@@ -42,8 +42,8 @@ DOAR datele din org A.
 
 ### Ce mai trebuie făcut manual, în afara acestui repo
 
-- Creat repo-ul GitHub `office729/fundraising-academy` și făcut primul push
-  (nu am `gh` CLI disponibil în acest mediu ca să-l creez eu).
+- ✅ Repo GitHub creat și urcat: **`github.com/office729/fundraising`** (2026-09-04).
+  Pe un laptop nou: `git clone https://github.com/office729/fundraising.git`.
 - Creat proiect Vercel legat de acel repo, cu variabilele de mediu de mai sus.
 - Creat cont/produse Stripe (test + live) — necesar abia din Faza 1.
 - Confirmat maparea pachet → instrumente din `lib/billing/packages.ts`
