@@ -1,0 +1,96 @@
+/* "Calm Impact" — sistem vizual pentru modulul CRM nou (mock data).
+   Izolat de restul aplicației: importat doar aici, nu afectează
+   Control Tower / CRM PJ / Echipă / Setări existente. */
+
+.ci-root {
+  --ci-bg: #f6f8fb;
+  --ci-surface: #ffffff;
+  --ci-surface-2: #fafbfd;
+  --ci-text: #14213d;
+  --ci-text-muted: #64748b;
+  --ci-text-faint: #94a3b8;
+
+  /* Accentul primar + verdele „succes" sunt legate de marca reală
+     Fundraising Academy (albastru #154A85 / verde #3FA85C, vezi
+     globals.css) — pagina principală, login și Dashboard-ul CRM trebuie
+     să simtă ca un singur produs, nu un skin de prototip separat. */
+  --ci-primary: #154a85;
+  --ci-primary-hover: #103a68;
+  --ci-primary-soft: #eaf0f8;
+
+  --ci-blue: #2563eb;
+  --ci-blue-soft: #eaf0fe;
+  --ci-green: #3fa85c;
+  --ci-green-soft: #e9f6ec;
+  --ci-amber: #d97706;
+  --ci-amber-soft: #fef6e7;
+  --ci-red: #dc2626;
+  --ci-red-soft: #fdecec;
+  --ci-orange: #ea580c;
+  --ci-orange-soft: #fef1e8;
+  --ci-purple: #7c3aed;
+  --ci-purple-soft: #f3ecfe;
+  --ci-pink: #db2777;
+  --ci-pink-soft: #fce8f2;
+  --ci-indigo: #4f46e5;
+  --ci-indigo-soft: #eceafd;
+  --ci-teal: #0d9488;
+  --ci-teal-soft: #e6f7f5;
+
+  --ci-border: #e2e8f0;
+  --ci-border-strong: #cbd5e1;
+
+  --ci-shadow-sm: 0 1px 2px rgba(20, 33, 61, 0.06);
+  --ci-shadow-md: 0 4px 16px rgba(20, 33, 61, 0.08);
+  --ci-shadow-lg: 0 12px 32px rgba(20, 33, 61, 0.12);
+
+  --ci-font-display: var(--font-manrope), "Manrope", system-ui, sans-serif;
+  --ci-font-body: var(--font-inter), "Inter", system-ui, sans-serif;
+
+  background: var(--ci-bg);
+  color: var(--ci-text);
+  font-family: var(--ci-font-body);
+  min-height: 100vh;
+}
+
+.ci-root[data-brand] {
+  --ci-primary: var(--ci-brand-override, #154a85);
+}
+
+.ci-root .ci-display {
+  font-family: var(--ci-font-display);
+  text-wrap: balance;
+}
+
+.ci-root .ci-tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.ci-root ::selection {
+  background: var(--ci-primary-soft);
+  color: var(--ci-primary-hover);
+}
+
+.ci-root *:focus-visible {
+  outline: 2px solid var(--ci-blue);
+  outline-offset: 2px;
+}
+
+.ci-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ci-border-strong) transparent;
+}
+
+/* Sidebar mobil: drawer închis implicit (clasă), deschis via style inline
+   (vezi shell.tsx) — inline style câștigă mereu cascada, evitând conflictul
+   de ordine dintre utilitarele Tailwind translate-x-0 / -translate-x-full. */
+.ci-sidebar {
+  transform: translateX(-100%);
+  transition: transform 200ms;
+}
+@media (min-width: 768px) {
+  .ci-sidebar {
+    transform: none;
+    transition: width 150ms;
+  }
+}

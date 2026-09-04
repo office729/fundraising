@@ -1,0 +1,81 @@
+import type { Locale } from "../config";
+
+// Doar structura persistentă a dashboard-ului (navigare + salut) — restul
+// paginilor CRM (companii, donatori, formular230 etc.) rămân în română
+// deocamdată; se traduc modul cu modul, în ture separate.
+export const DASHBOARD_DICT = {
+  ro: {
+    greeting: { morning: "Bună dimineața", afternoon: "Bună ziua", evening: "Bună seara" },
+    nav: {
+      home: "Acasă",
+      sectionRelatii: "Relații",
+      donatori: "Persoane fizice",
+      formular230: "Formularul 230",
+      companii: "Companii",
+      companiiD177: "Companii D177",
+      beneficiari: "Beneficiari & proiecte",
+      sectionFinanciar: "Financiar",
+      donatii: "Donații",
+      strangereFonduri: "Strângere fonduri",
+      fonduriPlati: "Fonduri și plăți",
+      rfm: "RFM & segmentare",
+      sectionOperare: "Operare",
+      comunicare: "Comunicare",
+      automatizari: "Automatizări",
+      taskuri: "Taskuri",
+      documente: "Documente",
+      rapoarte: "Rapoarte",
+      instrumente: "Instrumente",
+      setari: "Setări",
+    },
+    header: {
+      searchPersoane: "Caută persoane fizice…",
+      add: "Adaugă",
+      logout: "Deconectare",
+      team: "Echipă",
+      settings: "Setări",
+      trial: "Probă",
+      dayLeft: "zi rămasă",
+      daysLeft: "zile rămase",
+      roles: { owner: "Owner", admin: "Admin", member: "Membru" },
+    },
+  },
+  en: {
+    greeting: { morning: "Good morning", afternoon: "Good afternoon", evening: "Good evening" },
+    nav: {
+      home: "Home",
+      sectionRelatii: "Relationships",
+      donatori: "Individuals",
+      formular230: "Form 230",
+      companii: "Companies",
+      companiiD177: "Companies D177",
+      beneficiari: "Beneficiaries & projects",
+      sectionFinanciar: "Finance",
+      donatii: "Donations",
+      strangereFonduri: "Fundraising pages",
+      fonduriPlati: "Funds & payments",
+      rfm: "RFM & segmentation",
+      sectionOperare: "Operations",
+      comunicare: "Communication",
+      automatizari: "Automations",
+      taskuri: "Tasks",
+      documente: "Documents",
+      rapoarte: "Reports",
+      instrumente: "Tools",
+      setari: "Settings",
+    },
+    header: {
+      searchPersoane: "Search individuals…",
+      add: "Add",
+      logout: "Log out",
+      team: "Team",
+      settings: "Settings",
+      trial: "Trial",
+      dayLeft: "day left",
+      daysLeft: "days left",
+      roles: { owner: "Owner", admin: "Admin", member: "Member" },
+    },
+  },
+} satisfies Record<Locale, unknown>;
+
+export type DashboardDict = (typeof DASHBOARD_DICT)["ro"];

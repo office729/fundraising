@@ -1,0 +1,78 @@
+import type { Locale } from "../config";
+
+export const BENEFICIARI_DICT = {
+  ro: {
+    lista: {
+      title: "Beneficiari & proiecte",
+      subtitle: (n: number) => `${n} beneficiari`,
+      varstaLocalitate: (varsta: number, localitate: string) => `${varsta} ani · ${localitate}`,
+    },
+    profil: {
+      breadcrumb: "Beneficiari & proiecte",
+      varstaLocalitateZile: (varsta: number, localitate: string, zile: number) => `${varsta} ani · ${localitate} · ${zile} zile active`,
+      din: "din",
+      cardFinanciar: { title: "Card financiar", subtitle: "Fiecare valoare are un sens diferit — vezi explicația la ⓘ" },
+      fin: {
+        necesar: { label: "Necesar", tip: "Suma totală necesară pentru acest caz." },
+        incasat: { label: "Încasat", tip: "Suma efectiv primită de la donatori și sponsori." },
+        alocat: { label: "Alocat", tip: "Din suma încasată, partea rezervată acestui beneficiar (poate diferi de încasat dacă banii vin dintr-un fond comun)." },
+        achitat: { label: "Achitat", tip: "Suma deja plătită efectiv (către spital, furnizor etc.), cu document justificativ." },
+        disponibil: { label: "Disponibil", tip: "Alocat minus achitat — suma rămasă de plătit din ce e deja alocat." },
+        ramasDeStrans: { label: "Rămas de strâns", tip: "Necesar minus încasat — cât mai trebuie strâns până la obiectiv." },
+      },
+      tabs: {
+        poveste: "Poveste",
+        medical: "Situație medicală",
+        donatii: "Donații",
+        sponsori: "Sponsori",
+        plati: "Fonduri & plăți",
+        actualizari: "Actualizări",
+        rapoarte: "Rapoarte",
+      },
+      medicalEmpty: { title: "Documente medicale confidențiale", description: "Accesul la situația medicală detaliată e restricționat — disponibil doar echipei de caz în produsul final." },
+      niciodonatie: "Nicio donație directă legată de acest caz",
+      niciunSponsor: "Niciun sponsor asociat",
+      faraDocument: "fără document justificativ",
+      nicioPlata: "Nicio plată înregistrată",
+      nicioActualizare: "Nicio actualizare publicată",
+      niciunRaport: "Niciun raport transmis",
+    },
+  },
+  en: {
+    lista: {
+      title: "Beneficiaries & projects",
+      subtitle: (n: number) => `${n} beneficiaries`,
+      varstaLocalitate: (varsta: number, localitate: string) => `${varsta} yrs · ${localitate}`,
+    },
+    profil: {
+      breadcrumb: "Beneficiaries & projects",
+      varstaLocalitateZile: (varsta: number, localitate: string, zile: number) => `${varsta} yrs · ${localitate} · ${zile} active days`,
+      din: "of",
+      cardFinanciar: { title: "Financial card", subtitle: "Each value has a different meaning — see the explanation at ⓘ" },
+      fin: {
+        necesar: { label: "Needed", tip: "The total amount needed for this case." },
+        incasat: { label: "Received", tip: "The amount actually received from donors and sponsors." },
+        alocat: { label: "Allocated", tip: "Of the amount received, the part reserved for this beneficiary (can differ from received if the funds come from a shared pool)." },
+        achitat: { label: "Paid", tip: "The amount already paid out (to the hospital, supplier, etc.), with a supporting document." },
+        disponibil: { label: "Available", tip: "Allocated minus paid — the amount still to be paid out of what's already allocated." },
+        ramasDeStrans: { label: "Still to raise", tip: "Needed minus received — how much is still needed to reach the goal." },
+      },
+      tabs: {
+        poveste: "Story",
+        medical: "Medical status",
+        donatii: "Donations",
+        sponsori: "Sponsors",
+        plati: "Funds & payments",
+        actualizari: "Updates",
+        rapoarte: "Reports",
+      },
+      medicalEmpty: { title: "Confidential medical documents", description: "Access to detailed medical status is restricted — available only to the case team in the final product." },
+      niciodonatie: "No direct donation linked to this case",
+      niciunSponsor: "No sponsor associated",
+      faraDocument: "no supporting document",
+      nicioPlata: "No payment recorded",
+      nicioActualizare: "No update published",
+      niciunRaport: "No report submitted",
+    },
+  },
+} satisfies Record<Locale, unknown>;

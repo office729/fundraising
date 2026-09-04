@@ -1,0 +1,76 @@
+import type { Locale } from "../config";
+
+export const RFM_DICT = {
+  ro: {
+    segmentLabel: {
+      nou: "Donatori noi", fidel: "Donatori fideli", major: "Donatori mari", recurent: "Donatori lunari",
+      in_risc: "Riscă să-i pierdem", inactiv: "Donatori inactivi", reactivat: "Reveniți recent",
+    },
+    segmentExplicatie: {
+      nou: "Au donat pentru prima dată de curând. Primul contact contează cel mai mult.",
+      fidel: "Donează des, în sume constante — nucleul de bază al organizației.",
+      major: "Cei cu sumele cele mai mari donate până acum. Merită atenție personală.",
+      recurent: "Au o donație lunară activă chiar acum.",
+      in_risc: "Donau constant, dar au încetinit vizibil — pot dispărea dacă nu-i contactăm.",
+      inactiv: "Nu au mai donat de multă vreme. Necesită o campanie de reactivare.",
+      reactivat: "Reveniseră după o pauză — un mulțumesc acum îi poate transforma în fideli.",
+    },
+    segmentRecomandare: {
+      nou: "Trimite un email de bun venit și mulțumire personalizată.",
+      fidel: "Invită-i la un eveniment exclusiv sau la un update special.",
+      major: "Programează o întâlnire 1:1 și oferă raport de impact detaliat.",
+      recurent: "Verifică plățile recurente eșuate și confirmă metoda de plată.",
+      in_risc: "Sună pentru feedback înainte să devină inactivi.",
+      inactiv: "Lansează o campanie de reactivare cu o poveste puternică.",
+      reactivat: "Mulțumește pentru revenire și propune o donație recurentă.",
+    },
+    title: "Cine sunt donatorii mei",
+    subtitle: (n: number) => `${n} donatori împărțiți pe grupe, după cât de recent, cât de des și cât au donat — ca să știi cui să te adresezi și cum`,
+    stats: {
+      totalDonatori: "Total donatori",
+      rataRetentie: "Rata de retenție",
+      riscaSaIiPierdem: "Riscă să-i pierdem",
+      valoareDonatoriMari: "Valoare donatori mari",
+    },
+    sumaGrup: "Sumă donată de acest grup, până acum",
+    ceAiDeFacut: "Ce ai de făcut",
+    creazaCampanie: "Creează campanie pentru acest grup",
+    distributie: { title: "Câți donatori sunt în fiecare grupă", subtitle: "Din totalul de mai sus, ca să vezi dintr-o privire unde e concentrată baza de donatori" },
+  },
+  en: {
+    segmentLabel: {
+      nou: "New donors", fidel: "Loyal donors", major: "Major donors", recurent: "Monthly donors",
+      in_risc: "At risk of leaving", inactiv: "Inactive donors", reactivat: "Recently returned",
+    },
+    segmentExplicatie: {
+      nou: "Donated for the first time recently. The first contact matters most.",
+      fidel: "Donate often, in steady amounts — the organization's core base.",
+      major: "Those with the largest amounts donated so far. Worth personal attention.",
+      recurent: "Have an active monthly donation right now.",
+      in_risc: "Used to donate steadily, but have visibly slowed down — may disappear if not contacted.",
+      inactiv: "Haven't donated in a long time. Needs a reactivation campaign.",
+      reactivat: "Had returned after a break — a thank-you now can turn them into loyal donors.",
+    },
+    segmentRecomandare: {
+      nou: "Send a personalized welcome and thank-you email.",
+      fidel: "Invite them to an exclusive event or a special update.",
+      major: "Schedule a 1:1 meeting and offer a detailed impact report.",
+      recurent: "Check for failed recurring payments and confirm the payment method.",
+      in_risc: "Call for feedback before they become inactive.",
+      inactiv: "Launch a reactivation campaign with a powerful story.",
+      reactivat: "Thank them for returning and suggest a recurring donation.",
+    },
+    title: "Who my donors are",
+    subtitle: (n: number) => `${n} donors grouped by how recently, how often and how much they've donated — so you know who to reach out to and how`,
+    stats: {
+      totalDonatori: "Total donors",
+      rataRetentie: "Retention rate",
+      riscaSaIiPierdem: "At risk of leaving",
+      valoareDonatoriMari: "Major donor value",
+    },
+    sumaGrup: "Amount donated by this group, so far",
+    ceAiDeFacut: "What to do",
+    creazaCampanie: "Create a campaign for this group",
+    distributie: { title: "How many donors are in each group", subtitle: "Out of the total above, so you can see at a glance where the donor base is concentrated" },
+  },
+} satisfies Record<Locale, unknown>;

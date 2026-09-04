@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Brandul real Fundraising Academy (din pagina de prezentare/prețuri) —
+   albastru #154A85 + verde #3FA85C, Manrope + Sora. */
+:root {
+  --brand-blue: #154a85;
+  --brand-blue-hover: #103a68;
+  --brand-blue-soft: #eaf0f8;
+  --brand-green: #3fa85c;
+  --brand-green-hover: #2f8548;
+  --brand-green-soft: #e9f6ec;
+  --brand-amber: #b7791f;
+  --brand-amber-soft: #fbf1de;
+
+  --canvas: #ffffff;
+  --panel: #ffffff;
+  --panel-2: #f7f8fa;
+  --ink: #154a85;
+  --body: #374151;
+  --muted: #4a5a6e;
+  --muted-2: #7e8b9c;
+  --line: #e6e9ee;
+}
+
+.dark {
+  --brand-blue: #8ab0f0;
+  --brand-blue-hover: #aecbfb;
+  --brand-blue-soft: #16233a;
+  --brand-green: #5fc97e;
+  --brand-green-hover: #7ddb98;
+  --brand-green-soft: #12281a;
+  --brand-amber: #e0a54a;
+  --brand-amber-soft: #2a2410;
+
+  --canvas: #0b0f16;
+  --panel: #131a24;
+  --panel-2: #182230;
+  --ink: #eaf1ff;
+  --body: #cdd6e3;
+  --muted: #9aa8ba;
+  --muted-2: #798799;
+  --line: #253044;
+}
+
+@theme inline {
+  --color-brand-blue: var(--brand-blue);
+  --color-brand-blue-hover: var(--brand-blue-hover);
+  --color-brand-blue-soft: var(--brand-blue-soft);
+  --color-brand-green: var(--brand-green);
+  --color-brand-green-hover: var(--brand-green-hover);
+  --color-brand-green-soft: var(--brand-green-soft);
+  --color-brand-amber: var(--brand-amber);
+  --color-brand-amber-soft: var(--brand-amber-soft);
+
+  --color-canvas: var(--canvas);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel-2);
+  --color-ink: var(--ink);
+  --color-body: var(--body);
+  --color-muted: var(--muted);
+  --color-muted-2: var(--muted-2);
+  --color-line: var(--line);
+
+  --font-sans: var(--font-manrope);
+  --font-display: var(--font-sora);
+}
+
+body {
+  background: var(--canvas);
+  color: var(--body);
+  font-family: var(--font-manrope), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
