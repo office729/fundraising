@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 
 import { withOrgAdmin } from "@/lib/auth/guard";
+import { inregistreazaAudit } from "@/lib/audit";
 import { fundraisingBeneficiaries, fundraisingBeneficiaryInvites, fundraisingPages } from "@/lib/db/schema";
 import { EMAIL_RE, normalizeazaEmail } from "@/lib/validation";
 
@@ -85,4 +86,12 @@ export const dezactiveazaBeneficiarAction = withOrgAdmin(async (ctx, beneficiarI
     .update(fundraisingBeneficiaries)
     .set({ status: "dezactivat" })
     .where(and(eq(fundraisingBeneficiaries.id, beneficiarId), eq(fundraisingBeneficiaries.orgId, ctx.orgId)));
+
+  await inregistreazaAudit(ctx.db, {
+    orgId: ctx.orgId,
+    actorAppUserId: ctx.userId,
+    actiune: "beneficiar_dezactivat",
+    entitate: "fundraising_beneficiaries",
+    entitateId: beneficiarId,
+  });
 });

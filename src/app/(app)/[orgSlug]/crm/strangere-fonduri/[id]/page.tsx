@@ -28,6 +28,10 @@ import {
 } from "../presa-actions";
 import { PresaCard } from "../presa-card";
 import { GrupuriLocaleCard } from "../grupuri-locale-card";
+import { listFacturiCampanie } from "../invoice-actions";
+import { FacturiCard } from "../facturi-card";
+import { listAttachmentsCampanie, listTaskuriCampanie } from "../task-actions";
+import { TaskCard } from "../task-card";
 import { listMembers } from "../../../echipa/actions";
 
 const STATUS_TONE = { in_asteptare: "amber", reusita: "green", esuata: "red", rambursata: "orange" } as const;
@@ -94,17 +98,21 @@ const getPaginaSiDonatii = withOrgSession(async (ctx, id: string) => {
 
 export default async function PaginaDetaliuPage({ params }: { params: Promise<{ orgSlug: string; id: string }> }) {
   const { orgSlug, id } = await params;
-  const [data, membri, mesaje, calendarItems, continutItems, comunicat, mediaContacte, grupuriLocale, grupuriPublicate] = await Promise.all([
-    getPaginaSiDonatii(orgSlug, id),
-    listMembers(orgSlug),
-    listMesajeCampanie(orgSlug, id),
-    listCalendarCampanie(orgSlug, id),
-    listContinutCampanie(orgSlug, id),
-    listComunicatCampanie(orgSlug, id),
-    listMediaContacteCampanie(orgSlug, id),
-    listLocalGroupsCampanie(orgSlug, id),
-    listGrupuriPublicateCampanie(orgSlug, id),
-  ]);
+  const [data, membri, mesaje, calendarItems, continutItems, comunicat, mediaContacte, grupuriLocale, grupuriPublicate, facturi, taskuri, taskAttachments] =
+    await Promise.all([
+      getPaginaSiDonatii(orgSlug, id),
+      listMembers(orgSlug),
+      listMesajeCampanie(orgSlug, id),
+      listCalendarCampanie(orgSlug, id),
+      listContinutCampanie(orgSlug, id),
+      listComunicatCampanie(orgSlug, id),
+      listMediaContacteCampanie(orgSlug, id),
+      listLocalGroupsCampanie(orgSlug, id),
+      listGrupuriPublicateCampanie(orgSlug, id),
+      listFacturiCampanie(orgSlug, id),
+      listTaskuriCampanie(orgSlug, id),
+      listAttachmentsCampanie(orgSlug, id),
+    ]);
   if (!data) notFound();
 
   const outreachTrimis = comunicat ? await listOutreachIstoric(orgSlug, comunicat.id) : [];
@@ -199,6 +207,30 @@ export default async function PaginaDetaliuPage({ params }: { params: Promise<{ 
         orgSlug={orgSlug}
         grupuri={grupuriLocale.map((g) => ({ id: g.id, nume: g.nume, platforma: g.platforma, link: g.link, localitate: g.localitate }))}
         publicateIds={grupuriPublicate}
+      />
+
+      <FacturiCard
+        orgSlug={orgSlug}
+        pageId={pagina.id}
+        facturi={facturi.map((f) => ({ id: f.id, denumire: f.denumire, suma: f.suma, categorie: f.categorie, status: f.status, fisierUrl: f.fisierUrl, createdAt: f.createdAt.toISOString() }))}
+      />
+
+      <TaskCard
+        orgSlug={orgSlug}
+        pageId={pagina.id}
+        taskuri={taskuri.map((t) => ({
+          id: t.id,
+          tip: t.tip,
+          titlu: t.titlu,
+          descriere: t.descriere,
+          dataLimita: t.dataLimita,
+          status: t.status,
+          companie: t.companie,
+          suma: t.suma,
+          textMultumire: t.textMultumire,
+          canalRecomandat: t.canalRecomandat,
+        }))}
+        attachments={taskAttachments.map((a) => ({ id: a.id, taskId: a.taskId, fisierUrl: a.fisierUrl, denumire: a.denumire }))}
       />
 
       <Card>

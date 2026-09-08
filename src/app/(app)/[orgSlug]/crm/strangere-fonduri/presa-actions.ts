@@ -4,6 +4,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 
 import { withOrgAdmin, withOrgSession } from "@/lib/auth/guard";
+import { inregistreazaAudit } from "@/lib/audit";
 import {
   fundraisingGroupPostingHistory,
   fundraisingLocalGroups,
@@ -69,6 +70,14 @@ export const aprobaComunicatAction = withOrgAdmin(async (ctx, releaseId: string)
     .update(fundraisingPressReleases)
     .set({ status: "aprobat", aprobatDe: ctx.userId })
     .where(and(eq(fundraisingPressReleases.id, releaseId), eq(fundraisingPressReleases.orgId, ctx.orgId)));
+
+  await inregistreazaAudit(ctx.db, {
+    orgId: ctx.orgId,
+    actorAppUserId: ctx.userId,
+    actiune: "comunicat_aprobat",
+    entitate: "fundraising_press_releases",
+    entitateId: releaseId,
+  });
 });
 
 // Contacte de presă recomandate pentru campanie — filtrate pe județul

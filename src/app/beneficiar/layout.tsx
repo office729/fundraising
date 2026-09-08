@@ -1,7 +1,9 @@
+import { and, eq } from "drizzle-orm";
 import Link from "next/link";
 
 import { logoutAction } from "@/app/(app)/[orgSlug]/actions";
-import { requireBeneficiarAccess } from "@/lib/auth/guard";
+import { requireBeneficiarAccess, withBeneficiarSession } from "@/lib/auth/guard";
+import { fundraisingNotifications } from "@/lib/db/schema";
 
 const NAV = [
   { href: "/beneficiar", label: "Acasă" },
@@ -9,14 +11,24 @@ const NAV = [
   { href: "/beneficiar/continut-social", label: "Conținut social media" },
   { href: "/beneficiar/presa-locala", label: "Presă locală" },
   { href: "/beneficiar/grupuri", label: "Grupuri recomandate" },
+  { href: "/beneficiar/sarcinile-mele", label: "Sarcinile mele" },
   { href: "/beneficiar/situatie-financiara", label: "Situație financiară" },
   { href: "/beneficiar/facturi", label: "Facturi și plăți" },
   { href: "/beneficiar/agentul-meu", label: "Agentul meu" },
+  { href: "/beneficiar/notificari", label: "Notificări" },
   { href: "/beneficiar/profil", label: "Profil și securitate" },
 ];
 
+const getUnreadCount = withBeneficiarSession(async (ctx) => {
+  const rows = await ctx.db
+    .select({ id: fundraisingNotifications.id })
+    .from(fundraisingNotifications)
+    .where(and(eq(fundraisingNotifications.appUserId, ctx.userId), eq(fundraisingNotifications.citit, false)));
+  return rows.length;
+});
+
 export default async function BeneficiarLayout({ children }: { children: React.ReactNode }) {
-  const access = await requireBeneficiarAccess();
+  const [access, necitite] = await Promise.all([requireBeneficiarAccess(), getUnreadCount()]);
 
   return (
     <div className="min-h-screen bg-panel-2">
@@ -40,6 +52,11 @@ export default async function BeneficiarLayout({ children }: { children: React.R
               className="shrink-0 rounded-md px-3 py-1.5 text-[13px] font-medium text-body transition hover:bg-panel-2 hover:text-ink"
             >
               {item.label}
+              {item.href === "/beneficiar/notificari" && necitite > 0 && (
+                <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-green px-1 text-[10px] font-bold text-white">
+                  {necitite}
+                </span>
+              )}
             </Link>
           ))}
         </nav>

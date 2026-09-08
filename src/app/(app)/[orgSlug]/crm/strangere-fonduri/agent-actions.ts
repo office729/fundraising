@@ -1,9 +1,12 @@
 "use server";
 
 import { and, desc, eq } from "drizzle-orm";
+import { headers } from "next/headers";
 
 import { withOrgAdmin, withOrgSession } from "@/lib/auth/guard";
-import { appUsers, fundraisingCampaignAgents, fundraisingMessages, fundraisingPages } from "@/lib/db/schema";
+import { inregistreazaAudit } from "@/lib/audit";
+import { appUsers, fundraisingBeneficiaries, fundraisingCampaignAgents, fundraisingMessages, fundraisingPages } from "@/lib/db/schema";
+import { notifica } from "@/lib/notifications";
 
 export type AtribuieAgentState = { error: string | null; ok: boolean };
 
@@ -34,18 +37,49 @@ export const atribuieAgentAction = withOrgAdmin(
       .set({ active: false })
       .where(and(eq(fundraisingCampaignAgents.campaignPageId, pageId), eq(fundraisingCampaignAgents.active, true)));
 
-    await ctx.db.insert(fundraisingCampaignAgents).values({
-      campaignPageId: pageId,
+    const [agentRow] = await ctx.db
+      .insert(fundraisingCampaignAgents)
+      .values({
+        campaignPageId: pageId,
+        orgId: ctx.orgId,
+        agentUserId,
+        agentNume: agentUser[0].name,
+        agentEmail: agentUser[0].email,
+        bio: bio || null,
+        programDisponibilitate: programDisponibilitate || null,
+        contactAprobat: contactAprobat || null,
+        assignedBy: ctx.userId,
+        active: true,
+      })
+      .returning({ id: fundraisingCampaignAgents.id });
+
+    await inregistreazaAudit(ctx.db, {
       orgId: ctx.orgId,
-      agentUserId,
-      agentNume: agentUser[0].name,
-      agentEmail: agentUser[0].email,
-      bio: bio || null,
-      programDisponibilitate: programDisponibilitate || null,
-      contactAprobat: contactAprobat || null,
-      assignedBy: ctx.userId,
-      active: true,
+      actorAppUserId: ctx.userId,
+      actiune: "agent_atribuit",
+      entitate: "fundraising_campaign_agents",
+      entitateId: agentRow.id,
+      detalii: { pageId, agentUserId, agentEmail: agentUser[0].email },
     });
+
+    const beneficiar = await ctx.db
+      .select({ appUserId: fundraisingBeneficiaries.appUserId, email: fundraisingBeneficiaries.email })
+      .from(fundraisingBeneficiaries)
+      .where(and(eq(fundraisingBeneficiaries.campaignPageId, pageId), eq(fundraisingBeneficiaries.status, "activ")))
+      .limit(1);
+    if (beneficiar[0]) {
+      const hdrs = await headers();
+      const proto = hdrs.get("x-forwarded-proto") ?? "https";
+      const link = `${proto}://${hdrs.get("host")}/beneficiar/agentul-meu`;
+      await notifica(ctx.db, {
+        appUserId: beneficiar[0].appUserId,
+        tip: "agent_atribuit",
+        titlu: "Ai un agent dedicat",
+        continut: `${agentUser[0].name || agentUser[0].email} este acum agentul tău dedicat.`,
+        link,
+        email: beneficiar[0].email,
+      });
+    }
 
     return { error: null, ok: true };
   },
@@ -77,6 +111,25 @@ export const trimiteMesajStaffAction = withOrgAdmin(
       senderEmail: ctx.userEmail,
       continut,
     });
+
+    const beneficiar = await ctx.db
+      .select({ appUserId: fundraisingBeneficiaries.appUserId, email: fundraisingBeneficiaries.email })
+      .from(fundraisingBeneficiaries)
+      .where(and(eq(fundraisingBeneficiaries.campaignPageId, pageId), eq(fundraisingBeneficiaries.status, "activ")))
+      .limit(1);
+    if (beneficiar[0]) {
+      const hdrs = await headers();
+      const proto = hdrs.get("x-forwarded-proto") ?? "https";
+      const link = `${proto}://${hdrs.get("host")}/beneficiar/agentul-meu`;
+      await notifica(ctx.db, {
+        appUserId: beneficiar[0].appUserId,
+        tip: "mesaj_nou",
+        titlu: "Mesaj nou de la echipă",
+        continut,
+        link,
+        email: beneficiar[0].email,
+      });
+    }
 
     return { error: null, ok: true };
   },
