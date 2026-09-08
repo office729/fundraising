@@ -155,6 +155,67 @@ export function genereazaMesajeGrupuri(c: DateCampanie): MesajGrup[] {
   ];
 }
 
+export type ContinutCanal = {
+  canal: "facebook" | "instagram" | "tiktok" | "whatsapp" | "grup_local" | "comunicat";
+  titlu: string | null;
+  textComplet: string;
+  textScurt: string | null;
+  indemn: string | null;
+};
+
+// Materiale pregătite pe canal — șablon determinist (nu AI, vezi planul
+// modulului pentru „Faza AI"). Un rând per canal, gata de aprobat/publicat.
+export function genereazaContinutPeCanal(c: DateCampanie): ContinutCanal[] {
+  const scurta = povesteScurta(c, 200);
+  const mesajeGrupuri = genereazaMesajeGrupuri(c);
+  const indemnDonatie = "Donează sau distribuie:";
+
+  return [
+    {
+      canal: "facebook",
+      titlu: c.titlu,
+      textComplet: `${c.titlu}\n\n${scurta}\n\n${indemnDonatie} ${c.url}`,
+      textScurt: `Susține „${c.titlu}” — ${c.url}`,
+      indemn: "Distribuie mai departe, contează pentru fiecare",
+    },
+    {
+      canal: "instagram",
+      titlu: c.titlu,
+      textComplet: `${scurta}\n\n💛 ${indemnDonatie} link în bio / ${c.url}`,
+      textScurt: `${c.titlu} — ${c.url}`,
+      indemn: "Distribuie la story",
+    },
+    {
+      canal: "tiktok",
+      titlu: c.titlu,
+      textComplet: `${c.titlu}. ${povesteScurta(c, 100)} ${indemnDonatie} ${c.url}`,
+      textScurt: `${c.titlu} — ${c.url}`,
+      indemn: "Distribuie video-ul",
+    },
+    {
+      canal: "whatsapp",
+      titlu: null,
+      textComplet: mesajeGrupuri[1].text,
+      textScurt: mesajeGrupuri[0].text,
+      indemn: null,
+    },
+    {
+      canal: "grup_local",
+      titlu: null,
+      textComplet: mesajeGrupuri[2].text,
+      textScurt: mesajeGrupuri[0].text,
+      indemn: null,
+    },
+    {
+      canal: "comunicat",
+      titlu: `${c.orgName} lansează un apel public pentru „${c.titlu}”`,
+      textComplet: genereazaComunicatPresa(c),
+      textScurt: null,
+      indemn: null,
+    },
+  ];
+}
+
 export function genereazaComunicatPresa(c: DateCampanie): string {
   const procent = procentDin(c);
   return `COMUNICAT DE PRESĂ

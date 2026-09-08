@@ -5,6 +5,8 @@ import { requireBeneficiarAccess } from "@/lib/auth/guard";
 
 const NAV = [
   { href: "/beneficiar", label: "Acasă" },
+  { href: "/beneficiar/calendar", label: "Calendar" },
+  { href: "/beneficiar/continut-social", label: "Conținut social media" },
   { href: "/beneficiar/situatie-financiara", label: "Situație financiară" },
   { href: "/beneficiar/facturi", label: "Facturi și plăți" },
   { href: "/beneficiar/agentul-meu", label: "Agentul meu" },

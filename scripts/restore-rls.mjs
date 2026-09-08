@@ -418,8 +418,11 @@ const POLICIES = [
   `create policy fundraising_generated_content_tenant_isolation on fundraising_generated_content
     using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
     with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  // Beneficiarul vede doar materialele aprobate/publicate, nu draft-urile
+  // (aprobarea e un pas de control al agentului/staff-ului).
   `create policy fundraising_generated_content_beneficiar_select on fundraising_generated_content for select using (
     campaign_page_id = nullif(current_setting('app.current_beneficiary_campaign_id', true), '')::uuid
+    and status in ('aprobat', 'publicat')
   )`,
 
   // fundraising_media_contacts / fundraising_local_groups: globale per

@@ -16,6 +16,9 @@ import { BeneficiarCard } from "../beneficiar-card";
 import { AgentCard } from "../agent-card";
 import { listMesajeCampanie } from "../agent-actions";
 import { MesajeCard } from "../mesaje-card";
+import { listCalendarCampanie, listContinutCampanie } from "../continut-actions";
+import { CalendarCard } from "../calendar-card";
+import { ContinutCard } from "../continut-card";
 import { listMembers } from "../../../echipa/actions";
 
 const STATUS_TONE = { in_asteptare: "amber", reusita: "green", esuata: "red", rambursata: "orange" } as const;
@@ -82,10 +85,12 @@ const getPaginaSiDonatii = withOrgSession(async (ctx, id: string) => {
 
 export default async function PaginaDetaliuPage({ params }: { params: Promise<{ orgSlug: string; id: string }> }) {
   const { orgSlug, id } = await params;
-  const [data, membri, mesaje] = await Promise.all([
+  const [data, membri, mesaje, calendarItems, continutItems] = await Promise.all([
     getPaginaSiDonatii(orgSlug, id),
     listMembers(orgSlug),
     listMesajeCampanie(orgSlug, id),
+    listCalendarCampanie(orgSlug, id),
+    listContinutCampanie(orgSlug, id),
   ]);
   if (!data) notFound();
 
@@ -153,6 +158,18 @@ export default async function PaginaDetaliuPage({ params }: { params: Promise<{ 
         orgSlug={orgSlug}
         pageId={pagina.id}
         mesaje={mesaje.map((m) => ({ ...m, createdAt: m.createdAt.toISOString() }))}
+      />
+
+      <CalendarCard
+        orgSlug={orgSlug}
+        pageId={pagina.id}
+        items={calendarItems.map((it) => ({ id: it.id, ziua: it.ziua, obiectiv: it.obiectiv, textPregatit: it.textPregatit, status: it.status }))}
+      />
+
+      <ContinutCard
+        orgSlug={orgSlug}
+        pageId={pagina.id}
+        items={continutItems.map((it) => ({ id: it.id, canal: it.canal, titlu: it.titlu, textComplet: it.textComplet, status: it.status }))}
       />
 
       <Card>
