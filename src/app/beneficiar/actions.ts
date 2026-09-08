@@ -3,7 +3,7 @@
 import { and, eq } from "drizzle-orm";
 
 import { withBeneficiarSession } from "@/lib/auth/guard";
-import { fundraisingMessages, fundraisingTasks } from "@/lib/db/schema";
+import { fundraisingGroupPostingHistory, fundraisingMessages, fundraisingTasks } from "@/lib/db/schema";
 
 export type TrimiteMesajBeneficiarState = { error: string | null; ok: boolean };
 
@@ -32,4 +32,16 @@ export const finalizeazaSarcinaBeneficiarAction = withBeneficiarSession(async (c
     .update(fundraisingTasks)
     .set({ status: "finalizata", completedAt: new Date() })
     .where(and(eq(fundraisingTasks.id, taskId), eq(fundraisingTasks.campaignPageId, ctx.campaignPageId)));
+});
+
+// Beneficiarul marchează „am publicat” într-un grup local — RLS
+// (fundraising_group_posting_history_beneficiar_insert) garantează scoparea
+// pe campania lui, nu poate marca postări pentru altă campanie.
+export const marcheazaPublicatGrupAction = withBeneficiarSession(async (ctx, groupId: string) => {
+  await ctx.db.insert(fundraisingGroupPostingHistory).values({
+    groupId,
+    campaignPageId: ctx.campaignPageId,
+    orgId: ctx.orgId,
+    marcatDe: ctx.userId,
+  });
 });

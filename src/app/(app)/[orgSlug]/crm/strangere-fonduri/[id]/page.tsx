@@ -19,6 +19,15 @@ import { MesajeCard } from "../mesaje-card";
 import { listCalendarCampanie, listContinutCampanie } from "../continut-actions";
 import { CalendarCard } from "../calendar-card";
 import { ContinutCard } from "../continut-card";
+import {
+  listComunicatCampanie,
+  listGrupuriPublicateCampanie,
+  listLocalGroupsCampanie,
+  listMediaContacteCampanie,
+  listOutreachIstoric,
+} from "../presa-actions";
+import { PresaCard } from "../presa-card";
+import { GrupuriLocaleCard } from "../grupuri-locale-card";
 import { listMembers } from "../../../echipa/actions";
 
 const STATUS_TONE = { in_asteptare: "amber", reusita: "green", esuata: "red", rambursata: "orange" } as const;
@@ -85,14 +94,20 @@ const getPaginaSiDonatii = withOrgSession(async (ctx, id: string) => {
 
 export default async function PaginaDetaliuPage({ params }: { params: Promise<{ orgSlug: string; id: string }> }) {
   const { orgSlug, id } = await params;
-  const [data, membri, mesaje, calendarItems, continutItems] = await Promise.all([
+  const [data, membri, mesaje, calendarItems, continutItems, comunicat, mediaContacte, grupuriLocale, grupuriPublicate] = await Promise.all([
     getPaginaSiDonatii(orgSlug, id),
     listMembers(orgSlug),
     listMesajeCampanie(orgSlug, id),
     listCalendarCampanie(orgSlug, id),
     listContinutCampanie(orgSlug, id),
+    listComunicatCampanie(orgSlug, id),
+    listMediaContacteCampanie(orgSlug, id),
+    listLocalGroupsCampanie(orgSlug, id),
+    listGrupuriPublicateCampanie(orgSlug, id),
   ]);
   if (!data) notFound();
+
+  const outreachTrimis = comunicat ? await listOutreachIstoric(orgSlug, comunicat.id) : [];
 
   const { pagina, donatii, actualizari, beneficiar, inviteActiv, agent } = data;
   const locale = await getLocale();
@@ -170,6 +185,20 @@ export default async function PaginaDetaliuPage({ params }: { params: Promise<{ 
         orgSlug={orgSlug}
         pageId={pagina.id}
         items={continutItems.map((it) => ({ id: it.id, canal: it.canal, titlu: it.titlu, textComplet: it.textComplet, status: it.status }))}
+      />
+
+      <PresaCard
+        orgSlug={orgSlug}
+        pageId={pagina.id}
+        comunicat={comunicat ? { id: comunicat.id, continut: comunicat.continut, status: comunicat.status } : null}
+        contacte={mediaContacte.map((c) => ({ id: c.id, numeRedactie: c.numeRedactie, judet: c.judet, email: c.email, telefon: c.telefon }))}
+        trimisIds={outreachTrimis.map((o) => o.mediaContactId)}
+      />
+
+      <GrupuriLocaleCard
+        orgSlug={orgSlug}
+        grupuri={grupuriLocale.map((g) => ({ id: g.id, nume: g.nume, platforma: g.platforma, link: g.link, localitate: g.localitate }))}
+        publicateIds={grupuriPublicate}
       />
 
       <Card>

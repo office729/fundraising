@@ -61,6 +61,8 @@ export const creeazaPaginaAdminAction = withOrgAdmin(
     const titlu = str("titlu");
     const poveste = str("poveste");
     const sumaTintaRaw = str("sumaTinta");
+    const judet = str("judet") || null;
+    const localitate = str("localitate") || null;
 
     if (!numeCreator || !emailCreator || !titlu || !poveste) {
       return { error: "Completează toate câmpurile obligatorii." };
@@ -93,6 +95,8 @@ export const creeazaPaginaAdminAction = withOrgAdmin(
       sumaTinta,
       numeCreator,
       emailCreator,
+      judet,
+      localitate,
       // Pagină creată de organizație însăși (nu de un susținător extern) —
       // organizația e proprietara datelor publicate, nu un terț a cărui
       // consimțământ trebuie colectat separat.
@@ -115,6 +119,8 @@ export const editeazaPaginaAdminAction = withOrgAdmin(
     const titlu = str("titlu");
     const poveste = str("poveste");
     const sumaTintaRaw = str("sumaTinta");
+    const judet = str("judet") || null;
+    const localitate = str("localitate") || null;
 
     if (!numeCreator || !emailCreator || !titlu || !poveste) {
       return { error: "Completează toate câmpurile obligatorii." };
@@ -130,7 +136,7 @@ export const editeazaPaginaAdminAction = withOrgAdmin(
 
     const r = await ctx.db
       .update(fundraisingPages)
-      .set({ titlu, poveste, sumaTinta, numeCreator, emailCreator })
+      .set({ titlu, poveste, sumaTinta, numeCreator, emailCreator, judet, localitate })
       .where(and(eq(fundraisingPages.id, pageId), eq(fundraisingPages.orgId, ctx.orgId)))
       .returning({ id: fundraisingPages.id });
     if (!r[0]) return { error: "Pagina nu a fost găsită." };

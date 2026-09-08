@@ -18,6 +18,7 @@ import {
   LayoutGrid,
   Menu,
   MessageSquare,
+  Newspaper,
   Plus,
   Search,
   Settings,
@@ -84,6 +85,7 @@ function buildNav(dict: DashboardDict): { section: string; items: { href: string
       items: [
         { href: "donatii", label: dict.nav.donatii, icon: Sparkles },
         { href: "strangere-fonduri", label: dict.nav.strangereFonduri, icon: HandCoins },
+        { href: "presa-grupuri", label: dict.nav.presaGrupuri, icon: Newspaper },
         { href: "fonduri-plati", label: dict.nav.fonduriPlati, icon: Banknote },
         { href: "rfm", label: dict.nav.rfm, icon: LayoutGrid },
       ],

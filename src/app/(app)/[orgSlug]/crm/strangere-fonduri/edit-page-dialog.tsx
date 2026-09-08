@@ -18,6 +18,8 @@ export type PaginaEditabila = {
   numeCreator: string;
   emailCreator: string;
   imagineUrl: string | null;
+  judet: string | null;
+  localitate: string | null;
 };
 
 export function EditPageDialog({
@@ -109,6 +111,17 @@ export function EditPageDialog({
             <Label>{dict.sumaTinta}</Label>
             <Input type="number" name="sumaTinta" min={1} step={1} defaultValue={pagina.sumaTinta ?? ""} />
           </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>{dict.judet}</Label>
+              <Input name="judet" placeholder={dict.judetPlaceholder} defaultValue={pagina.judet ?? ""} />
+            </div>
+            <div>
+              <Label>{dict.localitate}</Label>
+              <Input name="localitate" defaultValue={pagina.localitate ?? ""} />
+            </div>
+          </div>
+          <p className="text-[11.5px] text-[var(--ci-text-faint)]">{dict.localitateNota}</p>
 
           {eroare && <p className="text-[13px] text-[var(--ci-red)]">{eroare}</p>}
 
