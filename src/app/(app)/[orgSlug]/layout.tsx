@@ -3,7 +3,7 @@ import Image from "next/image";
 import type { CSSProperties } from "react";
 
 import { requireOrgAccess } from "@/lib/auth/guard";
-import { isAccessBlocked, trialDaysRemaining } from "@/lib/billing/trial";
+import { isAccessBlocked, isPlatformAdmin, trialDaysRemaining } from "@/lib/billing/trial";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { DASHBOARD_DICT } from "@/lib/i18n/dictionaries/dashboard";
 import { getLocale } from "@/lib/i18n/get-locale";
@@ -28,11 +28,14 @@ export default async function OrgLayout({
   const dict = DASHBOARD_DICT[locale];
 
   if (
-    isAccessBlocked({
-      createdAt: access.orgCreatedAt,
-      subscriptionStatus: access.orgSubscriptionStatus,
-      package: access.orgPackage,
-    })
+    isAccessBlocked(
+      {
+        createdAt: access.orgCreatedAt,
+        subscriptionStatus: access.orgSubscriptionStatus,
+        package: access.orgPackage,
+      },
+      access.userEmail,
+    )
   ) {
     return (
       <Paywall
@@ -44,7 +47,8 @@ export default async function OrgLayout({
     );
   }
 
-  const zileProba = access.orgPackage === "trial" ? trialDaysRemaining(access.orgCreatedAt) : null;
+  const zileProba =
+    access.orgPackage === "trial" && !isPlatformAdmin(access.userEmail) ? trialDaysRemaining(access.orgCreatedAt) : null;
   const initiale =
     (access.orgName.match(/\p{L}+/gu) ?? [])
       .slice(0, 2)

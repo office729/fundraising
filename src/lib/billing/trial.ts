@@ -4,6 +4,15 @@ import type { OrgPackage } from "./packages";
 // accesul se blochează dacă nu s-a ales (și confirmat manual) un pachet.
 export const TRIAL_DAYS = 14;
 
+// Contul(ele) administratorului platformei — niciodată blocate de perioada
+// de probă, indiferent de organizația în care lucrează. Nu afectează
+// clienții reali (vezi isAccessBlocked mai jos).
+const PLATFORM_ADMIN_EMAILS = ["vlad.placinta@fundrasingacademy.ro", "office@salveazaoinima.ro"];
+
+export function isPlatformAdmin(userEmail?: string | null): boolean {
+  return Boolean(userEmail && PLATFORM_ADMIN_EMAILS.includes(userEmail.toLowerCase()));
+}
+
 export function trialEndsAt(orgCreatedAt: Date): Date {
   return new Date(orgCreatedAt.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
 }
@@ -18,11 +27,15 @@ export function trialDaysRemaining(orgCreatedAt: Date): number {
 // choosePackageAction din billing-actions.ts: alegerea unui pachet
 // înregistrează intenția, nu activează accesul (nu există plată automată,
 // activarea o face manual proprietarul platformei după confirmarea plății).
-export function isAccessBlocked(org: {
-  createdAt: Date;
-  subscriptionStatus: string;
-  package: OrgPackage;
-}): boolean {
+export function isAccessBlocked(
+  org: {
+    createdAt: Date;
+    subscriptionStatus: string;
+    package: OrgPackage;
+  },
+  userEmail?: string,
+): boolean {
+  if (isPlatformAdmin(userEmail)) return false;
   if (org.subscriptionStatus === "active") return false;
   return trialDaysRemaining(org.createdAt) <= 0;
 }
