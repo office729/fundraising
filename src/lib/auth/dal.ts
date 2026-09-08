@@ -7,6 +7,8 @@ import { db } from "@/lib/db";
 import { appUsers, memberships, organizations } from "@/lib/db/schema";
 import { createClient } from "@/lib/supabase/server";
 
+import { findBeneficiaryProfile } from "./beneficiar";
+
 // User-ul autentificat la nivel Supabase (sau null). Memoizat pe render.
 export const getAuthUser = cache(async () => {
   const supabase = await createClient();
@@ -63,5 +65,25 @@ export async function getMyOrgSlug(): Promise<string | null> {
       .limit(1);
 
     return rows[0]?.slug ?? null;
+  });
+}
+
+// Pentru pagina de start: dacă userul logat e beneficiar (nu membru de
+// organizație), îl trimitem direct la /beneficiar. La fel ca getMyOrgSlug,
+// nu creează nimic — doar citește.
+export async function esteBeneficiarLogat(): Promise<boolean> {
+  const authUser = await getAuthUser();
+  if (!authUser?.email) return false;
+
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`select set_config('app.current_user_email', ${authUser.email}, true)`);
+
+    const appUserRows = await tx.select().from(appUsers).where(eq(appUsers.email, authUser.email!.toLowerCase())).limit(1);
+    const appUser = appUserRows[0];
+    if (!appUser) return false;
+
+    await tx.execute(sql`select set_config('app.current_user_id', ${appUser.id}, true)`);
+    const beneficiar = await findBeneficiaryProfile(tx, appUser.id);
+    return !!beneficiar;
   });
 }

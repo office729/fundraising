@@ -3,6 +3,7 @@
 import { eq, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 
+import { findBeneficiaryProfile } from "@/lib/auth/beneficiar";
 import { ensureAppUser } from "@/lib/auth/dal";
 import { db } from "@/lib/db";
 import { memberships, organizations } from "@/lib/db/schema";
@@ -17,6 +18,7 @@ export async function loginAction(
     .toLowerCase();
   const password = String(formData.get("password") ?? "");
   const inviteToken = String(formData.get("inviteToken") ?? "").trim();
+  const beneficiarInviteToken = String(formData.get("beneficiarInviteToken") ?? "").trim();
   const ramaiConectat = formData.get("ramaiConectat") != null;
 
   if (!email || !password) {
@@ -32,13 +34,20 @@ export async function loginAction(
   if (inviteToken) {
     redirect(`/invite/${inviteToken}`);
   }
+  if (beneficiarInviteToken) {
+    redirect(`/invite-beneficiar/${beneficiarInviteToken}`);
+  }
 
-  // Găsește prima organizație a userului și redirecționează acolo. Cu
-  // multiple organizații per user (Faza 1+), aici devine un selector.
-  const orgSlug = await db.transaction(async (tx) => {
+  // Verifică întâi profilul de beneficiar, apoi membership-ul de organizație
+  // — un cont are DOAR unul dintre cele două (vezi decizia de design din
+  // planul modulului „Persoană fizică / Beneficiar").
+  const { isBeneficiar, orgSlug } = await db.transaction(async (tx) => {
     await tx.execute(sql`select set_config('app.current_user_email', ${email}, true)`);
     const appUser = await ensureAppUser(tx, email);
     await tx.execute(sql`select set_config('app.current_user_id', ${appUser.id}, true)`);
+
+    const beneficiar = await findBeneficiaryProfile(tx, appUser.id);
+    if (beneficiar) return { isBeneficiar: true, orgSlug: null };
 
     const rows = await tx
       .select({ slug: organizations.slug })
@@ -46,9 +55,12 @@ export async function loginAction(
       .innerJoin(organizations, eq(organizations.id, memberships.orgId))
       .where(eq(memberships.userId, appUser.id))
       .limit(1);
-    return rows[0]?.slug ?? null;
+    return { isBeneficiar: false, orgSlug: rows[0]?.slug ?? null };
   });
 
+  if (isBeneficiar) {
+    redirect("/beneficiar");
+  }
   if (!orgSlug) {
     redirect("/signup");
   }

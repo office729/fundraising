@@ -2,7 +2,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 
 import { withOrgSession } from "@/lib/auth/guard";
-import { fundraisingDonations, fundraisingPages, fundraisingUpdates } from "@/lib/db/schema";
+import { appUsers, fundraisingBeneficiaries, fundraisingBeneficiaryInvites, fundraisingDonations, fundraisingPages, fundraisingUpdates } from "@/lib/db/schema";
 
 import { Badge } from "../../components/ui/badge";
 import { Breadcrumb } from "../../components/ui/breadcrumb";
@@ -12,6 +12,7 @@ import { formatDataOra } from "../../lib/format";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { STRANGERE_FONDURI_DICT } from "@/lib/i18n/dictionaries/strangere-fonduri";
 import { AddOfflineDonationButton, AddUpdateButton, CopyPageLinkButton, DeleteUpdateButton, ImageUploadCard, ToggleStatusButton } from "../client";
+import { BeneficiarCard } from "../beneficiar-card";
 
 const STATUS_TONE = { in_asteptare: "amber", reusita: "green", esuata: "red", rambursata: "orange" } as const;
 
@@ -36,7 +37,27 @@ const getPaginaSiDonatii = withOrgSession(async (ctx, id: string) => {
     .where(eq(fundraisingUpdates.pageId, id))
     .orderBy(desc(fundraisingUpdates.createdAt));
 
-  return { pagina: pagina[0], donatii, actualizari };
+  const beneficiarRows = await ctx.db
+    .select({ id: fundraisingBeneficiaries.id, createdAt: fundraisingBeneficiaries.createdAt, email: appUsers.email })
+    .from(fundraisingBeneficiaries)
+    .innerJoin(appUsers, eq(appUsers.id, fundraisingBeneficiaries.appUserId))
+    .where(and(eq(fundraisingBeneficiaries.campaignPageId, id), eq(fundraisingBeneficiaries.status, "activ")))
+    .limit(1);
+
+  let inviteActiv = null;
+  if (!beneficiarRows[0]) {
+    const inviteRows = await ctx.db
+      .select()
+      .from(fundraisingBeneficiaryInvites)
+      .where(and(eq(fundraisingBeneficiaryInvites.campaignPageId, id), eq(fundraisingBeneficiaryInvites.orgId, ctx.orgId)))
+      .orderBy(desc(fundraisingBeneficiaryInvites.createdAt))
+      .limit(1);
+    if (inviteRows[0] && !inviteRows[0].acceptedAt && inviteRows[0].expiresAt.getTime() > Date.now()) {
+      inviteActiv = inviteRows[0];
+    }
+  }
+
+  return { pagina: pagina[0], donatii, actualizari, beneficiar: beneficiarRows[0] ?? null, inviteActiv };
 });
 
 export default async function PaginaDetaliuPage({ params }: { params: Promise<{ orgSlug: string; id: string }> }) {
@@ -44,7 +65,7 @@ export default async function PaginaDetaliuPage({ params }: { params: Promise<{ 
   const data = await getPaginaSiDonatii(orgSlug, id);
   if (!data) notFound();
 
-  const { pagina, donatii, actualizari } = data;
+  const { pagina, donatii, actualizari, beneficiar, inviteActiv } = data;
   const locale = await getLocale();
   const dict = STRANGERE_FONDURI_DICT[locale];
   const dictDetail = dict.detail;
@@ -94,6 +115,13 @@ export default async function PaginaDetaliuPage({ params }: { params: Promise<{ 
           </p>
         </Card>
       </div>
+
+      <BeneficiarCard
+        orgSlug={orgSlug}
+        pageId={pagina.id}
+        beneficiar={beneficiar ? { id: beneficiar.id, email: beneficiar.email, createdAt: beneficiar.createdAt.toISOString() } : null}
+        invite={inviteActiv ? { id: inviteActiv.id, email: inviteActiv.email, token: inviteActiv.token, expiresAt: inviteActiv.expiresAt.toISOString() } : null}
+      />
 
       <Card>
         <CardHeader title={dictDetail.donatori.title} subtitle={dictDetail.donatori.subtitle(donatii.length)} />

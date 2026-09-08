@@ -20,13 +20,14 @@ export async function signupAction(
   formData: FormData,
 ): Promise<{ error: string | null }> {
   const inviteToken = String(formData.get("inviteToken") ?? "").trim();
+  const beneficiarInviteToken = String(formData.get("beneficiarInviteToken") ?? "").trim();
   const orgName = String(formData.get("orgName") ?? "").trim();
   const email = String(formData.get("email") ?? "")
     .trim()
     .toLowerCase();
   const password = String(formData.get("password") ?? "");
 
-  if (!email || !password || (!inviteToken && !orgName)) {
+  if (!email || !password || (!inviteToken && !beneficiarInviteToken && !orgName)) {
     return { error: "Completează toate câmpurile." };
   }
   if (password.length < 8) {
@@ -43,17 +44,20 @@ export async function signupAction(
   }
 
   // Cont creat printr-un link de invitație: NU se creează o organizație nouă —
-  // doar rândul app_users; membership-ul se creează la /invite/[token], unde
-  // acceptInviteAction verifică din nou emailul + validitatea invitației.
-  if (inviteToken) {
+  // doar rândul app_users; membership-ul (sau profilul de beneficiar) se
+  // creează la pagina de acceptare, care verifică din nou emailul +
+  // validitatea invitației.
+  if (inviteToken || beneficiarInviteToken) {
     await db.transaction(async (tx) => {
       await tx.execute(sql`select set_config('app.current_user_email', ${email}, true)`);
       await ensureAppUser(tx, email);
     });
     if (!data.session) {
-      redirect(`/login?confirmare=necesara&invite=${inviteToken}`);
+      redirect(
+        `/login?confirmare=necesara&${inviteToken ? `invite=${inviteToken}` : `beneficiarInvite=${beneficiarInviteToken}`}`,
+      );
     }
-    redirect(`/invite/${inviteToken}`);
+    redirect(inviteToken ? `/invite/${inviteToken}` : `/invite-beneficiar/${beneficiarInviteToken}`);
   }
 
   // Provizionare: creează app_users (dacă nu există) + organizația nouă +

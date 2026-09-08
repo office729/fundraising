@@ -66,6 +66,7 @@ export async function updateSession(request: NextRequest, rewriteTo?: URL) {
     path === "/reset-password" ||
     path.startsWith("/auth") ||
     path.startsWith("/invite/") ||
+    path.startsWith("/invite-beneficiar/") ||
     path.startsWith("/api/stripe/webhook") ||
     // Cron-uri Vercel — invocate de infrastructura Vercel, nu de un vizitator
     // cu sesiune; ruta își face propria verificare (CRON_SECRET).

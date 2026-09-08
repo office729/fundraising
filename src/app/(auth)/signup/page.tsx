@@ -11,16 +11,20 @@ function SignupForm() {
   const [state, formAction, pending] = useActionState(signupAction, { error: null });
   const params = useSearchParams();
   const inviteToken = params.get("invite") || "";
+  const beneficiarInviteToken = params.get("beneficiarInvite") || "";
+  const areInvitatie = Boolean(inviteToken || beneficiarInviteToken);
 
   return (
     <>
       <h1 className="font-display text-2xl font-bold text-ink">
-        {inviteToken ? "Creează cont" : "Creează cont pentru ONG-ul tău"}
+        {areInvitatie ? "Creează cont" : "Creează cont pentru ONG-ul tău"}
       </h1>
       <p className="mt-1 text-sm text-muted">
         {inviteToken
           ? "Ai fost invitat(ă) într-o organizație existentă."
-          : "Un cont nou = o organizație nouă, izolată complet de restul clienților."}
+          : beneficiarInviteToken
+            ? "Ai fost invitat(ă) în panoul dedicat campaniei tale."
+            : "Un cont nou = o organizație nouă, izolată complet de restul clienților."}
       </p>
 
       <div className="mt-6">
@@ -35,7 +39,8 @@ function SignupForm() {
 
       <form action={formAction} className="flex flex-col gap-3">
         <input type="hidden" name="inviteToken" value={inviteToken} />
-        {!inviteToken && (
+        <input type="hidden" name="beneficiarInviteToken" value={beneficiarInviteToken} />
+        {!areInvitatie && (
           <label className="text-sm font-medium text-ink">
             Numele organizației
             <input
@@ -82,7 +87,13 @@ function SignupForm() {
       <p className="mt-4 text-sm text-muted">
         Ai deja cont?{" "}
         <Link
-          href={inviteToken ? `/login?invite=${inviteToken}` : "/login"}
+          href={
+            inviteToken
+              ? `/login?invite=${inviteToken}`
+              : beneficiarInviteToken
+                ? `/login?beneficiarInvite=${beneficiarInviteToken}`
+                : "/login"
+          }
           className="font-medium text-brand-green"
         >
           Autentifică-te

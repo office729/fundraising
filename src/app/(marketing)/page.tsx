@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { getAuthUser, getMyOrgSlug } from "@/lib/auth/dal";
+import { esteBeneficiarLogat, getAuthUser, getMyOrgSlug } from "@/lib/auth/dal";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { MARKETING_DICT } from "@/lib/i18n/dictionaries/marketing";
 
@@ -15,6 +15,11 @@ export default async function LandingPage() {
   const myOrgSlug = authUser ? await getMyOrgSlug() : null;
   if (myOrgSlug) {
     redirect(`/${myOrgSlug}/crm`);
+  }
+  // Verificat înainte de FinalizeForm — un beneficiar logat nu trebuie să
+  // vadă formularul de finalizare a unui cont de ONG (acela nu se aplică lui).
+  if (authUser && (await esteBeneficiarLogat())) {
+    redirect("/beneficiar");
   }
   // Autentificat (de obicei prin Google, primul login) dar fără organizație
   // încă — spre deosebire de fluxul clasic de /signup, contul Supabase deja

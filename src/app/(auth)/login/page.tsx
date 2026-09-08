@@ -11,6 +11,7 @@ function LoginForm() {
   const [state, formAction, pending] = useActionState(loginAction, { error: null });
   const params = useSearchParams();
   const inviteToken = params.get("invite") || "";
+  const beneficiarInviteToken = params.get("beneficiarInvite") || "";
   const confirmareNecesara = params.get("confirmare") === "necesara";
 
   return (
@@ -35,6 +36,7 @@ function LoginForm() {
 
       <form action={formAction} className="flex flex-col gap-3">
         <input type="hidden" name="inviteToken" value={inviteToken} />
+        <input type="hidden" name="beneficiarInviteToken" value={beneficiarInviteToken} />
         <label className="text-sm font-medium text-ink">
           Email
           <input
@@ -79,7 +81,13 @@ function LoginForm() {
       <p className="mt-4 text-sm text-muted">
         Nu ai cont?{" "}
         <Link
-          href={inviteToken ? `/signup?invite=${inviteToken}` : "/signup"}
+          href={
+            inviteToken
+              ? `/signup?invite=${inviteToken}`
+              : beneficiarInviteToken
+                ? `/signup?beneficiarInvite=${beneficiarInviteToken}`
+                : "/signup"
+          }
           className="font-medium text-brand-green"
         >
           Creează unul

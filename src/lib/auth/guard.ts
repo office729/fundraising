@@ -5,6 +5,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { db } from "@/lib/db";
 
+import { findBeneficiaryProfile } from "./beneficiar";
 import { ensureAppUser, getAuthUser } from "./dal";
 import { findOrgMembership } from "./org";
 
@@ -146,4 +147,115 @@ export function requireOrgAccess(orgSlug: string): Promise<OrgAccess> {
     userName: ctx.userName,
     role: ctx.role,
   }))(orgSlug);
+}
+
+// ---------------------------------------------------------------------------
+// Modul „Persoană fizică / Beneficiar" — oglindă a withOrgSession/
+// requireOrgAccess de mai sus, dar scopată pe o campanie, nu pe o organizație.
+// ⚠️ NU setează niciodată app.current_org_id — un beneficiar nu trebuie
+// confundat cu un membru al organizației (ar vedea toate datele tenantului).
+// ---------------------------------------------------------------------------
+
+export type BeneficiarContext = {
+  beneficiarId: string;
+  campaignPageId: string;
+  campaignSlug: string;
+  campaignTitlu: string;
+  campaignPoveste: string;
+  campaignImagineUrl: string | null;
+  campaignSumaTinta: number | null;
+  campaignSumaStransa: number | null;
+  campaignJudet: string | null;
+  campaignLocalitate: string | null;
+  orgId: string;
+  orgSlug: string;
+  orgName: string;
+  userId: string;
+  userEmail: string;
+  userName: string | null;
+  db: typeof db;
+};
+
+/**
+ * Graniță de autorizare + izolare pentru orice Server Action sau route
+ * handler din portalul beneficiarului. Vezi avertismentul de la
+ * `withOrgSession` — se aplică identic aici: acțiunea înfășurată TREBUIE să
+ * folosească `ctx.db`, nu importul global `db`.
+ */
+export function withBeneficiarSession<A extends unknown[], R>(
+  action: (ctx: BeneficiarContext, ...args: A) => Promise<R>,
+): (...args: A) => Promise<R> {
+  return async (...args: A) => {
+    const authUser = await getAuthUser();
+    if (!authUser?.email) {
+      redirect("/login");
+    }
+
+    return db.transaction(async (tx) => {
+      await tx.execute(sql`select set_config('app.current_user_email', ${authUser.email}, true)`);
+
+      const appUser = await ensureAppUser(
+        tx as unknown as typeof db,
+        authUser.email!,
+        (authUser.user_metadata?.name as string | undefined) ?? null,
+      );
+
+      await tx.execute(sql`select set_config('app.current_user_id', ${appUser.id}, true)`);
+
+      const found = await findBeneficiaryProfile(tx as unknown as typeof db, appUser.id);
+      if (!found) {
+        notFound();
+      }
+
+      // De-acum, tabelele modulului beneficiar sunt vizibile filtrate corect
+      // prin politicile RLS scopate pe această campanie.
+      await tx.execute(
+        sql`select set_config('app.current_beneficiary_campaign_id', ${found.page.id}, true)`,
+      );
+
+      const ctx: BeneficiarContext = {
+        beneficiarId: found.beneficiary.id,
+        campaignPageId: found.page.id,
+        campaignSlug: found.page.slug,
+        campaignTitlu: found.page.titlu,
+        campaignPoveste: found.page.poveste,
+        campaignImagineUrl: found.page.imagineUrl,
+        campaignSumaTinta: found.page.sumaTinta,
+        campaignSumaStransa: found.page.sumaStransa,
+        campaignJudet: found.page.judet,
+        campaignLocalitate: found.page.localitate,
+        orgId: found.beneficiary.orgId,
+        orgSlug: found.orgSlug,
+        orgName: found.orgName,
+        userId: appUser.id,
+        userEmail: appUser.email,
+        userName: appUser.name,
+        db: tx as unknown as typeof db,
+      };
+      return action(ctx, ...args);
+    });
+  };
+}
+
+export type BeneficiarAccess = Omit<BeneficiarContext, "db">;
+
+export function requireBeneficiarAccess(): Promise<BeneficiarAccess> {
+  return withBeneficiarSession(async (ctx) => ({
+    beneficiarId: ctx.beneficiarId,
+    campaignPageId: ctx.campaignPageId,
+    campaignSlug: ctx.campaignSlug,
+    campaignTitlu: ctx.campaignTitlu,
+    campaignPoveste: ctx.campaignPoveste,
+    campaignImagineUrl: ctx.campaignImagineUrl,
+    campaignSumaTinta: ctx.campaignSumaTinta,
+    campaignSumaStransa: ctx.campaignSumaStransa,
+    campaignJudet: ctx.campaignJudet,
+    campaignLocalitate: ctx.campaignLocalitate,
+    orgId: ctx.orgId,
+    orgSlug: ctx.orgSlug,
+    orgName: ctx.orgName,
+    userId: ctx.userId,
+    userEmail: ctx.userEmail,
+    userName: ctx.userName,
+  }))();
 }
