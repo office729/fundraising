@@ -29,6 +29,11 @@ export const fundraisingPages = pgTable(
     sumaStransa: integer("suma_stransa").notNull().default(0), // lei, cache
     numeCreator: text("nume_creator").notNull(),
     emailCreator: text("email_creator").notNull(),
+    // Județul/localitatea beneficiarului — nullable (nu toate paginile mai
+    // vechi îl au), folosit pentru filtrarea presei locale și a grupurilor
+    // locale (vezi src/lib/db/schema/beneficiar.ts). Editabil doar din CRM.
+    judet: text("judet"),
+    localitate: text("localitate"),
     // Creatorul publică propriul nume + o poveste liberă — la fel ca la
     // donații, cere consimțământ explicit pentru procesarea acestor date.
     consimtamantGdpr: boolean("consimtamant_gdpr").notNull().default(false),

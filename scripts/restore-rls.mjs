@@ -315,6 +315,189 @@ const POLICIES = [
         and role in ('owner', 'admin')
     )
   )`,
+
+  // ---------------------------------------------------------------------
+  // Modul „Persoană fizică / Beneficiar" — vezi src/lib/db/schema/beneficiar.ts.
+  //
+  // Două tipare de acces, pe toate tabelele de mai jos:
+  //  1. Staff (owner/admin/member al organizației, inclusiv agentul dedicat —
+  //     un agent NU e un rol separat, e doar un membru atribuit unei campanii):
+  //     izolare simplă `org_id = app.current_org_id`, CRUD, exact ca
+  //     company_notite/donator_notite.
+  //  2. Beneficiar: SELECT (și, punctual, INSERT/UPDATE pe acțiunile lui
+  //     proprii — mesaj nou, sarcină bifată, „am publicat") scopat pe
+  //     `campaign_page_id = app.current_beneficiary_campaign_id` — un GUC NOU,
+  //     setat de withBeneficiarSession (src/lib/auth/guard.ts) DUPĂ ce a găsit
+  //     rândul din fundraising_beneficiaries după app.current_user_id (același
+  //     GUC folosit și de sesiunile de organizație). Beneficiarul nu primește
+  //     NICIODATĂ app.current_org_id — nu trebuie confundat cu un membru.
+  // ---------------------------------------------------------------------
+
+  `create policy fundraising_beneficiary_invites_tenant_isolation on fundraising_beneficiary_invites
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  // Acceptare publică prin token — la fel ca invites_token_select/_update.
+  `create policy fundraising_beneficiary_invites_token_select on fundraising_beneficiary_invites for select using (
+    token = nullif(current_setting('app.beneficiary_invite_token', true), '')
+  )`,
+  `create policy fundraising_beneficiary_invites_token_update on fundraising_beneficiary_invites for update using (
+    token = nullif(current_setting('app.beneficiary_invite_token', true), '')
+  )`,
+
+  `create policy fundraising_beneficiaries_tenant_isolation on fundraising_beneficiaries
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  // Beneficiarul își vede propriul rând (withBeneficiarSession are nevoie să
+  // îl citească ÎNAINTE ca GUC-ul de campanie să existe — de-aia e scopat pe
+  // app.current_user_id, nu pe app.current_beneficiary_campaign_id).
+  `create policy fundraising_beneficiaries_self_select on fundraising_beneficiaries for select using (
+    app_user_id = nullif(current_setting('app.current_user_id', true), '')::uuid
+  )`,
+  // Rândul e creat de acceptBeneficiaryInviteAction, în aceeași tranzacție cu
+  // token-ul de invitație validat — la fel ca fundraising_beneficiary_invites,
+  // gated de același token, nu de un rol de organizație (beneficiarul nu e
+  // încă membru al nimic în acel moment).
+  `create policy fundraising_beneficiaries_invite_insert on fundraising_beneficiaries for insert with check (
+    nullif(current_setting('app.beneficiary_invite_token', true), '') is not null
+  )`,
+
+  `create policy fundraising_campaign_agents_tenant_isolation on fundraising_campaign_agents
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy fundraising_campaign_agents_beneficiar_select on fundraising_campaign_agents for select using (
+    campaign_page_id = nullif(current_setting('app.current_beneficiary_campaign_id', true), '')::uuid
+  )`,
+
+  `create policy fundraising_messages_tenant_isolation on fundraising_messages
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy fundraising_messages_beneficiar_select on fundraising_messages for select using (
+    campaign_page_id = nullif(current_setting('app.current_beneficiary_campaign_id', true), '')::uuid
+  )`,
+  `create policy fundraising_messages_beneficiar_insert on fundraising_messages for insert with check (
+    campaign_page_id = nullif(current_setting('app.current_beneficiary_campaign_id', true), '')::uuid
+  )`,
+
+  `create policy fundraising_invoices_tenant_isolation on fundraising_invoices
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy fundraising_invoices_beneficiar_select on fundraising_invoices for select using (
+    campaign_page_id = nullif(current_setting('app.current_beneficiary_campaign_id', true), '')::uuid
+  )`,
+
+  `create policy fundraising_calendar_items_tenant_isolation on fundraising_calendar_items
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy fundraising_calendar_items_beneficiar_select on fundraising_calendar_items for select using (
+    campaign_page_id = nullif(current_setting('app.current_beneficiary_campaign_id', true), '')::uuid
+  )`,
+
+  `create policy fundraising_tasks_tenant_isolation on fundraising_tasks
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy fundraising_tasks_beneficiar_select on fundraising_tasks for select using (
+    campaign_page_id = nullif(current_setting('app.current_beneficiary_campaign_id', true), '')::uuid
+  )`,
+  // Beneficiarul poate doar bifa/debifa o sarcină proprie (statusul) — codul
+  // (finalizeazaSarcinaBeneficiarAction) trimite un UPDATE limitat la
+  // status/completedAt, RLS aici garantează doar scoparea pe campanie.
+  `create policy fundraising_tasks_beneficiar_update on fundraising_tasks for update using (
+    campaign_page_id = nullif(current_setting('app.current_beneficiary_campaign_id', true), '')::uuid
+  )`,
+
+  `create policy fundraising_task_attachments_tenant_isolation on fundraising_task_attachments
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy fundraising_task_attachments_beneficiar_select on fundraising_task_attachments for select using (
+    task_id in (
+      select id from fundraising_tasks
+      where campaign_page_id = nullif(current_setting('app.current_beneficiary_campaign_id', true), '')::uuid
+    )
+  )`,
+
+  `create policy fundraising_generated_content_tenant_isolation on fundraising_generated_content
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy fundraising_generated_content_beneficiar_select on fundraising_generated_content for select using (
+    campaign_page_id = nullif(current_setting('app.current_beneficiary_campaign_id', true), '')::uuid
+  )`,
+
+  // fundraising_media_contacts / fundraising_local_groups: globale per
+  // organizație (nu per campanie) — beneficiarul le vede filtrate pe județul
+  // PROPRIEI campanii, printr-un mic subselect pe fundraising_pages.
+  `create policy fundraising_media_contacts_tenant_isolation on fundraising_media_contacts
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy fundraising_media_contacts_beneficiar_select on fundraising_media_contacts for select using (
+    judet = (
+      select judet from fundraising_pages
+      where id = nullif(current_setting('app.current_beneficiary_campaign_id', true), '')::uuid
+    )
+  )`,
+
+  `create policy fundraising_press_releases_tenant_isolation on fundraising_press_releases
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy fundraising_press_releases_beneficiar_select on fundraising_press_releases for select using (
+    campaign_page_id = nullif(current_setting('app.current_beneficiary_campaign_id', true), '')::uuid
+  )`,
+
+  `create policy fundraising_press_outreach_history_tenant_isolation on fundraising_press_outreach_history
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+
+  `create policy fundraising_local_groups_tenant_isolation on fundraising_local_groups
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy fundraising_local_groups_beneficiar_select on fundraising_local_groups for select using (
+    judet = (
+      select judet from fundraising_pages
+      where id = nullif(current_setting('app.current_beneficiary_campaign_id', true), '')::uuid
+    )
+  )`,
+
+  `create policy fundraising_group_posting_history_tenant_isolation on fundraising_group_posting_history
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  // Beneficiarul marchează „am publicat" pentru un grup — INSERT propriu,
+  // scopat pe campania lui (nu poate marca postări pentru altă campanie).
+  `create policy fundraising_group_posting_history_beneficiar_insert on fundraising_group_posting_history for insert with check (
+    campaign_page_id = nullif(current_setting('app.current_beneficiary_campaign_id', true), '')::uuid
+  )`,
+  `create policy fundraising_group_posting_history_beneficiar_select on fundraising_group_posting_history for select using (
+    campaign_page_id = nullif(current_setting('app.current_beneficiary_campaign_id', true), '')::uuid
+  )`,
+
+  // fundraising_notifications: scopat pe app_user (nu pe organizație — un
+  // agent primește notificări din mai multe campanii/organizații posibil).
+  // INSERT e permis oricărei sesiuni autentificate (staff SAU beneficiar) —
+  // la fel ca app_users_insert_self, codul (server actions, deja gated de
+  // withOrgSession/withBeneficiarSession) controlează cui îi e adresată,
+  // RLS nu poate valida asta per-rând fără o subinterogare costisitoare pe
+  // fiecare tip posibil de declanșator.
+  `create policy fundraising_notifications_self_select on fundraising_notifications for select using (
+    app_user_id = nullif(current_setting('app.current_user_id', true), '')::uuid
+  )`,
+  `create policy fundraising_notifications_self_update on fundraising_notifications for update using (
+    app_user_id = nullif(current_setting('app.current_user_id', true), '')::uuid
+  )`,
+  `create policy fundraising_notifications_insert on fundraising_notifications for insert with check (
+    nullif(current_setting('app.current_user_id', true), '') is not null
+  )`,
+
+  // fundraising_audit_log: doar admin/owner citesc jurnalul; scris de orice
+  // membru autentificat al organizației (agentul care încarcă o factură,
+  // de exemplu) — niciodată de beneficiar.
+  `create policy fundraising_audit_log_admin_select on fundraising_audit_log for select using (
+    org_id in (
+      select org_id from memberships
+      where user_id = nullif(current_setting('app.current_user_id', true), '')::uuid
+        and role in ('owner', 'admin')
+    )
+  )`,
+  `create policy fundraising_audit_log_member_insert on fundraising_audit_log for insert with check (
+    org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
+  )`,
 ];
 
 const FORCE_TABLES = [
@@ -336,6 +519,22 @@ const FORCE_TABLES = [
   "donatori_reali",
   "donator_notite",
   "fundraising_updates",
+  "fundraising_beneficiary_invites",
+  "fundraising_beneficiaries",
+  "fundraising_campaign_agents",
+  "fundraising_messages",
+  "fundraising_invoices",
+  "fundraising_calendar_items",
+  "fundraising_tasks",
+  "fundraising_task_attachments",
+  "fundraising_generated_content",
+  "fundraising_media_contacts",
+  "fundraising_press_releases",
+  "fundraising_press_outreach_history",
+  "fundraising_local_groups",
+  "fundraising_group_posting_history",
+  "fundraising_notifications",
+  "fundraising_audit_log",
 ];
 
 try {

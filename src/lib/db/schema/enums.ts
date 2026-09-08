@@ -70,3 +70,29 @@ export const fundraisingDonationStatus = pgEnum("fundraising_donation_status", [
   "esuata",
   "rambursata",
 ]);
+
+// Tipul contului unui app_user — determinat de felul invitației acceptate,
+// nu ales liber de utilizator. Vezi src/lib/db/schema/beneficiar.ts.
+export const accountType = pgEnum("account_type", ["org", "beneficiar"]);
+
+// Modulul „Persoană fizică / Beneficiar" — vezi src/lib/db/schema/beneficiar.ts.
+export const beneficiarStatus = pgEnum("beneficiar_status", ["activ", "dezactivat"]);
+export const invoiceCategorie = pgEnum("invoice_categorie", ["factura", "plata", "chitanta", "proforma"]);
+export const invoiceStatus = pgEnum("invoice_status", ["achitata", "in_asteptare"]);
+export const taskTip = pgEnum("task_tip", ["generala", "sponsorizare"]);
+export const taskStatus = pgEnum("task_status", ["de_facut", "finalizata"]);
+export const calendarItemStatus = pgEnum("calendar_item_status", ["de_facut", "in_lucru", "publicat", "finalizat"]);
+export const continutCanal = pgEnum("continut_canal", [
+  "facebook",
+  "instagram",
+  "tiktok",
+  "whatsapp",
+  "grup_local",
+  "comunicat",
+]);
+export const continutSursa = pgEnum("continut_sursa", ["sablon", "ai"]);
+export const continutStatus = pgEnum("continut_status", ["draft", "aprobat", "publicat"]);
+export const mediaContactTip = pgEnum("media_contact_tip", ["publicatie", "tv", "radio", "site"]);
+export const pressReleaseStatus = pgEnum("press_release_status", ["draft", "aprobat"]);
+export const localGroupPlatforma = pgEnum("local_group_platforma", ["facebook", "whatsapp", "altul"]);
+export const localGroupStatus = pgEnum("local_group_status", ["activ", "inactiv"]);
