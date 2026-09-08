@@ -2,7 +2,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 
 import { withOrgSession } from "@/lib/auth/guard";
-import { appUsers, fundraisingBeneficiaries, fundraisingBeneficiaryInvites, fundraisingDonations, fundraisingPages, fundraisingUpdates } from "@/lib/db/schema";
+import { fundraisingBeneficiaries, fundraisingBeneficiaryInvites, fundraisingCampaignAgents, fundraisingDonations, fundraisingPages, fundraisingUpdates } from "@/lib/db/schema";
 
 import { Badge } from "../../components/ui/badge";
 import { Breadcrumb } from "../../components/ui/breadcrumb";
@@ -13,6 +13,10 @@ import { getLocale } from "@/lib/i18n/get-locale";
 import { STRANGERE_FONDURI_DICT } from "@/lib/i18n/dictionaries/strangere-fonduri";
 import { AddOfflineDonationButton, AddUpdateButton, CopyPageLinkButton, DeleteUpdateButton, ImageUploadCard, ToggleStatusButton } from "../client";
 import { BeneficiarCard } from "../beneficiar-card";
+import { AgentCard } from "../agent-card";
+import { listMesajeCampanie } from "../agent-actions";
+import { MesajeCard } from "../mesaje-card";
+import { listMembers } from "../../../echipa/actions";
 
 const STATUS_TONE = { in_asteptare: "amber", reusita: "green", esuata: "red", rambursata: "orange" } as const;
 
@@ -37,10 +41,12 @@ const getPaginaSiDonatii = withOrgSession(async (ctx, id: string) => {
     .where(eq(fundraisingUpdates.pageId, id))
     .orderBy(desc(fundraisingUpdates.createdAt));
 
+  // Fără JOIN pe app_users — staff-ul nu are politică RLS care să-i permită
+  // să vadă rândul app_users al beneficiarului; email e denormalizat pe
+  // fundraising_beneficiaries la acceptarea invitației (vezi schema).
   const beneficiarRows = await ctx.db
-    .select({ id: fundraisingBeneficiaries.id, createdAt: fundraisingBeneficiaries.createdAt, email: appUsers.email })
+    .select({ id: fundraisingBeneficiaries.id, createdAt: fundraisingBeneficiaries.createdAt, email: fundraisingBeneficiaries.email })
     .from(fundraisingBeneficiaries)
-    .innerJoin(appUsers, eq(appUsers.id, fundraisingBeneficiaries.appUserId))
     .where(and(eq(fundraisingBeneficiaries.campaignPageId, id), eq(fundraisingBeneficiaries.status, "activ")))
     .limit(1);
 
@@ -57,15 +63,33 @@ const getPaginaSiDonatii = withOrgSession(async (ctx, id: string) => {
     }
   }
 
-  return { pagina: pagina[0], donatii, actualizari, beneficiar: beneficiarRows[0] ?? null, inviteActiv };
+  const agentRows = await ctx.db
+    .select({
+      id: fundraisingCampaignAgents.id,
+      agentUserId: fundraisingCampaignAgents.agentUserId,
+      bio: fundraisingCampaignAgents.bio,
+      programDisponibilitate: fundraisingCampaignAgents.programDisponibilitate,
+      contactAprobat: fundraisingCampaignAgents.contactAprobat,
+      nume: fundraisingCampaignAgents.agentNume,
+      email: fundraisingCampaignAgents.agentEmail,
+    })
+    .from(fundraisingCampaignAgents)
+    .where(and(eq(fundraisingCampaignAgents.campaignPageId, id), eq(fundraisingCampaignAgents.active, true)))
+    .limit(1);
+
+  return { pagina: pagina[0], donatii, actualizari, beneficiar: beneficiarRows[0] ?? null, inviteActiv, agent: agentRows[0] ?? null };
 });
 
 export default async function PaginaDetaliuPage({ params }: { params: Promise<{ orgSlug: string; id: string }> }) {
   const { orgSlug, id } = await params;
-  const data = await getPaginaSiDonatii(orgSlug, id);
+  const [data, membri, mesaje] = await Promise.all([
+    getPaginaSiDonatii(orgSlug, id),
+    listMembers(orgSlug),
+    listMesajeCampanie(orgSlug, id),
+  ]);
   if (!data) notFound();
 
-  const { pagina, donatii, actualizari, beneficiar, inviteActiv } = data;
+  const { pagina, donatii, actualizari, beneficiar, inviteActiv, agent } = data;
   const locale = await getLocale();
   const dict = STRANGERE_FONDURI_DICT[locale];
   const dictDetail = dict.detail;
@@ -121,6 +145,14 @@ export default async function PaginaDetaliuPage({ params }: { params: Promise<{ 
         pageId={pagina.id}
         beneficiar={beneficiar ? { id: beneficiar.id, email: beneficiar.email, createdAt: beneficiar.createdAt.toISOString() } : null}
         invite={inviteActiv ? { id: inviteActiv.id, email: inviteActiv.email, token: inviteActiv.token, expiresAt: inviteActiv.expiresAt.toISOString() } : null}
+      />
+
+      <AgentCard orgSlug={orgSlug} pageId={pagina.id} agent={agent} membri={membri} />
+
+      <MesajeCard
+        orgSlug={orgSlug}
+        pageId={pagina.id}
+        mesaje={mesaje.map((m) => ({ ...m, createdAt: m.createdAt.toISOString() }))}
       />
 
       <Card>

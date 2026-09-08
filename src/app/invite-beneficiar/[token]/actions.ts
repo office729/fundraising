@@ -85,6 +85,7 @@ export async function acceptBeneficiaryInviteAction(token: string): Promise<{ er
           appUserId: appUser.id,
           campaignPageId: invite.campaignPageId,
           orgId: invite.orgId,
+          email: appUser.email,
           status: "activ",
         })
         .onConflictDoNothing();

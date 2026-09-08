@@ -7,6 +7,7 @@ const NAV = [
   { href: "/beneficiar", label: "Acasă" },
   { href: "/beneficiar/situatie-financiara", label: "Situație financiară" },
   { href: "/beneficiar/facturi", label: "Facturi și plăți" },
+  { href: "/beneficiar/agentul-meu", label: "Agentul meu" },
   { href: "/beneficiar/profil", label: "Profil și securitate" },
 ];
 

@@ -74,6 +74,12 @@ export const fundraisingBeneficiaries = pgTable(
     orgId: uuid("org_id")
       .notNull()
       .references(() => organizations.id, { onDelete: "cascade" }),
+    // Denormalizat la acceptare — staff-ul organizației nu are nicio politică
+    // RLS care să-i permită să vadă rândul app_users al beneficiarului (nu e
+    // membership), deci un JOIN pe app_users la citire (din CRM) ar ascunde
+    // tăcut orice beneficiar activ. Același motiv ca la
+    // fundraising_messages/fundraising_campaign_agents.
+    email: text("email").notNull(),
     status: beneficiarStatus("status").notNull().default("activ"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
@@ -100,6 +106,12 @@ export const fundraisingCampaignAgents = pgTable(
     agentUserId: uuid("agent_user_id")
       .notNull()
       .references(() => appUsers.id),
+    // Denormalizate la atribuire — un beneficiar nu are nicio politică RLS
+    // care să-i permită să citească rândul app_users al agentului (nu are
+    // membership), deci un JOIN pe app_users la citire ar ascunde tăcut
+    // agentul. Același motiv ca la fundraising_messages.senderNume/senderEmail.
+    agentNume: text("agent_nume"),
+    agentEmail: text("agent_email").notNull(),
     bio: text("bio"),
     programDisponibilitate: text("program_disponibilitate"),
     contactAprobat: text("contact_aprobat"),
@@ -129,6 +141,13 @@ export const fundraisingMessages = pgTable(
     senderAppUserId: uuid("sender_app_user_id")
       .notNull()
       .references(() => appUsers.id),
+    // Denormalizate la trimitere (nume/email) — NU un JOIN pe app_users la
+    // citire: staff-ul organizației nu are nicio politică RLS care să-i
+    // permită să vadă rândul app_users al beneficiarului (nu e membership),
+    // deci un INNER JOIN ar ascunde tăcut exact mesajele trimise de
+    // beneficiar. Același motiv ca denormalizarea `invites.orgName`.
+    senderNume: text("sender_nume"),
+    senderEmail: text("sender_email").notNull(),
     continut: text("continut").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     cititLa: timestamp("citit_la", { withTimezone: true }),

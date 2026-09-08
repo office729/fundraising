@@ -2,7 +2,7 @@ import { and, asc, eq, sql } from "drizzle-orm";
 import Link from "next/link";
 
 import { requireBeneficiarAccess, withBeneficiarSession } from "@/lib/auth/guard";
-import { appUsers, fundraisingCampaignAgents, fundraisingInvoices, fundraisingTasks } from "@/lib/db/schema";
+import { fundraisingCampaignAgents, fundraisingInvoices, fundraisingTasks } from "@/lib/db/schema";
 
 function formatLei(n: number): string {
   return `${n.toLocaleString("ro-RO")} lei`;
@@ -14,10 +14,12 @@ const getDashboardData = withBeneficiarSession(async (ctx) => {
     .from(fundraisingInvoices)
     .where(and(eq(fundraisingInvoices.campaignPageId, ctx.campaignPageId), eq(fundraisingInvoices.status, "achitata")));
 
+  // Fără JOIN pe app_users — un beneficiar nu are politică RLS care să-i
+  // permită să vadă rândul app_users al agentului; nume/email denormalizate
+  // pe fundraising_campaign_agents la atribuire (vezi schema).
   const agentRows = await ctx.db
-    .select({ nume: appUsers.name, email: appUsers.email })
+    .select({ nume: fundraisingCampaignAgents.agentNume, email: fundraisingCampaignAgents.agentEmail })
     .from(fundraisingCampaignAgents)
-    .innerJoin(appUsers, eq(appUsers.id, fundraisingCampaignAgents.agentUserId))
     .where(and(eq(fundraisingCampaignAgents.campaignPageId, ctx.campaignPageId), eq(fundraisingCampaignAgents.active, true)))
     .limit(1);
 
@@ -134,6 +136,9 @@ export default async function BeneficiarDashboardPage() {
           ) : (
             <p className="mt-2 text-[13px] text-muted-2">Nu ți-a fost atribuit încă un agent — echipa te va contacta în curând.</p>
           )}
+          <Link href="/beneficiar/agentul-meu" className="mt-3 inline-block text-[13px] font-medium text-brand-green hover:underline">
+            {data.agent ? "Vezi profilul și mesajele →" : "Vezi mesaje →"}
+          </Link>
         </div>
 
         <div className="rounded-xl border border-line bg-panel p-5">
