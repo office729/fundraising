@@ -21,50 +21,51 @@ import { useCompanii, useDonatori } from "../lib/use-data";
 import { useLocale } from "../lib/locale-context";
 import { INSTRUMENTE_DICT } from "@/lib/i18n/dictionaries/instrumente";
 
-type CategorieKey = "rapoarte" | "organizare" | "campanii" | "generatoare";
+type CategorieKey = "crm" | "rapoarte" | "organizare" | "campanii" | "generatoare";
 type InstrumentDef = { key: string; href: string };
 
-// Instrumentele reale din Control Tower-ul salveazaoinima.org.ro, reconstruite aici
-// cu funcționalitate proprie pe datele demonstrative ale acestui produs (nu link
-// extern, nu se conectează la datele reale) — la fel de utilizabile, izolate.
+// Instrumentele reale din Control Tower-ul salveazaoinima.org.ro. Cele cu href
+// ABSOLUT (începe cu "/") sunt instrumentele HTML reale, portate EXACT ca la
+// CRM PJ (design neatins, rulate într-un iframe la /${orgSlug}/<slug> — vezi
+// src/modules/crm/<slug>/); cele cu href relativ sunt reimplementări React,
+// mai simple, pe date demonstrative, care mai trăiesc doar sub /crm/instrumente/<href>
+// (fără echivalent HTML real portat încă).
 const CATEGORII: { key: CategorieKey; culoare: string; instrumente: InstrumentDef[] }[] = [
+  {
+    key: "crm",
+    culoare: "var(--ci-green)",
+    instrumente: [
+      { key: "crmVoluntari", href: "/crm-voluntari" },
+      { key: "prospectare", href: "/prospectare" },
+    ],
+  },
   {
     key: "rapoarte",
     culoare: "var(--ci-blue)",
     instrumente: [
       { key: "raportCompanii", href: "raport-companii" },
       { key: "onePager", href: "one-pager" },
-      { key: "raportCaz", href: "raport-caz" },
     ],
   },
   {
     key: "organizare",
     culoare: "var(--ci-amber)",
-    instrumente: [
-      { key: "programLucru", href: "program-lucru" },
-      { key: "planificatorIt", href: "planificator-it" },
-    ],
+    instrumente: [{ key: "programLucru", href: "/program-lucru" }],
   },
   {
     key: "campanii",
     culoare: "var(--ci-purple)",
     instrumente: [
-      { key: "grupuriFacebook", href: "grupuri-facebook" },
-      { key: "newsletterPf", href: "newsletter?aud=pf" },
-      { key: "newsletterPj", href: "newsletter?aud=pj" },
-      { key: "statisticiNewsletter", href: "statistici-newsletter" },
-      { key: "comunicate", href: "comunicate" },
-      { key: "radarDonatori", href: "radar-donatori" },
+      { key: "grupuriFacebook", href: "/grupuri-facebook" },
+      { key: "newsletterPf", href: "/newsletter-pf" },
+      { key: "newsletterPj", href: "/newsletter-pj" },
+      { key: "comunicate", href: "/comunicate" },
     ],
   },
   {
     key: "generatoare",
     culoare: "var(--ci-red)",
-    instrumente: [
-      { key: "carduriCaz", href: "carduri-caz" },
-      { key: "carduriCazEn", href: "carduri-caz?lang=en" },
-      { key: "bannereSms", href: "bannere-sms" },
-    ],
+    instrumente: [{ key: "bannereSms", href: "bannere-sms" }],
   },
 ];
 
@@ -156,7 +157,7 @@ export default function InstrumentePage() {
                     <p className="text-[14px] font-semibold text-[var(--ci-text)]">{instDict.titlu}</p>
                     <p className="mt-1 text-[12px] text-[var(--ci-text-muted)]">{instDict.descriere}</p>
                     <Link
-                      href={`/${orgSlug}/crm/instrumente/${inst.href}`}
+                      href={inst.href.startsWith("/") ? `/${orgSlug}${inst.href}` : `/${orgSlug}/crm/instrumente/${inst.href}`}
                       className="mt-3 flex items-center gap-1 text-[13px] font-medium text-[var(--ci-primary)] hover:underline"
                     >
                       {dict.deschide} <ArrowRight className="h-3.5 w-3.5" />

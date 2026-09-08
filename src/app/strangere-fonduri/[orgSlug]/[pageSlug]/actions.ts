@@ -45,6 +45,7 @@ export async function doneazaAction(
   const recurenta = formData.get("recurenta") != null;
   const consimtamantGdpr = formData.get("consimtamantGdpr") != null;
   const consimtamantTermeni = formData.get("consimtamantTermeni") != null;
+  const consimtamantWhatsapp = formData.get("consimtamantWhatsapp") != null;
 
   if (!numeDonator || !emailDonator) {
     return { error: "Numele și emailul sunt obligatorii." };
@@ -101,6 +102,7 @@ export async function doneazaAction(
       anonim: String(anonim),
       consimtamantGdpr: String(consimtamantGdpr),
       consimtamantTermeni: String(consimtamantTermeni),
+      consimtamantWhatsapp: String(consimtamantWhatsapp),
     };
 
     const session = await getStripe().checkout.sessions.create({
@@ -147,6 +149,7 @@ export async function doneazaAction(
       anonim,
       consimtamantGdpr,
       consimtamantTermeni,
+      consimtamantWhatsapp,
       stripeSessionId: session.id,
       recurenta,
     });

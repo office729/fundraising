@@ -216,6 +216,16 @@ const POLICIES = [
   `create policy fundraising_pages_webhook_update on fundraising_pages for update using (
     nullif(current_setting('app.public_lookup', true), '') = 'true'
   )`,
+  // LIPSEA — editeazaPaginaAdminAction/comutaStatusPaginaStrangereFonduri/
+  // actualizeazaImaginePaginaAction (CRM, sesiune de membru) actualizau
+  // fundraising_pages fără nicio politică UPDATE care să se aplice în acel
+  // context (doar cea de mai sus, gated pe webhook) — updateurile lor
+  // rulau silențios pe 0 rânduri. Necesară și pentru creditarea unei
+  // donații offline (adaugaDonatieOfflineAction), care incrementează
+  // suma_stransa din același context de membru.
+  `create policy fundraising_pages_member_update on fundraising_pages for update using (
+    org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
+  )`,
   `create policy fundraising_pages_admin_delete on fundraising_pages for delete using (
     org_id in (
       select org_id from memberships
@@ -253,6 +263,12 @@ const POLICIES = [
   `create policy fundraising_donations_webhook_update on fundraising_donations for update using (
     nullif(current_setting('app.public_lookup', true), '') = 'true'
   )`,
+  // Donație offline/manuală (transfer bancar, cash, sau test înainte de
+  // Stripe live) — înregistrată direct de un admin din CRM, cu status
+  // 'reusita' imediat (nu există sesiune Checkout de confirmat async).
+  `create policy fundraising_donations_member_insert on fundraising_donations for insert with check (
+    org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
+  )`,
 
   // donatori_reali: doar organizația își vede propriii donatori reali;
   // scris DOAR de webhook-ul Stripe (upsert după org_id+email).
@@ -265,6 +281,22 @@ const POLICIES = [
   `create policy donatori_reali_webhook_update on donatori_reali for update using (
     nullif(current_setting('app.public_lookup', true), '') = 'true'
   )`,
+  // Aceeași creditare (crediteazaPaginaSiDonator) rulează și din contextul
+  // de membru (donație offline înregistrată manual în CRM) — nu doar din
+  // webhook-ul Stripe (public_lookup).
+  `create policy donatori_reali_member_insert on donatori_reali for insert with check (
+    org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
+  )`,
+  `create policy donatori_reali_member_update on donatori_reali for update using (
+    org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
+  )`,
+
+  // donator_notite: notițe reale pe donatori reali (modulul Persoane fizice)
+  // — la fel ca company_notite, orice membru al organizației poate
+  // citi/scrie/șterge (nu doar admin/owner), fără context de webhook.
+  `create policy donator_notite_tenant_isolation on donator_notite
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
 
   // fundraising_updates: text public (nu e sensibil, e menit distribuirii),
   // scris DOAR de owner/admin din CRM.
@@ -302,6 +334,7 @@ const FORCE_TABLES = [
   "fundraising_pages",
   "fundraising_donations",
   "donatori_reali",
+  "donator_notite",
   "fundraising_updates",
 ];
 

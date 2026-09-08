@@ -1,0 +1,78 @@
+import type { Locale } from "../config";
+
+export const CINE_SUNTEM_DICT = {
+  ro: {
+    homeLabel: "Acasă",
+    breadcrumb: "Cine suntem?",
+    eyebrow: "Cine suntem?",
+    titlu: "Ghidez ONG-uri spre succes prin campanii eficiente și strategii clare",
+    paragrafe: [
+      "Suntem echipa Fundraising Academy și ne-am unit experiența, cunoștințele și pasiunea pentru a ajuta organizațiile nonprofit să își dezvolte campanii de fundraising eficiente, bine structurate și cu impact real.",
+      "Platforma are la bază experiența de peste 14 ani a lui Vlad Plăcintă, președintele Asociației „Salvează o inimă”, dar și munca unei echipe implicate zi de zi în comunicare, fundraising, relația cu donatorii și companiile. Împreună, am contribuit la strângerea a peste 27 de milioane de euro și la susținerea a sute de campanii umanitare.",
+      "Prin Fundraising Academy, vă oferim metode testate, instrumente practice și îndrumare personalizată, astfel încât organizația dumneavoastră să poată atrage mai mulți donatori, să construiască parteneriate durabile și să obțină rezultate mai bune.",
+      "La fiecare pas, veți avea alături o echipă care înțelege provocările reale ale unui ONG și care își dorește să vă ajute să transformați binele pe care îl faceți într-un impact tot mai puternic în comunitate.",
+    ],
+    statsTitlu: "Experiența echipei noastre, construită prin muncă, implicare și rezultate reale.",
+    stats: [
+      { v: "28", l: "milioane de euro mobilizate" },
+      { v: "690+", l: "campanii umanitare susținute" },
+      { v: "1.000+", l: "beneficiari sprijiniți" },
+      { v: "14 ani", l: "de experiență în fundraising" },
+    ],
+    diferentiatoriTitlu: "Ce ne face diferiți?",
+    diferentiatoriSubtitlu: "Peste 500 de campanii reușite și 22 milioane de euro strânși.",
+    diferentiatori: [
+      "Expertiză reală în fundraising: peste 22 milioane de euro strânși prin campanii de succes.",
+      "Mentorat 1 la 1: sesiuni personalizate direct cu Vlad Plăcintă, Omul Anului 2023.",
+      "Impact tangibil: peste 500 de campanii care au salvat viețile a peste 1000 de copii.",
+      "Cursuri structurate: fundraising în 10 ședințe, cu suport practic și resurse aplicabile.",
+      "Acces la rețea: conectează-te cu alți lideri ONG și creează parteneriate valoroase.",
+    ],
+    misiune: { titlu: "Misiunea", desc: "Să educăm și să sprijinim ONG-urile în crearea de campanii de fundraising eficiente, oferindu-le instrumentele și cunoștințele necesare pentru a atrage donatori și a-și susține cauzele." },
+    viziune: { titlu: "Viziunea", desc: "Ne propunem să devenim lideri în educația de fundraising, contribuind la crearea unei rețele de ONG-uri puternice și sustenabile, capabile să schimbe vieți prin campanii de succes." },
+    valori: { titlu: "Valorile", desc: "Integritate, transparență și inovație sunt fundamentul activității noastre. Ne dedicăm să oferim instruire de calitate, axată pe rezultate concrete și durabile pentru fiecare organizație." },
+    exploreazaTitlu: "Explorează mai departe",
+    exploreaza: [
+      { label: "Portofoliu", href: "/portofoliu" },
+      { label: "Premii Vlad Plăcintă", href: "/premii" },
+      { label: "Hub Fundraising", href: "/hub" },
+    ],
+  },
+  en: {
+    homeLabel: "Home",
+    breadcrumb: "About us",
+    eyebrow: "About us",
+    titlu: "I guide NGOs to success through effective campaigns and clear strategies",
+    paragrafe: [
+      "We're the Fundraising Academy team, and we've combined our experience, knowledge and passion to help nonprofit organizations build effective, well-structured fundraising campaigns with real impact.",
+      "The platform is built on Vlad Plăcintă's 14+ years of experience as president of Asociația „Salvează o inimă”, as well as the work of a team involved daily in communication, fundraising, and relationships with donors and companies. Together, we've contributed to raising over €27 million and supporting hundreds of humanitarian campaigns.",
+      "Through Fundraising Academy, we offer you tested methods, practical tools and personalized guidance, so your organization can attract more donors, build lasting partnerships, and get better results.",
+      "At every step, you'll have a team that understands the real challenges of running an NGO and wants to help you turn the good you do into an ever-stronger impact on your community.",
+    ],
+    statsTitlu: "Our team's experience, built through work, dedication and real results.",
+    stats: [
+      { v: "28", l: "million euros mobilized" },
+      { v: "690+", l: "humanitarian campaigns supported" },
+      { v: "1,000+", l: "beneficiaries supported" },
+      { v: "14 yrs", l: "of fundraising experience" },
+    ],
+    diferentiatoriTitlu: "What makes us different?",
+    diferentiatoriSubtitlu: "690+ successful campaigns and €22 million raised.",
+    diferentiatori: [
+      "Real fundraising expertise: over €22 million raised through successful campaigns.",
+      "1-on-1 mentoring: personalized sessions directly with Vlad Plăcintă, Man of the Year 2023.",
+      "Tangible impact: 500+ campaigns that saved the lives of over 1,000 children.",
+      "Structured courses: fundraising in 10 sessions, with practical support and applicable resources.",
+      "Network access: connect with other NGO leaders and build valuable partnerships.",
+    ],
+    misiune: { titlu: "Mission", desc: "To educate and support NGOs in building effective fundraising campaigns, giving them the tools and knowledge needed to attract donors and sustain their causes." },
+    viziune: { titlu: "Vision", desc: "We aim to become leaders in fundraising education, helping build a network of strong, sustainable NGOs capable of changing lives through successful campaigns." },
+    valori: { titlu: "Values", desc: "Integrity, transparency and innovation are the foundation of our work. We're committed to offering quality training, focused on concrete, lasting results for every organization." },
+    exploreazaTitlu: "Explore further",
+    exploreaza: [
+      { label: "Portfolio", href: "/portofoliu" },
+      { label: "Vlad Plăcintă Awards", href: "/premii" },
+      { label: "Fundraising Hub", href: "/hub" },
+    ],
+  },
+} satisfies Record<Locale, unknown>;

@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generator newsletter — salvează o inimă</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; background:#F2EFEA; color:#1F1B17; }
+  .top { background:#C41D33; color:#fff; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+  .top h1 { margin:0; font-size:17px; font-weight:800; }
+  .top .btns button { border:0; border-radius:50px; padding:10px 18px; font-size:13px; font-weight:800; cursor:pointer; margin-left:8px; }
+  #copyBtn { background:#fff; color:#C41D33; }
+  .wrap { display:flex; height:calc(100vh - 62px); }
+  .form { width:430px; min-width:350px; overflow-y:auto; background:#fff; padding:18px 20px 60px 20px; border-right:1px solid #E4DFD7; }
+  .prev { flex:1; overflow:hidden; }
+  .prev iframe { width:100%; height:100%; border:0; background:#F2EFEA; }
+  h2 { font-size:12px; text-transform:uppercase; letter-spacing:.8px; color:#C41D33; margin:22px 0 8px 0; border-bottom:1px solid #F0EBE3; padding-bottom:6px; }
+  label { display:block; font-size:12px; font-weight:700; color:#55504A; margin:10px 0 4px 0; }
+  input[type=text], textarea { width:100%; padding:9px 10px; border:1.5px solid #E4DFD7; border-radius:8px; font-size:13px; font-family:inherit; }
+  input:focus, textarea:focus { outline:none; border-color:#E0263C; }
+  textarea { resize:vertical; }
+  .fmtbar { display:flex; align-items:center; gap:6px; margin:2px 0 6px 0; }
+  .fmtbar button { width:38px; height:34px; border:1.5px solid #E4DFD7; background:#fff; border-radius:6px; cursor:pointer; font-size:13px; color:#55504A; }
+  .fmtbar button:hover { border-color:#E0263C; color:#E0263C; }
+  button:focus-visible, select:focus-visible { outline:2px solid #E0263C; outline-offset:2px; }
+  @media (prefers-reduced-motion: reduce){ * { transition:none !important; animation:none !important; } }
+  .fmtbar span { font-size:11px; color:#9A938A; }
+  .hint { font-size:11px; color:#7A736A; margin-top:3px; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .ok { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#1F1B17; color:#fff; padding:12px 24px; border-radius:14px; font-size:13px; font-weight:600; opacity:0; transition:opacity .3s; pointer-events:none; max-width:520px; text-align:center; line-height:1.5; }
+  .ok.show { opacity:1; }
+  .prevbar { display:flex; gap:6px; justify-content:center; padding:8px; background:#EAE5DC; border-bottom:1px solid #E4DFD7; }
+  .prevbar button { border:1.5px solid #C9C2B6; background:#fff; color:#55504A; border-radius:50px; padding:6px 14px; font-size:12px; font-weight:700; cursor:pointer; }
+  .prevbar button.on { background:#C41D33; border-color:#C41D33; color:#fff; }
+  .prev iframe { height:calc(100% - 45px); display:block; margin:0 auto; transition:width .2s; }
+  .modal-bg { position:fixed; inset:0; background:rgba(31,27,23,.55); display:none; align-items:center; justify-content:center; z-index:50; }
+  .modal-bg.show { display:flex; }
+  .modal { background:#fff; border-radius:16px; padding:22px 26px; max-width:560px; width:92%; max-height:80vh; overflow-y:auto; }
+  .modal h3 { margin:0 0 12px 0; font-size:16px; color:#C41D33; }
+  .modal ul { margin:0 0 18px 0; padding-left:20px; }
+  .modal li { font-size:13px; line-height:20px; color:#1F1B17; margin-bottom:8px; }
+  .modal-btns { display:flex; gap:10px; justify-content:flex-end; }
+  .modal-btns button { border:0; border-radius:50px; padding:10px 18px; font-size:13px; font-weight:800; cursor:pointer; }
+  #checkFix { background:#C41D33; color:#fff; }
+  #checkGo { background:none; color:#9A938A; text-decoration:underline; padding:10px 8px; }
+  #checkList li.err { color:#C41D33; font-weight:700; }
+  #checkList li.warn { color:#8a6d1a; }
+  .modal-bg.rem { background:rgba(31,27,23,.2); align-items:flex-start; justify-content:flex-start; }
+  .modal-bg.rem .modal { margin:78px 0 0 16px; width:440px; max-width:44%; }
+  #remCopy { background:#C41D33; color:#fff; }
+  #remCancel { background:#F0EBE3; color:#55504A; }
+  .mtabs { display:none; }
+  @media (max-width:900px){
+    .wrap{flex-direction:column; height:auto;} .form{width:100%;} .prev iframe{height:80vh;}
+    .mtabs { display:flex; gap:8px; padding:8px 12px; background:#EAE5DC; border-bottom:1px solid #E4DFD7; position:sticky; top:0; z-index:20; }
+    .mtabs button { flex:1; border:1.5px solid #C9C2B6; background:#fff; color:#55504A; border-radius:50px; padding:9px; font-size:13px; font-weight:800; cursor:pointer; }
+    .mtabs button.on { background:#C41D33; border-color:#C41D33; color:#fff; }
+    .wrap.mp-prev .form { display:none; }
+    .wrap:not(.mp-prev) .prev { display:none; }
+  }
+</style>
+</head>
+<body>
+<div class="top">
+  <h1>❤️ Generator newsletter — salvează o inimă <span id="variantBadge" style="font-size:11px; font-weight:800; letter-spacing:.5px; padding:3px 10px; border-radius:50px; margin-left:8px; vertical-align:middle;"></span></h1>
+  <div class="btns">
+    <button id="resetBtn" style="background:rgba(255,255,255,.15); color:#fff; border:1.5px solid rgba(255,255,255,.6) !important;">🆕 Campanie nouă</button>
+    <button id="cvBtn" style="background:rgba(255,255,255,.15); color:#fff; border:1.5px solid rgba(255,255,255,.6) !important;">🧩 Copiază pt. conversie în template</button>
+    <button id="remBtn" style="background:rgba(255,255,255,.15); color:#fff; border:1.5px solid rgba(255,255,255,.6) !important;">🔔 Copiază varianta reminder</button>
+    <button id="copyBtn">📋 Copiază codul pentru Newsman</button>
+  </div>
+</div>
+<div class="mtabs">
+  <button type="button" data-mt="form" class="on">✏️ Editez</button>
+  <button type="button" data-mt="prev">👁 Previzualizez</button>
+</div>
+<div class="wrap">
+  <div class="form">
+    <h2>Șablon</h2>
+    <label>Tipul de newsletter</label>
+    <select id="TEMPLATE" style="width:100%; padding:9px 10px; border:1.5px solid #E4DFD7; border-radius:8px; font-size:13px; font-family:inherit; background:#fff;">
+      <option value="d177" selected>Campanie D177 (complet)</option>
+      <option value="propunere">Propunere de parteneriat</option>
+      <option value="multumire">Mulțumire partener</option>
+      <option value="raport">Raport de impact partener</option>
+      <option value="eveniment">Invitație eveniment</option>
+      <option value="bunvenit">Bun venit (partener nou)</option>
+      <option value="design_editorial">✦ Design: Editorial cald</option>
+      <option value="design_foto">✦ Design: Foto-first</option>
+      <option value="design_bold">✦ Design: Modern bold</option>
+      <option value="design_minimal">✦ Design: Minimal cald</option>
+      <option value="design_gazeta">✦ Design: Gazetă (buletin)</option>
+      <option value="design_warm">✦ Design: Warm / ilustrativ</option>
+      <option value="design_modular">✦ Design: Modular (carduri)</option>
+      <option value="design_scrisoare">✦ Design: Scrisoare personală</option>
+      <option value="design_manifest">✦ Design: Manifest / afiș</option>
+      <option value="design_chitanta">✦ Design: Chitanță de impact</option>
+      <option value="design_cronologie">✦ Design: Cronologie</option>
+      <option value="design_certificat">✦ Design: Certificat de recunoștință</option>
+    </select>
+    <div class="hint">„Campanie D177" include tot (termen, butoane, „cum se face", „cine suntem"). Celelalte ascund automat blocurile care nu se potrivesc.</div>
+    <div class="tplfields" data-tpl="eveniment" style="display:none;">
+      <label>Titlul evenimentului</label>
+      <input type="text" id="EV_TITLU" value="Gală caritabilă de Crăciun">
+      <label>Data și ora</label>
+      <input type="text" id="EV_DATA" value="12 decembrie 2025, ora 18:00">
+      <label>Locul</label>
+      <input type="text" id="EV_LOC" value="Sala Palatului, București">
+    </div>
+    <div class="tplfields" data-tpl="propunere" style="display:none;">
+      <h2>Beneficii parteneriat</h2>
+      <label>Beneficiu 1 — titlu</label><input type="text" id="B1_TITLU" value="Vizibilitate și imagine">
+      <label>Beneficiu 1 — text</label><textarea id="B1_TEXT" rows="2">Logo și mențiune în rapoarte, comunicare și pe site, alături de o cauză cu impact real.</textarea>
+      <label>Beneficiu 2 — titlu</label><input type="text" id="B2_TITLU" value="Avantaj fiscal (D177 / 20%)">
+      <label>Beneficiu 2 — text</label><textarea id="B2_TEXT" rows="2">Redirecționați până la 20% din impozitul pe profit — bani deja generați, fără cost suplimentar.</textarea>
+      <label>Beneficiu 3 — titlu</label><input type="text" id="B3_TITLU" value="Impact raportat transparent">
+      <label>Beneficiu 3 — text</label><textarea id="B3_TEXT" rows="2">Primiți un raport concret cu ce a făcut contribuția companiei — ordine de plată și evoluția cazurilor.</textarea>
+    </div>
+    <div class="tplfields" data-tpl="propunere,multumire,raport,bunvenit" style="display:none;">
+      <h2>Buton (CTA)</h2>
+      <label>Text buton</label><input type="text" id="CTA_TEXT" value="Hai să discutăm un parteneriat">
+      <label>Link buton</label><input type="text" id="CTA_LINK" value="https://salveazaoinima.ro/directioneaza-20/">
+    </div>
+    <div class="tplfields" data-tpl="design_editorial,design_foto,design_bold,design_minimal,design_gazeta,design_warm,design_modular,design_scrisoare,design_manifest,design_chitanta,design_cronologie,design_certificat" style="display:none;">
+      <h2>Conținut design</h2>
+      <div class="hint">Câmpuri pentru șabloanele de <b>design vizual</b>. Eticheta din header, linkul butonului și poza (Foto-first) se iau din câmpurile de mai jos.</div>
+      <label>Titlu principal</label>
+      <input type="text" id="D_HEADLINE" value="Compania dumneavoastră a schimbat vieți">
+      <label>Text / lead</label>
+      <textarea id="D_LEAD" rows="3">Prin sponsorizarea directă și mecanismul D177, compania dumneavoastră a ajutat copii și adulți grav bolnavi să ajungă la tratamentul de care aveau nevoie — fără cost real, doar o decizie la timp.</textarea>
+      <div class="grid2">
+        <div><label>Cifra mare (Foto/Bold)</label><input type="text" id="D_STATBIG" value="67"></div>
+        <div><label>Buton (CTA)</label><input type="text" id="D_CTA" value="Redirecționează prin D177"></div>
+      </div>
+      <label>Etichetă cifră mare</label>
+      <input type="text" id="D_STATLABEL" value="copii ajutați prin sponsorizări de companii">
+      <label>Citat (Editorial / Minimal)</label>
+      <textarea id="D_QUOTE" rows="2">O semnătură pusă la timp poate însemna enorm pentru un copil care așteaptă tratamentul.</textarea>
+      <label>Autor citat</label>
+      <input type="text" id="D_QAUTHOR" value="Vlad Plăcintă, Președinte">
+      <div class="hint">Trei cifre de impact (Editorial):</div>
+      <div class="grid2"><div><label>Cifră 1</label><input type="text" id="D_N1" value="1.600+"></div><div><label>Etichetă 1</label><input type="text" id="D_L1" value="copii sprijiniți"></div></div>
+      <div class="grid2"><div><label>Cifră 2</label><input type="text" id="D_N2" value="27 mil €"></div><div><label>Etichetă 2</label><input type="text" id="D_L2" value="mobilizați"></div></div>
+      <div class="grid2"><div><label>Cifră 3</label><input type="text" id="D_N3" value="7.200+"></div><div><label>Etichetă 3</label><input type="text" id="D_L3" value="companii partenere"></div></div>
+    </div>
+
+    <h2>Campania D177</h2>
+    <label>Termen-limită D177</label>
+    <input type="text" id="TERMEN" value="25 iunie 2026">
+    <div class="hint">Variabila centrală. Scrie data ca „25 iunie 2026". Apare în etichetă, în preview și oriunde pui <strong>{{TERMEN}}</strong> în subiect sau în scrisoare — se sincronizează automat.</div>
+    <label>Eticheta din header</label>
+    <input type="text" id="PERIOADA" value="D177 · Iunie 2026">
+
+    <h2>Email</h2>
+    <label>Subiectul / titlul emailului</label>
+    <input type="text" id="TITLU" value="D177: până pe {{TERMEN}}, compania dumneavoastră poate salva o viață — fără costuri suplimentare">
+    <div class="hint" id="subjHint"></div>
+    <label>Textul de preview din inbox</label>
+    <textarea id="PREHEADER" rows="2">Ultima zi în care compania dumneavoastră poate ajuta fără costuri suplimentare — {{TERMEN}}.</textarea>
+
+    <h2>Titlu &amp; scrisoare</h2>
+    <label>Titlul mare (H1)</label>
+    <input type="text" id="HERO_TITLU" value="Puterea unei simple semnături: compania dumneavoastră poate salva o viață">
+    <label>Textul scrisorii</label>
+    <div class="fmtbar">
+      <button type="button" data-ta="SCRISOARE" data-wrap="**" title="Îngroașă textul selectat"><b>B</b></button>
+      <button type="button" data-ta="SCRISOARE" data-wrap="*" title="Înclină (italic) textul selectat"><i>I</i></button>
+      <span>selectează un cuvânt din text, apoi apasă B sau I</span>
+    </div>
+    <textarea id="SCRISOARE" rows="20"></textarea>
+    <div class="hint">Un rând gol = paragraf nou. **text** = îngroșat, *text* = înclinat. <strong>{{TERMEN}}</strong> se înlocuiește automat cu data-limită.</div>
+
+    <h2>Imagine &amp; buton</h2>
+    <label>Imaginea hero (URL)</label>
+    <input type="text" id="HERO" value="https://mktr.salveazaoinima.ro/newsletter-assets/67b745da3609801d410c7fa9/my-uploads/default-folder/In2bHiPTwspVhQfENNm94FhrzkxZjL0dkxlcGBwD.png">
+    <div class="hint">Imaginea de sus. Rar se schimbă — e imaginea de brand cu copiii sprijiniți.</div>
+    <label>Linkul butonului „Completează pentru D177"</label>
+    <input type="text" id="LINK" value="https://salveazaoinima.ro/directioneaza-20/">
+
+    <h2>Statistici (header)</h2>
+    <div class="grid2">
+      <div><label>Ani de activitate</label><input type="text" id="S1" value="13"></div>
+      <div><label>Campanii</label><input type="text" id="S2" value="670+"></div>
+      <div><label>Donatori</label><input type="text" id="S3" value="136.000+"></div>
+      <div><label>Strânși</label><input type="text" id="S4" value="27 mil. €"></div>
+      <div><label>Companii partenere</label><input type="text" id="S5" value="7.200+"></div>
+    </div>
+  </div>
+  <div class="prev">
+    <div class="prevbar">
+      <button data-pm="desktop" class="on">🖥 Desktop</button>
+      <button data-pm="mobile">📱 Mobil</button>
+      <button data-pm="dark">🌙 Mobil dark</button>
+    </div>
+    <iframe id="frame"></iframe>
+  </div>
+</div>
+<div class="modal-bg" id="checkBg">
+  <div class="modal">
+    <h3>⚠ De verificat înainte de trimitere</h3>
+    <ul id="checkList"></ul>
+    <div class="modal-btns">
+      <button id="checkGo">Copiază oricum</button>
+      <button id="checkFix">Corectez întâi</button>
+    </div>
+  </div>
+</div>
+<div class="modal-bg rem" id="remBg">
+  <div class="modal">
+    <h3>🔔 Varianta reminder — textul scrisorii</h3>
+    <div class="fmtbar">
+      <button type="button" data-ta="remText" data-wrap="**" title="Îngroașă textul selectat"><b>B</b></button>
+      <button type="button" data-ta="remText" data-wrap="*" title="Înclină (italic) textul selectat"><i>I</i></button>
+      <span>selectează un cuvânt din text, apoi apasă B sau I</span>
+    </div>
+    <textarea id="remText" rows="15"></textarea>
+    <div class="hint" style="margin:6px 0 14px 0;">Generat automat din termenul D177 (countdown). Îl poți modifica aici — previzualizarea din dreapta se actualizează pe măsură ce scrii. Un rând gol = paragraf nou, **text** = îngroșat, *text* = înclinat.</div>
+    <div class="modal-btns">
+      <button id="remCancel">Renunț</button>
+      <button id="remCopy">📋 Copiază codul reminder</button>
+    </div>
+  </div>
+</div>
+<div class="ok" id="ok" role="status" aria-live="polite"></div>
+
+<script type="text/plain" id="tpl"><!DOCTYPE html>
+<html dir="ltr" lang="ro" xmlns="http://www.w3.org/1999/xhtml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<title>{{TITLU}}</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="x-apple-disable-message-reformatting">
+<meta content="telephone=no" name="format-detection">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<!--[if gte mso 9]><noscript><xml><o:OfficeDocumentSettings><o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
+<!--[if mso]><style type="text/css">.container{width:600px;}</style><![endif]-->
+<style>
+  :root { color-scheme: light; supported-color-schemes: light; }
+  @media (prefers-color-scheme: dark) {
+    .darkmode-bg { background-color: #FFFFFF !important; }
+    .darkmode-text { color: #55504A !important; }
+  }
+  [data-ogsc] .darkmode-bg, [data-ogsb] .darkmode-bg { background-color: #FFFFFF !important; }
+  [data-ogsc] .darkmode-text { color: #55504A !important; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 0; -webkit-text-size-adjust: 100%; }
+  table { border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+  img { border: 0; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; }
+  a[x-apple-data-detectors] { color: inherit !important; text-decoration: inherit !important; }
+  #MessageViewBody a { color: inherit; text-decoration: none; }
+  p { margin: 0; }
+  @media only screen and (max-width: 520px) {
+    .container { width: 100% !important; max-width: 100% !important; }
+    .main-padding { padding: 12px 8px !important; }
+    .px { padding-left: 22px !important; padding-right: 22px !important; }
+    .logo-mobile { width: 76px !important; }
+    .slogan-mobile { font-size: 24px !important; line-height: 28px !important; }
+    .stats-number { font-size: 17px !important; }
+    .stats-label { font-size: 9px !important; }
+    .hero-img { width: 100% !important; max-width: 100% !important; }
+    .stats-table { width: 100% !important; }
+    .stats-table td { width: 20% !important; white-space: normal !important; padding: 4px 1px !important; }
+    .stats-label { white-space: normal !important; }
+    .hero-title { font-size: 26px !important; line-height: 32px !important; }
+  }
+</style>
+</head>
+<body style="margin:0; padding:0; background-color:#F2EFEA;">
+
+<div style="display:none; font-size:1px; color:#F2EFEA; line-height:1px; max-height:0; max-width:0; opacity:0; overflow:hidden; mso-hide:all;">
+  {{PREHEADER}}&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
+</div>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F2EFEA" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+  <tr>
+    <td align="center" class="main-padding" style="padding:24px 12px;">
+
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" class="container" style="width:600px; max-width:600px;">
+        <tr>
+          <td bgcolor="#FFFFFF" class="darkmode-bg" style="border-radius:24px; overflow:hidden; background-color:#FFFFFF;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+
+              <!-- ===== HEADER: logo + slogan + perioada ===== -->
+              <tr>
+                <td bgcolor="#FFFFFF" class="darkmode-bg" style="border-radius:24px 24px 0 0; padding:18px 18px 12px 18px; border-bottom:1px solid #F0EBE3; background-color:#FFFFFF;">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td align="left" valign="middle" width="112">
+                        <a href="https://salveazaoinima.ro" target="_blank" style="text-decoration:none;">
+                          <img alt="Asociația salvează o inimă" src="https://salveazaoinima.ro/uploads/_salveaza/config/5da06e72a355998af725c123/5dc98c542380f_logo.png" width="92" class="logo-mobile" style="display:block; width:92px; max-width:92px; height:auto;">
+                        </a>
+                      </td>
+                      <td align="right" valign="middle" style="padding-left:12px;">
+                        <span class="slogan-mobile" style="font-family:'Brush Script MT','Segoe Script','Comic Sans MS',cursive; font-size:30px; line-height:34px; color:#E0263C;">Noi punem suflet!</span><br>
+                        <span style="font-size:10px; font-weight:600; color:#B5AFA5; letter-spacing:0.8px; text-transform:uppercase;">{{PERIOADA}}</span>
+                      </td>
+                    </tr>
+                  </table>
+
+                  <table role="presentation" width="556" cellpadding="0" cellspacing="0" border="0" class="stats-table" style="width:556px; max-width:100%; margin-top:12px;">
+                    <tr>
+                      <td width="111" nowrap align="center" valign="top" style="width:111px; padding:4px 2px;">
+                        <span class="stats-number" style="font-size:21px; font-weight:800; color:#E0263C;">{{S1}}</span><br>
+                        <span class="stats-label" style="font-size:10px; line-height:16px; font-weight:700; color:#9A938A; letter-spacing:0.4px; text-transform:uppercase; white-space:nowrap;">ani de<br>activitate</span>
+                      </td>
+                      <td width="111" nowrap align="center" valign="top" style="width:111px; padding:4px 2px; border-left:1px solid #F0EBE3;">
+                        <span class="stats-number" style="font-size:21px; font-weight:800; color:#E0263C;">{{S2}}</span><br>
+                        <span class="stats-label" style="font-size:10px; line-height:16px; font-weight:700; color:#9A938A; letter-spacing:0.4px; text-transform:uppercase; white-space:nowrap;">campanii</span>
+                      </td>
+                      <td width="111" nowrap align="center" valign="top" style="width:111px; padding:4px 2px; border-left:1px solid #F0EBE3;">
+                        <span class="stats-number" style="font-size:21px; font-weight:800; color:#E0263C;">{{S3}}</span><br>
+                        <span class="stats-label" style="font-size:10px; line-height:16px; font-weight:700; color:#9A938A; letter-spacing:0.4px; text-transform:uppercase; white-space:nowrap;">donatori</span>
+                      </td>
+                      <td width="111" nowrap align="center" valign="top" style="width:111px; padding:4px 2px; border-left:1px solid #F0EBE3;">
+                        <span class="stats-number" style="font-size:21px; font-weight:800; color:#E0263C;">{{S4}}</span><br>
+                        <span class="stats-label" style="font-size:10px; line-height:16px; font-weight:700; color:#9A938A; letter-spacing:0.4px; text-transform:uppercase; white-space:nowrap;">strânși</span>
+                      </td>
+                      <td width="111" nowrap align="center" valign="top" style="width:111px; padding:4px 2px; border-left:1px solid #F0EBE3;">
+                        <span class="stats-number" style="font-size:21px; font-weight:800; color:#E0263C;">{{S5}}</span><br>
+                        <span class="stats-label" style="font-size:10px; line-height:16px; font-weight:700; color:#9A938A; letter-spacing:0.4px; text-transform:uppercase; white-space:nowrap;">companii<br>partenere</span>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+
+              <!-- ===== IMAGINE HERO ===== -->
+              <tr>
+                <td align="center" style="padding:22px 28px 0 28px;">
+                  <a href="https://salveazaoinima.ro" target="_blank" style="text-decoration:none;">
+                    <img alt="Copii sprijiniți prin Asociația salvează o inimă" src="{{HERO}}" width="544" class="hero-img" style="display:block; width:100%; max-width:544px; height:auto; border-radius:18px;">
+                  </a>
+                </td>
+              </tr>
+
+<!--EVENT_START-->
+              <!-- ===== DETALII EVENIMENT ===== -->
+              <tr>
+                <td class="px" style="padding:24px 40px 4px 40px;">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#FAF7F2" style="border-radius:16px; border-collapse:separate;">
+                    <tr>
+                      <td align="center" style="padding:24px 26px;">
+                        <p style="margin:0 0 10px 0; font-size:26px; line-height:32px; font-weight:800; color:#C41D33;">{{EV_TITLU}}</p>
+                        <p style="margin:0 0 18px 0; font-size:15px; line-height:24px; color:#55504A;">📅 <strong>{{EV_DATA}}</strong><br>📍 {{EV_LOC}}</p>
+                        <table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;">
+                          <tr>
+                            <td align="center" bgcolor="#D7193F" style="border-radius:50px;">
+                              <a href="{{LINK}}" target="_blank" style="display:block; padding:14px 30px; font-size:15px; line-height:20px; font-weight:800; color:#FFFFFF; text-decoration:none; border-radius:50px;">Confirmă participarea</a>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+<!--EVENT_END-->
+              <!-- ===== TERMEN + TITLU + SCRISOARE ===== -->
+              <tr>
+                <td class="px" style="padding:30px 40px 10px 40px;">
+                  <!--TERMEN_START--><p style="margin:0 0 12px 0; font-size:13px; line-height:18px; font-weight:800; color:#E0263C; letter-spacing:1px; text-transform:uppercase;">Termen limită: {{TERMEN}}</p><!--TERMEN_END-->
+                  <!--HTITLU_START--><h1 class="hero-title" style="margin:0 0 18px 0; font-size:34px; line-height:41px; color:#1F1B17; font-weight:800; letter-spacing:-0.7px;">{{HERO_TITLU}}</h1><!--HTITLU_END-->
+                  {{SCRISOARE}}
+                </td>
+              </tr>
+
+<!--BENEFITS_START-->
+              <!-- ===== DE CE PARTENER (beneficii) ===== -->
+              <tr>
+                <td class="px" style="padding:16px 40px 0 40px;">
+                  <p style="margin:0 0 12px 0; font-size:18px; line-height:26px; font-weight:800; color:#1F1B17;">De ce să fiți partener</p>
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#FAF7F2" style="border-radius:12px; border-collapse:separate; margin-bottom:10px;"><tr><td style="padding:14px 18px;"><p style="margin:0 0 3px 0; font-size:15px; font-weight:800; color:#C41D33;">{{B1_TITLU}}</p><p style="margin:0; font-size:14px; line-height:21px; color:#55504A;">{{B1_TEXT}}</p></td></tr></table>
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#FAF7F2" style="border-radius:12px; border-collapse:separate; margin-bottom:10px;"><tr><td style="padding:14px 18px;"><p style="margin:0 0 3px 0; font-size:15px; font-weight:800; color:#C41D33;">{{B2_TITLU}}</p><p style="margin:0; font-size:14px; line-height:21px; color:#55504A;">{{B2_TEXT}}</p></td></tr></table>
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#FAF7F2" style="border-radius:12px; border-collapse:separate;"><tr><td style="padding:14px 18px;"><p style="margin:0 0 3px 0; font-size:15px; font-weight:800; color:#C41D33;">{{B3_TITLU}}</p><p style="margin:0; font-size:14px; line-height:21px; color:#55504A;">{{B3_TEXT}}</p></td></tr></table>
+                </td>
+              </tr>
+<!--BENEFITS_END-->
+<!--BIGSTATS_START-->
+              <!-- ===== GRILĂ CIFRE MARI (raport partener) ===== -->
+              <tr>
+                <td style="padding:16px 40px 0 40px;">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#FAF7F2" style="border-radius:16px; border-collapse:separate;">
+                    <tr>
+                      <td align="center" class="stack" width="33%" style="padding:20px 8px;"><div style="font-family:Georgia,'Times New Roman',serif; font-size:34px; line-height:36px; font-weight:bold; color:#C41D33;">{{S1}}</div><div style="font-size:12px; color:#9A938A; margin-top:6px; text-transform:uppercase; letter-spacing:0.5px;">ani de activitate</div></td>
+                      <td align="center" class="stack" width="33%" style="padding:20px 8px;"><div style="font-family:Georgia,'Times New Roman',serif; font-size:34px; line-height:36px; font-weight:bold; color:#C41D33;">{{S4}}</div><div style="font-size:12px; color:#9A938A; margin-top:6px; text-transform:uppercase; letter-spacing:0.5px;">strânși</div></td>
+                      <td align="center" class="stack" width="33%" style="padding:20px 8px;"><div style="font-family:Georgia,'Times New Roman',serif; font-size:34px; line-height:36px; font-weight:bold; color:#C41D33;">{{S5}}</div><div style="font-size:12px; color:#9A938A; margin-top:6px; text-transform:uppercase; letter-spacing:0.5px;">companii partenere</div></td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+<!--BIGSTATS_END-->
+<!--BTND177_START-->
+              <!-- ===== BUTON PRINCIPAL D177 ===== -->
+              <tr>
+                <td align="center" style="padding:8px 40px 20px 40px;">
+                  <table role="presentation" align="center" width="82%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;">
+                    <tr>
+                      <td align="center" bgcolor="#D7193F" style="border-radius:50px;">
+                        <a href="{{LINK}}" target="_blank" style="display:block; padding:15px 18px; font-size:15px; line-height:20px; font-weight:800; color:#FFFFFF; text-decoration:none; border-radius:50px;">Completează pentru D177</a>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+
+<!--BTND177_END-->
+<!--BTNSEC_START-->
+              <!-- ===== BUTOANE SECUNDARE ===== -->
+              <tr>
+                <td align="center" style="padding:2px 22px 18px 22px;">
+                  <table role="presentation" align="center" width="82%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate; margin:0 auto 8px auto;">
+                    <tr><td align="center" bgcolor="#FFFFFF" style="border:2px solid #E0263C; border-radius:50px;">
+                      <a href="https://salveazaoinima.ro/directioneaza-20/" target="_blank" style="display:block; padding:11px 12px; font-size:13px; line-height:17px; font-weight:700; color:#E0263C; text-decoration:none; text-align:center; border-radius:50px;">📄&nbsp;Contract de sponsorizare</a>
+                    </td></tr>
+                  </table>
+                  <table role="presentation" align="center" width="82%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate; margin:0 auto 8px auto;">
+                    <tr><td align="center" bgcolor="#FFFFFF" style="border:1.5px solid #E0263C; border-radius:50px;">
+                      <a href="https://salveazaoinima.ro/premii/" target="_blank" style="display:block; padding:11px 12px; font-size:13px; line-height:17px; font-weight:700; color:#E0263C; text-decoration:none; text-align:center; border-radius:50px;">🏆&nbsp;Premii și recunoaștere</a>
+                    </td></tr>
+                  </table>
+                  <table role="presentation" align="center" width="82%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate; margin:0 auto 8px auto;">
+                    <tr><td align="center" bgcolor="#FFFFFF" style="border:1.5px solid #E0263C; border-radius:50px;">
+                      <a href="https://salveazaoinima.ro/sponsori/" target="_blank" style="display:block; padding:11px 12px; font-size:13px; line-height:17px; font-weight:700; color:#E0263C; text-decoration:none; text-align:center; border-radius:50px;">🤝&nbsp;Sponsori</a>
+                    </td></tr>
+                  </table>
+                  <table role="presentation" align="center" width="82%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate; margin:0 auto 8px auto;">
+                    <tr><td align="center" bgcolor="#FFFFFF" style="border:1.5px solid #E4DFD7; border-radius:50px;">
+                      <a href="https://salveazaoinima.ro/stiri-media/" target="_blank" style="display:block; padding:11px 12px; font-size:13px; line-height:17px; font-weight:700; color:#55504A; text-decoration:none; text-align:center; border-radius:50px;">📰&nbsp;Apariții media</a>
+                    </td></tr>
+                  </table>
+                  <table role="presentation" align="center" width="82%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate; margin:0 auto;">
+                    <tr><td align="center" bgcolor="#D7193F" style="border-radius:50px;">
+                      <a href="{{LINK}}" target="_blank" style="display:block; padding:12px; font-size:13px; line-height:17px; font-weight:800; color:#FFFFFF; text-decoration:none; text-align:center; border-radius:50px;">CONTRACT D177</a>
+                    </td></tr>
+                  </table>
+                </td>
+              </tr>
+
+<!--BTNSEC_END-->
+<!--HOWTO_START-->
+              <!-- ===== CUM SE FACE SIMPLU ===== -->
+              <tr>
+                <td class="px" style="padding:10px 40px 18px 40px;">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#FAF7F2" style="border-radius:16px; border-collapse:separate;">
+                    <tr>
+                      <td style="padding:20px 24px;">
+                        <p style="margin:0 0 12px 0; font-size:17px; line-height:24px; font-weight:800; color:#1F1B17;">Cum se face simplu:</p>
+                        <p style="margin:0 0 8px 0; font-size:15px; line-height:24px; color:#55504A;">1. Contabilul stabilește suma eligibilă.</p>
+                        <p style="margin:0 0 8px 0; font-size:15px; line-height:24px; color:#55504A;">2. Semnăm contractul de sponsorizare.</p>
+                        <p style="margin:0 0 8px 0; font-size:15px; line-height:24px; color:#55504A;">3. Compania depune Declarația 177 în SPV.</p>
+                        <p style="margin:0; font-size:15px; line-height:24px; color:#55504A;">4. ANAF virează suma, iar noi o direcționăm transparent către cazuri medicale urgente.</p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+
+<!--HOWTO_END-->
+<!--ABOUT_START-->
+              <!-- ===== CINE SUNTEM NOI ===== -->
+              <tr>
+                <td class="px" style="padding:22px 40px 20px 40px;">
+                  <p style="margin:0 0 14px 0; font-size:18px; line-height:28px; font-weight:800; color:#1F1B17;">Cine suntem noi</p>
+                  <p style="margin:0 0 14px 0; font-size:17px; line-height:28px; color:#55504A;">De peste 13 ani, la Asociația „salvează o inimă" suntem aproape de copii și adulți care duc lupte grele cu boala. Sunt oameni care nu cer lucruri imposibile. Cer doar o șansă la tratament, la operație, la terapie, la viață. În toți acești ani, am învățat că binele se face cu inimă, dar și cu încredere.</p>
+                  <p style="margin:0 0 14px 0; font-size:17px; line-height:28px; color:#55504A;">De aceea, am construit cea mai mare platformă de donații online pentru cazuri medicale din România, având la bază un principiu la care nu am renunțat niciodată: transparență totală, responsabilitate și ajutor real. Până astăzi, peste 136.000 de donatori și mii de companii au ales să fie alături de noi. Împreună, am susținut peste 1.600 de copii și adulți grav bolnavi și am mobilizat aproximativ 27 de milioane de euro pentru operații, tratamente și terapii.</p>
+                  <p style="margin:0 0 14px 0; font-size:17px; line-height:28px; color:#55504A;">Doar anul trecut, datorită sponsorizărilor oferite de companii prin mecanismul Declarației D177, <strong><em>67 de copii și adulți cu afecțiuni grave au putut merge mai departe</em></strong>: spre o operație, spre un tratament început la timp, spre terapii esențiale sau spre o șansă reală la vindecare. Publicăm ordinele de plată, actualizările cazurilor și evoluția fiecărui pacient, astfel încât fiecare companie să poată vedea clar cum sprijinul oferit se transformă în ajutor real.</p>
+                  <p style="margin:0; font-size:17px; line-height:28px; color:#55504A;"><em><strong>Vă rugăm să nu lăsăm această oportunitate să treacă. Pentru un copil care așteaptă tratamentul, o semnătură pusă la timp poate însemna enorm.</strong></em></p>
+                </td>
+              </tr>
+
+<!--ABOUT_END-->
+<!--BTNSOFT_START-->
+              <!-- ===== BUTON GENERIC (CTA) ===== -->
+              <tr>
+                <td align="center" style="padding:14px 40px 6px 40px;">
+                  <table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;"><tr><td align="center" bgcolor="#D7193F" style="border-radius:50px;"><a href="{{CTA_LINK}}" target="_blank" style="display:block; padding:14px 32px; font-size:15px; font-weight:800; color:#FFFFFF; text-decoration:none; border-radius:50px;">{{CTA_TEXT}}</a></td></tr></table>
+                </td>
+              </tr>
+<!--BTNSOFT_END-->
+              <!-- ===== SEMNĂTURĂ ===== -->
+              <tr>
+                <td class="px" style="padding:8px 40px 32px 40px;">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td style="border-top:1px solid #F0EBE3; padding-top:22px;">
+                        <p style="margin:0 0 4px 0; font-family:'Brush Script MT','Segoe Script','Comic Sans MS',cursive; font-size:30px; color:#E0263C;">Vlad Plăcintă</p>
+                        <p style="margin:0 0 2px 0; font-size:14px; font-weight:700; color:#1F1B17;">Președinte</p>
+                        <p style="margin:0 0 2px 0; font-size:13px; color:#55504A;">Asociația „salvează o inimă&quot;</p>
+                        <p style="margin:0; font-size:13px; color:#55504A;">📞 <a href="tel:+40752753540" style="color:#55504A; text-decoration:none; font-weight:600;">0752 753 540</a></p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+
+            </table>
+          </td>
+        </tr>
+
+        <!-- ===== FOOTER ===== -->
+        <tr>
+          <td align="center" style="padding:22px 20px 8px 20px;">
+            <p style="margin:0 0 6px 0; font-size:12px; line-height:19px; color:#9A938A;">
+              <strong>Asociația salvează o inimă</strong> · <a href="https://salveazaoinima.ro" target="_blank" style="color:#9A938A; text-decoration:none;">salveazaoinima.ro</a>
+            </p>
+            <p style="margin:0; font-size:12px; line-height:19px; color:#9A938A;">
+              Primești acest email deoarece ai interacționat cu Asociația „salvează o inimă".<br>
+              <a href="##NEWSMAN:list_unsubscribe##" style="word-break:break-all; text-decoration:none; color:#9A938A;">Dezabonare</a>
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
+</script>
+<script type="text/plain" id="tpl_editorial"><!DOCTYPE html>
+<html lang="ro"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{D_HEADLINE}}</title>
+<!--[if mso]><style>.container{width:600px;}</style><![endif]-->
+<style>@media only screen and (max-width:600px){.container{width:100%!important}.mh1{font-size:26px!important}.mpad{padding-left:24px!important;padding-right:24px!important}}</style></head>
+<body style="margin:0;padding:0;background-color:#EFE9DE;-webkit-text-size-adjust:100%;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#EFE9DE;">{{PREHEADER}}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#EFE9DE" style="font-family:Georgia,'Times New Roman',serif;"><tr><td align="center" style="padding:26px 12px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" class="container" style="width:600px;max-width:600px;background-color:#FAF6EE;">
+  <tr><td class="mpad" style="padding:44px 48px 0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+      <td style="font-family:Georgia,serif;font-size:24px;color:#241C18;">salvează o inimă</td>
+      <td align="right" style="font-family:Arial,sans-serif;font-size:11px;font-weight:bold;letter-spacing:1.5px;color:#9A8D7A;text-transform:uppercase;">Buletin &middot; {{PERIOADA}}</td>
+    </tr></table>
+    <div style="border-top:1px solid #E4D9C8;font-size:1px;line-height:1px;margin-top:14px;">&nbsp;</div>
+  </td></tr>
+  <tr><td class="mpad" style="padding:30px 48px 0;">
+    <div style="font-family:Arial,sans-serif;font-size:11px;font-weight:bold;letter-spacing:2px;color:#C41D33;text-transform:uppercase;">Povestea lunii</div>
+    <h1 class="mh1" style="font-family:Georgia,serif;font-weight:normal;font-size:38px;line-height:1.12;color:#241C18;margin:12px 0 0;">{{D_HEADLINE}}</h1>
+    <p style="font-family:Arial,sans-serif;font-size:16px;line-height:1.62;color:#4A403A;margin:20px 0 0;">{{D_LEAD}}</p>
+  </td></tr>
+  <tr><td class="mpad" style="padding:28px 48px 0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+      <td width="3" bgcolor="#C41D33" style="width:3px;font-size:1px;line-height:1px;">&nbsp;</td>
+      <td style="padding-left:22px;">
+        <div style="font-family:Georgia,serif;font-style:italic;font-size:21px;line-height:1.4;color:#2C2320;">&#8222;{{D_QUOTE}}&#8221;</div>
+        <div style="font-family:Arial,sans-serif;font-size:13px;font-weight:bold;color:#9A8D7A;margin-top:12px;">&mdash; {{D_QAUTHOR}}</div>
+      </td>
+    </tr></table>
+  </td></tr>
+  <tr><td class="mpad" style="padding:30px 48px 0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid #E4D9C8;border-bottom:1px solid #E4D9C8;"><tr>
+      <td align="center" width="33%" style="padding:22px 4px;"><div style="font-family:Georgia,serif;font-size:32px;color:#C41D33;">{{D_N1}}</div><div style="font-family:Arial,sans-serif;font-size:11px;color:#7C7166;padding-top:4px;">{{D_L1}}</div></td>
+      <td align="center" width="33%" style="padding:22px 4px;border-left:1px solid #E4D9C8;border-right:1px solid #E4D9C8;"><div style="font-family:Georgia,serif;font-size:32px;color:#C41D33;">{{D_N2}}</div><div style="font-family:Arial,sans-serif;font-size:11px;color:#7C7166;padding-top:4px;">{{D_L2}}</div></td>
+      <td align="center" width="33%" style="padding:22px 4px;"><div style="font-family:Georgia,serif;font-size:32px;color:#C41D33;">{{D_N3}}</div><div style="font-family:Arial,sans-serif;font-size:11px;color:#7C7166;padding-top:4px;">{{D_L3}}</div></td>
+    </tr></table>
+  </td></tr>
+  <tr><td align="center" class="mpad" style="padding:34px 48px 6px;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="#C41D33" style="border-radius:2px;"><a href="{{LINK}}" target="_blank" style="display:inline-block;padding:15px 40px;font-family:Arial,sans-serif;font-size:15px;font-weight:bold;color:#ffffff;text-decoration:none;">{{D_CTA}}</a></td></tr></table>
+  </td></tr>
+  <tr><td align="center" class="mpad" style="padding:30px 48px 44px;font-family:Arial,sans-serif;font-size:12px;line-height:1.6;color:#9A8D7A;">Asociația salvează o inimă &middot; salveazaoinima.ro<br><a href="##NEWSMAN:list_unsubscribe##" style="color:#9A8D7A;">Dezabonare</a></td></tr>
+</table>
+</td></tr></table>
+</body></html></script>
+<script type="text/plain" id="tpl_foto"><!DOCTYPE html>
+<html lang="ro"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{D_HEADLINE}}</title>
+<!--[if mso]><style>.container{width:600px;}</style><![endif]-->
+<style>@media only screen and (max-width:600px){.container{width:100%!important}.mbig{font-size:52px!important}}</style></head>
+<body style="margin:0;padding:0;background-color:#EDEAE6;-webkit-text-size-adjust:100%;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#EDEAE6;">{{PREHEADER}}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#EDEAE6" style="font-family:Arial,Helvetica,sans-serif;"><tr><td align="center" style="padding:24px 12px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" class="container" style="width:600px;max-width:600px;background-color:#ffffff;">
+  <tr><td style="padding:20px 28px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+      <td style="font-family:Arial,sans-serif;font-size:18px;font-weight:800;color:#C41D33;">salvează o inimă</td>
+      <td align="right" style="font-family:Arial,sans-serif;font-size:11px;font-weight:bold;letter-spacing:1px;color:#A79E97;text-transform:uppercase;">{{PERIOADA}}</td>
+    </tr></table>
+  </td></tr>
+  <tr><td style="padding:0;"><img src="{{HERO}}" width="600" alt="" style="display:block;width:100%;max-width:600px;height:auto;border:0;"></td></tr>
+  <tr><td bgcolor="#17110F" style="padding:26px 34px 30px;">
+    <div class="mbig" style="font-family:Arial,sans-serif;font-size:74px;line-height:0.9;font-weight:800;color:#ffffff;letter-spacing:-2px;">{{D_STATBIG}}</div>
+    <div style="font-family:Arial,sans-serif;font-size:18px;font-weight:600;color:#F0DDE1;margin-top:8px;line-height:1.3;">{{D_STATLABEL}}</div>
+  </td></tr>
+  <tr><td style="padding:32px 34px 0;">
+    <p style="font-family:Arial,sans-serif;font-size:17px;line-height:1.6;color:#3B322E;margin:0;">{{D_LEAD}}</p>
+  </td></tr>
+  <tr><td align="center" style="padding:30px 34px 6px;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="#C41D33" style="border-radius:999px;"><a href="{{LINK}}" target="_blank" style="display:inline-block;padding:16px 46px;font-family:Arial,sans-serif;font-size:15px;font-weight:800;color:#ffffff;text-decoration:none;border-radius:999px;">{{D_CTA}}</a></td></tr></table>
+  </td></tr>
+  <tr><td align="center" style="padding:36px 34px 40px;font-family:Arial,sans-serif;font-size:12px;line-height:1.6;color:#A79E97;">Asociația salvează o inimă &middot; salveazaoinima.ro &middot; <a href="##NEWSMAN:list_unsubscribe##" style="color:#A79E97;">Dezabonare</a></td></tr>
+</table>
+</td></tr></table>
+</body></html></script>
+<script type="text/plain" id="tpl_bold"><!DOCTYPE html>
+<html lang="ro"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{D_HEADLINE}}</title>
+<!--[if mso]><style>.container{width:600px;}</style><![endif]-->
+<style>@media only screen and (max-width:600px){.container{width:100%!important}.mbig{font-size:58px!important}.mlabel{font-size:22px!important}.mcol{display:block!important;width:100%!important}.mhide{display:none!important}}</style></head>
+<body style="margin:0;padding:0;background-color:#0d0908;-webkit-text-size-adjust:100%;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#0d0908;">{{PREHEADER}}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#0d0908" style="font-family:Arial,Helvetica,sans-serif;"><tr><td align="center" style="padding:24px 12px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" class="container" style="width:600px;max-width:600px;background-color:#17110F;">
+  <tr><td style="padding:22px 30px;border-bottom:1px solid #322824;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+      <td style="font-family:'Arial Black',Arial,sans-serif;font-size:19px;font-weight:900;color:#ffffff;text-transform:uppercase;letter-spacing:1px;">salvează o inimă</td>
+      <td align="right" style="font-family:Arial,sans-serif;font-size:11px;font-weight:bold;letter-spacing:1.5px;color:#8A7F79;text-transform:uppercase;">{{PERIOADA}}</td>
+    </tr></table>
+  </td></tr>
+  <tr><td style="padding:38px 30px 30px;">
+    <div style="font-family:Arial,sans-serif;font-size:12px;font-weight:800;letter-spacing:3px;color:#E0546A;text-transform:uppercase;">Impactul tău, luna aceasta</div>
+    <div class="mbig" style="font-family:'Arial Black',Arial,sans-serif;font-size:84px;line-height:0.9;color:#ffffff;letter-spacing:-2px;margin-top:14px;">{{D_STATBIG}}</div>
+    <div class="mlabel" style="font-family:'Arial Black',Arial,sans-serif;font-size:28px;line-height:1.05;color:#F4EFEA;text-transform:uppercase;margin-top:8px;">{{D_STATLABEL}}</div>
+  </td></tr>
+  <tr><td style="padding:0 30px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+      <td width="49%" bgcolor="#C41D33" class="mcol" style="padding:22px 22px;"><div style="font-family:'Arial Black',Arial,sans-serif;font-size:32px;color:#ffffff;">{{D_N1}}</div><div style="font-family:Arial,sans-serif;font-size:12px;font-weight:bold;color:#FBE0E4;padding-top:6px;">{{D_L1}}</div></td>
+      <td width="2%" class="mhide" style="font-size:1px;">&nbsp;</td>
+      <td width="49%" bgcolor="#241A17" class="mcol" style="padding:22px 22px;"><div style="font-family:'Arial Black',Arial,sans-serif;font-size:32px;color:#E0546A;">{{D_N2}}</div><div style="font-family:Arial,sans-serif;font-size:12px;font-weight:bold;color:#B7ACA6;padding-top:6px;">{{D_L2}}</div></td>
+    </tr></table>
+  </td></tr>
+  <tr><td style="padding:30px 30px 0;">
+    <p style="font-family:Arial,sans-serif;font-size:16px;line-height:1.6;color:#C8BEB8;margin:0 0 24px;">{{D_LEAD}}</p>
+    <a href="{{LINK}}" target="_blank" style="display:block;text-align:center;background-color:#C41D33;color:#ffffff;font-family:'Arial Black',Arial,sans-serif;font-size:15px;font-weight:900;padding:18px;text-decoration:none;text-transform:uppercase;letter-spacing:1px;border-radius:3px;">{{D_CTA}}</a>
+  </td></tr>
+  <tr><td align="center" style="padding:32px 30px 40px;font-family:Arial,sans-serif;font-size:12px;line-height:1.6;color:#6E635D;">Asociația salvează o inimă &middot; salveazaoinima.ro &middot; <a href="##NEWSMAN:list_unsubscribe##" style="color:#6E635D;">Dezabonare</a></td></tr>
+</table>
+</td></tr></table>
+</body></html></script>
+<script type="text/plain" id="tpl_minimal"><!DOCTYPE html>
+<html lang="ro"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{D_HEADLINE}}</title>
+<!--[if mso]><style>.container{width:600px;}</style><![endif]-->
+<style>@media only screen and (max-width:600px){.container{width:100%!important}.mh1{font-size:26px!important}.mpad{padding-left:28px!important;padding-right:28px!important}}</style></head>
+<body style="margin:0;padding:0;background-color:#F4F1EC;-webkit-text-size-adjust:100%;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#F4F1EC;">{{PREHEADER}}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F4F1EC" style="font-family:Arial,Helvetica,sans-serif;"><tr><td align="center" style="padding:26px 12px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" class="container" style="width:600px;max-width:600px;background-color:#FCFAF7;">
+  <tr><td align="center" class="mpad" style="padding:46px 56px 0;">
+    <span style="font-family:Georgia,serif;font-size:19px;color:#241E1C;">&#9829; salvează o inimă</span>
+  </td></tr>
+  <tr><td align="center" class="mpad" style="padding:38px 56px 0;">
+    <div style="font-family:Arial,sans-serif;font-size:11px;font-weight:bold;letter-spacing:2.5px;color:#B3A79D;text-transform:uppercase;">{{PERIOADA}}</div>
+    <h1 class="mh1" style="font-family:Georgia,serif;font-weight:normal;font-size:33px;line-height:1.24;color:#241E1C;margin:18px 0 0;">{{D_HEADLINE}}</h1>
+    <p style="font-family:Arial,sans-serif;font-size:16px;line-height:1.7;color:#5C534E;margin:22px 0 0;">{{D_LEAD}}</p>
+  </td></tr>
+  <tr><td align="center" style="padding:34px 0;"><div style="width:40px;border-top:1px solid #E7DDD2;font-size:1px;line-height:1px;">&nbsp;</div></td></tr>
+  <tr><td align="center" class="mpad" style="padding:0 56px;">
+    <div style="font-family:Georgia,serif;font-style:italic;font-size:20px;line-height:1.5;color:#3A322F;">&#8222;{{D_QUOTE}}&#8221;</div>
+    <div style="font-family:Arial,sans-serif;font-size:12px;color:#B3A79D;margin-top:12px;">{{D_QAUTHOR}}</div>
+  </td></tr>
+  <tr><td align="center" class="mpad" style="padding:44px 56px 50px;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="border:1px solid #C41D33;border-radius:999px;"><a href="{{LINK}}" target="_blank" style="display:inline-block;padding:13px 34px;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;color:#C41D33;text-decoration:none;">{{D_CTA}}</a></td></tr></table>
+    <div style="font-family:Arial,sans-serif;font-size:12px;line-height:1.7;color:#B3A79D;margin-top:36px;">Asociația salvează o inimă &middot; salveazaoinima.ro<br><a href="##NEWSMAN:list_unsubscribe##" style="color:#B3A79D;">Dezabonare</a></div>
+  </td></tr>
+</table>
+</td></tr></table>
+</body></html></script>
+<script type="text/plain" id="tpl_gazeta"><!DOCTYPE html>
+<html lang="ro"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{D_HEADLINE}}</title>
+<!--[if mso]><style>.container{width:600px;}</style><![endif]-->
+<style>@media only screen and (max-width:600px){.container{width:100%!important}.mmast{font-size:30px!important}.mh1{font-size:24px!important}.mcol{display:block!important;width:100%!important;padding:0 0 14px 0!important}}</style></head>
+<body style="margin:0;padding:0;background-color:#EFE9DE;-webkit-text-size-adjust:100%;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#EFE9DE;">{{PREHEADER}}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#EFE9DE" style="font-family:Georgia,'Times New Roman',serif;"><tr><td align="center" style="padding:26px 12px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" class="container" style="width:600px;max-width:600px;background-color:#FBF9F4;">
+  <tr><td align="center" style="padding:34px 40px 0;">
+    <div style="font-family:Arial,sans-serif;font-size:10px;font-weight:bold;letter-spacing:3px;color:#8A7E72;text-transform:uppercase;">Buletinul asociației &middot; {{PERIOADA}}</div>
+    <div class="mmast" style="font-family:Georgia,serif;font-weight:bold;font-size:44px;line-height:1;color:#1A1613;margin-top:10px;">Salvează o inimă</div>
+    <div style="border-top:3px double #1A1613;font-size:1px;line-height:1px;margin-top:16px;">&nbsp;</div>
+  </td></tr>
+  <tr><td style="padding:26px 40px 0;">
+    <h1 class="mh1" style="font-family:Georgia,serif;font-weight:bold;font-size:30px;line-height:1.15;color:#1A1613;margin:0;">{{D_HEADLINE}}</h1>
+  </td></tr>
+  <tr><td style="padding:18px 40px 0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+      <td width="58%" valign="top" class="mcol" style="padding-right:20px;font-family:Arial,sans-serif;font-size:15px;line-height:1.62;color:#33291F;">{{D_LEAD}}</td>
+      <td width="42%" valign="top" class="mcol">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #1A1613;"><tr><td align="center" style="padding:18px 14px;">
+          <div style="font-family:Georgia,serif;font-weight:bold;font-size:42px;line-height:1;color:#C41D33;">{{D_N2}}</div>
+          <div style="font-family:Arial,sans-serif;font-style:italic;font-size:12px;color:#6E6155;margin-top:6px;">{{D_L2}}</div>
+        </td></tr></table>
+      </td>
+    </tr></table>
+  </td></tr>
+  <tr><td style="padding:24px 40px 0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid #D8CDBC;border-bottom:1px solid #D8CDBC;"><tr><td align="center" style="padding:18px 6px;">
+      <div style="font-family:Georgia,serif;font-style:italic;font-size:20px;line-height:1.45;color:#33291F;">&#8222;{{D_QUOTE}}&#8221;</div>
+      <div style="font-family:Arial,sans-serif;font-size:12px;color:#8A7E72;margin-top:10px;">&#8212; {{D_QAUTHOR}}</div>
+    </td></tr></table>
+  </td></tr>
+  <tr><td align="center" style="padding:26px 40px 8px;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="#C41D33"><a href="{{LINK}}" target="_blank" style="display:inline-block;padding:13px 36px;font-family:Arial,sans-serif;font-size:15px;font-weight:bold;color:#ffffff;text-decoration:none;">{{D_CTA}}</a></td></tr></table>
+  </td></tr>
+  <tr><td align="center" style="padding:24px 40px 34px;font-family:Arial,sans-serif;font-size:11px;line-height:1.6;color:#8A7E72;border-top:1px solid #D8CDBC;">Asociația salvează o inimă &middot; salveazaoinima.ro &middot; <a href="##NEWSMAN:list_unsubscribe##" style="color:#8A7E72;">Dezabonare</a></td></tr>
+</table>
+</td></tr></table>
+</body></html></script>
+<script type="text/plain" id="tpl_warm"><!DOCTYPE html>
+<html lang="ro"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{D_HEADLINE}}</title>
+<!--[if mso]><style>.container{width:600px;}</style><![endif]-->
+<style>@media only screen and (max-width:600px){.container{width:100%!important}.mbig{font-size:52px!important}}</style></head>
+<body style="margin:0;padding:0;background-color:#FFE9DC;-webkit-text-size-adjust:100%;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#FFE9DC;">{{PREHEADER}}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#FFE9DC" style="font-family:'Trebuchet MS',Arial,sans-serif;"><tr><td align="center" style="padding:26px 12px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" class="container" style="width:600px;max-width:600px;background-color:#FFF3EC;">
+  <tr><td align="center" style="padding:32px 40px 0;font-family:'Trebuchet MS',Arial,sans-serif;font-size:18px;font-weight:bold;color:#C41D33;">&#9829; salvează o inimă</td></tr>
+  <tr><td style="padding:24px 34px 0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#ffffff;border-radius:24px;"><tr><td align="center" style="padding:34px 30px;">
+      <div class="mbig" style="font-family:'Trebuchet MS',Arial,sans-serif;font-size:72px;line-height:0.95;font-weight:bold;color:#C41D33;">{{D_STATBIG}}</div>
+      <div style="font-family:'Trebuchet MS',Arial,sans-serif;font-size:17px;font-weight:bold;color:#8A5A48;margin-top:8px;line-height:1.35;">{{D_STATLABEL}}</div>
+    </td></tr></table>
+  </td></tr>
+  <tr><td style="padding:26px 40px 0;">
+    <p style="font-family:'Trebuchet MS',Arial,sans-serif;font-size:16px;line-height:1.65;color:#5B463D;margin:0;">{{D_LEAD}}</p>
+  </td></tr>
+  <tr><td style="padding:24px 40px 0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#FCE4D6;border-radius:18px;"><tr><td style="padding:22px 26px;">
+      <div style="font-family:Georgia,serif;font-style:italic;font-size:18px;line-height:1.5;color:#6E4A3C;">&#8222;{{D_QUOTE}}&#8221;</div>
+      <div style="font-family:'Trebuchet MS',Arial,sans-serif;font-size:12px;font-weight:bold;color:#B07A5E;margin-top:10px;">&#8212; {{D_QAUTHOR}}</div>
+    </td></tr></table>
+  </td></tr>
+  <tr><td align="center" style="padding:30px 40px 8px;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="#C41D33" style="border-radius:999px;"><a href="{{LINK}}" target="_blank" style="display:inline-block;padding:16px 44px;font-family:'Trebuchet MS',Arial,sans-serif;font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:999px;">{{D_CTA}}</a></td></tr></table>
+  </td></tr>
+  <tr><td align="center" style="padding:28px 40px 38px;font-family:'Trebuchet MS',Arial,sans-serif;font-size:12px;line-height:1.6;color:#B07A5E;">Asociația salvează o inimă &middot; salveazaoinima.ro &middot; <a href="##NEWSMAN:list_unsubscribe##" style="color:#B07A5E;">Dezabonare</a></td></tr>
+</table>
+</td></tr></table>
+</body></html></script>
+<script type="text/plain" id="tpl_modular"><!DOCTYPE html>
+<html lang="ro"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{D_HEADLINE}}</title>
+<!--[if mso]><style>.container{width:600px;}</style><![endif]-->
+<style>@media only screen and (max-width:600px){.container{width:100%!important}.mbig{font-size:52px!important}.mcol{display:block!important;width:100%!important;padding:0 0 14px 0!important}.mhide{display:none!important}}</style></head>
+<body style="margin:0;padding:0;background-color:#E4DED6;-webkit-text-size-adjust:100%;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#E4DED6;">{{PREHEADER}}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#E4DED6" style="font-family:'Segoe UI',Arial,sans-serif;"><tr><td align="center" style="padding:24px 12px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" class="container" style="width:600px;max-width:600px;background-color:#ECE7E1;">
+  <tr><td style="padding:22px 26px 6px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+      <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:18px;font-weight:bold;color:#1C1815;">salvează o inimă</td>
+      <td align="right" style="font-family:Arial,sans-serif;font-size:11px;font-weight:bold;letter-spacing:1.5px;color:#8C8177;text-transform:uppercase;">{{PERIOADA}}</td>
+    </tr></table>
+  </td></tr>
+  <tr><td style="padding:10px 20px 0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#C41D33;border-radius:20px;"><tr><td style="padding:28px 30px;">
+      <div class="mbig" style="font-family:'Segoe UI',Arial,sans-serif;font-size:66px;line-height:0.9;font-weight:bold;color:#ffffff;letter-spacing:-2px;">{{D_STATBIG}}</div>
+      <div style="font-family:'Segoe UI',Arial,sans-serif;font-size:16px;font-weight:600;color:#FBE3E6;margin-top:8px;">{{D_STATLABEL}}</div>
+    </td></tr></table>
+  </td></tr>
+  <tr><td style="padding:14px 20px 0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+      <td width="49%" valign="top" class="mcol"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#17110F;border-radius:20px;"><tr><td style="padding:22px 24px;">
+        <div style="font-family:'Segoe UI',Arial,sans-serif;font-size:34px;font-weight:bold;color:#ffffff;line-height:1;">{{D_N2}}</div>
+        <div style="font-family:Arial,sans-serif;font-size:13px;color:#B7ACA6;margin-top:6px;">{{D_L2}}</div>
+      </td></tr></table></td>
+      <td width="2%" class="mhide" style="font-size:1px;">&nbsp;</td>
+      <td width="49%" valign="top" class="mcol"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#ffffff;border-radius:20px;"><tr><td style="padding:22px 24px;">
+        <div style="font-family:'Segoe UI',Arial,sans-serif;font-size:34px;font-weight:bold;color:#C41D33;line-height:1;">{{D_N3}}</div>
+        <div style="font-family:Arial,sans-serif;font-size:13px;color:#756A62;margin-top:6px;">{{D_L3}}</div>
+      </td></tr></table></td>
+    </tr></table>
+  </td></tr>
+  <tr><td style="padding:14px 20px 0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#ffffff;border-radius:20px;"><tr><td style="padding:24px 28px;">
+      <div style="font-family:Georgia,serif;font-style:italic;font-size:18px;line-height:1.45;color:#2A2320;">&#8222;{{D_QUOTE}}&#8221;</div>
+      <div style="font-family:Arial,sans-serif;font-size:12px;font-weight:bold;color:#C41D33;margin-top:10px;">&#8212; {{D_QAUTHOR}}</div>
+    </td></tr></table>
+  </td></tr>
+  <tr><td style="padding:14px 20px 0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#C41D33;border-radius:20px;"><tr><td align="center" style="padding:4px;"><a href="{{LINK}}" target="_blank" style="display:block;padding:18px;font-family:'Segoe UI',Arial,sans-serif;font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none;">{{D_CTA}} &#8594;</a></td></tr></table>
+  </td></tr>
+  <tr><td align="center" style="padding:22px 26px 26px;font-family:Arial,sans-serif;font-size:11px;line-height:1.6;color:#8C8177;">Asociația salvează o inimă &middot; salveazaoinima.ro &middot; <a href="##NEWSMAN:list_unsubscribe##" style="color:#8C8177;">Dezabonare</a></td></tr>
+</table>
+</td></tr></table>
+</body></html></script>
+<script type="text/plain" id="tpl_scrisoare"><!DOCTYPE html>
+<html lang="ro"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{D_HEADLINE}}</title>
+<!--[if mso]><style>.container{width:600px;}</style><![endif]-->
+<style>@media only screen and (max-width:600px){.container{width:100%!important}.mpad{padding-left:26px!important;padding-right:26px!important}}</style></head>
+<body style="margin:0;padding:0;background-color:#EFEAE1;-webkit-text-size-adjust:100%;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#EFEAE1;">{{PREHEADER}}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#EFEAE1" style="font-family:Georgia,'Times New Roman',serif;"><tr><td align="center" style="padding:26px 12px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" class="container" style="width:600px;max-width:600px;background-color:#FAF7F1;">
+  <tr><td bgcolor="#C41D33" style="font-size:1px;line-height:6px;height:6px;">&nbsp;</td></tr>
+  <tr><td class="mpad" style="padding:38px 52px 0;font-family:Georgia,serif;font-size:16px;font-weight:bold;color:#C41D33;">&#9829; salvează o inimă</td></tr>
+  <tr><td class="mpad" style="padding:26px 52px 0;">
+    <div style="font-family:Georgia,serif;font-style:italic;font-size:12px;color:#A79684;">{{PERIOADA}}</div>
+    <p style="font-family:Georgia,serif;font-size:17px;line-height:1.75;color:#2B2420;margin:20px 0 0;">Stimați parteneri,</p>
+    <p style="font-family:Georgia,serif;font-size:17px;line-height:1.75;color:#43382F;margin:16px 0 0;">{{D_LEAD}}</p>
+    <p style="font-family:Georgia,serif;font-size:17px;line-height:1.75;color:#43382F;margin:16px 0 0;">Vă mulțumim pentru încrederea și sprijinul companiei dumneavoastră.</p>
+    <div style="margin-top:24px;">
+      <div style="font-family:Georgia,serif;font-style:italic;font-size:28px;color:#C41D33;line-height:1;">Vlad Plăcintă</div>
+      <div style="font-family:Arial,sans-serif;font-size:13px;color:#A79684;margin-top:6px;">Președinte, Asociația salvează o inimă</div>
+    </div>
+  </td></tr>
+  <tr><td align="center" class="mpad" style="padding:30px 52px 0;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="border:1px solid #C41D33;border-radius:3px;"><a href="{{LINK}}" target="_blank" style="display:inline-block;padding:12px 32px;font-family:Georgia,serif;font-size:15px;color:#C41D33;text-decoration:none;">{{D_CTA}}</a></td></tr></table>
+  </td></tr>
+  <tr><td align="center" class="mpad" style="padding:30px 52px 40px;font-family:Arial,sans-serif;font-size:12px;line-height:1.6;color:#A79684;">Asociația salvează o inimă &middot; salveazaoinima.ro &middot; <a href="##NEWSMAN:list_unsubscribe##" style="color:#A79684;">Dezabonare</a></td></tr>
+</table>
+</td></tr></table>
+</body></html></script>
+<script type="text/plain" id="tpl_manifest"><!DOCTYPE html>
+<html lang="ro"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{D_HEADLINE}}</title>
+<!--[if mso]><style>.container{width:600px;}</style><![endif]-->
+<style>@media only screen and (max-width:600px){.container{width:100%!important}.mhero{font-size:60px!important;letter-spacing:-2px!important}.mlabel{font-size:26px!important}.mcol{display:block!important;width:100%!important;border-right:0!important}}</style></head>
+<body style="margin:0;padding:0;background-color:#8F0F20;-webkit-text-size-adjust:100%;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#8F0F20;">{{PREHEADER}}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#8F0F20" style="font-family:Arial,Helvetica,sans-serif;"><tr><td align="center" style="padding:24px 12px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" class="container" style="width:600px;max-width:600px;background-color:#C41D33;">
+  <tr><td style="padding:32px 40px 0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+      <td style="font-family:Arial,sans-serif;font-size:11px;font-weight:bold;letter-spacing:2px;color:#ffffff;text-transform:uppercase;">Salvează o inimă</td>
+      <td align="right" style="font-family:Arial,sans-serif;font-size:11px;font-weight:bold;letter-spacing:2px;color:#F4B9C1;text-transform:uppercase;">{{PERIOADA}}</td>
+    </tr></table>
+  </td></tr>
+  <tr><td style="padding:26px 40px 0;">
+    <div class="mhero" style="font-family:'Arial Black',Arial,sans-serif;font-size:120px;line-height:0.82;color:#ffffff;letter-spacing:-4px;">{{D_STATBIG}}</div>
+    <div class="mlabel" style="font-family:'Arial Black',Arial,sans-serif;font-size:38px;line-height:1;color:#ffffff;text-transform:uppercase;margin-top:12px;">{{D_STATLABEL}}</div>
+  </td></tr>
+  <tr><td style="padding:30px 0 0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#17110F"><tr>
+      <td width="50%" class="mcol" style="padding:22px 40px;border-right:1px solid #3A2F2C;">
+        <div style="font-family:'Arial Black',Arial,sans-serif;font-size:38px;color:#ffffff;line-height:1;">{{D_N2}}</div>
+        <div style="font-family:Arial,sans-serif;font-size:12px;color:#C9BEB9;margin-top:4px;">{{D_L2}}</div>
+      </td>
+      <td width="50%" class="mcol" style="padding:22px 40px;">
+        <div style="font-family:'Arial Black',Arial,sans-serif;font-size:38px;color:#ffffff;line-height:1;">{{D_N3}}</div>
+        <div style="font-family:Arial,sans-serif;font-size:12px;color:#C9BEB9;margin-top:4px;">{{D_L3}}</div>
+      </td>
+    </tr></table>
+  </td></tr>
+  <tr><td align="center" style="padding:32px 40px 8px;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="#ffffff"><a href="{{LINK}}" target="_blank" style="display:inline-block;padding:16px 46px;font-family:Arial,sans-serif;font-size:16px;font-weight:bold;color:#C41D33;text-decoration:none;text-transform:uppercase;letter-spacing:1px;">{{D_CTA}}</a></td></tr></table>
+  </td></tr>
+  <tr><td align="center" style="padding:26px 40px 38px;font-family:Arial,sans-serif;font-size:11px;line-height:1.6;color:#F1AEB7;">Asociația salvează o inimă &middot; salveazaoinima.ro &middot; <a href="##NEWSMAN:list_unsubscribe##" style="color:#F1AEB7;">Dezabonare</a></td></tr>
+</table>
+</td></tr></table>
+</body></html></script>
+<script type="text/plain" id="tpl_chitanta"><!DOCTYPE html>
+<html lang="ro"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{D_HEADLINE}}</title>
+<!--[if mso]><style>.container{width:600px;}</style><![endif]-->
+<style>@media only screen and (max-width:600px){.container{width:100%!important}}</style></head>
+<body style="margin:0;padding:0;background-color:#E7E4DE;-webkit-text-size-adjust:100%;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#E7E4DE;">{{PREHEADER}}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#E7E4DE" style="font-family:'Courier New',Courier,monospace;"><tr><td align="center" style="padding:34px 12px;">
+<table role="presentation" width="400" cellpadding="0" cellspacing="0" border="0" class="container" style="width:400px;max-width:400px;background-color:#ffffff;border-top:2px dashed #B9B2A6;border-bottom:2px dashed #B9B2A6;">
+  <tr><td align="center" style="padding:26px 32px 0;">
+    <div style="font-family:'Courier New',monospace;font-size:18px;font-weight:bold;letter-spacing:1px;color:#211E1A;">SALVEAZĂ O INIMĂ</div>
+    <div style="font-family:'Courier New',monospace;font-size:11px;letter-spacing:2px;color:#6B655C;margin-top:6px;">* CHITANȚĂ DE IMPACT *</div>
+    <div style="font-family:'Courier New',monospace;font-size:11px;color:#6B655C;margin-top:4px;">{{PERIOADA}}</div>
+  </td></tr>
+  <tr><td style="padding:16px 32px 0;"><div style="border-top:1px dashed #B9B2A6;font-size:1px;line-height:1px;">&nbsp;</div></td></tr>
+  <tr><td style="padding:12px 32px 0;font-family:'Courier New',monospace;font-size:13px;color:#211E1A;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr><td style="padding:5px 0;">{{D_L1}}</td><td align="right" style="padding:5px 0;font-weight:bold;">{{D_N1}}</td></tr>
+      <tr><td style="padding:5px 0;">{{D_L2}}</td><td align="right" style="padding:5px 0;font-weight:bold;">{{D_N2}}</td></tr>
+      <tr><td style="padding:5px 0;">{{D_L3}}</td><td align="right" style="padding:5px 0;font-weight:bold;">{{D_N3}}</td></tr>
+    </table>
+  </td></tr>
+  <tr><td style="padding:10px 32px 0;"><div style="border-top:1px dashed #B9B2A6;font-size:1px;line-height:1px;">&nbsp;</div></td></tr>
+  <tr><td style="padding:12px 32px 0;font-family:'Courier New',monospace;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+      <td style="font-size:14px;font-weight:bold;color:#211E1A;">{{D_STATLABEL}}</td>
+      <td align="right" style="font-size:16px;font-weight:bold;color:#C41D33;">{{D_STATBIG}}</td>
+    </tr></table>
+  </td></tr>
+  <tr><td style="padding:12px 32px 0;"><div style="border-top:1px dashed #B9B2A6;font-size:1px;line-height:1px;">&nbsp;</div></td></tr>
+  <tr><td align="center" style="padding:14px 32px 0;font-family:'Courier New',monospace;font-size:12px;line-height:1.5;color:#43403A;">&#8222;{{D_QUOTE}}&#8221;<br><span style="color:#6B655C;">&#8212; {{D_QAUTHOR}}</span></td></tr>
+  <tr><td align="center" style="padding:18px 32px 0;font-family:'Courier New',monospace;font-size:18px;letter-spacing:1px;color:#211E1A;">||| || |||||| | ||| |||| || |</td></tr>
+  <tr><td align="center" style="padding:6px 32px 0;font-family:'Courier New',monospace;font-size:11px;letter-spacing:4px;color:#6B655C;">MULȚUMIM</td></tr>
+  <tr><td align="center" style="padding:20px 32px 6px;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="#211E1A"><a href="{{LINK}}" target="_blank" style="display:inline-block;padding:13px 30px;font-family:'Courier New',monospace;font-size:13px;font-weight:bold;color:#ffffff;text-decoration:none;letter-spacing:1px;">{{D_CTA}}</a></td></tr></table>
+  </td></tr>
+  <tr><td align="center" style="padding:22px 32px 28px;font-family:'Courier New',monospace;font-size:10px;line-height:1.6;color:#6B655C;">salveazaoinima.ro &middot; <a href="##NEWSMAN:list_unsubscribe##" style="color:#6B655C;">Dezabonare</a></td></tr>
+</table>
+</td></tr></table>
+</body></html></script>
+<script type="text/plain" id="tpl_cronologie"><!DOCTYPE html>
+<html lang="ro"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{D_HEADLINE}}</title>
+<!--[if mso]><style>.container{width:600px;}</style><![endif]-->
+<style>@media only screen and (max-width:600px){.container{width:100%!important}.mh1{font-size:24px!important}.mpad{padding-left:24px!important;padding-right:24px!important}}</style></head>
+<body style="margin:0;padding:0;background-color:#EDEAE4;-webkit-text-size-adjust:100%;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#EDEAE4;">{{PREHEADER}}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#EDEAE4" style="font-family:'Segoe UI',Arial,sans-serif;"><tr><td align="center" style="padding:26px 12px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" class="container" style="width:600px;max-width:600px;background-color:#FFFFFF;">
+  <tr><td class="mpad" style="padding:40px 48px 0;">
+    <div style="font-family:Arial,sans-serif;font-size:11px;font-weight:bold;letter-spacing:2px;color:#C41D33;text-transform:uppercase;">Salvează o inimă</div>
+    <h1 class="mh1" style="font-family:'Segoe UI',Arial,sans-serif;font-size:32px;font-weight:bold;line-height:1.12;color:#1E1B18;margin:12px 0 0;">{{D_HEADLINE}}</h1>
+    <p style="font-family:Arial,sans-serif;font-size:15px;line-height:1.6;color:#5C554E;margin:12px 0 0;">{{D_LEAD}}</p>
+  </td></tr>
+  <tr><td class="mpad" style="padding:28px 48px 0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+      <td width="3" bgcolor="#EAD9DC" style="width:3px;font-size:1px;line-height:1px;">&nbsp;</td>
+      <td style="padding-left:22px;">
+        <div style="font-family:Arial,sans-serif;font-size:11px;font-weight:bold;letter-spacing:1px;color:#C41D33;text-transform:uppercase;">&#9679; Etapa 1</div>
+        <div style="font-family:'Segoe UI',Arial,sans-serif;font-size:20px;font-weight:bold;color:#1E1B18;margin-top:3px;">{{D_N1}} &#183; {{D_L1}}</div>
+        <div style="font-family:Arial,sans-serif;font-size:14px;color:#5C554E;margin:4px 0 22px;line-height:1.55;">Parteneriate care au pornit sprijinul pentru primii copii din program.</div>
+        <div style="font-family:Arial,sans-serif;font-size:11px;font-weight:bold;letter-spacing:1px;color:#C41D33;text-transform:uppercase;">&#9679; Etapa 2</div>
+        <div style="font-family:'Segoe UI',Arial,sans-serif;font-size:20px;font-weight:bold;color:#1E1B18;margin-top:3px;">{{D_N2}} &#183; {{D_L2}}</div>
+        <div style="font-family:Arial,sans-serif;font-size:14px;color:#5C554E;margin:4px 0 22px;line-height:1.55;">Resurse mobilizate prin mecanismul D177 și sponsorizări directe.</div>
+        <div style="font-family:Arial,sans-serif;font-size:11px;font-weight:bold;letter-spacing:1px;color:#C41D33;text-transform:uppercase;">&#9679; Etapa 3</div>
+        <div style="font-family:'Segoe UI',Arial,sans-serif;font-size:20px;font-weight:bold;color:#1E1B18;margin-top:3px;">{{D_N3}} &#183; {{D_L3}}</div>
+        <div style="font-family:Arial,sans-serif;font-size:14px;color:#5C554E;margin:4px 0 22px;line-height:1.55;">O rețea de companii care fac binele parte din strategie.</div>
+        <div style="font-family:Arial,sans-serif;font-size:11px;font-weight:bold;letter-spacing:1px;color:#1E1B18;text-transform:uppercase;">&#9679; Astăzi</div>
+        <div style="font-family:Georgia,serif;font-style:italic;font-size:17px;color:#33291F;margin-top:6px;line-height:1.45;">&#8222;{{D_QUOTE}}&#8221;</div>
+        <div style="font-family:Arial,sans-serif;font-size:12px;color:#A79A93;margin-top:8px;">&#8212; {{D_QAUTHOR}}</div>
+      </td>
+    </tr></table>
+  </td></tr>
+  <tr><td class="mpad" style="padding:26px 48px 0;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="#C41D33" style="border-radius:8px;"><a href="{{LINK}}" target="_blank" style="display:inline-block;padding:14px 34px;font-family:'Segoe UI',Arial,sans-serif;font-size:15px;font-weight:bold;color:#ffffff;text-decoration:none;">{{D_CTA}}</a></td></tr></table>
+  </td></tr>
+  <tr><td class="mpad" style="padding:26px 48px 40px;font-family:Arial,sans-serif;font-size:11px;line-height:1.6;color:#A79A93;border-top:1px solid #EDE7E1;">Asociația salvează o inimă &middot; salveazaoinima.ro &middot; <a href="##NEWSMAN:list_unsubscribe##" style="color:#A79A93;">Dezabonare</a></td></tr>
+</table>
+</td></tr></table>
+</body></html></script>
+<script type="text/plain" id="tpl_certificat"><!DOCTYPE html>
+<html lang="ro"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{D_HEADLINE}}</title>
+<!--[if mso]><style>.container{width:600px;}</style><![endif]-->
+<style>@media only screen and (max-width:600px){.container{width:100%!important}.mtitle{font-size:30px!important}.mpad{padding-left:22px!important;padding-right:22px!important}}</style></head>
+<body style="margin:0;padding:0;background-color:#EFE7D4;-webkit-text-size-adjust:100%;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#EFE7D4;">{{PREHEADER}}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#EFE7D4" style="font-family:Georgia,'Times New Roman',serif;"><tr><td align="center" style="padding:30px 12px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" class="container" style="width:600px;max-width:600px;background-color:#FAF5EA;border:2px solid #C9A94E;">
+  <tr><td style="padding:10px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #D8BE73;"><tr><td align="center" class="mpad" style="padding:38px 44px;">
+      <div style="font-family:Arial,sans-serif;font-size:11px;font-weight:bold;letter-spacing:3px;color:#B08B2E;text-transform:uppercase;">Asociația salvează o inimă</div>
+      <div class="mtitle" style="font-family:Georgia,serif;font-size:42px;line-height:1.08;color:#2C2416;margin-top:16px;">Certificat de<br>recunoștință</div>
+      <div style="width:54px;border-top:2px solid #C9A94E;font-size:1px;line-height:1px;margin:22px auto;">&nbsp;</div>
+      <div style="font-family:Georgia,serif;font-style:italic;font-size:18px;color:#6B5D42;">se acordă, cu recunoștință,</div>
+      <div style="font-family:Georgia,serif;font-size:32px;color:#C41D33;margin-top:8px;">Companiei partenere</div>
+      <p style="font-family:Arial,sans-serif;font-size:14px;line-height:1.7;color:#5A4F3C;margin:20px auto 0;max-width:400px;">{{D_LEAD}}</p>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:28px auto 0;"><tr><td align="center" width="84" height="84" bgcolor="#C41D33" style="width:84px;height:84px;border-radius:999px;font-family:Georgia,serif;color:#ffffff;">
+        <div style="font-size:26px;line-height:1;">&#9829;</div>
+        <div style="font-family:Arial,sans-serif;font-size:9px;letter-spacing:1px;color:#F4D48A;margin-top:4px;">{{PERIOADA}}</div>
+      </td></tr></table>
+      <div style="margin-top:26px;">
+        <div style="font-family:Georgia,serif;font-style:italic;font-size:24px;color:#2C2416;">Vlad Plăcintă</div>
+        <div style="font-family:Arial,sans-serif;font-size:10px;letter-spacing:1px;color:#8A7B5E;text-transform:uppercase;border-top:1px solid #C9A94E;display:inline-block;padding-top:5px;margin-top:4px;">Președinte</div>
+      </div>
+      <div style="font-family:Arial,sans-serif;font-size:10px;color:#A2916E;margin-top:26px;">salveazaoinima.ro &middot; <a href="##NEWSMAN:list_unsubscribe##" style="color:#A2916E;">Dezabonare</a></div>
+    </td></tr></table>
+  </td></tr>
+</table>
+</td></tr></table>
+</body></html></script>
+<script type="text/plain" id="letterDefault">Bună ziua,
+
+Orice antreprenor știe câtă muncă se ascunde în spatele unei companii. În spatele cifrelor din bilanț sunt ani de muncă, investiții, decizii dificile și responsabilități pe care puțini le văd. Sunt nopți în care somnul vine târziu, luni în care fiecare cheltuială trebuie cântărită atent și momente în care grija pentru angajați, clienți și viitorul companiei apasă mai mult decât arată exteriorul.
+
+Sunt taxe, impozite, termene limită, riscuri asumate și multe decizii luate într-un mediu economic care nu oferă întotdeauna certitudini. De aceea, știm că nimic din ceea ce construiește o companie nu vine ușor. Și tocmai pentru că știm acest lucru, credem că este important să vă mulțumim pentru tot ceea ce creați: locuri de muncă, valoare, stabilitate și oportunități pentru oamenii din jurul dumneavoastră.
+
+Există însă momente în care o decizie de business poate depăși granițele companiei și poate ajunge direct în viața unor oameni care trec prin cea mai grea perioadă a existenței lor.
+
+La Asociația „salvează o inimă" întâlnim zilnic părinți care nu mai caută confort, vacanțe sau lucruri materiale. Caută doar o șansă pentru copilul lor. O operație. Un tratament. O terapie care nu mai poate fi amânată. Pentru ei, fiecare zi contează.
+
+Până la data de **{{TERMEN}}, compania dumneavoastră poate redirecționa, prin Declarația D177, până la 20%** din impozitul pe profit sau pe venit către copiii și adulții grav bolnavi pe care îi sprijinim. Nu este o cheltuială suplimentară pentru companie. Este o sumă care a fost deja generată prin munca dumneavoastră, a echipei dumneavoastră și a companiei pe care ați construit-o.
+
+Diferența este că aveți posibilitatea să decideți unde produce impact. Pentru o companie, poate fi o simplă semnătură. Pentru contabil, poate fi încă un document. Pentru o familie care încearcă să strângă bani pentru o operație salvatoare, poate fi vestea care le redă speranța. Pentru un copil, poate însemna tratamentul care îi oferă șansa la o viață normală.
+
+Astăzi nu vă cerem o donație. Vă invităm doar să transformați o parte din impozitul pe care compania dumneavoastră îl datorează statului într-un ajutor concret pentru oameni care nu mai au timp să aștepte.
+
+Vă mulțumim pentru munca pe care o depuneți zi de zi și pentru faptul că luați în considerare posibilitatea de a transforma succesul companiei dumneavoastră într-o șansă la viață pentru cineva care are nevoie de ajutor acum.</script>
+
+<script>
+/* Varianta (persoane fizice / juridice) vine din login prin localStorage — o pune
+   editor.tsx. Aici e varianta PERSOANE JURIDICE (D177). */
+/* Varianta e fixată în fișier (editor.tsx încarcă artefactul corect per rută),
+   deci NU mai citim dintr-o cheie localStorage comună — evită cursa PF/PJ când
+   ambele sunt deschise în taburi diferite pe aceeași origine. */
+var VARIANT = 'pj';
+(function(){
+  var b = document.getElementById('variantBadge');
+  if(!b) return;
+  if(VARIANT === 'pf'){ b.textContent = 'PERSOANE FIZICE'; b.style.background = 'rgba(255,255,255,.22)'; b.style.color = '#fff'; }
+  else { b.textContent = 'PERSOANE JURIDICE'; b.style.background = '#0E7C86'; b.style.color = '#fff'; }
+})();
+
+var tpl = document.getElementById('tpl').textContent;
+document.getElementById('SCRISOARE').value = document.getElementById('letterDefault').textContent.trim();
+
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+var PSTYLE = 'margin:0 0 16px 0; font-size:17px; line-height:28px; color:#55504A;';
+function letterHtml(txt){
+  return txt.trim().split(/\n\s*\n/).map(function(p){
+    var t = esc(p.trim())
+      .replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>')
+      .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+      .replace(/\*([^*\n]+)\*/g,'<em>$1</em>')
+      .replace(/\n/g,'<br>');
+    return '<p style="' + PSTYLE + '">' + t + '</p>';
+  }).join('\n                  ');
+}
+/* Ce blocuri conține fiecare șablon (blocurile lipsă se elimină prin marcajele
+   <!--X_START--> / <!--X_END-->, refolosind blocurile validate). */
+var TPL_BLOCKS = {
+  d177:      { TERMEN:1, HTITLU:1, BTND177:1, BTNSEC:1, HOWTO:1, ABOUT:1 },
+  propunere: { HTITLU:1, BENEFITS:1, ABOUT:1, BTNSOFT:1 },
+  multumire: { HTITLU:1, ABOUT:1, BTNSOFT:1 },
+  raport:    { HTITLU:1, BIGSTATS:1, ABOUT:1, BTNSOFT:1 },
+  eveniment: { EVENT:1 },
+  bunvenit:  { HTITLU:1, ABOUT:1, BTNSOFT:1 }
+};
+function currentTpl(){ var e=document.getElementById('TEMPLATE'); return (e && TPL_BLOCKS[e.value]) ? e.value : 'd177'; }
+/* Arată/ascunde secțiunile de câmpuri în funcție de șablon (atribut data-tpl). */
+function syncFields(){
+  var te=document.getElementById('TEMPLATE');var t=te?te.value:'d177';
+  var els=document.querySelectorAll('[data-tpl]');
+  for(var i=0;i<els.length;i++){
+    var list=els[i].getAttribute('data-tpl').split(',');
+    els[i].style.display = (list.indexOf(t)>=0) ? '' : 'none';
+  }
+}
+var DESIGN_TPL={design_editorial:'tpl_editorial',design_foto:'tpl_foto',design_bold:'tpl_bold',design_minimal:'tpl_minimal',design_gazeta:'tpl_gazeta',design_warm:'tpl_warm',design_modular:'tpl_modular',design_scrisoare:'tpl_scrisoare',design_manifest:'tpl_manifest',design_chitanta:'tpl_chitanta',design_cronologie:'tpl_cronologie',design_certificat:'tpl_certificat'};
+function isDesign(){var e=document.getElementById('TEMPLATE');return e&&DESIGN_TPL[e.value];}
+function build(forExport, letterOverride){
+  var _d=isDesign();
+  if(_d){
+    var dout=document.getElementById(_d).textContent;
+    ['LINK','PREHEADER','PERIOADA','HERO','D_HEADLINE','D_LEAD','D_STATBIG','D_STATLABEL','D_QUOTE','D_QAUTHOR','D_N1','D_L1','D_N2','D_L2','D_N3','D_L3','D_CTA','TERMEN'].forEach(function(id){var e=document.getElementById(id);if(e){dout=dout.split('{{'+id+'}}').join(e.value);}});
+    return dout;
+  }
+  var out = tpl;
+  ['TITLU','HERO_TITLU','PREHEADER','PERIOADA','LINK','S1','S2','S3','S4','S5','HERO'].forEach(function(id){
+    out = out.split('{{' + id + '}}').join(document.getElementById(id).value);
+  });
+  ['EV_TITLU','EV_DATA','EV_LOC','CTA_TEXT','CTA_LINK','B1_TITLU','B1_TEXT','B2_TITLU','B2_TEXT','B3_TITLU','B3_TEXT'].forEach(function(id){ var e=document.getElementById(id); if(e){ out = out.split('{{'+id+'}}').join(e.value); } });
+  out = out.split('{{SCRISOARE}}').join(letterHtml(letterOverride != null ? letterOverride : document.getElementById('SCRISOARE').value));
+  // TERMEN ultimul, ca să sincronizeze eticheta + subiect + preheader + scrisoarea deodată
+  out = out.split('{{TERMEN}}').join(document.getElementById('TERMEN').value);
+  var BLK = TPL_BLOCKS[currentTpl()];
+  ['TERMEN','HTITLU','BTND177','BTNSEC','HOWTO','ABOUT','EVENT','BENEFITS','BIGSTATS','BTNSOFT'].forEach(function(b){
+    if(!BLK[b]){ out = out.replace(new RegExp('<!--'+b+'_START-->[\\s\\S]*?<!--'+b+'_END-->'), ''); }
+  });
+  return out;
+}
+
+/* ===== Preview: Desktop / Mobil / Mobil dark ===== */
+var previewMode = 'desktop';
+var DARK_SIM = '<scr'+'ipt>(function(){'
+ +'function pc(c){var m=/#([0-9a-fA-F]{6})/.exec(c||"");if(m){var h=m[1];return[parseInt(h.substr(0,2),16),parseInt(h.substr(2,2),16),parseInt(h.substr(4,2),16)];}m=/rgb\\((\\d+),\\s*(\\d+),\\s*(\\d+)/.exec(c||"");return m?[+m[1],+m[2],+m[3]]:null;}'
+ +'function lum(r){return(0.299*r[0]+0.587*r[1]+0.114*r[2])/255;}'
+ +'function sat(r){var x=Math.max(r[0],r[1],r[2]),n=Math.min(r[0],r[1],r[2]);return x?(x-n)/x:0;}'
+ +'var all=document.querySelectorAll("*");'
+ +'for(var i=0;i<all.length;i++){var el=all[i],st=el.style;'
+ +'var bi=st.backgroundImage&&st.backgroundImage!=="none";'
+ +'var bg=st.backgroundColor||(el.getAttribute&&el.getAttribute("bgcolor"))||"";var c=pc(bg);'
+ +'if(c&&!bi&&lum(c)>0.55&&sat(c)<0.35){var v=Math.round(14+Math.pow(lum(c),3)*26);el.style.setProperty("background-color","rgb("+v+","+v+","+v+")","important");}'
+ +'var tc=pc(st.color);'
+ +'if(tc&&lum(tc)<0.72&&sat(tc)<0.42){var t=Math.round(150+(0.72-lum(tc))*160);if(t>235)t=235;el.style.setProperty("color","rgb("+t+","+t+","+t+")","important");}'
+ +'["borderTopColor","borderRightColor","borderBottomColor","borderLeftColor"].forEach(function(p){var b=pc(st[p]);if(b&&lum(b)>0.55&&sat(b)<0.35){st[p]="rgb(58,58,58)";}});'
+ +'}'
+ +'document.documentElement.style.setProperty("background-color","#111111","important");'
+ +'})();</scr'+'ipt>';
+document.querySelectorAll('.prevbar button').forEach(function(b){
+  b.addEventListener('click', function(){
+    previewMode = b.getAttribute('data-pm');
+    document.querySelectorAll('.prevbar button').forEach(function(x){ x.classList.toggle('on', x === b); });
+    refresh();
+  });
+});
+function applyPreviewMode(){
+  var fr = document.getElementById('frame');
+  fr.style.width = (previewMode === 'desktop') ? '100%' : '393px';
+  fr.style.borderLeft = fr.style.borderRight = (previewMode === 'desktop') ? '0' : '1px solid #C9C2B6';
+}
+
+function updateSubjHint(){
+  var el = document.getElementById('subjHint'); if(!el) return;
+  var raw = document.getElementById('TITLU').value.split('{{TERMEN}}').join(document.getElementById('TERMEN').value);
+  var n = raw.length;
+  var extra = n > 78 ? ' — prea lung; pe telefon se văd ~45, pune esențialul la început' : (n > 45 ? ' — pe telefon se văd ~45' : '');
+  el.textContent = n + ' caractere' + extra;
+  el.style.color = n > 78 ? '#C41D33' : '#7A736A';
+}
+function refresh(){
+  var remOn = document.getElementById('remBg').classList.contains('show');
+  document.getElementById('frame').srcdoc = build(false, remOn ? document.getElementById('remText').value : null) + (previewMode === 'dark' ? DARK_SIM : '');
+  applyPreviewMode();
+  updateSubjHint();
+  syncFields();
+}
+
+/* ===== Salvare automată a lucrului (draft în browser) ===== */
+var DRAFT_KEY = 'soi_draft_' + VARIANT + '_v1';
+function draftFields(){
+  return document.querySelectorAll('.form input[type=text], .form input[type=checkbox], .form textarea, .form select');
+}
+var _draftWarned = false;
+function saveDraft(){
+  try {
+    var d = {};
+    draftFields().forEach(function(el){
+      if(!el.id) return;
+      d[el.id] = (el.type === 'checkbox') ? el.checked : el.value;
+    });
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(d));
+  } catch(e){
+    if(!_draftWarned){ _draftWarned = true; toast('⚠ Nu pot salva automat (memoria browserului e plină sau blocată). Copiază codul acum, ca să nu pierzi lucrul.'); }
+  }
+}
+function restoreDraft(){
+  try {
+    var raw = localStorage.getItem(DRAFT_KEY);
+    if(!raw) return false;
+    var d = JSON.parse(raw);
+    draftFields().forEach(function(el){
+      if(!el.id || !(el.id in d)) return;
+      if(el.type === 'checkbox'){ el.checked = !!d[el.id]; }
+      else { el.value = d[el.id]; }
+    });
+    return true;
+  } catch(e){ return false; }
+}
+document.getElementById('resetBtn').onclick = function(){
+  if(!confirm('Începi o campanie nouă? Tot ce ai completat acum se șterge și revin valorile de start.')) return;
+  try { localStorage.removeItem(DRAFT_KEY); } catch(e){}
+  location.reload();
+};
+
+/* ===== Butoane B / I — înfășoară textul selectat în ** sau * ===== */
+document.querySelectorAll('.fmtbar button').forEach(function(b){
+  b.addEventListener('click', function(){
+    var ta = document.getElementById(b.getAttribute('data-ta'));
+    var w = b.getAttribute('data-wrap');
+    var s = ta.selectionStart, e = ta.selectionEnd;
+    var sel = ta.value.substring(s, e);
+    if(!sel){ toast('Selectează întâi, cu mouse-ul, textul pe care vrei să-l formatezi — apoi apasă B sau I.'); ta.focus(); return; }
+    ta.value = ta.value.substring(0, s) + w + sel + w + ta.value.substring(e);
+    ta.focus();
+    ta.setSelectionRange(s + w.length, s + w.length + sel.length);
+    ta.dispatchEvent(new Event('input'));
+  });
+});
+
+/* ===== Tab-uri pe mobil: Editez / Previzualizez ===== */
+document.querySelectorAll('.mtabs button').forEach(function(b){
+  b.addEventListener('click', function(){
+    document.querySelectorAll('.mtabs button').forEach(function(x){ x.classList.toggle('on', x === b); });
+    document.querySelector('.wrap').classList.toggle('mp-prev', b.getAttribute('data-mt') === 'prev');
+  });
+});
+
+document.querySelectorAll('input[type=text], input[type=checkbox], textarea, select').forEach(function(el){ el.addEventListener('input', function(){ refresh(); }); el.addEventListener('change', function(){ refresh(); }); });
+var hadDraft = restoreDraft();
+var _origRefresh = refresh;
+refresh = function(){ _origRefresh(); saveDraft(); };
+refresh();
+if(hadDraft){ setTimeout(function(){ toast('Am reîncărcat ultima campanie la care ai lucrat (se salvează automat).'); }, 300); }
+
+function toast(msg){
+  var ok = document.getElementById('ok');
+  ok.textContent = msg;
+  ok.classList.add('show');
+  setTimeout(function(){ ok.classList.remove('show'); }, 4500);
+}
+
+/* ===== Verificări înainte de copiere ===== */
+function val(id){ return document.getElementById(id).value; }
+var LUNI = ['ianuarie','februarie','martie','aprilie','mai','iunie','iulie','august','septembrie','octombrie','noiembrie','decembrie'];
+function parseTermen(s){
+  var m = (s || '').toLowerCase().match(/(\d{1,2})\s+([a-zăâîșț]+)\s+(\d{4})/);
+  if(!m) return null;
+  var lu = LUNI.indexOf(m[2]);
+  if(lu < 0) return null;
+  return new Date(+m[3], lu, +m[1]);
+}
+function zileRamase(){
+  var d = parseTermen(val('TERMEN').trim());
+  if(!d) return null;
+  var azi = new Date(); azi.setHours(0,0,0,0);
+  return Math.round((d - azi) / 86400000);
+}
+function runChecks(){
+  var w = [];
+  var titlu = val('TITLU').split('{{TERMEN}}').join(val('TERMEN')), pre = val('PREHEADER'), letter = val('SCRISOARE'), termen = val('TERMEN').trim();
+
+  // Termen D177 completat + în viitor
+  if(!termen){ w.push({level:'error', msg:'Termenul D177 e gol — completează data-limită (ex. 25 iunie 2026).'}); }
+  else {
+    var zr = zileRamase();
+    if(zr === null) w.push({level:'warn', msg:'Nu am putut înțelege termenul „' + termen + '" — scrie-l ca „25 iunie 2026".'});
+    else if(zr < 0) w.push({level:'error', msg:'Termenul D177 („' + termen + '") pare să fie în trecut — verifică data-limită.'});
+  }
+
+  // Data din scrisoare la zi
+  if(termen && letter.indexOf('{{TERMEN}}') === -1 && letter.toLowerCase().indexOf(termen.toLowerCase()) === -1){
+    w.push({level:'warn', msg:'Scrisoarea nu conține termenul „' + termen + '" — folosește {{TERMEN}} sau verifică data din text.'});
+  }
+
+  // Link buton principal
+  var link = val('LINK').trim();
+  if(!/^https?:\/\//.test(link)) w.push({level:'error', msg:'Linkul butonului „Completează pentru D177" nu începe cu https:// — nu va funcționa.'});
+
+  // Subiect
+  if(!titlu.trim()) w.push({level:'warn', msg:'Subiectul e gol.'});
+  else if(titlu.length > 78) w.push({level:'warn', msg:'Subiectul are ' + titlu.length + ' caractere — pe telefon se văd cam 40-50; ce e esențial pune la început.'});
+
+  // Preheader gol
+  if(!pre.trim()) w.push({level:'warn', msg:'Textul de preview din inbox (preheader) e gol — contează mult pentru rata de deschidere.'});
+
+  // Imagine hero
+  if(!val('HERO').trim()) w.push({level:'warn', msg:'Nu ai pus nicio imagine hero (URL gol).'});
+
+  return w;
+}
+function guarded(action){
+  var w = runChecks();
+  if(!w.length){ action(true); return; }
+  var ul = document.getElementById('checkList');
+  ul.innerHTML = '';
+  w.forEach(function(item){ var li = document.createElement('li'); li.textContent = item.msg; li.className = (item.level === 'error') ? 'err' : 'warn'; ul.appendChild(li); });
+  var bg = document.getElementById('checkBg');
+  bg.classList.add('show');
+  document.getElementById('checkFix').onclick = function(){ bg.classList.remove('show'); };
+  document.getElementById('checkGo').onclick = function(){ bg.classList.remove('show'); action(false); };
+}
+function copyToClipboard(code, done){
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(code).then(done, done); }
+  else { var ta=document.createElement('textarea'); ta.value=code; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); done(); }
+}
+
+document.getElementById('copyBtn').onclick = function(){
+  guarded(function(clean){
+    var code = build(true);
+    var msg = (clean ? '✔ Toate verificările trecute. ' : '') + 'Copiat! Lipește în Newsman → Copy paste HTML.';
+    copyToClipboard(code, function(){ toast(msg); });
+  });
+};
+document.getElementById('cvBtn').onclick = function(){
+  guarded(function(){
+    var code = build(true)
+      .replace(/<!--\[if[\s\S]*?<!\[endif\]-->/g, '')   // blocuri condiționale Outlook
+      .replace(/<!--[\s\S]*?-->/g, '');                  // toate comentariile HTML
+    copyToClipboard(code, function(){ toast('Copiat pentru conversie! În Newsman: editorul drag & drop → Export / Import → Convertire din HTML (BETA) → lipește → Convertește HTML → salvează ca template.'); });
+  });
+};
+
+/* ===== Varianta reminder (countdown la termenul D177) ===== */
+function reminderLetter(){
+  var termen = val('TERMEN').trim();
+  var zr = zileRamase();
+  var cand;
+  if(zr === null) cand = 'până pe ' + (termen || 'termenul D177');
+  else if(zr <= 0) cand = '**astăzi este ultima zi**';
+  else if(zr === 1) cand = '**a mai rămas o singură zi**';
+  else cand = '**au mai rămas ' + zr + ' zile**';
+  return [
+    'Vă scriu din nou, pe scurt, pentru că timpul e pe sfârșite: ' + cand + ' până la termenul pentru Declarația D177 (' + termen + ').',
+    'Până atunci, compania dumneavoastră poate redirecționa **până la 20% din impozitul pe profit** către copiii și adulții grav bolnavi pe care îi sprijinim — fără niciun cost suplimentar. Este o sumă deja generată prin munca dumneavoastră; alegeți doar unde produce impact.',
+    'Dacă ați semnat deja, vă mulțumim din suflet. Dacă nu ați apucat, acesta este momentul — o semnătură pusă la timp poate însemna enorm pentru un copil care așteaptă tratamentul.',
+    'Vă stăm la dispoziție cu contractul de sponsorizare completat și cu orice detaliu are nevoie contabilul dumneavoastră.',
+    'Cu recunoștință și respect,'
+  ].join('\n\n');
+}
+document.getElementById('remBtn').onclick = function(){
+  document.getElementById('remText').value = reminderLetter();
+  document.getElementById('remBg').classList.add('show');
+  refresh();
+};
+document.getElementById('remText').addEventListener('input', function(){ refresh(); });
+document.getElementById('remCancel').onclick = function(){
+  document.getElementById('remBg').classList.remove('show');
+  refresh();
+};
+document.getElementById('remCopy').onclick = function(){
+  guarded(function(){
+    var zr = zileRamase();
+    var code = build(true, document.getElementById('remText').value);
+    var sug = (zr !== null && zr > 0) ? ('„D177 — au mai rămas ' + zr + ' zile"') : '„D177 — ultimele zile"';
+    copyToClipboard(code, function(){
+      document.getElementById('remBg').classList.remove('show');
+      refresh();
+      toast('Copiat! Varianta reminder. În Newsman, schimbă subiectul, ex.: ' + sug + '.');
+    });
+  });
+};
+</script>
+</body>
+</html>

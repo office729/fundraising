@@ -38,27 +38,23 @@ export default async function LandingPage() {
         </div>
 
         <div className="relative mx-auto max-w-3xl">
-          <span className="inline-block rounded-full border border-white/30 bg-white/10 px-3.5 py-1.5 text-xs font-bold tracking-wide text-white/90 uppercase">
-            {dict.hero.eyebrow}
-          </span>
-          <h1 className="font-display mt-4 text-[28px] leading-[1.15] font-bold text-balance sm:text-[36px]">
+          <h1 className="font-display text-[28px] leading-[1.15] font-bold text-balance sm:text-[36px]">
             {dict.hero.titlePre}
             <span className="text-brand-green">{dict.hero.titleHighlight}</span>
             {dict.hero.titlePost}
           </h1>
-          <p className="mx-auto mt-3 max-w-xl text-base leading-relaxed text-white/75 sm:text-lg">{dict.hero.subtitle}</p>
           <div className="mt-6 flex flex-wrap justify-center gap-3.5">
-            <a
-              href="mailto:vlad.placinta@fundrasingacademy.ro"
+            <Link
+              href="/signup"
               className="rounded-md bg-brand-green px-7 py-3.5 font-bold text-white transition hover:bg-brand-green-hover"
             >
-              {dict.hero.ctaEnroll}
-            </a>
+              {dict.hero.ctaPrimary}
+            </Link>
             <Link
-              href="/hub"
+              href="#platforma"
               className="rounded-md border-[1.5px] border-[#2e639b] px-7 py-3.5 font-bold text-white transition hover:border-white"
             >
-              {dict.hero.ctaHub}
+              {dict.hero.ctaSecondary}
             </Link>
           </div>
 
@@ -84,28 +80,11 @@ export default async function LandingPage() {
         </svg>
       </section>
 
-      {/* Hub callout */}
-      <section className="px-[6%] py-14">
-        <div className="mx-auto flex max-w-4xl flex-col items-center gap-5 rounded-2xl border-2 border-brand-green bg-brand-green-soft p-8 text-center sm:flex-row sm:text-left">
-          <div className="flex-1">
-            <span className="text-xs font-extrabold tracking-wide text-brand-green uppercase">{dict.hubCallout.badge}</span>
-            <h2 className="font-display mt-1 text-xl font-bold text-ink">{dict.hubCallout.title}</h2>
-            <p className="mt-2 text-[14.5px] leading-relaxed text-body">{dict.hubCallout.desc}</p>
-          </div>
-          <Link
-            href="/hub"
-            className="shrink-0 rounded-md bg-brand-green px-6 py-3 font-bold text-white transition hover:bg-brand-green-hover"
-          >
-            {dict.hubCallout.cta}
-          </Link>
-        </div>
-      </section>
-
-      {/* Ce vei învăța */}
-      <section id="ce-vei-invata" className="px-[6%] py-16">
-        <h2 className="font-display mx-auto max-w-2xl text-center text-[32px] font-bold text-ink">{dict.lectii.title}</h2>
+      {/* Platforma */}
+      <section id="platforma" className="px-[6%] py-16">
+        <h2 className="font-display mx-auto max-w-2xl text-center text-[32px] font-bold text-ink">{dict.platforma.title}</h2>
         <div className="mx-auto mt-10 grid max-w-5xl grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {dict.lectii.items.map((l) => (
+          {dict.platforma.items.map((l) => (
             <div key={l.n} className="rounded-xl border border-line bg-panel p-6">
               <span className="font-display text-2xl font-extrabold text-brand-green/40">{l.n}</span>
               <h3 className="font-display mt-2 text-base font-bold text-ink">{l.t}</h3>

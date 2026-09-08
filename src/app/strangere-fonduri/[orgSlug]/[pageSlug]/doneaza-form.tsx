@@ -103,6 +103,10 @@ export function DoneazaForm({ orgSlug, pageSlug }: { orgSlug: string; pageSlug: 
             </Link>
           </span>
         </label>
+        <label className="flex items-start gap-2 text-[13px] text-body">
+          <input type="checkbox" name="consimtamantWhatsapp" className="mt-0.5 h-4 w-4 rounded border-line" />
+          <span>Sunt de acord să fiu adăugat în grupul de WhatsApp al organizației (opțional)</span>
+        </label>
       </div>
 
       {state.error && <p className="text-sm text-red-600">{state.error}</p>}

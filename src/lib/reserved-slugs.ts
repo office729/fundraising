@@ -5,6 +5,7 @@
 const RESERVED_SLUGS = new Set([
   "api",
   "auth",
+  "automatizare",
   "blog",
   "ce-facem",
   "cine-suntem",
@@ -26,7 +27,6 @@ const RESERVED_SLUGS = new Set([
   "strangere-fonduri",
   "studii-de-caz",
   "termeni",
-  "website-fundraising",
 ]);
 
 export function esteSlugRezervat(slug: string): boolean {

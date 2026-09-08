@@ -6,75 +6,39 @@ import StripeSDK from "stripe";
 import type Stripe from "stripe";
 
 import { db } from "@/lib/db";
-import type { Tx } from "@/lib/db";
-import { donatoriReali, fundraisingDonations, fundraisingPages } from "@/lib/db/schema";
+import { fundraisingDonations } from "@/lib/db/schema";
+import { htmlEmailMultumireDonatie, subiectEmailMultumireDonatie } from "@/lib/donation-email-template";
+import { emailConfigurat, trimiteEmail } from "@/lib/email";
+import { crediteazaPaginaSiDonator, decrediteazaPaginaSiDonator } from "@/lib/fundraising-credit";
 import { getStripe } from "@/lib/stripe";
 
-// Incrementează cache-ul sumei strânse pe pagină și sincronizează donatorul
-// real (CRM) — comun donației inițiale (checkout.session.completed) și
-// reînnoirilor lunare (invoice.paid). NU se apelează dacă donatorul n-a lăsat
-// un email (nu poate fi sincronizat în CRM), dar suma tot se adaugă pe pagină.
-async function crediteazaPaginaSiDonator(
-  tx: Tx,
-  params: { pageId: string; orgId: string; suma: number; numeDonator: string | null; emailDonator: string | null; telefonDonator: string | null },
-) {
-  const pagina = await tx.select({ titlu: fundraisingPages.titlu }).from(fundraisingPages).where(eq(fundraisingPages.id, params.pageId)).limit(1);
-
-  await tx
-    .update(fundraisingPages)
-    .set({ sumaStransa: sql`${fundraisingPages.sumaStransa} + ${params.suma}` })
-    .where(eq(fundraisingPages.id, params.pageId));
-
-  if (!params.emailDonator) return;
-
-  const sursa = `Pagină strângere fonduri: ${pagina[0]?.titlu ?? "necunoscută"}`;
-  await tx
-    .insert(donatoriReali)
-    .values({
-      id: randomUUID(),
-      orgId: params.orgId,
-      nume: params.numeDonator ?? "Donator",
-      email: params.emailDonator,
-      telefon: params.telefonDonator,
-      sursa,
-      metodaPlata: "Card (Stripe)",
-      totalDonat: params.suma,
-      numarDonatii: 1,
-    })
-    .onConflictDoUpdate({
-      target: [donatoriReali.orgId, donatoriReali.email],
-      set: {
-        nume: params.numeDonator ?? sql`${donatoriReali.nume}`,
-        telefon: params.telefonDonator ?? sql`${donatoriReali.telefon}`,
-        sursa,
-        totalDonat: sql`${donatoriReali.totalDonat} + ${params.suma}`,
-        numarDonatii: sql`${donatoriReali.numarDonatii} + 1`,
-        ultimaDonatieLa: sql`now()`,
-      },
+// Trimite emailul de mulțumire DUPĂ ce tranzacția de creditare s-a închis (nu
+// ține conexiunea DB ocupată în timpul apelului HTTP către Resend) —
+// best-effort: o eroare aici nu trebuie să facă Stripe să reîncerce webhook-ul,
+// plata tot s-a confirmat și creditat, indiferent dacă emailul a plecat.
+async function trimiteEmailMultumireDacaSePoate(params: {
+  emailDonator: string | null;
+  numeDonator: string | null;
+  suma: number;
+  recurenta: boolean;
+  info: { pageTitlu: string; orgName: string } | null;
+}) {
+  if (!params.emailDonator || !params.info || !emailConfigurat()) return;
+  try {
+    await trimiteEmail({
+      to: params.emailDonator,
+      subiect: subiectEmailMultumireDonatie(params.info.orgName),
+      html: htmlEmailMultumireDonatie({
+        numeDonator: params.numeDonator ?? "Donator",
+        suma: params.suma,
+        pageTitlu: params.info.pageTitlu,
+        orgName: params.info.orgName,
+        recurenta: params.recurenta,
+      }),
     });
-}
-
-// Simetricul lui crediteazaPaginaSiDonator — apelat la rambursare/contestație,
-// pentru o donație deja "reusita". greatest(0, ...) evită sume negative dacă
-// vreodată cache-ul era deja desincronizat.
-async function decrediteazaPaginaSiDonator(
-  tx: Tx,
-  params: { pageId: string; orgId: string; suma: number; emailDonator: string | null },
-) {
-  await tx
-    .update(fundraisingPages)
-    .set({ sumaStransa: sql`greatest(0, ${fundraisingPages.sumaStransa} - ${params.suma})` })
-    .where(eq(fundraisingPages.id, params.pageId));
-
-  if (!params.emailDonator) return;
-
-  await tx
-    .update(donatoriReali)
-    .set({
-      totalDonat: sql`greatest(0, ${donatoriReali.totalDonat} - ${params.suma})`,
-      numarDonatii: sql`greatest(0, ${donatoriReali.numarDonatii} - 1)`,
-    })
-    .where(and(eq(donatoriReali.orgId, params.orgId), eq(donatoriReali.email, params.emailDonator)));
+  } catch (e) {
+    console.error("Eroare la trimiterea emailului de mulțumire:", e);
+  }
 }
 
 function idDin(ref: string | { id: string } | null | undefined): string | null {
@@ -111,6 +75,7 @@ export async function POST(req: Request) {
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
+    let emailParams: Parameters<typeof trimiteEmailMultumireDacaSePoate>[0] | null = null;
     try {
       await db.transaction(async (tx) => {
         await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
@@ -148,19 +113,28 @@ export async function POST(req: Request) {
         // Sincronizare cu CRM-ul organizației — donatorul real (nu prototipul
         // mock) apare/se actualizează automat, indiferent dacă a bifat
         // "nu-mi afișa numele public" (asta ascunde doar afișarea PUBLICĂ).
-        await crediteazaPaginaSiDonator(tx, {
+        const info = await crediteazaPaginaSiDonator(tx, {
           pageId: donatie[0].pageId,
           orgId: donatie[0].orgId,
           suma: donatie[0].suma,
           numeDonator: donatie[0].numeDonator,
           emailDonator: donatie[0].emailDonator,
           telefonDonator: donatie[0].telefonDonator,
+          consimtamantWhatsapp: donatie[0].consimtamantWhatsapp,
         });
+        emailParams = {
+          emailDonator: donatie[0].emailDonator,
+          numeDonator: donatie[0].numeDonator,
+          suma: donatie[0].suma,
+          recurenta: donatie[0].recurenta,
+          info,
+        };
       });
     } catch (e) {
       console.error("Eroare la procesarea checkout.session.completed:", e);
       return NextResponse.json({ error: "processing_failed" }, { status: 500 });
     }
+    if (emailParams) await trimiteEmailMultumireDacaSePoate(emailParams);
   }
 
   if (event.type === "checkout.session.expired") {
@@ -188,6 +162,7 @@ export async function POST(req: Request) {
     const subId = typeof subscriptionRef === "string" ? subscriptionRef : (subscriptionRef?.id ?? null);
 
     if (invoice.billing_reason === "subscription_cycle" && subId) {
+      let emailParams: Parameters<typeof trimiteEmailMultumireDacaSePoate>[0] | null = null;
       try {
         const subscription = await getStripe().subscriptions.retrieve(subId);
         const md = subscription.metadata;
@@ -223,6 +198,7 @@ export async function POST(req: Request) {
               anonim: md.anonim === "true",
               consimtamantGdpr: md.consimtamantGdpr === "true",
               consimtamantTermeni: md.consimtamantTermeni === "true",
+              consimtamantWhatsapp: md.consimtamantWhatsapp === "true",
               stripeSessionId: `invoice_${invoice.id}`,
               recurenta: true,
               stripeSubscriptionId: subId,
@@ -230,14 +206,22 @@ export async function POST(req: Request) {
               status: "reusita",
             });
 
-            await crediteazaPaginaSiDonator(tx, {
+            const info = await crediteazaPaginaSiDonator(tx, {
               pageId: md.pageId,
               orgId: md.orgId,
               suma,
               numeDonator: md.numeDonator || null,
               emailDonator: md.emailDonator || null,
               telefonDonator: md.telefonDonator || null,
+              consimtamantWhatsapp: md.consimtamantWhatsapp === "true",
             });
+            emailParams = {
+              emailDonator: md.emailDonator || null,
+              numeDonator: md.numeDonator || null,
+              suma,
+              recurenta: true,
+              info,
+            };
           });
         }
       } catch (e) {
@@ -247,6 +231,7 @@ export async function POST(req: Request) {
         // în sumaStransa/donatoriReali, fără nicio alertă vizibilă.
         return NextResponse.json({ error: "processing_failed" }, { status: 500 });
       }
+      if (emailParams) await trimiteEmailMultumireDacaSePoate(emailParams);
     }
   }
 

@@ -13,7 +13,7 @@ export const MARKETING_DICT = {
       { href: "/cine-suntem", label: "Cine suntem?" },
       { href: "/ce-facem", label: "Ce facem?" },
       { href: "/hub", label: "Hub Fundraising" },
-      { href: "/website-fundraising", label: "Website Fundraising" },
+      { href: "/automatizare", label: "Automatizare" },
     ],
     header: {
       consulting: "Consiliere 1 la 1",
@@ -22,43 +22,34 @@ export const MARKETING_DICT = {
       closeMenu: "Închide meniul",
     },
     hero: {
-      eyebrow: "Marketing și fundraising pentru ONG-uri",
-      titlePre: "Ghidăm ",
-      titleHighlight: "100 de ONG-uri",
-      titlePost: " către cele mai bune practici de fundraising",
-      subtitle:
-        "Cursuri, consiliere 1 la 1 și instrumente practice de la Vlad Plăcintă, coordonator a peste 28 de milioane de euro strânși pentru cauze umanitare.",
-      ctaEnroll: "Înscrie-te la curs",
-      ctaHub: "Explorează Hub-ul →",
+      titlePre: "Platforma care organizează ",
+      titleHighlight: "donatorii, companiile și campaniile",
+      titlePost: " ONG-ului tău",
+      ctaPrimary: "Începe trial gratuit",
+      ctaSecondary: "Vezi platforma →",
       stats: [
         { n: "28M€+", l: "strânși pentru cauze umanitare" },
-        { n: "100", l: "ONG-uri ghidate" },
-        { n: "6", l: "module de curs practic" },
+        { n: "9", l: "instrumente incluse în platformă" },
+        { n: "14 zile", l: "trial gratuit, fără card" },
       ],
     },
-    hubCallout: {
-      badge: "Nou",
-      title: "Hub Fundraising — instrumente contra cost",
-      desc: "Ghiduri și template-uri descărcabile, calculatoare interactive, comunitate privată și consultanță premium. Individual sau cu abonament Hub Pro.",
-      cta: "Intră în Hub →",
-    },
-    lectii: {
-      title: "Ce vei învăța?",
+    platforma: {
+      title: "Tot ce are nevoie ONG-ul tău, într-un singur loc",
       items: [
-        { n: "01", t: "Început în Fundraising", d: "Strategiile fundamentale pentru a planifica și implementa campanii de succes, pas cu pas." },
-        { n: "02", t: "AI în Fundraising", d: "Cum transformă inteligența artificială fundraising-ul: automatizare, personalizare, analiza datelor." },
-        { n: "03", t: "Avatarul donatorului ideal", d: "Definește clar cine sunt donatorii tăi ideali pentru comunicare și strategii eficiente." },
-        { n: "04", t: "Sponsorizări și parteneriate", d: "Dezvoltă parteneriate care sprijină financiar și amplifică impactul cauzei tale." },
-        { n: "05", t: "Social media și PR", d: "Crește vizibilitatea, consolidează relațiile și atrage susținători activi." },
-        { n: "06", t: "Monitorizare și evaluare", d: "Înțelege ce a funcționat și ce nu, ca să crești de la o campanie la alta." },
+        { n: "01", t: "CRM Donatori", d: "Toți donatorii persoane fizice, cu istoric complet de donații, segmentare și notițe — populat automat din paginile de colectare." },
+        { n: "02", t: "CRM Companii & Sponsorizări", d: "Urmărești firmele partenere de la primul contact până la contract semnat și sponsorizare încasată." },
+        { n: "03", t: "Pagini de donație online", d: "Creezi o pagină de colectare pentru fiecare caz, accepți donații cu cardul, iar donatorul primește automat mesaj și email de mulțumire." },
+        { n: "04", t: "Instrumente de lucru", d: "Newsletter, rapoarte de activitate, one-pager pentru companii, program de lucru al echipei — generate din datele tale reale." },
+        { n: "05", t: "Rapoarte & GDPR", d: "Consimțăminte GDPR colectate corect la fiecare donație, rapoarte gata de printat pentru consiliul director sau sponsori." },
+        { n: "06", t: "Acces pe roluri, pentru toată echipa", d: "Fiecare coleg are cont propriu, cu acces controlat — de la voluntari la coordonator." },
       ],
     },
     valori: {
       title: "De ce Fundraising Academy?",
       items: [
-        { t: "Expertiză dovedită", d: "Peste 22 de milioane de euro strânși și sute de campanii de succes coordonate de Vlad Plăcintă." },
-        { t: "Învățare personalizată 1 la 1", d: "Îndrumare directă, adaptată nevoilor tale, ca să aplici strategiile corecte pentru ONG-ul tău." },
-        { t: "Resurse și instrumente profesionale", d: "Ghiduri, template-uri și studii de caz — acum disponibile și în noul Hub Fundraising." },
+        { t: "Construită pe o fundație solidă, care a strâns 28M€", d: "Fiecare instrument pornește din nevoi reale, testate în activitatea Asociației Salvează o Inimă, nu din presupuneri." },
+        { t: "Toate instrumentele, într-un singur abonament", d: "CRM, pagini de donație, rapoarte și newslettere — nu plătești separat pentru fiecare unealtă, doar pentru capacitate." },
+        { t: "Trial complet, 14 zile, fără card", d: "Testezi platforma cu datele tale reale înainte să te decizi — fără angajament, fără card bancar." },
       ],
     },
     testimoniale: {
@@ -89,15 +80,8 @@ export const MARKETING_DICT = {
         },
       ],
     },
-    ctaBand: {
-      title: "Crește ONG-ul tău la următorul nivel",
-      desc: "Înscrie-te la cursul lui Vlad Plăcintă și află cum poți dezvolta impactul organizației tale. Sau programează o sesiune cu unul dintre experții noștri.",
-      cta: "Înscrie-te la curs!",
-      footnote:
-        "Vlad Plăcintă, președinte al Asociației Salvează o Inimă și fondator al Fundraising Academy, îți oferă acces la expertiza sa de peste 12 ani în fundraising — peste 22 milioane de euro strânși pentru cauze umanitare.",
-    },
     footer: {
-      tagline: "Marketing și fundraising pentru ONG-uri din România.",
+      tagline: "Platforma CRM pentru ONG-uri din România.",
       navTitle: "Navigare",
       nav: [
         { href: "/cine-suntem", label: "Cine suntem?" },
@@ -126,7 +110,7 @@ export const MARKETING_DICT = {
       { href: "/cine-suntem", label: "About us" },
       { href: "/ce-facem", label: "What we do" },
       { href: "/hub", label: "Fundraising Hub" },
-      { href: "/website-fundraising", label: "Fundraising Website" },
+      { href: "/automatizare", label: "Automation" },
     ],
     header: {
       consulting: "1-on-1 Consulting",
@@ -135,43 +119,34 @@ export const MARKETING_DICT = {
       closeMenu: "Close menu",
     },
     hero: {
-      eyebrow: "Marketing and fundraising for NGOs",
-      titlePre: "Guiding ",
-      titleHighlight: "100 NGOs",
-      titlePost: " toward fundraising best practices",
-      subtitle:
-        "Courses, 1-on-1 consulting and practical tools from Vlad Plăcintă, who has coordinated over €28 million raised for humanitarian causes.",
-      ctaEnroll: "Enroll in the course",
-      ctaHub: "Explore the Hub →",
+      titlePre: "The platform that organizes ",
+      titleHighlight: "your donors, companies and campaigns",
+      titlePost: "",
+      ctaPrimary: "Start free trial",
+      ctaSecondary: "See the platform →",
       stats: [
         { n: "€28M+", l: "raised for humanitarian causes" },
-        { n: "100", l: "NGOs guided" },
-        { n: "6", l: "practical course modules" },
+        { n: "9", l: "tools included in the platform" },
+        { n: "14 days", l: "free trial, no card" },
       ],
     },
-    hubCallout: {
-      badge: "New",
-      title: "Fundraising Hub — paid tools",
-      desc: "Downloadable guides and templates, interactive calculators, a private community and premium consulting. One-off or with a Hub Pro subscription.",
-      cta: "Enter the Hub →",
-    },
-    lectii: {
-      title: "What will you learn?",
+    platforma: {
+      title: "Everything your NGO needs, in one place",
       items: [
-        { n: "01", t: "Getting Started in Fundraising", d: "The core strategies for planning and running successful campaigns, step by step." },
-        { n: "02", t: "AI in Fundraising", d: "How artificial intelligence is transforming fundraising: automation, personalization, data analysis." },
-        { n: "03", t: "Your ideal donor persona", d: "Define exactly who your ideal donors are for effective communication and strategy." },
-        { n: "04", t: "Sponsorships & partnerships", d: "Build partnerships that fund and amplify the impact of your cause." },
-        { n: "05", t: "Social media & PR", d: "Grow visibility, strengthen relationships and attract active supporters." },
-        { n: "06", t: "Monitoring & evaluation", d: "Understand what worked and what didn't, so each campaign builds on the last." },
+        { n: "01", t: "Donor CRM", d: "Every individual donor, with full donation history, segmentation and notes — populated automatically from your donation pages." },
+        { n: "02", t: "Company CRM & sponsorships", d: "Track partner companies from first contact through signed contract and received sponsorship." },
+        { n: "03", t: "Online donation pages", d: "Create a donation page for each case, accept card payments, and the donor automatically gets a thank-you message and email." },
+        { n: "04", t: "Working tools", d: "Newsletters, activity reports, company one-pagers, team work schedules — generated from your real data." },
+        { n: "05", t: "Reports & GDPR", d: "GDPR consent collected correctly on every donation, print-ready reports for your board or sponsors." },
+        { n: "06", t: "Role-based access for the whole team", d: "Every teammate gets their own account, with controlled access — from volunteers to the coordinator." },
       ],
     },
     valori: {
       title: "Why Fundraising Academy?",
       items: [
-        { t: "Proven expertise", d: "Over €22 million raised and hundreds of successful campaigns coordinated by Vlad Plăcintă." },
-        { t: "Personalized 1-on-1 learning", d: "Direct guidance, tailored to your needs, so you apply the right strategy for your NGO." },
-        { t: "Professional resources & tools", d: "Guides, templates and case studies — now also available in the new Fundraising Hub." },
+        { t: "Built on a solid foundation that raised €28M", d: "Every tool starts from a real need, tested in Asociația Salvează o Inimă's own work — not from guesswork." },
+        { t: "Every tool, in one subscription", d: "CRM, donation pages, reports and newsletters — you don't pay separately per tool, only for capacity." },
+        { t: "Full 14-day trial, no card", d: "Test the platform with your real data before you decide — no commitment, no bank card." },
       ],
     },
     testimoniale: {
@@ -202,15 +177,8 @@ export const MARKETING_DICT = {
         },
       ],
     },
-    ctaBand: {
-      title: "Take your NGO to the next level",
-      desc: "Enroll in Vlad Plăcintă's course and discover how to grow your organization's impact. Or schedule a session with one of our experts.",
-      cta: "Enroll in the course!",
-      footnote:
-        "Vlad Plăcintă, president of Asociația Salvează o Inimă and founder of Fundraising Academy, gives you access to over 12 years of fundraising expertise — over €22 million raised for humanitarian causes.",
-    },
     footer: {
-      tagline: "Marketing and fundraising for NGOs in Romania.",
+      tagline: "The CRM platform for NGOs in Romania.",
       navTitle: "Navigation",
       nav: [
         { href: "/cine-suntem", label: "About us" },

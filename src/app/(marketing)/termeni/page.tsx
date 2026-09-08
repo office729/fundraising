@@ -1,62 +1,51 @@
+import { getLocale } from "@/lib/i18n/get-locale";
+import { TERMENI_DICT } from "@/lib/i18n/dictionaries/termeni";
+
 import { LegalLayout, Sectiune } from "../legal-shared";
 
-export default function TermeniPage() {
+export default async function TermeniPage() {
+  const locale = await getLocale();
+  const dict = TERMENI_DICT[locale];
+
   return (
-    <LegalLayout eyebrow="Legal" titlu="Termeni și condiții" actualizat="[DE COMPLETAT — data publicării]">
-      <Sectiune titlu="1. Despre acest document">
-        <p>
-          Acești Termeni și condiții reglementează utilizarea site-ului fundrasingacademy.ro și a platformei
-          Fundraising Academy (cursuri, consiliere, Hub Fundraising, servicii de implementare Website Fundraising),
-          operate de [DE COMPLETAT — denumirea legală a entității, ex. „Vlad Plăcintă PFA” / „Asociația ...”], cu
-          sediul în [DE COMPLETAT — adresă], CUI/CIF [DE COMPLETAT].
-        </p>
+    <LegalLayout
+      locale={locale}
+      homeLabel={dict.homeLabel}
+      eyebrow={dict.eyebrow}
+      titlu={dict.titlu}
+      actualizatLabel={dict.actualizatLabel}
+      actualizat={dict.actualizat}
+    >
+      <Sectiune titlu={dict.s1.titlu}>
+        <p>{dict.s1.text}</p>
       </Sectiune>
 
-      <Sectiune titlu="2. Serviciile oferite">
-        <p>
-          Platforma oferă: (a) cursuri și materiale educaționale de fundraising; (b) sesiuni de consiliere 1 la 1;
-          (c) instrumente software prin abonament („Hub Fundraising” — CRM, generator de documente, rapoarte etc.);
-          (d) servicii de implementare a unei platforme digitale de fundraising („Website Fundraising”).
-        </p>
+      <Sectiune titlu={dict.s2.titlu}>
+        <p>{dict.s2.text}</p>
       </Sectiune>
 
-      <Sectiune titlu="3. Cont și abonament">
+      <Sectiune titlu={dict.s3.titlu}>
         <p>
-          Crearea unui cont presupune furnizarea unei adrese de email valide. Abonamentele Hub Fundraising (START,
-          CREȘTERE, IMPACT) se facturează lunar sau anual, conform prețurilor afișate pe pagina{" "}
-          <code>/hub</code> la momentul înscrierii. Perioada de probă este de 14 zile, fără a fi necesar un card
-          bancar.
+          {dict.s3.text1Before} <code>/hub</code> {dict.s3.text1After}
         </p>
-        <p>[DE COMPLETAT — politica exactă de reziliere, rambursare și suspendare a contului.]</p>
+        <p>{dict.s3.text2}</p>
       </Sectiune>
 
-      <Sectiune titlu="4. Plăți">
-        <p>
-          [DE COMPLETAT — procesatorul de plăți folosit, moneda de facturare, condițiile de facturare pentru
-          pachetele de implementare Website Fundraising (700€ / 3.500€ / 10.000€), taxe aplicabile.]
-        </p>
+      <Sectiune titlu={dict.s4.titlu}>
+        <p>{dict.s4.text}</p>
       </Sectiune>
 
-      <Sectiune titlu="5. Proprietate intelectuală">
-        <p>
-          Conținutul cursurilor, ghidurile, template-urile și materialele puse la dispoziție rămân proprietatea
-          Fundraising Academy. Utilizatorul primește un drept de folosință personal, neexclusiv, pe durata
-          abonamentului activ.
-        </p>
+      <Sectiune titlu={dict.s5.titlu}>
+        <p>{dict.s5.text}</p>
       </Sectiune>
 
-      <Sectiune titlu="6. Limitarea răspunderii">
-        <p>
-          [DE COMPLETAT — clauze standard de limitare a răspunderii, aplicabile serviciilor educaționale și software
-          oferite; recomandăm redactare de către un avocat specializat, având în vedere caracterul organizației
-          (ONG-uri) și natura datelor gestionate prin CRM (date cu caracter personal ale donatorilor).]
-        </p>
+      <Sectiune titlu={dict.s6.titlu}>
+        <p>{dict.s6.text}</p>
       </Sectiune>
 
-      <Sectiune titlu="7. Contact">
+      <Sectiune titlu={dict.s7.titlu}>
         <p>
-          Pentru întrebări legate de acești termeni: <strong>vlad.placinta@fundrasingacademy.ro</strong>, 0752 753
-          540.
+          {dict.s7.textBefore} <strong>vlad.placinta@fundrasingacademy.ro</strong>, 0752 753 540.
         </p>
       </Sectiune>
     </LegalLayout>

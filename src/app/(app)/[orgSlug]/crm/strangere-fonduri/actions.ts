@@ -6,9 +6,13 @@ import { and, eq } from "drizzle-orm";
 
 import { withOrgAdmin } from "@/lib/auth/guard";
 import { fundraisingDonations, fundraisingPages, fundraisingUpdates } from "@/lib/db/schema";
+import { htmlEmailMultumireDonatie, subiectEmailMultumireDonatie } from "@/lib/donation-email-template";
+import { emailConfigurat, trimiteEmail } from "@/lib/email";
+import { crediteazaPaginaSiDonator } from "@/lib/fundraising-credit";
 import { slugify } from "@/lib/slugify";
 import { createClient } from "@/lib/supabase/server";
 import { genereazaSlugUnic } from "@/lib/unique-slug";
+import { EMAIL_RE, normalizeazaEmail } from "@/lib/validation";
 
 export type StergePaginaState = { error: string | null };
 
@@ -211,6 +215,86 @@ export const actualizeazaImaginePaginaAction = withOrgAdmin(
     const imagineUrl = supabase.storage.from("org-branding").getPublicUrl(path).data.publicUrl;
 
     await ctx.db.update(fundraisingPages).set({ imagineUrl }).where(eq(fundraisingPages.id, pageId));
+    return { error: null, ok: true };
+  },
+);
+
+export type AdaugaDonatieOfflineState = { error: string | null; ok: boolean };
+
+// Donație primită IN AFARA Stripe (transfer bancar, cash) sau o donație de
+// test — folosește DELIBERAT aceeași funcție de creditare (crediteazaPaginaSiDonator)
+// și același șablon de email ca donația online, ca „fluxul să fie identic"
+// indiferent de cum a ajuns banul: când Stripe trece pe chei live, nimic din
+// asta nu se schimbă. status='reusita' direct — nu există o sesiune Checkout
+// de confirmat asincron, deci nimic de așteptat.
+export const adaugaDonatieOfflineAction = withOrgAdmin(
+  async (ctx, pageId: string, _prevState: AdaugaDonatieOfflineState, formData: FormData): Promise<AdaugaDonatieOfflineState> => {
+    const numeDonator = String(formData.get("numeDonator") ?? "").trim().slice(0, 200);
+    const emailRaw = String(formData.get("emailDonator") ?? "").trim();
+    const telefonDonator = String(formData.get("telefonDonator") ?? "").trim().slice(0, 200);
+    const mesaj = String(formData.get("mesaj") ?? "").trim().slice(0, 1000);
+    const suma = Math.round(Number(formData.get("suma")));
+    const consimtamantWhatsapp = formData.get("consimtamantWhatsapp") != null;
+
+    if (!numeDonator) return { error: "Numele donatorului e obligatoriu.", ok: false };
+    if (!Number.isFinite(suma) || suma < 1) return { error: "Introdu o sumă validă.", ok: false };
+
+    const emailDonator = emailRaw ? normalizeazaEmail(emailRaw) : "";
+    if (emailDonator && !EMAIL_RE.test(emailDonator)) {
+      return { error: "Adresa de email nu e validă.", ok: false };
+    }
+
+    const pagina = await ctx.db
+      .select({ id: fundraisingPages.id })
+      .from(fundraisingPages)
+      .where(and(eq(fundraisingPages.id, pageId), eq(fundraisingPages.orgId, ctx.orgId)))
+      .limit(1);
+    if (!pagina[0]) return { error: "Pagina nu a fost găsită.", ok: false };
+
+    const donationId = randomUUID();
+    await ctx.db.insert(fundraisingDonations).values({
+      id: donationId,
+      pageId,
+      orgId: ctx.orgId,
+      numeDonator,
+      emailDonator: emailDonator || null,
+      telefonDonator: telefonDonator || null,
+      suma,
+      mesaj: mesaj || null,
+      anonim: false,
+      // Consimțămintele GDPR/Termeni de mai jos țin de fluxul public (donatorul
+      // le-a bifat el însuși) — o donație offline nu trece prin acel formular,
+      // deci rămân false: reflectă corect ce s-a întâmplat, nu blochează nimic.
+      consimtamantGdpr: false,
+      consimtamantTermeni: false,
+      consimtamantWhatsapp,
+      stripeSessionId: `manual_${donationId}`,
+      recurenta: false,
+      status: "reusita",
+    });
+
+    const info = await crediteazaPaginaSiDonator(ctx.db, {
+      pageId,
+      orgId: ctx.orgId,
+      suma,
+      numeDonator,
+      emailDonator: emailDonator || null,
+      telefonDonator: telefonDonator || null,
+      consimtamantWhatsapp,
+    });
+
+    if (emailDonator && info && emailConfigurat()) {
+      try {
+        await trimiteEmail({
+          to: emailDonator,
+          subiect: subiectEmailMultumireDonatie(info.orgName),
+          html: htmlEmailMultumireDonatie({ numeDonator, suma, pageTitlu: info.pageTitlu, orgName: info.orgName, recurenta: false }),
+        });
+      } catch (e) {
+        console.error("Eroare la trimiterea emailului de mulțumire (donație offline):", e);
+      }
+    }
+
     return { error: null, ok: true };
   },
 );

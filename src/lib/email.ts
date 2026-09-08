@@ -24,6 +24,18 @@ export function emailConfigurat(): boolean {
 
 export type DestinatarEmail = { email: string; nume: string };
 
+// Trimitere individuală (nu în lot) — pentru declanșatoare 1-la-1 (ex. email
+// de mulțumire imediat după o donație), unde nu are sens să aștepți un batch.
+// Best-effort: erorile se propagă către apelant, care alege dacă le prinde
+// (de regulă da — un email eșuat nu trebuie să strice confirmarea plății).
+export async function trimiteEmail(params: { to: string; subiect: string; html: string }): Promise<void> {
+  const resend = getResend();
+  const from = process.env.EMAIL_FROM;
+  if (!from) throw new Error("EMAIL_FROM lipsește din mediu.");
+  const { error } = await resend.emails.send({ from, to: params.to, subject: params.subiect, html: params.html });
+  if (error) throw new Error(error.message);
+}
+
 // Trimite câte un email individual fiecărui destinatar (nu un singur email cu
 // toți în CC/BCC — fiecare donator își vede doar propriul nume). Resend
 // acceptă trimiteri în lot (batch.send, până la 100/apel) — folosim asta

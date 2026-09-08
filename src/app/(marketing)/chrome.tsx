@@ -130,22 +130,6 @@ export function SiteHeader({ dict }: { dict: MarketingDict }) {
   );
 }
 
-export function CtaBand({ dict }: { dict: MarketingDict }) {
-  return (
-    <section className="bg-panel-2 px-[6%] py-16 text-center">
-      <h2 className="font-display mb-3 text-[28px] font-bold text-ink">{dict.ctaBand.title}</h2>
-      <p className="mx-auto mb-6 max-w-xl text-base leading-relaxed text-muted">{dict.ctaBand.desc}</p>
-      <a
-        href="mailto:vlad.placinta@fundrasingacademy.ro"
-        className="inline-block rounded-md bg-brand-green px-7 py-3.5 font-bold text-white transition hover:bg-brand-green-hover"
-      >
-        {dict.ctaBand.cta}
-      </a>
-      <p className="mx-auto mt-6 max-w-xl text-[13px] leading-relaxed text-muted-2">{dict.ctaBand.footnote}</p>
-    </section>
-  );
-}
-
 export function SiteFooter({ dict }: { dict: MarketingDict }) {
   return (
     <footer className="bg-[#1a2332] px-[6%] py-14 text-white">

@@ -1,0 +1,1849 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CRM Voluntari — Salvează o inimă</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#FDF8F5; --card:#FFFFFF; --line:#EDE1DD; --line-soft:#F3EBE8;
+    --ink:#2A2523; --ink-2:#5B5450; --muted:#8A7F7A; --muted-2:#B0A29B;
+    --red:#B71C1C; --red-2:#D42E2E; --red-tint:#FBEAEA;
+    --green:#2E7D32; --green-tint:#E8F5E9; --chip:#F2EDEB;
+    --shadow:0 1px 2px rgba(42,37,35,.04), 0 8px 24px rgba(42,37,35,.05);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:'Source Sans 3', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.display{font-family:'Outfit', system-ui, sans-serif; margin:0}
+  button{font-family:inherit; cursor:pointer}
+  a{color:inherit}
+  input,textarea,select{font-family:inherit; font-size:14px; color:var(--ink)}
+  .app{display:flex; flex-direction:column; min-height:100%}
+
+  /* Sidebar */
+  .side{display:flex; flex-direction:row; align-items:center; gap:8px; background:var(--card); border-bottom:1px solid var(--line); padding:10px 16px; position:sticky; top:0; z-index:20; overflow-x:auto}
+  .brand{display:flex; align-items:center; gap:10px; padding:6px 8px; margin:0 6px 0 0; border-radius:10px; cursor:pointer; transition:.12s; white-space:nowrap}
+  .brand:hover{background:var(--line-soft)}
+  .brand .logo{width:34px; height:34px; flex:0 0 34px; object-fit:contain; border-radius:8px}
+  .brand .name{font-family:'Outfit'; font-weight:700; font-size:15px; color:var(--ink); line-height:1.15}
+  .brand .sub{font-size:11.5px; color:var(--muted); font-weight:500}
+  .nav-item{display:flex; align-items:center; gap:8px; padding:8px 12px; border-radius:10px; color:var(--ink-2); font-weight:600; font-size:14px; border:1px solid transparent; background:transparent; width:auto; white-space:nowrap; text-align:left; transition:.12s}
+  .nav-item:hover{background:var(--line-soft)}
+  .nav-item.active{background:var(--red-tint); color:var(--red); border-color:#F3D6D6}
+  .nav-item .ico{width:18px; height:18px; flex:0 0 18px}
+  .side-foot{margin-top:0; margin-left:auto; padding:0 4px; border-top:none; font-size:12px; color:var(--muted); white-space:nowrap}
+  .who{font-weight:600; color:var(--ink-2)}
+
+  /* Main */
+  .main{flex:1; min-width:0; padding:28px 34px 60px; max-width:1120px}
+  @media(max-width:720px){ .side{display:none} .main{padding:18px 16px 48px} }
+  .page-head{display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:20px; flex-wrap:wrap}
+  .page-title{font-size:24px; font-weight:700; letter-spacing:-.01em}
+  .page-meta{color:var(--muted); font-size:13.5px; margin-top:4px}
+  .page-meta b{color:var(--ink-2); font-weight:600}
+
+  .btn{
+    display:inline-flex; align-items:center; gap:7px; border-radius:10px; padding:9px 14px;
+    font-weight:600; font-size:13.5px; border:1px solid var(--line); background:var(--card); color:var(--ink);
+    transition:.12s; white-space:nowrap;
+  }
+  .btn:hover{border-color:var(--muted-2)}
+  .btn-primary{background:var(--red); border-color:var(--red); color:#fff}
+  .btn-primary:hover{background:var(--red-2); border-color:var(--red-2)}
+  .btn-ghost{background:transparent; border-color:transparent; color:var(--ink-2); padding:8px 10px}
+  .btn-ghost:hover{background:var(--line-soft)}
+  .btn-danger{color:var(--red); border-color:#F0D3D3; background:#fff}
+  .btn-danger:hover{background:var(--red-tint)}
+  .btn .ico{width:16px; height:16px}
+
+  .controls{display:flex; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap}
+  .filterbar{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:12px}
+  .fchip{padding:6px 12px; border-radius:999px; border:1px solid var(--line); background:#fff; color:var(--ink-2); font-weight:600; font-size:12.5px; cursor:pointer; transition:.12s}
+  .fchip:hover{border-color:var(--muted-2)}
+  .fchip.on{background:var(--red-tint); border-color:#F0D3D3; color:var(--red)}
+  .fchip.fclear{border-style:dashed; color:var(--muted)}
+  .fsel{padding:7px 11px; border:1px solid var(--line); border-radius:999px; background:#fff; font-weight:600; font-size:12.5px; color:var(--ink-2)}
+  .filt-info{font-size:13px; color:var(--muted); font-weight:600; margin:-4px 0 12px 2px}
+  .filt-info b{color:var(--red)}
+  .rel{font-size:11.5px; color:var(--muted); margin-top:1px}
+  .rel-old{color:#C2660C; font-weight:600}
+  .table-scroll{overflow-x:auto}
+  .table-scroll table{min-width:1080px}
+  .bulkbar{display:none}
+  .bulkbar.show{display:flex; align-items:center; gap:9px; flex-wrap:wrap; padding:10px 14px; margin-bottom:12px; background:var(--red-tint); border:1px solid #F0D3D3; border-radius:12px}
+  .bulkbar b{color:var(--red); margin-right:4px}
+  .bulkbar .btn{padding:7px 11px; font-size:12.5px}
+  tr.row-sel td{background:#FDF3F3}
+  .timeline{display:flex; flex-direction:column; max-height:320px; overflow:auto}
+  .tl-row{display:flex; gap:11px; padding:9px 0; border-bottom:1px solid var(--line-soft)}
+  .tl-row:last-child{border-bottom:none}
+  .tl-dot{width:9px; height:9px; flex:0 0 9px; border-radius:50%; margin-top:5px; background:var(--muted-2)}
+  .tl-dot.tl-apel{background:#5B5450} .tl-dot.tl-email{background:var(--red)} .tl-dot.tl-whatsapp{background:#25d366} .tl-dot.tl-messenger{background:#0084FF} .tl-dot.tl-nota{background:#C2660C}
+  .tl-body{min-width:0}
+  .tl-head{font-size:13.5px; color:var(--ink)}
+  .tl-meta{font-size:12px; color:var(--muted); margin-top:1px}
+  .task-add{display:flex; gap:9px; flex-wrap:wrap; align-items:center}
+  .task-add input{padding:9px 11px; border:1px solid var(--line); border-radius:9px; background:#fff; outline:none}
+  .task-add input:focus{border-color:var(--muted-2)}
+  .task-row{display:flex; align-items:flex-start; gap:11px; padding:11px 2px; border-bottom:1px solid var(--line-soft)}
+  .task-row:last-child{border-bottom:none}
+  .task-row .chk{margin-top:2px}
+  .task-main{flex:1; min-width:0}
+  .task-text{font-weight:600; color:var(--ink); font-size:14px}
+  .task-meta{font-size:12px; color:var(--muted); margin-top:2px}
+  .task-done .task-text{text-decoration:line-through; color:var(--muted)}
+  .caz-list{display:flex; flex-direction:column; gap:16px}
+  .caz-card{display:flex; gap:16px; padding:16px 18px}
+  .caz-img{width:120px; height:90px; flex:0 0 120px; object-fit:cover; border-radius:10px; background:var(--line-soft)}
+  .caz-body{flex:1; min-width:0}
+  .caz-nume{font-family:'Outfit'; font-weight:700; font-size:16px; margin-bottom:4px}
+  .caz-desc{font-size:13.5px; color:var(--ink-2); margin-bottom:6px; white-space:pre-wrap}
+  .caz-actions{display:flex; gap:9px; margin-top:12px; flex-wrap:wrap}
+  @media(max-width:600px){ .caz-card{flex-direction:column} .caz-img{width:100%; flex-basis:auto; height:160px} }
+  .im-preview{margin:4px 0 4px}
+  .im-ok{padding:11px 14px; background:var(--green-tint); border:1px solid #CBE7CD; border-radius:10px; font-size:13px; color:#1f5d23}
+  .im-ok b{color:var(--green)}
+  .im-warn{padding:11px 14px; background:#FFF6E6; border:1px solid #F3E2BE; border-radius:10px; font-size:13px; color:#8A6A16}
+  .note-btn{border:none; background:transparent; cursor:pointer; font-size:14px; line-height:1; opacity:.4; padding:3px 5px; border-radius:6px; margin-left:2px}
+  .note-btn:hover{opacity:1; background:var(--line-soft)}
+  .note-btn.has-note{opacity:1}
+  .note-btn sup{color:var(--red); font-weight:700; font-size:10px}
+  .nq-add{display:flex; gap:9px; margin-bottom:14px}
+  .nq-add input{flex:1; padding:9px 11px; border:1px solid var(--line); border-radius:9px; outline:none}
+  .nq-add input:focus{border-color:var(--muted-2)}
+  .nq-list{max-height:300px; overflow:auto}
+  .nq-row{display:flex; justify-content:space-between; align-items:flex-start; gap:10px; padding:9px 0; border-bottom:1px dashed var(--line)}
+  .nq-row:last-child{border-bottom:none}
+  .nq-date{font-size:11.5px; color:var(--muted); margin-bottom:2px}
+  .nq-text{font-size:13.5px; color:var(--ink); white-space:pre-wrap}
+  .nq-del{border:none; background:none; color:var(--red); cursor:pointer; font-size:15px; flex-shrink:0; padding:0 2px}
+  .search{position:relative; flex:1; min-width:220px; max-width:420px}
+  .search input{
+    width:100%; padding:10px 12px 10px 36px; border:1px solid var(--line); border-radius:10px;
+    background:var(--card); outline:none; transition:.12s;
+  }
+  .search input:focus{border-color:var(--muted-2)}
+  .search .ico{position:absolute; left:11px; top:50%; transform:translateY(-50%); width:16px; height:16px; color:var(--muted)}
+
+  .banner{
+    display:flex; align-items:center; gap:10px; padding:11px 14px; border-radius:10px; margin-bottom:16px;
+    background:#FFF6E6; border:1px solid #F3E2BE; color:#8A6A16; font-size:13.5px; font-weight:500;
+  }
+
+  /* Table */
+  .card{background:var(--card); border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow); overflow:hidden}
+  table{width:100%; border-collapse:collapse}
+  thead th{
+    text-align:left; font-size:11.5px; font-weight:600; letter-spacing:.03em; text-transform:uppercase;
+    color:var(--muted); padding:12px 14px; border-bottom:1px solid var(--line); background:#FDFAF8; white-space:nowrap;
+  }
+  tbody td{padding:12px 14px; border-bottom:1px solid var(--line-soft); vertical-align:middle}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr.rowlink{cursor:pointer; transition:.1s}
+  tbody tr.rowlink:hover{background:#FDF9F7}
+  .cell-name{display:flex; align-items:center; gap:11px}
+  .avatar{
+    width:34px; height:34px; flex:0 0 34px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-family:'Outfit'; font-weight:600; font-size:13px; color:var(--red); background:var(--red-tint);
+  }
+  .avatar.lg{width:56px; height:56px; font-size:20px; flex-basis:56px}
+  .name-main{font-weight:600; color:var(--ink)}
+  .name-sub{font-size:12px; color:var(--muted)}
+  .muted{color:var(--muted)}
+  .fb-link{color:var(--red); font-weight:600; text-decoration:none}
+  .fb-link:hover{text-decoration:underline}
+
+  .badge{display:inline-flex; align-items:center; gap:6px; padding:4px 9px; border-radius:999px; font-size:12px; font-weight:600; white-space:nowrap}
+  .badge .dot{width:6px; height:6px; border-radius:50%}
+  .badge-green{background:var(--green-tint); color:var(--green)} .badge-green .dot{background:var(--green)}
+  .badge-gray{background:var(--chip); color:var(--muted)} .badge-gray .dot{background:var(--muted-2)}
+  .badge-red{background:var(--red-tint); color:var(--red)} .badge-red .dot{background:var(--red-2)}
+
+  .chk{width:18px; height:18px; accent-color:var(--red); cursor:pointer}
+  .sent-icons{display:flex; gap:9px; align-items:center; justify-content:center}
+  .sent-ic{width:18px; height:18px; color:#DAD0CB; display:inline-flex}
+  .sent-ic svg{width:18px; height:18px}
+  .sent-ic.on-email{color:var(--red)}
+  .sent-ic.on-wa{color:#25d366}
+  .chan-ic{width:18px; height:18px; flex:0 0 18px; display:inline-flex; align-items:center}
+  .chan-ic svg{width:18px; height:18px}
+  .chan-ic.chan-any{color:#B0A29B}
+
+  /* Empty state */
+  .empty{padding:56px 24px; text-align:center; color:var(--muted)}
+  .empty .big{font-family:'Outfit'; font-size:16px; font-weight:600; color:var(--ink-2); margin:10px 0 4px}
+  .empty svg{width:40px; height:40px; color:var(--muted-2)}
+
+  /* Profile */
+  .back{display:inline-flex; align-items:center; gap:7px; color:var(--muted); font-weight:600; background:none; border:none; padding:6px 0; margin-bottom:14px; font-size:13.5px}
+  .back:hover{color:var(--ink)}
+  .prof-head{display:flex; align-items:center; gap:16px; margin-bottom:22px; flex-wrap:wrap}
+  .prof-head .who-name{font-size:22px; font-weight:700; letter-spacing:-.01em; border:1px solid transparent; border-radius:8px; padding:2px 6px; margin-left:-6px; background:transparent; min-width:180px}
+  .prof-head .who-name:focus{border-color:var(--line); background:var(--card); outline:none}
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+  @media(max-width:860px){ .grid{grid-template-columns:1fr} }
+  .panel{background:var(--card); border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow); padding:18px 20px}
+  .panel h3{font-size:12px; font-weight:600; letter-spacing:.03em; text-transform:uppercase; color:var(--muted); margin-bottom:14px}
+  .field{margin-bottom:13px}
+  .field:last-child{margin-bottom:0}
+  .field label{display:block; font-size:12px; color:var(--muted); font-weight:600; margin-bottom:4px}
+  .field input, .field textarea{
+    width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:9px; background:#FDFBFA; outline:none; transition:.12s;
+  }
+  .field input:focus, .field textarea:focus{border-color:var(--muted-2); background:#fff}
+  .field textarea{min-height:96px; resize:vertical}
+
+  .switch-row{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:11px 0; border-bottom:1px solid var(--line-soft)}
+  .switch-row:last-child{border-bottom:none}
+  .switch-row .lab{font-weight:600; color:var(--ink)}
+  .switch-row .desc{font-size:12px; color:var(--muted); font-weight:400; margin-top:1px}
+  .toggle{position:relative; width:42px; height:24px; flex:0 0 42px; border-radius:999px; background:#DED2CD; border:none; transition:.15s; padding:0}
+  .toggle:after{content:''; position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,.2); transition:.15s}
+  .toggle.on{background:var(--red)}
+  .toggle.on:after{left:21px}
+
+  .pill-group{margin-bottom:16px}
+  .pill-group:last-child{margin-bottom:0}
+  .pill-group .gl{font-size:12px; color:var(--muted); font-weight:600; margin-bottom:8px}
+  .pills{display:flex; flex-wrap:wrap; gap:8px}
+  .pill{padding:6px 12px; border-radius:999px; border:1px solid var(--line); background:#fff; color:var(--ink-2); font-weight:600; font-size:12.5px; transition:.12s}
+  .pill:hover{border-color:var(--muted-2)}
+  .pill.on{background:var(--red); border-color:var(--red); color:#fff}
+  .pill-custom{cursor:pointer}
+  .tag-add{padding:6px 12px; border-radius:999px; border:1px dashed var(--muted-2); background:#fff; color:var(--ink); font-family:inherit; font-size:12.5px; font-weight:600; outline:none; min-width:160px; transition:.12s}
+  .tag-add::placeholder{color:var(--muted); font-weight:500}
+  .tag-add:focus{border-style:solid; border-color:var(--red)}
+
+  .auto-note{margin-top:16px; padding:13px 15px; border-radius:11px; font-size:13px; display:flex; gap:10px; align-items:flex-start}
+  .auto-note.ok{background:var(--green-tint); color:#1f5d23; border:1px solid #CBE7CD}
+  .auto-note.no{background:var(--chip); color:var(--ink-2); border:1px solid var(--line)}
+  .auto-note svg{width:18px; height:18px; flex:0 0 18px; margin-top:1px}
+
+  /* Automation view */
+  .kpis{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:24px}
+  @media(max-width:860px){ .kpis{grid-template-columns:repeat(2,1fr)} }
+  .kpi{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px 18px; box-shadow:var(--shadow)}
+  .kpi .k{font-size:12px; color:var(--muted); font-weight:600}
+  .kpi .v{font-family:'Outfit'; font-size:30px; font-weight:700; margin-top:6px; letter-spacing:-.02em}
+  .kpi.red .v{color:var(--red)} .kpi.green .v{color:var(--green)}
+
+  .setting-bar{display:flex; align-items:center; gap:18px; flex-wrap:wrap; padding:15px 18px; margin-bottom:22px; background:var(--card); border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow)}
+  .setting-bar .s-lab{font-weight:600}
+  .setting-bar .s-desc{font-size:12px; color:var(--muted)}
+  select.sel{padding:8px 11px; border:1px solid var(--line); border-radius:9px; background:#fff; font-weight:600}
+  .sb-sep{width:1px; height:34px; background:var(--line)}
+  .aud-row{display:flex; gap:24px; flex-wrap:wrap}
+  .chk-row{display:flex; align-items:center; gap:8px; font-weight:600; color:var(--ink); cursor:pointer; font-size:13.5px}
+  .chk-row .chk{width:17px; height:17px}
+  .aud-count{margin-top:16px; padding:11px 15px; background:var(--red-tint); color:var(--red); border-radius:11px; font-weight:600; font-size:13.5px}
+  .aud-count b{color:var(--red)}
+  .gl .muted{font-weight:500}
+  .pick-tools{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px}
+  .pick-count{margin-left:auto; font-size:13px; color:var(--muted); font-weight:600}
+  .pick-count b{color:var(--red)}
+  .pick-list{max-height:360px; overflow:auto; border:1px solid var(--line-soft); border-radius:11px}
+  .pick-row{display:flex; align-items:center; gap:11px; padding:9px 13px; border-bottom:1px solid var(--line-soft); cursor:pointer}
+  .pick-row:last-child{border-bottom:none}
+  .pick-row:hover{background:#FDF9F7}
+  .pick-row .pick-main{min-width:0; flex:1}
+  .pick-row .badge{margin-left:auto}
+  .pick-dim{opacity:.5}
+  .send-card{display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap}
+  .send-card .s-lab{font-size:15px}
+  .send-card .s-desc b{color:var(--ink-2)}
+  .send-btns{display:flex; gap:10px; flex-wrap:wrap}
+  .sig-tools{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px}
+  .sig-preview{width:100%; min-height:110px; border:1px solid var(--line); border-radius:9px; background:#fff}
+
+  .flow{display:grid; grid-template-columns:repeat(5,1fr); gap:0; margin-bottom:26px}
+  @media(max-width:860px){ .flow{grid-template-columns:1fr; gap:10px} }
+  .step{position:relative; padding:16px 16px 16px 0}
+  .step .n{width:26px; height:26px; border-radius:50%; background:var(--red-tint); color:var(--red); font-family:'Outfit'; font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center; margin-bottom:9px}
+  .step .st{font-family:'Outfit'; font-weight:600; font-size:13.5px; margin-bottom:3px}
+  .step .sd{font-size:12.5px; color:var(--muted); line-height:1.45}
+  .step:not(:last-child):after{content:''; position:absolute; top:29px; right:16px; left:34px; height:2px; background:var(--line)}
+  @media(max-width:860px){ .step:not(:last-child):after{display:none} }
+
+  .elig-list{display:flex; flex-direction:column}
+  .elig-row{display:flex; align-items:center; gap:12px; padding:11px 4px; border-bottom:1px solid var(--line-soft)}
+  .elig-row:last-child{border-bottom:none}
+
+  .sec-title{font-family:'Outfit'; font-weight:700; font-size:16px; margin:2px 0 12px}
+
+  /* Toast */
+  .toast{position:fixed; right:18px; bottom:18px; background:var(--ink); color:#fff; padding:10px 15px; border-radius:10px; font-size:13px; font-weight:600; box-shadow:0 8px 30px rgba(0,0,0,.25); opacity:0; transform:translateY(8px); transition:.2s; pointer-events:none; z-index:50}
+  .toast.show{opacity:1; transform:translateY(0)}
+  .toast.err{background:var(--red)}
+
+  .save-flag{font-size:12px; color:var(--muted); font-weight:600; display:inline-flex; align-items:center; gap:6px}
+  .save-flag .dot{width:7px; height:7px; border-radius:50%; background:var(--green)}
+  .save-flag.saving .dot{background:#E0A93B}
+
+  /* Modal */
+  .modal-bg{position:fixed; inset:0; background:rgba(42,37,35,.42); display:none; align-items:center; justify-content:center; padding:20px; z-index:40}
+  .modal-bg.show{display:flex}
+  .modal{position:relative; background:var(--card); border-radius:16px; width:100%; max-width:440px; padding:24px; box-shadow:0 20px 60px rgba(0,0,0,.28)}
+  .modal h2{font-size:18px; font-weight:700; margin-bottom:4px}
+  .modal .sub{font-size:13px; color:var(--muted); margin-bottom:18px}
+  .modal .field input{background:#fff}
+  .modal-actions{display:flex; justify-content:flex-end; gap:9px; margin-top:20px}
+  .modal-x{position:absolute; top:14px; right:14px; width:30px; height:30px; border-radius:8px; border:none; background:transparent; color:var(--muted); font-size:22px; line-height:1; cursor:pointer; transition:.12s}
+  .modal-x:hover{background:var(--line-soft); color:var(--ink)}
+
+  .prof-meta{display:flex; flex-wrap:wrap; gap:6px 18px; margin:-6px 0 20px 72px; font-size:12.5px; color:var(--muted)}
+  .prof-meta b{color:var(--ink-2); font-weight:600}
+  @media(max-width:720px){ .prof-meta{margin-left:0} }
+
+  .loading{padding:80px 20px; text-align:center; color:var(--muted); font-weight:600}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand" id="brandHome" title="Acasă — Panou instrumente" role="link" tabindex="0">
+      <img class="logo" src="/icon-soi.png" alt="Salvează o inimă" />
+      <div>
+        <div class="name">Salvează o inimă</div>
+        <div class="sub">CRM Voluntari</div>
+      </div>
+    </div>
+    <button class="nav-item" data-nav="list" type="button">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Voluntari
+    </button>
+    <button class="nav-item" data-nav="arhiva" type="button">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
+      Arhivă
+    </button>
+    <button class="nav-item" data-nav="automation" type="button">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z" opacity="0"/><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      Automatizare email
+    </button>
+    <button class="nav-item" data-nav="cazuri" type="button">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.7-4.35-9.3-8.02C.98 10.6 1.4 7.3 3.9 5.9c2.02-1.13 4.3-.5 5.6 1.06L12 9.9l2.5-2.94c1.3-1.56 3.58-2.19 5.6-1.06 2.5 1.4 2.92 4.7 1.2 7.08C18.7 16.65 12 21 12 21Z"/></svg>
+      Cazuri
+    </button>
+    <button class="nav-item" data-nav="tasks" type="button">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      Sarcini
+    </button>
+    <button class="nav-item" data-nav="raport" id="navRaport" type="button" style="display:none">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l3-3 3 3 5-6"/></svg>
+      Raport activitate
+    </button>
+    <div class="side-foot">
+      Conectat ca <span class="who" id="whoName">—</span>
+      <div id="saveFlag" class="save-flag" style="margin-top:8px"><span class="dot"></span> Sincronizat</div>
+    </div>
+  </aside>
+
+  <main class="main" id="main">
+    <div class="loading">Se încarcă…</div>
+  </main>
+</div>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <button class="modal-x" id="m_close" type="button" aria-label="Închide">×</button>
+    <h2>Adaugă voluntar</h2>
+    <div class="sub">Completează datele de bază. Le poți edita oricând din fișa voluntarului.</div>
+    <div class="field"><label>Nume și prenume</label><input id="m_nume" type="text" placeholder="ex. Ana Popescu" /></div>
+    <div class="field"><label>Telefon</label><input id="m_tel" type="text" placeholder="+40 7__ ___ ___" /></div>
+    <div class="field"><label>Email</label><input id="m_email" type="email" placeholder="nume@exemplu.ro" /></div>
+    <div class="field"><label>Profil Facebook</label><input id="m_fb" type="text" placeholder="facebook.com/… sau numele de pe Facebook" /></div>
+    <div class="field" style="display:flex;gap:12px">
+      <div style="flex:1"><label>Responsabil</label><input id="m_resp" type="text" placeholder="Cine ține legătura" /></div>
+      <div style="flex:0 0 150px"><label>Grupă</label><select id="m_grup" class="sel" style="width:100%"><option value="Nedistribuit">Nedistribuit</option><option value="1">Grupa 1</option><option value="2">Grupa 2</option><option value="3">Grupa 3</option><option value="4">Grupa 4</option><option value="5">Grupa 5</option></select></div>
+    </div>
+    <div class="field"><label>Se implică la</label>
+      <div class="pills" id="m_tip">
+        <button class="pill" data-mtip="Social media" type="button">Social media</button>
+        <button class="pill" data-mtip="Caz" type="button">Caz</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="m_cancel" type="button">Anulează</button>
+      <button class="btn btn-primary" id="m_save" type="button">Adaugă voluntar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="bmBg">
+  <div class="modal" style="max-width:560px">
+    <button class="modal-x" id="bm_close" type="button" aria-label="Închide">×</button>
+    <h2>Trimite email către lista filtrată</h2>
+    <div class="sub"><b id="bm_count">0</b> voluntari cu email vor primi acest mesaj (prin Make.com).</div>
+    <div class="field"><label>Subiect</label><input id="bm_subiect" type="text" placeholder="Subiectul emailului" /></div>
+    <div class="field"><label>Mesaj</label><textarea id="bm_continut" style="min-height:130px" placeholder="Scrie mesajul…"></textarea></div>
+    <div class="field"><label>Semnătură (se poate folosi HTML)</label><textarea id="bm_semnatura" style="min-height:70px" placeholder="ex. Cu drag,<br>Echipa Salvează o Inimă"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="bm_cancel" type="button">Anulează</button>
+      <button class="btn btn-primary" id="bm_send" type="button">Trimite prin Make.com</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="noteBg">
+  <div class="modal" style="max-width:480px">
+    <button class="modal-x" id="nt_close" type="button" aria-label="Închide">×</button>
+    <h2>Notițe</h2>
+    <div class="sub">Pentru <b id="nt_nume"></b></div>
+    <div class="nq-add"><input id="nt_input" type="text" placeholder="Scrie o notiță… (data se pune automat)" autocomplete="off" /><button class="btn btn-primary" id="nt_add" type="button">Adaugă</button></div>
+    <div id="nt_list" class="nq-list"></div>
+    <div class="modal-actions"><button class="btn btn-ghost" id="nt_cancel" type="button">Închide</button></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="importBg">
+  <div class="modal" style="max-width:600px">
+    <button class="modal-x" id="im_close" type="button" aria-label="Închide">×</button>
+    <h2>Importă voluntari din fișier</h2>
+    <div class="sub">Încarcă un fișier <b>CSV/text</b> sau lipește datele (din Excel/Sheets). Prima linie = antet (nume, telefon, email, facebook, responsabil, grup, tip).</div>
+    <div class="sig-tools" style="margin-bottom:10px">
+      <button class="btn" id="im_pick" type="button"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg> Alege fișier</button>
+      <input id="im_file" type="file" accept=".csv,.txt,.tsv,.xlsx,.xls,text/csv,text/plain" style="display:none" />
+      <span class="muted" id="im_fname" style="font-size:12.5px"></span>
+    </div>
+    <div class="field"><textarea id="im_text" style="min-height:120px; font-family:ui-monospace,monospace; font-size:12px" placeholder="…sau lipește aici (nume,telefon,email,…)"></textarea></div>
+    <div id="im_preview" class="im-preview"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="im_cancel" type="button">Anulează</button>
+      <button class="btn btn-primary" id="im_do" type="button" disabled>Importă</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="sendMsgBg">
+  <div class="modal" style="max-width:540px">
+    <button class="modal-x" id="sm_close" type="button" aria-label="Închide">×</button>
+    <h2>Trimite mesaj</h2>
+    <div class="sub">Către <b id="sm_nume"></b> · canal preferat: <span id="sm_canal" style="display:inline-flex;align-items:center;gap:5px;vertical-align:middle"></span></div>
+    <div class="field" id="sm_subiectField"><label>Subiect</label><input id="sm_subiect" type="text" placeholder="Subiectul emailului" /></div>
+    <div class="field"><label>Mesaj (editabil)</label><textarea id="sm_continut" style="min-height:130px" placeholder="Scrie mesajul de trimis…"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="sm_cancel" type="button">Anulează</button>
+      <button class="btn btn-primary" id="sm_send" type="button">Trimite</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---- Config ----
+  var SYNC = "/api/voluntari-sync";
+  var KEY = "soi-vol-roster";
+  var TASKS_KEY = "soi-vol-tasks";
+  var CAZURI_KEY = "soi-vol-cazuri";
+  var LOGIN_KEY = "soi-voluntari-loginname";
+
+  var TAGS = [
+    {k:"Agitat", l:"Agitat"},
+    {k:"VorbesteMult", l:"Vorbește mult la telefon"},
+    {k:"RaspundeRar", l:"Răspunde rar"}
+  ];
+  var CANALE = ["WhatsApp","Email","Messenger","Telefon","Oricare"];
+  var GRUPURI = ["1","2","3","4","5","Nedistribuit"];
+  var TIPURI = ["Social media","Caz"];
+  var ZILE = ["Luni","Marți","Miercuri","Joi","Vineri"];
+
+  // ---- State ----
+  var state = {
+    view: "list",
+    selectedId: null,
+    search: "",
+    sortDir: "desc",
+    volunteers: [],
+    settings: { automationEnabled: true, sendDay: "Luni", canal: "email", webhooks: { email: "", whatsapp: "" }, mesaj: { subiect: "", continut: "", semnatura: "" }, audience: { mode: "criterii", doarActivi: true, doarConsimtit: true, grupuri: [], tip: "", selectedIds: [] } },
+    pickSearch: "",
+    activity: undefined,
+    raportPeriod: "all",
+    tasks: undefined,
+    cazuri: undefined,
+    selected: {},
+    filters: { mine:false, stare:"", grup:"", netrimis:false, vechi:0, fMsg:false, fWa:false, fEmail:false, fTel:false, fLinked:false },
+    loaded: false
+  };
+
+  var loginName = "";
+  var isAdmin = false;
+  try { loginName = localStorage.getItem(LOGIN_KEY) || ""; } catch(e){}
+  try { isAdmin = localStorage.getItem("soi-voluntari-isadmin")==="1"; } catch(e){}
+
+  // ---- Helpers ----
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+  function uid(){ try{ return crypto.randomUUID(); }catch(e){ return "v"+Date.now().toString(36)+Math.random().toString(36).slice(2,8); } }
+  function todayIso(){ var d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+  function fmtDate(iso){
+    if(!iso) return "—";
+    var p=String(iso).split("-"); if(p.length!==3) return iso;
+    return p[2]+"."+p[1]+"."+p[0];
+  }
+  function norm(s){ return String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/ș|ş/g,"s").replace(/ț|ţ/g,"t"); }
+  var DIAC=new RegExp("[\\u0300-\\u036f]","g");
+  function norm2(s){ return String(s||"").toLowerCase().normalize("NFD").replace(DIAC,"").replace(/ș|ş/g,"s").replace(/ț|ţ/g,"t"); }
+  function daysSince(iso){
+    if(!iso) return null;
+    var p=String(iso).split("-"); if(p.length!==3) return null;
+    var then=new Date(+p[0], +p[1]-1, +p[2]);
+    var now=new Date(); var t=new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return Math.round((t-then)/86400000);
+  }
+  function relTime(iso){
+    var d=daysSince(iso); if(d===null) return "";
+    if(d<=0) return "azi"; if(d===1) return "ieri";
+    if(d<30) return "acum "+d+" zile";
+    if(d<60) return "acum o lună";
+    var m=Math.round(d/30); if(m<12) return "acum "+m+" luni";
+    var y=Math.round(d/365); return "acum "+y+(y===1?" an":" ani");
+  }
+  function istoricAdd(v, tip, nota){
+    if(!v) return;
+    if(!Array.isArray(v.istoric)) v.istoric=[];
+    v.istoric.push({ tip:tip, at:new Date().toISOString(), by:loginName||"", nota:nota||"" });
+    if(v.istoric.length>60) v.istoric=v.istoric.slice(v.istoric.length-60);
+  }
+  var ISTORIC_LABEL={ apel:"Apel", email:"Email", whatsapp:"WhatsApp", messenger:"Messenger", nota:"Notă" };
+  function initials(nume){
+    var parts=String(nume||"").trim().split(/\s+/).filter(Boolean);
+    if(!parts.length) return "?";
+    return (parts[0][0]+(parts.length>1?parts[parts.length-1][0]:"")).toUpperCase();
+  }
+  function fbLabel(fb){ return String(fb||"").replace(/^https?:\/\//,"").replace(/^www\./,"").replace(/^facebook\.com\//,"@").replace(/\/$/,""); }
+  function fbHref(fb){
+    fb=String(fb||"").trim(); if(!fb) return "";
+    if(/^https?:\/\//i.test(fb)) return fb;
+    if(/facebook\.com/i.test(fb)) return "https://"+fb.replace(/^\/+/,"");
+    if(/^@?[a-z0-9._-]+$/i.test(fb)) return "https://facebook.com/"+fb.replace(/^@/,"");
+    return "https://www.facebook.com/search/top?q="+encodeURIComponent(fb); // nume -> căutare FB
+  }
+  function isEligible(v){ return !!(state.settings.automationEnabled && v.activ && v.vreaEmail); }
+  var CHAN_SVG={
+    "Email":'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>',
+    "WhatsApp":'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.1-1.3A10 10 0 1 0 12 2zm0 1.8a8.2 8.2 0 0 1 5.8 14A8.2 8.2 0 0 1 7.6 19l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 0 1 12 3.8zM8.9 7.4c-.15 0-.4.06-.6.3-.2.24-.78.76-.78 1.85 0 1.1.8 2.16.9 2.3.12.15 1.56 2.5 3.9 3.4 1.94.75 2.34.6 2.76.56.42-.04 1.35-.55 1.54-1.08.19-.53.19-.98.13-1.08-.06-.1-.22-.15-.46-.27-.24-.12-1.35-.67-1.56-.74-.2-.08-.36-.12-.5.12-.15.24-.58.74-.7.9-.14.14-.26.16-.5.05-.24-.12-1-.37-1.9-1.18-.7-.62-1.17-1.4-1.31-1.63-.13-.24-.01-.37.1-.49.12-.11.25-.29.37-.43.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.5-1.28-.7-1.75-.18-.45-.37-.4-.5-.4z"/></svg>',
+    "Messenger":'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.36 2 2 6.13 2 11.7c0 2.91 1.19 5.44 3.14 7.19.16.14.26.35.27.57l.05 1.78c.02.57.6.94 1.12.71l1.99-.88c.17-.07.36-.09.53-.04 1.06.29 2.2.45 3.4.45 5.64 0 10-4.13 10-9.7S17.64 2 12 2zm6 7.46l-2.94 4.66c-.47.74-1.47.93-2.18.4l-2.34-1.75a.6.6 0 0 0-.72 0l-3.16 2.4c-.42.32-.97-.18-.69-.63l2.94-4.66c.47-.74 1.47-.93 2.18-.4l2.34 1.75a.6.6 0 0 0 .72 0l3.16-2.4c.42-.32.97.18.69.63z"/></svg>',
+    "Telefon":'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>'
+  };
+  var CHAN_COL={ "Email":"var(--red)", "WhatsApp":"#25d366", "Messenger":"#0084FF", "Telefon":"#5B5450" };
+  function channelIcon(v){
+    var c=v.canal||"Oricare";
+    if(!CHAN_SVG[c]) return '<span class="chan-ic chan-any" title="Preferă: oricare canal"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="19" cy="12" r="1.9"/></svg></span>';
+    return '<span class="chan-ic" title="Preferă: '+esc(c)+'" style="color:'+CHAN_COL[c]+'">'+CHAN_SVG[c]+'</span>';
+  }
+  function sentIcons(v){
+    return '<div class="sent-icons">'+
+      '<span class="sent-ic'+(v.sentEmail?" on-email":"")+'" title="'+(v.sentEmail?"Email trimis: "+fmtDate(v.sentEmail):"Fără email trimis")+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg></span>'+
+      '<span class="sent-ic'+(v.sentWhatsapp?" on-wa":"")+'" title="'+(v.sentWhatsapp?"WhatsApp trimis: "+fmtDate(v.sentWhatsapp):"Fără WhatsApp trimis")+'"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.1-1.3A10 10 0 1 0 12 2zm0 1.8a8.2 8.2 0 0 1 5.8 14A8.2 8.2 0 0 1 7.6 19l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 0 1 12 3.8zM8.9 7.4c-.15 0-.4.06-.6.3-.2.24-.78.76-.78 1.85 0 1.1.8 2.16.9 2.3.12.15 1.56 2.5 3.9 3.4 1.94.75 2.34.6 2.76.56.42-.04 1.35-.55 1.54-1.08.19-.53.19-.98.13-1.08-.06-.1-.22-.15-.46-.27-.24-.12-1.35-.67-1.56-.74-.2-.08-.36-.12-.5.12-.15.24-.58.74-.7.9-.14.14-.26.16-.5.05-.24-.12-1-.37-1.9-1.18-.7-.62-1.17-1.4-1.31-1.63-.13-.24-.01-.37.1-.49.12-.11.25-.29.37-.43.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.5-1.28-.7-1.75-.18-.45-.37-.4-.5-.4z"/></svg></span>'+
+    '</div>';
+  }
+
+  function byId(id){ for(var i=0;i<state.volunteers.length;i++){ if(state.volunteers[i].id===id) return state.volunteers[i]; } return null; }
+
+  // ---- Persistence ----
+  var saveTimer=null, saving=false, dirty=false;
+  function setFlag(kind){
+    var el=$("saveFlag"); if(!el) return;
+    el.className="save-flag"+(kind==="saving"?" saving":"");
+    el.innerHTML='<span class="dot"></span> '+(kind==="saving"?"Se salvează…":kind==="err"?"Nesalvat":"Sincronizat");
+    if(kind==="err") el.style.color="var(--red)"; else el.style.color="";
+  }
+  function scheduleSave(){
+    dirty=true; setFlag("saving");
+    if(saveTimer) clearTimeout(saveTimer);
+    saveTimer=setTimeout(flush, 700);
+  }
+  function flush(){
+    if(saving){ return; }
+    if(!dirty) return;
+    saving=true; dirty=false;
+    var payload={ volunteers: state.volunteers, settings: state.settings, updatedBy: loginName, updatedAt: new Date().toISOString() };
+    fetch(SYNC+"/"+KEY+".json", {
+      method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload)
+    }).then(function(r){
+      if(!r.ok) throw new Error("HTTP "+r.status);
+      saving=false; setFlag(dirty?"saving":"ok");
+      if(dirty) scheduleSave();
+    }).catch(function(){
+      saving=false; dirty=true; setFlag("err"); toast("Salvarea a eșuat — reîncerc…", true);
+      if(saveTimer) clearTimeout(saveTimer); saveTimer=setTimeout(flush, 3000);
+    });
+  }
+  function saveNow(){
+    var payload={ volunteers: state.volunteers, settings: state.settings, updatedBy: loginName, updatedAt: new Date().toISOString() };
+    dirty=false;
+    return fetch(SYNC+"/"+KEY+".json", {method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload)});
+  }
+  var sending=false;
+  function sendNow(canal, test){
+    if(sending) return;
+    var canalNume=canal==="whatsapp"?"WhatsApp":"Email";
+    if(canal==="email" && !((state.settings.mesaj.continut||"").trim())){
+      toast("Scrie întâi mesajul (subiect + conținut).", true); return;
+    }
+    if(!test){
+      var recs=recipientsFor(canal);
+      if(recs.length===0){ toast("Niciun destinatar pentru "+canalNume+".", true); return; }
+      if(!confirm("Trimit "+canalNume+" către "+recs.length+" destinatari?")) return;
+    }
+    sending=true; setFlag("saving");
+    saveNow().then(function(){
+      return fetch("/api/voluntari-send", {method:"POST", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ canal:canal, audience:state.settings.audience, test:!!test,
+          subiect:state.settings.mesaj.subiect, continut:state.settings.mesaj.continut, semnatura:state.settings.mesaj.semnatura })});
+    }).then(function(r){ return r.json().then(function(j){ return {ok:r.ok, j:j}; }); })
+    .then(function(res){
+      sending=false; setFlag("ok");
+      if(res.ok && res.j && res.j.ok){
+        if(!test){
+          var stamp=todayIso();
+          recipientsFor(canal).forEach(function(v){ if(canal==="whatsapp") v.sentWhatsapp=stamp; else v.sentEmail=stamp; });
+          scheduleSave();
+        }
+        toast((test?"Test trimis":"Trimis")+" către "+res.j.total+" prin "+canalNume+" ✓");
+      }
+      else { toast((res.j&&res.j.error)||"Trimiterea a eșuat", true); }
+    }).catch(function(){ sending=false; setFlag("ok"); toast("Trimiterea a eșuat", true); });
+  }
+  function load(){
+    fetch(SYNC+"/"+KEY+".json", {cache:"no-store"}).then(function(r){
+      if(!r.ok) throw new Error("HTTP "+r.status);
+      return r.json();
+    }).then(function(data){
+      if(data && typeof data==="object"){
+        if(Array.isArray(data.volunteers)) state.volunteers=data.volunteers.map(normalize);
+        if(data.settings && typeof data.settings==="object"){
+          state.settings.automationEnabled = data.settings.automationEnabled!==false;
+          if(ZILE.indexOf(data.settings.sendDay)>=0) state.settings.sendDay=data.settings.sendDay;
+          if(data.settings.canal==="whatsapp"||data.settings.canal==="email") state.settings.canal=data.settings.canal;
+          if(data.settings.webhooks && typeof data.settings.webhooks==="object"){
+            state.settings.webhooks={
+              email: typeof data.settings.webhooks.email==="string"?data.settings.webhooks.email:"",
+              whatsapp: typeof data.settings.webhooks.whatsapp==="string"?data.settings.webhooks.whatsapp:""
+            };
+          }
+          if(data.settings.mesaj && typeof data.settings.mesaj==="object"){
+            state.settings.mesaj={
+              subiect: typeof data.settings.mesaj.subiect==="string"?data.settings.mesaj.subiect:"",
+              continut: typeof data.settings.mesaj.continut==="string"?data.settings.mesaj.continut:"",
+              semnatura: typeof data.settings.mesaj.semnatura==="string"?data.settings.mesaj.semnatura:""
+            };
+          }
+          var a=data.settings.audience;
+          if(a && typeof a==="object"){
+            state.settings.audience={
+              mode: a.mode==="manual"?"manual":"criterii",
+              doarActivi: a.doarActivi!==false,
+              doarConsimtit: a.doarConsimtit!==false,
+              grupuri: Array.isArray(a.grupuri)?a.grupuri.filter(function(g){return GRUPURI.indexOf(g)>=0;}):[],
+              tip: TIPURI.indexOf(a.tip)>=0?a.tip:"",
+              selectedIds: Array.isArray(a.selectedIds)?a.selectedIds:[]
+            };
+          }
+        }
+      }
+      state.loaded=true; setFlag("ok"); render();
+    }).catch(function(){
+      state.loaded=true; setFlag("err");
+      $("main").innerHTML='<div class="empty"><div class="big">Nu am putut încărca datele</div><div>Verifică conexiunea sau reîmprospătează pagina.</div></div>';
+    });
+  }
+  function normalize(v){
+    v=v||{};
+    return {
+      id: v.id||uid(),
+      nume: v.nume||"",
+      activ: v.activ!==false,
+      mesajSaptamanal: !!v.mesajSaptamanal,
+      vreaEmail: !!v.vreaEmail,
+      vreaLinkedin: !!v.vreaLinkedin,
+      whatsappGrup: !!v.whatsappGrup,
+      linkedin: v.linkedin||"",
+      telefon: v.telefon||"",
+      email: v.email||"",
+      facebook: v.facebook||"",
+      responsabil: v.responsabil||"",
+      notite: v.notite||"",
+      contactat: !!v.contactat,
+      dataContact: v.dataContact||"",
+      dataInscriere: v.dataInscriere||"",
+      sentEmail: v.sentEmail||"",
+      sentWhatsapp: v.sentWhatsapp||"",
+      istoric: Array.isArray(v.istoric)?v.istoric:[],
+      notite2: Array.isArray(v.notite2)?v.notite2:[],
+      tags: Array.isArray(v.tags)?v.tags:[],
+      canal: CANALE.indexOf(v.canal)>=0?v.canal:"Oricare",
+      grup: GRUPURI.indexOf(v.grup)>=0?v.grup:"Nedistribuit",
+      tip: TIPURI.indexOf(v.tip)>=0?v.tip:""
+    };
+  }
+
+  // ---- Toast ----
+  var toastTimer=null;
+  function toast(msg, isErr){
+    var el=$("toast"); el.onclick=null; el.textContent=msg; el.className="toast show"+(isErr?" err":"");
+    if(toastTimer) clearTimeout(toastTimer);
+    toastTimer=setTimeout(function(){ el.className="toast"+(isErr?" err":""); }, 2600);
+  }
+  function toastUndo(msg, onUndo){
+    var el=$("toast");
+    el.innerHTML=esc(msg)+' <span style="text-decoration:underline;cursor:pointer;margin-left:6px">Anulează</span>';
+    el.className="toast show";
+    el.onclick=function(){ el.className="toast"; el.onclick=null; if(onUndo) onUndo(); };
+    if(toastTimer) clearTimeout(toastTimer);
+    toastTimer=setTimeout(function(){ el.className="toast"; el.onclick=null; }, 6000);
+  }
+
+  // ---- Derived ----
+  function counts(){
+    var total=state.volunteers.length, activi=0, elig=0;
+    state.volunteers.forEach(function(v){ if(v.activ) activi++; if(isEligible(v)) elig++; });
+    return {total:total, activi:activi, elig:elig};
+  }
+  function anyFilter(){ var f=state.filters; return !!(f.mine||f.stare||f.grup||f.netrimis||f.vechi||f.fMsg||f.fWa||f.fEmail||f.fTel||f.fLinked); }
+  function matchFilters(v){
+    var f=state.filters;
+    if(state.view==="arhiva"){ if(v.activ) return false; } else { if(!v.activ) return false; }
+    if(f.mine && norm2(v.responsabil)!==norm2(loginName)) return false;
+    if(f.stare==="activ" && !v.activ) return false;
+    if(f.stare==="inactiv" && v.activ) return false;
+    if(f.grup && v.grup!==f.grup) return false;
+    if(f.netrimis && (v.sentEmail || v.sentWhatsapp)) return false;
+    if(f.vechi){ var d=daysSince(v.dataContact); if(d===null || d<f.vechi) return false; }
+    if(f.fMsg && !v.facebook) return false;
+    if(f.fWa && !v.whatsappGrup) return false;
+    if(f.fEmail && !v.email) return false;
+    if(f.fTel && !v.telefon) return false;
+    if(f.fLinked && !v.linkedin) return false;
+    return true;
+  }
+  function filteredSorted(){
+    var q=norm2(state.search.trim());
+    var list=state.volunteers.filter(function(v){
+      if(!matchFilters(v)) return false;
+      if(!q) return true;
+      return norm2([v.nume,v.telefon,v.email,v.facebook].join(" ")).indexOf(q)>=0;
+    });
+    list.sort(function(a,b){
+      var x=a.dataContact||"", y=b.dataContact||"";
+      if(x===y) return a.nume.localeCompare(b.nume,"ro");
+      return state.sortDir==="desc" ? (y<x?-1:1) : (x<y?-1:1);
+    });
+    return list;
+  }
+
+  // ---- Render ----
+  function setNav(){
+    var nav=$("navRaport"); if(nav) nav.style.display = isAdmin ? "" : "none";
+    document.querySelectorAll(".nav-item").forEach(function(b){
+      var d=b.getAttribute("data-nav");
+      var active = (d==="automation"&&state.view==="automation") ||
+                   (d==="raport"&&state.view==="raport") ||
+                   (d==="tasks"&&state.view==="tasks") ||
+                   (d==="cazuri"&&state.view==="cazuri") ||
+                   (d==="arhiva"&&state.view==="arhiva") ||
+                   (d==="list"&&(state.view==="list"||state.view==="profile"));
+      b.classList.toggle("active", active);
+    });
+    $("whoName").textContent = loginName || "—";
+  }
+
+  function render(){
+    setNav();
+    var m=$("main");
+    if(!state.loaded){ m.innerHTML='<div class="loading">Se încarcă…</div>'; return; }
+    if(state.view==="profile"){ m.innerHTML=viewProfile(); wireProfile(); return; }
+    if(state.view==="automation"){ m.innerHTML=viewAutomation(); wireAutomation(); return; }
+    if(state.view==="raport"){ m.innerHTML=viewRaport(); wireRaport(); return; }
+    if(state.view==="tasks"){ m.innerHTML=viewTasks(); wireTasks(); return; }
+    if(state.view==="cazuri"){ m.innerHTML=viewCazuri(); wireCazuri(); return; }
+    m.innerHTML=viewList(); wireList();
+  }
+
+  // LIST
+  function viewList(){
+    var c=counts();
+    var banner = state.settings.automationEnabled ? "" :
+      '<div class="banner"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg> Automatizarea de email este oprită global. Nimeni nu primește emailul săptămânal.</div>';
+    var sortLabel = state.sortDir==="desc" ? "↓ Cel mai recent contact" : "↑ Cel mai vechi contact";
+    var head =
+      '<div class="page-head">'+
+        '<div><div class="page-title">'+(state.view==="arhiva"?"Arhivă — voluntari inactivi":"Voluntari")+'</div>'+
+        '<div class="page-meta"><b>'+c.total+'</b> voluntari · <b>'+c.activi+'</b> activi · <b>'+c.elig+'</b> primesc email automat</div></div>'+
+        '<div style="display:flex;gap:9px;flex-wrap:wrap">'+
+        '<button class="btn" id="importBtn" type="button"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg> Importă fișier</button>'+
+        '<button class="btn" id="bulkEmailBtn" type="button"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg> Trimite email</button>'+
+        '<button class="btn btn-primary" id="addBtn" type="button"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg> Adaugă voluntar</button>'+
+        '</div>'+
+      '</div>';
+    var controls =
+      '<div class="controls">'+
+        '<div class="search"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>'+
+        '<input id="searchInput" type="text" placeholder="Caută (nume, telefon, email, Facebook)…" value="'+esc(state.search)+'" /></div>'+
+        '<button class="btn" id="sortBtn" type="button">'+sortLabel+'</button>'+
+      '</div>';
+    var f=state.filters;
+    var fchip=function(active,label,attr){ return '<button class="fchip'+(active?" on":"")+'" '+attr+' type="button">'+label+'</button>'; };
+    var grupSel='<select class="fsel" id="fGrup"><option value="">Toate grupele</option>'+GRUPURI.map(function(g){return '<option value="'+esc(g)+'"'+(f.grup===g?" selected":"")+'>'+(g==="Nedistribuit"?"Nedistribuit":"Grupa "+esc(g))+'</option>';}).join("")+'</select>';
+    var filterBar='<div class="filterbar">'+
+      fchip(f.mine,"Ai mei",'data-fk="mine"')+
+      fchip(f.fEmail,"Email",'data-fk="fEmail"')+
+      fchip(f.fTel,"Telefon",'data-fk="fTel"')+
+      fchip(f.fMsg,"Messenger",'data-fk="fMsg"')+
+      fchip(f.fWa,"WhatsApp grup",'data-fk="fWa"')+
+      fchip(f.fLinked,"LinkedIn",'data-fk="fLinked"')+
+      fchip(f.netrimis,"Netrimiși",'data-fk="netrimis"')+
+      fchip(f.vechi===60,"Necontactați 60+ zile",'data-fk="vechi" data-fv="60"')+
+      grupSel+
+      (anyFilter()?'<button class="fchip fclear" id="fClear" type="button">✕ Șterge filtrele</button>':'')+
+    '</div>';
+    var nFilt=filteredSorted().length;
+    var filtInfo=anyFilter()?'<div class="filt-info"><b>'+nFilt+'</b> voluntari după filtre</div>':'';
+    var body = state.volunteers.length===0
+      ? emptyState()
+      : '<div class="card"><div class="table-scroll"><table><thead><tr>'+
+          '<th style="width:40px"><input class="chk" type="checkbox" id="selAll" /></th><th style="width:72px">Contactat</th><th>Nume și prenume</th><th>Telefon</th><th>Email</th><th>Facebook</th><th>Responsabil</th><th style="text-align:center">Trimis</th><th>Activ</th><th>Ultim contact</th><th>Automatizare</th>'+
+        '</tr></thead><tbody id="tbody">'+rowsHtml()+'</tbody></table></div></div>';
+    return head+banner+controls+filterBar+filtInfo+'<div id="bulkBar" class="bulkbar"></div>'+body;
+  }
+  function emptyState(){
+    return '<div class="card"><div class="empty">'+
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>'+
+      '<div class="big">Niciun voluntar încă</div>'+
+      '<div>Adaugă primul voluntar ca să începi evidența.</div>'+
+      '</div></div>';
+  }
+  function rowsHtml(){
+    var list=filteredSorted();
+    if(list.length===0) return '<tr><td colspan="11" class="empty" style="padding:34px">Niciun voluntar nu se potrivește filtrelor.</td></tr>';
+    return list.map(function(v){
+      var elig=isEligible(v);
+      return '<tr class="rowlink'+(state.selected[v.id]?" row-sel":"")+'" data-id="'+esc(v.id)+'">'+
+        '<td><input class="chk sel-chk" type="checkbox" data-sel="'+esc(v.id)+'" '+(state.selected[v.id]?"checked":"")+' /></td>'+
+        '<td><input class="chk" type="checkbox" data-chk="'+esc(v.id)+'" '+(v.contactat?"checked":"")+' /></td>'+
+        '<td><div class="cell-name"><div class="avatar">'+esc(initials(v.nume))+'</div>'+channelIcon(v)+
+          '<span class="name-main">'+esc(v.nume||"(fără nume)")+'</span>'+
+          '<button class="note-btn'+(v.notite2.length?" has-note":"")+'" data-note="'+esc(v.id)+'" data-stop="1" type="button" title="Notițe rapide">📝'+(v.notite2.length?'<sup>'+v.notite2.length+'</sup>':'')+'</button>'+
+          '</div></td>'+
+        '<td class="'+(v.telefon?"":"muted")+'">'+esc(v.telefon||"—")+'</td>'+
+        '<td class="'+(v.email?"":"muted")+'">'+esc(v.email||"—")+'</td>'+
+        '<td>'+(v.facebook?'<a class="fb-link" href="'+esc(fbHref(v.facebook))+'" target="_blank" rel="noopener" data-stop="1">'+esc(fbLabel(v.facebook))+'</a>':'<span class="muted">—</span>')+'</td>'+
+        '<td class="'+(v.responsabil?"":"muted")+'">'+esc(v.responsabil||"—")+'</td>'+
+        '<td>'+sentIcons(v)+'</td>'+
+        '<td>'+(v.activ?'<span class="badge badge-green"><span class="dot"></span>Activ</span>':'<span class="badge badge-gray"><span class="dot"></span>Inactiv</span>')+'</td>'+
+        '<td class="'+(v.dataContact?"":"muted")+'"><div>'+fmtDate(v.dataContact)+'</div>'+(v.dataContact?'<div class="rel'+((daysSince(v.dataContact)||0)>=60?" rel-old":"")+'">'+relTime(v.dataContact)+'</div>':'')+'</td>'+
+        '<td>'+(elig?'<span class="badge badge-green"><span class="dot"></span>Activă</span>':'<span class="badge badge-gray"><span class="dot"></span>Inactivă</span>')+'</td>'+
+      '</tr>';
+    }).join("");
+  }
+  function selCount(){ return Object.keys(state.selected).length; }
+  function selectedVols(){ return state.volunteers.filter(function(v){ return state.selected[v.id]; }); }
+  function renderBulkBar(){
+    var bar=$("bulkBar"); if(!bar) return;
+    var n=selCount();
+    if(n===0){ bar.className="bulkbar"; bar.innerHTML=""; return; }
+    bar.className="bulkbar show";
+    bar.innerHTML='<b>'+n+' selectați</b>'+
+      '<button class="btn" data-bulk="contactat" type="button">Marchează contactat</button>'+
+      '<button class="btn" data-bulk="resp" type="button">Atribuie responsabil</button>'+
+      '<button class="btn" data-bulk="grup" type="button">Setează grupă</button>'+
+      '<button class="btn" data-bulk="activ" type="button">Activează</button>'+
+      '<button class="btn" data-bulk="inactiv" type="button">Dezactivează</button>'+
+      '<button class="btn btn-ghost" data-bulk="clear" type="button" style="margin-left:auto">Golește selecția</button>';
+    bar.querySelectorAll("[data-bulk]").forEach(function(b){ b.onclick=function(){ bulkAction(b.getAttribute("data-bulk")); }; });
+  }
+  function bulkAction(a){
+    if(a==="clear"){ state.selected={}; render(); return; }
+    var vols=selectedVols(); if(!vols.length) return;
+    if(a==="contactat"){ var t=todayIso(); vols.forEach(function(v){ v.contactat=true; v.dataContact=t; istoricAdd(v,"apel",""); }); }
+    else if(a==="activ"){ vols.forEach(function(v){ v.activ=true; }); }
+    else if(a==="inactiv"){ vols.forEach(function(v){ v.activ=false; }); }
+    else if(a==="resp"){ var r=prompt("Responsabil pentru cei "+vols.length+" selectați:", loginName||""); if(r===null) return; vols.forEach(function(v){ v.responsabil=r.trim(); }); }
+    else if(a==="grup"){ var g=prompt("Grupă (1-5 sau Nedistribuit) pentru cei "+vols.length+" selectați:", "Nedistribuit"); if(g===null) return; g=g.trim(); if(GRUPURI.indexOf(g)<0){ toast("Grupă invalidă (1-5 sau Nedistribuit)", true); return; } vols.forEach(function(v){ v.grup=g; }); }
+    scheduleSave(); state.selected={}; toast("Actualizat "+vols.length+" voluntari"); render();
+  }
+  function wireList(){
+    $("addBtn").onclick=openModal;
+    var beb=$("bulkEmailBtn"); if(beb) beb.onclick=openBulkEmail;
+    var ib=$("importBtn"); if(ib) ib.onclick=openImport;
+    renderBulkBar();
+    var sa=$("selAll");
+    if(sa){ sa.onclick=function(ev){ ev.stopPropagation();
+      var list=filteredSorted();
+      if(sa.checked){ list.forEach(function(v){ state.selected[v.id]=true; }); }
+      else { list.forEach(function(v){ delete state.selected[v.id]; }); }
+      render();
+    }; }
+    var si=$("searchInput");
+    si.oninput=function(){ state.search=si.value; var tb=$("tbody"); if(tb) tb.innerHTML=rowsHtml(); bindRows(); var fi=document.querySelector(".filt-info b"); if(fi) fi.textContent=filteredSorted().length; };
+    $("sortBtn").onclick=function(){ state.sortDir=state.sortDir==="desc"?"asc":"desc"; render(); };
+    document.querySelectorAll("[data-fk]").forEach(function(b){
+      b.onclick=function(){
+        var k=b.getAttribute("data-fk"), val=b.getAttribute("data-fv"), f=state.filters;
+        if(k==="mine") f.mine=!f.mine;
+        else if(k==="netrimis") f.netrimis=!f.netrimis;
+        else if(k==="stare") f.stare=(f.stare===val?"":val);
+        else if(k==="vechi") f.vechi=(f.vechi===+val?0:+val);
+        else f[k]=!f[k];
+        render();
+      };
+    });
+    var fg=$("fGrup"); if(fg) fg.onchange=function(){ state.filters.grup=fg.value; render(); };
+    var fc=$("fClear"); if(fc) fc.onclick=function(){ state.filters={mine:false,stare:"",grup:"",netrimis:false,vechi:0,fMsg:false,fWa:false,fEmail:false,fTel:false,fLinked:false}; render(); };
+    bindRows();
+  }
+  function bindRows(){
+    document.querySelectorAll("#tbody tr.rowlink").forEach(function(tr){
+      tr.onclick=function(ev){
+        if(ev.target.closest("[data-stop]")||ev.target.closest("[data-chk]")||ev.target.closest("[data-sel]")) return;
+        state.selectedId=tr.getAttribute("data-id"); state.view="profile"; render();
+      };
+    });
+    document.querySelectorAll("#tbody [data-note]").forEach(function(el){
+      el.onclick=function(ev){ ev.stopPropagation(); openNote(byId(el.getAttribute("data-note"))); };
+    });
+    document.querySelectorAll("[data-sel]").forEach(function(cb){
+      cb.onclick=function(ev){ ev.stopPropagation(); };
+      cb.onchange=function(){
+        var id=cb.getAttribute("data-sel");
+        if(cb.checked) state.selected[id]=true; else delete state.selected[id];
+        var tr=cb.closest("tr"); if(tr) tr.classList.toggle("row-sel", cb.checked);
+        renderBulkBar();
+      };
+    });
+    document.querySelectorAll("[data-chk]").forEach(function(cb){
+      cb.onclick=function(ev){ ev.stopPropagation(); };
+      cb.onchange=function(){
+        var v=byId(cb.getAttribute("data-chk")); if(!v) return;
+        v.contactat=cb.checked; if(cb.checked) v.dataContact=todayIso();
+        scheduleSave();
+        // reîmprospătează tabelul (data ultim contact + badge automatizare)
+        var tb=$("tbody"); if(tb){ tb.innerHTML=rowsHtml(); bindRows(); }
+        var meta=document.querySelector(".page-meta");
+        if(meta){ var c=counts(); meta.innerHTML="<b>"+c.total+"</b> voluntari · <b>"+c.activi+"</b> activi · <b>"+c.elig+"</b> primesc email automat"; }
+      };
+    });
+  }
+
+  // PROFILE
+  function viewProfile(){
+    var v=byId(state.selectedId);
+    if(!v){ state.view="list"; return viewList(); }
+    var elig=isEligible(v);
+    var contactCard=
+      '<div class="panel"><h3>Date de contact</h3>'+
+        '<div class="field"><label>Telefon</label><input data-f="telefon" type="text" value="'+esc(v.telefon)+'" placeholder="+40 …" /></div>'+
+        '<div class="field"><label>Email</label><input data-f="email" type="email" value="'+esc(v.email)+'" placeholder="nume@exemplu.ro" /></div>'+
+        '<div class="field"><label>Pagină Facebook</label><input data-f="facebook" type="text" value="'+esc(v.facebook)+'" placeholder="facebook.com/…" /></div>'+
+        '<div class="field"><label>LinkedIn</label><input data-f="linkedin" type="text" value="'+esc(v.linkedin)+'" placeholder="linkedin.com/in/…" /></div>'+
+        '<div class="field"><label>Responsabil</label><input data-f="responsabil" type="text" value="'+esc(v.responsabil)+'" placeholder="Cine ține legătura" /></div>'+
+      '</div>';
+    var togglesCard=
+      '<div class="panel"><h3>Stare & preferințe</h3>'+
+        switchRow("activ", v.activ, "Activ în organizație", "Voluntar activ în prezent")+
+        switchRow("mesajSaptamanal", v.mesajSaptamanal, "Vrea mesaj săptămânal", "Preferă un mesaj de la coordonator")+
+        switchRow("vreaEmail", v.vreaEmail, "Vrea email automat", "Primește newsletterul săptămânal")+
+        switchRow("vreaLinkedin", v.vreaLinkedin, "Vrea LinkedIn", "Vrea să fie adăugat pe LinkedIn")+
+        switchRow("whatsappGrup", v.whatsappGrup, "În grupul de WhatsApp", "E membru în grupul de WhatsApp")+
+      '</div>';
+    var behaviorCard=
+      '<div class="panel"><h3>Profil comportamental</h3>'+
+        behaviorGroup(v)+
+        pillGroup("Canal de comunicare preferat", CANALE, CANALE, [v.canal], false, "canal")+
+        pillGroup("Grupă de distribuție", GRUPURI, GRUPURI, [v.grup], false, "grup")+
+        pillGroup("Tip de implicare", TIPURI, TIPURI, [v.tip], false, "tip")+
+      '</div>';
+    var notesCard=
+      '<div class="panel"><h3>Notițe</h3>'+
+        '<div class="field"><textarea data-f="notite" placeholder="Observații, disponibilitate, istoric…">'+esc(v.notite)+'</textarea></div>'+
+        autoNote(v, elig)+
+      '</div>';
+    return ''+
+      '<button class="back" id="backBtn" type="button">← Toți voluntarii</button>'+
+      '<div class="prof-head">'+
+        '<div class="avatar lg">'+esc(initials(v.nume))+'</div>'+
+        '<input class="who-name" data-f="nume" value="'+esc(v.nume)+'" placeholder="Nume și prenume" />'+
+        (v.activ?'<span class="badge badge-green"><span class="dot"></span>Activ</span>':'<span class="badge badge-gray"><span class="dot"></span>Inactiv</span>')+
+        '<button class="btn btn-primary" id="sendMsgBtn" type="button" style="margin-left:auto"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg> Trimite mesaj</button>'+
+        '<button class="btn" id="callBtn" type="button"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg> Am sunat</button>'+
+        '<button class="btn" id="taskBtn" type="button"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> Sarcină</button>'+
+        '<button class="btn btn-danger" id="delBtn" type="button"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg> Șterge</button>'+
+      '</div>'+
+      '<div class="prof-meta">'+
+        '<span>Înscris pe site: <b>'+fmtDate(v.dataInscriere||v.dataContact)+'</b></span>'+
+        '<span>Ultim contact: <b>'+fmtDate(v.dataContact)+'</b></span>'+
+      '</div>'+
+      '<div class="grid">'+
+        '<div>'+contactCard+'<div style="height:18px"></div>'+togglesCard+'</div>'+
+        '<div>'+behaviorCard+'<div style="height:18px"></div>'+notesCard+'</div>'+
+      '</div>'+
+      '<div style="height:18px"></div>'+timelineCard(v);
+  }
+  function timelineCard(v){
+    var ist=(v.istoric||[]).slice().reverse();
+    var rows = ist.length ? ist.map(function(e){
+      var lab=ISTORIC_LABEL[e.tip]||e.tip;
+      return '<div class="tl-row"><span class="tl-dot tl-'+esc(e.tip)+'"></span>'+
+        '<div class="tl-body"><div class="tl-head"><b>'+esc(lab)+'</b>'+(e.nota?' — '+esc(e.nota):'')+'</div>'+
+        '<div class="tl-meta">'+fmtDate((e.at||"").slice(0,10))+(e.by?' · '+esc(e.by):'')+'</div></div></div>';
+    }).join("") : '<div class="muted" style="padding:6px 2px">Nicio interacțiune încă. Apelurile, emailurile și notele apar aici.</div>';
+    return '<div class="panel"><h3>Istoric interacțiuni</h3>'+
+      '<div class="field" style="margin-bottom:14px"><input id="notaInput" type="text" placeholder="Adaugă o notă și apasă Enter…" autocomplete="off" /></div>'+
+      '<div class="timeline">'+rows+'</div>'+
+    '</div>';
+  }
+  function switchRow(field, on, lab, desc){
+    return '<div class="switch-row"><div><div class="lab">'+esc(lab)+'</div><div class="desc">'+esc(desc)+'</div></div>'+
+      '<button class="toggle'+(on?" on":"")+'" data-toggle="'+field+'" type="button" aria-pressed="'+(on?"true":"false")+'"></button></div>';
+  }
+  function pillGroup(title, keys, labels, active, multi, field){
+    var pills=keys.map(function(k,i){
+      var on=active.indexOf(k)>=0;
+      return '<button class="pill'+(on?" on":"")+'" data-pill="'+esc(field)+'" data-val="'+esc(k)+'" data-multi="'+(multi?"1":"0")+'" type="button">'+esc(labels[i])+'</button>';
+    }).join("");
+    return '<div class="pill-group"><div class="gl">'+esc(title)+'</div><div class="pills">'+pills+'</div></div>';
+  }
+  // „Comportament observat": etichete fixe (toggle) + personalizate (adăugate de echipă) + căsuță de adăugare.
+  function behaviorGroup(v){
+    var fixedKeys=TAGS.map(function(t){return t.k;});
+    var fixed=TAGS.map(function(t){
+      var on=v.tags.indexOf(t.k)>=0;
+      return '<button class="pill'+(on?" on":"")+'" data-btag="'+esc(t.k)+'" type="button">'+esc(t.l)+'</button>';
+    }).join("");
+    var custom=v.tags.filter(function(t){ return fixedKeys.indexOf(t)<0; }).map(function(t){
+      return '<button class="pill on pill-custom" data-btagremove="'+esc(t)+'" type="button" title="Elimină eticheta">'+esc(t)+' ✕</button>';
+    }).join("");
+    var input='<input class="tag-add" id="tagAddInput" type="text" placeholder="+ adaugă comportament…" autocomplete="off" />';
+    return '<div class="pill-group"><div class="gl">Comportament observat</div><div class="pills">'+fixed+custom+input+'</div></div>';
+  }
+  function autoNote(v, elig){
+    if(elig){
+      return '<div class="auto-note ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg><div><b>Primește emailul săptămânal.</b> Voluntarul e activ și a cerut emailul automat.</div></div>';
+    }
+    var motiv = !state.settings.automationEnabled ? "automatizarea e oprită global"
+      : !v.activ ? "voluntarul nu e activ"
+      : "nu a cerut emailul automat";
+    return '<div class="auto-note no"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg><div><b>Nu primește emailul.</b> Motiv: '+esc(motiv)+'.</div></div>';
+  }
+  function wireProfile(){
+    $("backBtn").onclick=function(){ state.view="list"; state.selectedId=null; render(); };
+    $("sendMsgBtn").onclick=function(){ openSendMsg(byId(state.selectedId)); };
+    $("taskBtn").onclick=function(){
+      var v=byId(state.selectedId); if(!v) return;
+      var txt=prompt("Sarcină pentru "+(v.nume||"voluntar")+":"); if(!txt||!txt.trim()) return;
+      var t=txt.trim();
+      var doAdd=function(){ addTask(t, v, "", loginName); toast("Sarcină adăugată pentru "+(v.nume||"voluntar")); };
+      if(Array.isArray(state.tasks)) doAdd();
+      else fetch(SYNC+"/"+TASKS_KEY+".json",{cache:"no-store"}).then(function(r){return r.ok?r.json():null;}).then(function(d){ state.tasks=(d&&Array.isArray(d.tasks))?d.tasks:[]; doAdd(); }).catch(function(){ state.tasks=[]; doAdd(); });
+    };
+    var ni=$("notaInput");
+    if(ni){ ni.onkeydown=function(ev){ if(ev.key==="Enter"){ ev.preventDefault();
+      var v=byId(state.selectedId); var t=(ni.value||"").trim(); if(!v||!t) return;
+      istoricAdd(v,"nota",t); scheduleSave(); render();
+    } }; }
+    $("callBtn").onclick=function(){
+      var v=byId(state.selectedId); if(!v) return;
+      fetch("/api/voluntari-activity", {method:"POST", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ type:"apel", contacte:[{ nume:v.nume, telefon:v.telefon, email:v.email }] })})
+        .then(function(r){ if(!r.ok) throw new Error(); toast("Apel înregistrat ✓"); })
+        .catch(function(){ toast("Nu am putut înregistra apelul", true); });
+      v.contactat=true; v.dataContact=todayIso(); istoricAdd(v,"apel",""); scheduleSave(); render();
+    };
+    $("delBtn").onclick=function(){
+      var idx=-1, v=null;
+      for(var i=0;i<state.volunteers.length;i++){ if(state.volunteers[i].id===state.selectedId){ idx=i; v=state.volunteers[i]; break; } }
+      if(!v) return;
+      if(!confirm("Ștergi voluntarul „"+(v.nume||"fără nume")+"”? Poți anula imediat după.")) return;
+      state.volunteers.splice(idx,1);
+      state.view="list"; state.selectedId=null; scheduleSave(); render();
+      toastUndo("Voluntar șters", function(){
+        state.volunteers.splice(Math.min(idx, state.volunteers.length), 0, v);
+        scheduleSave(); render(); toast("Voluntar restaurat");
+      });
+    };
+    // text fields — actualizează starea fără re-render (păstrează cursorul)
+    document.querySelectorAll("[data-f]").forEach(function(el){
+      el.oninput=function(){
+        var v=byId(state.selectedId); if(!v) return;
+        v[el.getAttribute("data-f")]=el.value; scheduleSave();
+      };
+    });
+    // toggles
+    document.querySelectorAll("[data-toggle]").forEach(function(btn){
+      btn.onclick=function(){
+        var v=byId(state.selectedId); if(!v) return;
+        var f=btn.getAttribute("data-toggle"); v[f]=!v[f]; scheduleSave(); render();
+      };
+    });
+    // pills
+    document.querySelectorAll("[data-pill]").forEach(function(btn){
+      btn.onclick=function(){
+        var v=byId(state.selectedId); if(!v) return;
+        var f=btn.getAttribute("data-pill"), val=btn.getAttribute("data-val"), multi=btn.getAttribute("data-multi")==="1";
+        if(multi){
+          var arr=v[f]||[]; var i=arr.indexOf(val);
+          if(i>=0) arr.splice(i,1); else arr.push(val); v[f]=arr;
+        } else { v[f]=val; }
+        scheduleSave(); render();
+      };
+    });
+    // Comportament observat: toggle etichete fixe
+    document.querySelectorAll("[data-btag]").forEach(function(btn){
+      btn.onclick=function(){
+        var v=byId(state.selectedId); if(!v) return;
+        var k=btn.getAttribute("data-btag"), i=v.tags.indexOf(k);
+        if(i>=0) v.tags.splice(i,1); else v.tags.push(k);
+        scheduleSave(); render();
+      };
+    });
+    // Elimină etichetă personalizată
+    document.querySelectorAll("[data-btagremove]").forEach(function(btn){
+      btn.onclick=function(){
+        var v=byId(state.selectedId); if(!v) return;
+        var k=btn.getAttribute("data-btagremove"), i=v.tags.indexOf(k);
+        if(i>=0){ v.tags.splice(i,1); scheduleSave(); render(); }
+      };
+    });
+    // Căsuță de adăugare: Enter (sau blur) salvează eticheta și redeschide o căsuță nouă
+    var tagInput=$("tagAddInput");
+    if(tagInput){
+      var addTag=function(){
+        var v=byId(state.selectedId); if(!v) return false;
+        var val=(tagInput.value||"").trim();
+        if(!val) return false;
+        if(v.tags.indexOf(val)<0) v.tags.push(val);
+        scheduleSave(); render();
+        var el=$("tagAddInput"); if(el) el.focus();
+        return true;
+      };
+      tagInput.onkeydown=function(ev){
+        if(ev.key==="Enter"){ ev.preventDefault(); addTag(); }
+      };
+      tagInput.onblur=function(){ if((tagInput.value||"").trim()) addTag(); };
+    }
+  }
+
+  // AUTOMATION
+  // Destinatarii = audiența aleasă (activi / consimțământ / grupă / tip) care au
+  // canalul de contact necesar (email pentru Email, telefon pentru WhatsApp).
+  function recipientsFor(canal){
+    var a=state.settings.audience, needEmail=canal!=="whatsapp";
+    var hasContact=function(v){ return needEmail?!!v.email:!!v.telefon; };
+    if(a.mode==="manual"){
+      return state.volunteers.filter(function(v){ return a.selectedIds.indexOf(v.id)>=0 && hasContact(v); });
+    }
+    return state.volunteers.filter(function(v){
+      if(a.doarActivi && !v.activ) return false;
+      if(a.doarConsimtit){ if(needEmail ? !v.vreaEmail : !v.mesajSaptamanal) return false; }
+      if(a.grupuri.length && a.grupuri.indexOf(v.grup)<0) return false;
+      if(a.tip && v.tip!==a.tip) return false;
+      return hasContact(v);
+    });
+  }
+  function recipients(){ return recipientsFor(state.settings.canal); }
+  // Lista bifabilă (mod „Aleg manual"), filtrată după căutare.
+  function manualRows(q){
+    q=(q||"").trim().toLowerCase();
+    var isWa=state.settings.canal==="whatsapp";
+    var sel=state.settings.audience.selectedIds;
+    var list=state.volunteers.filter(function(v){ return !q || v.nume.toLowerCase().indexOf(q)>=0; });
+    if(!list.length) return '<div class="empty" style="padding:24px">Niciun voluntar găsit.</div>';
+    return list.map(function(v){
+      var contact=isWa?v.telefon:v.email;
+      return '<label class="pick-row'+(contact?"":" pick-dim")+'">'+
+        '<input type="checkbox" class="chk" data-pick="'+esc(v.id)+'" '+(sel.indexOf(v.id)>=0?"checked":"")+' />'+
+        '<div class="avatar">'+esc(initials(v.nume))+'</div>'+
+        channelIcon(v)+
+        '<div class="pick-main"><div class="name-main">'+esc(v.nume||"(fără nume)")+'</div>'+
+        '<div class="name-sub">'+esc(contact||("fără "+(isWa?"telefon":"email")))+'</div></div>'+
+        (v.activ?'':'<span class="badge badge-gray"><span class="dot"></span>Inactiv</span>')+
+      '</label>';
+    }).join("");
+  }
+  function bindPicks(){
+    document.querySelectorAll("[data-pick]").forEach(function(cb){
+      cb.onchange=function(){
+        var id=cb.getAttribute("data-pick"), sel=state.settings.audience.selectedIds, i=sel.indexOf(id);
+        if(cb.checked){ if(i<0) sel.push(id); } else if(i>=0){ sel.splice(i,1); }
+        scheduleSave(); refreshCounts();
+      };
+    });
+  }
+  function refreshCounts(){
+    var recs=recipients(), total=state.volunteers.length, pct=total?Math.round(recs.length/total*100):0;
+    var isWa=state.settings.canal==="whatsapp", el;
+    el=$("pickCount"); if(el) el.textContent=state.settings.audience.selectedIds.length;
+    el=document.querySelector(".aud-count"); if(el) el.innerHTML='<b>'+recs.length+'</b> destinatari cu '+(isWa?"telefon":"email")+' vor primi '+(isWa?"mesajul WhatsApp":"emailul")+' în fiecare <b>'+esc(state.settings.sendDay.toLowerCase())+'</b>.';
+    var vs=document.querySelectorAll(".kpi .v");
+    if(vs[2]) vs[2].textContent=recs.length;
+    if(vs[3]) vs[3].textContent=pct+"%";
+  }
+  function viewAutomation(){
+    var s=state.settings, a=s.audience;
+    var isWa = s.canal==="whatsapp";
+    var day=s.sendDay;
+    var recs=recipients();
+    var total=state.volunteers.length;
+    var activi=state.volunteers.filter(function(v){return v.activ;}).length;
+    var pct = total? Math.round(recs.length/total*100):0;
+    var canalNume = isWa?"WhatsApp":"Email";
+    var contactNume = isWa?"telefon":"email";
+    var mesajNume = isWa?"mesajul WhatsApp":"emailul";
+    var sep='<div class="sb-sep"></div>';
+
+    var canalSeg='<div class="pills">'+
+      '<button class="pill'+(!isWa?" on":"")+'" data-canal="email" type="button">✉ Email</button>'+
+      '<button class="pill'+(isWa?" on":"")+'" data-canal="whatsapp" type="button">💬 WhatsApp</button>'+
+    '</div>';
+    var daySel='<select class="sel" id="daySel">'+ZILE.map(function(z){return '<option'+(z===day?" selected":"")+'>'+z+'</option>';}).join("")+'</select>';
+    var settingBar=
+      '<div class="setting-bar">'+
+        '<div><div class="s-lab">Canal</div><div class="s-desc">Cum trimiți mesajul.</div></div>'+canalSeg+ sep+
+        '<div><div class="s-lab">Ziua trimiterii</div><div class="s-desc">Când pornește scenariul.</div></div>'+daySel+ sep+
+        '<div><div class="s-lab">Automatizare</div><div class="s-desc">Pornit/oprit pentru toți.</div></div>'+
+        '<button class="toggle'+(s.automationEnabled?" on":"")+'" id="autoToggle" type="button"></button>'+
+      '</div>';
+
+    var grupPills=GRUPURI.map(function(g){ return '<button class="pill'+(a.grupuri.indexOf(g)>=0?" on":"")+'" data-agrup="'+esc(g)+'" type="button">'+esc(g)+'</button>'; }).join("");
+    var tipPills='<button class="pill'+(a.tip===""?" on":"")+'" data-atip="" type="button">Toate</button>'+
+      TIPURI.map(function(t){ return '<button class="pill'+(a.tip===t?" on":"")+'" data-atip="'+esc(t)+'" type="button">'+esc(t)+'</button>'; }).join("");
+    var criteriiBody=
+      '<div class="aud-row">'+
+        '<label class="chk-row"><input type="checkbox" class="chk" id="aActivi" '+(a.doarActivi?"checked":"")+' /> Doar voluntarii activi</label>'+
+        '<label class="chk-row"><input type="checkbox" class="chk" id="aCons" '+(a.doarConsimtit?"checked":"")+' /> Doar cei care au acceptat '+mesajNume+'</label>'+
+      '</div>'+
+      '<div class="pill-group" style="margin-top:16px"><div class="gl">Grupă de distribuție <span class="muted">(gol = toate)</span></div><div class="pills">'+grupPills+'</div></div>'+
+      '<div class="pill-group"><div class="gl">Tip de implicare</div><div class="pills">'+tipPills+'</div></div>';
+    var manualBody=
+      '<div class="pick-tools">'+
+        '<div class="search" style="flex:0 1 280px; min-width:170px"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input id="pickSearch" type="text" placeholder="Caută după nume…" value="'+esc(state.pickSearch)+'" /></div>'+
+        '<button class="btn" id="pickAll" type="button">Bifează tot</button>'+
+        '<button class="btn" id="pickNone" type="button">Golește</button>'+
+        '<span class="pick-count"><b id="pickCount">'+a.selectedIds.length+'</b> aleși</span>'+
+      '</div>'+
+      '<div class="pick-list" id="pickList">'+manualRows(state.pickSearch)+'</div>';
+    var modeSeg='<div class="pills" style="margin-bottom:16px">'+
+      '<button class="pill'+(a.mode==="criterii"?" on":"")+'" data-mode="criterii" type="button">După criterii</button>'+
+      '<button class="pill'+(a.mode==="manual"?" on":"")+'" data-mode="manual" type="button">Aleg manual (bifez)</button>'+
+    '</div>';
+    var audience=
+      '<div class="sec-title">Către cine trimit</div>'+
+      '<div class="panel" style="margin-bottom:24px">'+
+        modeSeg+
+        (a.mode==="manual"? manualBody : criteriiBody)+
+        '<div class="aud-count"><b>'+recs.length+'</b> destinatari cu '+contactNume+' vor primi '+mesajNume+' în fiecare <b>'+esc(day.toLowerCase())+'</b>.</div>'+
+      '</div>';
+
+    var kpis=
+      '<div class="kpis">'+
+        kpi("Total voluntari", total, "")+
+        kpi("Activi", activi, "green")+
+        kpi("Destinatari selectați", recs.length, "red")+
+        kpi("Procent din total", pct+"%", "")+
+      '</div>';
+
+    var filtruTxt=[
+      a.doarActivi?"activi":"", a.doarConsimtit?("au acceptat "+mesajNume):"",
+      a.grupuri.length?("grupele "+a.grupuri.join(", ")):"", a.tip?("tip "+a.tip):"",
+      "au "+contactNume
+    ].filter(Boolean).join(", ");
+    var steps = isWa ? [
+      ["Declanșator","În fiecare "+day+" la 09:00, scenariul Make.com pornește automat."],
+      ["Sursă date","Citește lista de voluntari din acest CRM."],
+      ["Filtru","Păstrează destinatarii aleși: "+filtruTxt+"."],
+      ["Conținut","Preia mesajul WhatsApp (șablon aprobat)."],
+      ["Trimitere","Trimite prin WhatsApp Business API (Twilio/360dialog) la fiecare număr."]
+    ] : [
+      ["Declanșator","În fiecare "+day+" la 09:00, scenariul Make.com pornește automat."],
+      ["Sursă date","Citește lista de voluntari din acest CRM."],
+      ["Filtru","Păstrează destinatarii aleși: "+filtruTxt+"."],
+      ["Conținut","Preia newsletterul săptămânal pentru persoane fizice."],
+      ["Trimitere","Trimite emailul fiecărui destinatar (Gmail/SMTP)."]
+    ];
+    var flow='<div class="sec-title">Fluxul scenariului · '+canalNume+'</div><div class="flow">'+steps.map(function(st,i){
+      return '<div class="step"><div class="n">'+(i+1)+'</div><div class="st">'+esc(st[0])+'</div><div class="sd">'+esc(st[1])+'</div></div>';
+    }).join("")+'</div>';
+
+    var listCard='<div class="sec-title">Vor primi '+mesajNume+' '+esc(day.toLowerCase())+' ('+recs.length+')</div><div class="card" style="padding:8px 18px">'+
+      (recs.length? '<div class="elig-list">'+recs.map(function(v){
+        var contact=isWa?(v.telefon||"fără telefon"):(v.email||"fără email");
+        return '<div class="elig-row"><div class="avatar">'+esc(initials(v.nume))+'</div><div><div class="name-main">'+esc(v.nume||"(fără nume)")+'</div><div class="name-sub">'+esc(contact)+'</div></div></div>';
+      }).join("")+'</div>'
+      : '<div class="empty" style="padding:34px"><div>Niciun destinatar cu filtrele curente.</div></div>')+
+    '</div>';
+
+    var m=state.settings.mesaj;
+    var mesajCard=
+      '<div class="sec-title">Mesajul de trimis</div>'+
+      '<div class="panel" style="margin-bottom:24px">'+
+        '<div class="field"><label>Subiect (email)</label><input data-msg="subiect" type="text" placeholder="ex. Cazul săptămânii — ai un minut?" value="'+esc(m.subiect)+'" /></div>'+
+        '<div class="field"><label>Conținut</label><textarea data-msg="continut" style="min-height:120px" placeholder="Scrie mesajul… (poți folosi HTML pentru email)">'+esc(m.continut)+'</textarea></div>'+
+        '<div class="field"><label>Semnătură <span class="muted" style="font-weight:500">(HTML acceptat — se adaugă jos, la fiecare email)</span></label>'+
+          '<div class="sig-tools">'+
+            '<button class="btn" id="sigUpload" type="button"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg> Încarcă HTML</button>'+
+            '<input id="sigFile" type="file" accept=".html,.htm,text/html" style="display:none" />'+
+            '<button class="btn btn-ghost" id="sigClear" type="button">Golește</button>'+
+          '</div>'+
+          '<textarea data-msg="semnatura" id="sigText" style="min-height:96px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px" placeholder="Lipește aici HTML-ul semnăturii sau încarcă un fișier .html…">'+esc(m.semnatura)+'</textarea>'+
+        '</div>'+
+        '<div class="field"><label>Previzualizare semnătură</label><iframe id="sigPreview" class="sig-preview" title="Previzualizare semnătură"></iframe></div>'+
+        '<div class="s-desc" style="margin-top:2px">Subiect + Conținut + Semnătură se folosesc la „Trimite email". Pentru WhatsApp se folosește un șablon aprobat (separat).</div>'+
+      '</div>';
+    var nEmail=recipientsFor("email").length, nWa=recipientsFor("whatsapp").length;
+    var sendCard=
+      '<div class="panel send-card" style="margin-bottom:24px">'+
+        '<div><div class="s-lab">Trimite acum</div><div class="s-desc">Declanșează scenariul Make către destinatarii aleși, pe canalul dorit.</div></div>'+
+        '<div class="send-btns">'+
+          '<button class="btn" id="btnTest" type="button">Test către mine</button>'+
+          '<button class="btn btn-primary" id="btnEmail" type="button">✉ Trimite email ('+nEmail+')</button>'+
+          '<button class="btn btn-primary" id="btnWa" type="button">💬 Trimite mesaj ('+nWa+')</button>'+
+        '</div>'+
+      '</div>';
+    var wh=state.settings.webhooks;
+    var makeCard=
+      '<div class="sec-title">Conectare Make</div>'+
+      '<div class="panel" style="margin-bottom:24px">'+
+        '<div class="field"><label>Webhook Make — Email</label><input data-wh="email" type="text" placeholder="https://hook.eu1.make.com/…" value="'+esc(wh.email)+'" /></div>'+
+        '<div class="field"><label>Webhook Make — WhatsApp</label><input data-wh="whatsapp" type="text" placeholder="https://hook.eu1.make.com/…" value="'+esc(wh.whatsapp)+'" /></div>'+
+        '<div class="s-desc" style="margin-top:2px">Lipește adresa webhook-ului din scenariul Make (modulul „Webhooks → Custom webhook"). Se salvează automat.</div>'+
+      '</div>';
+    return '<div class="page-head"><div><div class="page-title">Automatizare · '+canalNume+' săptămânal</div>'+
+      '<div class="page-meta">Integrare Make.com — alegi canalul, ziua și către cine trimiți.</div></div></div>'+
+      settingBar+audience+mesajCard+sendCard+kpis+flow+makeCard+listCard;
+  }
+  function kpi(k, v, cls){
+    return '<div class="kpi'+(cls?" "+cls:"")+'"><div class="k">'+esc(k)+'</div><div class="v">'+esc(String(v))+'</div></div>';
+  }
+  function wireAutomation(){
+    var a=state.settings.audience;
+    document.querySelectorAll("[data-canal]").forEach(function(b){
+      b.onclick=function(){ state.settings.canal=b.getAttribute("data-canal"); scheduleSave(); render(); };
+    });
+    $("autoToggle").onclick=function(){ state.settings.automationEnabled=!state.settings.automationEnabled; scheduleSave(); render(); };
+    $("daySel").onchange=function(){ state.settings.sendDay=$("daySel").value; scheduleSave(); render(); };
+    // moduri: dupa criterii / aleg manual
+    document.querySelectorAll("[data-mode]").forEach(function(b){
+      b.onclick=function(){
+        var target=b.getAttribute("data-mode");
+        if(target==="manual" && a.selectedIds.length===0){
+          a.selectedIds=recipients().map(function(v){return v.id;}); // pornește de la criteriile curente
+        }
+        a.mode=target; scheduleSave(); render();
+      };
+    });
+    if(a.mode==="manual"){
+      var ps=$("pickSearch");
+      if(ps) ps.oninput=function(){ state.pickSearch=ps.value; var pl=$("pickList"); if(pl){ pl.innerHTML=manualRows(state.pickSearch); bindPicks(); } };
+      var pAll=$("pickAll"); if(pAll) pAll.onclick=function(){
+        var q=state.pickSearch.trim().toLowerCase(), sel=a.selectedIds;
+        state.volunteers.forEach(function(v){ if(q && v.nume.toLowerCase().indexOf(q)<0) return; if(sel.indexOf(v.id)<0) sel.push(v.id); });
+        scheduleSave(); render();
+      };
+      var pNone=$("pickNone"); if(pNone) pNone.onclick=function(){ a.selectedIds=[]; scheduleSave(); render(); };
+      bindPicks();
+    } else {
+      $("aActivi").onchange=function(){ a.doarActivi=$("aActivi").checked; scheduleSave(); render(); };
+      $("aCons").onchange=function(){ a.doarConsimtit=$("aCons").checked; scheduleSave(); render(); };
+      document.querySelectorAll("[data-agrup]").forEach(function(b){
+        b.onclick=function(){
+          var g=b.getAttribute("data-agrup"), arr=a.grupuri, i=arr.indexOf(g);
+          if(i>=0) arr.splice(i,1); else arr.push(g);
+          scheduleSave(); render();
+        };
+      });
+      document.querySelectorAll("[data-atip]").forEach(function(b){
+        b.onclick=function(){ a.tip=b.getAttribute("data-atip"); scheduleSave(); render(); };
+      });
+    }
+    var bEmail=$("btnEmail"); if(bEmail) bEmail.onclick=function(){ sendNow("email", false); };
+    var bWa=$("btnWa"); if(bWa) bWa.onclick=function(){ sendNow("whatsapp", false); };
+    var bTest=$("btnTest"); if(bTest) bTest.onclick=function(){ sendNow("email", true); };
+    document.querySelectorAll("[data-wh]").forEach(function(el){
+      el.oninput=function(){ state.settings.webhooks[el.getAttribute("data-wh")]=el.value.trim(); scheduleSave(); };
+    });
+    document.querySelectorAll("[data-msg]").forEach(function(el){
+      el.oninput=function(){ state.settings.mesaj[el.getAttribute("data-msg")]=el.value; scheduleSave(); };
+    });
+    // Semnătură: previzualizare live (iframe izolat) + încărcare fișier HTML
+    var sigText=$("sigText"), sigPreview=$("sigPreview");
+    function updateSigPreview(){
+      if(!sigPreview) return;
+      var html=(sigText && sigText.value.trim()) ? sigText.value
+        : '<span style="color:#8A7F7A;font-family:sans-serif;font-size:13px">— fără semnătură —</span>';
+      sigPreview.srcdoc='<!doctype html><meta charset="utf-8"><body style="margin:10px;font-family:Arial,Helvetica,sans-serif">'+html+'</body>';
+    }
+    if(sigText){ sigText.addEventListener("input", updateSigPreview); updateSigPreview(); }
+    var sigUpload=$("sigUpload"), sigFile=$("sigFile");
+    if(sigUpload && sigFile){
+      sigUpload.onclick=function(){ sigFile.click(); };
+      sigFile.onchange=function(){
+        var f=sigFile.files && sigFile.files[0]; if(!f) return;
+        var reader=new FileReader();
+        reader.onload=function(){
+          sigText.value=String(reader.result||"");
+          state.settings.mesaj.semnatura=sigText.value; scheduleSave(); updateSigPreview();
+          toast("Semnătură HTML încărcată");
+        };
+        reader.onerror=function(){ toast("Nu am putut citi fișierul", true); };
+        reader.readAsText(f); sigFile.value="";
+      };
+    }
+    var sigClear=$("sigClear");
+    if(sigClear) sigClear.onclick=function(){ if(sigText){ sigText.value=""; } state.settings.mesaj.semnatura=""; scheduleSave(); updateSigPreview(); };
+  }
+
+  // ---- Raport activitate (doar admin) ----
+  function loadActivity(){
+    state.activity=undefined; render();
+    if(!isAdmin){ state.activity={forbidden:true, events:[]}; render(); return; }
+    fetch("/api/voluntari-activity", {cache:"no-store"}).then(function(r){
+      if(r.status===403){ state.activity={forbidden:true, events:[]}; render(); return null; }
+      return r.json();
+    }).then(function(j){ if(j){ state.activity={events:(j&&j.events)||[]}; render(); } })
+    .catch(function(){ state.activity={error:true, events:[]}; render(); });
+  }
+  function buildReport(events){
+    var totals={apel:0,email:0,whatsapp:0}, perContact={}, perPerson={};
+    events.forEach(function(e){
+      if(!totals.hasOwnProperty(e.type)) return;
+      var cs=e.contacte||[]; totals[e.type]+=cs.length;
+      if(e.by){ perPerson[e.by]=perPerson[e.by]||{apel:0,email:0,whatsapp:0}; perPerson[e.by][e.type]+=cs.length; }
+      cs.forEach(function(c){
+        var key=((c.email||c.telefon||c.nume||"?")+"").toLowerCase();
+        perContact[key]=perContact[key]||{nume:c.nume||c.email||c.telefon||"?", info:c.email||c.telefon||"", apel:0,email:0,whatsapp:0};
+        perContact[key][e.type]++;
+      });
+    });
+    return {totals:totals, perContact:perContact, perPerson:perPerson};
+  }
+  function viewRaport(){
+    var pd=state.raportPeriod||"all";
+    var periodSel='<select class="fsel" id="raportPeriod"><option value="all"'+(pd==="all"?" selected":"")+'>Toată perioada</option><option value="7"'+(pd==="7"?" selected":"")+'>Ultimele 7 zile</option><option value="30"'+(pd==="30"?" selected":"")+'>Ultimele 30 zile</option></select>';
+    var head='<div class="page-head"><div><div class="page-title">Raport activitate</div>'+
+      '<div class="page-meta">Apeluri, emailuri și mesaje WhatsApp — cu contactul vizat. Vizibil doar pentru admin.</div></div>'+
+      '<div style="display:flex;gap:8px;align-items:center">'+periodSel+'<button class="btn" id="raportReload" type="button">Reîncarcă</button></div></div>';
+    if(state.activity===undefined) return head+'<div class="loading">Se încarcă…</div>';
+    if(state.activity.forbidden) return head+'<div class="card"><div class="empty"><div class="big">Acces restricționat</div><div>Raportul e disponibil doar pentru administratori.</div></div></div>';
+    if(state.activity.error) return head+'<div class="card"><div class="empty"><div class="big">Nu am putut încărca raportul</div><div>Reîncearcă.</div></div></div>';
+    var evAll=state.activity.events||[];
+    var pdDays={all:0,"7":7,"30":30};
+    var events = pd==="all" ? evAll : evAll.filter(function(e){ var d=daysSince((e.at||"").slice(0,10)); return d!==null && d<=pdDays[pd]; });
+    var rep=buildReport(events);
+    var kpis='<div class="kpis">'+
+      kpi("Apeluri", rep.totals.apel, "")+
+      kpi("Emailuri trimise", rep.totals.email, "red")+
+      kpi("Mesaje WhatsApp", rep.totals.whatsapp, "green")+
+      kpi("Acțiuni totale", events.length, "")+
+    '</div>';
+    var persKeys=Object.keys(rep.perPerson).sort();
+    var persRows=persKeys.map(function(p){ var x=rep.perPerson[p];
+      return '<tr><td>'+esc(p)+'</td><td>'+x.apel+'</td><td>'+x.email+'</td><td>'+x.whatsapp+'</td></tr>'; }).join("");
+    var persCard = persKeys.length ? '<div class="sec-title">Pe coordonator</div><div class="card" style="margin-bottom:24px"><table><thead><tr><th>Coordonator</th><th>Apeluri</th><th>Emailuri</th><th>WhatsApp</th></tr></thead><tbody>'+persRows+'</tbody></table></div>' : '';
+    var contacts=Object.keys(rep.perContact).map(function(k){ return rep.perContact[k]; });
+    contacts.sort(function(a,b){ return (b.apel+b.email+b.whatsapp)-(a.apel+a.email+a.whatsapp); });
+    var contactRows=contacts.map(function(c){
+      return '<tr><td><div class="name-main">'+esc(c.nume)+'</div>'+(c.info?'<div class="name-sub">'+esc(c.info)+'</div>':'')+'</td>'+
+        '<td>'+(c.apel||'<span class="muted">—</span>')+'</td><td>'+(c.email||'<span class="muted">—</span>')+'</td><td>'+(c.whatsapp||'<span class="muted">—</span>')+'</td></tr>'; }).join("");
+    var contactCard = contacts.length
+      ? '<div class="sec-title">Pe contact ('+contacts.length+')</div><div class="card"><div style="max-height:520px;overflow:auto"><table><thead><tr><th>Contact</th><th>Apeluri</th><th>Emailuri</th><th>WhatsApp</th></tr></thead><tbody>'+contactRows+'</tbody></table></div></div>'
+      : '<div class="card"><div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l3-3 3 3 5-6"/></svg><div class="big">Nicio activitate încă</div><div>Apelurile, emailurile și mesajele apar aici pe măsură ce echipa lucrează.</div></div></div>';
+    return head+kpis+persCard+contactCard;
+  }
+  function wireRaport(){
+    var r=$("raportReload"); if(r) r.onclick=function(){ loadActivity(); };
+    var p=$("raportPeriod"); if(p) p.onchange=function(){ state.raportPeriod=p.value; render(); };
+  }
+
+  // ---- Sarcini (task-uri) ----
+  function loadTasks(){
+    state.tasks=undefined; render();
+    fetch(SYNC+"/"+TASKS_KEY+".json", {cache:"no-store"}).then(function(r){ return r.ok?r.json():null; })
+      .then(function(data){ state.tasks=(data && Array.isArray(data.tasks))?data.tasks:[]; render(); })
+      .catch(function(){ state.tasks=[]; render(); });
+  }
+  function saveTasks(){
+    return fetch(SYNC+"/"+TASKS_KEY+".json", {method:"PUT", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({tasks:state.tasks||[], updatedBy:loginName, updatedAt:new Date().toISOString()})}).catch(function(){});
+  }
+  function addTask(text, vol, scadenta, responsabil){
+    if(!state.tasks) state.tasks=[];
+    state.tasks.push({ id:uid(), text:text, voluntarId:vol?vol.id:"", voluntarNume:vol?vol.nume:"",
+      responsabil:responsabil||loginName||"", scadenta:scadenta||"", done:false, createdBy:loginName||"", createdAt:new Date().toISOString() });
+    saveTasks();
+  }
+  function taskRowHtml(t){
+    var overdue = t.scadenta && !t.done && (daysSince(t.scadenta)||0)>0;
+    return '<div class="task-row'+(t.done?" task-done":"")+'">'+
+      '<input type="checkbox" class="chk" data-tkdone="'+esc(t.id)+'" '+(t.done?"checked":"")+' />'+
+      '<div class="task-main"><div class="task-text">'+esc(t.text)+'</div>'+
+      '<div class="task-meta">'+(t.voluntarNume?'👤 '+esc(t.voluntarNume)+' · ':'')+(t.responsabil?esc(t.responsabil)+' · ':'')+
+        (t.scadenta?'<span'+(overdue?' style="color:#C2660C;font-weight:600"':'')+'>scadență '+fmtDate(t.scadenta)+'</span>':'fără scadență')+'</div></div>'+
+      '<button class="btn btn-ghost" data-tkdel="'+esc(t.id)+'" type="button" title="Șterge">✕</button>'+
+    '</div>';
+  }
+  function viewTasks(){
+    var head='<div class="page-head"><div><div class="page-title">Sarcini</div>'+
+      '<div class="page-meta">Follow-up asignabil pe voluntari și coordonatori.</div></div></div>';
+    if(state.tasks===undefined) return head+'<div class="loading">Se încarcă…</div>';
+    var addForm='<div class="panel" style="margin-bottom:24px"><h3>Adaugă sarcină</h3><div class="task-add">'+
+      '<input id="tkText" type="text" placeholder="Ce e de făcut? (ex. sună grupa 3)" style="flex:1;min-width:200px" />'+
+      '<input id="tkResp" type="text" placeholder="Responsabil" value="'+esc(loginName||"")+'" style="flex:0 0 150px" />'+
+      '<input id="tkDate" type="date" style="flex:0 0 150px" />'+
+      '<button class="btn btn-primary" id="tkAdd" type="button">Adaugă</button>'+
+    '</div></div>';
+    var open=(state.tasks||[]).filter(function(t){return !t.done;});
+    open.sort(function(a,b){ return (a.scadenta||"9999")<(b.scadenta||"9999")?-1:1; });
+    var done=(state.tasks||[]).filter(function(t){return t.done;});
+    var openCard='<div class="sec-title">De făcut ('+open.length+')</div><div class="card" style="padding:6px 16px;margin-bottom:22px">'+(open.length?open.map(taskRowHtml).join(""):'<div class="empty" style="padding:28px">Nicio sarcină deschisă. 🎉</div>')+'</div>';
+    var doneCard=done.length?'<div class="sec-title">Finalizate ('+done.length+')</div><div class="card" style="padding:6px 16px">'+done.map(taskRowHtml).join("")+'</div>':'';
+    return head+addForm+openCard+doneCard;
+  }
+  function wireTasks(){
+    var add=$("tkAdd");
+    if(add) add.onclick=function(){
+      var text=($("tkText").value||"").trim(); if(!text){ toast("Scrie sarcina", true); return; }
+      addTask(text, null, $("tkDate").value, ($("tkResp").value||"").trim()); toast("Sarcină adăugată"); render();
+    };
+    var tt=$("tkText"); if(tt) tt.onkeydown=function(ev){ if(ev.key==="Enter"){ ev.preventDefault(); $("tkAdd").click(); } };
+    document.querySelectorAll("[data-tkdone]").forEach(function(cb){ cb.onchange=function(){
+      var t=(state.tasks||[]).filter(function(x){return x.id===cb.getAttribute("data-tkdone");})[0]; if(t){ t.done=cb.checked; saveTasks(); render(); }
+    }; });
+    document.querySelectorAll("[data-tkdel]").forEach(function(b){ b.onclick=function(){
+      state.tasks=(state.tasks||[]).filter(function(x){return x.id!==b.getAttribute("data-tkdel");}); saveTasks(); render();
+    }; });
+  }
+
+  // ---- Cazuri (distribuire) ----
+  function loadCazuri(){
+    state.cazuri=undefined; render();
+    fetch(SYNC+"/"+CAZURI_KEY+".json", {cache:"no-store"}).then(function(r){ return r.ok?r.json():null; })
+      .then(function(data){ state.cazuri=(data && Array.isArray(data.cazuri))?data.cazuri:[]; render(); })
+      .catch(function(){ state.cazuri=[]; render(); });
+  }
+  function saveCazuri(){
+    return fetch(SYNC+"/"+CAZURI_KEY+".json", {method:"PUT", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({cazuri:state.cazuri||[], updatedBy:loginName, updatedAt:new Date().toISOString()})}).catch(function(){});
+  }
+  function viewCazuri(){
+    var head='<div class="page-head"><div><div class="page-title">Cazuri</div>'+
+      '<div class="page-meta">Creezi un caz și îl trimiți voluntarilor spre distribuire.</div></div></div>';
+    if(state.cazuri===undefined) return head+'<div class="loading">Se încarcă…</div>';
+    var addForm='<div class="panel" style="margin-bottom:24px"><h3>Adaugă caz</h3>'+
+      '<div class="field"><label>Nume caz</label><input id="czNume" type="text" placeholder="ex. Andreea Ionescu" /></div>'+
+      '<div class="field"><label>Descriere / mesaj de distribuire</label><textarea id="czDesc" style="min-height:100px" placeholder="Povestea pe scurt + apelul la acțiune…"></textarea></div>'+
+      '<div class="field" style="display:flex;gap:12px"><div style="flex:1"><label>Link caz</label><input id="czLink" type="text" placeholder="https://salveazaoinima.ro/…" /></div>'+
+      '<div style="flex:1"><label>Imagine (URL)</label><input id="czImg" type="text" placeholder="https://…jpg" /></div></div>'+
+      '<div class="modal-actions"><button class="btn btn-primary" id="czAdd" type="button">Adaugă caz</button></div>'+
+    '</div>';
+    var list=(state.cazuri||[]);
+    var cards=list.length ? list.map(function(c){
+      return '<div class="panel caz-card">'+
+        (c.imagine?'<img class="caz-img" src="'+esc(c.imagine)+'" alt="" />':'')+
+        '<div class="caz-body"><div class="caz-nume">'+esc(c.nume||"(fără nume)")+'</div>'+
+        (c.descriere?'<div class="caz-desc">'+esc(c.descriere)+'</div>':'')+
+        (c.link?'<a class="fb-link" href="'+esc(c.link)+'" target="_blank" rel="noopener">'+esc(c.link)+'</a>':'')+
+        '<div class="caz-actions"><button class="btn btn-primary" data-cztrimite="'+esc(c.id)+'" type="button">Trimite către voluntari</button>'+
+        '<button class="btn btn-danger" data-czdel="'+esc(c.id)+'" type="button">Șterge</button></div></div>'+
+      '</div>';
+    }).join("") : '<div class="card"><div class="empty"><div class="big">Niciun caz încă</div><div>Adaugă un caz ca să-l poți trimite voluntarilor.</div></div></div>';
+    return head+addForm+'<div class="caz-list">'+cards+'</div>';
+  }
+  function trimiteCaz(c){
+    var html=(c.descriere?'<p>'+esc(c.descriere).replace(/\n/g,"<br>")+'</p>':'')+
+      (c.imagine?'<p><img src="'+esc(c.imagine)+'" style="max-width:100%;border-radius:8px" alt=""></p>':'')+
+      (c.link?'<p><a href="'+esc(c.link)+'">Vezi cazul și distribuie »</a></p>':'');
+    state.settings.mesaj.subiect = c.nume ? ("Cazul „"+c.nume+"” — distribuie") : "Cazul săptămânii";
+    state.settings.mesaj.continut = html;
+    scheduleSave();
+    state.view="automation"; render();
+    toast("Cazul e pregătit în Automatizare — alege segmentul și trimite");
+  }
+  function wireCazuri(){
+    var add=$("czAdd");
+    if(add) add.onclick=function(){
+      var nume=($("czNume").value||"").trim(); if(!nume){ toast("Scrie numele cazului", true); return; }
+      if(!state.cazuri) state.cazuri=[];
+      state.cazuri.unshift({ id:uid(), nume:nume, descriere:($("czDesc").value||"").trim(), link:($("czLink").value||"").trim(), imagine:($("czImg").value||"").trim(), createdBy:loginName||"", createdAt:new Date().toISOString() });
+      saveCazuri(); toast("Caz adăugat"); render();
+    };
+    document.querySelectorAll("[data-cztrimite]").forEach(function(b){ b.onclick=function(){
+      var c=(state.cazuri||[]).filter(function(x){return x.id===b.getAttribute("data-cztrimite");})[0]; if(c) trimiteCaz(c);
+    }; });
+    document.querySelectorAll("[data-czdel]").forEach(function(b){ b.onclick=function(){
+      if(!confirm("Ștergi cazul?")) return;
+      state.cazuri=(state.cazuri||[]).filter(function(x){return x.id!==b.getAttribute("data-czdel");}); saveCazuri(); render();
+    }; });
+  }
+
+  // ---- Modal (adaugă) ----
+  var modalTip="";
+  function setModalTip(val){
+    modalTip=val;
+    document.querySelectorAll("#m_tip .pill").forEach(function(x){ x.classList.toggle("on", x.getAttribute("data-mtip")===val); });
+  }
+  function openModal(){
+    $("m_nume").value=""; $("m_tel").value=""; $("m_email").value=""; $("m_fb").value="";
+    $("m_resp").value=loginName||""; $("m_grup").value="Nedistribuit";
+    setModalTip("");
+    $("modalBg").classList.add("show"); setTimeout(function(){ $("m_nume").focus(); }, 30);
+  }
+  function closeModal(){ $("modalBg").classList.remove("show"); }
+
+  // ---- Import voluntari din fișier CSV/text ----
+  var importParsed=null;
+  function parseDelimited(text){
+    if(text.charCodeAt(0)===0xFEFF) text=text.slice(1);
+    var firstLine=text.split(/\r?\n/)[0]||"";
+    var delim = firstLine.indexOf("\t")>=0 ? "\t" : ((firstLine.split(";").length>firstLine.split(",").length) ? ";" : ",");
+    var rows=[], row=[], field="", inQ=false, i=0;
+    while(i<text.length){
+      var c=text[i];
+      if(inQ){ if(c==='"'){ if(text[i+1]==='"'){ field+='"'; i+=2; continue;} inQ=false; i++; continue;} field+=c; i++; continue; }
+      if(c==='"'){ inQ=true; i++; continue; }
+      if(c===delim){ row.push(field); field=""; i++; continue; }
+      if(c==='\r'){ i++; continue; }
+      if(c==='\n'){ row.push(field); rows.push(row); row=[]; field=""; i++; continue; }
+      field+=c; i++;
+    }
+    if(field.length||row.length){ row.push(field); rows.push(row); }
+    return rows.filter(function(r){ return r.some(function(x){ return (x||"").trim()!==""; }); });
+  }
+  function detectCol(headers, names){
+    for(var i=0;i<headers.length;i++){ var h=norm2(headers[i]); for(var j=0;j<names.length;j++){ if(h===names[j]||h.indexOf(names[j])>=0) return i; } }
+    return -1;
+  }
+  function mapImport(text){
+    var rows=parseDelimited(text); if(rows.length<1) return null;
+    var headers=rows[0];
+    var idx={ nume:detectCol(headers,["nume si prenume","nume complet","nume","name"]), prenume:detectCol(headers,["prenume"]),
+      telefon:detectCol(headers,["telefon","tel","phone","mobil","numar"]), email:detectCol(headers,["email","e mail","mail"]),
+      facebook:detectCol(headers,["facebook","fb"]), responsabil:detectCol(headers,["responsabil","owner","coordonator"]),
+      grup:detectCol(headers,["grupa","grup"]), tip:detectCol(headers,["tip"]) };
+    var hasHeader = idx.nume>=0 || idx.email>=0 || idx.telefon>=0;
+    var start = hasHeader?1:0;
+    if(!hasHeader){ idx={nume:0,prenume:-1,telefon:1,email:2,facebook:-1,responsabil:-1,grup:-1,tip:-1}; }
+    var get=function(r,i){ return (i>=0 && i<r.length) ? String(r[i]||"").trim() : ""; };
+    var vols=[];
+    for(var r=start;r<rows.length;r++){
+      var row=rows[r];
+      var nume=get(row,idx.nume), pren=get(row,idx.prenume);
+      if(pren) nume=(pren+" "+nume).trim();
+      var email=get(row,idx.email).toLowerCase(), tel=get(row,idx.telefon);
+      if(!nume && !email && !tel) continue;
+      vols.push({ nume:nume||email||tel, telefon:tel, email:email, facebook:get(row,idx.facebook), responsabil:get(row,idx.responsabil), grup:get(row,idx.grup), tip:get(row,idx.tip) });
+    }
+    return { vols:vols, hasHeader:hasHeader };
+  }
+  function updateImportPreview(){
+    var text=$("im_text").value, prev=$("im_preview"), doBtn=$("im_do");
+    if(!text.trim()){ prev.innerHTML=""; importParsed=null; doBtn.disabled=true; return; }
+    var m=mapImport(text);
+    if(!m || !m.vols.length){ prev.innerHTML='<div class="im-warn">Nu am găsit voluntari. Prima linie trebuie să fie antetul (nume, telefon, email…).</div>'; importParsed=null; doBtn.disabled=true; return; }
+    importParsed=m;
+    var existing={}; state.volunteers.forEach(function(v){ if(v.email) existing[v.email.toLowerCase()]=1; if(v.telefon) existing[v.telefon.replace(/\D/g,"")]=1; });
+    var noi=0, dup=0;
+    m.vols.forEach(function(v){ var k=v.email?v.email.toLowerCase():(v.telefon?v.telefon.replace(/\D/g,""):""); if(k && existing[k]) dup++; else noi++; });
+    var sample=m.vols.slice(0,3).map(function(v){ return esc(v.nume)+(v.email?' · '+esc(v.email):'')+(v.telefon?' · '+esc(v.telefon):''); }).join("<br>");
+    prev.innerHTML='<div class="im-ok"><b>'+m.vols.length+'</b> găsiți · <b>'+noi+'</b> noi · '+dup+' există deja (se sar)<div style="margin-top:8px;color:var(--muted);font-size:12px">'+sample+(m.vols.length>3?'<br>…':'')+'</div></div>';
+    doBtn.disabled = noi===0;
+  }
+  function doImport(){
+    if(!importParsed) return;
+    var existing={}; state.volunteers.forEach(function(v){ if(v.email) existing[v.email.toLowerCase()]=1; if(v.telefon) existing[v.telefon.replace(/\D/g,"")]=1; });
+    var added=0;
+    importParsed.vols.forEach(function(iv){
+      var k=iv.email?iv.email.toLowerCase():(iv.telefon?iv.telefon.replace(/\D/g,""):"");
+      if(k && existing[k]) return; if(k) existing[k]=1;
+      state.volunteers.unshift(normalize({ id:uid(), nume:iv.nume, telefon:iv.telefon, email:iv.email, facebook:iv.facebook, responsabil:iv.responsabil, grup:iv.grup, tip:iv.tip, dataInscriere:todayIso(), activ:true }));
+      added++;
+    });
+    scheduleSave(); closeImport(); toast("Importați "+added+" voluntari"); render();
+  }
+  function openImport(){ $("im_text").value=""; $("im_fname").textContent=""; $("im_preview").innerHTML=""; $("im_do").disabled=true; importParsed=null; $("importBg").classList.add("show"); }
+  function closeImport(){ $("importBg").classList.remove("show"); }
+
+  // ---- Notițe rapide din listă (jurnal datat, ca la CRM PF) ----
+  var noteVol=null;
+  function fmtNoteTs(ts){ try{ var d=new Date(ts); return d.toLocaleDateString("ro-RO")+" · "+d.toLocaleTimeString("ro-RO",{hour:"2-digit",minute:"2-digit"}); }catch(e){ return ""; } }
+  function openNote(v){ if(!v) return; noteVol=v; $("nt_nume").textContent=v.nume||"(fără nume)"; $("nt_input").value=""; drawNotes(); $("noteBg").classList.add("show"); setTimeout(function(){ var i=$("nt_input"); if(i) i.focus(); },40); }
+  function closeNote(){ $("noteBg").classList.remove("show"); noteVol=null; }
+  function drawNotes(){
+    var v=noteVol; if(!v) return;
+    var notes=(v.notite2||[]).slice().sort(function(a,b){ return b.ts-a.ts; });
+    $("nt_list").innerHTML = notes.length ? notes.map(function(n){
+      return '<div class="nq-row"><div class="nq-body"><div class="nq-date">'+esc(fmtNoteTs(n.ts))+(n.by?' · '+esc(n.by):'')+'</div><div class="nq-text">'+esc(n.text)+'</div></div>'+
+        '<button class="nq-del" data-ts="'+n.ts+'" type="button" title="Șterge notița">🗑</button></div>';
+    }).join("") : '<div class="muted" style="padding:10px 2px">Nicio notiță încă.</div>';
+    $("nt_list").querySelectorAll(".nq-del").forEach(function(b){ b.onclick=function(){
+      var ts=+b.getAttribute("data-ts"); if(!confirm("Ștergi această notiță?")) return;
+      noteVol.notite2=(noteVol.notite2||[]).filter(function(x){ return x.ts!==ts; });
+      scheduleSave(); drawNotes(); render(); toast("Notiță ștearsă");
+    }; });
+  }
+  function addNote(){
+    var v=noteVol; if(!v) return;
+    var val=($("nt_input").value||"").trim(); if(!val) return;
+    if(!Array.isArray(v.notite2)) v.notite2=[];
+    v.notite2.push({ ts:Date.now(), text:val, by:loginName||"" });
+    scheduleSave(); $("nt_input").value=""; drawNotes(); render(); toast("Notiță adăugată");
+  }
+
+  // ---- Trimite mesaj individual (pop-up) ----
+  var smVol=null;
+  function openSendMsg(v){
+    if(!v) return; smVol=v;
+    var canal=v.canal||"Oricare";
+    $("sm_nume").textContent=v.nume||"(fără nume)";
+    $("sm_canal").innerHTML=channelIcon(v)+'<b>'+esc(canal)+'</b>';
+    $("sm_subiect").value=state.settings.mesaj.subiect||"";
+    $("sm_continut").value=state.settings.mesaj.continut||"";
+    $("sm_subiectField").style.display=(canal==="Email"||canal==="Oricare")?"":"none";
+    var isEmail=(canal==="Email"||canal==="Oricare");
+    $("sm_send").textContent = canal==="Telefon" ? "Marchează apel" : canal==="Messenger" ? "Deschide Facebook" : canal==="WhatsApp" ? "Trimite WhatsApp" : "Trimite email";
+    $("sendMsgBg").classList.add("show"); setTimeout(function(){ $("sm_continut").focus(); },30);
+  }
+  function closeSendMsg(){ $("sendMsgBg").classList.remove("show"); smVol=null; }
+  function doSendMsg(){
+    var v=smVol; if(!v) return;
+    var canal=v.canal||"Oricare";
+    if(canal==="Telefon"){
+      v.contactat=true; v.dataContact=todayIso(); istoricAdd(v,"apel",""); scheduleSave();
+      fetch("/api/voluntari-activity", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({type:"apel", contacte:[{nume:v.nume, telefon:v.telefon, email:v.email}]})}).catch(function(){});
+      toast("Apel marcat către "+(v.nume||"voluntar")); closeSendMsg(); render(); return;
+    }
+    if(canal==="Messenger"){
+      if(v.facebook){ try{ window.open(fbHref(v.facebook), "_blank", "noopener"); }catch(e){} istoricAdd(v,"messenger",""); scheduleSave(); toast("Am deschis Facebook — scrie mesajul acolo"); }
+      else toast("Voluntarul nu are pagină Facebook", true);
+      closeSendMsg(); return;
+    }
+    if(canal==="WhatsApp"){ toast("WhatsApp: reconectează Make + șablon aprobat mai întâi", true); return; }
+    // Email (sau Oricare)
+    if(!v.email){ toast("Voluntarul nu are email", true); return; }
+    var continut=$("sm_continut").value;
+    if(!continut.trim()){ toast("Scrie mesajul", true); return; }
+    $("sm_send").disabled=true; setFlag("saving");
+    fetch("/api/voluntari-send", {method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ canal:"email", contacte:[{nume:v.nume, email:v.email, telefon:v.telefon}], subiect:$("sm_subiect").value, continut:continut, semnatura:state.settings.mesaj.semnatura })})
+      .then(function(r){ return r.json().then(function(j){ return {ok:r.ok, j:j}; }); })
+      .then(function(res){
+        $("sm_send").disabled=false; setFlag("ok");
+        if(res.ok && res.j && res.j.ok){ v.sentEmail=todayIso(); istoricAdd(v,"email",($("sm_subiect").value||"").trim()); scheduleSave(); toast("Email trimis către "+(v.nume||"voluntar")+" ✓"); closeSendMsg(); render(); }
+        else { toast((res.j&&res.j.error)||"Trimiterea a eșuat", true); }
+      }).catch(function(){ $("sm_send").disabled=false; setFlag("ok"); toast("Trimiterea a eșuat", true); });
+  }
+  function bulkRecipients(){ return filteredSorted().filter(function(v){ return v.email && v.email.trim(); }); }
+  var bulkSending=false;
+  function openBulkEmail(){
+    var recs=bulkRecipients();
+    $("bm_count").textContent=recs.length;
+    $("bm_subiect").value=state.settings.mesaj.subiect||"";
+    $("bm_continut").value=state.settings.mesaj.continut||"";
+    $("bm_semnatura").value=state.settings.mesaj.semnatura||"";
+    $("bmBg").classList.add("show"); setTimeout(function(){ $("bm_continut").focus(); },30);
+  }
+  function closeBulkEmail(){ $("bmBg").classList.remove("show"); }
+  function doBulkEmail(){
+    if(bulkSending) return;
+    var recs=bulkRecipients();
+    if(!recs.length){ toast("Niciun voluntar cu email în lista filtrată.", true); return; }
+    var continut=$("bm_continut").value;
+    if(!continut.trim()){ toast("Scrie mesajul întâi.", true); return; }
+    if(!confirm("Trimit email către "+recs.length+" voluntari (prin Make)?")) return;
+    state.settings.mesaj.subiect=$("bm_subiect").value; state.settings.mesaj.continut=continut; state.settings.mesaj.semnatura=$("bm_semnatura").value; scheduleSave();
+    bulkSending=true; $("bm_send").disabled=true; setFlag("saving");
+    fetch("/api/voluntari-send", {method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ canal:"email", contacte:recs.map(function(v){return {nume:v.nume, email:v.email, telefon:v.telefon};}), subiect:$("bm_subiect").value, continut:continut, semnatura:$("bm_semnatura").value })})
+      .then(function(r){ return r.json().then(function(j){ return {ok:r.ok, j:j}; }); })
+      .then(function(res){
+        bulkSending=false; $("bm_send").disabled=false; setFlag("ok");
+        if(res.ok && res.j && res.j.ok){
+          var stamp=todayIso();
+          recs.forEach(function(v){ v.sentEmail=stamp; istoricAdd(v,"email",($("bm_subiect").value||"").trim()); });
+          scheduleSave();
+          toast("Email trimis către "+res.j.total+" voluntari ✓"); closeBulkEmail(); render();
+        } else { toast((res.j&&res.j.error)||"Trimiterea a eșuat", true); }
+      }).catch(function(){ bulkSending=false; $("bm_send").disabled=false; setFlag("ok"); toast("Trimiterea a eșuat", true); });
+  }
+  function addVolunteer(){
+    var nume=$("m_nume").value.trim();
+    if(!nume){ $("m_nume").focus(); toast("Scrie numele voluntarului", true); return; }
+    var v=normalize({ id:uid(), nume:nume, telefon:$("m_tel").value.trim(), email:$("m_email").value.trim(),
+      facebook:$("m_fb").value.trim(), responsabil:$("m_resp").value.trim(), grup:$("m_grup").value,
+      tip:modalTip, dataInscriere:todayIso(), dataContact:todayIso(), activ:true });
+    state.volunteers.unshift(v);
+    closeModal(); scheduleSave();
+    state.selectedId=v.id; state.view="profile"; render();
+    toast("Voluntar adăugat");
+  }
+
+  // ---- Nav ----
+  document.querySelectorAll(".nav-item").forEach(function(b){
+    b.onclick=function(){
+      var d=b.getAttribute("data-nav");
+      state.view=(d==="automation"||d==="raport"||d==="tasks"||d==="cazuri"||d==="arhiva")?d:"list"; state.selectedId=null; render();
+      if(state.view==="raport") loadActivity();
+      if(state.view==="tasks") loadTasks();
+      if(state.view==="cazuri") loadCazuri();
+    };
+  });
+  function goHome(){ try{ window.top.location.href="/"; }catch(e){ window.location.href="/"; } }
+  $("brandHome").onclick=goHome;
+  $("brandHome").onkeydown=function(ev){ if(ev.key==="Enter"||ev.key===" "){ ev.preventDefault(); goHome(); } };
+  document.querySelectorAll("#m_tip .pill").forEach(function(b){
+    b.onclick=function(){ setModalTip(b.getAttribute("data-mtip")===modalTip?"":b.getAttribute("data-mtip")); };
+  });
+  $("m_close").onclick=closeModal;
+  $("m_cancel").onclick=closeModal;
+  $("m_save").onclick=addVolunteer;
+  $("modalBg").onclick=function(ev){ if(ev.target===$("modalBg")) closeModal(); };
+  // Trimite mesaj individual (pop-up)
+  $("sm_close").onclick=closeSendMsg;
+  $("sm_cancel").onclick=closeSendMsg;
+  $("sm_send").onclick=doSendMsg;
+  $("sendMsgBg").onclick=function(ev){ if(ev.target===$("sendMsgBg")) closeSendMsg(); };
+  $("bm_close").onclick=closeBulkEmail;
+  $("bm_cancel").onclick=closeBulkEmail;
+  $("bm_send").onclick=doBulkEmail;
+  $("bmBg").onclick=function(ev){ if(ev.target===$("bmBg")) closeBulkEmail(); };
+  // Import fișier
+  $("im_pick").onclick=function(){ $("im_file").click(); };
+  $("im_file").onchange=function(){
+    var f=$("im_file").files&&$("im_file").files[0]; if(!f) return;
+    $("im_fname").textContent=f.name;
+    if(/\.(xlsx|xls)$/i.test(f.name)){ toast("Excel: deschide fișierul și salvează-l ca CSV, apoi încarcă-l (sau copiază-lipește datele).", true); $("im_file").value=""; return; }
+    var reader=new FileReader();
+    reader.onload=function(){ $("im_text").value=String(reader.result||""); updateImportPreview(); };
+    reader.onerror=function(){ toast("Nu am putut citi fișierul", true); };
+    reader.readAsText(f); $("im_file").value="";
+  };
+  $("im_text").oninput=updateImportPreview;
+  $("im_do").onclick=doImport;
+  $("im_close").onclick=closeImport; $("im_cancel").onclick=closeImport;
+  $("importBg").onclick=function(ev){ if(ev.target===$("importBg")) closeImport(); };
+  // Notiță rapidă
+  $("nt_close").onclick=closeNote; $("nt_cancel").onclick=closeNote;
+  $("nt_add").onclick=addNote;
+  var ntInp=$("nt_input"); if(ntInp) ntInp.onkeydown=function(ev){ if(ev.key==="Enter"){ ev.preventDefault(); addNote(); } };
+  $("noteBg").onclick=function(ev){ if(ev.target===$("noteBg")) closeNote(); };
+  document.addEventListener("keydown", function(ev){ if(ev.key==="Escape"){ closeModal(); closeSendMsg(); closeImport(); closeNote(); } });
+
+  // save on unload if pending
+  window.addEventListener("beforeunload", function(){ if(dirty){ try{ navigator.sendBeacon(SYNC+"/"+KEY+".json", JSON.stringify({volunteers:state.volunteers, settings:state.settings})); }catch(e){} } });
+
+  setFlag("ok");
+  load();
+})();
+</script>
+</body>
+</html>

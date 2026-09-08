@@ -11,7 +11,7 @@ import { EmptyState } from "../../components/ui/states";
 import { formatDataOra } from "../../lib/format";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { STRANGERE_FONDURI_DICT } from "@/lib/i18n/dictionaries/strangere-fonduri";
-import { AddUpdateButton, CopyPageLinkButton, DeleteUpdateButton, ImageUploadCard, ToggleStatusButton } from "../client";
+import { AddOfflineDonationButton, AddUpdateButton, CopyPageLinkButton, DeleteUpdateButton, ImageUploadCard, ToggleStatusButton } from "../client";
 
 const STATUS_TONE = { in_asteptare: "amber", reusita: "green", esuata: "red", rambursata: "orange" } as const;
 
@@ -68,6 +68,7 @@ export default async function PaginaDetaliuPage({ params }: { params: Promise<{ 
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <AddOfflineDonationButton orgSlug={orgSlug} pageId={pagina.id} />
           <CopyPageLinkButton orgSlug={orgSlug} pageSlug={pagina.slug} />
           <ToggleStatusButton orgSlug={orgSlug} id={pagina.id} status={pagina.status} />
         </div>

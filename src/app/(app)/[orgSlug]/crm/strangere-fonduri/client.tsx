@@ -1,12 +1,13 @@
 "use client";
 
-import { Check, Copy, ImageUp, Lock, Pencil, Plus, Trash2, Unlock } from "lucide-react";
+import { Check, Copy, HandCoins, ImageUp, Lock, Pencil, Plus, Trash2, Unlock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useState } from "react";
 
 import { Button } from "../components/ui/button";
 import { useLocale } from "../lib/locale-context";
 import { STRANGERE_FONDURI_DICT } from "@/lib/i18n/dictionaries/strangere-fonduri";
+import { AddOfflineDonationDialog } from "./add-offline-donation-dialog";
 import { AddPageDialog } from "./add-page-dialog";
 import { AddUpdateDialog } from "./add-update-dialog";
 import { EditPageDialog, type PaginaEditabila } from "./edit-page-dialog";
@@ -114,6 +115,21 @@ export function AddUpdateButton({ orgSlug, pageId }: { orgSlug: string; pageId: 
         <Plus className="h-3.5 w-3.5" /> {dict.adaugaActualizare}
       </Button>
       <AddUpdateDialog open={open} onClose={() => setOpen(false)} orgSlug={orgSlug} pageId={pageId} />
+    </>
+  );
+}
+
+export function AddOfflineDonationButton({ orgSlug, pageId }: { orgSlug: string; pageId: string }) {
+  const locale = useLocale();
+  const dict = STRANGERE_FONDURI_DICT[locale].client;
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <Button variant="secondary" onClick={() => setOpen(true)}>
+        <HandCoins className="h-3.5 w-3.5" /> {dict.adaugaDonatieOffline}
+      </Button>
+      <AddOfflineDonationDialog open={open} onClose={() => setOpen(false)} orgSlug={orgSlug} pageId={pageId} />
     </>
   );
 }

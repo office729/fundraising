@@ -1,5 +1,6 @@
 import { boolean, index, integer, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
+import { appUsers } from "./app-users";
 import { fundraisingDonationStatus, fundraisingPageStatus } from "./enums";
 import { organizations } from "./organizations";
 
@@ -66,6 +67,11 @@ export const fundraisingDonations = pgTable(
     anonim: boolean("anonim").notNull().default(false),
     consimtamantGdpr: boolean("consimtamant_gdpr").notNull().default(false),
     consimtamantTermeni: boolean("consimtamant_termeni").notNull().default(false),
+    // Opțional (nu blochează donația) — acordul separat pentru grupul de
+    // WhatsApp al organizației. Spre deosebire de GDPR/Termeni, NU e bifă
+    // obligatorie: forțarea unui consimțământ de marketing ca să poți dona
+    // ar încălca principiul „acord liber exprimat" din GDPR.
+    consimtamantWhatsapp: boolean("consimtamant_whatsapp").notNull().default(false),
     // Pentru prima plată a unui abonament (checkout mode="subscription"),
     // stripeSessionId e id-ul sesiunii Checkout — la fel ca o donație unică.
     // Pentru reînnoirile lunare ulterioare (webhook invoice.paid), nu mai
@@ -142,9 +148,35 @@ export const donatoriReali = pgTable(
     numarDonatii: integer("numar_donatii").notNull().default(0),
     primaDonatieLa: timestamp("prima_donatie_la", { withTimezone: true }).defaultNow().notNull(),
     ultimaDonatieLa: timestamp("ultima_donatie_la", { withTimezone: true }).defaultNow().notNull(),
+    // Adevărat dacă a bifat acordul de WhatsApp la ORICARE donație — webhook-ul
+    // face upgrade (false→true), niciodată downgrade, ca o donație ulterioară
+    // nebifată să nu-i șteargă acordul deja dat.
+    consimtamantWhatsapp: boolean("consimtamant_whatsapp").notNull().default(false),
   },
   (t) => [
     uniqueIndex("donatori_reali_org_email_idx").on(t.orgId, t.email),
     index("donatori_reali_org_idx").on(t.orgId),
   ],
+).enableRLS();
+
+// Notițe reale pe donatori reali — la fel ca company_notite, dar pentru
+// modulul Persoane fizice. donatorId ține de donatoriReali (care e cheie
+// (orgId,email), deci notele „urmăresc" implicit orice donator identificat
+// prin același email, indiferent de câte donații are).
+export const donatorNotite = pgTable(
+  "donator_notite",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    donatorId: uuid("donator_id")
+      .notNull()
+      .references(() => donatoriReali.id, { onDelete: "cascade" }),
+    text: text("text").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    createdBy: uuid("created_by").references(() => appUsers.id),
+    editatLa: timestamp("editat_la", { withTimezone: true }),
+  },
+  (t) => [index("donator_notite_org_idx").on(t.orgId), index("donator_notite_donator_idx").on(t.donatorId)],
 ).enableRLS();
