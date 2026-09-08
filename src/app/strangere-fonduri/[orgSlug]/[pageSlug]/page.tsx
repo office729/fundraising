@@ -1,6 +1,7 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 
@@ -123,6 +124,12 @@ export default async function PaginaStrangereFonduriPage({
             <div className="mt-5">
               <p className="text-xs font-semibold tracking-wide text-muted-2 uppercase">Distribuie această campanie</p>
               <ShareLinksClient url={url} titlu={pagina.titlu} />
+              <Link
+                href={`/strangere-fonduri/${orgSlug}/${pageSlug}/promovare`}
+                className="mt-2 inline-block text-[13px] font-medium text-brand-green hover:underline"
+              >
+                Instrumente de promovare pentru susținători →
+              </Link>
             </div>
 
             <div className="mt-7 flex flex-col items-start gap-4 rounded-2xl border border-line bg-panel-2 p-6 sm:flex-row sm:items-center sm:gap-5">
