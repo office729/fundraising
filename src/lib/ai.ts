@@ -163,6 +163,33 @@ export async function genereazaContinutCanalAI(
   }
 }
 
+// Text de mulțumire pentru o sponsorizare de companie (secțiunea 9) — mesaj
+// public pe care beneficiarul îl postează pentru a mulțumi firmei. Întoarce null
+// (fără cheie / eroare) → apelantul cere completare manuală.
+export async function genereazaTextMultumireAI(
+  date: DateCampanie,
+  companie: string,
+  suma: number | null,
+  moneda: string | null,
+): Promise<string | null> {
+  if (!aiConfigurat()) return null;
+  const sumaTxt = suma ? `${suma.toLocaleString("ro-RO")} ${moneda || "lei"}` : null;
+  const prompt = [
+    formatDate(date),
+    "",
+    `Compania „${companie}" a sponsorizat această campanie${sumaTxt ? ` cu ${sumaTxt}` : ""}.`,
+    "Scrie un mesaj SCURT și cald de mulțumire publică (pentru Facebook/Instagram), pe care familia/beneficiarul îl poate posta pentru a mulțumi companiei.",
+    "Menționează numele companiei exact. Ton sincer, demn, nu exagerat. Include un scurt îndemn pozitiv (ex. să susțină și alții). Poți include linkul campaniei.",
+    "Nu inventa detalii despre companie sau despre caz. Răspunde DOAR cu textul mesajului, fără ghilimele, fără explicații.",
+  ].join("\n");
+  try {
+    const text = curata(await apeleazaAI({ system: systemPrompt(), prompt, maxTokens: 500 }));
+    return text || null;
+  } catch {
+    return null;
+  }
+}
+
 export type PostCalendarAI = { obiectiv: string; text: string };
 
 // Generează un plan de N zile de postări, adaptat la stadiul real al campaniei

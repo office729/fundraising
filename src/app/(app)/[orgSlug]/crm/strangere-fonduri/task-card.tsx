@@ -6,7 +6,14 @@ import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Card, CardHeader } from "../components/ui/card";
 import { EmptyState } from "../components/ui/states";
-import { adaugaAttachmentAction, creeazaTaskAction, finalizeazaTaskAdminAction, stergeTaskAction, type CreeazaTaskState } from "./task-actions";
+import {
+  adaugaAttachmentAction,
+  creeazaTaskAction,
+  finalizeazaTaskAdminAction,
+  genereazaTextMultumireAIAction,
+  stergeTaskAction,
+  type CreeazaTaskState,
+} from "./task-actions";
 
 export type TaskRow = {
   id: string;
@@ -38,7 +45,29 @@ export function TaskCard({
 }) {
   const [state, formAction, pending] = useActionState(creeazaTaskAction.bind(null, orgSlug, pageId), INITIAL);
   const [tip, setTip] = useState<"generala" | "sponsorizare">("generala");
+  const [aiMultumirePending, setAiMultumirePending] = useState(false);
+  const textMultumireRef = useRef<HTMLTextAreaElement>(null);
   const submitted = useRef(false);
+
+  async function genereazaMultumire() {
+    const form = textMultumireRef.current?.form;
+    if (!form) return;
+    const companie = (form.elements.namedItem("companie") as HTMLInputElement | null)?.value.trim() ?? "";
+    if (!companie) {
+      window.alert("Completează numele companiei mai întâi.");
+      return;
+    }
+    const sumaRaw = (form.elements.namedItem("suma") as HTMLInputElement | null)?.value.trim() ?? "";
+    const suma = sumaRaw ? Math.round(Number(sumaRaw)) : null;
+    setAiMultumirePending(true);
+    const res = await genereazaTextMultumireAIAction(orgSlug, pageId, companie, suma, "lei");
+    setAiMultumirePending(false);
+    if (res?.error) {
+      window.alert(res.error);
+      return;
+    }
+    if (res?.text && textMultumireRef.current) textMultumireRef.current.value = res.text;
+  }
   useEffect(() => {
     if (submitted.current && !pending && !state.error) window.location.reload();
     if (pending) submitted.current = true;
@@ -78,7 +107,20 @@ export function TaskCard({
             <input name="companie" placeholder="Companie sponsor" className="rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
             <input name="suma" type="number" min={1} step={1} placeholder="Sumă sponsorizare" className="rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
             <input name="canalRecomandat" placeholder="Canal recomandat" className="rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
-            <textarea name="textMultumire" rows={2} placeholder="Text de mulțumire pentru sponsor" className="col-span-2 rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm sm:col-span-3" />
+            <div className="col-span-2 flex flex-col gap-1 sm:col-span-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[11px] font-medium text-[var(--ci-text-muted)]">Text de mulțumire pentru sponsor</span>
+                <button
+                  type="button"
+                  onClick={genereazaMultumire}
+                  disabled={aiMultumirePending}
+                  className="text-[12px] font-medium text-[var(--ci-primary)] hover:underline disabled:opacity-50"
+                >
+                  {aiMultumirePending ? "Se generează…" : "✨ Generează cu AI"}
+                </button>
+              </div>
+              <textarea ref={textMultumireRef} name="textMultumire" rows={2} placeholder="Text de mulțumire pentru sponsor" className="rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
+            </div>
           </div>
         )}
         <Button type="submit" disabled={pending} className="justify-self-start">
