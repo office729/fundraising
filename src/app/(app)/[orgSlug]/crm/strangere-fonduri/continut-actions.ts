@@ -3,7 +3,7 @@
 import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 
-import { aiConfigurat, genereazaContinutCanalAI } from "@/lib/ai";
+import { aiConfigurat, genereazaCalendarZilnicAI, genereazaContinutCanalAI } from "@/lib/ai";
 import { withOrgAdmin, withOrgSession } from "@/lib/auth/guard";
 import { fundraisingCalendarItems, fundraisingGeneratedContent, fundraisingPages } from "@/lib/db/schema";
 import { genereazaCalendarZilnic, genereazaContinutPeCanal, type ContinutCanal, type DateCampanie } from "@/lib/promovare/generator";
@@ -69,6 +69,45 @@ export const genereazaCalendarAction = withOrgAdmin(async (ctx, pageId: string):
 
   return { error: null, ok: true };
 });
+
+// Regenerează calendarul de 7 zile CU AI (secțiunea 4), adaptat stadiului
+// campaniei; fallback la generatorul determinist când AI nu e configurat/eșuează.
+// Șterge doar rândurile încă "de_facut" (păstrează observațiile agentului pe
+// cele în lucru/publicate).
+export const genereazaCalendarAIAction = withOrgAdmin(
+  async (ctx, pageId: string): Promise<GenereazaState & { aiFolosit?: boolean }> => {
+    const date = await dateCampanie(ctx.db, pageId, ctx.orgId, ctx.orgSlug, ctx.orgName);
+    if (!date) return { error: "Pagina nu a fost găsită.", ok: false };
+    if (!aiConfigurat())
+      return { error: "AI-ul nu e configurat (ANTHROPIC_API_KEY lipsește). Folosește «Generează (șablon)».", ok: false };
+
+    const aiItems = await genereazaCalendarZilnicAI(date, 7);
+    const items = aiItems ?? genereazaCalendarZilnic(date).map((it) => ({ obiectiv: it.unghi, text: it.text }));
+
+    await ctx.db
+      .delete(fundraisingCalendarItems)
+      .where(and(eq(fundraisingCalendarItems.campaignPageId, pageId), eq(fundraisingCalendarItems.status, "de_facut")));
+
+    const azi = new Date();
+    await ctx.db.insert(fundraisingCalendarItems).values(
+      items.map((it, i) => {
+        const ziua = new Date(azi);
+        ziua.setDate(azi.getDate() + i);
+        return {
+          campaignPageId: pageId,
+          orgId: ctx.orgId,
+          ziua: ziua.toISOString().slice(0, 10),
+          obiectiv: it.obiectiv,
+          canalRecomandat: "Facebook / WhatsApp",
+          textPregatit: it.text,
+          status: "de_facut" as const,
+        };
+      }),
+    );
+
+    return { error: null, ok: true, aiFolosit: Boolean(aiItems) };
+  },
+);
 
 // Regenerează materialele pe canal — șterge doar rândurile "draft" (nu
 // atinge cele deja aprobate/publicate).

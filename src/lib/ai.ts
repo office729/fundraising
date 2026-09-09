@@ -162,3 +162,38 @@ export async function genereazaContinutCanalAI(
     return null;
   }
 }
+
+export type PostCalendarAI = { obiectiv: string; text: string };
+
+// Generează un plan de N zile de postări, adaptat la stadiul real al campaniei
+// (procent, sumă rămasă). Întoarce null (fără cheie / eroare) → apelantul cade pe
+// generatorul determinist.
+export async function genereazaCalendarZilnicAI(date: DateCampanie, zile = 7): Promise<PostCalendarAI[] | null> {
+  if (!aiConfigurat()) return null;
+  const prompt = [
+    formatDate(date),
+    "",
+    `Creează un plan de ${zile} zile de postări pentru promovarea acestei campanii, adaptat stadiului ei curent (procent atins, cât mai e de strâns).`,
+    "Fiecare zi: un unghi/obiectiv diferit (prezentare, progres, de ce contează fiecare leu, mulțumire, apel la distribuire, mesajul pragului curent, recapitulare) și un text gata de publicat cu linkul campaniei.",
+    "Variază tonul și lungimea. Nu repeta același text.",
+    "",
+    "Format de răspuns (JSON valid, fără text în plus, fără ```): un array cu exact " + zile + " obiecte:",
+    '[{ "obiectiv": string, "text": string }, ...]',
+  ].join("\n");
+
+  try {
+    const raw = curata(await apeleazaAI({ system: systemPrompt(), prompt, maxTokens: 2200 }));
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return null;
+    const out: PostCalendarAI[] = [];
+    for (const it of parsed) {
+      const o = it as { obiectiv?: unknown; text?: unknown };
+      const text = typeof o.text === "string" ? o.text.trim() : "";
+      const obiectiv = typeof o.obiectiv === "string" && o.obiectiv.trim() ? o.obiectiv.trim() : "Postare";
+      if (text) out.push({ obiectiv, text });
+    }
+    return out.length ? out.slice(0, zile) : null;
+  } catch {
+    return null;
+  }
+}

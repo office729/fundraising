@@ -3,6 +3,7 @@
 import { and, desc, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 
+import { aiConfigurat, genereazaContinutCanalAI } from "@/lib/ai";
 import { withOrgAdmin, withOrgSession } from "@/lib/auth/guard";
 import { inregistreazaAudit } from "@/lib/audit";
 import {
@@ -53,6 +54,24 @@ export const genereazaComunicatAction = withOrgAdmin(async (ctx, pageId: string)
   });
 
   return { error: null, ok: true };
+});
+
+// Generează comunicatul CU AI (secțiunea 6) — reutilizează canalul "comunicat"
+// din generatorul AI, cu fallback la șablonul determinist când AI nu e configurat
+// sau eșuează. Pornește tot ca 'draft'; înlocuiește draftul existent.
+export const genereazaComunicatAIAction = withOrgAdmin(async (ctx, pageId: string) => {
+  const date = await dateCampanie(ctx.db, pageId, ctx.orgId, ctx.orgSlug, ctx.orgName);
+  if (!date) return { error: "Pagina nu a fost găsită.", ok: false };
+  if (!aiConfigurat())
+    return { error: "AI-ul nu e configurat (ANTHROPIC_API_KEY lipsește). Folosește «Generează (șablon)».", ok: false };
+
+  const ai = await genereazaContinutCanalAI(date, "comunicat");
+  const continut = ai?.textComplet ?? genereazaComunicatPresa(date);
+
+  await ctx.db.delete(fundraisingPressReleases).where(and(eq(fundraisingPressReleases.campaignPageId, pageId), eq(fundraisingPressReleases.status, "draft")));
+  await ctx.db.insert(fundraisingPressReleases).values({ campaignPageId: pageId, orgId: ctx.orgId, continut, status: "draft" });
+
+  return { error: null, ok: true, aiFolosit: Boolean(ai) };
 });
 
 export const listComunicatCampanie = withOrgSession(async (ctx, pageId: string) => {

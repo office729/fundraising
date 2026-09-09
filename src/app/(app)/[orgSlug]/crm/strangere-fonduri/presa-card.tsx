@@ -6,7 +6,7 @@ import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Card, CardHeader } from "../components/ui/card";
 import { EmptyState } from "../components/ui/states";
-import { aprobaComunicatAction, genereazaComunicatAction, marcheazaOutreachAction } from "./presa-actions";
+import { aprobaComunicatAction, genereazaComunicatAction, genereazaComunicatAIAction, marcheazaOutreachAction } from "./presa-actions";
 
 export type ComunicatRow = { id: string; continut: string; status: "draft" | "aprobat" } | null;
 export type MediaContactRow = { id: string; numeRedactie: string; judet: string; email: string | null; telefon: string | null };
@@ -24,12 +24,23 @@ export function PresaCard({
   contacte: MediaContactRow[];
   trimisIds: string[];
 }) {
-  const [pending, setPending] = useState(false);
+  const [pending, setPending] = useState<null | "sablon" | "ai">(null);
   const [trimisLocal, setTrimisLocal] = useState<string[]>(trimisIds);
 
   async function genereaza() {
-    setPending(true);
+    setPending("sablon");
     await genereazaComunicatAction(orgSlug, pageId);
+    window.location.reload();
+  }
+
+  async function genereazaAI() {
+    setPending("ai");
+    const res = await genereazaComunicatAIAction(orgSlug, pageId);
+    if (res?.error) {
+      setPending(null);
+      window.alert(res.error);
+      return;
+    }
     window.location.reload();
   }
 
@@ -48,10 +59,15 @@ export function PresaCard({
   return (
     <Card>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <CardHeader title="Presă locală" subtitle="Comunicat generat din șablon și contacte recomandate, filtrate pe județul campaniei" />
-        <Button variant="secondary" onClick={genereaza} disabled={pending}>
-          {comunicat ? "Regenerează comunicatul" : "Generează comunicatul"}
-        </Button>
+        <CardHeader title="Presă locală" subtitle="Comunicat generat cu AI sau din șablon + contacte recomandate pe județ" />
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" onClick={genereaza} disabled={pending !== null}>
+            {pending === "sablon" ? "Se generează…" : comunicat ? "Regenerează (șablon)" : "Șablon"}
+          </Button>
+          <Button onClick={genereazaAI} disabled={pending !== null}>
+            {pending === "ai" ? "Se generează…" : "✨ Generează cu AI"}
+          </Button>
+        </div>
       </div>
 
       {comunicat ? (

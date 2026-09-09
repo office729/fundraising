@@ -6,7 +6,7 @@ import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Card, CardHeader } from "../components/ui/card";
 import { EmptyState } from "../components/ui/states";
-import { actualizeazaStatusCalendarAction, genereazaCalendarAction, stergeCalendarItemAction } from "./continut-actions";
+import { actualizeazaStatusCalendarAction, genereazaCalendarAction, genereazaCalendarAIAction, stergeCalendarItemAction } from "./continut-actions";
 
 export type CalendarItemRow = { id: string; ziua: string; obiectiv: string; textPregatit: string; status: "de_facut" | "in_lucru" | "publicat" | "finalizat" };
 
@@ -24,11 +24,22 @@ const STATUS_TONE: Record<CalendarItemRow["status"], "amber" | "blue" | "green" 
 };
 
 export function CalendarCard({ orgSlug, pageId, items }: { orgSlug: string; pageId: string; items: CalendarItemRow[] }) {
-  const [pending, setPending] = useState(false);
+  const [pending, setPending] = useState<null | "sablon" | "ai">(null);
 
   async function genereaza() {
-    setPending(true);
+    setPending("sablon");
     await genereazaCalendarAction(orgSlug, pageId);
+    window.location.reload();
+  }
+
+  async function genereazaAI() {
+    setPending("ai");
+    const res = await genereazaCalendarAIAction(orgSlug, pageId);
+    if (res?.error) {
+      setPending(null);
+      window.alert(res.error);
+      return;
+    }
     window.location.reload();
   }
 
@@ -46,10 +57,15 @@ export function CalendarCard({ orgSlug, pageId, items }: { orgSlug: string; page
   return (
     <Card>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <CardHeader title="Calendar campanie" subtitle="7 zile de promovare, text pregătit din șablon" />
-        <Button variant="secondary" onClick={genereaza} disabled={pending}>
-          {items.length ? "Regenerează" : "Generează calendarul"}
-        </Button>
+        <CardHeader title="Calendar campanie" subtitle="7 zile de promovare — generează cu AI sau din șablon" />
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" onClick={genereaza} disabled={pending !== null}>
+            {pending === "sablon" ? "Se generează…" : items.length ? "Regenerează (șablon)" : "Șablon"}
+          </Button>
+          <Button onClick={genereazaAI} disabled={pending !== null}>
+            {pending === "ai" ? "Se generează…" : "✨ Generează cu AI"}
+          </Button>
+        </div>
       </div>
       {items.length ? (
         <div className="flex flex-col gap-2">
