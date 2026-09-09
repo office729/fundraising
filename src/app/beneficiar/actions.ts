@@ -7,6 +7,7 @@ import { headers } from "next/headers";
 import { withBeneficiarSession } from "@/lib/auth/guard";
 import { fundraisingCampaignAgents, fundraisingGroupPostingHistory, fundraisingMessages, fundraisingNotifications, fundraisingTasks } from "@/lib/db/schema";
 import { notifica } from "@/lib/notifications";
+import { createClient } from "@/lib/supabase/server";
 
 export type TrimiteMesajBeneficiarState = { error: string | null; ok: boolean };
 
@@ -81,3 +82,27 @@ export const marcheazaToateNotificarileCititeAction = withBeneficiarSession(asyn
     .set({ citit: true })
     .where(and(eq(fundraisingNotifications.appUserId, ctx.userId), eq(fundraisingNotifications.citit, false)));
 });
+
+export type SchimbaParolaState = { error: string | null; ok: boolean };
+
+// Beneficiarul își schimbă singur parola (secțiunea 12 — securitate). Nu atinge
+// datele campaniei (acelea rămân gestionate de echipă); `updateUser` afectează
+// EXCLUSIV contul din sesiunea curentă, deci e sigur fără scope suplimentar.
+export async function schimbaParolaBeneficiarAction(
+  _prevState: SchimbaParolaState,
+  formData: FormData,
+): Promise<SchimbaParolaState> {
+  const parola = String(formData.get("parola") ?? "");
+  const confirmare = String(formData.get("confirmare") ?? "");
+  if (parola.length < 8) return { error: "Parola trebuie să aibă cel puțin 8 caractere.", ok: false };
+  if (parola !== confirmare) return { error: "Parolele nu coincid.", ok: false };
+
+  const supabase = await createClient();
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData.user) return { error: "Sesiune expirată — reconectează-te și încearcă din nou.", ok: false };
+
+  const { error } = await supabase.auth.updateUser({ password: parola });
+  if (error) return { error: "Nu am putut schimba parola. Încearcă din nou.", ok: false };
+
+  return { error: null, ok: true };
+}

@@ -6,7 +6,13 @@ import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Card, CardHeader } from "../components/ui/card";
 import { EmptyState } from "../components/ui/states";
-import { aprobaContinutAction, genereazaContinutAction, stergeContinutAction } from "./continut-actions";
+import {
+  aprobaContinutAction,
+  genereazaContinutAction,
+  genereazaContinutAIAction,
+  regenereazaVariantaContinutAction,
+  stergeContinutAction,
+} from "./continut-actions";
 
 export type ContinutRow = {
   id: string;
@@ -26,11 +32,34 @@ const CANAL_LABEL: Record<string, string> = {
 };
 
 export function ContinutCard({ orgSlug, pageId, items }: { orgSlug: string; pageId: string; items: ContinutRow[] }) {
-  const [pending, setPending] = useState(false);
+  const [pending, setPending] = useState<null | "sablon" | "ai">(null);
+  const [variantaPending, setVariantaPending] = useState<string | null>(null);
 
   async function genereaza() {
-    setPending(true);
+    setPending("sablon");
     await genereazaContinutAction(orgSlug, pageId);
+    window.location.reload();
+  }
+
+  async function genereazaAI() {
+    setPending("ai");
+    const res = await genereazaContinutAIAction(orgSlug, pageId);
+    if (res?.error) {
+      setPending(null);
+      window.alert(res.error);
+      return;
+    }
+    window.location.reload();
+  }
+
+  async function altaVarianta(id: string) {
+    setVariantaPending(id);
+    const res = await regenereazaVariantaContinutAction(orgSlug, id);
+    if (res?.error) {
+      setVariantaPending(null);
+      window.alert(res.error);
+      return;
+    }
     window.location.reload();
   }
 
@@ -48,10 +77,15 @@ export function ContinutCard({ orgSlug, pageId, items }: { orgSlug: string; page
   return (
     <Card>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <CardHeader title="Materiale pe canal" subtitle="Generate din șablon — aprobă-le înainte ca beneficiarul să le vadă" />
-        <Button variant="secondary" onClick={genereaza} disabled={pending}>
-          {items.length ? "Regenerează" : "Generează materialele"}
-        </Button>
+        <CardHeader title="Materiale pe canal" subtitle="Generează cu AI sau din șablon — aprobă-le înainte ca beneficiarul să le vadă" />
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" onClick={genereaza} disabled={pending !== null}>
+            {pending === "sablon" ? "Se generează…" : items.length ? "Regenerează (șablon)" : "Șablon"}
+          </Button>
+          <Button onClick={genereazaAI} disabled={pending !== null}>
+            {pending === "ai" ? "Se generează…" : "✨ Generează cu AI"}
+          </Button>
+        </div>
       </div>
       {items.length ? (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -64,10 +98,19 @@ export function ContinutCard({ orgSlug, pageId, items }: { orgSlug: string; page
                 </Badge>
               </div>
               <p className="mt-1.5 line-clamp-4 whitespace-pre-wrap text-[12.5px] text-[var(--ci-text-muted)]">{it.textComplet}</p>
-              <div className="mt-2 flex gap-2">
+              <div className="mt-2 flex flex-wrap gap-2">
                 {it.status === "draft" && (
                   <button onClick={() => aproba(it.id)} className="text-[12px] font-medium text-[var(--ci-primary)] hover:underline">
                     Aprobă
+                  </button>
+                )}
+                {it.status === "draft" && (
+                  <button
+                    onClick={() => altaVarianta(it.id)}
+                    disabled={variantaPending === it.id}
+                    className="text-[12px] font-medium text-[var(--ci-text-muted)] hover:underline disabled:opacity-50"
+                  >
+                    {variantaPending === it.id ? "Se regenerează…" : "✨ Altă variantă"}
                   </button>
                 )}
                 <button onClick={() => sterge(it.id)} className="text-[12px] text-red-600 hover:underline">

@@ -1,5 +1,7 @@
 import { requireBeneficiarAccess } from "@/lib/auth/guard";
 
+import { ParolaForm } from "./parola-form";
+
 export default async function ProfilPage() {
   const access = await requireBeneficiarAccess();
 
@@ -25,6 +27,12 @@ export default async function ProfilPage() {
             <span className="font-medium text-ink">{access.campaignTitlu}</span>
           </div>
         </div>
+      </div>
+
+      <div className="rounded-xl border border-line bg-panel p-5">
+        <h2 className="font-display text-sm font-bold text-ink">Schimbă parola</h2>
+        <p className="mt-1 text-[13px] text-muted">Alege o parolă nouă, de cel puțin 8 caractere.</p>
+        <ParolaForm />
       </div>
 
       <div className="rounded-xl border border-line bg-panel p-5">
