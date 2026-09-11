@@ -19,7 +19,7 @@ export type OrgContext = {
   orgSlogan: string | null;
   orgBrandColor: string | null;
   orgCustomDomain: string | null;
-  orgPackage: "trial" | "start" | "crestere" | "impact";
+  orgPackage: "trial" | "start" | "crestere" | "impact" | "custom";
   orgSubscriptionStatus: string;
   orgCreatedAt: Date;
   userId: string;

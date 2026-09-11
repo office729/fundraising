@@ -10,8 +10,11 @@ export const membershipRole = pgEnum("membership_role", ["owner", "admin", "memb
 // fără card, cote generoase (nivel IMPACT) cât timp evaluează platforma.
 // Toate pachetele includ TOATE instrumentele — diferența e prin cote
 // (utilizatori, contacte, generări lunare), nu prin acces la instrumente.
+// "custom" = plan construit à la carte de organizație (cote + instrumente
+// alese individual) — vezi src/lib/billing/custom-plan.ts pentru formula de
+// preț și organizations.custom_plan_config pentru configurația salvată.
 // Vezi src/lib/billing/packages.ts.
-export const orgPackage = pgEnum("org_package", ["trial", "start", "crestere", "impact"]);
+export const orgPackage = pgEnum("org_package", ["trial", "start", "crestere", "impact", "custom"]);
 
 // Sursa de adevăr pentru status = webhook-ul Stripe, nu presupuneri locale.
 export const subscriptionStatus = pgEnum("subscription_status", [

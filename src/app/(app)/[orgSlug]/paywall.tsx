@@ -6,14 +6,15 @@ import { PACKAGE_LIMITS, PACKAGE_PRICE_ANUAL, type OrgPackage } from "@/lib/bill
 
 import { choosePackageAction } from "./billing-actions";
 import { logoutAction } from "./actions";
+import { CustomPlanBuilder } from "./custom-plan-builder";
 
-const PACHETE: { key: Exclude<OrgPackage, "trial">; nume: string; popular?: boolean }[] = [
+const PACHETE: { key: Exclude<OrgPackage, "trial" | "custom">; nume: string; popular?: boolean }[] = [
   { key: "start", nume: "START" },
   { key: "crestere", nume: "CREȘTERE", popular: true },
   { key: "impact", nume: "IMPACT" },
 ];
 
-function limiteText(pkg: Exclude<OrgPackage, "trial">): string[] {
+function limiteText(pkg: Exclude<OrgPackage, "trial" | "custom">): string[] {
   const l = PACKAGE_LIMITS[pkg];
   return [
     `${l.utilizatori} ${l.utilizatori === 1 ? "utilizator" : "utilizatori"}`,
@@ -42,7 +43,7 @@ export function Paywall({
   );
   const [trimis, setTrimis] = useState(status === "incomplete");
 
-  function alege(pkg: Exclude<OrgPackage, "trial">) {
+  function alege(pkg: Exclude<OrgPackage, "trial" | "custom">) {
     setAlegere(pkg);
     startTransition(async () => {
       await choosePackageAction(orgSlug, pkg);
@@ -78,7 +79,8 @@ export function Paywall({
         {trimis && (
           <div className="mx-auto mt-8 max-w-xl rounded-xl border border-brand-green bg-brand-green-soft p-5 text-center">
             <p className="font-medium text-ink">
-              Am înregistrat alegerea ta{alegere ? ` (${PACHETE.find((p) => p.key === alegere)?.nume})` : ""} —
+              Am înregistrat alegerea ta
+              {alegere ? ` (${alegere === "custom" ? "Plan personalizat" : PACHETE.find((p) => p.key === alegere)?.nume})` : ""} —
               te contactăm în scurt timp la adresa contului pentru finalizarea plății și reactivarea accesului.
             </p>
             <p className="mt-2 text-sm text-muted">
@@ -91,7 +93,7 @@ export function Paywall({
           </div>
         )}
 
-        <div className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-3">
+        <div className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-4">
           {PACHETE.map((p) => {
             const l = PACKAGE_LIMITS[p.key];
             const activ = alegere === p.key;
@@ -135,6 +137,15 @@ export function Paywall({
               </div>
             );
           })}
+
+          <CustomPlanBuilder
+            orgSlug={orgSlug}
+            activ={alegere === "custom"}
+            onSalvat={() => {
+              setAlegere("custom");
+              setTrimis(true);
+            }}
+          />
         </div>
       </main>
     </div>

@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 import { orgPackage, subscriptionStatus } from "./enums";
 
@@ -21,6 +21,12 @@ export const organizations = pgTable("organizations", {
   // rescrie orice cerere pe acest host către /<slug>/... intern.
   customDomain: text("custom_domain").unique(),
   package: orgPackage("package").notNull().default("trial"),
+  // Configurația planului à la carte, salvată doar când package = "custom"
+  // — { utilizatori, contactePf, companiiPj, generariLunare, tools, pretLunar }.
+  // pretLunar e recalculat și suprascris server-side la fiecare salvare
+  // (vezi lib/billing/custom-plan.ts) — nu se are încredere în prețul trimis
+  // de client.
+  customPlanConfig: jsonb("custom_plan_config"),
   subscriptionStatus: subscriptionStatus("subscription_status").notNull().default("trialing"),
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),

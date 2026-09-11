@@ -7,7 +7,7 @@
 // Aplicarea efectivă a cotelor (blocare la depășire, contorizare lunară
 // pentru rapoarte/contracte/D177) e Faza 1/2 — aici e doar structura de date.
 
-export type OrgPackage = "trial" | "start" | "crestere" | "impact";
+export type OrgPackage = "trial" | "start" | "crestere" | "impact" | "custom";
 
 export type ToolId =
   | "one-pager"
@@ -51,7 +51,9 @@ export type PackageLimits = {
   programLucru: "individual" | "echipa" | "echipa-cu-roluri";
 };
 
-export const PACKAGE_LIMITS: Record<OrgPackage, PackageLimits> = {
+// "custom" nu are cote fixe — vezi organizations.custom_plan_config și
+// lib/billing/custom-plan.ts.
+export const PACKAGE_LIMITS: Record<Exclude<OrgPackage, "custom">, PackageLimits> = {
   trial: {
     pretLunar: null,
     utilizatori: 10,
@@ -103,7 +105,7 @@ export const PACKAGE_LIMITS: Record<OrgPackage, PackageLimits> = {
 };
 
 // Prețuri anuale — 2 luni gratuite (din pagina de prețuri).
-export const PACKAGE_PRICE_ANUAL: Record<Exclude<OrgPackage, "trial">, number> = {
+export const PACKAGE_PRICE_ANUAL: Record<Exclude<OrgPackage, "trial" | "custom">, number> = {
   start: 490,
   crestere: 1490,
   impact: 2990,
@@ -112,7 +114,7 @@ export const PACKAGE_PRICE_ANUAL: Record<Exclude<OrgPackage, "trial">, number> =
 // Stripe Price IDs — completate în Faza 1, după crearea produselor în
 // dashboard-ul Stripe (test + live separat). Câte 2 per pachet (lunar/anual).
 export const PACKAGE_PRICE_IDS: Record<
-  Exclude<OrgPackage, "trial">,
+  Exclude<OrgPackage, "trial" | "custom">,
   { lunar: string | null; anual: string | null }
 > = {
   start: { lunar: null, anual: null },
