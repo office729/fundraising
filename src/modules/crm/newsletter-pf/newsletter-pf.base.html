@@ -12,8 +12,13 @@
   .top .btns button { border:0; border-radius:50px; padding:10px 18px; font-size:13px; font-weight:800; cursor:pointer; margin-left:8px; }
   #copyBtn { background:#fff; color:#C41D33; }
   .wrap { display:flex; height:calc(100vh - 62px); }
-  .form { width:400px; min-width:300px; flex-shrink:1; overflow-y:auto; background:#fff; padding:18px 20px 60px 20px; border-right:1px solid #E4DFD7; order:1; }
-  .prev { flex:1; min-width:0; overflow:hidden; order:2; }
+  .form { width:400px; min-width:300px; max-width:80vw; flex-shrink:0; overflow-y:auto; background:#fff; padding:18px 20px 60px 20px; order:1; }
+  #dragHandle { flex:0 0 6px; width:6px; cursor:col-resize; background:#EAE5DC; border-left:1px solid #E4DFD7; border-right:1px solid #E4DFD7; order:2; position:relative; }
+  #dragHandle:hover, #dragHandle.dragging { background:#E0263C; }
+  #dragHandle::after { content:''; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:2px; height:28px; border-radius:2px; background:#C9C2B6; }
+  #dragHandle:hover::after, #dragHandle.dragging::after { background:#fff; }
+  .prev { flex:1; min-width:0; overflow:hidden; order:3; }
+  @media (max-width:640px){ #dragHandle { display:none; } }
   .prev iframe { width:100%; height:100%; border:0; background:#F2EFEA; }
   h2 { font-size:12px; text-transform:uppercase; letter-spacing:.8px; color:#C41D33; margin:22px 0 8px 0; border-bottom:1px solid #F0EBE3; padding-bottom:6px; }
   label { display:block; font-size:12px; font-weight:700; color:#55504A; margin:10px 0 4px 0; }
@@ -77,8 +82,8 @@
   .gCard { text-align:left; cursor:pointer; background:#fff; border:1.5px solid #E4DFD7; border-radius:14px; padding:0; overflow:hidden; transition:transform .15s, box-shadow .15s, border-color .15s; font-family:inherit; }
   .gCard:hover { transform:translateY(-3px); box-shadow:0 10px 24px rgba(31,27,23,.12); border-color:#C41D33; }
   .gCard:focus-visible { outline:2px solid #E0263C; outline-offset:2px; }
-  .gSwatch { height:160px; position:relative; overflow:hidden; background:#F2EFEA; }
-  .gThumbFrame { position:absolute; top:0; left:0; width:600px; height:800px; border:0; pointer-events:none; transform:scale(.4); transform-origin:top left; background:#fff; }
+  .gSwatch { height:210px; position:relative; overflow:hidden; background:#F2EFEA; }
+  .gThumbFrame { position:absolute; top:0; left:0; width:600px; height:2100px; border:0; pointer-events:none; transform:scale(.3); transform-origin:top left; background:#fff; }
   .gBody { padding:14px 16px 16px; }
   .gName { font-size:14px; font-weight:800; color:#1F1B17; margin:0 0 4px; }
   .gTheme { font-size:12px; color:#7A736A; margin:0; line-height:1.45; }
@@ -305,6 +310,7 @@
     <input type="text" id="SEMN_TEL" value="" placeholder="ex. 07xx xxx xxx">
     <div class="hint">Completează cine semnează newsletter-ul — apare la finalul scrisorii.</div>
   </div>
+  <div id="dragHandle" title="Trage pentru a redimensiona"></div>
   <div class="prev">
     <div class="prevbar">
       <button data-pm="desktop" class="on">🖥 Desktop</button>
@@ -420,7 +426,7 @@
                   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                     <tr>
                       <td align="left" valign="middle" width="180">
-                        <a href="https://salveazaoinima.ro" target="_blank" class="hdr-dm-white" style="display:block; text-decoration:none; font-family:Georgia,'Times New Roman',serif; font-weight:bold; font-size:16px; line-height:20px; color:#1F1B17;">Newsletter&nbsp;caz&nbsp;umanitar</a>
+                        <span class="hdr-dm-white" style="display:block; font-family:Georgia,'Times New Roman',serif; font-weight:bold; font-size:16px; line-height:20px; color:#1F1B17;">Newsletter&nbsp;caz&nbsp;umanitar</span>
                       </td>
                       <td align="right" valign="middle" style="padding-left:12px;">
                         <span class="slogan-mobile hdr-dm-white" style="font-family:'Brush Script MT','Segoe Script','Comic Sans MS',cursive; font-size:30px; line-height:34px; color:#E0263C;">Noi punem suflet!</span><br>
@@ -759,7 +765,7 @@
         <tr>
           <td align="center" style="padding:22px 20px 8px 20px;">
             <p style="margin:0 0 6px 0; font-size:12px; line-height:19px; color:#9A938A;">
-              <strong>Asociația salvează o inimă</strong> · <a href="https://salveazaoinima.ro" target="_blank" style="color:#9A938A; text-decoration:none;">salveazaoinima.ro</a>
+              <strong>Asociația salvează o inimă</strong> · salveazaoinima.ro
             </p>
             <p style="margin:0; font-size:12px; line-height:19px; color:#9A938A;">
               Primești acest email pentru că ești abonat la noutățile asociației.<br>
@@ -1389,7 +1395,7 @@ var TPL_BLOCKS = {
   apel:        { PAY:1, PROG:1, BANK:1, SMS:1, TRANSP:1 },
   urgent:      { URGENT:1, GIFT:1, TRANSP:1 },
   digest:      { DIGEST:1, BTNSOFT:1 },
-  multumire:   { TRANSP:1 },
+  multumire:   { BTNSOFT:1 },
   update:      { PROG:1, BANK:1, TRANSP:1 },
   eveniment:   { EVENT:1 },
   voluntariat: { VOL:1, BTNSOFT:1 },
@@ -1503,6 +1509,34 @@ function applyPreviewMode(){
   }
 }
 window.addEventListener('resize', function(){ if (document.getElementById('editorView').style.display !== 'none') applyPreviewMode(); });
+
+/* ===== Bară de redimensionare — tragi ca să lărgești/îngustezi editorul ===== */
+(function(){
+  var handle = document.getElementById('dragHandle');
+  var formEl = document.querySelector('.form');
+  var wrapEl = document.querySelector('.wrap');
+  var dragging = false;
+  handle.addEventListener('mousedown', function(e){
+    dragging = true;
+    handle.classList.add('dragging');
+    document.body.style.userSelect = 'none';
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', function(e){
+    if (!dragging) return;
+    var wrapRect = wrapEl.getBoundingClientRect();
+    var newWidth = e.clientX - wrapRect.left;
+    newWidth = Math.max(300, Math.min(newWidth, wrapRect.width * 0.8));
+    formEl.style.width = newWidth + 'px';
+    applyPreviewMode();
+  });
+  document.addEventListener('mouseup', function(){
+    if (!dragging) return;
+    dragging = false;
+    handle.classList.remove('dragging');
+    document.body.style.userSelect = '';
+  });
+})();
 
 function updateSubjHint(){
   var el = document.getElementById('subjHint'); if(!el) return;
@@ -1814,10 +1848,15 @@ renderGalleryGrid('gGridDesign', TPL_ORDER_DESIGN);
 function fillGalleryThumbnails(){
   var teEl = document.getElementById('TEMPLATE');
   var original = teEl.value;
+  // Scrisoarea reală are multe paragrafe — cardurile/butoanele specifice
+  // fiecărui șablon vin DUPĂ ea, deci ar rămâne sub linia de tăiere a
+  // miniaturii. Pentru previzualizare folosim un text scurt de test, ca să
+  // se vadă și ce urmează (carduri digest, butoane, cifre).
+  var shortLetter = 'Poveste scurtă de exemplu — aici apare scrisoarea reală, personalizată pentru fiecare caz sau partener.';
   document.querySelectorAll('.gCard').forEach(function(card){
     var val = card.getAttribute('data-tpl-choice');
     teEl.value = val;
-    var html = build(false);
+    var html = build(false, shortLetter);
     var fr = card.querySelector('.gThumbFrame');
     if (fr) fr.srcdoc = html;
   });
