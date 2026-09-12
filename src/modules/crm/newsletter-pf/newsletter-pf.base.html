@@ -133,6 +133,7 @@
       <option value="bunvenit">Bun venit (abonat nou)</option>
       <option value="raport">Raport anual de impact</option>
       <option value="design_editorial">✦ Design: Editorial cald</option>
+      <option value="design_eveniment_elegant">✦ Design: Eveniment elegant</option>
       <option value="design_foto">✦ Design: Foto-first</option>
       <option value="design_bold">✦ Design: Modern bold</option>
       <option value="design_minimal">✦ Design: Minimal cald</option>
@@ -825,6 +826,60 @@
 </table>
 </td></tr></table>
 </body></html></script>
+<script type="text/plain" id="tpl_eveniment_elegant"><!DOCTYPE html>
+<html lang="ro"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{D_HEADLINE}}</title>
+<!--[if mso]><style>.container{width:600px;}</style><![endif]-->
+<style>@media only screen and (max-width:600px){.container{width:100%!important}.mh1{font-size:32px!important}.mpad{padding-left:26px!important;padding-right:26px!important}.mcol{display:block!important;width:100%!important;padding:0 0 18px 0!important;border:0!important}}</style></head>
+<body style="margin:0;padding:0;background-color:#F9F5F2;-webkit-text-size-adjust:100%;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#F9F5F2;">{{PREHEADER}}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F9F5F2" style="font-family:Arial,Helvetica,sans-serif;"><tr><td align="center" style="padding:26px 12px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" class="container" style="width:600px;max-width:600px;background-color:#ffffff;">
+  <tr><td bgcolor="#AF4228" align="center" style="padding:14px 20px;">
+    <span style="font-family:Arial,sans-serif;font-size:12px;font-weight:800;letter-spacing:2.5px;color:#ffffff;text-transform:uppercase;">Eveniment caritabil &middot; {{LUNA}}</span>
+  </td></tr>
+  <tr><td align="center" class="mpad" style="padding:44px 48px 0;">
+    <h1 class="mh1" style="font-family:Georgia,'Times New Roman',serif;font-weight:bold;font-size:42px;line-height:1.15;color:#AF4228;margin:0;">{{D_HEADLINE}}</h1>
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:22px auto 0;"><tr><td width="70" bgcolor="#D28C3A" style="height:4px;font-size:1px;line-height:1px;border-radius:2px;">&nbsp;</td></tr></table>
+  </td></tr>
+  <tr><td align="center" class="mpad" style="padding:24px 60px 0;">
+    <p style="font-family:Arial,sans-serif;font-size:16px;line-height:1.7;color:#3B322E;margin:0;">{{D_LEAD}}</p>
+  </td></tr>
+  <tr><td align="center" class="mpad" style="padding:30px 48px 8px;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="#D28C3A" style="border-radius:2px;"><a href="{{LINK}}" target="_blank" style="display:inline-block;padding:15px 44px;font-family:Arial,sans-serif;font-size:14px;font-weight:800;letter-spacing:0.5px;color:#ffffff;text-decoration:none;text-transform:uppercase;">{{D_CTA}}</a></td></tr></table>
+  </td></tr>
+  <tr><td class="mpad" style="padding:38px 40px 0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+      <td align="center" class="mcol" width="33%" style="padding:0 8px;border-right:1px solid #EFE6DC;">
+        <div style="font-family:Arial,sans-serif;font-size:20px;">📅</div>
+        <div style="font-family:Georgia,serif;font-weight:bold;font-size:16px;color:#241C18;margin-top:6px;">{{D_N1}}</div>
+        <div style="font-family:Arial,sans-serif;font-size:10px;font-weight:bold;letter-spacing:1px;color:#A3968A;text-transform:uppercase;margin-top:2px;">{{D_L1}}</div>
+      </td>
+      <td align="center" class="mcol" width="33%" style="padding:0 8px;border-right:1px solid #EFE6DC;">
+        <div style="font-family:Arial,sans-serif;font-size:20px;">🕖</div>
+        <div style="font-family:Georgia,serif;font-weight:bold;font-size:16px;color:#241C18;margin-top:6px;">{{D_N2}}</div>
+        <div style="font-family:Arial,sans-serif;font-size:10px;font-weight:bold;letter-spacing:1px;color:#A3968A;text-transform:uppercase;margin-top:2px;">{{D_L2}}</div>
+      </td>
+      <td align="center" class="mcol" width="33%" style="padding:0 8px;">
+        <div style="font-family:Arial,sans-serif;font-size:20px;">📍</div>
+        <div style="font-family:Georgia,serif;font-weight:bold;font-size:16px;color:#241C18;margin-top:6px;">{{D_N3}}</div>
+        <div style="font-family:Arial,sans-serif;font-size:10px;font-weight:bold;letter-spacing:1px;color:#A3968A;text-transform:uppercase;margin-top:2px;">{{D_L3}}</div>
+      </td>
+    </tr></table>
+  </td></tr>
+  <tr><td style="padding:36px 0 0;"><img src="{{D_FOTO}}" width="600" alt="" style="display:block;width:100%;max-width:600px;height:auto;border:0;"></td></tr>
+  <tr><td bgcolor="#AF4228" align="center" style="padding:8px 20px 0;">
+    <span style="font-family:Arial,sans-serif;font-size:11px;font-weight:800;letter-spacing:2px;color:#ffffff;text-transform:uppercase;">Invitat special</span>
+  </td></tr>
+  <tr><td bgcolor="#AF4228" align="center" class="mpad" style="padding:14px 48px 40px;">
+    <div style="font-family:Georgia,serif;font-size:24px;color:#F3D9C4;margin-top:6px;">{{D_STATBIG}}</div>
+    <div style="font-family:Arial,sans-serif;font-style:italic;font-size:13px;color:#ECD1BA;margin-top:2px;">{{D_STATLABEL}}</div>
+    <div style="font-family:Georgia,serif;font-style:italic;font-size:15px;line-height:1.6;color:#ffffff;margin-top:16px;">&#8222;{{D_QUOTE}}&#8221;</div>
+    <div style="font-family:Arial,sans-serif;font-size:12px;font-weight:bold;letter-spacing:0.5px;color:#ECD1BA;margin-top:10px;">&mdash; {{D_QAUTHOR}}</div>
+  </td></tr>
+  <tr><td align="center" style="padding:30px 34px 40px;font-family:Arial,sans-serif;font-size:12px;line-height:1.6;color:#A79E97;">Asociația salvează o inimă &middot; salveazaoinima.ro<br><a href="##NEWSMAN:list_unsubscribe##" style="color:#A79E97;">Dezabonare</a></td></tr>
+</table>
+</td></tr></table>
+</body></html></script>
 <script type="text/plain" id="tpl_foto"><!DOCTYPE html>
 <html lang="ro"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{D_HEADLINE}}</title>
 <!--[if mso]><style>.container{width:600px;}</style><![endif]-->
@@ -1412,7 +1467,7 @@ function syncFields(){
     els[i].style.display = (list.indexOf(t)>=0) ? '' : 'none';
   }
 }
-var DESIGN_TPL={design_editorial:'tpl_editorial',design_foto:'tpl_foto',design_bold:'tpl_bold',design_minimal:'tpl_minimal',design_gazeta:'tpl_gazeta',design_warm:'tpl_warm',design_modular:'tpl_modular',design_scrisoare:'tpl_scrisoare',design_manifest:'tpl_manifest',design_chitanta:'tpl_chitanta',design_cronologie:'tpl_cronologie',design_certificat:'tpl_certificat'};
+var DESIGN_TPL={design_editorial:'tpl_editorial',design_eveniment_elegant:'tpl_eveniment_elegant',design_foto:'tpl_foto',design_bold:'tpl_bold',design_minimal:'tpl_minimal',design_gazeta:'tpl_gazeta',design_warm:'tpl_warm',design_modular:'tpl_modular',design_scrisoare:'tpl_scrisoare',design_manifest:'tpl_manifest',design_chitanta:'tpl_chitanta',design_cronologie:'tpl_cronologie',design_certificat:'tpl_certificat'};
 function isDesign(){var e=document.getElementById('TEMPLATE');return e&&DESIGN_TPL[e.value];}
 function build(forExport, letterOverride){
   var _d=isDesign();
@@ -1813,6 +1868,7 @@ var TPL_META = {
   bunvenit: {icon:'👋', name:'Bun venit', theme:'Prima scrisoare către un abonat nou'},
   raport: {icon:'📈', name:'Raport anual', theme:'Bilanț de impact pe întregul an'},
   design_editorial: {icon:'📰', name:'Editorial cald', theme:'Stil revistă, tonuri calde'},
+  design_eveniment_elegant: {icon:'🎟️', name:'Eveniment elegant', theme:'Invitație elegantă — dată, oră, locație, invitat special'},
   design_foto: {icon:'📷', name:'Foto-first', theme:'Imaginea domină, text minimal'},
   design_bold: {icon:'⬛', name:'Modern bold', theme:'Contrast puternic, tipografie mare'},
   design_minimal: {icon:'⚪', name:'Minimal cald', theme:'Curat, mult alb, accente discrete'},
@@ -1826,7 +1882,7 @@ var TPL_META = {
   design_certificat: {icon:'🏅', name:'Certificat de recunoștință', theme:'Onorific, pentru susținători fideli'}
 };
 var TPL_ORDER_CONTINUT = ['apel','urgent','digest','multumire','update','eveniment','voluntariat','bunvenit','raport'];
-var TPL_ORDER_DESIGN = ['design_editorial','design_foto','design_bold','design_minimal','design_gazeta','design_warm','design_modular','design_scrisoare','design_manifest','design_chitanta','design_cronologie','design_certificat'];
+var TPL_ORDER_DESIGN = ['design_editorial','design_eveniment_elegant','design_foto','design_bold','design_minimal','design_gazeta','design_warm','design_modular','design_scrisoare','design_manifest','design_chitanta','design_cronologie','design_certificat'];
 function renderGalleryGrid(containerId, order){
   var el = document.getElementById(containerId);
   var html = '';
@@ -1845,6 +1901,23 @@ renderGalleryGrid('gGridDesign', TPL_ORDER_DESIGN);
 /* Randează o previzualizare REALĂ (nu iconițe) în fiecare card — reface
    HTML-ul exact ca la generarea finală (build()), doar cu TEMPLATE
    comutat temporar pe fiecare valoare, apoi restaurat. */
+// Câmpurile D_N1/D_L1...D_QAUTHOR sunt PARTAJATE de toate șabloanele de
+// design (3 cifre de impact, în mod normal) — pentru miniatura de
+// „Eveniment elegant" au alt sens (dată/oră/locație, invitat special),
+// așa că le suprascriem TEMPORAR doar cât timp randăm acea miniatură.
+var THUMB_FIELD_OVERRIDES = {
+  design_eveniment_elegant: {
+    D_HEADLINE: 'Gala Inimilor Curajoase',
+    D_LEAD: 'O seară dedicată celor care aleg să ajute — povești reale, muzică live și un apel către comunitate.',
+    D_CTA: 'Rezervă un loc',
+    D_N1: '8 martie', D_L1: 'Data',
+    D_N2: '18:00', D_L2: 'Ora',
+    D_N3: 'București', D_L3: 'Locație',
+    D_STATBIG: 'Andreea Pop', D_STATLABEL: 'Coordonator programe',
+    D_QUOTE: 'Fiecare poveste din sală ne amintește de ce facem asta.',
+    D_QAUTHOR: 'Andreea Pop'
+  }
+};
 function fillGalleryThumbnails(){
   var teEl = document.getElementById('TEMPLATE');
   var original = teEl.value;
@@ -1856,7 +1929,18 @@ function fillGalleryThumbnails(){
   document.querySelectorAll('.gCard').forEach(function(card){
     var val = card.getAttribute('data-tpl-choice');
     teEl.value = val;
+    var overrides = THUMB_FIELD_OVERRIDES[val];
+    var restore = {};
+    if (overrides) {
+      Object.keys(overrides).forEach(function(id){
+        var el = document.getElementById(id);
+        if (el) { restore[id] = el.value; el.value = overrides[id]; }
+      });
+    }
     var html = build(false, shortLetter);
+    if (overrides) {
+      Object.keys(restore).forEach(function(id){ document.getElementById(id).value = restore[id]; });
+    }
     var fr = card.querySelector('.gThumbFrame');
     if (fr) fr.srcdoc = html;
   });
