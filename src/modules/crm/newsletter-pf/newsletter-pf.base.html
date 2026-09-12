@@ -79,7 +79,7 @@
   #galleryView .ghead p { margin:8px 0 0; font-size:13.5px; color:#7A736A; }
   #galleryView h2.gsec { font-size:12px; text-transform:uppercase; letter-spacing:.8px; color:#C41D33; margin:32px 0 14px; border-bottom:1px solid #E4DFD7; padding-bottom:8px; }
   .gGrid { display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:16px; }
-  .gCard { text-align:left; cursor:pointer; background:#fff; border:1.5px solid #E4DFD7; border-radius:14px; padding:0; overflow:hidden; transition:transform .15s, box-shadow .15s, border-color .15s; font-family:inherit; }
+  .gCard { display:flex; flex-direction:column; align-items:stretch; text-align:left; cursor:pointer; background:#fff; border:1.5px solid #E4DFD7; border-radius:14px; padding:0; overflow:hidden; transition:transform .15s, box-shadow .15s, border-color .15s; font-family:inherit; }
   .gCard:hover { transform:translateY(-3px); box-shadow:0 10px 24px rgba(31,27,23,.12); border-color:#C41D33; }
   .gCard:focus-visible { outline:2px solid #E0263C; outline-offset:2px; }
   .gSwatch { height:210px; position:relative; overflow:hidden; background:#F2EFEA; }
@@ -146,7 +146,6 @@
       <option value="design_cronologie">✦ Design: Cronologie</option>
       <option value="design_certificat">✦ Design: Certificat de recunoștință</option>
     </select>
-    <div class="hint">„Apel de caz" include tot (foto, butoane de plată, progres, SMS, transfer bancar). Celelalte ascund automat blocurile care nu se potrivesc.</div>
     <div class="tplfields" data-tpl="eveniment" style="display:none;">
       <label>Titlul evenimentului</label>
       <input type="text" id="EV_TITLU" value="Gală caritabilă de Crăciun">
@@ -1983,7 +1982,20 @@ function fillGalleryThumbnails(){
       Object.keys(restore).forEach(function(id){ document.getElementById(id).value = restore[id]; });
     }
     var fr = card.querySelector('.gThumbFrame');
-    if (fr) fr.srcdoc = html;
+    var swatch = card.querySelector('.gSwatch');
+    if (fr) {
+      // Miniatura se decupează exact la înălțimea conținutului real (între
+      // limite rezonabile) — altfel un șablon cu antet înalt (poză mare,
+      // cifre) se tăia la mijloc, înainte de scrisoare, și arăta „necomplet".
+      fr.onload = function(){
+        try {
+          var realH = fr.contentDocument.body.scrollHeight;
+          realH = Math.max(600, Math.min(950, realH));
+          if (swatch) swatch.style.height = Math.round(realH * 0.3) + 'px';
+        } catch (e) {}
+      };
+      fr.srcdoc = html;
+    }
   });
   teEl.value = original;
 }
