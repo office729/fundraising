@@ -291,6 +291,18 @@
     <textarea id="SCRISOARE" rows="22"></textarea>
     <div class="hint">Un rând gol = paragraf nou. **text** = îngroșat, *text* = înclinat (italic), ***text*** = ambele.</div>
 
+    <div class="tplfields" data-tpl="apel">
+      <h2>Poze suplimentare (opțional)</h2>
+      <label>Poză 1 (alăturată)</label>
+      <input type="text" id="EXTRA1_IMG" value="" placeholder="URL poză">
+      <label>Poză 2 (alăturată)</label>
+      <input type="text" id="EXTRA2_IMG" value="" placeholder="URL poză">
+      <div class="hint">Dacă completezi ambele, apar una lângă alta, după scrisoare.</div>
+      <label>Poză mare</label>
+      <input type="text" id="EXTRA3_IMG" value="" placeholder="URL poză">
+      <div class="hint">Dacă lași câmpurile goale, blocurile nu apar deloc — nu strici designul.</div>
+    </div>
+
     <h2>Statistici (header)</h2>
     <div class="grid2">
       <div><label>Ani de activitate</label><input type="text" id="S1" value="13"></div>
@@ -592,6 +604,26 @@
                   {{SCRISOARE}}
                 </td>
               </tr>
+
+<!--EXTRAPHOTOS_START-->
+              <!-- ===== 2 POZE ALĂTURATE (opțional) ===== -->
+              <tr>
+                <td style="padding:16px 40px 0 40px;">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+                    <td width="48%" class="mobile-stack" style="padding-right:2%;"><img src="{{EXTRA1_IMG}}" width="270" alt="" style="display:block; width:100%; max-width:100%; height:auto; border-radius:12px;"></td>
+                    <td width="48%" class="mobile-stack" style="padding-left:2%;"><img src="{{EXTRA2_IMG}}" width="270" alt="" style="display:block; width:100%; max-width:100%; height:auto; border-radius:12px;"></td>
+                  </tr></table>
+                </td>
+              </tr>
+<!--EXTRAPHOTOS_END-->
+<!--EXTRAPHOTO_START-->
+              <!-- ===== POZĂ MARE (opțional) ===== -->
+              <tr>
+                <td style="padding:16px 40px 0 40px;">
+                  <img src="{{EXTRA3_IMG}}" width="520" alt="" style="display:block; width:100%; max-width:100%; height:auto; border-radius:12px;">
+                </td>
+              </tr>
+<!--EXTRAPHOTO_END-->
 
 <!--BIGSTATS_START-->
               <!-- ===== GRILĂ CIFRE MARI (raport anual) ===== -->
@@ -1494,13 +1526,22 @@ function build(forExport, letterOverride){
     ? (files.FOTO.url ? files.FOTO.url : (forExport ? files.FOTO.name : files.FOTO.blob))
     : document.getElementById('FOTO').value;
   out = out.split('{{FOTO}}').join(fotoSrc);
-  ['EV_TITLU','EV_DATA','EV_LOC','URG_TITLU','URG_TEXT','URG_DEADLINE','D1_IMG','D1_TITLU','D1_TEXT','D2_IMG','D2_TITLU','D2_TEXT','D3_IMG','D3_TITLU','D3_TEXT','V1_TITLU','V1_TEXT','V2_TITLU','V2_TEXT','V3_TITLU','V3_TEXT','G1','G2','G3','CTA_TEXT','CTA_LINK','SEMN_NUME','SEMN_FUNCTIE','SEMN_ORG','SEMN_TEL'].forEach(function(id){ var e=document.getElementById(id); if(e){ out = out.split('{{'+id+'}}').join(e.value); } });
+  ['EV_TITLU','EV_DATA','EV_LOC','URG_TITLU','URG_TEXT','URG_DEADLINE','D1_IMG','D1_TITLU','D1_TEXT','D2_IMG','D2_TITLU','D2_TEXT','D3_IMG','D3_TITLU','D3_TEXT','V1_TITLU','V1_TEXT','V2_TITLU','V2_TEXT','V3_TITLU','V3_TEXT','G1','G2','G3','CTA_TEXT','CTA_LINK','SEMN_NUME','SEMN_FUNCTIE','SEMN_ORG','SEMN_TEL','EXTRA1_IMG','EXTRA2_IMG','EXTRA3_IMG'].forEach(function(id){ var e=document.getElementById(id); if(e){ out = out.split('{{'+id+'}}').join(e.value); } });
   var BLK = TPL_BLOCKS[currentTpl()];
   ['PAY','PROG','BANK','TRANSP','EVENT','URGENT','BIGSTATS','DIGEST','VOL','GIFT','BTNSOFT'].forEach(function(b){
     if(!BLK[b]){ out = out.replace(new RegExp('<!--'+b+'_START-->[\\s\\S]*?<!--'+b+'_END-->'), ''); }
   });
   if(!BLK.SMS || !document.getElementById('SMS_ON').checked){
     out = out.replace(/<!--SMS_START-->[\s\S]*?<!--SMS_END-->/, '');
+  }
+  // Poze suplimentare (opțional, doar la „Apel de caz") — apar doar dacă
+  // agentul completează link-ul; altfel blocul dispare, nu rămâne gol.
+  var e1 = document.getElementById('EXTRA1_IMG'), e2 = document.getElementById('EXTRA2_IMG'), e3 = document.getElementById('EXTRA3_IMG');
+  if(!e1 || !e1.value.trim() || !e2 || !e2.value.trim()){
+    out = out.replace(/<!--EXTRAPHOTOS_START-->[\s\S]*?<!--EXTRAPHOTOS_END-->/, '');
+  }
+  if(!e3 || !e3.value.trim()){
+    out = out.replace(/<!--EXTRAPHOTO_START-->[\s\S]*?<!--EXTRAPHOTO_END-->/, '');
   }
   out = out.split('{{ADRESARE}}').join(adresare(forExport));
   out = out.split('{{SCRISOARE}}').join(letterHtml(letterOverride != null ? letterOverride : document.getElementById('SCRISOARE').value));
