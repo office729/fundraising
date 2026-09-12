@@ -59,12 +59,43 @@
     .wrap.mp-prev .form { display:none; }
     .wrap:not(.mp-prev) .prev { display:none; }
   }
+
+  /* ===== Galerie de template-uri (ecran de start) ===== */
+  #galleryView { max-width:1180px; margin:0 auto; padding:28px 24px 60px; }
+  #galleryView .ghead { text-align:center; margin-bottom:8px; }
+  #galleryView .ghead h1 { margin:0; font-size:24px; font-family:Georgia,serif; color:#1F1B17; }
+  #galleryView .ghead p { margin:8px 0 0; font-size:13.5px; color:#7A736A; }
+  #galleryView h2.gsec { font-size:12px; text-transform:uppercase; letter-spacing:.8px; color:#C41D33; margin:32px 0 14px; border-bottom:1px solid #E4DFD7; padding-bottom:8px; }
+  .gGrid { display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:16px; }
+  .gCard { text-align:left; cursor:pointer; background:#fff; border:1.5px solid #E4DFD7; border-radius:14px; padding:0; overflow:hidden; transition:transform .15s, box-shadow .15s, border-color .15s; font-family:inherit; }
+  .gCard:hover { transform:translateY(-3px); box-shadow:0 10px 24px rgba(31,27,23,.12); border-color:#C41D33; }
+  .gCard:focus-visible { outline:2px solid #E0263C; outline-offset:2px; }
+  .gSwatch { height:88px; display:flex; align-items:center; justify-content:center; font-size:32px; }
+  .gBody { padding:14px 16px 16px; }
+  .gName { font-size:14px; font-weight:800; color:#1F1B17; margin:0 0 4px; }
+  .gTheme { font-size:12px; color:#7A736A; margin:0; line-height:1.45; }
+  #galleryBtn { display:none; }
 </style>
 </head>
 <body>
+<div id="galleryView">
+  <div class="ghead">
+    <h1>❤️ Template-uri newsletter — persoane juridice</h1>
+    <p>Alege un template ca punct de plecare — fiecare are o temă proprie. Îl poți personaliza complet după ce-l alegi.</p>
+  </div>
+
+  <h2 class="gsec">Tipuri de conținut</h2>
+  <div class="gGrid" id="gGridContinut"></div>
+
+  <h2 class="gsec">Stiluri de design</h2>
+  <div class="gGrid" id="gGridDesign"></div>
+</div>
+
+<div id="editorView" style="display:none;">
 <div class="top">
   <h1>❤️ Generator newsletter — salvează o inimă <span id="variantBadge" style="font-size:11px; font-weight:800; letter-spacing:.5px; padding:3px 10px; border-radius:50px; margin-left:8px; vertical-align:middle;"></span></h1>
   <div class="btns">
+    <button id="galleryBtn" style="display:inline-block; background:rgba(255,255,255,.15); color:#fff; border:1.5px solid rgba(255,255,255,.6) !important;">🗂 Galerie de template-uri</button>
     <button id="resetBtn" style="background:rgba(255,255,255,.15); color:#fff; border:1.5px solid rgba(255,255,255,.6) !important;">🆕 Campanie nouă</button>
     <button id="cvBtn" style="background:rgba(255,255,255,.15); color:#fff; border:1.5px solid rgba(255,255,255,.6) !important;">🧩 Copiază pt. conversie în template</button>
     <button id="remBtn" style="background:rgba(255,255,255,.15); color:#fff; border:1.5px solid rgba(255,255,255,.6) !important;">🔔 Copiază varianta reminder</button>
@@ -223,6 +254,8 @@
   </div>
 </div>
 <div class="ok" id="ok" role="status" aria-live="polite"></div>
+</div>
+<!-- /#editorView -->
 
 <script type="text/plain" id="tpl"><!DOCTYPE html>
 <html dir="ltr" lang="ro" xmlns="http://www.w3.org/1999/xhtml" xmlns:o="urn:schemas-microsoft-com:office:office">
@@ -1274,6 +1307,60 @@ document.getElementById('remCopy').onclick = function(){
       toast('Copiat! Varianta reminder. În Newsman, schimbă subiectul, ex.: ' + sug + '.');
     });
   });
+};
+
+/* ===== Galerie de template-uri (ecran de start) ===== */
+var TPL_META = {
+  d177: {icon:'🏢', name:'Campanie D177', theme:'Redirecționare impozit pe profit — apel complet'},
+  propunere: {icon:'🤝', name:'Propunere de parteneriat', theme:'Prima abordare a unei companii noi'},
+  multumire: {icon:'🙏', name:'Mulțumire partener', theme:'Recunoștință după o sponsorizare'},
+  raport: {icon:'📈', name:'Raport de impact partener', theme:'Ce a realizat compania prin sprijinul ei'},
+  eveniment: {icon:'🎉', name:'Invitație eveniment', theme:'Gală sau eveniment caritabil pentru parteneri'},
+  bunvenit: {icon:'👋', name:'Bun venit', theme:'Prima scrisoare către un partener nou'},
+  design_editorial: {icon:'📰', name:'Editorial cald', theme:'Stil revistă, tonuri calde'},
+  design_foto: {icon:'📷', name:'Foto-first', theme:'Imaginea domină, text minimal'},
+  design_bold: {icon:'⬛', name:'Modern bold', theme:'Contrast puternic, tipografie mare'},
+  design_minimal: {icon:'⚪', name:'Minimal cald', theme:'Curat, mult alb, accente discrete'},
+  design_gazeta: {icon:'🗞️', name:'Gazetă (buletin)', theme:'Aspect de buletin informativ'},
+  design_warm: {icon:'🎨', name:'Warm / ilustrativ', theme:'Ilustrativ, culori calde'},
+  design_modular: {icon:'🧩', name:'Modular (carduri)', theme:'Conținut organizat pe carduri'},
+  design_scrisoare: {icon:'✉️', name:'Scrisoare personală', theme:'Ton intim, ca o scrisoare de mână'},
+  design_manifest: {icon:'📯', name:'Manifest / afiș', theme:'Declarativ, tipografie de impact'},
+  design_chitanta: {icon:'🧾', name:'Chitanță de impact', theme:'Transparență — cum au fost folosiți banii'},
+  design_cronologie: {icon:'🕒', name:'Cronologie', theme:'Povestea în ordine cronologică'},
+  design_certificat: {icon:'🏅', name:'Certificat de recunoștință', theme:'Onorific, pentru parteneri fideli'}
+};
+var TPL_ORDER_CONTINUT = ['d177','propunere','multumire','raport','eveniment','bunvenit'];
+var TPL_ORDER_DESIGN = ['design_editorial','design_foto','design_bold','design_minimal','design_gazeta','design_warm','design_modular','design_scrisoare','design_manifest','design_chitanta','design_cronologie','design_certificat'];
+var SWATCH_COLORS = ['#C41D33','#C9702F','#B8860B','#2F7A72','#7A3B69','#4A5568'];
+function renderGalleryGrid(containerId, order){
+  var el = document.getElementById(containerId);
+  var html = '';
+  order.forEach(function(val, i){
+    var m = TPL_META[val];
+    var color = SWATCH_COLORS[i % SWATCH_COLORS.length];
+    html += '<button type="button" class="gCard" data-tpl-choice="' + val + '">'
+      + '<div class="gSwatch" style="background:' + color + '22;">' + m.icon + '</div>'
+      + '<div class="gBody"><p class="gName">' + m.name + '</p><p class="gTheme">' + m.theme + '</p></div>'
+      + '</button>';
+  });
+  el.innerHTML = html;
+}
+renderGalleryGrid('gGridContinut', TPL_ORDER_CONTINUT);
+renderGalleryGrid('gGridDesign', TPL_ORDER_DESIGN);
+document.querySelectorAll('.gCard').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    var val = btn.getAttribute('data-tpl-choice');
+    var te = document.getElementById('TEMPLATE');
+    te.value = val;
+    te.dispatchEvent(new Event('change', {bubbles:true}));
+    document.getElementById('galleryView').style.display = 'none';
+    document.getElementById('editorView').style.display = '';
+  });
+});
+document.getElementById('galleryBtn').onclick = function(){
+  document.getElementById('editorView').style.display = 'none';
+  document.getElementById('galleryView').style.display = '';
 };
 </script>
 </body>
