@@ -146,6 +146,20 @@
       <option value="design_cronologie">✦ Design: Cronologie</option>
       <option value="design_certificat">✦ Design: Certificat de recunoștință</option>
     </select>
+
+    <h2>Branding (antet)</h2>
+    <label>Logo (opțional)</label>
+    <div class="filebox">
+      <label class="filebtn" for="LOGO_IMG_FILE">📁 Încarcă Logo</label>
+      <span class="filename" id="LOGO_IMG_NAME"><span></span><button title="Renunță la fișier">✕</button></span>
+    </div>
+    <input type="file" id="LOGO_IMG_FILE" accept="image/*">
+    <input type="text" id="LOGO_IMG" value="" placeholder="...sau lipește un URL" style="margin-top:6px;">
+    <div class="hint">Dacă adaugi un logo, el înlocuiește titlul text din antet. Se redimensionează automat (max. 34px înălțime).</div>
+    <label>Sloganul vostru (opțional)</label>
+    <input type="text" id="SLOGAN" value="" placeholder="ex: Noi punem suflet!">
+    <div class="hint">Apare în antet, cu scris de mână. Lasă gol dacă nu vrei niciun slogan.</div>
+
     <div class="tplfields" data-tpl="eveniment" style="display:none;">
       <label>Titlul evenimentului</label>
       <input type="text" id="EV_TITLU" value="Gală caritabilă de Crăciun">
@@ -438,10 +452,17 @@
                   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                     <tr>
                       <td align="left" valign="middle" width="180">
+<!--LOGO_START-->
+                        <img src="{{LOGO_IMG}}" alt="" style="display:block; max-height:34px; max-width:170px; width:auto; height:auto;">
+<!--LOGO_END-->
+<!--LOGOTXT_START-->
                         <span class="hdr-dm-white" style="display:block; font-family:Georgia,'Times New Roman',serif; font-weight:bold; font-size:16px; line-height:20px; color:#1F1B17;">Newsletter&nbsp;caz&nbsp;umanitar</span>
+<!--LOGOTXT_END-->
                       </td>
                       <td align="right" valign="middle" style="padding-left:12px;">
-                        <span class="slogan-mobile hdr-dm-white" style="font-family:'Brush Script MT','Segoe Script','Comic Sans MS',cursive; font-size:30px; line-height:34px; color:#E0263C;">Noi punem suflet!</span><br>
+<!--SLOGAN_START-->
+                        <span class="slogan-mobile hdr-dm-white" style="font-family:'Brush Script MT','Segoe Script','Comic Sans MS',cursive; font-size:30px; line-height:34px; color:#E0263C;">{{SLOGAN}}</span><br>
+<!--SLOGAN_END-->
                         <span class="hdr-dm-white" style="font-size:10px; font-weight:600; color:#B5AFA5; letter-spacing:0.8px; text-transform:uppercase;">{{LUNA}}</span>
                       </td>
                     </tr>
@@ -1332,7 +1353,7 @@ var VARIANT = 'pf';
 var tpl = document.getElementById('tpl').textContent;
 document.getElementById('SCRISOARE').value = document.getElementById('letterDefault').textContent.trim();
 
-var files = { FOTO: null };
+var files = { FOTO: null, LOGO_IMG: null };
 // null = necunoscut, true = serverul urcă pozele, false = serverul n-are cheia (mergem clasic)
 var imgbbAvailable = null;
 
@@ -1422,6 +1443,7 @@ function hookFile(id){
   });
 }
 hookFile('FOTO');
+hookFile('LOGO_IMG');
 
 function num(id){
   var v = document.getElementById(id).value.replace(/[^0-9]/g,'');
@@ -1525,7 +1547,16 @@ function build(forExport, letterOverride){
     ? (files.FOTO.url ? files.FOTO.url : (forExport ? files.FOTO.name : files.FOTO.blob))
     : document.getElementById('FOTO').value;
   out = out.split('{{FOTO}}').join(fotoSrc);
-  ['EV_TITLU','EV_DATA','EV_LOC','URG_TITLU','URG_TEXT','URG_DEADLINE','D1_IMG','D1_TITLU','D1_TEXT','D2_IMG','D2_TITLU','D2_TEXT','D3_IMG','D3_TITLU','D3_TEXT','V1_TITLU','V1_TEXT','V2_TITLU','V2_TEXT','V3_TITLU','V3_TEXT','G1','G2','G3','CTA_TEXT','CTA_LINK','SEMN_NUME','SEMN_FUNCTIE','SEMN_ORG','SEMN_TEL','EXTRA1_IMG','EXTRA2_IMG','EXTRA3_IMG'].forEach(function(id){ var e=document.getElementById(id); if(e){ out = out.split('{{'+id+'}}').join(e.value); } });
+  var logoSrc = files.LOGO_IMG
+    ? (files.LOGO_IMG.url ? files.LOGO_IMG.url : (forExport ? files.LOGO_IMG.name : files.LOGO_IMG.blob))
+    : document.getElementById('LOGO_IMG').value;
+  out = out.split('{{LOGO_IMG}}').join(logoSrc);
+  ['EV_TITLU','EV_DATA','EV_LOC','URG_TITLU','URG_TEXT','URG_DEADLINE','D1_IMG','D1_TITLU','D1_TEXT','D2_IMG','D2_TITLU','D2_TEXT','D3_IMG','D3_TITLU','D3_TEXT','V1_TITLU','V1_TEXT','V2_TITLU','V2_TEXT','V3_TITLU','V3_TEXT','G1','G2','G3','CTA_TEXT','CTA_LINK','SEMN_NUME','SEMN_FUNCTIE','SEMN_ORG','SEMN_TEL','EXTRA1_IMG','EXTRA2_IMG','EXTRA3_IMG','SLOGAN'].forEach(function(id){ var e=document.getElementById(id); if(e){ out = out.split('{{'+id+'}}').join(e.value); } });
+  var hasLogo = !!(logoSrc && logoSrc.trim());
+  out = out.replace(hasLogo ? /<!--LOGOTXT_START-->[\s\S]*?<!--LOGOTXT_END-->/ : /<!--LOGO_START-->[\s\S]*?<!--LOGO_END-->/, '');
+  if (!document.getElementById('SLOGAN').value.trim()) {
+    out = out.replace(/<!--SLOGAN_START-->[\s\S]*?<!--SLOGAN_END-->/, '');
+  }
   var BLK = TPL_BLOCKS[currentTpl()];
   ['PAY','PROG','BANK','TRANSP','EVENT','URGENT','BIGSTATS','DIGEST','VOL','GIFT','BTNSOFT'].forEach(function(b){
     if(!BLK[b]){ out = out.replace(new RegExp('<!--'+b+'_START-->[\\s\\S]*?<!--'+b+'_END-->'), ''); }
