@@ -58,7 +58,7 @@
   #remCopy { background:#C41D33; color:#fff; }
   #remCancel { background:#F0EBE3; color:#55504A; }
   .mtabs { display:none; }
-  @media (max-width:900px){
+  @media (max-width:1100px){
     .wrap{flex-direction:column; height:auto;} .form{width:100%;} .prev iframe{height:80vh;}
     .mtabs { display:flex; gap:8px; padding:8px 12px; background:#EAE5DC; border-bottom:1px solid #E4DFD7; position:sticky; top:0; z-index:20; }
     .mtabs button { flex:1; border:1.5px solid #C9C2B6; background:#fff; color:#55504A; border-radius:50px; padding:9px; font-size:13px; font-weight:800; cursor:pointer; }
@@ -293,6 +293,17 @@
       <div><label>SMS-uri trimise</label><input type="text" id="S4" value="816.000+"></div>
       <div><label>Companii partenere</label><input type="text" id="S5" value="1.700+"></div>
     </div>
+
+    <h2>Semnătură</h2>
+    <label>Nume</label>
+    <input type="text" id="SEMN_NUME" value="" placeholder="ex. Andreea Vasilescu">
+    <label>Funcție</label>
+    <input type="text" id="SEMN_FUNCTIE" value="" placeholder="ex. Coordonator campanii">
+    <label>Organizație</label>
+    <input type="text" id="SEMN_ORG" value="" placeholder="ex. Asociația &quot;salvează o inimă&quot;">
+    <label>Telefon</label>
+    <input type="text" id="SEMN_TEL" value="" placeholder="ex. 07xx xxx xxx">
+    <div class="hint">Completează cine semnează newsletter-ul — apare la finalul scrisorii.</div>
   </div>
   <div class="prev">
     <div class="prevbar">
@@ -408,16 +419,8 @@
                 <td bgcolor="#FFFFFF" class="hdr-dm-bg" style="border-radius:24px 24px 0 0; padding:18px 18px 12px 18px; border-bottom:1px solid #F0EBE3; background-color:#FFFFFF;">
                   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                     <tr>
-                      <td align="left" valign="middle" width="112">
-                        <table role="presentation" cellpadding="0" cellspacing="0" border="0">
-                          <tr>
-                            <td class="hdr-dm-bg" style="background-color:#FFFFFF; background-image:linear-gradient(#FFFFFF,#FFFFFF); border-radius:14px; padding:5px 9px;">
-                              <a href="https://salveazaoinima.ro" target="_blank" style="text-decoration:none;">
-                                <img alt="Asociația salvează o inimă" src="https://salveazaoinima.ro/uploads/_salveaza/config/5da06e72a355998af725c123/5dc98c542380f_logo.png" width="92" class="logo-mobile hdr-dm-logo" style="display:block; width:92px; max-width:92px; height:auto;">
-                              </a>
-                            </td>
-                          </tr>
-                        </table>
+                      <td align="left" valign="middle" width="180">
+                        <a href="https://salveazaoinima.ro" target="_blank" class="hdr-dm-white" style="display:block; text-decoration:none; font-family:Georgia,'Times New Roman',serif; font-weight:bold; font-size:16px; line-height:20px; color:#1F1B17;">Newsletter&nbsp;caz&nbsp;umanitar</a>
                       </td>
                       <td align="right" valign="middle" style="padding-left:12px;">
                         <span class="slogan-mobile hdr-dm-white" style="font-family:'Brush Script MT','Segoe Script','Comic Sans MS',cursive; font-size:30px; line-height:34px; color:#E0263C;">Noi punem suflet!</span><br>
@@ -507,33 +510,6 @@
                           <tr>
                             <td align="center" nowrap bgcolor="#FFFFFF" style="border:2px solid #000000; border-radius:50px; white-space:nowrap;">
                               <a href="{{LINK}}" target="_blank" style="display:block; padding:8px 10px; font-size:13px; line-height:19px; font-weight:700; color:#000000; text-decoration:none; text-align:center; border-radius:50px;"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Apple_Pay_logo.svg/330px-Apple_Pay_logo.svg.png" alt="Apple Pay" height="19" style="display:inline-block; height:19px; width:auto; vertical-align:middle; border:0;"></a>
-                            </td>
-                          </tr>
-                        </table>
-
-                        <!-- PayPal -->
-                        <table role="presentation" align="center" width="220" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 8px auto; border-collapse:separate;">
-                          <tr>
-                            <td align="center" nowrap bgcolor="#FFC439" style="border-radius:50px; white-space:nowrap;">
-                              <a href="{{LINK}}" target="_blank" style="display:block; padding:10px; font-size:13px; line-height:17px; font-weight:800; color:#003087; text-decoration:none; font-style:italic; text-align:center; border-radius:50px;">Pay<span style="color:#009CDE;">Pal</span></a>
-                            </td>
-                          </tr>
-                        </table>
-
-                        <!-- Revolut -->
-                        <table role="presentation" align="center" width="220" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 8px auto; border-collapse:separate;">
-                          <tr>
-                            <td align="center" nowrap bgcolor="#191C1F" style="border-radius:50px; white-space:nowrap;">
-                              <a href="{{LINK}}" target="_blank" style="display:block; padding:10px; font-size:13px; line-height:17px; font-weight:700; color:#FFFFFF; text-decoration:none; text-align:center; border-radius:50px;">Revolut</a>
-                            </td>
-                          </tr>
-                        </table>
-
-                        <!-- Contract sponsorizare -->
-                        <table role="presentation" align="center" width="220" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto; border-collapse:separate;">
-                          <tr>
-                            <td align="center" nowrap bgcolor="#FFFFFF" style="border:2px solid #E0263C; border-radius:50px; white-space:nowrap;">
-                              <a href="{{LINK}}" target="_blank" style="display:block; padding:10px; font-size:12px; line-height:16px; font-weight:700; color:#E0263C; text-decoration:none; text-align:center; border-radius:50px;">📄&nbsp;Contract&nbsp;de&nbsp;sponsorizare</a>
                             </td>
                           </tr>
                         </table>
@@ -725,31 +701,16 @@
               </tr>
 <!--SMS_END-->
 
-<!--TRANSP_START-->
-              <!-- ===== TRANSPARENȚĂ ===== -->
-              <tr>
-                <td style="padding:16px 22px 0 22px;">
-                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#FAF7F2" style="border-radius:16px; border-collapse:separate;">
-                    <tr>
-                      <td style="padding:16px 24px;">
-                        <p style="margin:0; font-size:13px; line-height:21px; color:#9A938A;"><strong>🔍 Transparență totală</strong> — pentru fiecare caz susținut, publicăm pe site ordinele de plată și dovada folosirii fondurilor, astfel încât să vezi cu ochii tăi unde ajunge fiecare leu. Aici nimic nu se pierde pe drum — sprijinul tău ajunge acolo unde e nevoie de el.</p>
-                      </td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-
-<!--TRANSP_END-->
               <!-- ===== SEMNĂTURĂ + SOCIAL ===== -->
               <tr>
                 <td class="px" style="padding:8px 40px 32px 40px;">
                   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                     <tr>
                       <td style="border-top:1px solid #F0EBE3; padding-top:22px;">
-                        <p style="margin:0 0 4px 0; font-family:'Brush Script MT','Segoe Script','Comic Sans MS',cursive; font-size:30px; color:#E0263C;">Vlad Plăcintă</p>
-                        <p style="margin:0 0 2px 0; font-size:14px; font-weight:700; color:#1F1B17;">Președinte</p>
-                        <p style="margin:0 0 2px 0; font-size:13px; color:#55504A;">Asociația „salvează o inimă&quot;</p>
-                        <p style="margin:0 0 14px 0; font-size:13px; color:#55504A;">📞 <a href="tel:+40752753540" style="color:#55504A; text-decoration:none; font-weight:600;">0752 753 540</a></p>
+                        <p style="margin:0 0 4px 0; font-family:'Brush Script MT','Segoe Script','Comic Sans MS',cursive; font-size:30px; color:#E0263C;">{{SEMN_NUME}}</p>
+                        <p style="margin:0 0 2px 0; font-size:14px; font-weight:700; color:#1F1B17;">{{SEMN_FUNCTIE}}</p>
+                        <p style="margin:0 0 2px 0; font-size:13px; color:#55504A;">{{SEMN_ORG}}</p>
+                        <p style="margin:0 0 14px 0; font-size:13px; color:#55504A;">📞 <a href="tel:{{SEMN_TEL}}" style="color:#55504A; text-decoration:none; font-weight:600;">{{SEMN_TEL}}</a></p>
 
                         <p style="margin:18px 0 12px 0; font-size:15px; line-height:22px; color:#1F1B17; font-weight:700;">Hai să ne cunoaștem</p>
                         <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;">
@@ -1472,7 +1433,7 @@ function build(forExport, letterOverride){
     ? (files.FOTO.url ? files.FOTO.url : (forExport ? files.FOTO.name : files.FOTO.blob))
     : document.getElementById('FOTO').value;
   out = out.split('{{FOTO}}').join(fotoSrc);
-  ['EV_TITLU','EV_DATA','EV_LOC','URG_TITLU','URG_TEXT','URG_DEADLINE','D1_IMG','D1_TITLU','D1_TEXT','D2_IMG','D2_TITLU','D2_TEXT','D3_IMG','D3_TITLU','D3_TEXT','V1_TITLU','V1_TEXT','V2_TITLU','V2_TEXT','V3_TITLU','V3_TEXT','G1','G2','G3','CTA_TEXT','CTA_LINK'].forEach(function(id){ var e=document.getElementById(id); if(e){ out = out.split('{{'+id+'}}').join(e.value); } });
+  ['EV_TITLU','EV_DATA','EV_LOC','URG_TITLU','URG_TEXT','URG_DEADLINE','D1_IMG','D1_TITLU','D1_TEXT','D2_IMG','D2_TITLU','D2_TEXT','D3_IMG','D3_TITLU','D3_TEXT','V1_TITLU','V1_TEXT','V2_TITLU','V2_TEXT','V3_TITLU','V3_TEXT','G1','G2','G3','CTA_TEXT','CTA_LINK','SEMN_NUME','SEMN_FUNCTIE','SEMN_ORG','SEMN_TEL'].forEach(function(id){ var e=document.getElementById(id); if(e){ out = out.split('{{'+id+'}}').join(e.value); } });
   var BLK = TPL_BLOCKS[currentTpl()];
   ['PAY','PROG','BANK','TRANSP','EVENT','URGENT','BIGSTATS','DIGEST','VOL','GIFT','BTNSOFT'].forEach(function(b){
     if(!BLK[b]){ out = out.replace(new RegExp('<!--'+b+'_START-->[\\s\\S]*?<!--'+b+'_END-->'), ''); }
