@@ -146,6 +146,11 @@ export const HUB_DICT = {
     faCardPret: "de la 49 lei/lună",
     faCardDesc: "CRM complet, în română, adaptat pe D177 și sponsorizare 20%",
     internationalFootnote: "Prețuri de pornire publicate de fiecare furnizor, convertite la cursul RON/USD din august 2026 (~4,50 lei) — verifică oricând pagina proprie de prețuri a fiecărui furnizor pentru cifrele actualizate. Avantajul Fundraising Academy nu e doar prețul: e adaptarea completă la realitatea ONG-urilor din România — sponsorizarea prin 20%, Declarația 177, relația cu firmele și documentele în limba română.",
+    consultantaEyebrow: "Consiliere 1 la 1",
+    consultantaTitlu: "Programează o sesiune cu Vlad Plăcintă",
+    consultantaDesc:
+      "45 de minute, online — audit al campaniilor actuale și un plan de acțiune concret, primit în scris. Alegi direct un interval liber, fără e-mailuri înainte și înapoi.",
+    consultantaLoading: "Se încarcă programarea...",
     contactTitlu: "Nu știi de unde să începi?",
     contactDesc: "Scrie-ne și îți recomandăm instrumentele potrivite pentru etapa în care se află ONG-ul tău.",
   },
@@ -294,6 +299,11 @@ export const HUB_DICT = {
     faCardPret: "from 49 lei/month",
     faCardDesc: "Full CRM, in Romanian, adapted for D177 and 20% sponsorship",
     internationalFootnote: "Starting prices published by each provider, converted at the August 2026 RON/USD rate (~4.50 lei) — always check each provider's own pricing page for current figures. Fundraising Academy's advantage isn't just the price: it's being fully adapted to the reality of Romanian NGOs — 20% sponsorship, Declarația 177, company relationships, and documents in Romanian.",
+    consultantaEyebrow: "1-on-1 Consulting",
+    consultantaTitlu: "Book a session with Vlad Plăcintă",
+    consultantaDesc:
+      "45 minutes, online — an audit of your current campaigns and a concrete action plan, delivered in writing. Pick an open slot directly, no back-and-forth emails.",
+    consultantaLoading: "Loading the booking calendar...",
     contactTitlu: "Not sure where to start?",
     contactDesc: "Write to us and we'll recommend the right tools for the stage your NGO is at.",
   },

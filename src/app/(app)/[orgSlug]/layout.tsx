@@ -10,6 +10,7 @@ import { getLocale } from "@/lib/i18n/get-locale";
 
 import { logoutAction } from "./actions";
 import { OnboardingBrandingGate } from "./onboarding-branding-gate";
+import { OnboardingCallPrompt } from "./onboarding-call-prompt";
 import { Paywall } from "./paywall";
 
 export default async function OrgLayout({
@@ -136,7 +137,10 @@ export default async function OrgLayout({
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-5xl px-6 py-8">{children}</main>
+      <main className="mx-auto max-w-5xl px-6 py-8">
+        <OnboardingCallPrompt show={showOnboarding} dict={dict.onboardingCall} />
+        {children}
+      </main>
     </div>
   );
 }

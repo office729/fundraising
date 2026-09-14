@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { CalendlyInlineWidget } from "@/components/calendly-inline-widget";
+import { CALENDLY_CONSULTANTA_URL } from "@/lib/calendly";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { HUB_DICT } from "@/lib/i18n/dictionaries/hub";
 
@@ -163,6 +165,22 @@ export default async function HubPage() {
             </div>
           </div>
           <p className="mt-4 text-[12px] leading-relaxed text-muted-2">{dict.internationalFootnote}</p>
+        </div>
+      </section>
+
+      {/* Consiliere 1 la 1 — destinația reală a butonului "Consiliere 1 la 1"
+          din header (chrome.tsx) și a CTA-ului de pe /ce-facem, amândouă
+          linkuind deja spre /hub#consultanta. */}
+      <section id="consultanta" className="scroll-mt-20 px-[6%] py-[70px]">
+        <div className="mx-auto grid max-w-[1200px] grid-cols-1 items-start gap-10 lg:grid-cols-[0.9fr_1.1fr]">
+          <div>
+            <span className="text-[12.5px] font-extrabold tracking-wide text-brand-green uppercase">
+              {dict.consultantaEyebrow}
+            </span>
+            <h2 className="font-display mt-2 text-[28px] font-bold text-ink">{dict.consultantaTitlu}</h2>
+            <p className="mt-3 max-w-md text-base leading-relaxed text-muted">{dict.consultantaDesc}</p>
+          </div>
+          <CalendlyInlineWidget url={CALENDLY_CONSULTANTA_URL} loadingLabel={dict.consultantaLoading} />
         </div>
       </section>
 

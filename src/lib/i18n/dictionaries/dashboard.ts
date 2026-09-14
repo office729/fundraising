@@ -41,6 +41,14 @@ export const DASHBOARD_DICT = {
       daysLeft: "zile rămase",
       roles: { owner: "Owner", admin: "Admin", member: "Membru" },
     },
+    onboardingCall: {
+      title: "Nou pe platformă?",
+      desc: "Programează un apel gratuit de onboarding — te ghidăm prin CRM și instrumente în 30 de minute.",
+      cta: "Programează un apel",
+      dismiss: "Nu acum",
+      close: "Închide",
+      loading: "Se încarcă programarea...",
+    },
   },
   en: {
     greeting: { morning: "Good morning", afternoon: "Good afternoon", evening: "Good evening" },
@@ -78,6 +86,14 @@ export const DASHBOARD_DICT = {
       dayLeft: "day left",
       daysLeft: "days left",
       roles: { owner: "Owner", admin: "Admin", member: "Member" },
+    },
+    onboardingCall: {
+      title: "New here?",
+      desc: "Book a free onboarding call — we'll walk you through the CRM and tools in 30 minutes.",
+      cta: "Book a call",
+      dismiss: "Not now",
+      close: "Close",
+      loading: "Loading the booking calendar...",
     },
   },
 } satisfies Record<Locale, unknown>;
