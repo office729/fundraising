@@ -57,10 +57,10 @@ function fitFontSize(
   return size;
 }
 
-/** Umple canvas-ul cu o poză, tăiată (cover) ca să acopere întreg formatul, indiferent de proporție. */
-function drawCoverImage(ctx: CanvasRenderingContext2D, img: HTMLImageElement, W: number, H: number) {
+/** Desenează o poză, tăiată (cover) ca să acopere exact dreptunghiul (x,y,w,h), indiferent de proporția pozei. */
+function drawCoverImage(ctx: CanvasRenderingContext2D, img: HTMLImageElement, x: number, y: number, w: number, h: number) {
   const ir = img.naturalWidth / img.naturalHeight;
-  const cr = W / H;
+  const cr = w / h;
   let sx = 0, sy = 0, sw = img.naturalWidth, sh = img.naturalHeight;
   if (ir > cr) {
     sw = img.naturalHeight * cr;
@@ -69,7 +69,20 @@ function drawCoverImage(ctx: CanvasRenderingContext2D, img: HTMLImageElement, W:
     sh = img.naturalWidth / cr;
     sy = (img.naturalHeight - sh) / 2;
   }
-  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, W, H);
+  ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+}
+
+/** Poza într-un cadru rotunjit (NU pe tot fundalul) — cu un contur discret. */
+function drawPhotoFrame(ctx: CanvasRenderingContext2D, img: HTMLImageElement, x: number, y: number, w: number, h: number, radius: number, border: string) {
+  ctx.save();
+  roundRect(ctx, x, y, w, h, radius);
+  ctx.clip();
+  drawCoverImage(ctx, img, x, y, w, h);
+  ctx.restore();
+  ctx.strokeStyle = border;
+  ctx.lineWidth = Math.max(1.5, w * 0.008);
+  roundRect(ctx, x, y, w, h, radius);
+  ctx.stroke();
 }
 
 /** Poziționează titlu + subtitlu + CTA centrate vertical într-o regiune — funcționează la orice proporție (bannner lat, pătrat, poveste înaltă). */
@@ -122,25 +135,19 @@ const TEMPLATES: Template[] = [
     label: "light",
     draw(ctx, W, H, t, photo) {
       const marginX = W * 0.06;
-      const reserveRight = photo ? 0 : W * 0.32;
+      const reserveRight = W * 0.32;
+
+      const grad = ctx.createLinearGradient(0, 0, W, H);
+      grad.addColorStop(0, "#D7263D");
+      grad.addColorStop(1, "#6E0F1F");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
 
       if (photo) {
-        drawCoverImage(ctx, photo, W, H);
-        ctx.save();
-        ctx.globalAlpha = 0.62;
-        const grad = ctx.createLinearGradient(0, 0, W, H);
-        grad.addColorStop(0, "#D7263D");
-        grad.addColorStop(1, "#6E0F1F");
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, W, H);
-        ctx.restore();
+        const fw = reserveRight * 0.8;
+        const fh = H * 0.7;
+        drawPhotoFrame(ctx, photo, W - marginX - fw, (H - fh) / 2, fw, fh, Math.min(24, fw * 0.08), "rgba(255,255,255,0.5)");
       } else {
-        const grad = ctx.createLinearGradient(0, 0, W, H);
-        grad.addColorStop(0, "#D7263D");
-        grad.addColorStop(1, "#6E0F1F");
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, W, H);
-
         ctx.save();
         ctx.globalAlpha = 0.14;
         ctx.fillStyle = "#ffffff";
@@ -187,18 +194,10 @@ const TEMPLATES: Template[] = [
     draw(ctx, W, H, t, photo) {
       const marginX = W * 0.06;
       const barH = Math.max(44, H * 0.15);
+      const reserveRight = photo ? W * 0.3 : 0;
 
-      if (photo) {
-        drawCoverImage(ctx, photo, W, H);
-        ctx.save();
-        ctx.globalAlpha = 0.7;
-        ctx.fillStyle = "#121010";
-        ctx.fillRect(0, 0, W, H);
-        ctx.restore();
-      } else {
-        ctx.fillStyle = "#121010";
-        ctx.fillRect(0, 0, W, H);
-      }
+      ctx.fillStyle = "#121010";
+      ctx.fillRect(0, 0, W, H);
       ctx.fillStyle = "#C41D33";
       ctx.fillRect(0, 0, W, barH);
       ctx.fillStyle = "#ffffff";
@@ -207,7 +206,13 @@ const TEMPLATES: Template[] = [
       ctx.fillText("▲  URGENT", marginX, barH / 2 + 1);
       ctx.textBaseline = "alphabetic";
 
-      const maxW = W - marginX * 2;
+      if (photo) {
+        const fw = reserveRight * 0.82;
+        const fh = H - barH - H * 0.16;
+        drawPhotoFrame(ctx, photo, W - marginX - fw, barH + H * 0.08, fw, fh, 10, "rgba(255,255,255,0.25)");
+      }
+
+      const maxW = W - marginX * 2 - reserveRight;
       const pillH = Math.max(42, H * 0.12);
       const L = layoutBlock(ctx, barH, H - barH, t.titlu, t.subtitlu, {
         titleFamily: "Sora", titleWeight: 800, titleMax: Math.min(56, H * 0.15), titleMin: 24,
@@ -241,25 +246,23 @@ const TEMPLATES: Template[] = [
     label: "dark",
     draw(ctx, W, H, t, photo) {
       const marginX = W * 0.06;
+      const reserveRight = photo ? W * 0.28 : 0;
 
-      if (photo) {
-        drawCoverImage(ctx, photo, W, H);
-        ctx.save();
-        ctx.globalAlpha = 0.82;
-        ctx.fillStyle = "#F7F3EC";
-        ctx.fillRect(0, 0, W, H);
-        ctx.restore();
-      } else {
-        ctx.fillStyle = "#F7F3EC";
-        ctx.fillRect(0, 0, W, H);
-      }
+      ctx.fillStyle = "#F7F3EC";
+      ctx.fillRect(0, 0, W, H);
 
       const eyebrowH = Math.max(28, H * 0.07);
       ctx.fillStyle = "#B08B2E";
       ctx.font = `700 ${Math.max(11, H * 0.028)}px "Manrope"`;
       ctx.fillText("S A L V E A Z Ă   O   I N I M Ă", marginX, eyebrowH * 0.75);
 
-      const maxW = W - marginX * 2;
+      if (photo) {
+        const fw = reserveRight * 0.85;
+        const fh = H * 0.24;
+        drawPhotoFrame(ctx, photo, W - marginX - fw, eyebrowH + H * 0.02, fw, fh, 10, "#C9A94E");
+      }
+
+      const maxW = W - marginX * 2 - reserveRight;
       const ctaApproxH = Math.max(24, H * 0.06);
       const L = layoutBlock(ctx, eyebrowH, H - eyebrowH, t.titlu, t.subtitlu, {
         titleFamily: "Georgia", titleWeight: 700, titleMax: Math.min(58, H * 0.16), titleMin: 24,
@@ -303,17 +306,11 @@ const TEMPLATES: Template[] = [
     label: "light",
     draw(ctx, W, H, t, photo) {
       const marginX = W * 0.06;
+      const reserveRight = photo ? W * 0.3 : 0;
 
-      if (photo) {
-        drawCoverImage(ctx, photo, W, H);
-        ctx.save();
-        ctx.globalAlpha = 0.66;
-        ctx.fillStyle = "#050B14";
-        ctx.fillRect(0, 0, W, H);
-        ctx.restore();
-      } else {
-        ctx.fillStyle = "#050B14";
-        ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = "#050B14";
+      ctx.fillRect(0, 0, W, H);
+      if (!photo) {
         const glow = ctx.createRadialGradient(W * 0.28, H * 0.4, 20, W * 0.28, H * 0.4, Math.max(W, H) * 0.5);
         glow.addColorStop(0, "rgba(74,159,216,0.35)");
         glow.addColorStop(1, "rgba(5,11,20,0)");
@@ -332,7 +329,13 @@ const TEMPLATES: Template[] = [
         ctx.fill();
       });
 
-      const maxW = W - marginX * 2;
+      if (photo) {
+        const fw = reserveRight * 0.8;
+        const fh = H * 0.65;
+        drawPhotoFrame(ctx, photo, W - marginX - fw, (H - fh) / 2, fw, fh, 14, "rgba(74,159,216,0.6)");
+      }
+
+      const maxW = W - marginX * 2 - reserveRight;
       const pillH = Math.max(44, H * 0.12);
       const L = layoutBlock(ctx, 0, H, t.titlu, t.subtitlu, {
         titleFamily: "Sora", titleWeight: 800, titleMax: Math.min(56, H * 0.16), titleMin: 26,
@@ -369,24 +372,19 @@ const TEMPLATES: Template[] = [
     label: "light",
     draw(ctx, W, H, t, photo) {
       const marginX = W * 0.06;
-      const reserveRight = photo ? 0 : W * 0.22;
+      const reserveRight = photo ? W * 0.3 : W * 0.22;
+
+      const grad = ctx.createLinearGradient(0, 0, W, H);
+      grad.addColorStop(0, "#F4977A");
+      grad.addColorStop(1, "#FCC98A");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
 
       if (photo) {
-        drawCoverImage(ctx, photo, W, H);
-        ctx.save();
-        ctx.globalAlpha = 0.6;
-        const grad = ctx.createLinearGradient(0, 0, W, H);
-        grad.addColorStop(0, "#F4977A");
-        grad.addColorStop(1, "#FCC98A");
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, W, H);
-        ctx.restore();
+        const fw = reserveRight * 0.8;
+        const fh = H * 0.7;
+        drawPhotoFrame(ctx, photo, W - marginX - fw, (H - fh) / 2, fw, fh, Math.min(24, fw * 0.1), "rgba(255,255,255,0.6)");
       } else {
-        const grad = ctx.createLinearGradient(0, 0, W, H);
-        grad.addColorStop(0, "#F4977A");
-        grad.addColorStop(1, "#FCC98A");
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, W, H);
         ctx.save();
         ctx.globalAlpha = 0.25;
         ctx.fillStyle = "#ffffff";
@@ -430,23 +428,11 @@ const TEMPLATES: Template[] = [
     draw(ctx, W, H, t, photo) {
       const marginX = W * 0.06;
 
-      if (photo) {
-        drawCoverImage(ctx, photo, W, H);
-        ctx.save();
-        ctx.globalAlpha = 0.66;
-        const grad = ctx.createLinearGradient(0, 0, W, H);
-        grad.addColorStop(0, "#0F1F3D");
-        grad.addColorStop(1, "#173B6B");
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, W, H);
-        ctx.restore();
-      } else {
-        const grad = ctx.createLinearGradient(0, 0, W, H);
-        grad.addColorStop(0, "#0F1F3D");
-        grad.addColorStop(1, "#173B6B");
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, W, H);
-      }
+      const grad = ctx.createLinearGradient(0, 0, W, H);
+      grad.addColorStop(0, "#0F1F3D");
+      grad.addColorStop(1, "#173B6B");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
 
       ctx.save();
       ctx.strokeStyle = "rgba(255,255,255,0.12)";
@@ -459,6 +445,12 @@ const TEMPLATES: Template[] = [
         ctx.stroke();
       }
       ctx.restore();
+
+      if (photo) {
+        const fw = W * 0.26;
+        const fh = H * 0.42;
+        drawPhotoFrame(ctx, photo, W - marginX - fw, H * 0.1, fw, fh, 10, "rgba(255,255,255,0.3)");
+      }
 
       const maxW = W * 0.58;
       const btnH = Math.max(40, H * 0.11);
