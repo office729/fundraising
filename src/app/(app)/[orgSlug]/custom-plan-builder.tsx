@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 
-import { calculateCustomPlanPrice, normalizeCustomPlanConfig } from "@/lib/billing/custom-plan";
-import { ALL_TOOLS, type ToolId } from "@/lib/billing/packages";
+import { calculateCustomPlanBreakdown, type CustomPlanBreakdownKey } from "@/lib/billing/custom-plan";
+import { ALL_TOOLS, PACKAGE_LIMITS, type ToolId } from "@/lib/billing/packages";
 
 import { chooseCustomPlanAction } from "./billing-actions";
 
@@ -19,31 +19,64 @@ const TOOL_LABELS: Record<ToolId, string> = {
   "program-lucru": "Program de lucru echipă",
 };
 
-function NumberField({
+const BREAKDOWN_LABELS: Record<CustomPlanBreakdownKey, string> = {
+  baza: "Bază (cont + platformă)",
+  utilizatori: "Utilizatori suplimentari",
+  contactePf: "Contacte PF",
+  companiiPj: "Companii PJ",
+  instrumente: "Instrumente alese",
+  generari: "Generări suplimentare",
+};
+
+const FIXED_PACKAGES: { key: "start" | "crestere" | "impact"; nume: string }[] = [
+  { key: "start", nume: "START" },
+  { key: "crestere", nume: "CREȘTERE" },
+  { key: "impact", nume: "IMPACT" },
+];
+
+function compararePachetFix(pret: number): string | null {
+  const preturi = FIXED_PACKAGES.map((p) => ({ ...p, pret: PACKAGE_LIMITS[p.key].pretLunar! }));
+  const apropiat = preturi.reduce((a, b) => (Math.abs(b.pret - pret) < Math.abs(a.pret - pret) ? b : a));
+  const delta = Math.abs(apropiat.pret - pret);
+  if (delta === 0) return null;
+  return pret < apropiat.pret
+    ? `cu ${delta} lei mai puțin decât pachetul ${apropiat.nume}`
+    : `cu ${delta} lei mai mult decât pachetul ${apropiat.nume}`;
+}
+
+function SliderField({
   label,
   value,
   onChange,
-  step = 1,
-  min = 0,
+  min,
+  max,
+  step,
+  format,
 }: {
   label: string;
   value: number;
   onChange: (n: number) => void;
-  step?: number;
-  min?: number;
+  min: number;
+  max: number;
+  step: number;
+  format: (n: number) => string;
 }) {
   return (
-    <label className="flex flex-col gap-1 text-[13px] font-medium text-ink">
-      {label}
+    <div className="flex flex-col gap-2">
+      <div className="flex items-baseline justify-between">
+        <span className="text-[13px] font-medium text-ink">{label}</span>
+        <span className="font-display text-[15px] font-bold text-brand-blue">{format(value)}</span>
+      </div>
       <input
-        type="number"
+        type="range"
         min={min}
+        max={max}
         step={step}
         value={value}
-        onChange={(e) => onChange(e.target.valueAsNumber || 0)}
-        className="rounded-lg border border-line bg-canvas px-3 py-2 text-sm text-ink"
+        onChange={(e) => onChange(e.target.valueAsNumber)}
+        className="h-2 w-full cursor-pointer appearance-none rounded-full bg-line accent-brand-green"
       />
-    </label>
+    </div>
   );
 }
 
@@ -56,7 +89,6 @@ export function CustomPlanBuilder({
   activ: boolean;
   onSalvat: () => void;
 }) {
-  const [deschis, setDeschis] = useState(activ);
   const [config, setConfig] = useState({
     utilizatori: 1,
     contactePf: 0,
@@ -65,9 +97,26 @@ export function CustomPlanBuilder({
     tools: [] as ToolId[],
   });
   const [pending, startTransition] = useTransition();
-  const [trimis, setTrimis] = useState(false);
+  // Dacă planul personalizat era deja ales (revii pe pagină), pornim direct
+  // în starea "trimis" — configurația salvată nu se restaurează (nu e
+  // transmisă din server), dar cel puțin butonul nu cere retrimitere.
+  const [trimis, setTrimis] = useState(activ);
 
-  const pret = useMemo(() => calculateCustomPlanPrice(normalizeCustomPlanConfig(config)), [config]);
+  const breakdown = useMemo(() => calculateCustomPlanBreakdown(config), [config]);
+  const pret = breakdown.reduce((sum, item) => sum + item.amount, 0);
+  const comparatie = useMemo(() => compararePachetFix(pret), [pret]);
+
+  const [puls, setPuls] = useState(false);
+  const primulRandăr = useRef(true);
+  useEffect(() => {
+    if (primulRandăr.current) {
+      primulRandăr.current = false;
+      return;
+    }
+    setPuls(true);
+    const t = setTimeout(() => setPuls(false), 400);
+    return () => clearTimeout(t);
+  }, [pret]);
 
   function toggleTool(tool: ToolId) {
     setConfig((c) => ({
@@ -85,78 +134,111 @@ export function CustomPlanBuilder({
   }
 
   return (
-    <div className="relative flex flex-col gap-3 rounded-2xl border border-dashed border-brand-blue bg-panel p-6">
-      <h3 className="font-display text-lg font-bold text-ink">Plan personalizat</h3>
-      <p className="text-[13px] text-muted">Alege exact ce ai nevoie — prețul se calculează automat.</p>
-      <p className="text-2xl font-extrabold text-ink">
-        {pret} lei<span className="text-sm font-medium text-muted">/lună</span>
+    <div className="rounded-2xl border border-dashed border-brand-blue bg-panel p-7 sm:p-9">
+      <div className="text-[12.5px] font-extrabold tracking-wide text-brand-blue uppercase">Plan à la carte</div>
+      <h3 className="font-display mt-1 text-[22px] font-bold text-ink">Plan personalizat</h3>
+      <p className="mt-1.5 max-w-xl text-[14.5px] leading-relaxed text-muted">
+        Alege exact ce ai nevoie — prețul se calculează automat.
       </p>
 
-      {!deschis && (
-        <button
-          type="button"
-          onClick={() => setDeschis(true)}
-          className="mt-2 rounded-md border border-brand-blue py-2.5 text-center text-sm font-bold text-brand-blue transition hover:bg-brand-blue-soft"
-        >
-          Configurează planul
-        </button>
-      )}
-
-      {deschis && (
-        <div className="flex flex-col gap-4 border-t border-line pt-3">
-          <div className="grid grid-cols-2 gap-3">
-            <NumberField
+      <div className="mt-7 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_320px]">
+        <div className="flex flex-col gap-7">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <SliderField
               label="Utilizatori"
               min={1}
+              max={20}
+              step={1}
               value={config.utilizatori}
               onChange={(n) => setConfig((c) => ({ ...c, utilizatori: n }))}
+              format={(n) => `${n}`}
             />
-            <NumberField
+            <SliderField
               label="Contacte PF"
-              step={100}
+              min={0}
+              max={50_000}
+              step={500}
               value={config.contactePf}
               onChange={(n) => setConfig((c) => ({ ...c, contactePf: n }))}
+              format={(n) => n.toLocaleString("ro-RO")}
             />
-            <NumberField
+            <SliderField
               label="Companii PJ"
-              step={50}
+              min={0}
+              max={10_000}
+              step={100}
               value={config.companiiPj}
               onChange={(n) => setConfig((c) => ({ ...c, companiiPj: n }))}
+              format={(n) => n.toLocaleString("ro-RO")}
             />
-            <NumberField
+            <SliderField
               label="Generări / lună"
+              min={0}
+              max={100}
+              step={1}
               value={config.generariLunare}
               onChange={(n) => setConfig((c) => ({ ...c, generariLunare: n }))}
+              format={(n) => `${n}`}
             />
           </div>
 
-          <div className="flex flex-col gap-1.5">
+          <div>
             <span className="text-[13px] font-medium text-ink">Instrumente incluse</span>
-            {ALL_TOOLS.map((tool) => (
-              <label key={tool} className="flex items-center gap-2 text-[13px] text-body">
-                <input
-                  type="checkbox"
-                  checked={config.tools.includes(tool)}
-                  onChange={() => toggleTool(tool)}
-                  className="h-4 w-4 rounded border-line"
-                />
-                {TOOL_LABELS[tool]}
-              </label>
-            ))}
+            <div className="mt-2.5 flex flex-wrap gap-2">
+              {ALL_TOOLS.map((tool) => {
+                const toolActiv = config.tools.includes(tool);
+                return (
+                  <button
+                    key={tool}
+                    type="button"
+                    onClick={() => toggleTool(tool)}
+                    aria-pressed={toolActiv}
+                    className={`rounded-full border px-3.5 py-1.5 text-[12.5px] font-medium transition ${
+                      toolActiv
+                        ? "border-brand-green bg-brand-green-soft text-brand-green"
+                        : "border-line text-body hover:border-brand-blue hover:text-brand-blue"
+                    }`}
+                  >
+                    {toolActiv ? "✓ " : ""}
+                    {TOOL_LABELS[tool]}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-
-          <button
-            type="button"
-            disabled={pending}
-            onClick={trimite}
-            className={`rounded-md py-2.5 text-center text-sm font-bold transition disabled:opacity-60 ${
-              trimis ? "bg-brand-green text-white" : "border border-brand-blue text-brand-blue hover:bg-brand-blue-soft"
-            }`}
-          >
-            {trimis ? "Plan personalizat ales" : "Trimite planul personalizat"}
-          </button>
         </div>
-      )}
+
+        <div className="lg:sticky lg:top-6 lg:self-start">
+          <div className="rounded-xl border border-line bg-canvas p-5">
+            <p
+              className={`text-3xl font-extrabold transition-colors duration-300 ${puls ? "text-brand-green" : "text-ink"}`}
+            >
+              {pret} lei<span className="text-sm font-medium text-muted">/lună</span>
+            </p>
+            {comparatie && <p className="mt-1 text-[12.5px] text-muted">{comparatie}</p>}
+
+            <div className="mt-4 flex flex-col gap-1.5 border-t border-line pt-4">
+              {breakdown.map((item) => (
+                <div key={item.key} className="flex items-center justify-between text-[13px] text-body">
+                  <span>{BREAKDOWN_LABELS[item.key]}</span>
+                  <span className="font-medium text-ink">+{item.amount} lei</span>
+                </div>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              disabled={pending}
+              onClick={trimite}
+              className={`mt-5 w-full rounded-md py-3 text-center text-sm font-bold transition disabled:opacity-60 ${
+                trimis ? "bg-brand-green text-white" : "bg-brand-green text-white hover:bg-brand-green-hover"
+              }`}
+            >
+              {trimis ? "Plan personalizat ales" : "Trimite planul personalizat"}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

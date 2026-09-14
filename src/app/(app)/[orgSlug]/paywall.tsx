@@ -93,7 +93,7 @@ export function Paywall({
           </div>
         )}
 
-        <div className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-4">
+        <div className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-3">
           {PACHETE.map((p) => {
             const l = PACKAGE_LIMITS[p.key];
             const activ = alegere === p.key;
@@ -137,7 +137,9 @@ export function Paywall({
               </div>
             );
           })}
+        </div>
 
+        <div className="mt-5">
           <CustomPlanBuilder
             orgSlug={orgSlug}
             activ={alegere === "custom"}
