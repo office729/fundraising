@@ -74,6 +74,32 @@ export const fundraisingDonationStatus = pgEnum("fundraising_donation_status", [
   "rambursata",
 ]);
 
+// Domeniul de activitate al organizației (tipul de cauză) — opțional, ales
+// din Setări/onboarding. Filtrează ce design-uri de campanie vede org-ul
+// implicit (vezi src/lib/campaign-templates.ts) — nu blochează nimic dacă
+// lipsește.
+export const orgDomeniuActivitate = pgEnum("org_domeniu_activitate", [
+  "copii",
+  "animale",
+  "mediu",
+  "educatie",
+  "sanatate",
+  "social_incluziune",
+  "cultura",
+  "altele",
+]);
+
+// Design-ul vizual al paginii publice de campanie — vezi
+// src/lib/campaign-templates.ts. "modern" = aspectul original (implicit),
+// ca nicio pagină existentă să nu-și schimbe vizual aspectul la introducerea
+// acestei coloane.
+export const campaignPageTemplate = pgEnum("campaign_page_template", [
+  "modern",
+  "cald",
+  "natural",
+  "elegant",
+]);
+
 // Tipul contului unui app_user — determinat de felul invitației acceptate,
 // nu ales liber de utilizator. Vezi src/lib/db/schema/beneficiar.ts.
 export const accountType = pgEnum("account_type", ["org", "beneficiar"]);

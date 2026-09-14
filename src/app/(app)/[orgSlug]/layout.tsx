@@ -69,6 +69,8 @@ export default async function OrgLayout({
         locale={locale}
         initialSlogan={access.orgSlogan}
         initialBrandColor={access.orgBrandColor}
+        initialCif={access.orgCif}
+        initialDomeniuActivitate={access.orgDomeniuActivitate}
       />
       <header className="border-b border-line bg-panel">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-4">

@@ -12,6 +12,9 @@ export const CUSTOM_PLAN_PRICING = {
   pretPerInstrument: 7,
   generariIncluse: 3,
   pretPer5GenerariSuplimentare: 10,
+  // Acces la toate design-urile de campanie (nu doar cele din domeniul de
+  // activitate ales) — vezi src/lib/campaign-templates.ts.
+  pretAccesDesignToate: 19,
 } as const;
 
 export type CustomPlanConfig = {
@@ -20,6 +23,7 @@ export type CustomPlanConfig = {
   companiiPj: number;
   generariLunare: number;
   tools: ToolId[];
+  accesDesignToate: boolean;
 };
 
 export type CustomPlanConfigSaved = CustomPlanConfig & { pretLunar: number };
@@ -39,6 +43,7 @@ export function normalizeCustomPlanConfig(input: {
   companiiPj: number;
   generariLunare: number;
   tools: string[];
+  accesDesignToate?: boolean;
 }): CustomPlanConfig {
   const clamp = (n: number, min: number, max: number) =>
     Math.min(max, Math.max(min, Math.round(Number.isFinite(n) ? n : min)));
@@ -49,13 +54,21 @@ export function normalizeCustomPlanConfig(input: {
     companiiPj: clamp(input.companiiPj, 0, MAX_COMPANII_PJ),
     generariLunare: clamp(input.generariLunare, 0, MAX_GENERARI_LUNARE),
     tools: input.tools.filter((t): t is ToolId => (ALL_TOOLS as string[]).includes(t)),
+    accesDesignToate: Boolean(input.accesDesignToate),
   };
 }
 
 // Cheia identifică rândul (pentru etichetă + traducere în UI); ordinea din
 // array e ordinea de afișare recomandată. Rândurile cu cost 0 NU sunt
 // incluse — un breakdown de tip "factură" nu listează linii goale.
-export type CustomPlanBreakdownKey = "baza" | "utilizatori" | "contactePf" | "companiiPj" | "instrumente" | "generari";
+export type CustomPlanBreakdownKey =
+  | "baza"
+  | "utilizatori"
+  | "contactePf"
+  | "companiiPj"
+  | "instrumente"
+  | "generari"
+  | "accesDesignToate";
 export type CustomPlanBreakdownItem = { key: CustomPlanBreakdownKey; amount: number };
 
 export function calculateCustomPlanBreakdown(config: CustomPlanConfig): CustomPlanBreakdownItem[] {
@@ -70,6 +83,7 @@ export function calculateCustomPlanBreakdown(config: CustomPlanConfig): CustomPl
     { key: "companiiPj", amount: Math.ceil(config.companiiPj / 500) * p.pretPer500CompaniiPj },
     { key: "instrumente", amount: config.tools.length * p.pretPerInstrument },
     { key: "generari", amount: Math.ceil(generariSuplimentare / 5) * p.pretPer5GenerariSuplimentare },
+    { key: "accesDesignToate", amount: config.accesDesignToate ? p.pretAccesDesignToate : 0 },
   ];
 
   return items.filter((item) => item.amount > 0);

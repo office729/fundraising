@@ -7,6 +7,7 @@ import { Button } from "../components/ui/button";
 import { Dialog } from "../components/ui/dialog";
 import { Input, Label } from "../components/ui/input";
 import { useLocale } from "../lib/locale-context";
+import { CAMPAIGN_TEMPLATES, type CampaignPageTemplate } from "@/lib/campaign-templates";
 import { STRANGERE_FONDURI_DICT } from "@/lib/i18n/dictionaries/strangere-fonduri";
 import { actualizeazaImaginePaginaAction, editeazaPaginaAdminAction } from "./actions";
 
@@ -20,6 +21,7 @@ export type PaginaEditabila = {
   imagineUrl: string | null;
   judet: string | null;
   localitate: string | null;
+  template: CampaignPageTemplate;
 };
 
 export function EditPageDialog({
@@ -27,11 +29,13 @@ export function EditPageDialog({
   onClose,
   orgSlug,
   pagina,
+  templateuriDisponibile,
 }: {
   open: boolean;
   onClose: () => void;
   orgSlug: string;
   pagina: PaginaEditabila;
+  templateuriDisponibile: CampaignPageTemplate[];
 }) {
   const router = useRouter();
   const locale = useLocale();
@@ -122,6 +126,34 @@ export function EditPageDialog({
             </div>
           </div>
           <p className="text-[11.5px] text-[var(--ci-text-faint)]">{dict.localitateNota}</p>
+
+          {templateuriDisponibile.length > 1 && (
+            <div>
+              <Label>{dict.design}</Label>
+              <div className="mt-1.5 grid grid-cols-4 gap-2">
+                {templateuriDisponibile.map((id) => {
+                  const tpl = CAMPAIGN_TEMPLATES[id];
+                  return (
+                    <label key={id} className="cursor-pointer">
+                      <input
+                        type="radio"
+                        name="template"
+                        value={id}
+                        defaultChecked={pagina.template === id}
+                        className="peer sr-only"
+                      />
+                      <div
+                        className={`h-10 w-full rounded-lg border border-[var(--ci-border)] bg-gradient-to-br ${tpl.clase.heroFallback} peer-checked:border-brand-green peer-checked:ring-2 peer-checked:ring-brand-green`}
+                      />
+                      <span className="mt-1 block text-center text-[11px] font-medium text-[var(--ci-text-muted)]">
+                        {tpl.nume}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {eroare && <p className="text-[13px] text-[var(--ci-red)]">{eroare}</p>}
 

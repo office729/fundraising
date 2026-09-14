@@ -3,7 +3,9 @@ import { ExternalLink } from "lucide-react";
 import Link from "next/link";
 
 import { withOrgSession } from "@/lib/auth/guard";
-import { fundraisingDonations, fundraisingPages } from "@/lib/db/schema";
+import type { CustomPlanConfigSaved } from "@/lib/billing/custom-plan";
+import { getTemplatesDisponibile } from "@/lib/campaign-templates";
+import { fundraisingDonations, fundraisingPages, organizations } from "@/lib/db/schema";
 
 import { Badge } from "../components/ui/badge";
 import { Breadcrumb } from "../components/ui/breadcrumb";
@@ -46,12 +48,20 @@ const getPagini = withOrgSession(async (ctx) => {
     .orderBy(desc(fundraisingDonations.suma))
     .limit(10);
 
-  return { totalStrans, totalDonatii, pagini, topDonatori };
+  const [org] = await ctx.db
+    .select({ customPlanConfig: organizations.customPlanConfig })
+    .from(organizations)
+    .where(eq(organizations.id, ctx.orgId))
+    .limit(1);
+  const customPlanConfig = org?.customPlanConfig as CustomPlanConfigSaved | null;
+  const templateuriDisponibile = getTemplatesDisponibile(ctx.orgDomeniuActivitate, Boolean(customPlanConfig?.accesDesignToate));
+
+  return { totalStrans, totalDonatii, pagini, topDonatori, templateuriDisponibile };
 });
 
 export default async function StrangereFonduriPage({ params }: { params: Promise<{ orgSlug: string }> }) {
   const { orgSlug } = await params;
-  const { totalStrans, totalDonatii, pagini, topDonatori } = await getPagini(orgSlug);
+  const { totalStrans, totalDonatii, pagini, topDonatori, templateuriDisponibile } = await getPagini(orgSlug);
   const locale = await getLocale();
   const dict = STRANGERE_FONDURI_DICT[locale].page;
 
@@ -136,7 +146,7 @@ export default async function StrangereFonduriPage({ params }: { params: Promise
                     <ExternalLink className="h-3.5 w-3.5" />
                   </a>
                   <CopyPageLinkButton orgSlug={orgSlug} pageSlug={p.slug} />
-                  <EditPageButton orgSlug={orgSlug} pagina={p} />
+                  <EditPageButton orgSlug={orgSlug} pagina={p} templateuriDisponibile={templateuriDisponibile} />
                   <ToggleStatusButton orgSlug={orgSlug} id={p.id} status={p.status} />
                   <DeletePageButton orgSlug={orgSlug} id={p.id} titlu={p.titlu} />
                 </div>

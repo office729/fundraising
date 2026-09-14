@@ -5,7 +5,9 @@ import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 
 import { withOrgAdmin } from "@/lib/auth/guard";
-import { fundraisingDonations, fundraisingPages, fundraisingUpdates } from "@/lib/db/schema";
+import type { CustomPlanConfigSaved } from "@/lib/billing/custom-plan";
+import { getTemplatesDisponibile, type CampaignPageTemplate } from "@/lib/campaign-templates";
+import { fundraisingDonations, fundraisingPages, fundraisingUpdates, organizations } from "@/lib/db/schema";
 import { htmlEmailMultumireDonatie, subiectEmailMultumireDonatie } from "@/lib/donation-email-template";
 import { emailConfigurat, trimiteEmail } from "@/lib/email";
 import { crediteazaPaginaSiDonator } from "@/lib/fundraising-credit";
@@ -121,6 +123,7 @@ export const editeazaPaginaAdminAction = withOrgAdmin(
     const sumaTintaRaw = str("sumaTinta");
     const judet = str("judet") || null;
     const localitate = str("localitate") || null;
+    const templateCerut = str("template");
 
     if (!numeCreator || !emailCreator || !titlu || !poveste) {
       return { error: "Completează toate câmpurile obligatorii." };
@@ -134,9 +137,31 @@ export const editeazaPaginaAdminAction = withOrgAdmin(
       sumaTinta = n;
     }
 
+    // Nu avem încredere în ce trimite clientul — recalculăm lista de
+    // template-uri permise din org-ul real, ca la creare (creeaza/actions.ts).
+    const [org] = await ctx.db
+      .select({ customPlanConfig: organizations.customPlanConfig })
+      .from(organizations)
+      .where(eq(organizations.id, ctx.orgId))
+      .limit(1);
+    const customPlanConfig = org?.customPlanConfig as CustomPlanConfigSaved | null;
+    const templateuriPermise = getTemplatesDisponibile(ctx.orgDomeniuActivitate, Boolean(customPlanConfig?.accesDesignToate));
+    const template: CampaignPageTemplate | undefined = templateuriPermise.includes(templateCerut as CampaignPageTemplate)
+      ? (templateCerut as CampaignPageTemplate)
+      : undefined;
+
     const r = await ctx.db
       .update(fundraisingPages)
-      .set({ titlu, poveste, sumaTinta, numeCreator, emailCreator, judet, localitate })
+      .set({
+        titlu,
+        poveste,
+        sumaTinta,
+        numeCreator,
+        emailCreator,
+        judet,
+        localitate,
+        ...(template ? { template } : {}),
+      })
       .where(and(eq(fundraisingPages.id, pageId), eq(fundraisingPages.orgId, ctx.orgId)))
       .returning({ id: fundraisingPages.id });
     if (!r[0]) return { error: "Pagina nu a fost găsită." };

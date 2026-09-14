@@ -26,7 +26,14 @@ export const choosePackageAction = withOrgAdmin(async (ctx, pkg: Exclude<OrgPack
 export const chooseCustomPlanAction = withOrgAdmin(
   async (
     ctx,
-    rawConfig: { utilizatori: number; contactePf: number; companiiPj: number; generariLunare: number; tools: string[] },
+    rawConfig: {
+      utilizatori: number;
+      contactePf: number;
+      companiiPj: number;
+      generariLunare: number;
+      tools: string[];
+      accesDesignToate?: boolean;
+    },
   ) => {
     const config = normalizeCustomPlanConfig(rawConfig);
     const pretLunar = calculateCustomPlanPrice(config);

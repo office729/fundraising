@@ -6,6 +6,7 @@ import { useActionState, useEffect, useState } from "react";
 
 import { Button } from "../components/ui/button";
 import { useLocale } from "../lib/locale-context";
+import type { CampaignPageTemplate } from "@/lib/campaign-templates";
 import { STRANGERE_FONDURI_DICT } from "@/lib/i18n/dictionaries/strangere-fonduri";
 import { AddOfflineDonationDialog } from "./add-offline-donation-dialog";
 import { AddPageDialog } from "./add-page-dialog";
@@ -34,7 +35,15 @@ export function AddPageButton({ orgSlug }: { orgSlug: string }) {
   );
 }
 
-export function EditPageButton({ orgSlug, pagina }: { orgSlug: string; pagina: PaginaEditabila }) {
+export function EditPageButton({
+  orgSlug,
+  pagina,
+  templateuriDisponibile,
+}: {
+  orgSlug: string;
+  pagina: PaginaEditabila;
+  templateuriDisponibile: CampaignPageTemplate[];
+}) {
   const locale = useLocale();
   const dict = STRANGERE_FONDURI_DICT[locale].client;
   const [open, setOpen] = useState(false);
@@ -48,7 +57,13 @@ export function EditPageButton({ orgSlug, pagina }: { orgSlug: string; pagina: P
       >
         <Pencil className="h-3.5 w-3.5" />
       </button>
-      <EditPageDialog open={open} onClose={() => setOpen(false)} orgSlug={orgSlug} pagina={pagina} />
+      <EditPageDialog
+        open={open}
+        onClose={() => setOpen(false)}
+        orgSlug={orgSlug}
+        pagina={pagina}
+        templateuriDisponibile={templateuriDisponibile}
+      />
     </>
   );
 }

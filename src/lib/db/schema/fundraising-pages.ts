@@ -1,7 +1,7 @@
 import { boolean, index, integer, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 import { appUsers } from "./app-users";
-import { fundraisingDonationStatus, fundraisingPageStatus } from "./enums";
+import { campaignPageTemplate, fundraisingDonationStatus, fundraisingPageStatus } from "./enums";
 import { organizations } from "./organizations";
 
 // Pagină de strângere fonduri creată de un SUSȚINĂTOR (public, neautentificat
@@ -38,6 +38,10 @@ export const fundraisingPages = pgTable(
     // donații, cere consimțământ explicit pentru procesarea acestor date.
     consimtamantGdpr: boolean("consimtamant_gdpr").notNull().default(false),
     status: fundraisingPageStatus("status").notNull().default("activa"),
+    // Design-ul vizual al paginii — vezi src/lib/campaign-templates.ts.
+    // Implicit "modern" = aspectul original, ca paginile deja existente să nu
+    // își schimbe vizual aspectul la introducerea acestei coloane.
+    template: campaignPageTemplate("template").notNull().default("modern"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [

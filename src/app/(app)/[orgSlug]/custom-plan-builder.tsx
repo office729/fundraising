@@ -26,6 +26,7 @@ const BREAKDOWN_LABELS: Record<CustomPlanBreakdownKey, string> = {
   companiiPj: "Companii PJ",
   instrumente: "Instrumente alese",
   generari: "Generări suplimentare",
+  accesDesignToate: "Acces la toate design-urile de campanie",
 };
 
 const FIXED_PACKAGES: { key: "start" | "crestere" | "impact"; nume: string }[] = [
@@ -95,6 +96,7 @@ export function CustomPlanBuilder({
     companiiPj: 0,
     generariLunare: 3,
     tools: [] as ToolId[],
+    accesDesignToate: false,
   });
   const [pending, startTransition] = useTransition();
   // Dacă planul personalizat era deja ales (revii pe pagină), pornim direct
@@ -204,6 +206,28 @@ export function CustomPlanBuilder({
                   </button>
                 );
               })}
+            </div>
+          </div>
+
+          <div>
+            <span className="text-[13px] font-medium text-ink">Design-uri de campanie</span>
+            <p className="mt-1 text-[12.5px] leading-relaxed text-muted">
+              Implicit vezi doar design-urile potrivite domeniului de activitate ales în Setări. Activează asta ca
+              să alegi din toate design-urile, indiferent de domeniu.
+            </p>
+            <div className="mt-2.5">
+              <button
+                type="button"
+                onClick={() => setConfig((c) => ({ ...c, accesDesignToate: !c.accesDesignToate }))}
+                aria-pressed={config.accesDesignToate}
+                className={`rounded-full border px-3.5 py-1.5 text-[12.5px] font-medium transition ${
+                  config.accesDesignToate
+                    ? "border-brand-green bg-brand-green-soft text-brand-green"
+                    : "border-line text-body hover:border-brand-blue hover:text-brand-blue"
+                }`}
+              >
+                {config.accesDesignToate ? "✓ " : ""}Acces la toate design-urile
+              </button>
             </div>
           </div>
         </div>

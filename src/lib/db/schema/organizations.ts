@@ -1,6 +1,6 @@
 import { jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
-import { orgPackage, subscriptionStatus } from "./enums";
+import { orgDomeniuActivitate, orgPackage, subscriptionStatus } from "./enums";
 
 // O organizație = un ONG client. Fiecare tabel de date de tenant (companii,
 // donatori etc.) are un FK org_id către acest tabel, izolat prin RLS
@@ -20,6 +20,13 @@ export const organizations = pgTable("organizations", {
   // (vercel domains add) e un pas separat, asistat. Vezi src/proxy.ts —
   // rescrie orice cerere pe acest host către /<slug>/... intern.
   customDomain: text("custom_domain").unique(),
+  // CIF-ul organizației și domeniul ei de activitate — opționale, completate
+  // din Setări/onboarding (nu blochează nimic la lipsă). Domeniul filtrează
+  // ce design-uri de campanie vede org-ul implicit (vezi
+  // src/lib/campaign-templates.ts); CIF-ul e validat doar ca FORMAT (nu
+  // checksum complet), cu cifValidFormat() din lib/iban.ts.
+  cif: text("cif"),
+  domeniuActivitate: orgDomeniuActivitate("domeniu_activitate"),
   package: orgPackage("package").notNull().default("trial"),
   // Configurația planului à la carte, salvată doar când package = "custom"
   // — { utilizatori, contactePf, companiiPj, generariLunare, tools, pretLunar }.

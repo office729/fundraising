@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState } from "react";
 
+import type { DomeniuActivitate } from "@/lib/campaign-templates";
 import type { Locale } from "@/lib/i18n/config";
 import { SETARI_ECHIPA_DICT } from "@/lib/i18n/dictionaries/setari-echipa";
 import { updateBrandingAction, type BrandingState } from "./actions";
@@ -47,6 +48,8 @@ export function BrandingForm({
   initialLogoUrl,
   initialSlogan,
   initialBrandColor,
+  initialCif,
+  initialDomeniuActivitate,
   onSaved,
 }: {
   orgSlug: string;
@@ -54,6 +57,8 @@ export function BrandingForm({
   initialLogoUrl: string | null;
   initialSlogan: string | null;
   initialBrandColor: string | null;
+  initialCif: string | null;
+  initialDomeniuActivitate: DomeniuActivitate | null;
   onSaved?: () => void;
 }) {
   const dict = SETARI_ECHIPA_DICT[locale].orgSetari;
@@ -144,6 +149,33 @@ export function BrandingForm({
           />
           <span className="text-sm text-muted">{color}</span>
         </div>
+      </div>
+
+      <label className="text-sm font-medium text-ink">
+        {dict.cif}
+        <input
+          name="cif"
+          defaultValue={initialCif ?? ""}
+          placeholder={dict.cifPlaceholder}
+          className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink"
+        />
+      </label>
+
+      <div>
+        <label className="text-sm font-medium text-ink">{dict.domeniuActivitate.label}</label>
+        <p className="mt-1 text-xs text-muted">{dict.domeniuActivitate.descriere}</p>
+        <select
+          name="domeniuActivitate"
+          defaultValue={initialDomeniuActivitate ?? ""}
+          className="mt-2 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink"
+        >
+          <option value="">{dict.domeniuActivitate.alege}</option>
+          {Object.entries(dict.domeniuActivitate.optiuni).map(([valoare, eticheta]) => (
+            <option key={valoare} value={valoare}>
+              {eticheta}
+            </option>
+          ))}
+        </select>
       </div>
 
       {state.error && <p className="text-sm text-red-600">{state.error}</p>}

@@ -3,11 +3,21 @@
 import Link from "next/link";
 import { useActionState } from "react";
 
+import { CAMPAIGN_TEMPLATES, type CampaignPageTemplate } from "@/lib/campaign-templates";
+
 import { creeazaPaginaAction, type CreeazaPaginaState } from "./actions";
 
 const INITIAL: CreeazaPaginaState = { error: null };
 
-export function CreeazaPaginaForm({ orgSlug, orgName }: { orgSlug: string; orgName: string }) {
+export function CreeazaPaginaForm({
+  orgSlug,
+  orgName,
+  templateuriDisponibile,
+}: {
+  orgSlug: string;
+  orgName: string;
+  templateuriDisponibile: CampaignPageTemplate[];
+}) {
   const action = creeazaPaginaAction.bind(null, orgSlug);
   const [state, formAction, pending] = useActionState(action, INITIAL);
 
@@ -60,6 +70,26 @@ export function CreeazaPaginaForm({ orgSlug, orgName }: { orgSlug: string; orgNa
             className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink"
           />
         </label>
+        {templateuriDisponibile.length > 1 && (
+          <div>
+            <span className="text-sm font-medium text-ink">Design-ul paginii</span>
+            <div className="mt-2 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+              {templateuriDisponibile.map((id, i) => {
+                const tpl = CAMPAIGN_TEMPLATES[id];
+                return (
+                  <label key={id} className="cursor-pointer">
+                    <input type="radio" name="template" value={id} defaultChecked={i === 0} className="peer sr-only" />
+                    <div
+                      className={`h-14 w-full rounded-lg border border-line bg-gradient-to-br ${tpl.clase.heroFallback} peer-checked:border-brand-green peer-checked:ring-2 peer-checked:ring-brand-green`}
+                    />
+                    <span className="mt-1.5 block text-center text-[12px] font-medium text-body">{tpl.nume}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         <label className="text-sm font-medium text-ink">
           Sumă țintă (lei) — opțional
           <input

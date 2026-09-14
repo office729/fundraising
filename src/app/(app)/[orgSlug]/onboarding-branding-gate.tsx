@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import type { DomeniuActivitate } from "@/lib/campaign-templates";
 import type { Locale } from "@/lib/i18n/config";
 import { SETARI_ECHIPA_DICT } from "@/lib/i18n/dictionaries/setari-echipa";
 import { BrandingForm } from "./setari/branding-form";
@@ -16,6 +17,8 @@ export function OnboardingBrandingGate({
   locale,
   initialSlogan,
   initialBrandColor,
+  initialCif,
+  initialDomeniuActivitate,
 }: {
   show: boolean;
   orgSlug: string;
@@ -23,6 +26,8 @@ export function OnboardingBrandingGate({
   locale: Locale;
   initialSlogan: string | null;
   initialBrandColor: string | null;
+  initialCif: string | null;
+  initialDomeniuActivitate: DomeniuActivitate | null;
 }) {
   const dict = SETARI_ECHIPA_DICT[locale].onboardingGate;
   const [dismissed, setDismissed] = useState(false);
@@ -40,6 +45,8 @@ export function OnboardingBrandingGate({
           initialLogoUrl={null}
           initialSlogan={initialSlogan}
           initialBrandColor={initialBrandColor}
+          initialCif={initialCif}
+          initialDomeniuActivitate={initialDomeniuActivitate}
           onSaved={() => setDismissed(true)}
         />
         <button

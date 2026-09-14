@@ -4,6 +4,7 @@ import { sql } from "drizzle-orm";
 import { notFound, redirect } from "next/navigation";
 
 import { db } from "@/lib/db";
+import type { DomeniuActivitate } from "@/lib/campaign-templates";
 
 import { findBeneficiaryProfile } from "./beneficiar";
 import { ensureAppUser, getAuthUser } from "./dal";
@@ -19,6 +20,8 @@ export type OrgContext = {
   orgSlogan: string | null;
   orgBrandColor: string | null;
   orgCustomDomain: string | null;
+  orgCif: string | null;
+  orgDomeniuActivitate: DomeniuActivitate | null;
   orgPackage: "trial" | "start" | "crestere" | "impact" | "custom";
   orgSubscriptionStatus: string;
   orgCreatedAt: Date;
@@ -94,6 +97,8 @@ export function withOrgSession<A extends unknown[], R>(
         orgSlogan: found.org.slogan,
         orgBrandColor: found.org.brandColor,
         orgCustomDomain: found.org.customDomain,
+        orgCif: found.org.cif,
+        orgDomeniuActivitate: found.org.domeniuActivitate,
         orgPackage: found.org.package,
         orgSubscriptionStatus: found.org.subscriptionStatus,
         orgCreatedAt: found.org.createdAt,
@@ -139,6 +144,8 @@ export function requireOrgAccess(orgSlug: string): Promise<OrgAccess> {
     orgSlogan: ctx.orgSlogan,
     orgBrandColor: ctx.orgBrandColor,
     orgCustomDomain: ctx.orgCustomDomain,
+    orgCif: ctx.orgCif,
+    orgDomeniuActivitate: ctx.orgDomeniuActivitate,
     orgPackage: ctx.orgPackage,
     orgSubscriptionStatus: ctx.orgSubscriptionStatus,
     orgCreatedAt: ctx.orgCreatedAt,

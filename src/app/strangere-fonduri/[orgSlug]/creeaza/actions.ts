@@ -5,6 +5,8 @@ import { randomUUID } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 
+import type { CustomPlanConfigSaved } from "@/lib/billing/custom-plan";
+import { getTemplatesDisponibile, type CampaignPageTemplate } from "@/lib/campaign-templates";
 import { db } from "@/lib/db";
 import { fundraisingPages, organizations } from "@/lib/db/schema";
 import { slugify } from "@/lib/slugify";
@@ -37,6 +39,7 @@ export async function creeazaPaginaAction(
   const titlu = str("titlu");
   const poveste = str("poveste");
   const sumaTintaRaw = str("sumaTinta");
+  const templateCerut = str("template");
   const consimtamantGdpr = formData.get("consimtamantGdpr") != null;
 
   if (!numeCreator || !emailCreator || !titlu || !poveste) {
@@ -70,9 +73,26 @@ export async function creeazaPaginaAction(
   try {
     pageSlug = await db.transaction(async (tx) => {
       await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
-      const org = await tx.select({ id: organizations.id }).from(organizations).where(eq(organizations.slug, orgSlug)).limit(1);
+      const org = await tx
+        .select({
+          id: organizations.id,
+          domeniuActivitate: organizations.domeniuActivitate,
+          customPlanConfig: organizations.customPlanConfig,
+        })
+        .from(organizations)
+        .where(eq(organizations.slug, orgSlug))
+        .limit(1);
       if (!org[0]) throw new Error("org_not_found");
       const orgId = org[0].id;
+
+      // Nu avem încredere în ce trimite clientul — recalculăm lista de
+      // template-uri permise din org-ul real (domeniu + plan personalizat) și
+      // păstrăm cererea doar dacă e chiar în acea listă.
+      const customPlanConfig = org[0].customPlanConfig as CustomPlanConfigSaved | null;
+      const templateuriPermise = getTemplatesDisponibile(org[0].domeniuActivitate, Boolean(customPlanConfig?.accesDesignToate));
+      const template: CampaignPageTemplate = templateuriPermise.includes(templateCerut as CampaignPageTemplate)
+        ? (templateCerut as CampaignPageTemplate)
+        : templateuriPermise[0];
 
       const slug = await genereazaSlugUnic(baseSlug, async (candidat) => {
         const existing = await tx
@@ -93,6 +113,7 @@ export async function creeazaPaginaAction(
         numeCreator,
         emailCreator,
         consimtamantGdpr,
+        template,
       });
 
       return slug;

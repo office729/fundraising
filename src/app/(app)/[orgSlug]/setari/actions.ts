@@ -5,7 +5,9 @@ import { randomUUID } from "node:crypto";
 import { and, eq, ne } from "drizzle-orm";
 
 import { withOrgAdmin } from "@/lib/auth/guard";
+import { TOATE_DOMENIILE, type DomeniuActivitate } from "@/lib/campaign-templates";
 import { organizations } from "@/lib/db/schema";
+import { cifValidFormat } from "@/lib/iban";
 import { esteSlugRezervat } from "@/lib/reserved-slugs";
 import { createClient } from "@/lib/supabase/server";
 
@@ -22,10 +24,21 @@ const LOGO_MIME_EXT: Record<string, string> = {
 };
 
 const updateBrandingRow = withOrgAdmin(
-  async (ctx, values: { slogan: string; brandColor: string; logoUrl?: string }) => {
+  async (
+    ctx,
+    values: {
+      slogan: string;
+      brandColor: string;
+      logoUrl?: string;
+      cif: string;
+      domeniuActivitate: string;
+    },
+  ) => {
     const set: Record<string, unknown> = {
       slogan: values.slogan || null,
       brandColor: values.brandColor || null,
+      cif: values.cif || null,
+      domeniuActivitate: values.domeniuActivitate || null,
     };
     if (values.logoUrl) set.logoUrl = values.logoUrl;
     await ctx.db.update(organizations).set(set).where(eq(organizations.id, ctx.orgId));
@@ -40,6 +53,17 @@ export async function updateBrandingAction(
   const slogan = String(formData.get("slogan") ?? "").trim();
   const brandColor = String(formData.get("brandColor") ?? "").trim();
   const logo = formData.get("logo");
+
+  // CIF și domeniul de activitate sunt opționale — necompletate nu blochează
+  // salvarea (la fel ca sloganul/logo-ul). Validate doar dacă sunt scrise.
+  const cifRaw = String(formData.get("cif") ?? "").trim();
+  if (cifRaw && !cifValidFormat(cifRaw)) {
+    return { error: "CIF invalid — scrie-l cu sau fără prefixul RO (ex. RO12345678).", ok: false };
+  }
+  const domeniuActivitate = String(formData.get("domeniuActivitate") ?? "").trim();
+  if (domeniuActivitate && !TOATE_DOMENIILE.includes(domeniuActivitate as DomeniuActivitate)) {
+    return { error: "Domeniu de activitate invalid.", ok: false };
+  }
 
   let logoUrl: string | undefined;
   if (logo instanceof File && logo.size > 0) {
@@ -63,7 +87,7 @@ export async function updateBrandingAction(
   }
 
   try {
-    await updateBrandingRow(orgSlug, { slogan, brandColor, logoUrl });
+    await updateBrandingRow(orgSlug, { slogan, brandColor, logoUrl, cif: cifRaw, domeniuActivitate });
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Salvarea a eșuat.", ok: false };
   }

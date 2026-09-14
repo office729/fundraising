@@ -5,6 +5,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 
+import { CAMPAIGN_TEMPLATES } from "@/lib/campaign-templates";
 import { db } from "@/lib/db";
 import { fundraisingDonations, fundraisingPages, fundraisingUpdates, organizations } from "@/lib/db/schema";
 
@@ -100,6 +101,7 @@ export default async function PaginaStrangereFonduriPage({
 
   const { org, pagina, recente, topDonatori, actualizari, totalDonatii } = data;
   const procent = pagina.sumaTinta ? Math.min(100, Math.round((pagina.sumaStransa / pagina.sumaTinta) * 100)) : null;
+  const tpl = CAMPAIGN_TEMPLATES[pagina.template];
   // Header "origin" nu e trimis pe navigare GET simplă (doar pe fetch/POST
   // cross-origin) — construim din host + protocolul reținut de proxy-ul Vercel.
   const hdrs = await headers();
@@ -107,18 +109,18 @@ export default async function PaginaStrangereFonduriPage({
   const url = `${proto}://${hdrs.get("host")}/strangere-fonduri/${orgSlug}/${pageSlug}`;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-brand-blue-soft/70 via-panel-2 to-panel-2">
+    <div className={`min-h-screen bg-gradient-to-b ${tpl.clase.fundal}`}>
       <main className="mx-auto max-w-3xl px-6 py-12 sm:py-16">
         <div className="overflow-hidden rounded-3xl border border-line bg-panel shadow-[0_20px_50px_-25px_rgba(21,74,133,0.35)]">
           {pagina.imagineUrl ? (
             // eslint-disable-next-line @next/next/no-img-element -- domeniu Supabase Storage dinamic
             <img src={pagina.imagineUrl} alt={pagina.titlu} className="aspect-[16/9] w-full object-cover" />
           ) : (
-            <div className="aspect-[21/9] w-full bg-gradient-to-br from-brand-blue to-brand-green" />
+            <div className={`aspect-[21/9] w-full bg-gradient-to-br ${tpl.clase.heroFallback}`} />
           )}
 
           <div className="px-6 py-7 sm:px-10 sm:py-9">
-            <p className="text-xs font-bold tracking-wide text-brand-green uppercase">Campanie verificată de {org.name}</p>
+            <p className={`text-xs font-bold tracking-wide uppercase ${tpl.clase.eyebrow}`}>Campanie verificată de {org.name}</p>
             <h1 className="font-display mt-1.5 text-[30px] leading-tight font-bold text-ink">{pagina.titlu}</h1>
 
             <div className="mt-5">

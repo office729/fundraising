@@ -40,6 +40,7 @@ const BREAKDOWN_LABELS: Record<Locale, Record<CustomPlanBreakdownKey, string>> =
     companiiPj: "Companii PJ",
     instrumente: "Instrumente alese",
     generari: "Generări suplimentare",
+    accesDesignToate: "Acces la toate design-urile de campanie",
   },
   en: {
     baza: "Base (account + platform)",
@@ -48,6 +49,7 @@ const BREAKDOWN_LABELS: Record<Locale, Record<CustomPlanBreakdownKey, string>> =
     companiiPj: "Companies",
     instrumente: "Selected tools",
     generari: "Extra generations",
+    accesDesignToate: "Access to all campaign designs",
   },
 };
 
@@ -122,6 +124,9 @@ export function CustomPlanCalculator({
     planPersonalizatCampCompaniiPj: string;
     planPersonalizatCampGenerari: string;
     planPersonalizatInstrumenteTitlu: string;
+    planPersonalizatAccesDesignTitlu: string;
+    planPersonalizatAccesDesignDesc: string;
+    planPersonalizatAccesDesignLabel: string;
     planPersonalizatPerLuna: string;
     planPersonalizatCta: string;
   };
@@ -132,6 +137,7 @@ export function CustomPlanCalculator({
     companiiPj: 0,
     generariLunare: 3,
     tools: [] as ToolId[],
+    accesDesignToate: false,
   });
 
   const normalized = useMemo(() => normalizeCustomPlanConfig(config), [config]);
@@ -231,6 +237,26 @@ export function CustomPlanCalculator({
                   </button>
                 );
               })}
+            </div>
+          </div>
+
+          <div>
+            <span className="text-[13px] font-medium text-ink">{dict.planPersonalizatAccesDesignTitlu}</span>
+            <p className="mt-1 text-[12.5px] leading-relaxed text-muted">{dict.planPersonalizatAccesDesignDesc}</p>
+            <div className="mt-2.5">
+              <button
+                type="button"
+                onClick={() => setConfig((c) => ({ ...c, accesDesignToate: !c.accesDesignToate }))}
+                aria-pressed={config.accesDesignToate}
+                className={`rounded-full border px-3.5 py-1.5 text-[12.5px] font-medium transition ${
+                  config.accesDesignToate
+                    ? "border-brand-green bg-brand-green-soft text-brand-green"
+                    : "border-line text-body hover:border-brand-blue hover:text-brand-blue"
+                }`}
+              >
+                {config.accesDesignToate ? "✓ " : ""}
+                {dict.planPersonalizatAccesDesignLabel}
+              </button>
             </div>
           </div>
         </div>
