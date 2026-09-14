@@ -11,6 +11,16 @@ import { createClient } from "@/lib/supabase/server";
 
 export type BrandingState = { error: string | null; ok: boolean };
 
+// Allowlist explicit — NU includem image/svg+xml: un SVG poate conține
+// <script>/handlere de evenimente, iar fișierul e servit public, necontrolat,
+// din bucket-ul org-branding (risc de XSS stocat dacă e deschis direct, nu
+// doar randat prin <img>). Vezi audit de securitate.
+const LOGO_MIME_EXT: Record<string, string> = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/webp": "webp",
+};
+
 const updateBrandingRow = withOrgAdmin(
   async (ctx, values: { slogan: string; brandColor: string; logoUrl?: string }) => {
     const set: Record<string, unknown> = {
@@ -36,8 +46,11 @@ export async function updateBrandingAction(
     if (logo.size > 2 * 1024 * 1024) {
       return { error: "Logo-ul e prea mare (max 2MB).", ok: false };
     }
+    const ext = LOGO_MIME_EXT[logo.type];
+    if (!ext) {
+      return { error: "Format neacceptat — folosește PNG, JPG sau WebP.", ok: false };
+    }
     const supabase = await createClient();
-    const ext = (logo.type.split("/")[1] || "png").replace("svg+xml", "svg");
     const path = `${orgSlug}/logo-${randomUUID()}.${ext}`;
     const { error: uploadError } = await supabase.storage.from("org-branding").upload(path, logo, {
       contentType: logo.type,

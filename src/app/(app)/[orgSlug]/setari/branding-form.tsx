@@ -113,7 +113,7 @@ export function BrandingForm({
             ref={fileRef}
             type="file"
             name="logo"
-            accept="image/png,image/jpeg,image/svg+xml,image/webp"
+            accept="image/png,image/jpeg,image/webp"
             className="hidden"
             onChange={onFileChange}
           />

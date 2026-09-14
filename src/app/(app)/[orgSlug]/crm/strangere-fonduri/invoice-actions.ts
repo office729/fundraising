@@ -14,6 +14,17 @@ export type IncarcaFacturaState = { error: string | null; ok: boolean };
 const CATEGORII = ["factura", "plata", "chitanta", "proforma"] as const;
 const STATUSURI = ["achitata", "in_asteptare"] as const;
 
+// Allowlist explicit (nu doar `startsWith("image/")`) — extensia de stocare
+// se derivă din tipul MIME verificat aici, NICIODATĂ din numele fișierului
+// trimis de client (`fisier.name` e complet controlat de atacator pe o
+// cerere multipart directă, nu doar prin <input type=file>). Exclude SVG
+// pentru același motiv ca la logo — vezi audit de securitate.
+const INVOICE_MIME_EXT: Record<string, string> = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/webp": "webp",
+};
+
 // Documentele financiare (facturi/ordine de plată/chitanțe/proforme) sunt
 // sursa reală pentru „facturi achitate" din calculul dashboard-ului
 // beneficiarului — nicio a doua sursă de adevăr pentru sume (vezi planul).
@@ -36,7 +47,8 @@ export const incarcaFacturaAction = withOrgAdmin(
     if (fisier.size > 10 * 1024 * 1024) return { error: "Fișierul e prea mare (max 10MB).", ok: false };
     // Bucket-ul de storage actual (org-branding) acceptă doar imagini — vezi
     // nota din facturi-card.tsx. Fotografiază documentul dacă e pe hârtie.
-    if (!fisier.type.startsWith("image/")) {
+    const ext = INVOICE_MIME_EXT[fisier.type];
+    if (!ext) {
       return { error: "Doar imagini (jpg, png, webp) — fotografiază documentul dacă e pe hârtie sau PDF.", ok: false };
     }
 
@@ -48,7 +60,6 @@ export const incarcaFacturaAction = withOrgAdmin(
     if (!pagina[0]) return { error: "Pagina nu a fost găsită.", ok: false };
 
     const supabase = await createClient();
-    const ext = fisier.name.split(".").pop() || "pdf";
     const path = `${ctx.orgSlug}/facturi/${pageId}-${randomUUID()}.${ext}`;
     const { error: uploadError } = await supabase.storage.from("org-branding").upload(path, fisier, {
       contentType: fisier.type || "application/octet-stream",
