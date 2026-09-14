@@ -85,8 +85,7 @@
   .gSwatch { height:250px; position:relative; overflow:hidden; background:#F2EFEA; }
   .gThumbFrame { position:absolute; top:0; left:0; width:600px; height:2100px; border:0; pointer-events:none; transform:scale(.3); transform-origin:top left; background:#fff; }
   .gBody { padding:14px 16px 16px; display:flex; flex-direction:column; flex:1; }
-  .gName { font-size:14px; font-weight:800; color:#1F1B17; margin:0 0 4px; }
-  .gTheme { font-size:12px; color:#7A736A; margin:0; line-height:1.45; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; }
+  .gName { font-size:14px; font-weight:800; color:#1F1B17; margin:0; }
   #galleryBtn { display:none; }
 </style>
 </head>
@@ -1523,7 +1522,7 @@ function renderGalleryGrid(containerId, order){
     var m = TPL_META[val];
     html += '<button type="button" class="gCard" data-tpl-choice="' + val + '">'
       + '<div class="gSwatch"><iframe class="gThumbFrame" tabindex="-1" aria-hidden="true"></iframe></div>'
-      + '<div class="gBody"><p class="gName">' + m.name + '</p><p class="gTheme">' + m.theme + '</p></div>'
+      + '<div class="gBody"><p class="gName">' + m.name + '</p></div>'
       + '</button>';
   });
   el.innerHTML = html;
@@ -1579,7 +1578,26 @@ function fillGalleryThumbnails(){
   });
   teEl.value = original;
 }
+/* Miniatura are conținut la lățime fixă (600px), scalat — dacă scala e
+   fixă, o casetă mai lată decât ea lasă un gol gol pe dreapta. Scalăm
+   după lățimea reală a fiecărui card, ca miniatura să umple caseta. */
+function sizeGalleryThumbs(){
+  document.querySelectorAll('.gSwatch').forEach(function(sw){
+    var fr = sw.querySelector('.gThumbFrame');
+    var w = sw.clientWidth;
+    if (!fr || !w) return;
+    fr.style.transform = 'scale(' + (w / 600) + ')';
+  });
+}
 fillGalleryThumbnails();
+sizeGalleryThumbs();
+var galleryResizeTimer;
+window.addEventListener('resize', function(){
+  clearTimeout(galleryResizeTimer);
+  galleryResizeTimer = setTimeout(function(){
+    if (document.getElementById('galleryView').style.display !== 'none') sizeGalleryThumbs();
+  }, 120);
+});
 document.querySelectorAll('.gCard').forEach(function(btn){
   btn.addEventListener('click', function(){
     var val = btn.getAttribute('data-tpl-choice');
@@ -1596,6 +1614,7 @@ document.querySelectorAll('.gCard').forEach(function(btn){
 document.getElementById('galleryBtn').onclick = function(){
   document.getElementById('editorView').style.display = 'none';
   document.getElementById('galleryView').style.display = '';
+  sizeGalleryThumbs();
 };
 </script>
 </body>
