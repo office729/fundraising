@@ -1361,6 +1361,9 @@ function toast(msg){
 
 /* ===== Verificări înainte de copiere ===== */
 var FOTO_DEFAULT = document.getElementById('FOTO').value;
+var NUME_DEFAULT = document.getElementById('NUME').value;
+var LINK_DEFAULT = document.getElementById('LINK').value;
+var SCRISOARE_DEFAULT = document.getElementById('SCRISOARE').value;
 function val(id){ return document.getElementById(id).value; }
 function firstName(){ return (val('NUME').trim().split(/\s+/)[0] || ''); }
 function nameHistory(){
@@ -1377,6 +1380,11 @@ function runChecks(){
   var fn = firstName();
   var letter = val('SCRISOARE'), titlu = val('TITLU'), pre = val('PREHEADER');
   var textTot = titlu + ' ' + pre + ' ' + val('PENTRU_NUME') + ' ' + letter;
+
+  // Exemplul din generator, netrimis mai departe (cel mai periculos — trimitere nemodificată)
+  if(val('NUME') === NUME_DEFAULT && val('LINK') === LINK_DEFAULT && letter === SCRISOARE_DEFAULT){
+    w.push({level:'error', msg:'‼ Numele, linkul și scrisoarea sunt încă exemplul din generator ("' + NUME_DEFAULT + '") — pare că nu ai personalizat campania. Verifică înainte să trimiți!'});
+  }
 
   // Numele copilului lipsește din scrisoare
   if(fn && letter.indexOf(fn) === -1) w.push({level:'warn', msg:'Scrisoarea nu conține prenumele „' + fn + '" — sigur e textul pentru campania asta?'});
@@ -1412,7 +1420,7 @@ function runChecks(){
 
   // Poza
   if(!files.FOTO && !val('FOTO').trim()) w.push({level:'warn', msg:'Nu ai ales nicio poză.'});
-  else if(!files.FOTO && val('FOTO') === FOTO_DEFAULT && fn && fn !== 'Sara') w.push({level:'warn', msg:'Poza e încă cea implicită din generator — alege poza copilului.'});
+  else if(!files.FOTO && val('FOTO') === FOTO_DEFAULT) w.push({level:'warn', msg:'Poza e încă cea implicită din generator — alege poza copilului.'});
   else if(files.FOTO && !files.FOTO.url && imgbbAvailable !== false) w.push({level:'warn', msg:'Poza aleasă nu s-a încărcat încă online — așteaptă „✔ încărcată online" sau Newsman o va cere la lipire.'});
 
   // Preheader gol (contează mult pentru rata de deschidere)
