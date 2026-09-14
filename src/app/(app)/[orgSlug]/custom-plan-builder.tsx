@@ -41,7 +41,7 @@ function NumberField({
         step={step}
         value={value}
         onChange={(e) => onChange(e.target.valueAsNumber || 0)}
-        className="rounded-md border border-line bg-canvas px-3 py-2 text-sm text-ink"
+        className="rounded-lg border border-line bg-canvas px-3 py-2 text-sm text-ink"
       />
     </label>
   );
@@ -134,7 +134,12 @@ export function CustomPlanBuilder({
             <span className="text-[13px] font-medium text-ink">Instrumente incluse</span>
             {ALL_TOOLS.map((tool) => (
               <label key={tool} className="flex items-center gap-2 text-[13px] text-body">
-                <input type="checkbox" checked={config.tools.includes(tool)} onChange={() => toggleTool(tool)} />
+                <input
+                  type="checkbox"
+                  checked={config.tools.includes(tool)}
+                  onChange={() => toggleTool(tool)}
+                  className="h-4 w-4 rounded border-line"
+                />
                 {TOOL_LABELS[tool]}
               </label>
             ))}

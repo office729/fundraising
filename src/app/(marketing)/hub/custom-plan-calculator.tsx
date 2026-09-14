@@ -54,7 +54,7 @@ function NumberField({
         step={step}
         value={value}
         onChange={(e) => onChange(e.target.valueAsNumber || 0)}
-        className="rounded-md border border-line bg-canvas px-3 py-2 text-sm text-ink"
+        className="rounded-lg border border-line bg-canvas px-3 py-2 text-sm text-ink"
       />
     </label>
   );
@@ -66,6 +66,7 @@ export function CustomPlanCalculator({
 }: {
   locale: Locale;
   dict: {
+    planPersonalizatTag: string;
     planPersonalizatTitlu: string;
     planPersonalizatDesc: string;
     planPersonalizatCampUtilizatori: string;
@@ -97,7 +98,8 @@ export function CustomPlanCalculator({
 
   return (
     <div className="mx-auto mb-11 max-w-[1200px] rounded-2xl border border-dashed border-brand-blue bg-panel p-7">
-      <h3 className="font-display text-[22px] font-bold text-ink">{dict.planPersonalizatTitlu}</h3>
+      <div className="text-[12.5px] font-extrabold tracking-wide text-brand-blue uppercase">{dict.planPersonalizatTag}</div>
+      <h3 className="font-display mt-1 text-[22px] font-bold text-ink">{dict.planPersonalizatTitlu}</h3>
       <p className="mt-1.5 max-w-xl text-[14.5px] leading-relaxed text-muted">{dict.planPersonalizatDesc}</p>
       <p className="mt-3 text-2xl font-extrabold text-ink">
         {pret} lei<span className="text-sm font-medium text-muted">{dict.planPersonalizatPerLuna}</span>
@@ -134,7 +136,12 @@ export function CustomPlanCalculator({
         <div className="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
           {ALL_TOOLS.map((tool) => (
             <label key={tool} className="flex items-center gap-2 text-[13px] text-body">
-              <input type="checkbox" checked={config.tools.includes(tool)} onChange={() => toggleTool(tool)} />
+              <input
+                type="checkbox"
+                checked={config.tools.includes(tool)}
+                onChange={() => toggleTool(tool)}
+                className="h-4 w-4 rounded border-line"
+              />
               {toolLabels[tool]}
             </label>
           ))}
