@@ -57,6 +57,52 @@
   --ci-primary: var(--ci-brand-override, #154a85);
 }
 
+/* Tema completă per domeniu de activitate (vezi globals.css pentru paleta
+   completă a restului platformei — aici suprascriem DOAR accentul de brand
+   (--ci-primary*), niciodată paleta de status (--ci-green/-red/-amber etc.,
+   mai jos) — acelea au sens fix (succes/eroare/atenție), indiferent de
+   domeniu, ca un badge "Activă" să rămână mereu verde. */
+.ci-root[data-domeniu="copii"] {
+  --ci-primary: hsl(8 60% 42%);
+  --ci-primary-hover: hsl(8 60% 33%);
+  --ci-primary-soft: hsl(8 55% 95%);
+}
+.ci-root[data-domeniu="sanatate"] {
+  --ci-primary: hsl(174 55% 32%);
+  --ci-primary-hover: hsl(174 55% 24%);
+  --ci-primary-soft: hsl(174 45% 94%);
+}
+.ci-root[data-domeniu="social_incluziune"] {
+  --ci-primary: hsl(280 45% 42%);
+  --ci-primary-hover: hsl(280 45% 33%);
+  --ci-primary-soft: hsl(280 40% 95%);
+}
+.ci-root[data-domeniu="animale"] {
+  --ci-primary: hsl(95 35% 32%);
+  --ci-primary-hover: hsl(95 35% 24%);
+  --ci-primary-soft: hsl(95 30% 94%);
+}
+.ci-root[data-domeniu="mediu"] {
+  --ci-primary: hsl(150 45% 28%);
+  --ci-primary-hover: hsl(150 45% 20%);
+  --ci-primary-soft: hsl(150 40% 94%);
+}
+.ci-root[data-domeniu="sport"] {
+  --ci-primary: hsl(355 70% 45%);
+  --ci-primary-hover: hsl(355 70% 36%);
+  --ci-primary-soft: hsl(355 60% 95%);
+}
+.ci-root[data-domeniu="educatie"] {
+  --ci-primary: hsl(222 55% 32%);
+  --ci-primary-hover: hsl(222 55% 24%);
+  --ci-primary-soft: hsl(222 45% 94%);
+}
+.ci-root[data-domeniu="cultura"] {
+  --ci-primary: hsl(300 40% 32%);
+  --ci-primary-hover: hsl(300 40% 24%);
+  --ci-primary-soft: hsl(300 35% 95%);
+}
+
 .ci-root .ci-display {
   font-family: var(--ci-font-display);
   text-wrap: balance;

@@ -1,13 +1,15 @@
-// Biblioteca de design-uri pentru pagina publică de strângere fonduri —
-// vezi src/app/strangere-fonduri/[orgSlug]/[pageSlug]/page.tsx (randare) și
-// src/app/strangere-fonduri/[orgSlug]/creeaza/ (alegere la creare).
+// Tema completă per domeniu de activitate — nu doar o culoare de accent.
+// Domeniul ȘI template-ul paginii de campanie sunt același set de valori
+// (vezi CampaignPageTemplate mai jos): alegerea domeniului organizației
+// determină automat aspectul întregii platforme (public + CRM), iar pagina
+// de campanie poate opta pentru altă temă doar dacă org-ul are acces total
+// (plan personalizat, vezi lib/billing/custom-plan.ts).
 //
-// Toate cele 3 variante noi reutilizează tokenii de brand deja existenți
-// (globals.css) — niciun hex nou, niciun radius nou (evită să adâncească
-// inconsistența de rounded-xl/rounded-2xl semnalată în auditul de design).
-// Doar culoarea/gradientul wash-ului, eyebrow-ul și fallback-ul hero variază.
-// Restul paginii (donație, progress ring, share links, listă donatori) e
-// identic pe toate design-urile.
+// Paleta reală (--brand-*) e definită în src/app/globals.css, sub blocuri
+// `[data-domeniu="x"]` / `.dark[data-domeniu="x"]` — acest fișier NU repetă
+// culorile, doar identifică tema (nume, familie de layout, motiv) ca
+// `data-domeniu` să ajungă pe elementul corect din arbore (vezi
+// [orgSlug]/layout.tsx, crm/shell.tsx, pagina publică de campanie).
 
 export type DomeniuActivitate =
   | "copii"
@@ -17,6 +19,7 @@ export type DomeniuActivitate =
   | "sanatate"
   | "social_incluziune"
   | "cultura"
+  | "sport"
   | "altele";
 
 export const TOATE_DOMENIILE: DomeniuActivitate[] = [
@@ -27,78 +30,49 @@ export const TOATE_DOMENIILE: DomeniuActivitate[] = [
   "sanatate",
   "social_incluziune",
   "cultura",
+  "sport",
   "altele",
 ];
 
-export type CampaignPageTemplate = "modern" | "cald" | "natural" | "elegant";
+// Template-ul paginii de campanie = domeniul de activitate (același set de 9
+// valori) — nu mai există o listă separată, grupată many-to-one, ca înainte.
+// "altele" e neutru (aspectul original, dinaintea acestei funcționalități).
+export type CampaignPageTemplate = DomeniuActivitate;
+export const TOATE_TEMPLATE_URILE: CampaignPageTemplate[] = TOATE_DOMENIILE;
 
-export const TOATE_TEMPLATE_URILE: CampaignPageTemplate[] = ["modern", "cald", "natural", "elegant"];
+// Familia de layout — dă FORMA structurală (așezarea hero-ului, radius-ul),
+// nu culoarea. Două domenii din aceeași familie tot arată clar diferit (au
+// paletă + motiv proprii), familia doar le dă un "aer" comun de personalitate.
+export type LayoutFamily = "cald-protector" | "natural-ancorat" | "indraznet-dinamic" | "elegant-editorial" | "neutru";
+
+export type MotifId = "balon" | "puls" | "incluziune" | "laba" | "frunza" | "minge" | "absolvire" | "paleta" | null;
 
 type TemplateDef = {
   nume: string;
-  domenii: DomeniuActivitate[];
-  clase: {
-    // Wash-ul din spatele cardului principal.
-    fundal: string;
-    // Culoarea textului "Campanie verificată de {org}".
-    eyebrow: string;
-    // Gradientul hero folosit când pagina nu are imagine de copertă.
-    heroFallback: string;
-  };
+  familie: LayoutFamily;
+  motiv: MotifId;
 };
 
-// "modern" = EXACT aspectul original al paginii, dinainte de introducerea
-// template-urilor — implicit pentru orice pagină existentă sau fără domeniu
-// de activitate ales, ca nimic să nu se schimbe vizual din greșeală.
 export const CAMPAIGN_TEMPLATES: Record<CampaignPageTemplate, TemplateDef> = {
-  modern: {
-    nume: "Modern",
-    domenii: ["altele"],
-    clase: {
-      fundal: "from-brand-blue-soft/70 via-panel-2 to-panel-2",
-      eyebrow: "text-brand-green",
-      heroFallback: "from-brand-blue to-brand-green",
-    },
-  },
-  cald: {
-    nume: "Cald & Apropiat",
-    domenii: ["copii", "sanatate", "social_incluziune"],
-    clase: {
-      fundal: "from-brand-amber-soft/70 via-panel-2 to-panel-2",
-      eyebrow: "text-brand-amber",
-      heroFallback: "from-brand-amber to-brand-green",
-    },
-  },
-  natural: {
-    nume: "Natural",
-    domenii: ["animale", "mediu"],
-    clase: {
-      fundal: "from-brand-green-soft/70 via-panel-2 to-panel-2",
-      eyebrow: "text-brand-green-hover",
-      heroFallback: "from-brand-green to-brand-green-hover",
-    },
-  },
-  elegant: {
-    nume: "Elegant",
-    domenii: ["educatie", "cultura"],
-    clase: {
-      fundal: "from-brand-blue-hover/10 via-panel-2 to-brand-blue-soft/60",
-      eyebrow: "text-brand-blue-hover",
-      heroFallback: "from-brand-blue-hover to-brand-blue",
-    },
-  },
+  copii: { nume: "Copii", familie: "cald-protector", motiv: "balon" },
+  sanatate: { nume: "Sănătate", familie: "cald-protector", motiv: "puls" },
+  social_incluziune: { nume: "Social / Incluziune", familie: "cald-protector", motiv: "incluziune" },
+  animale: { nume: "Animale", familie: "natural-ancorat", motiv: "laba" },
+  mediu: { nume: "Mediu", familie: "natural-ancorat", motiv: "frunza" },
+  sport: { nume: "Sport", familie: "indraznet-dinamic", motiv: "minge" },
+  educatie: { nume: "Educație", familie: "indraznet-dinamic", motiv: "absolvire" },
+  cultura: { nume: "Cultură", familie: "elegant-editorial", motiv: "paleta" },
+  altele: { nume: "Modern", familie: "neutru", motiv: null },
 };
 
-// Template-urile disponibile pentru un org — filtrate după domeniul lui de
-// activitate, cu excepția cazului în care are acces la toate (plan
-// personalizat, vezi lib/billing/custom-plan.ts) sau nu și-a ales încă un
-// domeniu (nu blocăm crearea paginii din lipsa acestei informații).
-// "modern" e mereu inclus, ca opțiune universală de fallback.
+// Template-urile disponibile pentru un org — implicit doar tema propriului
+// domeniu (+ "altele", mereu disponibil ca opțiune neutră), decât dacă are
+// acces total (plan personalizat) sau nu și-a ales încă un domeniu (nu
+// blocăm crearea paginii din lipsa acestei informații).
 export function getTemplatesDisponibile(
   domeniu: DomeniuActivitate | null,
   accesDesignToate: boolean,
 ): CampaignPageTemplate[] {
   if (accesDesignToate || !domeniu) return TOATE_TEMPLATE_URILE;
-  const potrivite = TOATE_TEMPLATE_URILE.filter((id) => CAMPAIGN_TEMPLATES[id].domenii.includes(domeniu));
-  return Array.from(new Set([...potrivite, "modern" as CampaignPageTemplate]));
+  return Array.from(new Set([domeniu, "altele" as CampaignPageTemplate]));
 }

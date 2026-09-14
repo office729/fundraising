@@ -4,7 +4,9 @@ import type { CSSProperties } from "react";
 
 import { requireOrgAccess } from "@/lib/auth/guard";
 import { isAccessBlocked, isPlatformAdmin, trialDaysRemaining } from "@/lib/billing/trial";
+import { DomainMotif } from "@/components/domain-motif";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { CAMPAIGN_TEMPLATES } from "@/lib/campaign-templates";
 import { DASHBOARD_DICT } from "@/lib/i18n/dictionaries/dashboard";
 import { getLocale } from "@/lib/i18n/get-locale";
 
@@ -60,6 +62,7 @@ export default async function OrgLayout({
   return (
     <div
       className="min-h-screen bg-canvas"
+      data-domeniu={access.orgDomeniuActivitate ?? undefined}
       style={accent ? ({ "--ci-brand-override": accent } as CSSProperties) : undefined}
     >
       <OnboardingBrandingGate
@@ -99,6 +102,12 @@ export default async function OrgLayout({
               >
                 {access.orgName}
               </p>
+              {access.orgDomeniuActivitate && (
+                <DomainMotif
+                  motiv={CAMPAIGN_TEMPLATES[access.orgDomeniuActivitate].motiv}
+                  className="h-4 w-4 shrink-0 text-brand-green"
+                />
+              )}
             </Link>
           </div>
           <div className="flex shrink-0 items-center gap-4">

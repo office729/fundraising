@@ -22,6 +22,11 @@
   --muted: #4a5a6e;
   --muted-2: #7e8b9c;
   --line: #e6e9ee;
+
+  /* Radius de temă — variază pe "familie de layout" per domeniu (vezi mai
+     jos); implicit = aspectul actual ("altele"/neutru). */
+  --radius-hero: 1.5rem;
+  --radius-card: 1rem;
 }
 
 .dark {
@@ -42,6 +47,213 @@
   --muted: #9aa8ba;
   --muted-2: #798799;
   --line: #253044;
+}
+
+/* Teme complete per domeniu de activitate — paletă proprie (nu doar un
+   accent), plus radius/familie de layout. "altele" nu are bloc — rămâne
+   aspectul neutru de mai sus (:root/.dark). Consumate automat de orice
+   utilitar Tailwind existent (text-brand-green, from-brand-blue etc.) —
+   ajunge să pui atributul data-domeniu pe un element ancestor (vezi
+   [orgSlug]/layout.tsx, crm/shell.tsx, pagina publică de campanie). */
+
+[data-domeniu="copii"] {
+  --brand-blue: hsl(8 60% 42%);
+  --brand-blue-hover: hsl(8 60% 33%);
+  --brand-blue-soft: hsl(8 55% 95%);
+  --brand-green: hsl(38 75% 50%);
+  --brand-green-hover: hsl(38 75% 40%);
+  --brand-green-soft: hsl(38 65% 94%);
+  --brand-amber: hsl(45 85% 58%);
+  --brand-amber-soft: hsl(45 70% 92%);
+  --ink: hsl(8 55% 24%);
+  --radius-hero: 2rem;
+  --radius-card: 1.25rem;
+}
+.dark[data-domeniu="copii"] {
+  --brand-blue: hsl(8 70% 72%);
+  --brand-blue-hover: hsl(8 70% 80%);
+  --brand-blue-soft: hsl(8 40% 16%);
+  --brand-green: hsl(38 70% 62%);
+  --brand-green-hover: hsl(38 70% 72%);
+  --brand-green-soft: hsl(38 40% 15%);
+  --brand-amber: hsl(45 70% 65%);
+  --brand-amber-soft: hsl(45 40% 14%);
+  --ink: hsl(8 60% 92%);
+}
+
+[data-domeniu="sanatate"] {
+  --brand-blue: hsl(174 55% 32%);
+  --brand-blue-hover: hsl(174 55% 24%);
+  --brand-blue-soft: hsl(174 45% 94%);
+  --brand-green: hsl(8 65% 55%);
+  --brand-green-hover: hsl(8 65% 45%);
+  --brand-green-soft: hsl(8 55% 95%);
+  --brand-amber: hsl(20 75% 60%);
+  --brand-amber-soft: hsl(20 60% 93%);
+  --ink: hsl(174 45% 20%);
+  --radius-hero: 2rem;
+  --radius-card: 1.25rem;
+}
+.dark[data-domeniu="sanatate"] {
+  --brand-blue: hsl(174 55% 68%);
+  --brand-blue-hover: hsl(174 55% 76%);
+  --brand-blue-soft: hsl(174 35% 15%);
+  --brand-green: hsl(8 60% 68%);
+  --brand-green-hover: hsl(8 60% 76%);
+  --brand-green-soft: hsl(8 35% 16%);
+  --brand-amber: hsl(20 60% 65%);
+  --brand-amber-soft: hsl(20 35% 14%);
+  --ink: hsl(174 40% 90%);
+}
+
+[data-domeniu="social_incluziune"] {
+  --brand-blue: hsl(280 45% 42%);
+  --brand-blue-hover: hsl(280 45% 33%);
+  --brand-blue-soft: hsl(280 40% 95%);
+  --brand-green: hsl(25 80% 55%);
+  --brand-green-hover: hsl(25 80% 45%);
+  --brand-green-soft: hsl(25 65% 94%);
+  --brand-amber: hsl(280 50% 65%);
+  --brand-amber-soft: hsl(280 40% 94%);
+  --ink: hsl(280 40% 24%);
+  --radius-hero: 2rem;
+  --radius-card: 1.25rem;
+}
+.dark[data-domeniu="social_incluziune"] {
+  --brand-blue: hsl(280 55% 75%);
+  --brand-blue-hover: hsl(280 55% 82%);
+  --brand-blue-soft: hsl(280 30% 17%);
+  --brand-green: hsl(25 70% 65%);
+  --brand-green-hover: hsl(25 70% 73%);
+  --brand-green-soft: hsl(25 35% 15%);
+  --brand-amber: hsl(280 45% 72%);
+  --brand-amber-soft: hsl(280 30% 15%);
+  --ink: hsl(280 45% 92%);
+}
+
+[data-domeniu="animale"] {
+  --brand-blue: hsl(95 35% 32%);
+  --brand-blue-hover: hsl(95 35% 24%);
+  --brand-blue-soft: hsl(95 30% 94%);
+  --brand-green: hsl(18 60% 50%);
+  --brand-green-hover: hsl(18 60% 40%);
+  --brand-green-soft: hsl(18 50% 94%);
+  --brand-amber: hsl(40 70% 55%);
+  --brand-amber-soft: hsl(40 55% 92%);
+  --ink: hsl(95 30% 20%);
+  --radius-hero: 1.75rem;
+  --radius-card: 1rem;
+}
+.dark[data-domeniu="animale"] {
+  --brand-blue: hsl(95 40% 65%);
+  --brand-blue-hover: hsl(95 40% 73%);
+  --brand-blue-soft: hsl(95 25% 15%);
+  --brand-green: hsl(18 55% 65%);
+  --brand-green-hover: hsl(18 55% 73%);
+  --brand-green-soft: hsl(18 30% 15%);
+  --brand-amber: hsl(40 55% 65%);
+  --brand-amber-soft: hsl(40 30% 14%);
+  --ink: hsl(95 35% 90%);
+}
+
+[data-domeniu="mediu"] {
+  --brand-blue: hsl(150 45% 28%);
+  --brand-blue-hover: hsl(150 45% 20%);
+  --brand-blue-soft: hsl(150 40% 94%);
+  --brand-green: hsl(200 60% 45%);
+  --brand-green-hover: hsl(200 60% 36%);
+  --brand-green-soft: hsl(200 50% 94%);
+  --brand-amber: hsl(90 40% 50%);
+  --brand-amber-soft: hsl(90 35% 92%);
+  --ink: hsl(150 40% 18%);
+  --radius-hero: 1.75rem;
+  --radius-card: 1rem;
+}
+.dark[data-domeniu="mediu"] {
+  --brand-blue: hsl(150 40% 65%);
+  --brand-blue-hover: hsl(150 40% 73%);
+  --brand-blue-soft: hsl(150 30% 14%);
+  --brand-green: hsl(200 55% 68%);
+  --brand-green-hover: hsl(200 55% 76%);
+  --brand-green-soft: hsl(200 30% 15%);
+  --brand-amber: hsl(90 35% 62%);
+  --brand-amber-soft: hsl(90 25% 14%);
+  --ink: hsl(150 35% 90%);
+}
+
+[data-domeniu="sport"] {
+  --brand-blue: hsl(355 70% 45%);
+  --brand-blue-hover: hsl(355 70% 36%);
+  --brand-blue-soft: hsl(355 60% 95%);
+  --brand-green: hsl(210 80% 48%);
+  --brand-green-hover: hsl(210 80% 38%);
+  --brand-green-soft: hsl(210 65% 94%);
+  --brand-amber: hsl(15 80% 55%);
+  --brand-amber-soft: hsl(15 65% 93%);
+  --ink: hsl(355 55% 24%);
+  --radius-hero: 0.5rem;
+  --radius-card: 0.5rem;
+}
+.dark[data-domeniu="sport"] {
+  --brand-blue: hsl(355 70% 70%);
+  --brand-blue-hover: hsl(355 70% 78%);
+  --brand-blue-soft: hsl(355 40% 16%);
+  --brand-green: hsl(210 70% 68%);
+  --brand-green-hover: hsl(210 70% 76%);
+  --brand-green-soft: hsl(210 40% 16%);
+  --brand-amber: hsl(15 65% 65%);
+  --brand-amber-soft: hsl(15 40% 14%);
+  --ink: hsl(355 50% 92%);
+}
+
+[data-domeniu="educatie"] {
+  --brand-blue: hsl(222 55% 32%);
+  --brand-blue-hover: hsl(222 55% 24%);
+  --brand-blue-soft: hsl(222 45% 94%);
+  --brand-green: hsl(45 70% 48%);
+  --brand-green-hover: hsl(45 70% 38%);
+  --brand-green-soft: hsl(45 60% 93%);
+  --brand-amber: hsl(222 40% 55%);
+  --brand-amber-soft: hsl(222 35% 93%);
+  --ink: hsl(222 45% 20%);
+  --radius-hero: 0.5rem;
+  --radius-card: 0.5rem;
+}
+.dark[data-domeniu="educatie"] {
+  --brand-blue: hsl(222 55% 70%);
+  --brand-blue-hover: hsl(222 55% 78%);
+  --brand-blue-soft: hsl(222 35% 15%);
+  --brand-green: hsl(45 60% 62%);
+  --brand-green-hover: hsl(45 60% 70%);
+  --brand-green-soft: hsl(45 35% 14%);
+  --brand-amber: hsl(222 40% 68%);
+  --brand-amber-soft: hsl(222 30% 15%);
+  --ink: hsl(222 40% 90%);
+}
+
+[data-domeniu="cultura"] {
+  --brand-blue: hsl(300 40% 32%);
+  --brand-blue-hover: hsl(300 40% 24%);
+  --brand-blue-soft: hsl(300 35% 95%);
+  --brand-green: hsl(42 75% 50%);
+  --brand-green-hover: hsl(42 75% 40%);
+  --brand-green-soft: hsl(42 65% 93%);
+  --brand-amber: hsl(300 35% 58%);
+  --brand-amber-soft: hsl(300 30% 93%);
+  --ink: hsl(300 35% 20%);
+  --radius-hero: 0.75rem;
+  --radius-card: 0.75rem;
+}
+.dark[data-domeniu="cultura"] {
+  --brand-blue: hsl(300 45% 72%);
+  --brand-blue-hover: hsl(300 45% 80%);
+  --brand-blue-soft: hsl(300 28% 16%);
+  --brand-green: hsl(42 65% 65%);
+  --brand-green-hover: hsl(42 65% 73%);
+  --brand-green-soft: hsl(42 35% 14%);
+  --brand-amber: hsl(300 35% 68%);
+  --brand-amber-soft: hsl(300 25% 15%);
+  --ink: hsl(300 40% 92%);
 }
 
 @theme inline {

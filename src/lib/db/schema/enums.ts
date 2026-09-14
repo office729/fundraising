@@ -75,9 +75,9 @@ export const fundraisingDonationStatus = pgEnum("fundraising_donation_status", [
 ]);
 
 // Domeniul de activitate al organizației (tipul de cauză) — opțional, ales
-// din Setări/onboarding. Filtrează ce design-uri de campanie vede org-ul
-// implicit (vezi src/lib/campaign-templates.ts) — nu blochează nimic dacă
-// lipsește.
+// din Setări/onboarding. Determină tema COMPLETĂ a platformei (paletă +
+// motiv + familie de layout, vezi src/lib/campaign-templates.ts) — nu doar
+// design-ul paginii de campanie. Nu blochează nimic dacă lipsește.
 export const orgDomeniuActivitate = pgEnum("org_domeniu_activitate", [
   "copii",
   "animale",
@@ -86,18 +86,25 @@ export const orgDomeniuActivitate = pgEnum("org_domeniu_activitate", [
   "sanatate",
   "social_incluziune",
   "cultura",
+  "sport",
   "altele",
 ]);
 
-// Design-ul vizual al paginii publice de campanie — vezi
-// src/lib/campaign-templates.ts. "modern" = aspectul original (implicit),
-// ca nicio pagină existentă să nu-și schimbe vizual aspectul la introducerea
-// acestei coloane.
+// Design-ul vizual al paginii publice de campanie — ACELAȘI set de valori ca
+// org_domeniu_activitate (vezi src/lib/campaign-templates.ts: template =
+// domeniu). Implicit urmează domeniul organizației; diferă doar dacă org-ul
+// are acces total (plan personalizat) și alege explicit altă temă pentru o
+// campanie anume. "altele" = aspectul neutru original.
 export const campaignPageTemplate = pgEnum("campaign_page_template", [
-  "modern",
-  "cald",
-  "natural",
-  "elegant",
+  "copii",
+  "animale",
+  "mediu",
+  "educatie",
+  "sanatate",
+  "social_incluziune",
+  "cultura",
+  "sport",
+  "altele",
 ]);
 
 // Tipul contului unui app_user — determinat de felul invitației acceptate,

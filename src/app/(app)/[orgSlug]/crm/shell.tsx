@@ -35,6 +35,8 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 
+import { DomainMotif } from "@/components/domain-motif";
+import { CAMPAIGN_TEMPLATES, type DomeniuActivitate } from "@/lib/campaign-templates";
 import { DASHBOARD_DICT, type DashboardDict } from "@/lib/i18n/dictionaries/dashboard";
 import type { Locale } from "@/lib/i18n/config";
 
@@ -111,6 +113,7 @@ export function CrmShell({
   orgName,
   orgLogoUrl,
   orgBrandColor,
+  orgDomeniuActivitate,
   userName,
   locale,
   children,
@@ -119,6 +122,7 @@ export function CrmShell({
   orgName: string;
   orgLogoUrl: string | null;
   orgBrandColor: string | null;
+  orgDomeniuActivitate: DomeniuActivitate | null;
   userName: string;
   locale: Locale;
   children: ReactNode;
@@ -149,6 +153,7 @@ export function CrmShell({
     <div
       className="ci-root flex min-h-[calc(100vh-73px)]"
       data-brand
+      data-domeniu={orgDomeniuActivitate ?? undefined}
       style={orgBrandColor ? ({ "--ci-brand-override": orgBrandColor } as CSSProperties) : undefined}
     >
       {mobileOpen && (
@@ -181,6 +186,12 @@ export function CrmShell({
               <p className={cn("ci-display truncate text-[13px] font-semibold text-[var(--ci-text)]", collapsed && "md:hidden")}>
                 {orgName}
               </p>
+              {orgDomeniuActivitate && (
+                <DomainMotif
+                  motiv={CAMPAIGN_TEMPLATES[orgDomeniuActivitate].motiv}
+                  className={cn("h-3.5 w-3.5 shrink-0 text-[var(--ci-primary)]", collapsed && "md:hidden")}
+                />
+              )}
             </div>
             <button
               aria-label="Închide meniul"

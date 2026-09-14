@@ -38,10 +38,11 @@ export const fundraisingPages = pgTable(
     // donații, cere consimțământ explicit pentru procesarea acestor date.
     consimtamantGdpr: boolean("consimtamant_gdpr").notNull().default(false),
     status: fundraisingPageStatus("status").notNull().default("activa"),
-    // Design-ul vizual al paginii — vezi src/lib/campaign-templates.ts.
-    // Implicit "modern" = aspectul original, ca paginile deja existente să nu
-    // își schimbe vizual aspectul la introducerea acestei coloane.
-    template: campaignPageTemplate("template").notNull().default("modern"),
+    // Design-ul vizual al paginii — vezi src/lib/campaign-templates.ts
+    // (template = domeniu de activitate). Implicit "altele" = aspectul
+    // neutru original, ca paginile deja existente să nu-și schimbe vizual
+    // aspectul la introducerea acestei coloane.
+    template: campaignPageTemplate("template").notNull().default("altele"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [

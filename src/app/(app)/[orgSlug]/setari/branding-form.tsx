@@ -4,7 +4,8 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState } from "react";
 
-import type { DomeniuActivitate } from "@/lib/campaign-templates";
+import { DomainMotif } from "@/components/domain-motif";
+import { CAMPAIGN_TEMPLATES, TOATE_DOMENIILE, type DomeniuActivitate } from "@/lib/campaign-templates";
 import type { Locale } from "@/lib/i18n/config";
 import { SETARI_ECHIPA_DICT } from "@/lib/i18n/dictionaries/setari-echipa";
 import { updateBrandingAction, type BrandingState } from "./actions";
@@ -164,18 +165,35 @@ export function BrandingForm({
       <div>
         <label className="text-sm font-medium text-ink">{dict.domeniuActivitate.label}</label>
         <p className="mt-1 text-xs text-muted">{dict.domeniuActivitate.descriere}</p>
-        <select
-          name="domeniuActivitate"
-          defaultValue={initialDomeniuActivitate ?? ""}
-          className="mt-2 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink"
-        >
-          <option value="">{dict.domeniuActivitate.alege}</option>
-          {Object.entries(dict.domeniuActivitate.optiuni).map(([valoare, eticheta]) => (
-            <option key={valoare} value={valoare}>
-              {eticheta}
-            </option>
+        <div className="mt-2.5 grid grid-cols-3 gap-2 sm:grid-cols-5">
+          <label className="cursor-pointer">
+            <input
+              type="radio"
+              name="domeniuActivitate"
+              value=""
+              defaultChecked={!initialDomeniuActivitate}
+              className="peer sr-only"
+            />
+            <div className="flex h-14 flex-col items-center justify-center gap-1 rounded-lg border border-line bg-panel-2 text-muted peer-checked:border-brand-green peer-checked:ring-2 peer-checked:ring-brand-green">
+              <span className="text-[11px] font-medium">{dict.domeniuActivitate.alege}</span>
+            </div>
+          </label>
+          {TOATE_DOMENIILE.map((id) => (
+            <label key={id} className="cursor-pointer" data-domeniu={id}>
+              <input
+                type="radio"
+                name="domeniuActivitate"
+                value={id}
+                defaultChecked={initialDomeniuActivitate === id}
+                className="peer sr-only"
+              />
+              <div className="flex h-14 flex-col items-center justify-center gap-1 rounded-lg border border-line bg-gradient-to-br from-brand-blue-soft to-brand-green-soft peer-checked:border-brand-green peer-checked:ring-2 peer-checked:ring-brand-green">
+                <DomainMotif motiv={CAMPAIGN_TEMPLATES[id].motiv} className="h-4 w-4 text-brand-blue" />
+              </div>
+              <span className="mt-1 block text-center text-[11px] font-medium text-body">{dict.domeniuActivitate.optiuni[id]}</span>
+            </label>
           ))}
-        </select>
+        </div>
       </div>
 
       {state.error && <p className="text-sm text-red-600">{state.error}</p>}

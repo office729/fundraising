@@ -5,6 +5,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 
+import { DomainMotif } from "@/components/domain-motif";
 import { CAMPAIGN_TEMPLATES } from "@/lib/campaign-templates";
 import { db } from "@/lib/db";
 import { fundraisingDonations, fundraisingPages, fundraisingUpdates, organizations } from "@/lib/db/schema";
@@ -108,20 +109,73 @@ export default async function PaginaStrangereFonduriPage({
   const proto = hdrs.get("x-forwarded-proto") ?? "https";
   const url = `${proto}://${hdrs.get("host")}/strangere-fonduri/${orgSlug}/${pageSlug}`;
 
+  // eslint-disable-next-line @next/next/no-img-element -- domeniu Supabase Storage dinamic
+  const fotoCampanie = pagina.imagineUrl ? <img src={pagina.imagineUrl} alt={pagina.titlu} className="h-full w-full object-cover" /> : null;
+  const heroFallback = (
+    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-brand-blue to-brand-green">
+      <DomainMotif motiv={tpl.motiv} className="h-14 w-14 text-white/80" />
+    </div>
+  );
+  const eyebrow = (
+    <p className="flex items-center gap-1.5 text-xs font-bold tracking-wide text-brand-green uppercase">
+      <DomainMotif motiv={tpl.motiv} className="h-3.5 w-3.5" />
+      Campanie verificată de {org.name}
+    </p>
+  );
+  const titlu = <h1 className="font-display mt-1.5 text-[30px] leading-tight font-bold text-ink">{pagina.titlu}</h1>;
+
   return (
-    <div className={`min-h-screen bg-gradient-to-b ${tpl.clase.fundal}`}>
+    <div className="min-h-screen bg-gradient-to-b from-brand-blue-soft/70 via-panel-2 to-panel-2" data-domeniu={pagina.template}>
       <main className="mx-auto max-w-3xl px-6 py-12 sm:py-16">
-        <div className="overflow-hidden rounded-3xl border border-line bg-panel shadow-[0_20px_50px_-25px_rgba(21,74,133,0.35)]">
-          {pagina.imagineUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element -- domeniu Supabase Storage dinamic
-            <img src={pagina.imagineUrl} alt={pagina.titlu} className="aspect-[16/9] w-full object-cover" />
+        <div className="overflow-hidden rounded-[var(--radius-hero)] border border-line bg-panel shadow-[0_20px_50px_-25px_rgba(21,74,133,0.35)]">
+          {tpl.familie === "natural-ancorat" ? (
+            <div className="flex flex-col gap-5 p-6 pb-0 sm:flex-row sm:items-end sm:pb-0 sm:p-8">
+              <div className="aspect-square w-full shrink-0 overflow-hidden rounded-[var(--radius-card)] sm:w-40">
+                {fotoCampanie ?? heroFallback}
+              </div>
+              <div className="min-w-0 pb-1">
+                {eyebrow}
+                {titlu}
+              </div>
+            </div>
+          ) : tpl.familie === "indraznet-dinamic" ? (
+            <div className="relative aspect-[16/9] w-full overflow-hidden">
+              {fotoCampanie ?? heroFallback}
+              <div className="absolute inset-x-0 top-0 h-14 origin-top-left -skew-y-3 bg-brand-green/90" />
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent px-6 pt-14 pb-5 sm:px-10">
+                <p className="flex items-center gap-1.5 text-xs font-bold tracking-wide text-white uppercase">
+                  <DomainMotif motiv={tpl.motiv} className="h-3.5 w-3.5" />
+                  Campanie verificată de {org.name}
+                </p>
+                <h1 className="font-display mt-1.5 text-[28px] leading-tight font-bold text-white sm:text-[32px]">{pagina.titlu}</h1>
+              </div>
+            </div>
+          ) : tpl.familie === "elegant-editorial" ? (
+            <div className="grid gap-0 sm:grid-cols-[0.85fr_1.15fr]">
+              <div className="aspect-[4/3] w-full overflow-hidden sm:aspect-auto sm:h-full">{fotoCampanie ?? heroFallback}</div>
+              <div className="flex flex-col justify-center px-6 py-7 sm:px-9 sm:py-9">
+                {eyebrow}
+                {titlu}
+              </div>
+            </div>
+          ) : tpl.familie === "cald-protector" ? (
+            <div className="relative p-4 pb-0 sm:p-5">
+              <div className="relative aspect-[16/9] w-full overflow-hidden rounded-[var(--radius-card)]">{fotoCampanie ?? heroFallback}</div>
+              <div className="absolute bottom-0 left-8 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border-4 border-panel bg-brand-green text-white shadow-md sm:left-11">
+                <DomainMotif motiv={tpl.motiv} className="h-[18px] w-[18px]" />
+              </div>
+            </div>
           ) : (
-            <div className={`aspect-[21/9] w-full bg-gradient-to-br ${tpl.clase.heroFallback}`} />
+            <div className="aspect-[21/9] w-full overflow-hidden">{fotoCampanie ?? heroFallback}</div>
           )}
 
           <div className="px-6 py-7 sm:px-10 sm:py-9">
-            <p className={`text-xs font-bold tracking-wide uppercase ${tpl.clase.eyebrow}`}>Campanie verificată de {org.name}</p>
-            <h1 className="font-display mt-1.5 text-[30px] leading-tight font-bold text-ink">{pagina.titlu}</h1>
+            {tpl.familie !== "natural-ancorat" && tpl.familie !== "indraznet-dinamic" && tpl.familie !== "elegant-editorial" && (
+              <>
+                {eyebrow}
+                {titlu}
+              </>
+            )}
 
             <div className="mt-5">
               <p className="text-xs font-semibold tracking-wide text-muted-2 uppercase">Distribuie această campanie</p>

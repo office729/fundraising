@@ -38,8 +38,8 @@ export const SETARI_ECHIPA_DICT = {
       cifPlaceholder: "ex. RO12345678",
       domeniuActivitate: {
         label: "Domeniu de activitate",
-        descriere: "Filtrează ce design-uri de campanie vezi la crearea unei pagini de strângere fonduri.",
-        alege: "Alege...",
+        descriere: "Schimbă tema completă a platformei (culori, iconițe) și ce design-uri de campanie vezi la crearea unei pagini.",
+        alege: "Fără",
         optiuni: {
           copii: "Copii",
           animale: "Animale",
@@ -48,6 +48,7 @@ export const SETARI_ECHIPA_DICT = {
           sanatate: "Sănătate",
           social_incluziune: "Social / Incluziune",
           cultura: "Cultură",
+          sport: "Sport",
           altele: "Altele",
         },
       },
@@ -131,8 +132,8 @@ export const SETARI_ECHIPA_DICT = {
       cifPlaceholder: "e.g. RO12345678",
       domeniuActivitate: {
         label: "Field of activity",
-        descriere: "Filters which campaign page designs you see when creating a fundraising page.",
-        alege: "Choose...",
+        descriere: "Changes the platform's complete theme (colors, icons) and which campaign designs you see when creating a page.",
+        alege: "None",
         optiuni: {
           copii: "Children",
           animale: "Animals",
@@ -141,6 +142,7 @@ export const SETARI_ECHIPA_DICT = {
           sanatate: "Health",
           social_incluziune: "Social / Inclusion",
           cultura: "Culture",
+          sport: "Sport",
           altele: "Other",
         },
       },
