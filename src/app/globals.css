@@ -69,7 +69,7 @@
   --radius-hero: 2rem;
   --radius-card: 1.25rem;
 }
-.dark[data-domeniu="copii"] {
+.dark [data-domeniu="copii"] {
   --brand-blue: hsl(8 70% 72%);
   --brand-blue-hover: hsl(8 70% 80%);
   --brand-blue-soft: hsl(8 40% 16%);
@@ -94,7 +94,7 @@
   --radius-hero: 2rem;
   --radius-card: 1.25rem;
 }
-.dark[data-domeniu="sanatate"] {
+.dark [data-domeniu="sanatate"] {
   --brand-blue: hsl(174 55% 68%);
   --brand-blue-hover: hsl(174 55% 76%);
   --brand-blue-soft: hsl(174 35% 15%);
@@ -119,7 +119,7 @@
   --radius-hero: 2rem;
   --radius-card: 1.25rem;
 }
-.dark[data-domeniu="social_incluziune"] {
+.dark [data-domeniu="social_incluziune"] {
   --brand-blue: hsl(280 55% 75%);
   --brand-blue-hover: hsl(280 55% 82%);
   --brand-blue-soft: hsl(280 30% 17%);
@@ -144,7 +144,7 @@
   --radius-hero: 1.75rem;
   --radius-card: 1rem;
 }
-.dark[data-domeniu="animale"] {
+.dark [data-domeniu="animale"] {
   --brand-blue: hsl(95 40% 65%);
   --brand-blue-hover: hsl(95 40% 73%);
   --brand-blue-soft: hsl(95 25% 15%);
@@ -169,7 +169,7 @@
   --radius-hero: 1.75rem;
   --radius-card: 1rem;
 }
-.dark[data-domeniu="mediu"] {
+.dark [data-domeniu="mediu"] {
   --brand-blue: hsl(150 40% 65%);
   --brand-blue-hover: hsl(150 40% 73%);
   --brand-blue-soft: hsl(150 30% 14%);
@@ -194,7 +194,7 @@
   --radius-hero: 0.5rem;
   --radius-card: 0.5rem;
 }
-.dark[data-domeniu="sport"] {
+.dark [data-domeniu="sport"] {
   --brand-blue: hsl(355 70% 70%);
   --brand-blue-hover: hsl(355 70% 78%);
   --brand-blue-soft: hsl(355 40% 16%);
@@ -219,7 +219,7 @@
   --radius-hero: 0.5rem;
   --radius-card: 0.5rem;
 }
-.dark[data-domeniu="educatie"] {
+.dark [data-domeniu="educatie"] {
   --brand-blue: hsl(222 55% 70%);
   --brand-blue-hover: hsl(222 55% 78%);
   --brand-blue-soft: hsl(222 35% 15%);
@@ -244,7 +244,7 @@
   --radius-hero: 0.75rem;
   --radius-card: 0.75rem;
 }
-.dark[data-domeniu="cultura"] {
+.dark [data-domeniu="cultura"] {
   --brand-blue: hsl(300 45% 72%);
   --brand-blue-hover: hsl(300 45% 80%);
   --brand-blue-soft: hsl(300 28% 16%);
