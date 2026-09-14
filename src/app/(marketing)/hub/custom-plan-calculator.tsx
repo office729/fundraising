@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 
-import { calculateCustomPlanPrice, normalizeCustomPlanConfig } from "@/lib/billing/custom-plan";
-import { ALL_TOOLS, type ToolId } from "@/lib/billing/packages";
+import { calculateCustomPlanBreakdown, normalizeCustomPlanConfig, type CustomPlanBreakdownKey } from "@/lib/billing/custom-plan";
+import { ALL_TOOLS, PACKAGE_LIMITS, type ToolId } from "@/lib/billing/packages";
 import type { Locale } from "@/lib/i18n/config";
 
 const TOOL_LABELS: Record<Locale, Record<ToolId, string>> = {
@@ -32,31 +32,79 @@ const TOOL_LABELS: Record<Locale, Record<ToolId, string>> = {
   },
 };
 
-function NumberField({
+const BREAKDOWN_LABELS: Record<Locale, Record<CustomPlanBreakdownKey, string>> = {
+  ro: {
+    baza: "Bază (cont + platformă)",
+    utilizatori: "Utilizatori suplimentari",
+    contactePf: "Contacte PF",
+    companiiPj: "Companii PJ",
+    instrumente: "Instrumente alese",
+    generari: "Generări suplimentare",
+  },
+  en: {
+    baza: "Base (account + platform)",
+    utilizatori: "Extra users",
+    contactePf: "Individual contacts",
+    companiiPj: "Companies",
+    instrumente: "Selected tools",
+    generari: "Extra generations",
+  },
+};
+
+const FIXED_PACKAGES: { key: "start" | "crestere" | "impact"; nume: string }[] = [
+  { key: "start", nume: "START" },
+  { key: "crestere", nume: "CREȘTERE" },
+  { key: "impact", nume: "IMPACT" },
+];
+
+function compararePachetFix(pret: number, locale: Locale): string | null {
+  const preturi = FIXED_PACKAGES.map((p) => ({ ...p, pret: PACKAGE_LIMITS[p.key].pretLunar! }));
+  // Cel mai apropiat pachet fix, ca ancoră de preț — nu cea mai ieftină/scumpă opțiune.
+  const apropiat = preturi.reduce((a, b) => (Math.abs(b.pret - pret) < Math.abs(a.pret - pret) ? b : a));
+  const delta = Math.abs(apropiat.pret - pret);
+  if (delta === 0) return null;
+  const maiPutin = pret < apropiat.pret;
+  if (locale === "en") {
+    return maiPutin
+      ? `${delta} lei/month less than ${apropiat.nume}`
+      : `${delta} lei/month more than ${apropiat.nume}`;
+  }
+  return maiPutin ? `cu ${delta} lei mai puțin decât pachetul ${apropiat.nume}` : `cu ${delta} lei mai mult decât pachetul ${apropiat.nume}`;
+}
+
+function SliderField({
   label,
   value,
   onChange,
-  step = 1,
-  min = 0,
+  min,
+  max,
+  step,
+  format,
 }: {
   label: string;
   value: number;
   onChange: (n: number) => void;
-  step?: number;
-  min?: number;
+  min: number;
+  max: number;
+  step: number;
+  format: (n: number) => string;
 }) {
   return (
-    <label className="flex flex-col gap-1 text-[13px] font-medium text-ink">
-      {label}
+    <div className="flex flex-col gap-2">
+      <div className="flex items-baseline justify-between">
+        <span className="text-[13px] font-medium text-ink">{label}</span>
+        <span className="font-display text-[15px] font-bold text-brand-blue">{format(value)}</span>
+      </div>
       <input
-        type="number"
+        type="range"
         min={min}
+        max={max}
         step={step}
         value={value}
-        onChange={(e) => onChange(e.target.valueAsNumber || 0)}
-        className="rounded-lg border border-line bg-canvas px-3 py-2 text-sm text-ink"
+        onChange={(e) => onChange(e.target.valueAsNumber)}
+        className="h-2 w-full cursor-pointer appearance-none rounded-full bg-line accent-brand-green"
       />
-    </label>
+    </div>
   );
 }
 
@@ -86,8 +134,25 @@ export function CustomPlanCalculator({
     tools: [] as ToolId[],
   });
 
-  const pret = useMemo(() => calculateCustomPlanPrice(normalizeCustomPlanConfig(config)), [config]);
+  const normalized = useMemo(() => normalizeCustomPlanConfig(config), [config]);
+  const breakdown = useMemo(() => calculateCustomPlanBreakdown(normalized), [normalized]);
+  const pret = breakdown.reduce((sum, item) => sum + item.amount, 0);
+  const comparatie = useMemo(() => compararePachetFix(pret, locale), [pret, locale]);
   const toolLabels = TOOL_LABELS[locale];
+  const breakdownLabels = BREAKDOWN_LABELS[locale];
+
+  // Puls scurt de culoare pe preț la fiecare schimbare — feedback "live" fără librărie de animație.
+  const [puls, setPuls] = useState(false);
+  const primulRandăr = useRef(true);
+  useEffect(() => {
+    if (primulRandăr.current) {
+      primulRandăr.current = false;
+      return;
+    }
+    setPuls(true);
+    const t = setTimeout(() => setPuls(false), 400);
+    return () => clearTimeout(t);
+  }, [pret]);
 
   function toggleTool(tool: ToolId) {
     setConfig((c) => ({
@@ -97,63 +162,107 @@ export function CustomPlanCalculator({
   }
 
   return (
-    <div className="mx-auto mb-11 max-w-[1200px] rounded-2xl border border-dashed border-brand-blue bg-panel p-7">
+    <div className="mx-auto mb-11 max-w-[1200px] rounded-2xl border border-dashed border-brand-blue bg-panel p-7 sm:p-9">
       <div className="text-[12.5px] font-extrabold tracking-wide text-brand-blue uppercase">{dict.planPersonalizatTag}</div>
-      <h3 className="font-display mt-1 text-[22px] font-bold text-ink">{dict.planPersonalizatTitlu}</h3>
+      <h3 className="font-display mt-1 text-[26px] font-bold text-ink">{dict.planPersonalizatTitlu}</h3>
       <p className="mt-1.5 max-w-xl text-[14.5px] leading-relaxed text-muted">{dict.planPersonalizatDesc}</p>
-      <p className="mt-3 text-2xl font-extrabold text-ink">
-        {pret} lei<span className="text-sm font-medium text-muted">{dict.planPersonalizatPerLuna}</span>
-      </p>
 
-      <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <NumberField
-          label={dict.planPersonalizatCampUtilizatori}
-          min={1}
-          value={config.utilizatori}
-          onChange={(n) => setConfig((c) => ({ ...c, utilizatori: n }))}
-        />
-        <NumberField
-          label={dict.planPersonalizatCampContactePf}
-          step={100}
-          value={config.contactePf}
-          onChange={(n) => setConfig((c) => ({ ...c, contactePf: n }))}
-        />
-        <NumberField
-          label={dict.planPersonalizatCampCompaniiPj}
-          step={50}
-          value={config.companiiPj}
-          onChange={(n) => setConfig((c) => ({ ...c, companiiPj: n }))}
-        />
-        <NumberField
-          label={dict.planPersonalizatCampGenerari}
-          value={config.generariLunare}
-          onChange={(n) => setConfig((c) => ({ ...c, generariLunare: n }))}
-        />
-      </div>
+      <div className="mt-7 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_320px]">
+        {/* Controale */}
+        <div className="flex flex-col gap-7">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <SliderField
+              label={dict.planPersonalizatCampUtilizatori}
+              min={1}
+              max={20}
+              step={1}
+              value={config.utilizatori}
+              onChange={(n) => setConfig((c) => ({ ...c, utilizatori: n }))}
+              format={(n) => `${n}`}
+            />
+            <SliderField
+              label={dict.planPersonalizatCampContactePf}
+              min={0}
+              max={50_000}
+              step={500}
+              value={config.contactePf}
+              onChange={(n) => setConfig((c) => ({ ...c, contactePf: n }))}
+              format={(n) => n.toLocaleString(locale === "ro" ? "ro-RO" : "en-US")}
+            />
+            <SliderField
+              label={dict.planPersonalizatCampCompaniiPj}
+              min={0}
+              max={10_000}
+              step={100}
+              value={config.companiiPj}
+              onChange={(n) => setConfig((c) => ({ ...c, companiiPj: n }))}
+              format={(n) => n.toLocaleString(locale === "ro" ? "ro-RO" : "en-US")}
+            />
+            <SliderField
+              label={dict.planPersonalizatCampGenerari}
+              min={0}
+              max={100}
+              step={1}
+              value={config.generariLunare}
+              onChange={(n) => setConfig((c) => ({ ...c, generariLunare: n }))}
+              format={(n) => `${n}`}
+            />
+          </div>
 
-      <div className="mt-5">
-        <span className="text-[13px] font-medium text-ink">{dict.planPersonalizatInstrumenteTitlu}</span>
-        <div className="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
-          {ALL_TOOLS.map((tool) => (
-            <label key={tool} className="flex items-center gap-2 text-[13px] text-body">
-              <input
-                type="checkbox"
-                checked={config.tools.includes(tool)}
-                onChange={() => toggleTool(tool)}
-                className="h-4 w-4 rounded border-line"
-              />
-              {toolLabels[tool]}
-            </label>
-          ))}
+          <div>
+            <span className="text-[13px] font-medium text-ink">{dict.planPersonalizatInstrumenteTitlu}</span>
+            <div className="mt-2.5 flex flex-wrap gap-2">
+              {ALL_TOOLS.map((tool) => {
+                const activ = config.tools.includes(tool);
+                return (
+                  <button
+                    key={tool}
+                    type="button"
+                    onClick={() => toggleTool(tool)}
+                    aria-pressed={activ}
+                    className={`rounded-full border px-3.5 py-1.5 text-[12.5px] font-medium transition ${
+                      activ
+                        ? "border-brand-green bg-brand-green-soft text-brand-green"
+                        : "border-line text-body hover:border-brand-blue hover:text-brand-blue"
+                    }`}
+                  >
+                    {activ ? "✓ " : ""}
+                    {toolLabels[tool]}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Sumar */}
+        <div className="lg:sticky lg:top-24 lg:self-start">
+          <div className="rounded-xl border border-line bg-canvas p-5">
+            <p
+              className={`text-3xl font-extrabold transition-colors duration-300 ${puls ? "text-brand-green" : "text-ink"}`}
+            >
+              {pret} lei<span className="text-sm font-medium text-muted">{dict.planPersonalizatPerLuna}</span>
+            </p>
+            {comparatie && <p className="mt-1 text-[12.5px] text-muted">{comparatie}</p>}
+
+            <div className="mt-4 flex flex-col gap-1.5 border-t border-line pt-4">
+              {breakdown.map((item) => (
+                <div key={item.key} className="flex items-center justify-between text-[13px] text-body">
+                  <span>{breakdownLabels[item.key]}</span>
+                  <span className="font-medium text-ink">+{item.amount} lei</span>
+                </div>
+              ))}
+            </div>
+
+            <Link
+              href="/signup"
+              className="mt-5 block rounded-md bg-brand-green py-3 text-center font-bold text-white transition hover:bg-brand-green-hover"
+            >
+              {dict.planPersonalizatCta}
+            </Link>
+          </div>
         </div>
       </div>
-
-      <Link
-        href="/signup"
-        className="mt-6 inline-block rounded-md border border-brand-blue px-7 py-3 text-center font-bold text-brand-blue transition hover:bg-brand-blue-soft"
-      >
-        {dict.planPersonalizatCta}
-      </Link>
     </div>
   );
 }

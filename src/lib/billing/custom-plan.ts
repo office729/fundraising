@@ -52,18 +52,29 @@ export function normalizeCustomPlanConfig(input: {
   };
 }
 
-export function calculateCustomPlanPrice(config: CustomPlanConfig): number {
+// Cheia identifică rândul (pentru etichetă + traducere în UI); ordinea din
+// array e ordinea de afișare recomandată. Rândurile cu cost 0 NU sunt
+// incluse — un breakdown de tip "factură" nu listează linii goale.
+export type CustomPlanBreakdownKey = "baza" | "utilizatori" | "contactePf" | "companiiPj" | "instrumente" | "generari";
+export type CustomPlanBreakdownItem = { key: CustomPlanBreakdownKey; amount: number };
+
+export function calculateCustomPlanBreakdown(config: CustomPlanConfig): CustomPlanBreakdownItem[] {
   const p = CUSTOM_PLAN_PRICING;
   const utilizatoriSuplimentari = Math.max(0, config.utilizatori - p.utilizatoriInclusi);
   const generariSuplimentare = Math.max(0, config.generariLunare - p.generariIncluse);
 
-  const total =
-    p.baza +
-    utilizatoriSuplimentari * p.pretPerUtilizator +
-    Math.ceil(config.contactePf / 1000) * p.pretPer1000ContactePf +
-    Math.ceil(config.companiiPj / 500) * p.pretPer500CompaniiPj +
-    config.tools.length * p.pretPerInstrument +
-    Math.ceil(generariSuplimentare / 5) * p.pretPer5GenerariSuplimentare;
+  const items: CustomPlanBreakdownItem[] = [
+    { key: "baza", amount: p.baza },
+    { key: "utilizatori", amount: utilizatoriSuplimentari * p.pretPerUtilizator },
+    { key: "contactePf", amount: Math.ceil(config.contactePf / 1000) * p.pretPer1000ContactePf },
+    { key: "companiiPj", amount: Math.ceil(config.companiiPj / 500) * p.pretPer500CompaniiPj },
+    { key: "instrumente", amount: config.tools.length * p.pretPerInstrument },
+    { key: "generari", amount: Math.ceil(generariSuplimentare / 5) * p.pretPer5GenerariSuplimentare },
+  ];
 
-  return total;
+  return items.filter((item) => item.amount > 0);
+}
+
+export function calculateCustomPlanPrice(config: CustomPlanConfig): number {
+  return calculateCustomPlanBreakdown(config).reduce((sum, item) => sum + item.amount, 0);
 }
