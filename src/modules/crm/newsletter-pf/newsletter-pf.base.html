@@ -82,11 +82,11 @@
   .gCard { display:flex; flex-direction:column; align-items:stretch; text-align:left; cursor:pointer; background:#fff; border:1.5px solid #E4DFD7; border-radius:14px; padding:0; overflow:hidden; transition:transform .15s, box-shadow .15s, border-color .15s; font-family:inherit; }
   .gCard:hover { transform:translateY(-3px); box-shadow:0 10px 24px rgba(31,27,23,.12); border-color:#C41D33; }
   .gCard:focus-visible { outline:2px solid #E0263C; outline-offset:2px; }
-  .gSwatch { height:210px; position:relative; overflow:hidden; background:#F2EFEA; }
+  .gSwatch { height:250px; position:relative; overflow:hidden; background:#F2EFEA; }
   .gThumbFrame { position:absolute; top:0; left:0; width:600px; height:2100px; border:0; pointer-events:none; transform:scale(.3); transform-origin:top left; background:#fff; }
-  .gBody { padding:14px 16px 16px; }
+  .gBody { padding:14px 16px 16px; display:flex; flex-direction:column; flex:1; }
   .gName { font-size:14px; font-weight:800; color:#1F1B17; margin:0 0 4px; }
-  .gTheme { font-size:12px; color:#7A736A; margin:0; line-height:1.45; }
+  .gTheme { font-size:12px; color:#7A736A; margin:0; line-height:1.45; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; }
   #galleryBtn { display:none; }
 </style>
 </head>
@@ -1575,20 +1575,7 @@ function fillGalleryThumbnails(){
       Object.keys(restore).forEach(function(id){ document.getElementById(id).value = restore[id]; });
     }
     var fr = card.querySelector('.gThumbFrame');
-    var swatch = card.querySelector('.gSwatch');
-    if (fr) {
-      // Miniatura se decupează exact la înălțimea conținutului real (între
-      // limite rezonabile) — altfel un șablon cu antet înalt (poză mare,
-      // cifre) se tăia la mijloc, înainte de scrisoare, și arăta „necomplet".
-      fr.onload = function(){
-        try {
-          var realH = fr.contentDocument.body.scrollHeight;
-          realH = Math.max(600, Math.min(950, realH));
-          if (swatch) swatch.style.height = Math.round(realH * 0.3) + 'px';
-        } catch (e) {}
-      };
-      fr.srcdoc = html;
-    }
+    if (fr) fr.srcdoc = html;
   });
   teEl.value = original;
 }
