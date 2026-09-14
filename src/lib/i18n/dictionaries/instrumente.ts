@@ -98,9 +98,9 @@ export const INSTRUMENTE_DICT = {
       titlu: "Titlu",
       subtitlu: "Subtitlu",
       textFinal: "Text final (CTA / link)",
-      paletaCulori: "Paletă culori",
+      sablon: "Șablon",
       descarcaPng: "Descarcă PNG",
-      palete: { teal: "Teal", rosuUrgenta: "Roșu urgență", albastru: "Albastru", auriu: "Auriu" },
+      sabloane: { impact: "Impact", urgent: "Urgent", elegant: "Elegant", noapte: "Noapte", poveste: "Poveste caldă", parteneri: "Parteneri" },
     },
   },
   en: {
@@ -200,9 +200,9 @@ export const INSTRUMENTE_DICT = {
       titlu: "Title",
       subtitlu: "Subtitle",
       textFinal: "Final text (CTA / link)",
-      paletaCulori: "Color palette",
+      sablon: "Template",
       descarcaPng: "Download PNG",
-      palete: { teal: "Teal", rosuUrgenta: "Urgent red", albastru: "Blue", auriu: "Gold" },
+      sabloane: { impact: "Impact", urgent: "Urgent", elegant: "Elegant", noapte: "Night", poveste: "Warm story", parteneri: "Partners" },
     },
   },
 } satisfies Record<Locale, unknown>;
