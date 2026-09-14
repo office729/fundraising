@@ -30,6 +30,101 @@ function clamp(v: number, min: number, max: number) {
   return Math.max(min, Math.min(max, v));
 }
 
+type BrandPalette = { primary: string; dark: string; darker: string; light: string; lighter: string; accent: string };
+
+function rgbToHsl(r: number, g: number, b: number) {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h = 0, s = 0;
+  const l = (max + min) / 2;
+  const d = max - min;
+  if (d !== 0) {
+    s = d / (1 - Math.abs(2 * l - 1));
+    switch (max) {
+      case r: h = ((g - b) / d) % 6; break;
+      case g: h = (b - r) / d + 2; break;
+      default: h = (r - g) / d + 4; break;
+    }
+    h *= 60;
+    if (h < 0) h += 360;
+  }
+  return { h, s, l };
+}
+
+function hslToHex(h: number, s: number, l: number) {
+  s = clamp(s, 0, 1);
+  l = clamp(l, 0, 1);
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = l - c / 2;
+  let r = 0, g = 0, b = 0;
+  if (h < 60) { r = c; g = x; }
+  else if (h < 120) { r = x; g = c; }
+  else if (h < 180) { g = c; b = x; }
+  else if (h < 240) { g = x; b = c; }
+  else if (h < 300) { r = x; b = c; }
+  else { r = c; b = x; }
+  const toHex = (v: number) => Math.round((v + m) * 255).toString(16).padStart(2, "0");
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+/** Culoarea dominantă (saturată, nici prea deschisă nici prea închisă) dintr-un logo — folosită ca bază de brand. */
+function extractDominantColor(img: HTMLImageElement): string | null {
+  const size = 48;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+  ctx.drawImage(img, 0, 0, size, size);
+  let data: Uint8ClampedArray;
+  try {
+    data = ctx.getImageData(0, 0, size, size).data;
+  } catch {
+    return null;
+  }
+  const buckets = new Map<string, { count: number; r: number; g: number; b: number }>();
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
+    if (a < 128) continue;
+    const { s, l } = rgbToHsl(r, g, b);
+    if (l < 0.1 || l > 0.9 || s < 0.2) continue;
+    const key = `${Math.round(r / 20)}_${Math.round(g / 20)}_${Math.round(b / 20)}`;
+    const entry = buckets.get(key) ?? { count: 0, r: 0, g: 0, b: 0 };
+    entry.count++; entry.r += r; entry.g += g; entry.b += b;
+    buckets.set(key, entry);
+  }
+  let best: { count: number; r: number; g: number; b: number } | null = null;
+  buckets.forEach((entry) => {
+    if (!best || entry.count > best.count) best = entry;
+  });
+  if (!best) return null;
+  const { count, r, g, b } = best as { count: number; r: number; g: number; b: number };
+  const toHex = (v: number) => Math.round(v / count).toString(16).padStart(2, "0");
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+function hexToRgb(hex: string) {
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!m) return null;
+  return { r: parseInt(m[1], 16), g: parseInt(m[2], 16), b: parseInt(m[3], 16) };
+}
+
+/** Din culoarea de brand extrasă din logo, derivă o rampă de tonuri (mai închis/mai deschis) pentru șabloane. */
+function deriveBrandPalette(hex: string): BrandPalette {
+  const rgb = hexToRgb(hex);
+  const { h, s } = rgb ? rgbToHsl(rgb.r, rgb.g, rgb.b) : { h: 351, s: 0.7 };
+  const sat = clamp(s, 0.45, 0.85);
+  return {
+    primary: hslToHex(h, sat, 0.42),
+    dark: hslToHex(h, sat, 0.24),
+    darker: hslToHex(h, sat * 0.9, 0.12),
+    light: hslToHex(h, sat * 0.55, 0.85),
+    lighter: hslToHex(h, sat * 0.4, 0.93),
+    accent: hslToHex(h, sat, 0.5),
+  };
+}
+
 function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   const rr = Math.min(r, w / 2, h / 2);
   ctx.beginPath();
@@ -146,6 +241,31 @@ function drawLogoMark(ctx: CanvasRenderingContext2D, cx: number, cy: number, siz
   ctx.closePath();
   ctx.fill();
   ctx.restore();
+}
+
+/** Logo-ul ONG-ului, dacă a fost încărcat (pe un disc alb, contain-fit) — altfel semnul generic (inimă în inel). */
+function drawOrgLogo(ctx: CanvasRenderingContext2D, logo: HTMLImageElement | null, cx: number, cy: number, size: number, ringColor: string) {
+  if (!logo) {
+    drawLogoMark(ctx, cx, cy, size, ringColor);
+    return;
+  }
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(cx, cy, size / 2, 0, Math.PI * 2);
+  ctx.clip();
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(cx - size / 2, cy - size / 2, size, size);
+  const ir = logo.naturalWidth / logo.naturalHeight;
+  const pad = size * 0.72;
+  let dw = pad, dh = pad;
+  if (ir > 1) dh = pad / ir; else dw = pad * ir;
+  ctx.drawImage(logo, cx - dw / 2, cy - dh / 2, dw, dh);
+  ctx.restore();
+  ctx.strokeStyle = ringColor;
+  ctx.lineWidth = Math.max(1.5, size * 0.045);
+  ctx.beginPath();
+  ctx.arc(cx, cy, size / 2, 0, Math.PI * 2);
+  ctx.stroke();
 }
 
 /** Inimioare mici decorative, împrăștiate — ton discret, doar în zona de culoare (nu peste poză). */
@@ -296,20 +416,23 @@ function drawPhotoPlaceholder(ctx: CanvasRenderingContext2D, x: number, y: numbe
 
 type Template = {
   key: string;
-  draw: (ctx: CanvasRenderingContext2D, W: number, H: number, t: BannerTexts, photo: HTMLImageElement | null, adjust: PhotoAdjust) => void;
+  draw: (ctx: CanvasRenderingContext2D, W: number, H: number, t: BannerTexts, photo: HTMLImageElement | null, adjust: PhotoAdjust, orgLogo: HTMLImageElement | null, brand: BrandPalette | null) => void;
 };
 
 const TEMPLATES: Template[] = [
   {
     key: "impact",
-    draw(ctx, W, H, t, photo, adjust) {
+    draw(ctx, W, H, t, photo, adjust, orgLogo, brand) {
       const marginX = W * 0.055;
       const cx = W * 0.52;
       const amp = W * 0.032;
 
+      const primary = brand?.primary ?? "#D7263D";
+      const dark = brand?.dark ?? "#6E0F1F";
+
       const grad = ctx.createLinearGradient(0, 0, W, H);
-      grad.addColorStop(0, "#D7263D");
-      grad.addColorStop(1, "#6E0F1F");
+      grad.addColorStop(0, primary);
+      grad.addColorStop(1, dark);
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, cx + amp + 2, H);
 
@@ -317,7 +440,7 @@ const TEMPLATES: Template[] = [
       rightWaveClip(ctx, W, H, cx, amp);
       ctx.clip();
       if (photo) drawCoverImagePZ(ctx, photo, cx - amp, 0, W - (cx - amp), H, adjust);
-      else drawPhotoPlaceholder(ctx, cx - amp, 0, W - (cx - amp), H, "#F2CFCB", "#6E0F1F");
+      else drawPhotoPlaceholder(ctx, cx - amp, 0, W - (cx - amp), H, brand?.light ?? "#F2CFCB", dark);
       ctx.restore();
 
       ctx.save();
@@ -328,7 +451,7 @@ const TEMPLATES: Template[] = [
       ctx.restore();
 
       const logoR = Math.max(20, H * 0.075);
-      drawLogoMark(ctx, marginX + logoR, marginX * 0.9 + logoR, logoR * 2, "#ffffff");
+      drawOrgLogo(ctx, orgLogo, marginX + logoR, marginX * 0.9 + logoR, logoR * 2, "#ffffff");
 
       const zoneW = cx - amp - marginX * 2;
       const regionTop = marginX + logoR * 2.2;
@@ -350,25 +473,27 @@ const TEMPLATES: Template[] = [
 
       const scale = clamp(zoneW / 460, 0.55, 1.3);
       drawCtaBlock(ctx, marginX, L.ctaTop, t, {
-        badgeTopBg: "#6E0F1F", badgeTopFg: "#ffffff", badgeBottomBg: "#ffffff", badgeBottomFg: "#6E0F1F",
-        pillBg: "#ffffff", pillFg: "#6E0F1F", linkColor: "rgba(255,255,255,0.75)",
+        badgeTopBg: dark, badgeTopFg: "#ffffff", badgeBottomBg: "#ffffff", badgeBottomFg: dark,
+        pillBg: "#ffffff", pillFg: dark, linkColor: "rgba(255,255,255,0.75)",
       }, scale);
     },
   },
   {
     key: "urgent",
-    draw(ctx, W, H, t, photo, adjust) {
+    draw(ctx, W, H, t, photo, adjust, orgLogo, brand) {
       const marginX = W * 0.055;
       const barH = Math.max(40, H * 0.11);
       const cx = W * 0.56;
+
+      const primary = brand?.primary ?? "#C41D33";
 
       ctx.fillStyle = "#121010";
       ctx.fillRect(0, 0, cx, H);
 
       if (photo) drawCoverImagePZ(ctx, photo, cx, 0, W - cx, H, adjust);
-      else drawPhotoPlaceholder(ctx, cx, 0, W - cx, H, "#2A1F1F", "#C41D33");
+      else drawPhotoPlaceholder(ctx, cx, 0, W - cx, H, "#2A1F1F", primary);
 
-      ctx.fillStyle = "#C41D33";
+      ctx.fillStyle = primary;
       ctx.fillRect(0, 0, W, barH);
       ctx.fillStyle = "#ffffff";
       ctx.font = `800 ${Math.max(12, barH * 0.34)}px "Manrope"`;
@@ -379,7 +504,7 @@ const TEMPLATES: Template[] = [
       drawHeartAccents(ctx, 0, barH, cx, H - barH, "#ffffff", 0.07, 2);
 
       const logoR = Math.max(18, H * 0.06);
-      drawLogoMark(ctx, marginX + logoR, barH + marginX * 0.6 + logoR, logoR * 2, "#ffffff");
+      drawOrgLogo(ctx, orgLogo, marginX + logoR, barH + marginX * 0.6 + logoR, logoR * 2, "#ffffff");
 
       const zoneW = cx - marginX * 2;
       const regionTop = barH + marginX * 0.4 + logoR * 2.2;
@@ -401,34 +526,39 @@ const TEMPLATES: Template[] = [
 
       const scale = clamp(zoneW / 460, 0.5, 1.2);
       drawCtaBlock(ctx, marginX, L.ctaTop, t, {
-        badgeTopBg: "#C41D33", badgeTopFg: "#ffffff", badgeBottomBg: "#ffffff", badgeBottomFg: "#121010",
-        pillBg: "#C41D33", pillFg: "#ffffff", linkColor: "#8A8078",
+        badgeTopBg: primary, badgeTopFg: "#ffffff", badgeBottomBg: "#ffffff", badgeBottomFg: "#121010",
+        pillBg: primary, pillFg: "#ffffff", linkColor: "#8A8078",
       }, scale);
     },
   },
   {
     key: "elegant",
-    draw(ctx, W, H, t, photo, adjust) {
+    draw(ctx, W, H, t, photo, adjust, orgLogo, brand) {
       const marginX = W * 0.055;
       const cx = W * 0.6;
+
+      const accent = brand?.accent ?? "#C9A94E";
+      const accentDark = brand?.dark ?? "#B08B2E";
 
       ctx.fillStyle = "#F7F3EC";
       ctx.fillRect(0, 0, W, H);
 
       if (photo) drawCoverImagePZ(ctx, photo, cx, 0, W - cx, H, adjust);
-      else drawPhotoPlaceholder(ctx, cx, 0, W - cx, H, "#EFE2C6", "#B08B2E");
+      else drawPhotoPlaceholder(ctx, cx, 0, W - cx, H, "#EFE2C6", accentDark);
 
-      ctx.strokeStyle = "#C9A94E";
+      ctx.strokeStyle = accent;
       ctx.lineWidth = Math.max(2, W * 0.003);
       ctx.beginPath();
       ctx.moveTo(cx, 0);
       ctx.lineTo(cx, H);
       ctx.stroke();
 
-      const eyebrowH = Math.max(26, H * 0.065);
-      ctx.fillStyle = "#B08B2E";
+      const eyebrowH = Math.max(30, H * 0.075);
+      const logoSize = eyebrowH * 0.82;
+      drawOrgLogo(ctx, orgLogo, marginX + logoSize / 2, eyebrowH / 2, logoSize, accentDark);
+      ctx.fillStyle = accentDark;
       ctx.font = `700 ${Math.max(10, H * 0.026)}px "Manrope"`;
-      ctx.fillText("S A L V E A Z Ă   O   I N I M Ă", marginX, eyebrowH * 0.75);
+      ctx.fillText("S A L V E A Z Ă   O   I N I M Ă", marginX + logoSize + 10, eyebrowH * 0.58);
 
       const zoneW = cx - marginX * 2;
       const L = layoutTitle(ctx, eyebrowH, H - eyebrowH, t.titlu, t.subtitlu, {
@@ -450,21 +580,25 @@ const TEMPLATES: Template[] = [
       const scale = clamp(zoneW / 460, 0.5, 1.15);
       drawCtaBlock(ctx, marginX, L.ctaTop, t, {
         badgeTopBg: "#241C18", badgeTopFg: "#F1E6CE", badgeBottomBg: "#ffffff", badgeBottomFg: "#241C18",
-        pillBg: "#C9A94E", pillFg: "#241C18", linkColor: "#8A7B5E",
+        pillBg: accent, pillFg: "#241C18", linkColor: "#8A7B5E",
       }, scale);
     },
   },
   {
     key: "noapte",
-    draw(ctx, W, H, t, photo, adjust) {
+    draw(ctx, W, H, t, photo, adjust, orgLogo, brand) {
       const marginX = W * 0.055;
       const cx = W * 0.52;
       const amp = W * 0.028;
 
+      const accent = brand?.accent ?? "#4A9FD8";
+      const accentRgb = hexToRgb(accent) ?? { r: 74, g: 159, b: 216 };
+      const accentRgbStr = `${accentRgb.r},${accentRgb.g},${accentRgb.b}`;
+
       ctx.fillStyle = "#050B14";
       ctx.fillRect(0, 0, cx + amp + 2, H);
       const glow = ctx.createRadialGradient(cx * 0.5, H * 0.4, 20, cx * 0.5, H * 0.4, Math.max(W, H) * 0.45);
-      glow.addColorStop(0, "rgba(74,159,216,0.3)");
+      glow.addColorStop(0, `rgba(${accentRgbStr},0.3)`);
       glow.addColorStop(1, "rgba(5,11,20,0)");
       ctx.fillStyle = glow;
       ctx.fillRect(0, 0, cx + amp + 2, H);
@@ -473,7 +607,7 @@ const TEMPLATES: Template[] = [
       rightWaveClip(ctx, W, H, cx, amp);
       ctx.clip();
       if (photo) drawCoverImagePZ(ctx, photo, cx - amp, 0, W - (cx - amp), H, adjust);
-      else drawPhotoPlaceholder(ctx, cx - amp, 0, W - (cx - amp), H, "#0F2038", "#4A9FD8");
+      else drawPhotoPlaceholder(ctx, cx - amp, 0, W - (cx - amp), H, "#0F2038", accent);
       ctx.restore();
 
       const starsFrac: Array<[number, number]> = [
@@ -487,7 +621,7 @@ const TEMPLATES: Template[] = [
       });
 
       const logoR = Math.max(20, H * 0.07);
-      drawLogoMark(ctx, marginX + logoR, marginX * 0.9 + logoR, logoR * 2, "#DCEEFA");
+      drawOrgLogo(ctx, orgLogo, marginX + logoR, marginX * 0.9 + logoR, logoR * 2, "#DCEEFA");
 
       const zoneW = cx - amp - marginX * 2;
       const regionTop = marginX + logoR * 2.2;
@@ -498,7 +632,7 @@ const TEMPLATES: Template[] = [
       });
 
       ctx.fillStyle = "#ffffff";
-      ctx.shadowColor = "rgba(74,159,216,0.6)";
+      ctx.shadowColor = `rgba(${accentRgbStr},0.6)`;
       ctx.shadowBlur = Math.max(8, H * 0.035);
       ctx.font = `800 ${L.titleSize}px "Sora"`;
       ctx.fillText(t.titlu.toUpperCase(), marginX, L.titleBaseline);
@@ -512,21 +646,25 @@ const TEMPLATES: Template[] = [
 
       const scale = clamp(zoneW / 460, 0.5, 1.2);
       drawCtaBlock(ctx, marginX, L.ctaTop, t, {
-        badgeTopBg: "#4A9FD8", badgeTopFg: "#04101C", badgeBottomBg: "#DCEEFA", badgeBottomFg: "#0A1628",
-        pillBg: "#4A9FD8", pillFg: "#04101C", linkColor: "#6E8BA6",
+        badgeTopBg: accent, badgeTopFg: "#04101C", badgeBottomBg: "#DCEEFA", badgeBottomFg: "#0A1628",
+        pillBg: accent, pillFg: "#04101C", linkColor: "#6E8BA6",
       }, scale);
     },
   },
   {
     key: "poveste",
-    draw(ctx, W, H, t, photo, adjust) {
+    draw(ctx, W, H, t, photo, adjust, orgLogo, brand) {
       const marginX = W * 0.055;
       const cx = W * 0.5;
       const amp = W * 0.045;
 
+      const primary = brand?.primary ?? "#F4977A";
+      const light = brand?.light ?? "#FCC98A";
+      const dark = brand?.dark ?? "#C4633F";
+
       const grad = ctx.createLinearGradient(0, 0, W, H);
-      grad.addColorStop(0, "#F4977A");
-      grad.addColorStop(1, "#FCC98A");
+      grad.addColorStop(0, primary);
+      grad.addColorStop(1, light);
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, cx + amp + 2, H);
 
@@ -534,7 +672,7 @@ const TEMPLATES: Template[] = [
       rightWaveClip(ctx, W, H, cx, amp);
       ctx.clip();
       if (photo) drawCoverImagePZ(ctx, photo, cx - amp, 0, W - (cx - amp), H, adjust);
-      else drawPhotoPlaceholder(ctx, cx - amp, 0, W - (cx - amp), H, "#FCE3D3", "#C4633F");
+      else drawPhotoPlaceholder(ctx, cx - amp, 0, W - (cx - amp), H, brand?.lighter ?? "#FCE3D3", dark);
       ctx.restore();
 
       ctx.save();
@@ -544,7 +682,7 @@ const TEMPLATES: Template[] = [
       ctx.restore();
 
       const logoR = Math.max(20, H * 0.075);
-      drawLogoMark(ctx, marginX + logoR, marginX * 0.9 + logoR, logoR * 2, "#ffffff");
+      drawOrgLogo(ctx, orgLogo, marginX + logoR, marginX * 0.9 + logoR, logoR * 2, "#ffffff");
 
       const zoneW = cx - amp - marginX * 2;
       const regionTop = marginX + logoR * 2.2;
@@ -566,21 +704,25 @@ const TEMPLATES: Template[] = [
 
       const scale = clamp(zoneW / 460, 0.5, 1.2);
       drawCtaBlock(ctx, marginX, L.ctaTop, t, {
-        badgeTopBg: "#C4633F", badgeTopFg: "#ffffff", badgeBottomBg: "#ffffff", badgeBottomFg: "#C4633F",
-        pillBg: "#ffffff", pillFg: "#C4633F", linkColor: "rgba(255,255,255,0.8)",
+        badgeTopBg: dark, badgeTopFg: "#ffffff", badgeBottomBg: "#ffffff", badgeBottomFg: dark,
+        pillBg: "#ffffff", pillFg: dark, linkColor: "rgba(255,255,255,0.8)",
       }, scale);
     },
   },
   {
     key: "parteneri",
-    draw(ctx, W, H, t, photo, adjust) {
+    draw(ctx, W, H, t, photo, adjust, orgLogo, brand) {
       const marginX = W * 0.055;
       const cx = W * 0.56;
       const skew = W * 0.05;
 
+      const darker = brand?.darker ?? "#0F1F3D";
+      const dark = brand?.dark ?? "#173B6B";
+      const accent = brand?.accent ?? "#8FB4DE";
+
       const grad = ctx.createLinearGradient(0, 0, W, H);
-      grad.addColorStop(0, "#0F1F3D");
-      grad.addColorStop(1, "#173B6B");
+      grad.addColorStop(0, darker);
+      grad.addColorStop(1, dark);
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, cx + skew + 2, H);
 
@@ -588,7 +730,7 @@ const TEMPLATES: Template[] = [
       rightDiagonalClip(ctx, W, H, cx, skew);
       ctx.clip();
       if (photo) drawCoverImagePZ(ctx, photo, cx - skew, 0, W - (cx - skew), H, adjust);
-      else drawPhotoPlaceholder(ctx, cx - skew, 0, W - (cx - skew), H, "#152A4E", "#8FB4DE");
+      else drawPhotoPlaceholder(ctx, cx - skew, 0, W - (cx - skew), H, darker, accent);
       ctx.restore();
 
       ctx.save();
@@ -606,7 +748,7 @@ const TEMPLATES: Template[] = [
       ctx.restore();
 
       const logoR = Math.max(18, H * 0.06);
-      drawLogoMark(ctx, marginX + logoR, marginX * 0.9 + logoR, logoR * 2, "#ffffff");
+      drawOrgLogo(ctx, orgLogo, marginX + logoR, marginX * 0.9 + logoR, logoR * 2, "#ffffff");
 
       const zoneW = cx - skew - marginX * 2;
       const regionTop = marginX + logoR * 2.2;
@@ -620,7 +762,7 @@ const TEMPLATES: Template[] = [
       ctx.font = `800 ${L.titleSize}px "Sora"`;
       ctx.fillText(t.titlu.toUpperCase(), marginX, L.titleBaseline);
 
-      ctx.strokeStyle = "#8FB4DE";
+      ctx.strokeStyle = accent;
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(marginX, L.titleBaseline + L.titleSize * 0.32);
@@ -635,8 +777,8 @@ const TEMPLATES: Template[] = [
 
       const scale = clamp(zoneW / 460, 0.45, 1.1);
       drawCtaBlock(ctx, marginX, L.ctaTop, t, {
-        badgeTopBg: "#173B6B", badgeTopFg: "#DCEEFA", badgeBottomBg: "#ffffff", badgeBottomFg: "#0F1F3D",
-        pillBg: "#8FB4DE", pillFg: "#0F1F3D", linkColor: "#8FA8C7",
+        badgeTopBg: dark, badgeTopFg: "#DCEEFA", badgeBottomBg: "#ffffff", badgeBottomFg: darker,
+        pillBg: accent, pillFg: darker, linkColor: "#8FA8C7",
       }, scale);
     },
   },
@@ -670,9 +812,14 @@ export default function BannereSmsPage() {
   const [panY, setPanY] = useState(0);
   const [zoom, setZoom] = useState(1);
   const [dragOver, setDragOver] = useState(false);
+  const [orgLogoImg, setOrgLogoImg] = useState<HTMLImageElement | null>(null);
+  const [orgLogoName, setOrgLogoName] = useState<string>("");
+  const [brand, setBrand] = useState<BrandPalette | null>(null);
+  const [logoDragOver, setLogoDragOver] = useState(false);
   const canvasRefs = useRef<Map<string, HTMLCanvasElement>>(new Map());
   const pickerCanvasRefs = useRef<Map<string, HTMLCanvasElement>>(new Map());
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const template = TEMPLATES.find((tpl) => tpl.key === templateKey) ?? TEMPLATES[0];
   const texts: BannerTexts = { titlu, subtitlu, smsNumar, smsCuvant, link };
   const adjust: PhotoAdjust = { panX, panY, zoom };
@@ -710,6 +857,32 @@ export default function BannereSmsPage() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
+  function loadOrgLogoFile(file: File | undefined) {
+    if (!file || !file.type.startsWith("image/")) return;
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      setOrgLogoImg((prev) => {
+        if (prev) URL.revokeObjectURL(prev.src);
+        return img;
+      });
+      setOrgLogoName(file.name);
+      const dominant = extractDominantColor(img);
+      setBrand(dominant ? deriveBrandPalette(dominant) : null);
+    };
+    img.src = url;
+  }
+
+  function removeOrgLogo() {
+    setOrgLogoImg((prev) => {
+      if (prev) URL.revokeObjectURL(prev.src);
+      return null;
+    });
+    setOrgLogoName("");
+    setBrand(null);
+    if (logoInputRef.current) logoInputRef.current.value = "";
+  }
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -732,7 +905,7 @@ export default function BannereSmsPage() {
         canvas.width = format.w;
         canvas.height = format.h;
         resetCtx(ctx);
-        template.draw(ctx, format.w, format.h, texts, photoImg, adjust);
+        template.draw(ctx, format.w, format.h, texts, photoImg, adjust, orgLogoImg, brand);
       });
       TEMPLATES.forEach((tpl) => {
         const canvas = pickerCanvasRefs.current.get(tpl.key);
@@ -742,14 +915,14 @@ export default function BannereSmsPage() {
         canvas.width = 480;
         canvas.height = 480;
         resetCtx(ctx);
-        tpl.draw(ctx, 480, 480, texts, photoImg, adjust);
+        tpl.draw(ctx, 480, 480, texts, photoImg, adjust, orgLogoImg, brand);
       });
     })();
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [titlu, subtitlu, smsNumar, smsCuvant, link, template, photoImg, panX, panY, zoom]);
+  }, [titlu, subtitlu, smsNumar, smsCuvant, link, template, photoImg, panX, panY, zoom, orgLogoImg, brand]);
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-5">
@@ -790,6 +963,57 @@ export default function BannereSmsPage() {
                 </button>
               ))}
             </div>
+          </div>
+
+          <div>
+            <Label>{dict.logoOng}</Label>
+            {orgLogoImg ? (
+              <div className="flex items-center gap-2 rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface-2)] px-3 py-2">
+                {brand && (
+                  <span
+                    className="h-5 w-5 shrink-0 rounded-full border border-[var(--ci-border)]"
+                    style={{ backgroundColor: brand.primary }}
+                    title={brand.primary}
+                  />
+                )}
+                <span className="flex-1 truncate text-[12.5px] text-[var(--ci-text)]">{orgLogoName}</span>
+                <button
+                  type="button"
+                  onClick={removeOrgLogo}
+                  className="rounded p-1 text-[var(--ci-text-muted)] hover:bg-[var(--ci-surface)] hover:text-[var(--ci-text)]"
+                  aria-label={dict.scoateLogo}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => logoInputRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); setLogoDragOver(true); }}
+                onDragLeave={() => setLogoDragOver(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setLogoDragOver(false);
+                  loadOrgLogoFile(e.dataTransfer.files?.[0]);
+                }}
+                className={cn(
+                  "flex h-16 w-full flex-col items-center justify-center gap-1 rounded-lg border border-dashed text-center transition-colors",
+                  logoDragOver ? "border-[var(--ci-primary)] bg-[var(--ci-primary)]/5" : "border-[var(--ci-border-strong)] hover:border-[var(--ci-primary)]",
+                )}
+              >
+                <ImagePlus className="h-3.5 w-3.5 text-[var(--ci-text-muted)]" />
+                <span className="text-[12.5px] text-[var(--ci-text)]">{dict.incarcaLogo}</span>
+              </button>
+            )}
+            <input
+              ref={logoInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => loadOrgLogoFile(e.target.files?.[0])}
+            />
+            <p className="mt-1 text-[11.5px] text-[var(--ci-text-faint)]">{dict.logoOngHint}</p>
           </div>
 
           <div>
