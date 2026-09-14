@@ -296,16 +296,12 @@ function drawPhotoPlaceholder(ctx: CanvasRenderingContext2D, x: number, y: numbe
 
 type Template = {
   key: string;
-  swatch: string;
-  label: "light" | "dark";
   draw: (ctx: CanvasRenderingContext2D, W: number, H: number, t: BannerTexts, photo: HTMLImageElement | null, adjust: PhotoAdjust) => void;
 };
 
 const TEMPLATES: Template[] = [
   {
     key: "impact",
-    swatch: "linear-gradient(135deg, #D7263D 0%, #6E0F1F 100%)",
-    label: "light",
     draw(ctx, W, H, t, photo, adjust) {
       const marginX = W * 0.055;
       const cx = W * 0.52;
@@ -361,8 +357,6 @@ const TEMPLATES: Template[] = [
   },
   {
     key: "urgent",
-    swatch: "linear-gradient(180deg, #C41D33 0%, #C41D33 16%, #121010 16%, #121010 100%)",
-    label: "light",
     draw(ctx, W, H, t, photo, adjust) {
       const marginX = W * 0.055;
       const barH = Math.max(40, H * 0.11);
@@ -414,8 +408,6 @@ const TEMPLATES: Template[] = [
   },
   {
     key: "elegant",
-    swatch: "linear-gradient(135deg, #F7F3EC 0%, #F1E6CE 100%)",
-    label: "dark",
     draw(ctx, W, H, t, photo, adjust) {
       const marginX = W * 0.055;
       const cx = W * 0.6;
@@ -464,9 +456,6 @@ const TEMPLATES: Template[] = [
   },
   {
     key: "noapte",
-    swatch:
-      "radial-gradient(circle at 35% 35%, rgba(74,159,216,0.55), transparent 60%), linear-gradient(180deg, #0A1628, #050B14)",
-    label: "light",
     draw(ctx, W, H, t, photo, adjust) {
       const marginX = W * 0.055;
       const cx = W * 0.52;
@@ -530,8 +519,6 @@ const TEMPLATES: Template[] = [
   },
   {
     key: "poveste",
-    swatch: "linear-gradient(135deg, #F4977A 0%, #FCC98A 100%)",
-    label: "light",
     draw(ctx, W, H, t, photo, adjust) {
       const marginX = W * 0.055;
       const cx = W * 0.5;
@@ -586,8 +573,6 @@ const TEMPLATES: Template[] = [
   },
   {
     key: "parteneri",
-    swatch: "linear-gradient(135deg, #0F1F3D 0%, #173B6B 100%)",
-    label: "light",
     draw(ctx, W, H, t, photo, adjust) {
       const marginX = W * 0.055;
       const cx = W * 0.56;
@@ -686,6 +671,7 @@ export default function BannereSmsPage() {
   const [zoom, setZoom] = useState(1);
   const [dragOver, setDragOver] = useState(false);
   const canvasRefs = useRef<Map<string, HTMLCanvasElement>>(new Map());
+  const pickerCanvasRefs = useRef<Map<string, HTMLCanvasElement>>(new Map());
   const fileInputRef = useRef<HTMLInputElement>(null);
   const template = TEMPLATES.find((tpl) => tpl.key === templateKey) ?? TEMPLATES[0];
   const texts: BannerTexts = { titlu, subtitlu, smsNumar, smsCuvant, link };
@@ -748,6 +734,16 @@ export default function BannereSmsPage() {
         resetCtx(ctx);
         template.draw(ctx, format.w, format.h, texts, photoImg, adjust);
       });
+      TEMPLATES.forEach((tpl) => {
+        const canvas = pickerCanvasRefs.current.get(tpl.key);
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        canvas.width = 480;
+        canvas.height = 480;
+        resetCtx(ctx);
+        tpl.draw(ctx, 480, 480, texts, photoImg, adjust);
+      });
     })();
     return () => {
       cancelled = true;
@@ -775,19 +771,20 @@ export default function BannereSmsPage() {
                   type="button"
                   onClick={() => setTemplateKey(tpl.key)}
                   className={cn(
-                    "flex h-16 items-center justify-center rounded-lg border-2 transition-all",
+                    "overflow-hidden rounded-lg border-2 text-left transition-all",
                     templateKey === tpl.key
                       ? "border-[var(--ci-primary)] ring-2 ring-[var(--ci-primary)]/25"
-                      : "border-transparent hover:opacity-90",
+                      : "border-[var(--ci-border)] hover:border-[var(--ci-border-strong)]",
                   )}
-                  style={{ backgroundImage: tpl.swatch }}
                 >
-                  <span
-                    className={cn(
-                      "text-[12.5px] font-semibold",
-                      tpl.label === "dark" ? "text-[#241C18]" : "text-white",
-                    )}
-                  >
+                  <canvas
+                    ref={(el) => {
+                      if (el) pickerCanvasRefs.current.set(tpl.key, el);
+                      else pickerCanvasRefs.current.delete(tpl.key);
+                    }}
+                    className="aspect-square w-full"
+                  />
+                  <span className="block px-2 py-1.5 text-[12px] font-semibold text-[var(--ci-text)]">
                     {dict.sabloane[tpl.key as keyof typeof dict.sabloane]}
                   </span>
                 </button>
