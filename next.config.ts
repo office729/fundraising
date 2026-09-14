@@ -6,6 +6,13 @@ const isDev = process.env.NODE_ENV !== "production";
 // (Checkout redirect + billing portal + webhook nu ating browserul) și
 // Calendly (embed inline pentru consiliere 1 la 1 — vezi
 // components/calendly-inline-widget.tsx).
+// `unsafe-inline` în script-src: verificat explicit (audit de securitate) —
+// rămâne intenționat. Eliminarea lui (ex. via nonce per-request în proxy.ts)
+// ar rupe cele 8 instrumente CRM randate în iframe srcDoc, same-origin, fără
+// CSP proprie (vezi modules/crm/shared/standalone-tool-frame.tsx) — acelea
+// au scripturi inline statice cu date interpolate (JSON.stringify), fără
+// niciun sink care să injecteze markup/JS din input necontrolat. Rămâne o
+// recomandare de hardening, nu o vulnerabilitate activă.
 const csp = [
   `default-src 'self'`,
   `script-src 'self' 'unsafe-inline' https://assets.calendly.com${isDev ? " 'unsafe-eval'" : ""}`,
