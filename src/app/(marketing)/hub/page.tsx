@@ -3,6 +3,8 @@ import Link from "next/link";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { HUB_DICT } from "@/lib/i18n/dictionaries/hub";
 
+import { CustomPlanCalculator } from "./custom-plan-calculator";
+
 type Plan = (typeof HUB_DICT)["ro"]["abonamente"][number];
 
 function PricingCard({ plan, perLuna, popularBadge }: { plan: Plan; perLuna: string; popularBadge: string }) {
@@ -98,6 +100,8 @@ export default async function HubPage() {
             <PricingCard key={plan.nume} plan={plan} perLuna={dict.perLuna} popularBadge={dict.popularBadge} />
           ))}
         </div>
+
+        <CustomPlanCalculator locale={locale} dict={dict} />
 
         <div className="mx-auto mb-5 max-w-[1200px] overflow-auto rounded-xl border border-line bg-panel">
           <div className="grid min-w-[700px] grid-cols-[1.6fr_1fr_1fr_1fr] bg-brand-blue">
