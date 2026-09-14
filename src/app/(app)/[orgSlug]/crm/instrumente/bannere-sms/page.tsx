@@ -315,7 +315,7 @@ type CtaColors = {
 };
 
 /** „Trimite SMS la NUMĂR / CUVÂNT" + buton „DONEAZĂ" separat + link mic dedesubt. Întoarce înălțimea folosită. */
-function drawCtaBlock(ctx: CanvasRenderingContext2D, x: number, y: number, t: BannerTexts, colors: CtaColors, scale: number) {
+function drawCtaBlock(ctx: CanvasRenderingContext2D, x: number, y: number, t: BannerTexts, colors: CtaColors, scale: number, centered = false) {
   const s = scale;
   const numText = `TRIMITE SMS LA ${t.smsNumar || "8832"}`;
   const wordText = (t.smsCuvant || "CAZ").toUpperCase();
@@ -328,6 +328,18 @@ function drawCtaBlock(ctx: CanvasRenderingContext2D, x: number, y: number, t: Ba
   const topH = 24 * s;
   const wordH = 40 * s;
   const r = 8 * s;
+
+  const pillGap = 14 * s;
+  ctx.font = `800 ${16 * s}px "Manrope"`;
+  const pillTextW = ctx.measureText("DONEAZĂ").width;
+  const pillPadX = 20 * s;
+  const pillH = 42 * s;
+  const pillW = pillTextW + pillPadX * 2;
+
+  if (centered) {
+    const totalW = boxW + pillGap + pillW;
+    x = x - totalW / 2;
+  }
 
   roundRect(ctx, x, y, boxW, topH + r, r);
   ctx.fillStyle = colors.badgeTopBg;
@@ -349,25 +361,25 @@ function drawCtaBlock(ctx: CanvasRenderingContext2D, x: number, y: number, t: Ba
   ctx.font = `800 ${19 * s}px "Sora"`;
   ctx.fillText(wordText, x + boxW / 2, y + topH + wordH / 2 + 1);
 
-  const pillGap = 14 * s;
-  ctx.font = `800 ${16 * s}px "Manrope"`;
-  const pillTextW = ctx.measureText("DONEAZĂ").width;
-  const pillPadX = 20 * s;
-  const pillH = 42 * s;
-  const pillW = pillTextW + pillPadX * 2;
   const pillX = x + boxW + pillGap;
   const pillY = y + (topH + wordH - pillH) / 2;
+  ctx.font = `800 ${16 * s}px "Manrope"`;
   roundRect(ctx, pillX, pillY, pillW, pillH, pillH / 2);
   ctx.fillStyle = colors.pillBg;
   ctx.fill();
   ctx.fillStyle = colors.pillFg;
   ctx.fillText("DONEAZĂ", pillX + pillW / 2, pillY + pillH / 2 + 1);
 
-  ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
   ctx.font = `600 ${11 * s}px "Manrope"`;
   ctx.fillStyle = colors.linkColor;
-  ctx.fillText(t.link || "salveazaoinima.ro", x, y + topH + wordH + 22 * s);
+  if (centered) {
+    ctx.fillText(t.link || "salveazaoinima.ro", x + (boxW + pillGap + pillW) / 2, y + topH + wordH + 22 * s);
+  } else {
+    ctx.textAlign = "left";
+    ctx.fillText(t.link || "salveazaoinima.ro", x, y + topH + wordH + 22 * s);
+  }
+  ctx.textAlign = "left";
 
   return topH + wordH + 34 * s;
 }
@@ -388,6 +400,25 @@ function leftWaveClip(ctx: CanvasRenderingContext2D, W: number, H: number, cx: n
   ctx.bezierCurveTo(cx + amp, H * 0.22, cx - amp, H * 0.38, cx, H * 0.5);
   ctx.bezierCurveTo(cx + amp, H * 0.62, cx - amp, H * 0.78, cx + amp * 0.5, H);
   ctx.lineTo(0, H);
+  ctx.closePath();
+}
+/** Val orizontal (nu vertical) — pentru șabloane cu poza sus / text jos, nu stânga-dreapta. */
+function topWaveClip(ctx: CanvasRenderingContext2D, W: number, cy: number, amp: number) {
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(0, cy);
+  ctx.bezierCurveTo(W * 0.25, cy + amp, W * 0.42, cy - amp, W * 0.5, cy);
+  ctx.bezierCurveTo(W * 0.58, cy + amp, W * 0.75, cy - amp, W, cy - amp * 0.4);
+  ctx.lineTo(W, 0);
+  ctx.closePath();
+}
+function bottomWaveClip(ctx: CanvasRenderingContext2D, W: number, H: number, cy: number, amp: number) {
+  ctx.beginPath();
+  ctx.moveTo(0, H);
+  ctx.lineTo(0, cy);
+  ctx.bezierCurveTo(W * 0.25, cy + amp, W * 0.42, cy - amp, W * 0.5, cy);
+  ctx.bezierCurveTo(W * 0.58, cy + amp, W * 0.75, cy - amp, W, cy - amp * 0.4);
+  ctx.lineTo(W, H);
   ctx.closePath();
 }
 function rightDiagonalClip(ctx: CanvasRenderingContext2D, W: number, H: number, cx: number, skew: number) {
@@ -419,6 +450,28 @@ function drawPhotoPlaceholder(ctx: CanvasRenderingContext2D, x: number, y: numbe
   ctx.textBaseline = "middle";
   ctx.fillText("♥", x + w / 2, y + h / 2);
   ctx.restore();
+}
+
+/** Poză (sau loc gol) într-un medalion circular — pentru șabloane cu poză mică, tip „sigiliu", nu pe tot fundalul. */
+function drawCircularPhoto(
+  ctx: CanvasRenderingContext2D,
+  photo: HTMLImageElement | null,
+  adjust: PhotoAdjust,
+  cx: number, cy: number, r: number,
+  ringColor: string, placeholderBg: string, placeholderFg: string,
+) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.clip();
+  if (photo) drawCoverImagePZ(ctx, photo, cx - r, cy - r, r * 2, r * 2, adjust);
+  else drawPhotoPlaceholder(ctx, cx - r, cy - r, r * 2, r * 2, placeholderBg, placeholderFg);
+  ctx.restore();
+  ctx.strokeStyle = ringColor;
+  ctx.lineWidth = Math.max(2, r * 0.035);
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.stroke();
 }
 
 type Template = {
@@ -487,38 +540,42 @@ const TEMPLATES: Template[] = [
   },
   {
     key: "urgent",
+    // Compoziție diferită de „impact": poza pe tot fundalul, text peste, într-o
+    // fâșie întunecată jos (nu împărțire pe verticală în două zone).
     draw(ctx, W, H, t, photo, adjust, orgLogo, brand) {
       const marginX = W * 0.055;
-      const barH = Math.max(40, H * 0.11);
-      const cx = W * 0.56;
+      const barH = Math.max(36, H * 0.09);
 
       const primary = brand?.primary ?? "#C41D33";
 
-      ctx.fillStyle = "#121010";
-      ctx.fillRect(0, 0, cx, H);
+      if (photo) drawCoverImagePZ(ctx, photo, 0, 0, W, H, adjust);
+      else drawPhotoPlaceholder(ctx, 0, 0, W, H, "#2A1F1F", primary);
 
-      if (photo) drawCoverImagePZ(ctx, photo, cx, 0, W - cx, H, adjust);
-      else drawPhotoPlaceholder(ctx, cx, 0, W - cx, H, "#2A1F1F", primary);
+      const scrimTop = H * 0.5;
+      const scrim = ctx.createLinearGradient(0, scrimTop, 0, H);
+      scrim.addColorStop(0, "rgba(10,8,8,0)");
+      scrim.addColorStop(0.55, "rgba(10,8,8,0.82)");
+      scrim.addColorStop(1, "rgba(10,8,8,0.94)");
+      ctx.fillStyle = scrim;
+      ctx.fillRect(0, scrimTop, W, H - scrimTop);
 
       ctx.fillStyle = primary;
       ctx.fillRect(0, 0, W, barH);
       ctx.fillStyle = "#ffffff";
-      ctx.font = `800 ${Math.max(12, barH * 0.34)}px "Manrope"`;
+      ctx.font = `800 ${Math.max(11, barH * 0.4)}px "Manrope"`;
       ctx.textBaseline = "middle";
       ctx.fillText("▲  URGENT", marginX, barH / 2 + 1);
       ctx.textBaseline = "alphabetic";
 
-      drawHeartAccents(ctx, 0, barH, cx, H - barH, "#ffffff", 0.07, 2);
+      const logoR = Math.max(16, H * 0.05);
+      drawOrgLogo(ctx, orgLogo, marginX + logoR, barH + marginX * 0.55 + logoR, logoR * 2, "#ffffff");
 
-      const logoR = Math.max(18, H * 0.06);
-      drawOrgLogo(ctx, orgLogo, marginX + logoR, barH + marginX * 0.6 + logoR, logoR * 2, "#ffffff");
-
-      const zoneW = cx - marginX * 2;
-      const regionTop = barH + marginX * 0.4 + logoR * 2.2;
+      const zoneW = W - marginX * 2;
+      const regionTop = H * 0.56;
       const L = layoutTitle(ctx, regionTop, H - regionTop, t.titlu, t.subtitlu, {
         titleFamily: "Sora", titleWeight: 800, titleMax: Math.min(46, H * 0.13), titleMin: 20,
         subFamily: "Manrope", subWeight: 500, subMax: Math.min(22, H * 0.06), subMin: 13,
-        maxWidth: zoneW, reserveBelow: 100 * (H / 1080), marginY: H * 0.025,
+        maxWidth: zoneW, reserveBelow: 100 * (H / 1080), marginY: H * 0.02,
       });
 
       ctx.fillStyle = "#ffffff";
@@ -526,7 +583,7 @@ const TEMPLATES: Template[] = [
       ctx.fillText(t.titlu.toUpperCase(), marginX, L.titleBaseline);
 
       if (t.subtitlu) {
-        ctx.fillStyle = "#C9C2BE";
+        ctx.fillStyle = "#D9CFC9";
         ctx.font = `500 ${L.subtitleSize}px "Manrope"`;
         ctx.fillText(t.subtitlu, marginX, L.subtitleBaseline);
       }
@@ -534,136 +591,139 @@ const TEMPLATES: Template[] = [
       const scale = clamp(zoneW / 460, 0.5, 1.2);
       drawCtaBlock(ctx, marginX, L.ctaTop, t, {
         badgeTopBg: primary, badgeTopFg: "#ffffff", badgeBottomBg: "#ffffff", badgeBottomFg: "#121010",
-        pillBg: primary, pillFg: "#ffffff", linkColor: "#8A8078",
+        pillBg: primary, pillFg: "#ffffff", linkColor: "#B7ADA6",
       }, scale);
     },
   },
   {
     key: "elegant",
+    // Compoziție diferită: fără împărțire pe verticală — poză mică, medalion
+    // circular centrat sus; totul (titlu, CTA) centrat, ca o invitație/certificat.
     draw(ctx, W, H, t, photo, adjust, orgLogo, brand) {
-      const marginX = W * 0.055;
-      const cx = W * 0.6;
-
+      const midX = W / 2;
       const accent = brand?.accent ?? "#C9A94E";
       const accentDark = brand?.dark ?? "#B08B2E";
 
       ctx.fillStyle = "#F7F3EC";
       ctx.fillRect(0, 0, W, H);
 
-      if (photo) drawCoverImagePZ(ctx, photo, cx, 0, W - cx, H, adjust);
-      else drawPhotoPlaceholder(ctx, cx, 0, W - cx, H, "#EFE2C6", accentDark);
+      const medR = Math.min(W, H) * 0.155;
+      const medCy = H * 0.09 + medR;
+      drawCircularPhoto(ctx, photo, adjust, midX, medCy, medR, accent, "#EFE2C6", accentDark);
 
-      ctx.strokeStyle = accent;
-      ctx.lineWidth = Math.max(2, W * 0.003);
-      ctx.beginPath();
-      ctx.moveTo(cx, 0);
-      ctx.lineTo(cx, H);
-      ctx.stroke();
+      const logoSize = Math.max(20, H * 0.05);
+      drawOrgLogo(ctx, orgLogo, logoSize / 2 + W * 0.03, logoSize / 2 + W * 0.03, logoSize, accentDark);
 
-      const eyebrowH = Math.max(30, H * 0.075);
-      const logoSize = eyebrowH * 0.82;
-      drawOrgLogo(ctx, orgLogo, marginX + logoSize / 2, eyebrowH / 2, logoSize, accentDark);
+      const eyebrowY = medCy + medR + Math.max(20, H * 0.045);
+      ctx.textAlign = "center";
       ctx.fillStyle = accentDark;
-      ctx.font = `700 ${Math.max(10, H * 0.026)}px "Manrope"`;
-      ctx.fillText("S A L V E A Z Ă   O   I N I M Ă", marginX + logoSize + 10, eyebrowH * 0.58);
+      ctx.font = `700 ${Math.max(10, H * 0.024)}px "Manrope"`;
+      ctx.fillText("S A L V E A Z Ă   O   I N I M Ă", midX, eyebrowY);
 
-      const zoneW = cx - marginX * 2;
-      const L = layoutTitle(ctx, eyebrowH, H - eyebrowH, t.titlu, t.subtitlu, {
-        titleFamily: "Georgia", titleWeight: 700, titleMax: Math.min(48, H * 0.14), titleMin: 20,
-        subFamily: "Manrope", subWeight: 500, subMax: Math.min(22, H * 0.06), subMin: 13,
-        maxWidth: zoneW, reserveBelow: 100 * (H / 1080), marginY: H * 0.03,
+      const zoneW = W * 0.78;
+      const regionTop = eyebrowY + H * 0.02;
+      const L = layoutTitle(ctx, regionTop, H - regionTop, t.titlu, t.subtitlu, {
+        titleFamily: "Georgia", titleWeight: 700, titleMax: Math.min(46, H * 0.13), titleMin: 20,
+        subFamily: "Manrope", subWeight: 500, subMax: Math.min(20, H * 0.055), subMin: 13,
+        maxWidth: zoneW, reserveBelow: 100 * (H / 1080), marginY: H * 0.02,
       });
 
       ctx.fillStyle = "#241C18";
       ctx.font = `700 ${L.titleSize}px "Georgia"`;
-      ctx.fillText(t.titlu, marginX, L.titleBaseline);
+      ctx.fillText(t.titlu, midX, L.titleBaseline);
+
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = Math.max(2, H * 0.004);
+      ctx.beginPath();
+      ctx.moveTo(midX - 30, L.titleBaseline + L.titleSize * 0.32);
+      ctx.lineTo(midX + 30, L.titleBaseline + L.titleSize * 0.32);
+      ctx.stroke();
 
       if (t.subtitlu) {
         ctx.fillStyle = "#5A4F3C";
         ctx.font = `500 ${L.subtitleSize}px "Manrope"`;
-        ctx.fillText(t.subtitlu, marginX, L.subtitleBaseline);
+        ctx.fillText(t.subtitlu, midX, L.subtitleBaseline);
       }
+      ctx.textAlign = "left";
 
       const scale = clamp(zoneW / 460, 0.5, 1.15);
-      drawCtaBlock(ctx, marginX, L.ctaTop, t, {
+      drawCtaBlock(ctx, midX, L.ctaTop, t, {
         badgeTopBg: "#241C18", badgeTopFg: "#F1E6CE", badgeBottomBg: "#ffffff", badgeBottomFg: "#241C18",
         pillBg: accent, pillFg: "#241C18", linkColor: "#8A7B5E",
-      }, scale);
+      }, scale, true);
     },
   },
   {
     key: "noapte",
+    // Compoziție diferită: poză pe tot fundalul, întunecată, text centrat —
+    // ca un afiș de film, nu împărțire în două zone.
     draw(ctx, W, H, t, photo, adjust, orgLogo, brand) {
-      const marginX = W * 0.055;
-      const cx = W * 0.52;
-      const amp = W * 0.028;
-
+      const midX = W / 2;
       const accent = brand?.accent ?? "#4A9FD8";
       const accentRgb = hexToRgb(accent) ?? { r: 74, g: 159, b: 216 };
       const accentRgbStr = `${accentRgb.r},${accentRgb.g},${accentRgb.b}`;
 
-      ctx.fillStyle = "#050B14";
-      ctx.fillRect(0, 0, cx + amp + 2, H);
-      const glow = ctx.createRadialGradient(cx * 0.5, H * 0.4, 20, cx * 0.5, H * 0.4, Math.max(W, H) * 0.45);
-      glow.addColorStop(0, `rgba(${accentRgbStr},0.3)`);
-      glow.addColorStop(1, "rgba(5,11,20,0)");
-      ctx.fillStyle = glow;
-      ctx.fillRect(0, 0, cx + amp + 2, H);
+      if (photo) drawCoverImagePZ(ctx, photo, 0, 0, W, H, adjust);
+      else drawPhotoPlaceholder(ctx, 0, 0, W, H, "#0F2038", accent);
 
-      ctx.save();
-      rightWaveClip(ctx, W, H, cx, amp);
-      ctx.clip();
-      if (photo) drawCoverImagePZ(ctx, photo, cx - amp, 0, W - (cx - amp), H, adjust);
-      else drawPhotoPlaceholder(ctx, cx - amp, 0, W - (cx - amp), H, "#0F2038", accent);
-      ctx.restore();
+      ctx.fillStyle = "rgba(4,8,16,0.72)";
+      ctx.fillRect(0, 0, W, H);
+      const glow = ctx.createRadialGradient(midX, H * 0.42, 10, midX, H * 0.42, Math.max(W, H) * 0.55);
+      glow.addColorStop(0, `rgba(${accentRgbStr},0.28)`);
+      glow.addColorStop(1, "rgba(4,8,16,0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, 0, W, H);
 
       const starsFrac: Array<[number, number]> = [
-        [0.07, 0.10], [0.13, 0.22], [0.4, 0.13], [0.3, 0.35], [0.06, 0.55], [0.15, 0.75], [0.42, 0.85],
+        [0.07, 0.08], [0.13, 0.18], [0.9, 0.1], [0.85, 0.22], [0.06, 0.5], [0.93, 0.5], [0.15, 0.9], [0.88, 0.88],
       ];
-      ctx.fillStyle = "rgba(255,255,255,0.7)";
+      ctx.fillStyle = "rgba(255,255,255,0.75)";
       starsFrac.forEach(([fx, fy]) => {
         ctx.beginPath();
-        ctx.arc(fx * cx, fy * H, Math.max(1.2, W * 0.0015), 0, Math.PI * 2);
+        ctx.arc(fx * W, fy * H, Math.max(1.2, W * 0.0015), 0, Math.PI * 2);
         ctx.fill();
       });
 
-      const logoR = Math.max(20, H * 0.07);
-      drawOrgLogo(ctx, orgLogo, marginX + logoR, marginX * 0.9 + logoR, logoR * 2, "#DCEEFA");
+      const logoSize = Math.max(20, H * 0.05);
+      drawOrgLogo(ctx, orgLogo, logoSize / 2 + W * 0.03, logoSize / 2 + W * 0.03, logoSize, "#DCEEFA");
 
-      const zoneW = cx - amp - marginX * 2;
-      const regionTop = marginX + logoR * 2.2;
-      const L = layoutTitle(ctx, regionTop, H - regionTop, t.titlu, t.subtitlu, {
-        titleFamily: "Sora", titleWeight: 800, titleMax: Math.min(50, H * 0.14), titleMin: 22,
-        subFamily: "Manrope", subWeight: 500, subMax: Math.min(22, H * 0.065), subMin: 14,
-        maxWidth: zoneW, reserveBelow: 100 * (H / 1080), marginY: H * 0.03,
+      const zoneW = W * 0.8;
+      const L = layoutTitle(ctx, 0, H, t.titlu, t.subtitlu, {
+        titleFamily: "Sora", titleWeight: 800, titleMax: Math.min(52, H * 0.15), titleMin: 22,
+        subFamily: "Manrope", subWeight: 500, subMax: Math.min(22, H * 0.06), subMin: 14,
+        maxWidth: zoneW, reserveBelow: 100 * (H / 1080), marginY: H * 0.05,
       });
 
+      ctx.textAlign = "center";
       ctx.fillStyle = "#ffffff";
-      ctx.shadowColor = `rgba(${accentRgbStr},0.6)`;
-      ctx.shadowBlur = Math.max(8, H * 0.035);
+      ctx.shadowColor = `rgba(${accentRgbStr},0.7)`;
+      ctx.shadowBlur = Math.max(10, H * 0.04);
       ctx.font = `800 ${L.titleSize}px "Sora"`;
-      ctx.fillText(t.titlu.toUpperCase(), marginX, L.titleBaseline);
+      ctx.fillText(t.titlu.toUpperCase(), midX, L.titleBaseline);
       ctx.shadowBlur = 0;
 
       if (t.subtitlu) {
-        ctx.fillStyle = "#9FC2DC";
+        ctx.fillStyle = "#C7DCEE";
         ctx.font = `500 ${L.subtitleSize}px "Manrope"`;
-        ctx.fillText(t.subtitlu, marginX, L.subtitleBaseline);
+        ctx.fillText(t.subtitlu, midX, L.subtitleBaseline);
       }
+      ctx.textAlign = "left";
 
       const scale = clamp(zoneW / 460, 0.5, 1.2);
-      drawCtaBlock(ctx, marginX, L.ctaTop, t, {
+      drawCtaBlock(ctx, midX, L.ctaTop, t, {
         badgeTopBg: accent, badgeTopFg: "#04101C", badgeBottomBg: "#DCEEFA", badgeBottomFg: "#0A1628",
-        pillBg: accent, pillFg: "#04101C", linkColor: "#6E8BA6",
-      }, scale);
+        pillBg: accent, pillFg: "#04101C", linkColor: "#9DB6CB",
+      }, scale, true);
     },
   },
   {
     key: "poveste",
+    // Compoziție diferită: împărțire ORIZONTALĂ — poza sus, text+CTA jos pe
+    // culoare — nu stânga-dreapta ca celelalte.
     draw(ctx, W, H, t, photo, adjust, orgLogo, brand) {
-      const marginX = W * 0.055;
-      const cx = W * 0.5;
-      const amp = W * 0.045;
+      const marginX = W * 0.06;
+      const cy = H * 0.56;
+      const amp = H * 0.035;
 
       const primary = brand?.primary ?? "#F4977A";
       const light = brand?.light ?? "#FCC98A";
@@ -673,30 +733,30 @@ const TEMPLATES: Template[] = [
       grad.addColorStop(0, primary);
       grad.addColorStop(1, light);
       ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, cx + amp + 2, H);
+      ctx.fillRect(0, 0, W, H);
 
       ctx.save();
-      rightWaveClip(ctx, W, H, cx, amp);
+      topWaveClip(ctx, W, cy, amp);
       ctx.clip();
-      if (photo) drawCoverImagePZ(ctx, photo, cx - amp, 0, W - (cx - amp), H, adjust);
-      else drawPhotoPlaceholder(ctx, cx - amp, 0, W - (cx - amp), H, brand?.lighter ?? "#FCE3D3", dark);
+      if (photo) drawCoverImagePZ(ctx, photo, 0, 0, W, cy + amp, adjust);
+      else drawPhotoPlaceholder(ctx, 0, 0, W, cy + amp, brand?.lighter ?? "#FCE3D3", dark);
       ctx.restore();
 
       ctx.save();
-      leftWaveClip(ctx, W, H, cx, amp);
+      bottomWaveClip(ctx, W, H, cy, amp);
       ctx.clip();
-      drawHeartAccents(ctx, 0, 0, cx + amp, H, "#ffffff", 0.16, 3);
+      drawHeartAccents(ctx, 0, cy - amp, W, H - (cy - amp), "#ffffff", 0.16, 3);
       ctx.restore();
 
-      const logoR = Math.max(20, H * 0.075);
-      drawOrgLogo(ctx, orgLogo, marginX + logoR, marginX * 0.9 + logoR, logoR * 2, "#ffffff");
+      const logoSize = Math.max(20, H * 0.06);
+      drawOrgLogo(ctx, orgLogo, marginX + logoSize / 2, marginX * 0.7 + logoSize / 2, logoSize, dark);
 
-      const zoneW = cx - amp - marginX * 2;
-      const regionTop = marginX + logoR * 2.2;
+      const zoneW = W - marginX * 2;
+      const regionTop = cy + amp + H * 0.02;
       const L = layoutTitle(ctx, regionTop, H - regionTop, t.titlu, t.subtitlu, {
-        titleFamily: "Sora", titleWeight: 800, titleMax: Math.min(50, H * 0.14), titleMin: 22,
-        subFamily: "Manrope", subWeight: 500, subMax: Math.min(22, H * 0.065), subMin: 14,
-        maxWidth: zoneW, reserveBelow: 100 * (H / 1080), marginY: H * 0.03,
+        titleFamily: "Sora", titleWeight: 800, titleMax: Math.min(48, H * 0.13), titleMin: 20,
+        subFamily: "Manrope", subWeight: 500, subMax: Math.min(20, H * 0.055), subMin: 13,
+        maxWidth: zoneW, reserveBelow: 90 * (H / 1080), marginY: H * 0.015,
       });
 
       ctx.fillStyle = "#ffffff";
@@ -1118,45 +1178,38 @@ export default function BannereSmsPage() {
         </Card>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {FORMATS.map((format) => {
-            const maxBoxW = 440, maxBoxH = 460;
-            const scale = Math.min(maxBoxW / format.w, maxBoxH / format.h, 1);
-            const dispW = Math.round(format.w * scale);
-            return (
-              <Card key={format.key} className="space-y-2 overflow-hidden">
-                <div className="flex items-center justify-between">
-                  <span className="text-[12px] font-medium text-[var(--ci-text)]">
-                    {dict.formate[format.key as keyof typeof dict.formate]}
-                    <span className="ml-1.5 font-normal text-[var(--ci-text-faint)]">{format.w}×{format.h}</span>
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const canvas = canvasRefs.current.get(format.key);
-                      if (canvas) downloadCanvasPng(canvas, `banner-${templateKey}-${format.key}.png`);
-                    }}
-                    className="inline-flex items-center gap-1 rounded-full border border-[var(--ci-border)] bg-[var(--ci-surface)] px-2.5 py-1 text-[11.5px] font-semibold text-[var(--ci-primary)] hover:bg-[var(--ci-surface-2)]"
-                  >
-                    <Download className="h-3 w-3" /> JPG
-                  </button>
-                </div>
-                <div className="flex items-center justify-center">
-                  <div
-                    className="overflow-hidden rounded-lg shadow-[var(--ci-shadow-md)]"
-                    style={{ width: dispW, maxWidth: "100%", aspectRatio: `${format.w} / ${format.h}` }}
-                  >
-                    <canvas
-                      ref={(el) => {
-                        if (el) canvasRefs.current.set(format.key, el);
-                        else canvasRefs.current.delete(format.key);
-                      }}
-                      className="block h-full w-full"
-                    />
-                  </div>
-                </div>
-              </Card>
-            );
-          })}
+          {FORMATS.map((format) => (
+            <Card key={format.key} className="space-y-2 overflow-hidden">
+              <div className="flex items-center justify-between">
+                <span className="text-[12px] font-medium text-[var(--ci-text)]">
+                  {dict.formate[format.key as keyof typeof dict.formate]}
+                  <span className="ml-1.5 font-normal text-[var(--ci-text-faint)]">{format.w}×{format.h}</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const canvas = canvasRefs.current.get(format.key);
+                    if (canvas) downloadCanvasPng(canvas, `banner-${templateKey}-${format.key}.png`);
+                  }}
+                  className="inline-flex items-center gap-1 rounded-full border border-[var(--ci-border)] bg-[var(--ci-surface)] px-2.5 py-1 text-[11.5px] font-semibold text-[var(--ci-primary)] hover:bg-[var(--ci-surface-2)]"
+                >
+                  <Download className="h-3 w-3" /> JPG
+                </button>
+              </div>
+              <div
+                className="w-full overflow-hidden rounded-lg shadow-[var(--ci-shadow-md)]"
+                style={{ aspectRatio: `${format.w} / ${format.h}`, maxHeight: "70vh" }}
+              >
+                <canvas
+                  ref={(el) => {
+                    if (el) canvasRefs.current.set(format.key, el);
+                    else canvasRefs.current.delete(format.key);
+                  }}
+                  className="block h-full w-full"
+                />
+              </div>
+            </Card>
+          ))}
         </div>
       </div>
     </div>
