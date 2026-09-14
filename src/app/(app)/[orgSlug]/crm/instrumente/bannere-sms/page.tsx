@@ -20,10 +20,17 @@ type Format = { key: string; w: number; h: number };
 const FORMATS: Format[] = [
   { key: "sms", w: 1080, h: 400 },
   { key: "instaPost", w: 1080, h: 1080 },
+  { key: "instaPortrait", w: 1080, h: 1350 },
   { key: "instaStory", w: 1080, h: 1920 },
   { key: "facebook", w: 1200, h: 630 },
+  { key: "facebookCover", w: 820, h: 312 },
   { key: "twitter", w: 1200, h: 675 },
+  { key: "twitterHeader", w: 1500, h: 500 },
   { key: "linkedin", w: 1200, h: 627 },
+  { key: "linkedinCover", w: 1584, h: 396 },
+  { key: "youtube", w: 1280, h: 720 },
+  { key: "tiktok", w: 1080, h: 1920 },
+  { key: "pinterest", w: 1000, h: 1500 },
 ];
 
 function clamp(v: number, min: number, max: number) {
@@ -1118,7 +1125,10 @@ export default function BannereSmsPage() {
             return (
               <Card key={format.key} className="space-y-2 overflow-hidden">
                 <div className="flex items-center justify-between">
-                  <span className="text-[12px] font-medium text-[var(--ci-text-muted)]">{format.w}×{format.h}</span>
+                  <span className="text-[12px] font-medium text-[var(--ci-text)]">
+                    {dict.formate[format.key as keyof typeof dict.formate]}
+                    <span className="ml-1.5 font-normal text-[var(--ci-text-faint)]">{format.w}×{format.h}</span>
+                  </span>
                   <button
                     type="button"
                     onClick={() => {
