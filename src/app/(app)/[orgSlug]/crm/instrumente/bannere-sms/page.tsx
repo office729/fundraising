@@ -893,7 +893,7 @@ export default function BannereSmsPage() {
             const dispW = Math.round(format.w * scale);
             const dispH = Math.round(format.h * scale);
             return (
-              <Card key={format.key} className="space-y-2">
+              <Card key={format.key} className="space-y-2 overflow-hidden">
                 <div className="flex items-center justify-between">
                   <span className="text-[12px] font-medium text-[var(--ci-text-muted)]">{format.w}×{format.h}</span>
                   <button
@@ -908,14 +908,18 @@ export default function BannereSmsPage() {
                   </button>
                 </div>
                 <div className="flex items-center justify-center">
-                  <canvas
-                    ref={(el) => {
-                      if (el) canvasRefs.current.set(format.key, el);
-                      else canvasRefs.current.delete(format.key);
-                    }}
-                    className="rounded-lg shadow-[var(--ci-shadow-md)]"
-                    style={{ width: dispW, height: dispH }}
-                  />
+                  <div
+                    className="overflow-hidden rounded-lg shadow-[var(--ci-shadow-md)]"
+                    style={{ width: dispW, height: dispH, maxWidth: "100%" }}
+                  >
+                    <canvas
+                      ref={(el) => {
+                        if (el) canvasRefs.current.set(format.key, el);
+                        else canvasRefs.current.delete(format.key);
+                      }}
+                      className="block h-full w-full"
+                    />
+                  </div>
                 </div>
               </Card>
             );
