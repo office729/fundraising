@@ -891,7 +891,6 @@ export default function BannereSmsPage() {
             const maxBoxW = 440, maxBoxH = 460;
             const scale = Math.min(maxBoxW / format.w, maxBoxH / format.h, 1);
             const dispW = Math.round(format.w * scale);
-            const dispH = Math.round(format.h * scale);
             return (
               <Card key={format.key} className="space-y-2 overflow-hidden">
                 <div className="flex items-center justify-between">
@@ -910,7 +909,7 @@ export default function BannereSmsPage() {
                 <div className="flex items-center justify-center">
                   <div
                     className="overflow-hidden rounded-lg shadow-[var(--ci-shadow-md)]"
-                    style={{ width: dispW, height: dispH, maxWidth: "100%" }}
+                    style={{ width: dispW, maxWidth: "100%", aspectRatio: `${format.w} / ${format.h}` }}
                   >
                     <canvas
                       ref={(el) => {
