@@ -115,8 +115,9 @@ export const HUB_DICT = {
     ],
     optiuniTitlu: "Opțiuni suplimentare",
     optiuni: [
-      { textBefore: "Utilizator suplimentar", pret: "29 lei/lună", textAfter: "" },
-      { textBefore: "10.000 contacte PF suplimentare", pret: "25 lei/lună", textAfter: "" },
+      { textBefore: "Utilizator suplimentar", pret: "15 lei/lună", textAfter: "" },
+      { textBefore: "1.000 contacte PF suplimentare", pret: "8 lei/lună", textAfter: "" },
+      { textBefore: "500 companii PJ suplimentare", pret: "5 lei/lună", textAfter: "" },
       { textBefore: "Migrare asistată a bazei de date", pret: "490 lei", textAfter: ", o singură dată" },
       { textBefore: "Configurare și instruire personalizată", pret: "590 lei", textAfter: "" },
       { textBefore: "Probă gratuită", pret: "14 zile", textAfter: ", fără card" },
@@ -252,8 +253,9 @@ export const HUB_DICT = {
     ],
     optiuniTitlu: "Additional options",
     optiuni: [
-      { textBefore: "Extra user", pret: "29 lei/month", textAfter: "" },
-      { textBefore: "10,000 extra individual contacts", pret: "25 lei/month", textAfter: "" },
+      { textBefore: "Extra user", pret: "15 lei/month", textAfter: "" },
+      { textBefore: "1,000 extra individual contacts", pret: "8 lei/month", textAfter: "" },
+      { textBefore: "500 extra companies", pret: "5 lei/month", textAfter: "" },
       { textBefore: "Assisted database migration", pret: "490 lei", textAfter: ", one-time" },
       { textBefore: "Custom setup and training", pret: "590 lei", textAfter: "" },
       { textBefore: "Free trial", pret: "14 days", textAfter: ", no card" },
