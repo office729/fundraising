@@ -51,11 +51,13 @@ import { cn } from "./lib/cn";
 import { formatDataRelativa } from "./lib/format";
 import {
   getNotificariVazute,
+  getSidebarRestrans,
   getTaskStatusOverride,
   getTaskTermenOverride,
   getTaskuriGlobale,
   getTaskuriSterse,
   marcheazaNotificariVazute,
+  setSidebarRestrans,
   useLocalStoreValue,
 } from "./lib/local-store";
 import { useDonatori } from "./lib/use-data";
@@ -127,7 +129,7 @@ export function CrmShell({
   locale: Locale;
   children: ReactNode;
 }) {
-  const [collapsed, setCollapsed] = useState(false);
+  const collapsed = useLocalStoreValue(getSidebarRestrans, false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -167,11 +169,11 @@ export function CrmShell({
         style={mobileOpen ? { transform: "translateX(0)" } : undefined}
         className={cn(
           "ci-sidebar fixed inset-y-0 left-0 z-50 w-64 border-r border-[var(--ci-border)] bg-[var(--ci-surface)] duration-200 md:static md:z-auto md:shrink-0 md:transition-[width]",
-          collapsed ? "md:w-16" : "md:w-60",
+          collapsed ? "md:w-16" : "md:w-52",
         )}
       >
-        <div className="flex h-full flex-col py-4">
-          <div className={cn("mb-4 flex items-center justify-between gap-2 px-3", collapsed && "md:justify-center md:px-0")}>
+        <div className="flex h-full flex-col py-3">
+          <div className={cn("mb-3 flex items-center justify-between gap-2 px-3", collapsed && "md:justify-center md:px-0")}>
             <div className="flex min-w-0 items-center gap-2">
               {orgLogoUrl && (
                 <Image
@@ -201,16 +203,21 @@ export function CrmShell({
               <X className="h-4 w-4" />
             </button>
           </div>
-          <nav className="ci-scrollbar flex-1 space-y-4 overflow-y-auto px-2">
+          <nav className="ci-scrollbar flex-1 space-y-3 overflow-y-auto px-2">
             <Suspense fallback={<NavGroups pathname={pathname} base={base} collapsed={collapsed} query="" dict={dict} onNavigate={() => setMobileOpen(false)} />}>
               <NavGroupsWithQuery pathname={pathname} base={base} collapsed={collapsed} dict={dict} onNavigate={() => setMobileOpen(false)} />
             </Suspense>
           </nav>
           <button
-            onClick={() => setCollapsed((v) => !v)}
-            className="mx-2 mt-2 hidden items-center justify-center gap-2 rounded-lg px-2.5 py-2 text-[13px] font-medium text-[var(--ci-text-muted)] transition-colors hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)] md:flex"
+            onClick={() => setSidebarRestrans(!collapsed)}
+            title={collapsed ? dict.sidebar.extinde : dict.sidebar.restrange}
+            className={cn(
+              "mx-2 mt-2 hidden items-center gap-2 rounded-lg px-2.5 py-2 text-[13px] font-medium text-[var(--ci-text-muted)] transition-colors hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)] md:flex",
+              collapsed ? "justify-center" : "justify-start",
+            )}
           >
-            {collapsed ? <ChevronsRight className="h-4 w-4" /> : <ChevronsLeft className="h-4 w-4" />}
+            {collapsed ? <ChevronsRight className="h-4 w-4 shrink-0" /> : <ChevronsLeft className="h-4 w-4 shrink-0" />}
+            {!collapsed && <span className="truncate">{dict.sidebar.restrange}</span>}
           </button>
         </div>
       </aside>
@@ -325,7 +332,7 @@ function NavGroups({
           {group.section && (
             <p
               className={cn(
-                "px-2.5 pb-1.5 text-[11px] font-semibold tracking-wide text-[var(--ci-text-faint)] uppercase",
+                "px-2.5 pb-1 text-[11px] font-semibold tracking-wide text-[var(--ci-text-faint)] uppercase",
                 collapsed && "md:hidden",
               )}
             >
@@ -345,7 +352,7 @@ function NavGroups({
                   onClick={onNavigate}
                   title={collapsed ? item.label : undefined}
                   className={cn(
-                    "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium transition-colors",
+                    "flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition-colors",
                     collapsed && "md:justify-center md:px-0",
                     active
                       ? "bg-[var(--ci-primary-soft)] text-[var(--ci-primary)]"

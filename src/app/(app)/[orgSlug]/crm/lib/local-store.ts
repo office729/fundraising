@@ -758,6 +758,18 @@ export function stergeDocumentLocal(id: string) {
   writeAll(DOCUMENTE_KEY, getDocumenteLocale().filter((d) => d.id !== id));
 }
 
+// ===== Meniul lateral restrâns/extins — preferință per dispozitiv, nu per
+// utilizator sau organizație, deci rămâne local, ca restul prototipului.
+
+const SIDEBAR_RESTRANS_KEY = "ci-sidebar-restrans";
+
+export function getSidebarRestrans(): boolean {
+  return readAll<boolean>(SIDEBAR_RESTRANS_KEY, false);
+}
+export function setSidebarRestrans(value: boolean) {
+  writeAll(SIDEBAR_RESTRANS_KEY, value);
+}
+
 // ===== Notificări văzute (clopoțel) — task-urile întârziate rămân întârziate
 // oricât, dar odată ce ai deschis panoul cu ele nu mai are rost să tragă
 // atenția la loc; punctul roșu revine doar când apare un task NOU întârziat.

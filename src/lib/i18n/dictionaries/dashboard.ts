@@ -30,6 +30,10 @@ export const DASHBOARD_DICT = {
       instrumente: "Instrumente",
       setari: "Setări",
     },
+    sidebar: {
+      restrange: "Restrânge meniul",
+      extinde: "Extinde meniul",
+    },
     header: {
       searchPersoane: "Caută persoane fizice…",
       add: "Adaugă",
@@ -75,6 +79,10 @@ export const DASHBOARD_DICT = {
       rapoarte: "Reports",
       instrumente: "Tools",
       setari: "Settings",
+    },
+    sidebar: {
+      restrange: "Collapse menu",
+      extinde: "Expand menu",
     },
     header: {
       searchPersoane: "Search individuals…",
