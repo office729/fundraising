@@ -77,8 +77,9 @@
   #galleryView .ghead { text-align:center; margin-bottom:8px; }
   #galleryView .ghead h1 { margin:0; font-size:24px; font-family:Georgia,serif; color:#1F1B17; }
   #galleryView .ghead p { margin:8px 0 0; font-size:13.5px; color:#7A736A; }
-  #galleryView h2.gsec { font-size:12px; text-transform:uppercase; letter-spacing:.8px; color:#C41D33; margin:32px 0 14px; border-bottom:1px solid #E4DFD7; padding-bottom:8px; }
-  .gGrid { display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 320px)); gap:16px; justify-content:center; }
+  .gGrid { display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; }
+  @media (max-width:900px){ .gGrid { grid-template-columns:repeat(2, 1fr); } }
+  @media (max-width:560px){ .gGrid { grid-template-columns:1fr; } }
   .gCard { display:flex; flex-direction:column; align-items:stretch; text-align:left; cursor:pointer; background:#fff; border:1.5px solid #E4DFD7; border-radius:14px; padding:0; overflow:hidden; transition:transform .15s, box-shadow .15s, border-color .15s; font-family:inherit; }
   .gCard:hover { transform:translateY(-3px); box-shadow:0 10px 24px rgba(31,27,23,.12); border-color:#C41D33; }
   .gCard:focus-visible { outline:2px solid #E0263C; outline-offset:2px; }
@@ -96,11 +97,7 @@
     <p>Alege un template ca punct de plecare — fiecare are o temă proprie. Îl poți personaliza complet după ce-l alegi.</p>
   </div>
 
-  <h2 class="gsec">Tipuri de conținut</h2>
-  <div class="gGrid" id="gGridContinut"></div>
-
-  <h2 class="gsec">Stiluri de design</h2>
-  <div class="gGrid" id="gGridDesign"></div>
+  <div class="gGrid" id="gGrid"></div>
 </div>
 
 <div id="editorView" style="display:none;">
@@ -1521,8 +1518,7 @@ var TPL_META = {
   design_poveste: {icon:'📖', name:'Poveste ilustrată', theme:'Stil de carte pentru copii, jucăuș'},
   design_radiografie: {icon:'🩻', name:'Radiografie', theme:'Monocrom, medical, contrast dramatic'}
 };
-var TPL_ORDER_CONTINUT = ['apel','urgent'];
-var TPL_ORDER_DESIGN = ['design_eveniment_elegant','design_acuarela','design_poveste','design_radiografie'];
+var TPL_ORDER = ['apel','urgent','design_eveniment_elegant','design_acuarela','design_poveste','design_radiografie'];
 function renderGalleryGrid(containerId, order){
   var el = document.getElementById(containerId);
   var html = '';
@@ -1535,8 +1531,7 @@ function renderGalleryGrid(containerId, order){
   });
   el.innerHTML = html;
 }
-renderGalleryGrid('gGridContinut', TPL_ORDER_CONTINUT);
-renderGalleryGrid('gGridDesign', TPL_ORDER_DESIGN);
+renderGalleryGrid('gGrid', TPL_ORDER);
 
 /* Randează o previzualizare REALĂ (nu iconițe) în fiecare card — reface
    HTML-ul exact ca la generarea finală (build()), doar cu TEMPLATE
