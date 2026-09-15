@@ -9,7 +9,24 @@ import { CustomPlanCalculator } from "./custom-plan-calculator";
 
 type Plan = (typeof HUB_DICT)["ro"]["abonamente"][number];
 
-function PricingCard({ plan, perLuna, popularBadge }: { plan: Plan; perLuna: string; popularBadge: string }) {
+// Ordinea din dict.abonamente e mereu START, CREȘTERE, IMPACT (ro ȘI en —
+// numele pachetelor rămân neschimbate, doar restul textelor se traduc) —
+// vezi lib/i18n/dictionaries/hub.ts. planKey duce alegerea către /signup,
+// ca actions.ts s-o înregistreze direct pe organizația nou creată (vezi
+// signupAction) — fără asta, alegerea de pe hub se pierde la signup.
+const PLAN_KEYS = ["start", "crestere", "impact"] as const;
+
+function PricingCard({
+  plan,
+  planKey,
+  perLuna,
+  popularBadge,
+}: {
+  plan: Plan;
+  planKey: (typeof PLAN_KEYS)[number];
+  perLuna: string;
+  popularBadge: string;
+}) {
   return (
     <div
       className={`relative flex flex-col gap-3.5 rounded-2xl border bg-panel p-7 ${
@@ -37,7 +54,7 @@ function PricingCard({ plan, perLuna, popularBadge }: { plan: Plan; perLuna: str
         ))}
       </div>
       <Link
-        href="/signup"
+        href={`/signup?plan=${planKey}`}
         className={`rounded-md py-3 text-center font-bold transition ${
           plan.popular
             ? "bg-brand-green text-white hover:bg-brand-green-hover"
@@ -98,8 +115,14 @@ export default async function HubPage() {
         </div>
 
         <div className="mx-auto mb-11 grid max-w-[1200px] grid-cols-1 items-stretch gap-[22px] md:grid-cols-3">
-          {dict.abonamente.map((plan) => (
-            <PricingCard key={plan.nume} plan={plan} perLuna={dict.perLuna} popularBadge={dict.popularBadge} />
+          {dict.abonamente.map((plan, i) => (
+            <PricingCard
+              key={plan.nume}
+              plan={plan}
+              planKey={PLAN_KEYS[i]}
+              perLuna={dict.perLuna}
+              popularBadge={dict.popularBadge}
+            />
           ))}
         </div>
 

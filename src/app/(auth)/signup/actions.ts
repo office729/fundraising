@@ -6,6 +6,8 @@ import { eq, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 
 import { ensureAppUser } from "@/lib/auth/dal";
+import { calculateCustomPlanPrice, normalizeCustomPlanConfig, type CustomPlanConfigSaved } from "@/lib/billing/custom-plan";
+import type { OrgPackage } from "@/lib/billing/packages";
 import { db } from "@/lib/db";
 import { memberships, organizations } from "@/lib/db/schema";
 import { formular230Beneficiari } from "@/lib/db/schema/formular230";
@@ -14,6 +16,37 @@ import { esteSlugRezervat } from "@/lib/reserved-slugs";
 import { genereazaCodScurt } from "@/lib/short-code";
 import { slugify } from "@/lib/slugify";
 import { createClient } from "@/lib/supabase/server";
+
+// Planul ales pe pagina publică de prețuri (/hub), transportat spre signup ca
+// query params — vezi hub/page.tsx și hub/custom-plan-calculator.tsx. Fără
+// asta, alegerea se pierdea la click pe CTA (organizația nouă pornea mereu pe
+// "trial", indiferent ce alesese userul pe /hub). Recalculăm totul aici,
+// server-side, exact ca în chooseCustomPlanAction/choosePackageAction din
+// [orgSlug]/billing-actions.ts — nu avem încredere în prețul sau configurația
+// primite din URL/formular.
+function citestePlanulAlesDinFormular(
+  formData: FormData,
+): { package: Exclude<OrgPackage, "trial">; subscriptionStatus: "incomplete"; customPlanConfig: CustomPlanConfigSaved | null } | null {
+  const plan = String(formData.get("plan") ?? "");
+  if (plan === "start" || plan === "crestere" || plan === "impact") {
+    return { package: plan, subscriptionStatus: "incomplete", customPlanConfig: null };
+  }
+  if (plan === "custom") {
+    const config = normalizeCustomPlanConfig({
+      utilizatori: Number(formData.get("utilizatori")),
+      contactePf: Number(formData.get("contactePf")),
+      companiiPj: Number(formData.get("companiiPj")),
+      generariLunare: Number(formData.get("generariLunare")),
+      tools: String(formData.get("tools") ?? "")
+        .split(",")
+        .filter(Boolean),
+      accesDesignToate: formData.get("accesDesignToate") === "1",
+    });
+    const pretLunar = calculateCustomPlanPrice(config);
+    return { package: "custom", subscriptionStatus: "incomplete", customPlanConfig: { ...config, pretLunar } };
+  }
+  return null;
+}
 
 export async function signupAction(
   _prevState: { error: string | null },
@@ -64,6 +97,7 @@ export async function signupAction(
   // membership de owner, toate într-o singură tranzacție. Politicile RLS
   // permisive de INSERT pentru acest flux sunt documentate în
   // documentation/rls-setup.sql (secțiunea „bootstrapping”).
+  const planAles = citestePlanulAlesDinFormular(formData);
   const baseSlug = slugify(orgName);
   const orgSlug = await db.transaction(async (tx) => {
     await tx.execute(sql`select set_config('app.current_user_email', ${email}, true)`);
@@ -91,7 +125,12 @@ export async function signupAction(
     // deci am genera un fals "row-level security violation". Id-ul e generat în
     // cod ca să putem insera membership-ul fără să mai citim înapoi organizația.
     const orgId = randomUUID();
-    await tx.insert(organizations).values({ id: orgId, name: orgName, slug });
+    await tx.insert(organizations).values({
+      id: orgId,
+      name: orgName,
+      slug,
+      ...(planAles ?? {}),
+    });
     await tx.insert(memberships).values({ orgId, userId: appUser.id, role: "owner" });
     // Contul implicit de Formular 230 — orice organizație nouă are din start
     // unul, cu slug fix "principal", ca link-ul /f230/<orgSlug> să funcționeze

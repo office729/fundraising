@@ -144,6 +144,24 @@ export function CustomPlanCalculator({
   const breakdown = useMemo(() => calculateCustomPlanBreakdown(normalized), [normalized]);
   const pret = breakdown.reduce((sum, item) => sum + item.amount, 0);
   const comparatie = useMemo(() => compararePachetFix(pret, locale), [pret, locale]);
+
+  // Transportă configurația spre /signup ca query params — signupAction o
+  // înregistrează direct pe organizația nou creată (aceeași normalizare +
+  // recalculare de preț server-side ca la chooseCustomPlanAction). Fără
+  // asta, alegerile de aici s-ar pierde la click pe CTA (era exact gaura
+  // semnalată: pagina publică nu ducea planul mai departe la signup).
+  const signupHref = useMemo(() => {
+    const params = new URLSearchParams({
+      plan: "custom",
+      utilizatori: String(config.utilizatori),
+      contactePf: String(config.contactePf),
+      companiiPj: String(config.companiiPj),
+      generariLunare: String(config.generariLunare),
+      tools: config.tools.join(","),
+      accesDesignToate: config.accesDesignToate ? "1" : "0",
+    });
+    return `/signup?${params.toString()}`;
+  }, [config]);
   const toolLabels = TOOL_LABELS[locale];
   const breakdownLabels = BREAKDOWN_LABELS[locale];
 
@@ -281,7 +299,7 @@ export function CustomPlanCalculator({
             </div>
 
             <Link
-              href="/signup"
+              href={signupHref}
               className="mt-5 block rounded-md bg-brand-green py-3 text-center font-bold text-white transition hover:bg-brand-green-hover"
             >
               {dict.planPersonalizatCta}
