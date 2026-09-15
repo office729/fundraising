@@ -41,6 +41,7 @@ import { DASHBOARD_DICT, type DashboardDict } from "@/lib/i18n/dictionaries/dash
 import type { Locale } from "@/lib/i18n/config";
 
 import { AddDonorDialog } from "./components/add-donor-dialog";
+import { DomeniuProvider } from "./lib/domeniu-context";
 import { LocaleProvider } from "./lib/locale-context";
 import { AddProjectDialog } from "./components/add-project-dialog";
 import { Avatar } from "./components/ui/avatar";
@@ -168,10 +169,19 @@ export function CrmShell({
       <aside
         style={mobileOpen ? { transform: "translateX(0)" } : undefined}
         className={cn(
-          "ci-sidebar fixed inset-y-0 left-0 z-50 w-64 border-r border-[var(--ci-border)] bg-[var(--ci-surface)] duration-200 md:static md:z-auto md:shrink-0 md:transition-[width]",
+          "ci-sidebar fixed inset-y-0 left-0 z-50 w-64 overflow-hidden border-r border-[var(--ci-border)] bg-[var(--ci-surface)] duration-200 md:static md:z-auto md:shrink-0 md:transition-[width]",
           collapsed ? "md:w-16" : "md:w-52",
         )}
       >
+        {/* Motivul domeniului ca filigran discret — singurul loc din sidebar
+            unde identitatea domeniului rămâne vizibilă pe TOATE paginile CRM
+            (sidebar-ul e persistent), nu doar lângă numele organizației. */}
+        {orgDomeniuActivitate && (
+          <DomainMotif
+            motiv={CAMPAIGN_TEMPLATES[orgDomeniuActivitate].motiv}
+            className="pointer-events-none absolute -right-8 -bottom-8 h-40 w-40 text-[var(--ci-primary)] opacity-[0.05]"
+          />
+        )}
         <div className="flex h-full flex-col py-3">
           <div className={cn("mb-3 flex items-center justify-between gap-2 px-3", collapsed && "md:justify-center md:px-0")}>
             <div className="flex min-w-0 items-center gap-2">
@@ -198,7 +208,7 @@ export function CrmShell({
             <button
               aria-label="Închide meniul"
               onClick={() => setMobileOpen(false)}
-              className="rounded-lg p-1.5 text-[var(--ci-text-muted)] hover:bg-[var(--ci-surface-2)] md:hidden"
+              className="rounded-[var(--ci-radius-btn)] p-1.5 text-[var(--ci-text-muted)] hover:bg-[var(--ci-surface-2)] md:hidden"
             >
               <X className="h-4 w-4" />
             </button>
@@ -212,7 +222,7 @@ export function CrmShell({
             onClick={() => setSidebarRestrans(!collapsed)}
             title={collapsed ? dict.sidebar.extinde : dict.sidebar.restrange}
             className={cn(
-              "mx-2 mt-2 hidden items-center gap-2 rounded-lg px-2.5 py-2 text-[13px] font-medium text-[var(--ci-text-muted)] transition-colors hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)] md:flex",
+              "mx-2 mt-2 hidden items-center gap-2 rounded-[var(--ci-radius-btn)] px-2.5 py-2 text-[13px] font-medium text-[var(--ci-text-muted)] transition-colors hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)] md:flex",
               collapsed ? "justify-center" : "justify-start",
             )}
           >
@@ -227,7 +237,7 @@ export function CrmShell({
           <button
             aria-label="Deschide meniul"
             onClick={() => setMobileOpen(true)}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[var(--ci-text-muted)] transition-colors hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)] md:hidden"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--ci-radius-btn)] text-[var(--ci-text-muted)] transition-colors hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)] md:hidden"
           >
             <Menu className="h-4 w-4" />
           </button>
@@ -237,7 +247,7 @@ export function CrmShell({
           {!pathname.startsWith(`${base}/companii`) && (
             <button
               onClick={() => setSearchOpen(true)}
-              className="flex h-9 w-9 shrink-0 items-center gap-2 rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface-2)] px-3 text-[13px] text-[var(--ci-text-faint)] transition-colors hover:border-[var(--ci-border-strong)] sm:w-auto md:w-72"
+              className="flex h-9 w-9 shrink-0 items-center gap-2 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface-2)] px-3 text-[13px] text-[var(--ci-text-faint)] transition-colors hover:border-[var(--ci-border-strong)] sm:w-auto md:w-72"
             >
               <Search className="h-4 w-4 shrink-0" />
               <span className="hidden flex-1 text-left sm:inline">{dict.header.searchPersoane}</span>
@@ -249,7 +259,7 @@ export function CrmShell({
           <div className="flex-1" />
           <button
             onClick={() => setAddOpen(true)}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--ci-primary)] px-3.5 text-sm font-medium text-white transition-colors hover:bg-[var(--ci-primary-hover)]"
+            className="inline-flex h-9 items-center gap-1.5 rounded-[var(--ci-radius-btn)] bg-[var(--ci-primary)] px-3.5 text-sm font-medium text-white transition-colors hover:bg-[var(--ci-primary-hover)]"
           >
             <Plus className="h-4 w-4" />
             {dict.header.add}
@@ -257,7 +267,7 @@ export function CrmShell({
           <NotificationsButton base={base} />
           <button
             aria-label="Ajutor"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-[var(--ci-text-muted)] transition-colors hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)]"
+            className="flex h-9 w-9 items-center justify-center rounded-[var(--ci-radius-btn)] text-[var(--ci-text-muted)] transition-colors hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)]"
           >
             <HelpCircle className="h-4 w-4" />
           </button>
@@ -265,7 +275,9 @@ export function CrmShell({
         </header>
 
         <main className="ci-scrollbar flex-1 overflow-y-auto px-6 py-6">
-          <LocaleProvider locale={locale}>{children}</LocaleProvider>
+          <DomeniuProvider domeniu={orgDomeniuActivitate}>
+            <LocaleProvider locale={locale}>{children}</LocaleProvider>
+          </DomeniuProvider>
         </main>
       </div>
 
@@ -352,7 +364,7 @@ function NavGroups({
                   onClick={onNavigate}
                   title={collapsed ? item.label : undefined}
                   className={cn(
-                    "flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition-colors",
+                    "flex items-center gap-2.5 rounded-[var(--ci-radius-btn)] px-2.5 py-1.5 text-[13px] font-medium transition-colors",
                     collapsed && "md:justify-center md:px-0",
                     active
                       ? "bg-[var(--ci-primary-soft)] text-[var(--ci-primary)]"
@@ -428,7 +440,7 @@ function AddDialog({
                 onClose();
                 o.action();
               }}
-              className="flex w-full items-center gap-3 rounded-lg border border-[var(--ci-border)] px-3.5 py-2.5 text-left text-sm font-medium text-[var(--ci-text)] transition-colors hover:border-[var(--ci-primary)] hover:bg-[var(--ci-primary-soft)]"
+              className="flex w-full items-center gap-3 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-3.5 py-2.5 text-left text-sm font-medium text-[var(--ci-text)] transition-colors hover:border-[var(--ci-primary)] hover:bg-[var(--ci-primary-soft)]"
             >
               <o.icon className="h-4 w-4 text-[var(--ci-text-muted)]" />
               {o.label}
@@ -496,7 +508,7 @@ function NotificationsButton({ base }: { base: string }) {
           if (intarziate.length) marcheazaNotificariVazute(intarziate.map((t) => t.id));
         }}
         className={cn(
-          "relative flex h-9 w-9 items-center justify-center rounded-lg transition-colors",
+          "relative flex h-9 w-9 items-center justify-center rounded-[var(--ci-radius-btn)] transition-colors",
           neVazute.length > 0
             ? "bg-[var(--ci-red)] text-white hover:opacity-90"
             : "text-[var(--ci-text-muted)] hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)]",
@@ -516,7 +528,7 @@ function NotificationsButton({ base }: { base: string }) {
                   key={t.id}
                   href={`${base}/${t.legatDe.tip === "companie" ? "companii" : "donatori"}/${t.legatDe.id}`}
                   onClick={() => setOpen(false)}
-                  className="block rounded-lg px-2 py-1.5 hover:bg-[var(--ci-surface-2)]"
+                  className="block rounded-[var(--ci-radius-btn)] px-2 py-1.5 hover:bg-[var(--ci-surface-2)]"
                 >
                   <p className="truncate text-[12.5px] font-medium text-[var(--ci-text)]">{t.titlu}</p>
                   <p className="truncate text-[11px] text-[var(--ci-text-muted)]">
@@ -531,7 +543,7 @@ function NotificationsButton({ base }: { base: string }) {
           <Link
             href={`${base}/taskuri`}
             onClick={() => setOpen(false)}
-            className="mt-1 block rounded-lg px-2 py-1.5 text-center text-[12px] font-medium text-[var(--ci-primary)] hover:bg-[var(--ci-primary-soft)]"
+            className="mt-1 block rounded-[var(--ci-radius-btn)] px-2 py-1.5 text-center text-[12px] font-medium text-[var(--ci-primary)] hover:bg-[var(--ci-primary-soft)]"
           >
             Vezi toate task-urile
           </Link>
@@ -565,7 +577,7 @@ function SearchDialog({ open, onClose, base }: { open: boolean; onClose: () => v
         value={q}
         onChange={(e) => setQ(e.target.value)}
         placeholder="Nume donator…"
-        className="h-10 w-full rounded-lg border border-[var(--ci-border)] px-3 text-sm focus:border-[var(--ci-blue)] focus:outline-none"
+        className="h-10 w-full rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-3 text-sm focus:border-[var(--ci-blue)] focus:outline-none"
       />
       <div className="mt-3 space-y-1">
         {results.length === 0 && q.trim() && (
@@ -579,7 +591,7 @@ function SearchDialog({ open, onClose, base }: { open: boolean; onClose: () => v
               setQ("");
               router.push(r.href);
             }}
-            className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-[var(--ci-surface-2)]"
+            className="flex w-full items-center justify-between rounded-[var(--ci-radius-btn)] px-3 py-2 text-left text-sm transition-colors hover:bg-[var(--ci-surface-2)]"
           >
             <span className="font-medium text-[var(--ci-text)]">{r.label}</span>
             <span className="text-[12px] text-[var(--ci-text-muted)]">{r.sub}</span>

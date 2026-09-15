@@ -10,6 +10,7 @@ import { Badge } from "./components/ui/badge";
 import { Card, CardHeader } from "./components/ui/card";
 import { Input } from "./components/ui/input";
 import { ProgressBar } from "./components/ui/progress-bar";
+import { DomainWelcomeBanner } from "./components/domain-welcome-banner";
 import { KpiCard } from "./components/kpi-card";
 import { formatDataRelativa, formatSuma } from "./lib/format";
 import { useLocale } from "./lib/locale-context";
@@ -111,10 +112,7 @@ export default function CrmDashboardPage() {
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-6">
-      <div>
-        <h1 className="ci-display text-xl font-bold text-[var(--ci-text)]">{salut}, Vlad.</h1>
-        <p className="mt-1 text-[13px] text-[var(--ci-text-muted)]">{dict.summary(actiuni.length, blocate)}</p>
-      </div>
+      <DomainWelcomeBanner salut={salut} nume="Vlad" subtitle={dict.summary(actiuni.length, blocate)} />
 
       <div className="flex flex-wrap items-center gap-2">
         {PERIOADE.map((p) => (

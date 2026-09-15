@@ -47,6 +47,18 @@
   --ci-font-display: var(--font-manrope), "Manrope", system-ui, sans-serif;
   --ci-font-body: var(--font-inter), "Inter", system-ui, sans-serif;
 
+  /* Forma implicită ("neutru"/altele, neschimbată) — cărți/butoane/dialoguri
+     ale CRM-ului foloseau valori fixe (rounded-xl/-lg/-2xl) până acum; le
+     mutăm în variabile ca fiecare familie de layout (vezi mai jos și
+     lib/campaign-templates.ts) să poată da o FORMĂ diferită, nu doar o
+     culoare — colțuri, umbră, accent de card, spațiere între litere. */
+  --ci-radius-card: 0.75rem;
+  --ci-radius-btn: 0.5rem;
+  --ci-radius-dialog: 1rem;
+  --ci-letter-spacing-display: normal;
+  --ci-card-shadow: var(--ci-shadow-sm);
+  --ci-card-accent: 1px solid var(--ci-border);
+
   background: var(--ci-bg);
   color: var(--ci-text);
   font-family: var(--ci-font-body);
@@ -62,49 +74,89 @@
    (--ci-primary*), niciodată paleta de status (--ci-green/-red/-amber etc.,
    mai jos) — acelea au sens fix (succes/eroare/atenție), indiferent de
    domeniu, ca un badge "Activă" să rămână mereu verde. */
+/* Forma (colțuri/umbră/accent/spațiere) urmează familia de layout, nu
+   domeniul individual — la fel ca pe pagina publică de campanie (vezi
+   lib/campaign-templates.ts): cald-protector (Copii/Sănătate/Social),
+   natural-ancorat (Animale/Mediu), îndrăzneț-dinamic (Sport/Educație),
+   elegant-editorial (Cultură). "Altele" nu are bloc — rămâne pe formele
+   implicite din .ci-root. */
 .ci-root[data-domeniu="copii"] {
   --ci-primary: hsl(8 60% 42%);
   --ci-primary-hover: hsl(8 60% 33%);
   --ci-primary-soft: hsl(8 55% 95%);
+  --ci-radius-card: 1.25rem;
+  --ci-radius-btn: 999px;
+  --ci-radius-dialog: 1.5rem;
+  --ci-card-shadow: var(--ci-shadow-md);
 }
 .ci-root[data-domeniu="sanatate"] {
   --ci-primary: hsl(174 55% 32%);
   --ci-primary-hover: hsl(174 55% 24%);
   --ci-primary-soft: hsl(174 45% 94%);
+  --ci-radius-card: 1.25rem;
+  --ci-radius-btn: 999px;
+  --ci-radius-dialog: 1.5rem;
+  --ci-card-shadow: var(--ci-shadow-md);
 }
 .ci-root[data-domeniu="social_incluziune"] {
   --ci-primary: hsl(280 45% 42%);
   --ci-primary-hover: hsl(280 45% 33%);
   --ci-primary-soft: hsl(280 40% 95%);
+  --ci-radius-card: 1.25rem;
+  --ci-radius-btn: 999px;
+  --ci-radius-dialog: 1.5rem;
+  --ci-card-shadow: var(--ci-shadow-md);
 }
 .ci-root[data-domeniu="animale"] {
   --ci-primary: hsl(95 35% 32%);
   --ci-primary-hover: hsl(95 35% 24%);
   --ci-primary-soft: hsl(95 30% 94%);
+  --ci-radius-card: 1rem;
+  --ci-radius-btn: 0.75rem;
+  --ci-radius-dialog: 1.25rem;
 }
 .ci-root[data-domeniu="mediu"] {
   --ci-primary: hsl(150 45% 28%);
   --ci-primary-hover: hsl(150 45% 20%);
   --ci-primary-soft: hsl(150 40% 94%);
+  --ci-radius-card: 1rem;
+  --ci-radius-btn: 0.75rem;
+  --ci-radius-dialog: 1.25rem;
 }
 .ci-root[data-domeniu="sport"] {
   --ci-primary: hsl(355 70% 45%);
   --ci-primary-hover: hsl(355 70% 36%);
   --ci-primary-soft: hsl(355 60% 95%);
+  --ci-radius-card: 0.375rem;
+  --ci-radius-btn: 0.25rem;
+  --ci-radius-dialog: 0.5rem;
+  --ci-letter-spacing-display: 0.01em;
+  --ci-card-accent: 3px solid var(--ci-primary);
 }
 .ci-root[data-domeniu="educatie"] {
   --ci-primary: hsl(222 55% 32%);
   --ci-primary-hover: hsl(222 55% 24%);
   --ci-primary-soft: hsl(222 45% 94%);
+  --ci-radius-card: 0.375rem;
+  --ci-radius-btn: 0.25rem;
+  --ci-radius-dialog: 0.5rem;
+  --ci-letter-spacing-display: 0.01em;
+  --ci-card-accent: 3px solid var(--ci-primary);
 }
 .ci-root[data-domeniu="cultura"] {
   --ci-primary: hsl(300 40% 32%);
   --ci-primary-hover: hsl(300 40% 24%);
   --ci-primary-soft: hsl(300 35% 95%);
+  --ci-radius-card: 0.5rem;
+  --ci-radius-btn: 0.375rem;
+  --ci-radius-dialog: 0.75rem;
+  --ci-letter-spacing-display: 0.02em;
+  --ci-card-shadow: none;
 }
 
 .ci-root .ci-display {
   font-family: var(--ci-font-display);
+  letter-spacing: var(--ci-letter-spacing-display);
   text-wrap: balance;
 }
 

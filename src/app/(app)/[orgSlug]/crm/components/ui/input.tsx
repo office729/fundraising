@@ -5,7 +5,7 @@ import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTML
 import { cn } from "../../lib/cn";
 
 const FIELD =
-  "h-9 w-full rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 text-sm text-[var(--ci-text)] placeholder:text-[var(--ci-text-faint)] transition-colors focus:border-[var(--ci-blue)] focus:outline-none";
+  "h-9 w-full rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 text-sm text-[var(--ci-text)] placeholder:text-[var(--ci-text-faint)] transition-colors focus:border-[var(--ci-blue)] focus:outline-none";
 
 export function Input({
   className,

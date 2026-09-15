@@ -39,7 +39,7 @@ export function Dialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby="ci-dialog-title"
-        className={`relative w-full ${width} rounded-2xl border border-[var(--ci-border)] bg-[var(--ci-surface)] shadow-[var(--ci-shadow-lg)]`}
+        className={`relative w-full ${width} rounded-[var(--ci-radius-dialog)] border border-[var(--ci-border)] bg-[var(--ci-surface)] shadow-[var(--ci-shadow-lg)]`}
       >
         <div className="flex items-center justify-between border-b border-[var(--ci-border)] px-5 py-4">
           <h2 id="ci-dialog-title" className="ci-display text-[15px] font-semibold text-[var(--ci-text)]">

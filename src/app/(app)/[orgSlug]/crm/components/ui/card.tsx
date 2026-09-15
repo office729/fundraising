@@ -14,7 +14,7 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-xl border border-[var(--ci-border)] bg-[var(--ci-surface)] shadow-[var(--ci-shadow-sm)]",
+        "rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] shadow-[var(--ci-card-shadow)] [border-left:var(--ci-card-accent)]",
         padded && "p-5",
         className,
       )}
