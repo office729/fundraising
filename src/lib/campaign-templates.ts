@@ -51,17 +51,21 @@ type TemplateDef = {
   nume: string;
   familie: LayoutFamily;
   motiv: MotifId;
+  // Eticheta secțiunii de "proiecte active" pe panoul CRM (dashboard) — dă
+  // textului, nu doar formei, un aer specific domeniului. Fără valoare =
+  // rămâne titlul generic din dicționarul de traduceri (cazul "altele").
+  itemLabel?: string;
 };
 
 export const CAMPAIGN_TEMPLATES: Record<CampaignPageTemplate, TemplateDef> = {
-  copii: { nume: "Copii", familie: "cald-protector", motiv: "balon" },
-  sanatate: { nume: "Sănătate", familie: "cald-protector", motiv: "puls" },
-  social_incluziune: { nume: "Social / Incluziune", familie: "cald-protector", motiv: "incluziune" },
-  animale: { nume: "Animale", familie: "natural-ancorat", motiv: "laba" },
-  mediu: { nume: "Mediu", familie: "natural-ancorat", motiv: "frunza" },
-  sport: { nume: "Sport", familie: "indraznet-dinamic", motiv: "minge" },
-  educatie: { nume: "Educație", familie: "indraznet-dinamic", motiv: "absolvire" },
-  cultura: { nume: "Cultură", familie: "elegant-editorial", motiv: "paleta" },
+  copii: { nume: "Copii", familie: "cald-protector", motiv: "balon", itemLabel: "Copii sprijiniți" },
+  sanatate: { nume: "Sănătate", familie: "cald-protector", motiv: "puls", itemLabel: "Cazuri active" },
+  social_incluziune: { nume: "Social / Incluziune", familie: "cald-protector", motiv: "incluziune", itemLabel: "Persoane sprijinite" },
+  animale: { nume: "Animale", familie: "natural-ancorat", motiv: "laba", itemLabel: "Cazuri de salvare active" },
+  mediu: { nume: "Mediu", familie: "natural-ancorat", motiv: "frunza", itemLabel: "Proiecte de mediu active" },
+  sport: { nume: "Sport", familie: "indraznet-dinamic", motiv: "minge", itemLabel: "Provocări active" },
+  educatie: { nume: "Educație", familie: "indraznet-dinamic", motiv: "absolvire", itemLabel: "Burse și proiecte active" },
+  cultura: { nume: "Cultură", familie: "elegant-editorial", motiv: "paleta", itemLabel: "Proiecte culturale" },
   altele: { nume: "Modern", familie: "neutru", motiv: null },
 };
 
