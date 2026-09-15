@@ -76,8 +76,12 @@ export default async function OrgLayout({
         initialDomeniuActivitate={access.orgDomeniuActivitate}
       />
       <header className="border-b border-line bg-panel">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-4">
-          <div className="flex min-w-0 items-center gap-4">
+        {/* flex-wrap: pe ecran îngust (telefon), grupul din dreapta (trial/
+            Echipă/Setări/rol/limbă/Deconectare — 6 elemente, prea multe
+            pentru o singură linie sub ~640px) trece pe rândul următor în loc
+            să se suprapună peste siglă+nume, ca înainte. */}
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 sm:px-6 sm:py-4">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
             <Link href={`/${orgSlug}/crm`} className="flex min-w-0 items-center gap-3">
               {access.orgLogoUrl ? (
                 <Image
@@ -110,7 +114,7 @@ export default async function OrgLayout({
               )}
             </Link>
           </div>
-          <div className="flex shrink-0 items-center gap-4">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 sm:gap-4">
             {zileProba != null && (
               <span className="rounded-full bg-brand-amber-soft px-3 py-1.5 text-xs font-medium text-brand-amber">
                 {dict.header.trial} · {zileProba} {zileProba === 1 ? dict.header.dayLeft : dict.header.daysLeft}
@@ -148,7 +152,7 @@ export default async function OrgLayout({
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-5xl px-6 py-8">
+      <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
         <OnboardingCallPrompt show={showOnboarding} dict={dict.onboardingCall} />
         {children}
       </main>
