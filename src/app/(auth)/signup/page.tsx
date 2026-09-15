@@ -2,44 +2,13 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useActionState, useMemo } from "react";
+import { Suspense, useActionState } from "react";
 
-import { calculateCustomPlanPrice, normalizeCustomPlanConfig } from "@/lib/billing/custom-plan";
-import { PACKAGE_LIMITS, type OrgPackage } from "@/lib/billing/packages";
+import { extractPlanQuery, PLAN_QUERY_KEYS } from "@/lib/billing/plan-query";
+import { useAlegerePlan } from "@/lib/billing/use-alegere-plan";
 
 import { GoogleButton } from "../google-button";
 import { signupAction } from "./actions";
-
-const PLAN_NUME: Record<Exclude<OrgPackage, "trial" | "custom">, string> = {
-  start: "START",
-  crestere: "CREȘTERE",
-  impact: "IMPACT",
-};
-
-// Rezumatul planului ales pe /hub (fix sau à la carte), transportat aici prin
-// query params — vezi hub/page.tsx și hub/custom-plan-calculator.tsx. Doar
-// pentru afișare; signupAction reface aceeași normalizare + calcul de preț
-// server-side (nu are încredere în ce vine din URL).
-function useAlegerePlan(params: URLSearchParams) {
-  const plan = params.get("plan");
-  return useMemo(() => {
-    if (plan === "start" || plan === "crestere" || plan === "impact") {
-      return { nume: PLAN_NUME[plan], pret: PACKAGE_LIMITS[plan].pretLunar };
-    }
-    if (plan === "custom") {
-      const config = normalizeCustomPlanConfig({
-        utilizatori: Number(params.get("utilizatori")),
-        contactePf: Number(params.get("contactePf")),
-        companiiPj: Number(params.get("companiiPj")),
-        generariLunare: Number(params.get("generariLunare")),
-        tools: (params.get("tools") ?? "").split(",").filter(Boolean),
-        accesDesignToate: params.get("accesDesignToate") === "1",
-      });
-      return { nume: "Plan personalizat", pret: calculateCustomPlanPrice(config) };
-    }
-    return null;
-  }, [plan, params]);
-}
 
 function SignupForm() {
   const [state, formAction, pending] = useActionState(signupAction, { error: null });
@@ -47,7 +16,8 @@ function SignupForm() {
   const inviteToken = params.get("invite") || "";
   const beneficiarInviteToken = params.get("beneficiarInvite") || "";
   const areInvitatie = Boolean(inviteToken || beneficiarInviteToken);
-  const alegerePlan = useAlegerePlan(params);
+  const planValues = extractPlanQuery((key) => params.get(key));
+  const alegerePlan = useAlegerePlan(planValues);
 
   return (
     <>
@@ -82,17 +52,8 @@ function SignupForm() {
       <form action={formAction} className="flex flex-col gap-3">
         <input type="hidden" name="inviteToken" value={inviteToken} />
         <input type="hidden" name="beneficiarInviteToken" value={beneficiarInviteToken} />
-        {!areInvitatie && (
-          <>
-            <input type="hidden" name="plan" value={params.get("plan") ?? ""} />
-            <input type="hidden" name="utilizatori" value={params.get("utilizatori") ?? ""} />
-            <input type="hidden" name="contactePf" value={params.get("contactePf") ?? ""} />
-            <input type="hidden" name="companiiPj" value={params.get("companiiPj") ?? ""} />
-            <input type="hidden" name="generariLunare" value={params.get("generariLunare") ?? ""} />
-            <input type="hidden" name="tools" value={params.get("tools") ?? ""} />
-            <input type="hidden" name="accesDesignToate" value={params.get("accesDesignToate") ?? ""} />
-          </>
-        )}
+        {!areInvitatie &&
+          PLAN_QUERY_KEYS.map((key) => <input key={key} type="hidden" name={key} value={planValues[key] ?? ""} />)}
         {!areInvitatie && (
           <label className="text-sm font-medium text-ink">
             Numele organizației

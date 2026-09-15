@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { calculateCustomPlanBreakdown, normalizeCustomPlanConfig, type CustomPlanBreakdownKey } from "@/lib/billing/custom-plan";
 import { ALL_TOOLS, PACKAGE_LIMITS, type ToolId } from "@/lib/billing/packages";
+import { planQueryString } from "@/lib/billing/plan-query";
 import type { Locale } from "@/lib/i18n/config";
 
 const TOOL_LABELS: Record<Locale, Record<ToolId, string>> = {
@@ -151,7 +152,7 @@ export function CustomPlanCalculator({
   // asta, alegerile de aici s-ar pierde la click pe CTA (era exact gaura
   // semnalată: pagina publică nu ducea planul mai departe la signup).
   const signupHref = useMemo(() => {
-    const params = new URLSearchParams({
+    const query = planQueryString({
       plan: "custom",
       utilizatori: String(config.utilizatori),
       contactePf: String(config.contactePf),
@@ -160,7 +161,7 @@ export function CustomPlanCalculator({
       tools: config.tools.join(","),
       accesDesignToate: config.accesDesignToate ? "1" : "0",
     });
-    return `/signup?${params.toString()}`;
+    return `/signup?${query}`;
   }, [config]);
   const toolLabels = TOOL_LABELS[locale];
   const breakdownLabels = BREAKDOWN_LABELS[locale];

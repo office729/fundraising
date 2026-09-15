@@ -2,12 +2,17 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { esteBeneficiarLogat, getAuthUser, getMyOrgSlug } from "@/lib/auth/dal";
+import { extractPlanQuery } from "@/lib/billing/plan-query";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { MARKETING_DICT } from "@/lib/i18n/dictionaries/marketing";
 
 import { FinalizeForm } from "./finalize-form";
 
-export default async function LandingPage() {
+export default async function LandingPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   // Un user logat cu organizație nu trebuie să mai vadă pagina de marketing
   // și să dea click pe „Continuă în platformă" — pagina principală, odată
   // logat, E dashboard-ul CRM direct.
@@ -25,7 +30,12 @@ export default async function LandingPage() {
   // încă — spre deosebire de fluxul clasic de /signup, contul Supabase deja
   // există aici, mai lipsește doar numele organizației.
   if (authUser?.email) {
-    return <FinalizeForm email={authUser.email} />;
+    const sp = await searchParams;
+    const planValues = extractPlanQuery((key) => {
+      const value = sp[key];
+      return Array.isArray(value) ? value[0] : value;
+    });
+    return <FinalizeForm email={authUser.email} planValues={planValues} />;
   }
 
   const locale = await getLocale();

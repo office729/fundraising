@@ -1,18 +1,27 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
+import { extractPlanQuery, planQueryString } from "@/lib/billing/plan-query";
 import { createClient } from "@/lib/supabase/client";
 
 export function GoogleButton() {
   const [pending, setPending] = useState(false);
+  const params = useSearchParams();
 
   async function onClick() {
     setPending(true);
     const supabase = createClient();
+    // Planul ales pe /hub (dacă userul a ajuns aici din acel flux) circulă
+    // prin `next` al redirect-ului OAuth — /auth/callback îl reia ca atare și
+    // ajunge, cu query params intacte, pe pagina de marketing, care le
+    // transmite mai departe la FinalizeForm. Vezi lib/billing/plan-query.ts.
+    const planQuery = planQueryString(extractPlanQuery((key) => params.get(key)));
+    const next = planQuery ? `/?${planQuery}` : "/";
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
     });
     // La succes, browserul e deja redirecționat spre Google — nu mai
     // ajungem aici. Reactivăm butonul doar dacă a eșuat înainte de redirect.

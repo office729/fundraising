@@ -6,8 +6,7 @@ import { eq, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 
 import { ensureAppUser } from "@/lib/auth/dal";
-import { calculateCustomPlanPrice, normalizeCustomPlanConfig, type CustomPlanConfigSaved } from "@/lib/billing/custom-plan";
-import type { OrgPackage } from "@/lib/billing/packages";
+import { citestePlanulAlesDinFormular } from "@/lib/billing/plan-from-form";
 import { db } from "@/lib/db";
 import { memberships, organizations } from "@/lib/db/schema";
 import { formular230Beneficiari } from "@/lib/db/schema/formular230";
@@ -16,37 +15,6 @@ import { esteSlugRezervat } from "@/lib/reserved-slugs";
 import { genereazaCodScurt } from "@/lib/short-code";
 import { slugify } from "@/lib/slugify";
 import { createClient } from "@/lib/supabase/server";
-
-// Planul ales pe pagina publică de prețuri (/hub), transportat spre signup ca
-// query params — vezi hub/page.tsx și hub/custom-plan-calculator.tsx. Fără
-// asta, alegerea se pierdea la click pe CTA (organizația nouă pornea mereu pe
-// "trial", indiferent ce alesese userul pe /hub). Recalculăm totul aici,
-// server-side, exact ca în chooseCustomPlanAction/choosePackageAction din
-// [orgSlug]/billing-actions.ts — nu avem încredere în prețul sau configurația
-// primite din URL/formular.
-function citestePlanulAlesDinFormular(
-  formData: FormData,
-): { package: Exclude<OrgPackage, "trial">; subscriptionStatus: "incomplete"; customPlanConfig: CustomPlanConfigSaved | null } | null {
-  const plan = String(formData.get("plan") ?? "");
-  if (plan === "start" || plan === "crestere" || plan === "impact") {
-    return { package: plan, subscriptionStatus: "incomplete", customPlanConfig: null };
-  }
-  if (plan === "custom") {
-    const config = normalizeCustomPlanConfig({
-      utilizatori: Number(formData.get("utilizatori")),
-      contactePf: Number(formData.get("contactePf")),
-      companiiPj: Number(formData.get("companiiPj")),
-      generariLunare: Number(formData.get("generariLunare")),
-      tools: String(formData.get("tools") ?? "")
-        .split(",")
-        .filter(Boolean),
-      accesDesignToate: formData.get("accesDesignToate") === "1",
-    });
-    const pretLunar = calculateCustomPlanPrice(config);
-    return { package: "custom", subscriptionStatus: "incomplete", customPlanConfig: { ...config, pretLunar } };
-  }
-  return null;
-}
 
 export async function signupAction(
   _prevState: { error: string | null },
