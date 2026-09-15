@@ -156,17 +156,23 @@ export function CaldProtectorDashboard({
 function MiniEvolutie({ evolutie }: { evolutie: DashboardData["evolutie"] }) {
   const max = Math.max(1, ...evolutie.map((e) => e.pf + e.pj + e.recurent));
   return (
-    <div className="flex h-40 items-end gap-1.5">
+    <div className="flex h-40 gap-1.5">
       {evolutie.map((e) => {
         const total = e.pf + e.pj + e.recurent;
         return (
-          <div key={e.label} className="flex flex-1 flex-col items-center gap-1">
-            <div
-              className="w-full rounded-t-md bg-[var(--ci-primary)] opacity-80"
-              style={{ height: `${Math.max(4, (total / max) * 100)}%` }}
-              title={formatSuma(total)}
-            />
-            <span className="text-[10px] text-[var(--ci-text-faint)]">{e.label}</span>
+          // Coloana are înălțime fixă (h-full) ca procentul barei să aibă
+          // față de ce să se raporteze — un părinte fără înălțime definită
+          // (ex. items-end pe rândul de mai sus) ar face orice bară % înaltă
+          // să colapseze la 0.
+          <div key={e.label} className="flex h-full flex-1 flex-col items-center">
+            <div className="flex w-full flex-1 items-end">
+              <div
+                className="w-full rounded-t-md bg-[var(--ci-primary)] opacity-80"
+                style={{ height: `${Math.max(4, (total / max) * 100)}%` }}
+                title={formatSuma(total)}
+              />
+            </div>
+            <span className="mt-1 text-[10px] text-[var(--ci-text-faint)]">{e.label}</span>
           </div>
         );
       })}
