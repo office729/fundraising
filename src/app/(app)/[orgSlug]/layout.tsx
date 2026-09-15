@@ -76,11 +76,12 @@ export default async function OrgLayout({
         initialDomeniuActivitate={access.orgDomeniuActivitate}
       />
       <header className="border-b border-line bg-panel">
-        {/* flex-wrap: pe ecran îngust (telefon), grupul din dreapta (trial/
-            Echipă/Setări/rol/limbă/Deconectare — 6 elemente, prea multe
-            pentru o singură linie sub ~640px) trece pe rândul următor în loc
-            să se suprapună peste siglă+nume, ca înainte. */}
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 sm:px-6 sm:py-4">
+        {/* Fără max-w — bară pe toată lățimea, la fel ca <main> de mai jos
+            (vezi comentariul de-acolo). flex-wrap: pe ecran îngust (telefon),
+            grupul din dreapta (trial/Echipă/Setări/rol/limbă/Deconectare —
+            6 elemente, prea multe pentru o linie sub ~640px) trece pe rândul
+            următor în loc să se suprapună peste siglă+nume, ca înainte. */}
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex min-w-0 items-center gap-3 sm:gap-4">
             <Link href={`/${orgSlug}/crm`} className="flex min-w-0 items-center gap-3">
               {access.orgLogoUrl ? (
@@ -152,7 +153,14 @@ export default async function OrgLayout({
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
+      {/* Fără max-w aici — CRM și instrumentele standalone (comunicate,
+          newsletter-pf/-pj, grupuri-facebook, program-lucru, prospectare,
+          crm-pj, crm-voluntari) vor lățimea completă a ecranului, nu doar
+          1024px (max-w-5xl îngusta tot ecranul pe monitoare late, sidebar
+          CRM inclus). Setări/Echipă își păstrează coloana îngustă prin
+          propriul div (max-w-xl/-2xl, cu mx-auto acolo) — vezi
+          setari/page.tsx și echipa/page.tsx. */}
+      <main className="px-4 py-6 sm:px-6 sm:py-8">
         <OnboardingCallPrompt show={showOnboarding} dict={dict.onboardingCall} />
         {children}
       </main>

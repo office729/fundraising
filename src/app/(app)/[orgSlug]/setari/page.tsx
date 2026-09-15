@@ -22,7 +22,10 @@ export default async function SetariPage({
   }
 
   return (
-    <div className="max-w-xl">
+    // mx-auto: <main> din layout.tsx nu mai centrează el însuși (CRM și
+    // instrumentele standalone vor lățime completă) — Setări rămâne o
+    // coloană îngustă, centrată de propriul div, ca înainte.
+    <div className="mx-auto max-w-xl">
       <h1 className="font-display text-2xl font-bold text-ink">{dict.title}</h1>
       <p className="mt-1 text-muted">{dict.subtitle}</p>
       <BrandingForm

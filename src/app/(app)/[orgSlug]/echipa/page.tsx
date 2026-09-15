@@ -27,7 +27,9 @@ export default async function EchipaPage({
   ]);
 
   return (
-    <div className="max-w-2xl">
+    // mx-auto: vezi comentariul din setari/page.tsx — <main> nu mai
+    // centrează el însuși, coloana îngustă e responsabilitatea acestui div.
+    <div className="mx-auto max-w-2xl">
       <h1 className="font-display text-2xl font-bold text-ink">{dict.title}</h1>
       <p className="mt-1 text-muted">{dict.subtitle(access.orgName)}</p>
 
