@@ -125,6 +125,15 @@ create policy app_users_visible ON app_users
 create policy app_users_insert_self ON app_users
   for insert with check (true);
 
+-- Actualizare: userul își poate actualiza propriul rând — ex. account_type,
+-- setat de acceptBeneficiaryInviteAction (src/app/invite-beneficiar/[token]/
+-- actions.ts) la acceptarea unei invitații de beneficiar. LIPSEA inițial (la
+-- fel ca fundraising_pages_member_update mai jos) — fără ea, update-ul rula
+-- silențios pe 0 rânduri, account_type rămânea mereu NULL, fără nicio eroare
+-- vizibilă.
+create policy app_users_self_update ON app_users
+  for update using (id = nullif(current_setting('app.current_user_id', true), '')::uuid);
+
 -- memberships: doar propriile membership-uri.
 create policy memberships_self ON memberships
   for select using (user_id = nullif(current_setting('app.current_user_id', true), '')::uuid);
@@ -440,7 +449,7 @@ create policy fundraising_updates_admin_delete on fundraising_updates
 --    pierdut politici — re-rulează secțiunile 3 și 4 complet.
 -- ============================================================================
 -- select tablename, policyname, cmd from pg_policies where schemaname = 'public' order by tablename;
--- Așteptat: apeluri(3), app_users(2), companies(1), company_notite(1),
+-- Așteptat: apeluri(3), app_users(3), companies(1), company_notite(1),
 --           company_sponsorizari(1), contacts(1), crm_kv(1),
 --           donatori_reali(3), formular230_beneficiari(5),
 --           formular230_campanii_email(3), formular230_submissions(3),

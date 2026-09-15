@@ -51,6 +51,14 @@ const POLICIES = [
     )
   )`,
   `create policy app_users_insert_self on app_users for insert with check (true)`,
+  // LIPSEA — acceptBeneficiaryInviteAction actualizează account_type pe
+  // propriul rând (după ce ensureAppUser a stabilit deja app.current_user_id),
+  // dar fără nicio politică UPDATE care să se aplice, update-ul rula
+  // silențios pe 0 rânduri — account_type rămânea mereu NULL, la fel cum
+  // era cazul fundraising_pages mai jos înainte de fix.
+  `create policy app_users_self_update on app_users for update using (
+    id = nullif(current_setting('app.current_user_id', true), '')::uuid
+  )`,
   `create policy memberships_self on memberships for select using (user_id = nullif(current_setting('app.current_user_id', true), '')::uuid)`,
   `create policy memberships_insert_self on memberships for insert with check (user_id = nullif(current_setting('app.current_user_id', true), '')::uuid)`,
   `create policy organizations_member on organizations for select using (
