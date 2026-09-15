@@ -13,6 +13,11 @@ function LoginForm() {
   const inviteToken = params.get("invite") || "";
   const beneficiarInviteToken = params.get("beneficiarInvite") || "";
   const confirmareNecesara = params.get("confirmare") === "necesara";
+  // Setat de /auth/callback (route.ts) când exchangeCodeForSession eșuează —
+  // ex. link de resetare a parolei expirat, deja folosit, sau falsificat.
+  // Fără acest mesaj, userul ajungea aici fără nicio explicație — părea că
+  // "nu s-a întâmplat nimic", nu că link-ul era stricat.
+  const linkInvalid = params.get("eroare") === "link_invalid";
 
   return (
     <>
@@ -21,6 +26,16 @@ function LoginForm() {
       {confirmareNecesara && (
         <p className="mt-3 rounded-lg bg-brand-amber-soft px-3 py-2 text-sm text-ink">
           Contul a fost creat — confirmă adresa de email primită, apoi autentifică-te.
+        </p>
+      )}
+
+      {linkInvalid && (
+        <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+          Linkul din email e invalid sau a expirat —{" "}
+          <Link href="/forgot-password" className="font-medium underline">
+            cere unul nou
+          </Link>
+          .
         </p>
       )}
 
