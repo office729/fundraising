@@ -62,7 +62,12 @@ export function DomainWelcomeBanner({
 
   if (tpl.familie === "indraznet-dinamic") {
     return (
-      <div className="relative overflow-hidden rounded-lg bg-[var(--ci-primary)] px-6 py-5">
+      // [--ci-text:#fff]: fundal solid închis — subtitle-ul vine din dicționar
+      // (dashboard-home.tsx) cu <strong> colorat cu text-[var(--ci-text)],
+      // gândit pentru fundaluri deschise (navy închis pe alb). Suprascriem
+      // AICI variabila, nu în dicționar — restul familiilor (fundal deschis)
+      // au nevoie de --ci-text neschimbat (navy), doar aici fundalul e închis.
+      <div className="relative overflow-hidden rounded-lg bg-[var(--ci-primary)] px-6 py-5 [--ci-text:#fff]">
         <div
           aria-hidden="true"
           className="absolute inset-y-0 right-0 w-24 bg-white/10"
