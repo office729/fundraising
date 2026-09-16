@@ -25,6 +25,10 @@ export type OrgContext = {
   orgPackage: "trial" | "start" | "crestere" | "impact" | "custom";
   orgSubscriptionStatus: string;
   orgCreatedAt: Date;
+  orgReferralCode: string | null;
+  orgReferredByOrgId: string | null;
+  orgStripeCustomerId: string | null;
+  orgStripeSubscriptionId: string | null;
   userId: string;
   userEmail: string;
   userName: string | null;
@@ -102,6 +106,10 @@ export function withOrgSession<A extends unknown[], R>(
         orgPackage: found.org.package,
         orgSubscriptionStatus: found.org.subscriptionStatus,
         orgCreatedAt: found.org.createdAt,
+        orgReferralCode: found.org.referralCode,
+        orgReferredByOrgId: found.org.referredByOrgId,
+        orgStripeCustomerId: found.org.stripeCustomerId,
+        orgStripeSubscriptionId: found.org.stripeSubscriptionId,
         userId: appUser.id,
         userEmail: appUser.email,
         userName: appUser.name,
@@ -149,6 +157,10 @@ export function requireOrgAccess(orgSlug: string): Promise<OrgAccess> {
     orgPackage: ctx.orgPackage,
     orgSubscriptionStatus: ctx.orgSubscriptionStatus,
     orgCreatedAt: ctx.orgCreatedAt,
+    orgReferralCode: ctx.orgReferralCode,
+    orgReferredByOrgId: ctx.orgReferredByOrgId,
+    orgStripeCustomerId: ctx.orgStripeCustomerId,
+    orgStripeSubscriptionId: ctx.orgStripeSubscriptionId,
     userId: ctx.userId,
     userEmail: ctx.userEmail,
     userName: ctx.userName,

@@ -38,14 +38,7 @@ export default async function OrgLayout({
       access.userEmail,
     )
   ) {
-    return (
-      <Paywall
-        orgSlug={orgSlug}
-        orgName={access.orgName}
-        status={access.orgSubscriptionStatus}
-        pachetAles={access.orgPackage}
-      />
-    );
+    return <Paywall orgSlug={orgSlug} orgName={access.orgName} />;
   }
 
   const zileProba =

@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { calculateCustomPlanBreakdown, type CustomPlanBreakdownKey } from "@/lib/billing/custom-plan";
 import { ALL_TOOLS, PACKAGE_LIMITS, type ToolId } from "@/lib/billing/packages";
 
-import { chooseCustomPlanAction } from "./billing-actions";
+import { startCustomCheckoutAction } from "./billing-actions";
 
 const TOOL_LABELS: Record<ToolId, string> = {
   "one-pager": "One-pager companii",
@@ -81,15 +81,7 @@ function SliderField({
   );
 }
 
-export function CustomPlanBuilder({
-  orgSlug,
-  activ,
-  onSalvat,
-}: {
-  orgSlug: string;
-  activ: boolean;
-  onSalvat: () => void;
-}) {
+export function CustomPlanBuilder({ orgSlug }: { orgSlug: string }) {
   const [config, setConfig] = useState({
     utilizatori: 1,
     contactePf: 0,
@@ -99,10 +91,7 @@ export function CustomPlanBuilder({
     accesDesignToate: false,
   });
   const [pending, startTransition] = useTransition();
-  // Dacă planul personalizat era deja ales (revii pe pagină), pornim direct
-  // în starea "trimis" — configurația salvată nu se restaurează (nu e
-  // transmisă din server), dar cel puțin butonul nu cere retrimitere.
-  const [trimis, setTrimis] = useState(activ);
+  const [eroare, setEroare] = useState<string | null>(null);
 
   const breakdown = useMemo(() => calculateCustomPlanBreakdown(config), [config]);
   const pret = breakdown.reduce((sum, item) => sum + item.amount, 0);
@@ -128,10 +117,14 @@ export function CustomPlanBuilder({
   }
 
   function trimite() {
+    setEroare(null);
     startTransition(async () => {
-      await chooseCustomPlanAction(orgSlug, config);
-      setTrimis(true);
-      onSalvat();
+      try {
+        const { url } = await startCustomCheckoutAction(orgSlug, config);
+        window.location.href = url;
+      } catch {
+        setEroare("Nu am putut porni plata — încearcă din nou sau scrie-ne la vlad.placinta@fundrasingacademy.ro.");
+      }
     });
   }
 
@@ -250,15 +243,15 @@ export function CustomPlanBuilder({
               ))}
             </div>
 
+            {eroare && <p className="mt-3 text-[13px] text-red-600">{eroare}</p>}
+
             <button
               type="button"
               disabled={pending}
               onClick={trimite}
-              className={`mt-5 w-full rounded-md py-3 text-center text-sm font-bold transition disabled:opacity-60 ${
-                trimis ? "bg-brand-green text-white" : "bg-brand-green text-white hover:bg-brand-green-hover"
-              }`}
+              className="mt-5 w-full rounded-md bg-brand-green py-3 text-center text-sm font-bold text-white transition hover:bg-brand-green-hover disabled:opacity-60"
             >
-              {trimis ? "Plan personalizat ales" : "Trimite planul personalizat"}
+              {pending ? "Se redirecționează..." : "Continuă la plată"}
             </button>
           </div>
         </div>

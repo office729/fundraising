@@ -23,6 +23,7 @@ export async function signupAction(
   const inviteToken = String(formData.get("inviteToken") ?? "").trim();
   const beneficiarInviteToken = String(formData.get("beneficiarInviteToken") ?? "").trim();
   const orgName = String(formData.get("orgName") ?? "").trim();
+  const referralCode = String(formData.get("ref") ?? "").trim();
   const email = String(formData.get("email") ?? "")
     .trim()
     .toLowerCase();
@@ -87,6 +88,17 @@ export async function signupAction(
       slug = `${baseSlug}-${attempt}`;
     }
 
+    // Cod de recomandare opțional (?ref=...) — dacă e valid, organizația nouă
+    // are dreptul la 50% reducere la primul abonament plătit (vezi
+    // lib/billing/stripe-checkout.ts). Cod invalid/lipsă → ignorat silențios,
+    // nu blochează înscrierea. Același SELECT-bootstrap ca verificarea de
+    // unicitate a slug-ului de mai sus (RLS permisiv înainte de membership).
+    let referredByOrgId: string | null = null;
+    if (referralCode) {
+      const referrer = await tx.select({ id: organizations.id }).from(organizations).where(eq(organizations.referralCode, referralCode)).limit(1);
+      referredByOrgId = referrer[0]?.id ?? null;
+    }
+
     // Fără .returning() aici: INSERT...RETURNING pe organizations ar re-verifica
     // politica RLS de SELECT pentru rândul nou — care cere un membership deja
     // existent. La acest moment membership-ul încă nu există (îl creăm mai jos),
@@ -97,6 +109,7 @@ export async function signupAction(
       id: orgId,
       name: orgName,
       slug,
+      referredByOrgId,
       ...(planAles ?? {}),
     });
     await tx.insert(memberships).values({ orgId, userId: appUser.id, role: "owner" });

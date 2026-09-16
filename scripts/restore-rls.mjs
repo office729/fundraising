@@ -81,6 +81,14 @@ const POLICIES = [
   `create policy organizations_public_lookup on organizations for select using (
     nullif(current_setting('app.public_lookup', true), '') = 'true'
   )`,
+  // LIPSEA — webhook-ul Stripe (activare abonament: subscription_status,
+  // stripe_customer_id, stripe_subscription_id, current_period_end) rula pe
+  // `db` global (fără context de owner/admin), deci organizations_update_admin
+  // de mai sus nu se aplica — update-ul rula silențios pe 0 rânduri, la fel ca
+  // account_type mai sus. Gated de același app.public_lookup.
+  `create policy organizations_webhook_update on organizations for update using (
+    nullif(current_setting('app.public_lookup', true), '') = 'true'
+  )`,
   `create policy companies_tenant_isolation on companies
     using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
     with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,

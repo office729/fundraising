@@ -6,7 +6,7 @@ import StripeSDK from "stripe";
 import type Stripe from "stripe";
 
 import { db } from "@/lib/db";
-import { fundraisingDonations } from "@/lib/db/schema";
+import { fundraisingDonations, organizations } from "@/lib/db/schema";
 import { htmlEmailMultumireDonatie, subiectEmailMultumireDonatie } from "@/lib/donation-email-template";
 import { emailConfigurat, trimiteEmail } from "@/lib/email";
 import { crediteazaPaginaSiDonator, decrediteazaPaginaSiDonator } from "@/lib/fundraising-credit";
@@ -44,6 +44,30 @@ async function trimiteEmailMultumireDacaSePoate(params: {
 function idDin(ref: string | { id: string } | null | undefined): string | null {
   if (!ref) return null;
   return typeof ref === "string" ? ref : ref.id;
+}
+
+// Statusul de abonament Stripe → enumul nostru intern (subscriptionStatus).
+// Stripe are mai multe stări decât noi urmărim — mapate pe cea mai apropiată.
+function statusOrgDinStripe(stripeStatus: Stripe.Subscription.Status): "trialing" | "active" | "past_due" | "canceled" | "incomplete" {
+  switch (stripeStatus) {
+    case "active":
+    case "trialing":
+      return "active";
+    case "past_due":
+    case "unpaid":
+    case "paused":
+      return "past_due";
+    case "canceled":
+    case "incomplete_expired":
+      return "canceled";
+    default:
+      return "incomplete";
+  }
+}
+
+function currentPeriodEndDin(subscription: Stripe.Subscription): Date | null {
+  const secunde = subscription.items.data[0]?.current_period_end;
+  return secunde ? new Date(secunde * 1000) : null;
 }
 
 // Singurul loc care confirmă o donație ca reușită — niciodată clientul
@@ -135,6 +159,32 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "processing_failed" }, { status: 500 });
     }
     if (emailParams) await trimiteEmailMultumireDacaSePoate(emailParams);
+
+    // Abonament al PLATFORMEI (nu o donație) — marcat prin metadata.type,
+    // vezi lib/billing/stripe-checkout.ts. Complet independent de blocul de
+    // mai sus: acela operează pe fundraising_donations și pur și simplu nu
+    // găsește niciun rând pentru o sesiune de abonament ONG.
+    if (session.metadata?.type === "org_subscription" && session.metadata.orgId) {
+      try {
+        const subscriptionId = idDin(session.subscription);
+        const subscription = subscriptionId ? await getStripe().subscriptions.retrieve(subscriptionId) : null;
+        await db.transaction(async (tx) => {
+          await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
+          await tx
+            .update(organizations)
+            .set({
+              subscriptionStatus: "active",
+              stripeCustomerId: idDin(session.customer),
+              stripeSubscriptionId: subscriptionId,
+              currentPeriodEnd: subscription ? currentPeriodEndDin(subscription) : null,
+            })
+            .where(eq(organizations.id, session.metadata!.orgId!));
+        });
+      } catch (e) {
+        console.error("Eroare la activarea abonamentului organizației:", e);
+        return NextResponse.json({ error: "processing_failed" }, { status: 500 });
+      }
+    }
   }
 
   if (event.type === "checkout.session.expired") {
@@ -223,6 +273,16 @@ export async function POST(req: Request) {
               info,
             };
           });
+        } else if (md.type === "org_subscription" && md.orgId) {
+          // Reînnoire lunară a abonamentului PLATFORMEI (nu o donație) —
+          // doar mută înainte `currentPeriodEnd`, fără niciun rând nou.
+          await db.transaction(async (tx) => {
+            await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
+            await tx
+              .update(organizations)
+              .set({ currentPeriodEnd: currentPeriodEndDin(subscription) })
+              .where(eq(organizations.id, md.orgId));
+          });
         }
       } catch (e) {
         console.error("Eroare la procesarea invoice.paid (reînnoire abonament):", e);
@@ -290,10 +350,36 @@ export async function POST(req: Request) {
           .update(fundraisingDonations)
           .set({ abonamentActiv: false })
           .where(eq(fundraisingDonations.stripeSubscriptionId, subscription.id));
+
+        if (subscription.metadata?.type === "org_subscription") {
+          await tx.update(organizations).set({ subscriptionStatus: "canceled" }).where(eq(organizations.stripeSubscriptionId, subscription.id));
+        }
       });
     } catch (e) {
       console.error("Eroare la procesarea customer.subscription.deleted:", e);
       return NextResponse.json({ error: "processing_failed" }, { status: 500 });
+    }
+  }
+
+  // Schimbare de stare a abonamentului PLATFORMEI, altfel decât anularea de
+  // mai sus (ex. plată eșuată → "past_due", reactivat manual de client în
+  // Stripe → "active" din nou) — nu afectează deloc donațiile (donatorii
+  // recurenți nu au metadata.type = "org_subscription").
+  if (event.type === "customer.subscription.updated") {
+    const subscription = event.data.object as Stripe.Subscription;
+    if (subscription.metadata?.type === "org_subscription") {
+      try {
+        await db.transaction(async (tx) => {
+          await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
+          await tx
+            .update(organizations)
+            .set({ subscriptionStatus: statusOrgDinStripe(subscription.status), currentPeriodEnd: currentPeriodEndDin(subscription) })
+            .where(eq(organizations.stripeSubscriptionId, subscription.id));
+        });
+      } catch (e) {
+        console.error("Eroare la procesarea customer.subscription.updated:", e);
+        return NextResponse.json({ error: "processing_failed" }, { status: 500 });
+      }
     }
   }
 

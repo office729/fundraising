@@ -167,9 +167,8 @@ create policy organizations_insert_authenticated ON organizations
 create policy organizations_public_lookup ON organizations
   for select using (nullif(current_setting('app.public_lookup', true), '') = 'true');
 
--- Update (schimbare pachet, stripe_customer_id etc.): owner/admin din acea
--- organizație, SAU webhook-ul Stripe (care rulează cu propriul context —
--- vezi nota din guard.ts / Faza 1 despre `withStripeWebhook`).
+-- Update (schimbare pachet, culoare, domeniu etc.): owner/admin din acea
+-- organizație.
 create policy organizations_update_admin ON organizations
   for update using (
     id in (
@@ -178,6 +177,16 @@ create policy organizations_update_admin ON organizations
         and role in ('owner', 'admin')
     )
   );
+
+-- Update de la webhook-ul Stripe (activare abonament: subscription_status,
+-- stripe_customer_id, stripe_subscription_id, current_period_end — vezi
+-- api/stripe/webhook/route.ts) — gated de același app.public_lookup ca
+-- fundraising_pages_webhook_update mai jos. LIPSEA inițial (doar promisă în
+-- comentariul politicii de mai sus, niciodată implementată) — fără ea,
+-- update-ul webhook-ului rula silențios pe 0 rânduri, la fel ca bug-ul
+-- app_users_self_update documentat mai sus.
+create policy organizations_webhook_update ON organizations
+  for update using (nullif(current_setting('app.public_lookup', true), '') = 'true');
 
 -- invites: două căi de acces separate, pe același tabel —
 --  (a) admin/owner vede/creează invitațiile PROPRIEI organizații (listă);
@@ -455,4 +464,4 @@ create policy fundraising_updates_admin_delete on fundraising_updates
 --           formular230_campanii_email(3), formular230_submissions(3),
 --           fundraising_donations(6), fundraising_pages(5),
 --           fundraising_updates(3), invites(4), memberships(2),
---           organizations(4) = 48 politici.
+--           organizations(5) = 49 politici.

@@ -7,7 +7,7 @@ import type { OrgPackage } from "./packages";
 // hub/custom-plan-calculator.tsx. Fără asta, alegerea se pierdea la click pe
 // CTA (organizația nouă pornea mereu pe "trial", indiferent ce alesese
 // userul). Recalculăm totul aici, server-side, exact ca în
-// chooseCustomPlanAction/choosePackageAction din [orgSlug]/billing-actions.ts
+// startCustomCheckoutAction/startCheckoutAction din [orgSlug]/billing-actions.ts
 // — nu avem încredere în prețul sau configurația primite din URL/formular.
 export function citestePlanulAlesDinFormular(
   formData: FormData,

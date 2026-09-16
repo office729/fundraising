@@ -35,7 +35,9 @@ export default async function LandingPage({
       const value = sp[key];
       return Array.isArray(value) ? value[0] : value;
     });
-    return <FinalizeForm email={authUser.email} planValues={planValues} />;
+    const refValue = sp.ref;
+    const referralCode = Array.isArray(refValue) ? refValue[0] : refValue;
+    return <FinalizeForm email={authUser.email} planValues={planValues} referralCode={referralCode ?? ""} />;
   }
 
   const locale = await getLocale();

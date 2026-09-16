@@ -70,6 +70,20 @@ export const SETARI_ECHIPA_DICT = {
         pasul1: (domain: string, target: string) => `La furnizorul de domeniu, adaugă o înregistrare CNAME pentru ${domain} către ${target}.`,
         pasul2: "Scrie-ne să activăm domeniul pe platformă — durează câteva minute, apoi devine funcțional automat.",
       },
+      abonament: {
+        title: "Abonament",
+        pachetCurent: (nume: string) => `Pachet curent: ${nume}`,
+        status: { trialing: "perioadă de probă", active: "activ", incomplete: "plată neconfirmată", past_due: "plată restantă", canceled: "anulat" },
+        schimbaPlanul: "Schimbă planul",
+        ascundeOptiunile: "Ascunde opțiunile",
+      },
+      referral: {
+        title: "Recomandă alte ONG-uri",
+        descriere: "Oricine se înscrie cu linkul tău primește 50% reducere la primul abonament plătit.",
+        copiaza: "Copiază linkul",
+        copiat: "Copiat!",
+        numarRecomandari: (n: number) => (n === 0 ? "Niciun ONG înscris încă cu recomandarea ta." : `${n} ${n === 1 ? "ONG înscris" : "ONG-uri înscrise"} cu recomandarea ta.`),
+      },
     },
     onboardingGate: {
       title: (orgName: string) => `Personalizează ${orgName}`,
@@ -163,6 +177,20 @@ export const SETARI_ECHIPA_DICT = {
         caSaFunctioneze: (domain: string) => `For ${domain} to work:`,
         pasul1: (domain: string, target: string) => `At your domain provider, add a CNAME record for ${domain} pointing to ${target}.`,
         pasul2: "Message us to activate the domain on the platform — it takes a few minutes, then it works automatically.",
+      },
+      abonament: {
+        title: "Subscription",
+        pachetCurent: (nume: string) => `Current package: ${nume}`,
+        status: { trialing: "trial period", active: "active", incomplete: "payment unconfirmed", past_due: "payment overdue", canceled: "canceled" },
+        schimbaPlanul: "Change plan",
+        ascundeOptiunile: "Hide options",
+      },
+      referral: {
+        title: "Refer other NGOs",
+        descriere: "Anyone who signs up with your link gets 50% off their first paid month.",
+        copiaza: "Copy link",
+        copiat: "Copied!",
+        numarRecomandari: (n: number) => (n === 0 ? "No NGO has signed up with your referral yet." : `${n} ${n === 1 ? "NGO has" : "NGOs have"} signed up with your referral.`),
       },
     },
     onboardingGate: {

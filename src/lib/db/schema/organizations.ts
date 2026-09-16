@@ -1,3 +1,4 @@
+import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import { jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 import { orgDomeniuActivitate, orgPackage, subscriptionStatus } from "./enums";
@@ -38,5 +39,15 @@ export const organizations = pgTable("organizations", {
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
   currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
+  // Referral: codul PROPRIU al organizației (generat leneș, la prima cerere —
+  // vezi lib/referral.ts — nu la creare, ca să nu complice bootstrap-ul RLS
+  // din signup) — orice organizație îl poate distribui ca
+  // `/signup?ref=<cod>`. `referredByOrgId` se completează o singură dată, la
+  // înscriere, dacă cine s-a înscris a folosit un cod valid — vezi
+  // signup/actions.ts și (marketing)/finalize-actions.ts. Reducerea de 50%
+  // la primul abonament (lib/billing/stripe-checkout.ts) se aplică doar dacă
+  // acest câmp e completat ȘI stripeSubscriptionId e încă null.
+  referralCode: text("referral_code").unique(),
+  referredByOrgId: uuid("referred_by_org_id").references((): AnyPgColumn => organizations.id),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }).enableRLS();

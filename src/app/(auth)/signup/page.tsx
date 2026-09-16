@@ -18,6 +18,7 @@ function SignupForm() {
   const areInvitatie = Boolean(inviteToken || beneficiarInviteToken);
   const planValues = extractPlanQuery((key) => params.get(key));
   const alegerePlan = useAlegerePlan(planValues);
+  const referralCode = params.get("ref") || "";
 
   return (
     <>
@@ -49,9 +50,16 @@ function SignupForm() {
         </div>
       )}
 
+      {!areInvitatie && referralCode && (
+        <div className="mb-1 rounded-lg border border-brand-green bg-brand-green-soft px-3.5 py-2.5 text-sm text-ink">
+          Ai un cod de recomandare — primești <strong>50% reducere</strong> la primul abonament plătit.
+        </div>
+      )}
+
       <form action={formAction} className="flex flex-col gap-3">
         <input type="hidden" name="inviteToken" value={inviteToken} />
         <input type="hidden" name="beneficiarInviteToken" value={beneficiarInviteToken} />
+        {!areInvitatie && <input type="hidden" name="ref" value={referralCode} />}
         {!areInvitatie &&
           PLAN_QUERY_KEYS.map((key) => <input key={key} type="hidden" name={key} value={planValues[key] ?? ""} />)}
         {!areInvitatie && (

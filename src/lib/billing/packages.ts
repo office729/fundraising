@@ -104,20 +104,17 @@ export const PACKAGE_LIMITS: Record<Exclude<OrgPackage, "custom">, PackageLimits
   },
 };
 
-// Prețuri anuale — 2 luni gratuite (din pagina de prețuri).
+// Prețuri anuale — 2 luni gratuite (din pagina de prețuri). Doar informativ
+// azi (Paywall/Setări afișează prețul anual, dar checkout-ul real e
+// lunar-only — vezi lib/billing/stripe-checkout.ts).
 export const PACKAGE_PRICE_ANUAL: Record<Exclude<OrgPackage, "trial" | "custom">, number> = {
   start: 490,
   crestere: 1490,
   impact: 2990,
 };
 
-// Stripe Price IDs — completate în Faza 1, după crearea produselor în
-// dashboard-ul Stripe (test + live separat). Câte 2 per pachet (lunar/anual).
-export const PACKAGE_PRICE_IDS: Record<
-  Exclude<OrgPackage, "trial" | "custom">,
-  { lunar: string | null; anual: string | null }
-> = {
-  start: { lunar: null, anual: null },
-  crestere: { lunar: null, anual: null },
-  impact: { lunar: null, anual: null },
-};
+// Niciun Price ID Stripe pre-creat — sesiunea de checkout a abonamentului
+// folosește preț DINAMIC (price_data), la fel ca donațiile (vezi
+// strangere-fonduri/[orgSlug]/[pageSlug]/actions.ts), pornind de la
+// `pretLunar` de mai sus. Niciun Produs/Preț de configurat manual în Stripe
+// Dashboard.

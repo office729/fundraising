@@ -1,29 +1,44 @@
 "use server";
 
 import { eq } from "drizzle-orm";
+import { headers } from "next/headers";
 
 import { withOrgAdmin } from "@/lib/auth/guard";
 import { calculateCustomPlanPrice, normalizeCustomPlanConfig, type CustomPlanConfigSaved } from "@/lib/billing/custom-plan";
-import type { OrgPackage } from "@/lib/billing/packages";
+import { PACKAGE_LIMITS, type OrgPackage } from "@/lib/billing/packages";
+import { creeazaSesiuneAbonament } from "@/lib/billing/stripe-checkout";
 import { organizations } from "@/lib/db/schema";
 
-// Alegerea unui pachet ÎNREGISTREAZĂ intenția (owner/admin al organizației),
-// nu activează accesul — nu există încă procesare automată de plată (Stripe
-// nu e conectat, vezi PACKAGE_PRICE_IDS din lib/billing/packages.ts).
-// `subscriptionStatus` rămâne "incomplete" până la confirmarea manuală a
-// plății (proprietarul platformei o schimbă în "active").
-export const choosePackageAction = withOrgAdmin(async (ctx, pkg: Exclude<OrgPackage, "custom">) => {
-  await ctx.db
-    .update(organizations)
-    .set({ package: pkg, subscriptionStatus: "incomplete", customPlanConfig: null })
-    .where(eq(organizations.id, ctx.orgId));
+const NUME_PACHET: Record<Exclude<OrgPackage, "trial" | "custom">, string> = {
+  start: "Pachet START",
+  crestere: "Pachet CREȘTERE",
+  impact: "Pachet IMPACT",
+};
+
+async function origin(): Promise<string> {
+  const hdrs = await headers();
+  return hdrs.get("origin") ?? `${hdrs.get("x-forwarded-proto") ?? "https"}://${hdrs.get("host")}`;
+}
+
+// Alegerea unui pachet fix — înregistrează intenția (ca înainte) ȘI creează
+// imediat o sesiune Stripe Checkout reală pentru abonament; clientul
+// redirecționează la URL-ul întors. `subscriptionStatus` rămâne "incomplete"
+// până la confirmarea plății prin webhook (api/stripe/webhook/route.ts).
+export const startCheckoutAction = withOrgAdmin(async (ctx, pkg: Exclude<OrgPackage, "trial" | "custom">) => {
+  await ctx.db.update(organizations).set({ package: pkg, subscriptionStatus: "incomplete", customPlanConfig: null }).where(eq(organizations.id, ctx.orgId));
+
+  const url = await creeazaSesiuneAbonament(ctx, {
+    pretLunar: PACKAGE_LIMITS[pkg].pretLunar!,
+    packageLabel: NUME_PACHET[pkg],
+    origin: await origin(),
+  });
+  return { url };
 });
 
-// Ca și choosePackageAction — doar înregistrează intenția. Prețul e
-// recalculat AICI, server-side, din configurația primită — nu se are
-// încredere niciodată în `pretLunar` calculat pe client (poate fi manipulat
-// din devtools înainte de trimitere).
-export const chooseCustomPlanAction = withOrgAdmin(
+// Ca și startCheckoutAction — doar că prețul e recalculat AICI, server-side,
+// din configurația primită (nu se are încredere niciodată în `pretLunar`
+// calculat pe client, poate fi manipulat din devtools înainte de trimitere).
+export const startCustomCheckoutAction = withOrgAdmin(
   async (
     ctx,
     rawConfig: {
@@ -39,11 +54,13 @@ export const chooseCustomPlanAction = withOrgAdmin(
     const pretLunar = calculateCustomPlanPrice(config);
     const saved: CustomPlanConfigSaved = { ...config, pretLunar };
 
-    await ctx.db
-      .update(organizations)
-      .set({ package: "custom", subscriptionStatus: "incomplete", customPlanConfig: saved })
-      .where(eq(organizations.id, ctx.orgId));
+    await ctx.db.update(organizations).set({ package: "custom", subscriptionStatus: "incomplete", customPlanConfig: saved }).where(eq(organizations.id, ctx.orgId));
 
-    return saved;
+    const url = await creeazaSesiuneAbonament(ctx, {
+      pretLunar,
+      packageLabel: "Plan personalizat",
+      origin: await origin(),
+    });
+    return { url };
   },
 );

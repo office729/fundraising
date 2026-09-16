@@ -23,10 +23,11 @@ export function trialDaysRemaining(orgCreatedAt: Date): number {
 }
 
 // Blocat = proba s-a terminat ȘI nu există un abonament activ. "incomplete"
-// (pachet ales, plată neconfirmată încă) rămâne blocat — vezi
-// choosePackageAction din billing-actions.ts: alegerea unui pachet
-// înregistrează intenția, nu activează accesul (nu există plată automată,
-// activarea o face manual proprietarul platformei după confirmarea plății).
+// (pachet ales, sesiune Stripe pornită, plată neconfirmată încă) rămâne
+// blocat — vezi startCheckoutAction din billing-actions.ts: alegerea unui
+// pachet pornește imediat o sesiune Stripe Checkout reală, dar accesul se
+// activează abia la webhook-ul checkout.session.completed (api/stripe/
+// webhook/route.ts), niciodată optimist, înainte de confirmarea plății.
 export function isAccessBlocked(
   org: {
     createdAt: Date;

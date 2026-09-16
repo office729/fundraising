@@ -20,6 +20,7 @@ export async function finalizeazaOrganizatiaAction(
   formData: FormData,
 ): Promise<{ error: string | null }> {
   const orgName = String(formData.get("orgName") ?? "").trim();
+  const referralCode = String(formData.get("ref") ?? "").trim();
   if (!orgName) {
     return { error: "Completează numele organizației." };
   }
@@ -45,9 +46,16 @@ export async function finalizeazaOrganizatiaAction(
       slug = `${baseSlug}-${attempt}`;
     }
 
+    // Cod de recomandare opțional — vezi explicația din signup/actions.ts.
+    let referredByOrgId: string | null = null;
+    if (referralCode) {
+      const referrer = await tx.select({ id: organizations.id }).from(organizations).where(eq(organizations.referralCode, referralCode)).limit(1);
+      referredByOrgId = referrer[0]?.id ?? null;
+    }
+
     // Fără .returning() — vezi explicația din signup/actions.ts (RLS pe INSERT...RETURNING).
     const orgId = randomUUID();
-    await tx.insert(organizations).values({ id: orgId, name: orgName, slug, ...(planAles ?? {}) });
+    await tx.insert(organizations).values({ id: orgId, name: orgName, slug, referredByOrgId, ...(planAles ?? {}) });
     await tx.insert(memberships).values({ orgId, userId: appUser.id, role: "owner" });
     return slug;
   });

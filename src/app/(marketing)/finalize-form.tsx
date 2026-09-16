@@ -7,7 +7,15 @@ import { useAlegerePlan } from "@/lib/billing/use-alegere-plan";
 
 import { finalizeazaOrganizatiaAction } from "./finalize-actions";
 
-export function FinalizeForm({ email, planValues = {} }: { email: string; planValues?: PlanQueryValues }) {
+export function FinalizeForm({
+  email,
+  planValues = {},
+  referralCode = "",
+}: {
+  email: string;
+  planValues?: PlanQueryValues;
+  referralCode?: string;
+}) {
   const [state, formAction, pending] = useActionState(finalizeazaOrganizatiaAction, { error: null });
   const alegerePlan = useAlegerePlan(planValues);
 
@@ -25,7 +33,14 @@ export function FinalizeForm({ email, planValues = {} }: { email: string; planVa
         </div>
       )}
 
+      {referralCode && (
+        <div className="mt-4 rounded-lg border border-brand-green bg-brand-green-soft px-3.5 py-2.5 text-sm text-ink">
+          Ai un cod de recomandare — primești <strong>50% reducere</strong> la primul abonament plătit.
+        </div>
+      )}
+
       <form action={formAction} className="mt-6 flex flex-col gap-3">
+        <input type="hidden" name="ref" value={referralCode} />
         {PLAN_QUERY_KEYS.map((key) => (
           <input key={key} type="hidden" name={key} value={planValues[key] ?? ""} />
         ))}

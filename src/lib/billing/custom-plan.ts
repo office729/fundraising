@@ -1,8 +1,9 @@
 import { ALL_TOOLS, type ToolId } from "./packages";
 
-// Planul "à la carte" — vezi paywall.tsx. Formula de preț a fost stabilită
-// manual (nu derivată din START/CREȘTERE/IMPACT) și trebuie recalculată
-// mereu server-side (chooseCustomPlanAction), niciodată acceptată de la client.
+// Planul "à la carte" — vezi package-picker.tsx. Formula de preț a fost
+// stabilită manual (nu derivată din START/CREȘTERE/IMPACT) și trebuie
+// recalculată mereu server-side (startCustomCheckoutAction), niciodată
+// acceptată de la client.
 export const CUSTOM_PLAN_PRICING = {
   baza: 29,
   utilizatoriInclusi: 1,

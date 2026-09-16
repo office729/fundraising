@@ -4,8 +4,11 @@ import { requireOrgAccess } from "@/lib/auth/guard";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { SETARI_ECHIPA_DICT } from "@/lib/i18n/dictionaries/setari-echipa";
 
+import { AbonamentSection } from "./abonament-section";
 import { BrandingForm } from "./branding-form";
 import { DomainForm } from "./domain-form";
+import { obtineDateReferral } from "./referral-actions";
+import { ReferralSection } from "./referral-section";
 
 export default async function SetariPage({
   params,
@@ -20,6 +23,8 @@ export default async function SetariPage({
   if (access.role !== "owner" && access.role !== "admin") {
     redirect(`/${orgSlug}`);
   }
+
+  const { cod, numarRecomandari } = await obtineDateReferral(orgSlug);
 
   return (
     // mx-auto: <main> din layout.tsx nu mai centrează el însuși (CRM și
@@ -38,6 +43,8 @@ export default async function SetariPage({
         initialDomeniuActivitate={access.orgDomeniuActivitate}
       />
       <DomainForm orgSlug={orgSlug} locale={locale} initialCustomDomain={access.orgCustomDomain} />
+      <AbonamentSection orgSlug={orgSlug} pachetCurent={access.orgPackage} statusCurent={access.orgSubscriptionStatus} locale={locale} />
+      <ReferralSection cod={cod} numarRecomandari={numarRecomandari} locale={locale} />
     </div>
   );
 }
