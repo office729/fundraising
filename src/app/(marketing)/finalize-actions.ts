@@ -38,6 +38,10 @@ export async function finalizeazaOrganizatiaAction(
     await tx.execute(sql`select set_config('app.current_user_email', ${email}, true)`);
     const appUser = await ensureAppUser(tx, email, name);
     await tx.execute(sql`select set_config('app.current_user_id', ${appUser.id}, true)`);
+    // Vezi explicația din signup/actions.ts — necesar ca SELECT-urile de mai
+    // jos (unicitate slug, rezolvare cod de recomandare) să nu ruleze
+    // silențios pe 0 rânduri sub FORCE ROW LEVEL SECURITY.
+    await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
 
     let slug = baseSlug;
     for (let attempt = 1; attempt <= 20; attempt++) {

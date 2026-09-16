@@ -72,6 +72,14 @@ export async function signupAction(
     await tx.execute(sql`select set_config('app.current_user_email', ${email}, true)`);
     const appUser = await ensureAppUser(tx, email);
     await tx.execute(sql`select set_config('app.current_user_id', ${appUser.id}, true)`);
+    // Necesar pentru verificarea de unicitate a slug-ului ȘI pentru
+    // rezolvarea codului de recomandare de mai jos — la acest moment din
+    // tranzacție nu există încă niciun membership, deci organizations_member
+    // nu se aplică; fără app.public_lookup, ambele SELECT-uri rulau
+    // silențios pe 0 rânduri sub FORCE ROW LEVEL SECURITY (organizația
+    // "nouă" ar fi părut mereu disponibilă, iar codul de recomandare nu s-ar
+    // fi găsit niciodată — exact bug-ul descoperit testând live referralul).
+    await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
 
     let slug = baseSlug;
     for (let attempt = 1; attempt <= 20; attempt++) {
