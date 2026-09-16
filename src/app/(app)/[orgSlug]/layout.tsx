@@ -87,7 +87,7 @@ export default async function OrgLayout({
               ) : (
                 <span
                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg font-display text-sm font-bold text-white"
-                  style={{ backgroundColor: accent || "var(--brand-blue)" }}
+                  style={{ backgroundColor: accent || "var(--brand-solid)" }}
                 >
                   {initiale}
                 </span>
@@ -102,7 +102,13 @@ export default async function OrgLayout({
           </div>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2 sm:gap-4">
             {zileProba != null && (
-              <span className="rounded-full bg-brand-amber-soft px-3 py-1.5 text-xs font-medium text-brand-amber">
+              // Culori FIXE (nu --brand-amber/-soft) — indicator de status, nu
+              // element de branding: cele două variante domeniu erau aceeași
+              // nuanță (accent pe fundal deschis din aceeași nuanță), ceea ce
+              // ținea contrastul mereu sub pragul WCAG AA (~1.5–3.3:1 după
+              // domeniu). amber-100/amber-900 (Tailwind, neschimbate de temă)
+              // păstrează contrastul bun indiferent de domeniu sau mod dark.
+              <span className="rounded-full bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-900 dark:bg-amber-950 dark:text-amber-200">
                 {dict.header.trial} · {zileProba} {zileProba === 1 ? dict.header.dayLeft : dict.header.daysLeft}
               </span>
             )}

@@ -38,8 +38,11 @@ export default async function PremiiPage() {
             <div key={p.titlu} className="flex gap-5 rounded-xl border border-line bg-panel p-5">
               <div className="w-28 shrink-0 text-[12.5px] font-medium text-muted-2">{p.data}</div>
               <div>
+                {/* Culori fixe, nu --brand-amber/-soft — aceeași nuanță pe
+                    fundal deschis din aceeași nuanță ținea contrastul sub
+                    pragul WCAG AA (~3.25:1) la acest corp de literă mic. */}
                 {p.major && (
-                  <span className="mb-1 inline-block rounded-full bg-brand-amber-soft px-2.5 py-0.5 text-[11px] font-bold text-brand-amber uppercase">
+                  <span className="mb-1 inline-block rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-bold text-amber-900 uppercase dark:bg-amber-950 dark:text-amber-200">
                     {dict.distinctieMajora}
                   </span>
                 )}

@@ -134,9 +134,20 @@ export default async function PaginaStrangereFonduriPage({
             <div className="relative aspect-[16/9] w-full overflow-hidden">
               {fotoCampanie ?? heroFallback}
               <div className="absolute inset-x-0 top-0 h-14 origin-top-left -skew-y-3 bg-brand-green/90" />
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent px-6 pt-14 pb-5 sm:px-10">
-                <p className="text-xs font-bold tracking-wide text-white uppercase">Campanie verificată de {org.name}</p>
-                <h1 className="font-display mt-1.5 text-[28px] leading-tight font-bold text-white sm:text-[32px]">{pagina.titlu}</h1>
+              {/* Voal întărit (era from-black/80 via-black/30 to-transparent):
+                  div-ul se dimensionează după conținut, ancorat jos — textul
+                  (mai ales eyebrow-ul, primul rând) ajunge lângă capătul
+                  "to-transparent"/"via" de sus, unde fundalul de dedesubt
+                  (poză reală SAU heroFallback — pt. Educație, gradient navy→auriu)
+                  răzbătea aproape neschimbat, ilizibil cu text alb (~2.3:1
+                  contrast măsurat pe auriu). Minim 20% negru chiar și sus. */}
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/65 to-black/20 px-6 pt-14 pb-5 sm:px-10">
+                <p className="text-xs font-bold tracking-wide text-white uppercase [text-shadow:0_1px_4px_rgba(0,0,0,0.85)]">
+                  Campanie verificată de {org.name}
+                </p>
+                <h1 className="font-display mt-1.5 text-[28px] leading-tight font-bold text-white [text-shadow:0_1px_4px_rgba(0,0,0,0.85)] sm:text-[32px]">
+                  {pagina.titlu}
+                </h1>
               </div>
             </div>
           ) : tpl.familie === "elegant-editorial" ? (

@@ -19,7 +19,11 @@ export function Paywall({ orgSlug, orgName }: { orgSlug: string; orgName: string
 
       <main className="mx-auto max-w-5xl px-6 py-14">
         <div className="mx-auto max-w-xl text-center">
-          <span className="inline-block rounded-full bg-brand-amber-soft px-3.5 py-1.5 text-xs font-bold tracking-wide text-brand-amber uppercase">
+          {/* Culori fixe — vezi comentariul din [orgSlug]/layout.tsx (bannerul
+              de probă): --brand-amber/-soft au aceeași nuanță per domeniu,
+              ceea ce ținea contrastul sub pragul WCAG AA în majoritatea
+              domeniilor. */}
+          <span className="inline-block rounded-full bg-amber-100 px-3.5 py-1.5 text-xs font-bold tracking-wide text-amber-900 uppercase dark:bg-amber-950 dark:text-amber-200">
             Perioada de probă s-a încheiat
           </span>
           <h1 className="font-display mt-4 text-3xl font-bold text-ink">Alege pachetul organizației tale</h1>

@@ -13,6 +13,16 @@
   --brand-green-soft: #e9f6ec;
   --brand-amber: #b7791f;
   --brand-amber-soft: #fbf1de;
+  /* Variantă "solidă", NEschimbată în .dark — pentru fundaluri pline pe care
+     stă text alb fix (ex. avatarul cu inițiale din antet, layout.tsx). Spre
+     deosebire de --brand-blue (gândit ca TEXT, deci deschis la culoare în
+     dark mode), un fundal plin cu text alb are nevoie mereu de o culoare
+     suficient de închisă — --brand-blue în dark mode e prea deschis pentru
+     asta (contrast ~1.6-2.2:1 cu alb, aproape ilizibil). Fiecare bloc
+     [data-domeniu="x"] de mai jos își suprascrie propria valoare (egală cu
+     --brand-blue AL LUI ÎN LIGHT MODE); blocurile .dark NU o ating deloc, deci
+     rămâne mereu varianta închisă, indiferent de tema activă.  */
+  --brand-solid: var(--brand-blue);
 
   --canvas: #ffffff;
   --panel: #ffffff;
@@ -58,6 +68,7 @@
 
 [data-domeniu="copii"] {
   --brand-blue: hsl(8 60% 42%);
+  --brand-solid: hsl(8 60% 42%);
   --brand-blue-hover: hsl(8 60% 33%);
   --brand-blue-soft: hsl(8 55% 95%);
   --brand-green: hsl(38 75% 50%);
@@ -83,6 +94,7 @@
 
 [data-domeniu="sanatate"] {
   --brand-blue: hsl(174 55% 32%);
+  --brand-solid: hsl(174 55% 32%);
   --brand-blue-hover: hsl(174 55% 24%);
   --brand-blue-soft: hsl(174 45% 94%);
   --brand-green: hsl(8 65% 55%);
@@ -108,6 +120,7 @@
 
 [data-domeniu="social_incluziune"] {
   --brand-blue: hsl(280 45% 42%);
+  --brand-solid: hsl(280 45% 42%);
   --brand-blue-hover: hsl(280 45% 33%);
   --brand-blue-soft: hsl(280 40% 95%);
   --brand-green: hsl(25 80% 55%);
@@ -133,6 +146,7 @@
 
 [data-domeniu="animale"] {
   --brand-blue: hsl(95 35% 32%);
+  --brand-solid: hsl(95 35% 32%);
   --brand-blue-hover: hsl(95 35% 24%);
   --brand-blue-soft: hsl(95 30% 94%);
   --brand-green: hsl(18 60% 50%);
@@ -158,6 +172,7 @@
 
 [data-domeniu="mediu"] {
   --brand-blue: hsl(150 45% 28%);
+  --brand-solid: hsl(150 45% 28%);
   --brand-blue-hover: hsl(150 45% 20%);
   --brand-blue-soft: hsl(150 40% 94%);
   --brand-green: hsl(200 60% 45%);
@@ -183,6 +198,7 @@
 
 [data-domeniu="sport"] {
   --brand-blue: hsl(355 70% 45%);
+  --brand-solid: hsl(355 70% 45%);
   --brand-blue-hover: hsl(355 70% 36%);
   --brand-blue-soft: hsl(355 60% 95%);
   --brand-green: hsl(210 80% 48%);
@@ -208,6 +224,7 @@
 
 [data-domeniu="educatie"] {
   --brand-blue: hsl(222 55% 32%);
+  --brand-solid: hsl(222 55% 32%);
   --brand-blue-hover: hsl(222 55% 24%);
   --brand-blue-soft: hsl(222 45% 94%);
   --brand-green: hsl(45 70% 48%);
@@ -233,6 +250,7 @@
 
 [data-domeniu="cultura"] {
   --brand-blue: hsl(300 40% 32%);
+  --brand-solid: hsl(300 40% 32%);
   --brand-blue-hover: hsl(300 40% 24%);
   --brand-blue-soft: hsl(300 35% 95%);
   --brand-green: hsl(42 75% 50%);
@@ -265,6 +283,7 @@
   --color-brand-green-soft: var(--brand-green-soft);
   --color-brand-amber: var(--brand-amber);
   --color-brand-amber-soft: var(--brand-amber-soft);
+  --color-brand-solid: var(--brand-solid);
 
   --color-canvas: var(--canvas);
   --color-panel: var(--panel);
