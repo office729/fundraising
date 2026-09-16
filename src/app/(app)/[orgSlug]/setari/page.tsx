@@ -27,24 +27,36 @@ export default async function SetariPage({
   const { cod, numarRecomandari } = await obtineDateReferral(orgSlug);
 
   return (
-    // mx-auto: <main> din layout.tsx nu mai centrează el însuși (CRM și
-    // instrumentele standalone vor lățime completă) — Setări rămâne o
-    // coloană îngustă, centrată de propriul div, ca înainte.
-    <div className="mx-auto max-w-xl">
-      <h1 className="font-display text-2xl font-bold text-ink">{dict.title}</h1>
-      <p className="mt-1 text-muted">{dict.subtitle}</p>
-      <BrandingForm
-        orgSlug={orgSlug}
-        locale={locale}
-        initialLogoUrl={access.orgLogoUrl}
-        initialSlogan={access.orgSlogan}
-        initialBrandColor={access.orgBrandColor}
-        initialCif={access.orgCif}
-        initialDomeniuActivitate={access.orgDomeniuActivitate}
-      />
-      <DomainForm orgSlug={orgSlug} locale={locale} initialCustomDomain={access.orgCustomDomain} />
-      <AbonamentSection orgSlug={orgSlug} pachetCurent={access.orgPackage} statusCurent={access.orgSubscriptionStatus} locale={locale} />
-      <ReferralSection cod={cod} numarRecomandari={numarRecomandari} locale={locale} />
-    </div>
+    <>
+      {/* mx-auto: <main> din layout.tsx nu mai centrează el însuși (CRM și
+          instrumentele standalone vor lățime completă) — Setări rămâne o
+          coloană îngustă, centrată de propriul div, ca înainte. */}
+      <div className="mx-auto max-w-xl">
+        <h1 className="font-display text-2xl font-bold text-ink">{dict.title}</h1>
+        <p className="mt-1 text-muted">{dict.subtitle}</p>
+        <BrandingForm
+          orgSlug={orgSlug}
+          locale={locale}
+          initialLogoUrl={access.orgLogoUrl}
+          initialSlogan={access.orgSlogan}
+          initialBrandColor={access.orgBrandColor}
+          initialCif={access.orgCif}
+          initialDomeniuActivitate={access.orgDomeniuActivitate}
+        />
+        <DomainForm orgSlug={orgSlug} locale={locale} initialCustomDomain={access.orgCustomDomain} />
+      </div>
+
+      {/* Mai lat decât restul (max-w-5xl, ca fostul paywall.tsx unde grila de
+          pachete + planul à la carte au fost gândite inițial) — la max-w-xl
+          (36rem) coloana de sliders + cardul de preț de 320px se înghesuiau
+          una peste alta, ilizibil. */}
+      <div className="mx-auto max-w-5xl">
+        <AbonamentSection orgSlug={orgSlug} pachetCurent={access.orgPackage} statusCurent={access.orgSubscriptionStatus} locale={locale} />
+      </div>
+
+      <div className="mx-auto max-w-xl">
+        <ReferralSection cod={cod} numarRecomandari={numarRecomandari} locale={locale} />
+      </div>
+    </>
   );
 }
