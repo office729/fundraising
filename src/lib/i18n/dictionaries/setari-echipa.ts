@@ -38,7 +38,7 @@ export const SETARI_ECHIPA_DICT = {
       cifPlaceholder: "ex. RO12345678",
       domeniuActivitate: {
         label: "Domeniu de activitate",
-        descriere: "Schimbă tema completă a platformei (culori, iconițe) și ce design-uri de campanie vezi la crearea unei pagini.",
+        descriere: "Schimbă tema completă a platformei (culori, forme) și ce design-uri de campanie vezi la crearea unei pagini.",
         alege: "Fără",
         optiuni: {
           copii: "Copii",
@@ -132,7 +132,7 @@ export const SETARI_ECHIPA_DICT = {
       cifPlaceholder: "e.g. RO12345678",
       domeniuActivitate: {
         label: "Field of activity",
-        descriere: "Changes the platform's complete theme (colors, icons) and which campaign designs you see when creating a page.",
+        descriere: "Changes the platform's complete theme (colors, shapes) and which campaign designs you see when creating a page.",
         alege: "None",
         optiuni: {
           copii: "Children",
