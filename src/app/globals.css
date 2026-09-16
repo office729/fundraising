@@ -21,8 +21,11 @@
      asta (contrast ~1.6-2.2:1 cu alb, aproape ilizibil). Fiecare bloc
      [data-domeniu="x"] de mai jos își suprascrie propria valoare (egală cu
      --brand-blue AL LUI ÎN LIGHT MODE); blocurile .dark NU o ating deloc, deci
-     rămâne mereu varianta închisă, indiferent de tema activă.  */
-  --brand-solid: var(--brand-blue);
+     rămâne mereu varianta închisă, indiferent de tema activă. VALOARE LITERALĂ
+     aici, NU var(--brand-blue) — un var() ar rămâne o referință VIE către
+     --brand-blue, deci ar prelua oricum suprascrierea din .dark (exact bug-ul
+     inițial, doar mutat), pentru orice organizație FĂRĂ domeniu ales. */
+  --brand-solid: #154a85;
 
   --canvas: #ffffff;
   --panel: #ffffff;
