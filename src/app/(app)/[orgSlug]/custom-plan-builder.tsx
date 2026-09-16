@@ -130,8 +130,7 @@ export function CustomPlanBuilder({ orgSlug }: { orgSlug: string }) {
 
   return (
     <div className="rounded-2xl border border-dashed border-brand-blue bg-panel p-7 sm:p-9">
-      <div className="text-[12.5px] font-extrabold tracking-wide text-brand-blue uppercase">Plan à la carte</div>
-      <h3 className="font-display mt-1 text-[22px] font-bold text-ink">Plan personalizat</h3>
+      <h3 className="font-display text-[22px] font-bold text-ink">Plan personalizat</h3>
       <p className="mt-1.5 max-w-xl text-[14.5px] leading-relaxed text-muted">
         Alege exact ce ai nevoie — prețul se calculează automat.
       </p>

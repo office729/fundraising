@@ -117,7 +117,6 @@ export function CustomPlanCalculator({
 }: {
   locale: Locale;
   dict: {
-    planPersonalizatTag: string;
     planPersonalizatTitlu: string;
     planPersonalizatDesc: string;
     planPersonalizatCampUtilizatori: string;
@@ -188,8 +187,7 @@ export function CustomPlanCalculator({
 
   return (
     <div className="mx-auto mb-11 max-w-[1200px] rounded-2xl border border-dashed border-brand-blue bg-panel p-7 sm:p-9">
-      <div className="text-[12.5px] font-extrabold tracking-wide text-brand-blue uppercase">{dict.planPersonalizatTag}</div>
-      <h3 className="font-display mt-1 text-[26px] font-bold text-ink">{dict.planPersonalizatTitlu}</h3>
+      <h3 className="font-display text-[26px] font-bold text-ink">{dict.planPersonalizatTitlu}</h3>
       <p className="mt-1.5 max-w-xl text-[14.5px] leading-relaxed text-muted">{dict.planPersonalizatDesc}</p>
 
       <div className="mt-7 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_320px]">
