@@ -35,8 +35,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 
-import { DomainMotif } from "@/components/domain-motif";
-import { CAMPAIGN_TEMPLATES, type DomeniuActivitate } from "@/lib/campaign-templates";
+import type { DomeniuActivitate } from "@/lib/campaign-templates";
 import { DASHBOARD_DICT, type DashboardDict } from "@/lib/i18n/dictionaries/dashboard";
 import type { Locale } from "@/lib/i18n/config";
 
@@ -173,15 +172,6 @@ export function CrmShell({
           collapsed ? "md:w-16" : "md:w-52",
         )}
       >
-        {/* Motivul domeniului ca filigran discret — singurul loc din sidebar
-            unde identitatea domeniului rămâne vizibilă pe TOATE paginile CRM
-            (sidebar-ul e persistent), nu doar lângă numele organizației. */}
-        {orgDomeniuActivitate && (
-          <DomainMotif
-            motiv={CAMPAIGN_TEMPLATES[orgDomeniuActivitate].motiv}
-            className="pointer-events-none absolute -right-8 -bottom-8 h-40 w-40 text-[var(--ci-primary)] opacity-[0.05]"
-          />
-        )}
         <div className="flex h-full flex-col py-3">
           <div className={cn("mb-3 flex items-center justify-between gap-2 px-3", collapsed && "md:justify-center md:px-0")}>
             <div className="flex min-w-0 items-center gap-2">
@@ -198,12 +188,6 @@ export function CrmShell({
               <p className={cn("ci-display truncate text-[13px] font-semibold text-[var(--ci-text)]", collapsed && "md:hidden")}>
                 {orgName}
               </p>
-              {orgDomeniuActivitate && (
-                <DomainMotif
-                  motiv={CAMPAIGN_TEMPLATES[orgDomeniuActivitate].motiv}
-                  className={cn("h-3.5 w-3.5 shrink-0 text-[var(--ci-primary)]", collapsed && "md:hidden")}
-                />
-              )}
             </div>
             <button
               aria-label="Închide meniul"

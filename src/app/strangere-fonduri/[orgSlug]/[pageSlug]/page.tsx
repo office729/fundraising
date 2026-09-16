@@ -5,7 +5,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 
-import { DomainMotif } from "@/components/domain-motif";
 import { CAMPAIGN_TEMPLATES } from "@/lib/campaign-templates";
 import { db } from "@/lib/db";
 import { fundraisingDonations, fundraisingPages, fundraisingUpdates, organizations } from "@/lib/db/schema";
@@ -111,16 +110,9 @@ export default async function PaginaStrangereFonduriPage({
 
   // eslint-disable-next-line @next/next/no-img-element -- domeniu Supabase Storage dinamic
   const fotoCampanie = pagina.imagineUrl ? <img src={pagina.imagineUrl} alt={pagina.titlu} className="h-full w-full object-cover" /> : null;
-  const heroFallback = (
-    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-brand-blue to-brand-green">
-      <DomainMotif motiv={tpl.motiv} className="h-14 w-14 text-white/80" />
-    </div>
-  );
+  const heroFallback = <div className="h-full w-full bg-gradient-to-br from-brand-blue to-brand-green" />;
   const eyebrow = (
-    <p className="flex items-center gap-1.5 text-xs font-bold tracking-wide text-brand-green uppercase">
-      <DomainMotif motiv={tpl.motiv} className="h-3.5 w-3.5" />
-      Campanie verificată de {org.name}
-    </p>
+    <p className="text-xs font-bold tracking-wide text-brand-green uppercase">Campanie verificată de {org.name}</p>
   );
   const titlu = <h1 className="font-display mt-1.5 text-[30px] leading-tight font-bold text-ink">{pagina.titlu}</h1>;
 
@@ -143,10 +135,7 @@ export default async function PaginaStrangereFonduriPage({
               {fotoCampanie ?? heroFallback}
               <div className="absolute inset-x-0 top-0 h-14 origin-top-left -skew-y-3 bg-brand-green/90" />
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent px-6 pt-14 pb-5 sm:px-10">
-                <p className="flex items-center gap-1.5 text-xs font-bold tracking-wide text-white uppercase">
-                  <DomainMotif motiv={tpl.motiv} className="h-3.5 w-3.5" />
-                  Campanie verificată de {org.name}
-                </p>
+                <p className="text-xs font-bold tracking-wide text-white uppercase">Campanie verificată de {org.name}</p>
                 <h1 className="font-display mt-1.5 text-[28px] leading-tight font-bold text-white sm:text-[32px]">{pagina.titlu}</h1>
               </div>
             </div>
@@ -159,11 +148,8 @@ export default async function PaginaStrangereFonduriPage({
               </div>
             </div>
           ) : tpl.familie === "cald-protector" ? (
-            <div className="relative p-4 pb-0 sm:p-5">
-              <div className="relative aspect-[16/9] w-full overflow-hidden rounded-[var(--radius-card)]">{fotoCampanie ?? heroFallback}</div>
-              <div className="absolute bottom-0 left-8 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border-4 border-panel bg-brand-green text-white shadow-md sm:left-11">
-                <DomainMotif motiv={tpl.motiv} className="h-[18px] w-[18px]" />
-              </div>
+            <div className="p-4 pb-0 sm:p-5">
+              <div className="aspect-[16/9] w-full overflow-hidden rounded-[var(--radius-card)]">{fotoCampanie ?? heroFallback}</div>
             </div>
           ) : (
             <div className="aspect-[21/9] w-full overflow-hidden">{fotoCampanie ?? heroFallback}</div>

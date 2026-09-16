@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useActionState } from "react";
 
-import { DomainMotif } from "@/components/domain-motif";
 import { CAMPAIGN_TEMPLATES, type CampaignPageTemplate } from "@/lib/campaign-templates";
 
 import { creeazaPaginaAction, type CreeazaPaginaState } from "./actions";
@@ -80,9 +79,7 @@ export function CreeazaPaginaForm({
                 return (
                   <label key={id} className="cursor-pointer" data-domeniu={id}>
                     <input type="radio" name="template" value={id} defaultChecked={i === 0} className="peer sr-only" />
-                    <div className="flex h-14 w-full items-center justify-center rounded-lg border border-line bg-gradient-to-br from-brand-blue to-brand-green peer-checked:border-brand-green peer-checked:ring-2 peer-checked:ring-brand-green">
-                      <DomainMotif motiv={tpl.motiv} className="h-6 w-6 text-white/85" />
-                    </div>
+                    <div className="h-14 w-full rounded-lg border border-line bg-gradient-to-br from-brand-blue to-brand-green peer-checked:border-brand-green peer-checked:ring-2 peer-checked:ring-brand-green" />
                     <span className="mt-1.5 block text-center text-[12px] font-medium text-body">{tpl.nume}</span>
                   </label>
                 );

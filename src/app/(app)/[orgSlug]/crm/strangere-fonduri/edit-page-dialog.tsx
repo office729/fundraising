@@ -7,7 +7,6 @@ import { Button } from "../components/ui/button";
 import { Dialog } from "../components/ui/dialog";
 import { Input, Label } from "../components/ui/input";
 import { useLocale } from "../lib/locale-context";
-import { DomainMotif } from "@/components/domain-motif";
 import { CAMPAIGN_TEMPLATES, type CampaignPageTemplate } from "@/lib/campaign-templates";
 import { STRANGERE_FONDURI_DICT } from "@/lib/i18n/dictionaries/strangere-fonduri";
 import { actualizeazaImaginePaginaAction, editeazaPaginaAdminAction } from "./actions";
@@ -143,9 +142,7 @@ export function EditPageDialog({
                         defaultChecked={pagina.template === id}
                         className="peer sr-only"
                       />
-                      <div className="flex h-10 w-full items-center justify-center rounded-lg border border-[var(--ci-border)] bg-gradient-to-br from-brand-blue to-brand-green peer-checked:border-brand-green peer-checked:ring-2 peer-checked:ring-brand-green">
-                        <DomainMotif motiv={tpl.motiv} className="h-4 w-4 text-white/85" />
-                      </div>
+                      <div className="h-10 w-full rounded-lg border border-[var(--ci-border)] bg-gradient-to-br from-brand-blue to-brand-green peer-checked:border-brand-green peer-checked:ring-2 peer-checked:ring-brand-green" />
                       <span className="mt-1 block text-center text-[11px] font-medium text-[var(--ci-text-muted)]">
                         {tpl.nume}
                       </span>

@@ -1,14 +1,11 @@
-import type { ReactNode } from "react";
-
 // Insignă circulară de impact — familia natural-ancorat (Animale/Mediu):
 // cifra centrală (ex. suma totală strânsă) devine o "insignă" mare, gen
 // certificare/adopție simbolică (model WWF: nu un card mic într-un grid).
-export function ImpactBadge({ value, label, icon }: { value: string; label: string; icon?: ReactNode }) {
+export function ImpactBadge({ value, label }: { value: string; label: string }) {
   return (
     <div className="flex items-center gap-4">
       <div className="relative flex h-24 w-24 shrink-0 items-center justify-center rounded-full border-4 border-[var(--ci-primary-soft)] bg-[var(--ci-surface)] shadow-[var(--ci-shadow-md)]">
         <div className="absolute inset-1 rounded-full border-2 border-dashed border-[var(--ci-primary)] opacity-40" />
-        {icon && <span className="absolute -top-1.5 -right-1.5 text-[var(--ci-primary)]">{icon}</span>}
         <span className="ci-display ci-tabular px-1 text-center text-[15px] leading-none font-bold text-[var(--ci-primary)]">
           {value}
         </span>

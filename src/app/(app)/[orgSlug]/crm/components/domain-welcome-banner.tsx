@@ -2,7 +2,6 @@
 
 import type { ReactNode } from "react";
 
-import { DomainMotif } from "@/components/domain-motif";
 import { CAMPAIGN_TEMPLATES } from "@/lib/campaign-templates";
 
 import { useDomeniu } from "../lib/domeniu-context";
@@ -45,10 +44,6 @@ export function DomainWelcomeBanner({
       <div className="relative overflow-hidden rounded-3xl border border-[var(--ci-border)] bg-gradient-to-br from-[var(--ci-primary-soft)] to-[var(--ci-surface)] px-6 py-5">
         {titlu}
         {sub}
-        <DomainMotif
-          motiv={tpl.motiv}
-          className="pointer-events-none absolute -right-3 -bottom-3 h-16 w-16 text-[var(--ci-primary)] opacity-15"
-        />
       </div>
     );
   }
@@ -56,9 +51,7 @@ export function DomainWelcomeBanner({
   if (tpl.familie === "natural-ancorat") {
     return (
       <div className="flex items-center gap-3.5">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--ci-primary-soft)]">
-          <DomainMotif motiv={tpl.motiv} className="h-6 w-6 text-[var(--ci-primary)]" />
-        </div>
+        <div className="h-12 w-12 shrink-0 rounded-2xl bg-[var(--ci-primary-soft)]" />
         <div>
           {titlu}
           {sub}
@@ -75,10 +68,6 @@ export function DomainWelcomeBanner({
           className="absolute inset-y-0 right-0 w-24 bg-white/10"
           style={{ clipPath: "polygon(40% 0, 100% 0, 100% 100%, 0 100%)" }}
         />
-        <DomainMotif
-          motiv={tpl.motiv}
-          className="pointer-events-none absolute right-4 bottom-2 h-20 w-20 text-white opacity-15"
-        />
         <h1 className="ci-display relative text-xl font-bold text-white">
           {salut}, {nume}.
         </h1>
@@ -89,12 +78,9 @@ export function DomainWelcomeBanner({
 
   // elegant-editorial
   return (
-    <div className="flex items-start justify-between gap-3 border-l-[3px] border-[var(--ci-primary)] py-1 pl-5">
-      <div>
-        {titlu}
-        {sub}
-      </div>
-      <DomainMotif motiv={tpl.motiv} className="mt-1 h-5 w-5 shrink-0 text-[var(--ci-primary)] opacity-60" />
+    <div className="border-l-[3px] border-[var(--ci-primary)] py-1 pl-5">
+      {titlu}
+      {sub}
     </div>
   );
 }

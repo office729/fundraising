@@ -2,7 +2,6 @@ import { ArrowRight, Calendar, CheckCircle2, Mail, Phone } from "lucide-react";
 import Link from "next/link";
 import { Bar, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip as RTooltip, XAxis, YAxis } from "recharts";
 
-import { DomainMotif } from "@/components/domain-motif";
 import { CAMPAIGN_TEMPLATES } from "@/lib/campaign-templates";
 
 import { Badge } from "../ui/badge";
@@ -32,7 +31,6 @@ export function NaturalAncoratDashboard({
 }: DashboardData) {
   const totalKpi = kpis[0];
   const restKpi = kpis.slice(1);
-  const motiv = domeniu ? CAMPAIGN_TEMPLATES[domeniu].motiv : null;
   const itemLabel = domeniu ? CAMPAIGN_TEMPLATES[domeniu].itemLabel : undefined;
 
   return (
@@ -42,7 +40,6 @@ export function NaturalAncoratDashboard({
           <ImpactBadge
             value={totalKpi.unitate === "count" ? String(Math.round(totalKpi.valoare)) : formatSuma(totalKpi.valoare)}
             label={totalKpi.label}
-            icon={<DomainMotif motiv={motiv} className="h-5 w-5" />}
           />
         )}
         <div className="flex flex-wrap gap-4">
@@ -91,11 +88,8 @@ export function NaturalAncoratDashboard({
               <Link
                 key={b.id}
                 href={`${base}/beneficiari/${b.id}`}
-                className="relative rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4 pt-5 shadow-[var(--ci-card-shadow)] transition-shadow hover:shadow-[var(--ci-shadow-lg)]"
+                className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4 shadow-[var(--ci-card-shadow)] transition-shadow hover:shadow-[var(--ci-shadow-lg)]"
               >
-                <div className="absolute -top-3 left-4 flex h-7 w-7 items-center justify-center rounded-full bg-[var(--ci-primary)] text-white shadow-[var(--ci-shadow-sm)]">
-                  <DomainMotif motiv={motiv} className="h-3.5 w-3.5" />
-                </div>
                 <div className="mb-2 flex items-center justify-between">
                   <p className="text-sm font-semibold text-[var(--ci-text)]">{b.nume}</p>
                   <Badge tone={b.statusCampanie === "urgenta" ? "red" : "blue"}>

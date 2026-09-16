@@ -7,9 +7,9 @@
 //
 // Paleta reală (--brand-*) e definită în src/app/globals.css, sub blocuri
 // `[data-domeniu="x"]` / `.dark[data-domeniu="x"]` — acest fișier NU repetă
-// culorile, doar identifică tema (nume, familie de layout, motiv) ca
-// `data-domeniu` să ajungă pe elementul corect din arbore (vezi
-// [orgSlug]/layout.tsx, crm/shell.tsx, pagina publică de campanie).
+// culorile, doar identifică tema (nume, familie de layout) ca `data-domeniu`
+// să ajungă pe elementul corect din arbore (vezi [orgSlug]/layout.tsx,
+// crm/shell.tsx, pagina publică de campanie).
 
 export type DomeniuActivitate =
   | "copii"
@@ -42,15 +42,12 @@ export const TOATE_TEMPLATE_URILE: CampaignPageTemplate[] = TOATE_DOMENIILE;
 
 // Familia de layout — dă FORMA structurală (așezarea hero-ului, radius-ul),
 // nu culoarea. Două domenii din aceeași familie tot arată clar diferit (au
-// paletă + motiv proprii), familia doar le dă un "aer" comun de personalitate.
+// paletă proprie), familia doar le dă un "aer" comun de personalitate.
 export type LayoutFamily = "cald-protector" | "natural-ancorat" | "indraznet-dinamic" | "elegant-editorial" | "neutru";
-
-export type MotifId = "balon" | "puls" | "incluziune" | "laba" | "frunza" | "minge" | "absolvire" | "paleta" | null;
 
 type TemplateDef = {
   nume: string;
   familie: LayoutFamily;
-  motiv: MotifId;
   // Eticheta secțiunii de "proiecte active" pe panoul CRM (dashboard) — dă
   // textului, nu doar formei, un aer specific domeniului. Fără valoare =
   // rămâne titlul generic din dicționarul de traduceri (cazul "altele").
@@ -58,15 +55,15 @@ type TemplateDef = {
 };
 
 export const CAMPAIGN_TEMPLATES: Record<CampaignPageTemplate, TemplateDef> = {
-  copii: { nume: "Copii", familie: "cald-protector", motiv: "balon", itemLabel: "Copii sprijiniți" },
-  sanatate: { nume: "Sănătate", familie: "cald-protector", motiv: "puls", itemLabel: "Cazuri active" },
-  social_incluziune: { nume: "Social / Incluziune", familie: "cald-protector", motiv: "incluziune", itemLabel: "Persoane sprijinite" },
-  animale: { nume: "Animale", familie: "natural-ancorat", motiv: "laba", itemLabel: "Cazuri de salvare active" },
-  mediu: { nume: "Mediu", familie: "natural-ancorat", motiv: "frunza", itemLabel: "Proiecte de mediu active" },
-  sport: { nume: "Sport", familie: "indraznet-dinamic", motiv: "minge", itemLabel: "Provocări active" },
-  educatie: { nume: "Educație", familie: "indraznet-dinamic", motiv: "absolvire", itemLabel: "Burse și proiecte active" },
-  cultura: { nume: "Cultură", familie: "elegant-editorial", motiv: "paleta", itemLabel: "Proiecte culturale" },
-  altele: { nume: "Modern", familie: "neutru", motiv: null },
+  copii: { nume: "Copii", familie: "cald-protector", itemLabel: "Copii sprijiniți" },
+  sanatate: { nume: "Sănătate", familie: "cald-protector", itemLabel: "Cazuri active" },
+  social_incluziune: { nume: "Social / Incluziune", familie: "cald-protector", itemLabel: "Persoane sprijinite" },
+  animale: { nume: "Animale", familie: "natural-ancorat", itemLabel: "Cazuri de salvare active" },
+  mediu: { nume: "Mediu", familie: "natural-ancorat", itemLabel: "Proiecte de mediu active" },
+  sport: { nume: "Sport", familie: "indraznet-dinamic", itemLabel: "Provocări active" },
+  educatie: { nume: "Educație", familie: "indraznet-dinamic", itemLabel: "Burse și proiecte active" },
+  cultura: { nume: "Cultură", familie: "elegant-editorial", itemLabel: "Proiecte culturale" },
+  altele: { nume: "Modern", familie: "neutru" },
 };
 
 // Template-urile disponibile pentru un org — implicit doar tema propriului
