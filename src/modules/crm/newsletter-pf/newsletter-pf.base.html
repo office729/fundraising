@@ -119,7 +119,8 @@
     <h2>Șablon</h2>
     <label>Tipul de newsletter</label>
     <select id="TEMPLATE" style="width:100%; padding:9px 10px; border:1.5px solid #E4DFD7; border-radius:8px; font-size:13px; font-family:inherit; background:#fff;">
-      <option value="apel" selected>Apel de caz (complet)</option>
+      <option value="design_standard" selected>🧡 Standard (culori din logo)</option>
+      <option value="apel">Apel de caz (complet)</option>
       <option value="urgent">Apel urgent / criză</option>
       <option value="design_eveniment_elegant">✦ Design: Eveniment elegant</option>
       <option value="design_acuarela">✦ Design: Acuarelă</option>
@@ -135,7 +136,7 @@
     </div>
     <input type="file" id="LOGO_IMG_FILE" accept="image/*">
     <input type="text" id="LOGO_IMG" value="" placeholder="...sau lipește un URL" style="margin-top:6px;">
-    <div class="hint">Dacă adaugi un logo, el înlocuiește titlul text din antet. Se redimensionează automat (max. 34px înălțime).</div>
+    <div class="hint">Dacă adaugi un logo, el înlocuiește titlul text din antet. Se redimensionează automat (max. 34px înălțime). La șablonul „Standard", culorile (antet, buton, bară de progres) se adaptează automat după culoarea dominantă din logo — fără logo, rămâne tema portocaliu-cărbune implicită.</div>
     <label>Sloganul vostru (opțional)</label>
     <input type="text" id="SLOGAN" value="" placeholder="ex: Noi punem suflet!">
     <div class="hint">Apare în antet, cu scris de mână. Lasă gol dacă nu vrei niciun slogan.</div>
@@ -156,7 +157,7 @@
       <label>Suma 3</label>
       <input type="text" id="G3" value="300 lei">
     </div>
-    <div class="tplfields" data-tpl="design_eveniment_elegant,design_acuarela,design_poveste,design_radiografie" style="display:none;">
+    <div class="tplfields" data-tpl="design_standard,design_eveniment_elegant,design_acuarela,design_poveste,design_radiografie" style="display:none;">
       <h2>Conținut design</h2>
       <div class="hint">Câmpuri pentru șabloanele de <b>design vizual</b>. Luna, linkul butonului și poza (la „Foto-first") se iau din câmpurile de mai jos (Email / Poza).</div>
       <label>Titlu principal</label>
@@ -893,6 +894,90 @@
 </table>
 </td></tr></table>
 </body></html></script>
+<script type="text/plain" id="tpl_standard"><!DOCTYPE html>
+<html lang="ro"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{D_HEADLINE}}</title>
+<!--[if mso]><style>.container{width:600px;}</style><![endif]-->
+<style>@media only screen and (max-width:600px){.container{width:100%!important}.mh1{font-size:28px!important}.mpad{padding-left:26px!important;padding-right:26px!important}.mcol{display:block!important;width:100%!important;padding:10px 0!important;border-left:0!important;border-right:0!important;border-top:1px solid #EFE3D6!important}}</style></head>
+<body style="margin:0;padding:0;background-color:#FBF7F2;-webkit-text-size-adjust:100%;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#FBF7F2;">{{PREHEADER}}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#FBF7F2" style="font-family:Arial,Helvetica,sans-serif;"><tr><td align="center" style="padding:26px 12px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" class="container" style="width:600px;max-width:600px;background-color:#ffffff;">
+  <tr><td bgcolor="{{BR_PRIMARY}}" style="padding:20px 30px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+      <td align="left" valign="middle">
+<!--LOGO_START-->
+        <img src="{{LOGO_IMG}}" alt="" style="display:block;max-height:36px;max-width:180px;width:auto;height:auto;">
+<!--LOGO_END-->
+<!--LOGOTXT_START-->
+        <span style="font-family:Georgia,'Times New Roman',serif;font-weight:bold;font-size:19px;color:#ffffff;">Salvează o inimă</span>
+<!--LOGOTXT_END-->
+      </td>
+      <td align="right" valign="middle">
+        <span style="font-family:Arial,sans-serif;font-size:11px;font-weight:800;letter-spacing:2px;color:#FFE3C7;text-transform:uppercase;">Newsletter &middot; {{LUNA}}</span>
+      </td>
+    </tr></table>
+  </td></tr>
+  <tr><td align="center" class="mpad" style="padding:46px 50px 0;">
+    <div style="font-family:Arial,sans-serif;font-size:11px;font-weight:800;letter-spacing:2.5px;color:{{BR_PRIMARY}};text-transform:uppercase;">Noi punem suflet</div>
+    <h1 class="mh1" style="font-family:Georgia,'Times New Roman',serif;font-weight:bold;font-size:38px;line-height:1.15;color:#221C18;margin:14px 0 0;">{{D_HEADLINE}}</h1>
+    <p style="font-family:Arial,sans-serif;font-size:15px;line-height:1.7;color:#5B534C;margin:18px 0 0;">{{D_LEAD}}</p>
+  </td></tr>
+  <tr><td align="center" style="padding:24px 40px 0;">
+    <span style="font-family:Georgia,'Times New Roman',serif;font-weight:bold;font-size:26px;color:{{BR_PRIMARY}};">{{D_STATBIG}}</span>
+    <span style="font-family:Arial,sans-serif;font-size:13px;color:#5B534C;"> &mdash; {{D_STATLABEL}}</span>
+  </td></tr>
+  <tr><td align="center" style="padding:22px 50px 0;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="{{BR_PRIMARY}}" style="border-radius:999px;"><a href="{{LINK}}" target="_blank" style="display:inline-block;padding:15px 42px;font-family:Arial,sans-serif;font-size:14px;font-weight:800;letter-spacing:.5px;color:#ffffff;text-decoration:none;text-transform:uppercase;border-radius:999px;">{{D_CTA}}</a></td></tr></table>
+  </td></tr>
+  <tr><td style="padding:34px 0 0;"><img src="{{D_FOTO}}" width="600" alt="" style="display:block;width:100%;max-width:600px;height:auto;border:0;"></td></tr>
+  <tr><td class="mpad" style="padding:34px 40px 0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="{{BR_LIGHT}}" style="border-radius:20px;"><tr><td style="padding:26px 28px;">
+      <div style="font-family:Arial,sans-serif;font-size:11px;font-weight:800;letter-spacing:2px;color:#A08A78;text-transform:uppercase;">Cât de aproape suntem</div>
+      <div style="font-family:Georgia,serif;font-weight:bold;font-size:22px;color:#221C18;margin-top:4px;">de obiectivul campaniei</div>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:18px;"><tr>
+        <td bgcolor="{{BR_PRIMARY}}" style="padding:10px 18px;border-radius:999px 0 0 999px;"><span style="font-family:Arial,sans-serif;font-size:12px;font-weight:800;color:#ffffff;">&#10084; Donații strânse</span></td>
+        <td align="right" bgcolor="{{BR_PRIMARY}}" style="padding:10px 18px;border-radius:0 999px 999px 0;"><span style="font-family:Arial,sans-serif;font-size:14px;font-weight:800;color:#ffffff;">{{PROCENT_TXT}}</span></td>
+      </tr></table>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:12px;"><tr>
+        <td width="{{BAR_PCT}}%" height="10" bgcolor="{{BR_PRIMARY}}" style="width:{{BAR_PCT}}%;height:10px;font-size:0;line-height:0;border-radius:6px 0 0 6px;">&nbsp;</td>
+        <td width="{{BAR_REST}}%" height="10" bgcolor="#E6DCCF" style="width:{{BAR_REST}}%;height:10px;font-size:0;line-height:0;border-radius:0 6px 6px 0;">&nbsp;</td>
+      </tr></table>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:16px;"><tr>
+        <td align="left"><div style="font-family:Arial,sans-serif;font-size:11px;color:#A08A78;">Strâns</div><div style="font-family:Georgia,serif;font-weight:bold;font-size:20px;color:#221C18;">{{SUMA_TXT}}&nbsp;&euro;</div></td>
+        <td align="right"><div style="font-family:Arial,sans-serif;font-size:11px;color:#A08A78;">Obiectiv</div><div style="font-family:Georgia,serif;font-weight:bold;font-size:20px;color:#221C18;">{{TINTA_TXT}}&nbsp;&euro;</div></td>
+      </tr></table>
+    </td></tr></table>
+  </td></tr>
+  <tr><td class="mpad" style="padding:30px 40px 0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+      <td align="center" class="mcol" width="33%" style="padding:0 6px;">
+        <div style="font-family:Georgia,serif;font-weight:bold;font-size:24px;color:{{BR_PRIMARY}};">{{D_N1}}</div>
+        <div style="font-family:Arial,sans-serif;font-size:10px;font-weight:800;letter-spacing:.5px;color:#A08A78;text-transform:uppercase;margin-top:4px;">{{D_L1}}</div>
+      </td>
+      <td align="center" class="mcol" width="33%" style="padding:0 6px;border-left:1px solid #EFE3D6;border-right:1px solid #EFE3D6;">
+        <div style="font-family:Georgia,serif;font-weight:bold;font-size:24px;color:{{BR_PRIMARY}};">{{D_N2}}</div>
+        <div style="font-family:Arial,sans-serif;font-size:10px;font-weight:800;letter-spacing:.5px;color:#A08A78;text-transform:uppercase;margin-top:4px;">{{D_L2}}</div>
+      </td>
+      <td align="center" class="mcol" width="33%" style="padding:0 6px;">
+        <div style="font-family:Georgia,serif;font-weight:bold;font-size:24px;color:{{BR_PRIMARY}};">{{D_N3}}</div>
+        <div style="font-family:Arial,sans-serif;font-size:10px;font-weight:800;letter-spacing:.5px;color:#A08A78;text-transform:uppercase;margin-top:4px;">{{D_L3}}</div>
+      </td>
+    </tr></table>
+  </td></tr>
+  <tr><td class="mpad" style="padding:34px 40px 0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="{{BR_DARK}}" style="border-radius:20px;"><tr><td align="center" style="padding:30px 34px;">
+      <div style="font-family:Georgia,serif;font-style:italic;font-size:18px;line-height:1.6;color:#ffffff;">&#8222;{{D_QUOTE}}&#8221;</div>
+      <div style="font-family:Arial,sans-serif;font-size:12px;font-weight:800;letter-spacing:.5px;color:{{BR_PRIMARY}};margin-top:14px;">&mdash; {{D_QAUTHOR}}</div>
+    </td></tr></table>
+  </td></tr>
+  <tr><td align="center" style="padding:34px 40px 8px;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="{{BR_PRIMARY}}" style="border-radius:999px;"><a href="{{LINK}}" target="_blank" style="display:inline-block;padding:16px 46px;font-family:Arial,sans-serif;font-size:15px;font-weight:800;color:#ffffff;text-decoration:none;border-radius:999px;">{{D_CTA}}</a></td></tr></table>
+    <div style="font-family:Arial,sans-serif;font-size:12px;color:#A08A78;margin-top:14px;">{{LINK}}</div>
+  </td></tr>
+  <tr><td align="center" style="padding:26px 40px 38px;font-family:Arial,sans-serif;font-size:12px;line-height:1.6;color:#A79E97;">Asociația salvează o inimă &middot; salveazaoinima.ro &middot; <a href="##NEWSMAN:list_unsubscribe##" style="color:#A79E97;">Dezabonare</a></td></tr>
+</table>
+</td></tr></table>
+</body></html></script>
 <script type="text/plain" id="letterDefault">Te rog, oprește-te o clipă. Nu trece mai departe. Astăzi vreau să-ți vorbesc despre Sara.
 
 Sara are doar 14 ani. La vârsta ei, ar fi trebuit să-și facă planuri pentru vacanță, să râdă cu prietenele, să viseze la liceu, la haine, la muzică, la viața care abia începe. Dar în februarie, copilăria ei s-a frânt într-un diagnostic greu de rostit: osteosarcom. Cancer osos.
@@ -1028,6 +1113,102 @@ function hookFile(id){
 hookFile('FOTO');
 hookFile('LOGO_IMG');
 
+/* ===== Culori din logo (șablonul „Standard") — extrage culoarea dominantă
+   din logo-ul încărcat și derivează din ea antetul/butonul/bara de progres,
+   ca șablonul să se adapteze automat la brandul fiecărui ONG. Fără logo (sau
+   dacă extragerea eșuează), rămâne paleta portocaliu-cărbune implicită. */
+function rgbToHsl(r, g, b){
+  r /= 255; g /= 255; b /= 255;
+  var max = Math.max(r, g, b), min = Math.min(r, g, b);
+  var h = 0, s = 0, l = (max + min) / 2;
+  if(max !== min){
+    var d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    if(max === r) h = (g - b) / d + (g < b ? 6 : 0);
+    else if(max === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h *= 60;
+  }
+  return { h: h, s: s, l: l };
+}
+function hex2(n){ var s = Math.max(0, Math.min(255, Math.round(n))).toString(16); return s.length === 1 ? '0' + s : s; }
+function hslToHex(h, s, l){
+  h = ((h % 360) + 360) % 360;
+  var c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = l - c / 2;
+  var r = 0, g = 0, b = 0;
+  if(h < 60){ r = c; g = x; b = 0; } else if(h < 120){ r = x; g = c; b = 0; } else if(h < 180){ r = 0; g = c; b = x; }
+  else if(h < 240){ r = 0; g = x; b = c; } else if(h < 300){ r = x; g = 0; b = c; } else { r = c; g = 0; b = x; }
+  return '#' + hex2((r + m) * 255) + hex2((g + m) * 255) + hex2((b + m) * 255);
+}
+function hexToRgb(hex){
+  var m = /^#?([0-9a-f]{6})$/i.exec((hex || '').trim());
+  if(!m) return null;
+  var n = parseInt(m[1], 16);
+  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+}
+function extractDominantColor(img){
+  try {
+    var size = 48;
+    var c = document.createElement('canvas');
+    c.width = size; c.height = size;
+    var ctx = c.getContext('2d');
+    ctx.drawImage(img, 0, 0, size, size);
+    var data = ctx.getImageData(0, 0, size, size).data;
+    var buckets = {};
+    for(var i = 0; i < data.length; i += 4){
+      var r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
+      if(a < 128) continue;
+      var hsl = rgbToHsl(r, g, b);
+      if(hsl.l < 0.12 || hsl.l > 0.92 || hsl.s < 0.15) continue;
+      var key = Math.round(r / 20) + ',' + Math.round(g / 20) + ',' + Math.round(b / 20);
+      if(!buckets[key]) buckets[key] = { r: 0, g: 0, b: 0, n: 0 };
+      buckets[key].r += r; buckets[key].g += g; buckets[key].b += b; buckets[key].n++;
+    }
+    var best = null;
+    for(var k in buckets){ if(!best || buckets[k].n > best.n) best = buckets[k]; }
+    if(!best) return null;
+    return '#' + hex2(best.r / best.n) + hex2(best.g / best.n) + hex2(best.b / best.n);
+  } catch(e){ return null; }
+}
+var DEFAULT_BRAND = { primary: '#E8730D', dark: '#241E1A', light: '#FBEEE3' };
+function deriveBrandPalette(hex){
+  var rgb = hexToRgb(hex);
+  if(!rgb) return DEFAULT_BRAND;
+  var hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+  var sat = Math.max(0.45, Math.min(0.85, hsl.s || 0.6));
+  return {
+    primary: hslToHex(hsl.h, sat, 0.46),
+    dark: hslToHex(hsl.h, sat, 0.18),
+    light: hslToHex(hsl.h, Math.max(0.18, sat * 0.35), 0.94)
+  };
+}
+var brandHex = null;
+function currentBrandPalette(){ return brandHex ? deriveBrandPalette(brandHex) : DEFAULT_BRAND; }
+function tryExtractFromUrl(url){
+  if(!url){ brandHex = null; refresh(); return; }
+  var img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = function(){ brandHex = extractDominantColor(img); refresh(); };
+  img.onerror = function(){ };
+  img.src = url;
+}
+(function(){
+  document.getElementById('LOGO_IMG_FILE').addEventListener('change', function(e){
+    var f = e.target.files[0];
+    if(!f) return;
+    var img = new Image();
+    img.onload = function(){ brandHex = extractDominantColor(img); refresh(); };
+    img.onerror = function(){ brandHex = null; };
+    img.src = URL.createObjectURL(f);
+  });
+  document.getElementById('LOGO_IMG_NAME').querySelector('button').addEventListener('click', function(){
+    brandHex = null; refresh();
+  });
+  document.getElementById('LOGO_IMG').addEventListener('change', function(){
+    tryExtractFromUrl(document.getElementById('LOGO_IMG').value.trim());
+  });
+})();
+
 function num(id){
   var v = document.getElementById(id).value.replace(/[^0-9]/g,'');
   return v ? parseInt(v, 10) : 0;
@@ -1096,7 +1277,7 @@ function syncFields(){
     els[i].style.display = (list.indexOf(t)>=0) ? '' : 'none';
   }
 }
-var DESIGN_TPL={design_eveniment_elegant:'tpl_eveniment_elegant',design_acuarela:'tpl_acuarela',design_poveste:'tpl_poveste',design_radiografie:'tpl_radiografie'};
+var DESIGN_TPL={design_standard:'tpl_standard',design_eveniment_elegant:'tpl_eveniment_elegant',design_acuarela:'tpl_acuarela',design_poveste:'tpl_poveste',design_radiografie:'tpl_radiografie'};
 function isDesign(){var e=document.getElementById('TEMPLATE');return e&&DESIGN_TPL[e.value];}
 function build(forExport, letterOverride){
   var _d=isDesign();
@@ -1105,6 +1286,25 @@ function build(forExport, letterOverride){
     var dfoto=files.FOTO?(files.FOTO.url?files.FOTO.url:(forExport?files.FOTO.name:files.FOTO.blob)):document.getElementById('FOTO').value;
     dout=dout.split('{{D_FOTO}}').join(dfoto);
     ['LINK','PREHEADER','LUNA','D_HEADLINE','D_LEAD','D_STATBIG','D_STATLABEL','D_QUOTE','D_QAUTHOR','D_N1','D_L1','D_N2','D_L2','D_N3','D_L3','D_CTA'].forEach(function(id){var e=document.getElementById(id);if(e){dout=dout.split('{{'+id+'}}').join(e.value);}});
+    // Câmpuri suplimentare, folosite doar de șablonul „Standard" (logo din
+    // antet + progresul campaniei, reluat din SUMA/TINTA) — no-op (split/join
+    // fără potrivire) pentru celelalte șabloane de design, care nu au aceste token-uri.
+    var dlogoSrc = files.LOGO_IMG
+      ? (files.LOGO_IMG.url ? files.LOGO_IMG.url : (forExport ? files.LOGO_IMG.name : files.LOGO_IMG.blob))
+      : document.getElementById('LOGO_IMG').value;
+    dout = dout.split('{{LOGO_IMG}}').join(dlogoSrc);
+    var dHasLogo = !!(dlogoSrc && dlogoSrc.trim());
+    dout = dout.replace(dHasLogo ? /<!--LOGOTXT_START-->[\s\S]*?<!--LOGOTXT_END-->/ : /<!--LOGO_START-->[\s\S]*?<!--LOGO_END-->/, '');
+    var dpr = progres();
+    dout = dout.split('{{SUMA_TXT}}').join(dpr.suma);
+    dout = dout.split('{{TINTA_TXT}}').join(dpr.tinta);
+    dout = dout.split('{{PROCENT_TXT}}').join(dpr.txt);
+    dout = dout.split('{{BAR_PCT}}').join(dpr.bar);
+    dout = dout.split('{{BAR_REST}}').join(dpr.rest);
+    var dbr = currentBrandPalette();
+    dout = dout.split('{{BR_PRIMARY}}').join(dbr.primary);
+    dout = dout.split('{{BR_DARK}}').join(dbr.dark);
+    dout = dout.split('{{BR_LIGHT}}').join(dbr.light);
     return dout;
   }
   var out = tpl;
@@ -1513,6 +1713,7 @@ document.getElementById('remCopy').onclick = function(){
 
 /* ===== Galerie de template-uri (ecran de start) ===== */
 var TPL_META = {
+  design_standard: {icon:'🧡', name:'Standard', theme:'Tema implicită — se adaptează automat la culorile din logo-ul ONG-ului'},
   apel: {icon:'📢', name:'Apel de caz', theme:'Poveste completă — foto, progres, plată, SMS'},
   urgent: {icon:'🚨', name:'Apel urgent', theme:'Criză, termen scurt, presiune de timp'},
   design_eveniment_elegant: {icon:'🎟️', name:'Eveniment elegant', theme:'Invitație elegantă — dată, oră, locație, invitat special'},
@@ -1520,7 +1721,7 @@ var TPL_META = {
   design_poveste: {icon:'📖', name:'Poveste ilustrată', theme:'Stil de carte pentru copii, jucăuș'},
   design_radiografie: {icon:'🩻', name:'Radiografie', theme:'Monocrom, medical, contrast dramatic'}
 };
-var TPL_ORDER = ['apel','urgent','design_eveniment_elegant','design_acuarela','design_poveste','design_radiografie'];
+var TPL_ORDER = ['design_standard','apel','urgent','design_eveniment_elegant','design_acuarela','design_poveste','design_radiografie'];
 function renderGalleryGrid(containerId, order){
   var el = document.getElementById(containerId);
   var html = '';
