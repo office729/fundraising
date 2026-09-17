@@ -80,8 +80,10 @@ export const INSTRUMENTE_DICT = {
     onePager: {
       breadcrumbLabel: "One pager companii",
       printeaza: "Printează",
+      eyebrow: "Raport de impact",
       titluOrg: "Salvează o Inimă",
       subtitlu: "Prezentare pentru potențiali parteneri corporate",
+      impactLabel: "Impactul nostru",
       totalStrans: "Total strâns",
       cazuriActive: "Cazuri active",
       cazuriFinalizate: "Cazuri finalizate",
@@ -89,6 +91,7 @@ export const INSTRUMENTE_DICT = {
       cazuriImpact: "Cazuri cu cel mai mare impact",
       din: "din",
       parteneriCorporate: "Parteneri corporate",
+      site: "salveazaoinima.ro",
       generatAutomat: "Generat automat din datele curente ale organizației.",
     },
     bannereSms: {
@@ -211,8 +214,10 @@ export const INSTRUMENTE_DICT = {
     onePager: {
       breadcrumbLabel: "Corporate one-pager",
       printeaza: "Print",
+      eyebrow: "Impact report",
       titluOrg: "Save a Heart",
       subtitlu: "Presentation for potential corporate partners",
+      impactLabel: "Our impact",
       totalStrans: "Total raised",
       cazuriActive: "Active cases",
       cazuriFinalizate: "Completed cases",
@@ -220,6 +225,7 @@ export const INSTRUMENTE_DICT = {
       cazuriImpact: "Highest-impact cases",
       din: "of",
       parteneriCorporate: "Corporate partners",
+      site: "salveazaoinima.ro",
       generatAutomat: "Generated automatically from the organization's current data.",
     },
     bannereSms: {

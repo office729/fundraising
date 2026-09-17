@@ -3,6 +3,7 @@
 import { Printer } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useMemo } from "react";
+import type { ReactNode } from "react";
 
 import { Breadcrumb } from "../../components/ui/breadcrumb";
 import { Button } from "../../components/ui/button";
@@ -42,58 +43,74 @@ export default function OnePagerPage() {
         </Button>
       </div>
 
-      <Card className="space-y-6">
-        <div className="text-center">
-          <h1 className="ci-display text-2xl font-bold text-[var(--ci-text)]">{dict.titluOrg}</h1>
-          <p className="mt-1 text-[13px] text-[var(--ci-text-muted)]">{dict.subtitlu}</p>
+      <Card padded={false} className="overflow-hidden">
+        <div className="bg-[var(--ci-primary)] px-8 py-10 text-center text-white print:py-8">
+          <p className="text-[11px] font-bold tracking-[2.5px] text-white/70 uppercase">{dict.eyebrow}</p>
+          <h1 className="ci-display mt-2 text-[28px] font-bold">{dict.titluOrg}</h1>
+          <p className="mt-2 text-[13px] text-white/85">{dict.subtitlu}</p>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <Stat label={dict.totalStrans} value={formatSuma(stats.totalDonat)} />
-          <Stat label={dict.cazuriActive} value={String(stats.cazuriActive)} />
-          <Stat label={dict.cazuriFinalizate} value={String(stats.cazuriFinalizate)} />
-          <Stat label={dict.companiiPartenere} value={String(stats.companiiPartenere)} />
-        </div>
+        <div className="space-y-8 p-8">
+          <div>
+            <SectionLabel>{dict.impactLabel}</SectionLabel>
+            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <Stat label={dict.totalStrans} value={formatSuma(stats.totalDonat)} />
+              <Stat label={dict.cazuriActive} value={String(stats.cazuriActive)} />
+              <Stat label={dict.cazuriFinalizate} value={String(stats.cazuriFinalizate)} />
+              <Stat label={dict.companiiPartenere} value={String(stats.companiiPartenere)} />
+            </div>
+          </div>
 
-        <div>
-          <p className="mb-2 text-[13px] font-semibold text-[var(--ci-text)]">{dict.cazuriImpact}</p>
-          <div className="grid grid-cols-2 gap-3">
-            {topBeneficiari.map((b) => {
-              const pct = Math.round((b.sumaStransa / b.obiectiv) * 100);
-              return (
-                <div key={b.id} className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] p-3">
-                  <p className="text-[13px] font-medium text-[var(--ci-text)]">{b.nume}</p>
-                  <p className="text-[12px] text-[var(--ci-text-muted)]">{b.localitate}</p>
-                  <ProgressBar value={pct} className="mt-2" />
-                  <p className="ci-tabular mt-1 text-[12px] text-[var(--ci-text-muted)]">{formatSuma(b.sumaStransa)} {dict.din} {formatSuma(b.obiectiv)}</p>
-                </div>
-              );
-            })}
+          <div>
+            <SectionLabel>{dict.cazuriImpact}</SectionLabel>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              {topBeneficiari.map((b) => {
+                const pct = Math.round((b.sumaStransa / b.obiectiv) * 100);
+                return (
+                  <div key={b.id} className="overflow-hidden rounded-[var(--ci-radius-card)] border border-[var(--ci-border)]">
+                    <div className="h-1 bg-[var(--ci-primary)]" />
+                    <div className="p-3">
+                      <p className="text-[13px] font-medium text-[var(--ci-text)]">{b.nume}</p>
+                      <p className="text-[12px] text-[var(--ci-text-muted)]">{b.localitate}</p>
+                      <ProgressBar value={pct} className="mt-2" />
+                      <p className="ci-tabular mt-1 text-[12px] text-[var(--ci-text-muted)]">{formatSuma(b.sumaStransa)} {dict.din} {formatSuma(b.obiectiv)}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <SectionLabel>{dict.parteneriCorporate}</SectionLabel>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {topCompanii.map((c) => (
+                <span key={c.id} className="rounded-full border border-[var(--ci-primary)]/25 bg-[var(--ci-primary-soft)] px-3 py-1 text-[12px] font-medium text-[var(--ci-primary)]">
+                  {c.nume}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
 
-        <div>
-          <p className="mb-2 text-[13px] font-semibold text-[var(--ci-text)]">{dict.parteneriCorporate}</p>
-          <div className="flex flex-wrap gap-2">
-            {topCompanii.map((c) => (
-              <span key={c.id} className="rounded-full border border-[var(--ci-border)] bg-[var(--ci-surface-2)] px-3 py-1 text-[12px] font-medium text-[var(--ci-text)]">
-                {c.nume}
-              </span>
-            ))}
-          </div>
+        <div className="border-t border-[var(--ci-border)] bg-[var(--ci-surface-2)] px-8 py-4 text-center">
+          <p className="text-[12px] font-medium text-[var(--ci-text-muted)]">{dict.site}</p>
+          <p className="mt-1 text-[11px] text-[var(--ci-text-faint)]">{dict.generatAutomat}</p>
         </div>
-
-        <p className="text-center text-[11px] text-[var(--ci-text-faint)]">{dict.generatAutomat}</p>
       </Card>
     </div>
   );
 }
 
+function SectionLabel({ children }: { children: ReactNode }) {
+  return <p className="text-[11px] font-bold tracking-[1.5px] text-[var(--ci-primary)] uppercase">{children}</p>;
+}
+
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="text-center">
-      <p className="ci-tabular text-lg font-bold text-[var(--ci-text)]">{value}</p>
-      <p className="text-[11px] text-[var(--ci-text-muted)]">{label}</p>
+    <div className="rounded-[var(--ci-radius-card)] bg-[var(--ci-primary-soft)] px-2 py-4 text-center">
+      <p className="ci-tabular text-xl font-bold text-[var(--ci-primary)]">{value}</p>
+      <p className="mt-0.5 text-[11px] text-[var(--ci-text-muted)]">{label}</p>
     </div>
   );
 }
