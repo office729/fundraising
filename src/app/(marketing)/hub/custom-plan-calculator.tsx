@@ -11,6 +11,7 @@ import type { Locale } from "@/lib/i18n/config";
 const TOOL_LABELS: Record<Locale, Record<ToolId, string>> = {
   ro: {
     "one-pager": "One-pager companii",
+    "one-pager-generator": "Generator one-pager",
     "raport-companii": "Rapoarte companii",
     "newsletter-pf": "Newsletter persoane fizice",
     "newsletter-pj": "Newsletter companii",
@@ -22,6 +23,7 @@ const TOOL_LABELS: Record<Locale, Record<ToolId, string>> = {
   },
   en: {
     "one-pager": "Company one-pager",
+    "one-pager-generator": "One-pager generator",
     "raport-companii": "Company reports",
     "newsletter-pf": "Individual newsletter",
     "newsletter-pj": "Company newsletter",

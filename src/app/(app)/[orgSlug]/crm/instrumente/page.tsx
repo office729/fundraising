@@ -65,7 +65,10 @@ const CATEGORII: { key: CategorieKey; culoare: string; instrumente: InstrumentDe
   {
     key: "generatoare",
     culoare: "var(--ci-red)",
-    instrumente: [{ key: "bannereSms", href: "bannere-sms" }],
+    instrumente: [
+      { key: "bannereSms", href: "bannere-sms" },
+      { key: "onePagerGenerator", href: "/one-pager-generator" },
+    ],
   },
 ];
 

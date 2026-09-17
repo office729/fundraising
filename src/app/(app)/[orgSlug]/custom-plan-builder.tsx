@@ -9,6 +9,7 @@ import { startCustomCheckoutAction } from "./billing-actions";
 
 const TOOL_LABELS: Record<ToolId, string> = {
   "one-pager": "One-pager companii",
+  "one-pager-generator": "Generator one-pager",
   "raport-companii": "Rapoarte companii",
   "newsletter-pf": "Newsletter persoane fizice",
   "newsletter-pj": "Newsletter companii",

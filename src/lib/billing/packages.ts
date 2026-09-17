@@ -11,6 +11,7 @@ export type OrgPackage = "trial" | "start" | "crestere" | "impact" | "custom";
 
 export type ToolId =
   | "one-pager"
+  | "one-pager-generator"
   | "raport-companii"
   | "newsletter-pf"
   | "newsletter-pj"
@@ -23,6 +24,7 @@ export type ToolId =
 // Toate instrumentele sunt disponibile în orice pachet — inclusiv trial.
 export const ALL_TOOLS: ToolId[] = [
   "one-pager",
+  "one-pager-generator",
   "raport-companii",
   "newsletter-pf",
   "newsletter-pj",

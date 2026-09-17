@@ -41,6 +41,7 @@ export const INSTRUMENTE_DICT = {
           nume: "Generatoare",
           instrumente: {
             bannereSms: { titlu: "Generator bannere SMS", descriere: "Creează bannere grafice pentru campaniile SMS." },
+            onePagerGenerator: { titlu: "Generator one-pager", descriere: "Creează o prezentare editabilă de o pagină, cu logo, misiune, cifre de impact și contact." },
           },
         },
       },
@@ -175,6 +176,7 @@ export const INSTRUMENTE_DICT = {
           nume: "Generators",
           instrumente: {
             bannereSms: { titlu: "SMS banner generator", descriere: "Create graphic banners for SMS campaigns." },
+            onePagerGenerator: { titlu: "One-pager generator", descriere: "Create an editable one-page overview — logo, mission, impact figures and contact." },
           },
         },
       },

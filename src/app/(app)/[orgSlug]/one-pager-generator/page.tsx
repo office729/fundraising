@@ -1,0 +1,33 @@
+import Link from "next/link";
+
+import { requireOrgAccess } from "@/lib/auth/guard";
+import { orgHasToolAccess } from "@/lib/billing/packages";
+import { ONE_PAGER_GENERATOR_HTML } from "@/modules/crm/one-pager-generator/one-pager-generator-html";
+import { StandaloneToolFrame } from "@/modules/crm/shared/standalone-tool-frame";
+import { ToolLocked } from "@/modules/crm/shared/tool-locked";
+
+const TITLE = "Generator one-pager";
+
+export default async function OnePagerGeneratorPage({ params }: { params: Promise<{ orgSlug: string }> }) {
+  const { orgSlug } = await params;
+  const access = await requireOrgAccess(orgSlug);
+
+  if (!orgHasToolAccess(access.orgPackage, access.orgCustomPlanConfig, "one-pager-generator")) {
+    return <ToolLocked orgSlug={orgSlug} toolName={TITLE} />;
+  }
+
+  return (
+    <div className="relative left-1/2 -ml-[50vw] flex h-screen w-screen flex-col overflow-hidden">
+      <header className="flex shrink-0 items-center gap-3 border-b border-line bg-panel px-4 py-3 sm:px-6">
+        <Link href={`/${orgSlug}/crm/instrumente`} className="text-[13px] text-muted transition hover:text-ink">
+          ← Instrumente
+        </Link>
+        <span className="text-line">/</span>
+        <span className="font-display text-sm font-semibold text-ink">{TITLE}</span>
+      </header>
+      <div className="min-h-0 flex-1">
+        <StandaloneToolFrame html={ONE_PAGER_GENERATOR_HTML} title={TITLE} orgSlug={orgSlug} />
+      </div>
+    </div>
+  );
+}
