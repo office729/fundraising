@@ -68,12 +68,15 @@ export const CAMPAIGN_TEMPLATES: Record<CampaignPageTemplate, TemplateDef> = {
 
 // Template-urile disponibile pentru un org — implicit doar tema propriului
 // domeniu (+ "altele", mereu disponibil ca opțiune neutră), decât dacă are
-// acces total (plan personalizat) sau nu și-a ales încă un domeniu (nu
-// blocăm crearea paginii din lipsa acestei informații).
+// acces total (plan personalizat, accesDesignToate). Lipsa unui domeniu ales
+// (organizație nouă sau radio "Fără" din Setări) NU mai deblochează toate
+// template-urile — e tratată identic cu domeniul "altele": altfel oricine
+// putea ocoli gratuit plata de 29 lei/lună pentru "acces la toate
+// design-urile", pur și simplu nealegând (sau resetând la "Fără") un domeniu.
 export function getTemplatesDisponibile(
   domeniu: DomeniuActivitate | null,
   accesDesignToate: boolean,
 ): CampaignPageTemplate[] {
-  if (accesDesignToate || !domeniu) return TOATE_TEMPLATE_URILE;
-  return Array.from(new Set([domeniu, "altele" as CampaignPageTemplate]));
+  if (accesDesignToate) return TOATE_TEMPLATE_URILE;
+  return Array.from(new Set([domeniu ?? "altele", "altele" as CampaignPageTemplate]));
 }
