@@ -4,10 +4,14 @@ import { NextResponse } from "next/server";
 import { withOrgSession } from "@/lib/auth/guard";
 import { crmKv } from "@/lib/db/schema";
 
-// KV pentru starea ne-relațională a CRM PJ (sarcini + config), per organizație.
-// Doar chei pe listă albă, ca să nu devină un depozit generic.
-const ALLOWED_GET = new Set(["tasks", "config"]);
-const ALLOWED_PUT = new Set(["tasks", "config"]);
+// KV pentru starea ne-relațională a tool-urilor portate (CRM PJ, Prospectare,
+// CRM Voluntari), per organizație. Doar chei pe listă albă, ca să nu devină
+// un depozit generic. "email_opens" lipsea din listă deși CRM PJ/Prospectare
+// o cer la fiecare încărcare — răspundea mereu 400 (vezi crm-pj.base.html /
+// prospectare.base.html, loadOpens()). "voluntari-*" sunt cheile CRM Voluntari
+// (roster/sarcini/cazuri) — înainte loveau ruta inexistentă /api/voluntari-sync.
+const ALLOWED_GET = new Set(["tasks", "config", "email_opens", "voluntari-roster", "voluntari-tasks", "voluntari-cazuri"]);
+const ALLOWED_PUT = new Set(["tasks", "config", "email_opens", "voluntari-roster", "voluntari-tasks", "voluntari-cazuri"]);
 
 type Ctx = { params: Promise<{ orgSlug: string; path: string }> };
 

@@ -442,10 +442,15 @@
   "use strict";
 
   // ---- Config ----
-  var SYNC = "/api/voluntari-sync";
-  var KEY = "soi-vol-roster";
-  var TASKS_KEY = "soi-vol-tasks";
-  var CAZURI_KEY = "soi-vol-cazuri";
+  // Sincronizare reală per organizație — vezi crm-kv/[path]/route.ts (listă
+  // albă de chei) + voluntari-send/voluntari-activity/route.ts (dedicate,
+  // nu KV simplu: primul trimite email-uri reale, al doilea ține jurnalul
+  // de activitate cu vizibilitate pe rol). __FA_ORG_SLUG__ e înlocuit la
+  // randare — vezi StandaloneToolFrame.
+  var API_BASE = "/api/__FA_ORG_SLUG__";
+  var KEY = "voluntari-roster";
+  var TASKS_KEY = "voluntari-tasks";
+  var CAZURI_KEY = "voluntari-cazuri";
   var LOGIN_KEY = "soi-voluntari-loginname";
 
   var TAGS = [
@@ -569,7 +574,7 @@
     if(!dirty) return;
     saving=true; dirty=false;
     var payload={ volunteers: state.volunteers, settings: state.settings, updatedBy: loginName, updatedAt: new Date().toISOString() };
-    fetch(SYNC+"/"+KEY+".json", {
+    fetch(API_BASE+"/crm-kv/"+KEY, {
       method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload)
     }).then(function(r){
       if(!r.ok) throw new Error("HTTP "+r.status);
@@ -583,7 +588,7 @@
   function saveNow(){
     var payload={ volunteers: state.volunteers, settings: state.settings, updatedBy: loginName, updatedAt: new Date().toISOString() };
     dirty=false;
-    return fetch(SYNC+"/"+KEY+".json", {method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload)});
+    return fetch(API_BASE+"/crm-kv/"+KEY, {method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload)});
   }
   var sending=false;
   function sendNow(canal, test){
@@ -599,7 +604,7 @@
     }
     sending=true; setFlag("saving");
     saveNow().then(function(){
-      return fetch("/api/voluntari-send", {method:"POST", headers:{"Content-Type":"application/json"},
+      return fetch(API_BASE+"/voluntari-send", {method:"POST", headers:{"Content-Type":"application/json"},
         body:JSON.stringify({ canal:canal, audience:state.settings.audience, test:!!test,
           subiect:state.settings.mesaj.subiect, continut:state.settings.mesaj.continut, semnatura:state.settings.mesaj.semnatura })});
     }).then(function(r){ return r.json().then(function(j){ return {ok:r.ok, j:j}; }); })
@@ -617,7 +622,7 @@
     }).catch(function(){ sending=false; setFlag("ok"); toast("Trimiterea a eșuat", true); });
   }
   function load(){
-    fetch(SYNC+"/"+KEY+".json", {cache:"no-store"}).then(function(r){
+    fetch(API_BASE+"/crm-kv/"+KEY, {cache:"no-store"}).then(function(r){
       if(!r.ok) throw new Error("HTTP "+r.status);
       return r.json();
     }).then(function(data){
@@ -1045,7 +1050,7 @@
       var t=txt.trim();
       var doAdd=function(){ addTask(t, v, "", loginName); toast("Sarcină adăugată pentru "+(v.nume||"voluntar")); };
       if(Array.isArray(state.tasks)) doAdd();
-      else fetch(SYNC+"/"+TASKS_KEY+".json",{cache:"no-store"}).then(function(r){return r.ok?r.json():null;}).then(function(d){ state.tasks=(d&&Array.isArray(d.tasks))?d.tasks:[]; doAdd(); }).catch(function(){ state.tasks=[]; doAdd(); });
+      else fetch(API_BASE+"/crm-kv/"+TASKS_KEY,{cache:"no-store"}).then(function(r){return r.ok?r.json():null;}).then(function(d){ state.tasks=(d&&Array.isArray(d.tasks))?d.tasks:[]; doAdd(); }).catch(function(){ state.tasks=[]; doAdd(); });
     };
     var ni=$("notaInput");
     if(ni){ ni.onkeydown=function(ev){ if(ev.key==="Enter"){ ev.preventDefault();
@@ -1054,7 +1059,7 @@
     } }; }
     $("callBtn").onclick=function(){
       var v=byId(state.selectedId); if(!v) return;
-      fetch("/api/voluntari-activity", {method:"POST", headers:{"Content-Type":"application/json"},
+      fetch(API_BASE+"/voluntari-activity", {method:"POST", headers:{"Content-Type":"application/json"},
         body:JSON.stringify({ type:"apel", contacte:[{ nume:v.nume, telefon:v.telefon, email:v.email }] })})
         .then(function(r){ if(!r.ok) throw new Error(); toast("Apel înregistrat ✓"); })
         .catch(function(){ toast("Nu am putut înregistra apelul", true); });
@@ -1407,7 +1412,7 @@
   function loadActivity(){
     state.activity=undefined; render();
     if(!isAdmin){ state.activity={forbidden:true, events:[]}; render(); return; }
-    fetch("/api/voluntari-activity", {cache:"no-store"}).then(function(r){
+    fetch(API_BASE+"/voluntari-activity", {cache:"no-store"}).then(function(r){
       if(r.status===403){ state.activity={forbidden:true, events:[]}; render(); return null; }
       return r.json();
     }).then(function(j){ if(j){ state.activity={events:(j&&j.events)||[]}; render(); } })
@@ -1468,12 +1473,12 @@
   // ---- Sarcini (task-uri) ----
   function loadTasks(){
     state.tasks=undefined; render();
-    fetch(SYNC+"/"+TASKS_KEY+".json", {cache:"no-store"}).then(function(r){ return r.ok?r.json():null; })
+    fetch(API_BASE+"/crm-kv/"+TASKS_KEY, {cache:"no-store"}).then(function(r){ return r.ok?r.json():null; })
       .then(function(data){ state.tasks=(data && Array.isArray(data.tasks))?data.tasks:[]; render(); })
       .catch(function(){ state.tasks=[]; render(); });
   }
   function saveTasks(){
-    return fetch(SYNC+"/"+TASKS_KEY+".json", {method:"PUT", headers:{"Content-Type":"application/json"},
+    return fetch(API_BASE+"/crm-kv/"+TASKS_KEY, {method:"PUT", headers:{"Content-Type":"application/json"},
       body:JSON.stringify({tasks:state.tasks||[], updatedBy:loginName, updatedAt:new Date().toISOString()})}).catch(function(){});
   }
   function addTask(text, vol, scadenta, responsabil){
@@ -1527,12 +1532,12 @@
   // ---- Cazuri (distribuire) ----
   function loadCazuri(){
     state.cazuri=undefined; render();
-    fetch(SYNC+"/"+CAZURI_KEY+".json", {cache:"no-store"}).then(function(r){ return r.ok?r.json():null; })
+    fetch(API_BASE+"/crm-kv/"+CAZURI_KEY, {cache:"no-store"}).then(function(r){ return r.ok?r.json():null; })
       .then(function(data){ state.cazuri=(data && Array.isArray(data.cazuri))?data.cazuri:[]; render(); })
       .catch(function(){ state.cazuri=[]; render(); });
   }
   function saveCazuri(){
-    return fetch(SYNC+"/"+CAZURI_KEY+".json", {method:"PUT", headers:{"Content-Type":"application/json"},
+    return fetch(API_BASE+"/crm-kv/"+CAZURI_KEY, {method:"PUT", headers:{"Content-Type":"application/json"},
       body:JSON.stringify({cazuri:state.cazuri||[], updatedBy:loginName, updatedAt:new Date().toISOString()})}).catch(function(){});
   }
   function viewCazuri(){
@@ -1719,7 +1724,7 @@
     var canal=v.canal||"Oricare";
     if(canal==="Telefon"){
       v.contactat=true; v.dataContact=todayIso(); istoricAdd(v,"apel",""); scheduleSave();
-      fetch("/api/voluntari-activity", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({type:"apel", contacte:[{nume:v.nume, telefon:v.telefon, email:v.email}]})}).catch(function(){});
+      fetch(API_BASE+"/voluntari-activity", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({type:"apel", contacte:[{nume:v.nume, telefon:v.telefon, email:v.email}]})}).catch(function(){});
       toast("Apel marcat către "+(v.nume||"voluntar")); closeSendMsg(); render(); return;
     }
     if(canal==="Messenger"){
@@ -1733,7 +1738,7 @@
     var continut=$("sm_continut").value;
     if(!continut.trim()){ toast("Scrie mesajul", true); return; }
     $("sm_send").disabled=true; setFlag("saving");
-    fetch("/api/voluntari-send", {method:"POST", headers:{"Content-Type":"application/json"},
+    fetch(API_BASE+"/voluntari-send", {method:"POST", headers:{"Content-Type":"application/json"},
       body:JSON.stringify({ canal:"email", contacte:[{nume:v.nume, email:v.email, telefon:v.telefon}], subiect:$("sm_subiect").value, continut:continut, semnatura:state.settings.mesaj.semnatura })})
       .then(function(r){ return r.json().then(function(j){ return {ok:r.ok, j:j}; }); })
       .then(function(res){
@@ -1762,7 +1767,7 @@
     if(!confirm("Trimit email către "+recs.length+" voluntari (prin Make)?")) return;
     state.settings.mesaj.subiect=$("bm_subiect").value; state.settings.mesaj.continut=continut; state.settings.mesaj.semnatura=$("bm_semnatura").value; scheduleSave();
     bulkSending=true; $("bm_send").disabled=true; setFlag("saving");
-    fetch("/api/voluntari-send", {method:"POST", headers:{"Content-Type":"application/json"},
+    fetch(API_BASE+"/voluntari-send", {method:"POST", headers:{"Content-Type":"application/json"},
       body:JSON.stringify({ canal:"email", contacte:recs.map(function(v){return {nume:v.nume, email:v.email, telefon:v.telefon};}), subiect:$("bm_subiect").value, continut:continut, semnatura:$("bm_semnatura").value })})
       .then(function(r){ return r.json().then(function(j){ return {ok:r.ok, j:j}; }); })
       .then(function(res){
@@ -1839,7 +1844,7 @@
   document.addEventListener("keydown", function(ev){ if(ev.key==="Escape"){ closeModal(); closeSendMsg(); closeImport(); closeNote(); } });
 
   // save on unload if pending
-  window.addEventListener("beforeunload", function(){ if(dirty){ try{ navigator.sendBeacon(SYNC+"/"+KEY+".json", JSON.stringify({volunteers:state.volunteers, settings:state.settings})); }catch(e){} } });
+  window.addEventListener("beforeunload", function(){ if(dirty){ try{ navigator.sendBeacon(API_BASE+"/crm-kv/"+KEY, JSON.stringify({volunteers:state.volunteers, settings:state.settings})); }catch(e){} } });
 
   setFlag("ok");
   load();

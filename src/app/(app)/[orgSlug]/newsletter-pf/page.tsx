@@ -20,7 +20,7 @@ export default async function NewsletterPfPage({ params }: { params: Promise<{ o
         <span className="font-display text-sm font-semibold text-ink">{TITLE}</span>
       </header>
       <div className="min-h-0 flex-1">
-        <StandaloneToolFrame html={NEWSLETTER_PF_HTML} title={TITLE} />
+        <StandaloneToolFrame html={NEWSLETTER_PF_HTML} title={TITLE} orgSlug={orgSlug} />
       </div>
     </div>
   );
