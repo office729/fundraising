@@ -898,7 +898,7 @@
 <script type="text/plain" id="tpl_standard"><!DOCTYPE html>
 <html lang="ro"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{D_HEADLINE}}</title>
 <!--[if mso]><style>.container{width:600px;}</style><![endif]-->
-<style>@media only screen and (max-width:600px){.container{width:100%!important}.mh1{font-size:26px!important}.mpad{padding-left:26px!important;padding-right:26px!important}.mcol{display:block!important;width:100%!important;padding:0 0 16px 0!important}.mcol-last{padding-bottom:0!important}.mgrid{display:block!important;width:100%!important;border-right:0!important;padding:22px 0!important;border-bottom:1px solid rgba(255,255,255,.14)!important}.mgrid.mcol-last{border-bottom:0!important;padding-bottom:2px!important}.mphoto{padding-top:20px!important}.mphotoimg{max-width:100%!important}}</style></head>
+<style>@media only screen and (max-width:600px){.container{width:100%!important}.mh1{font-size:26px!important}.mpad{padding-left:26px!important;padding-right:26px!important}.mcol{display:block!important;width:100%!important;padding:0 0 16px 0!important}.mcol-last{padding-bottom:0!important}.mgrid{display:block!important;width:100%!important;border-right:0!important;padding:22px 0!important;border-bottom:1px solid rgba(255,255,255,.14)!important}.mgrid.mcol-last{border-bottom:0!important;padding-bottom:2px!important}.mspacer{display:none!important}.mphoto{padding-top:20px!important}.mphotoimg{max-width:100%!important}}</style></head>
 <body style="margin:0;padding:0;background-color:#FBF7F2;-webkit-text-size-adjust:100%;">
 <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#FBF7F2;">{{PREHEADER}}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#FBF7F2" style="font-family:Arial,Helvetica,sans-serif;"><tr><td align="center" style="padding:26px 12px;">
@@ -957,26 +957,34 @@
     </td></tr></table>
   </td></tr>
 
-  <!-- Grilă 2x2 pe fond închis — ecoul secțiunii de acțiuni din flyer -->
-  <tr><td bgcolor="{{BR_DARK}}" class="mpad" style="padding:30px 40px;">
+  <!-- Grilă 2x2 pe fond închis — ecoul secțiunii de acțiuni din flyer.
+       Spațiul dintre casete vine din celule/rânduri-spacer dedicate (lățime/
+       înălțime fixă), nu din padding pe celulele de conținut — pe mobil
+       spacer-ele orizontale dispar (.mspacer), iar cele verticale rămân
+       acoperite de padding-ul propriu al .mgrid din regula de mobil. -->
+  <tr><td bgcolor="{{BR_DARK}}" class="mpad" style="padding:34px 40px;">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-      <td class="mgrid" width="50%" valign="top" style="width:50%;padding:0 16px 22px 0;border-right:1px solid rgba(255,255,255,.14);">
+      <td class="mgrid" valign="top">
         <div style="font-family:Arial,sans-serif;font-size:20px;">&#10084;&#65039;</div>
         <div style="font-family:Georgia,serif;font-weight:bold;font-size:15px;color:{{BR_PRIMARY}};margin-top:8px;">Donează</div>
         <div style="font-family:Arial,sans-serif;font-size:12px;line-height:1.6;color:#C9BEB5;margin-top:4px;">Orice sumă contează și ajunge direct la cazuri.</div>
       </td>
-      <td class="mgrid" width="50%" valign="top" style="width:50%;padding:0 0 22px 16px;">
+      <td width="32" class="mspacer" style="width:32px;font-size:0;line-height:0;">&nbsp;</td>
+      <td class="mgrid" valign="top">
         <div style="font-family:Arial,sans-serif;font-size:20px;">&#129309;</div>
         <div style="font-family:Georgia,serif;font-weight:bold;font-size:15px;color:{{BR_PRIMARY}};margin-top:8px;">Devino voluntar</div>
         <div style="font-family:Arial,sans-serif;font-size:12px;line-height:1.6;color:#C9BEB5;margin-top:4px;">Alătură-te echipei și oferă din timpul tău.</div>
       </td>
-    </tr><tr>
-      <td class="mgrid" width="50%" valign="top" style="width:50%;padding:22px 16px 0 0;border-right:1px solid rgba(255,255,255,.14);">
+    </tr>
+    <tr><td colspan="3" height="30" class="mspacer" style="height:30px;font-size:0;line-height:0;">&nbsp;</td></tr>
+    <tr>
+      <td class="mgrid" valign="top">
         <div style="font-family:Arial,sans-serif;font-size:20px;">&#127891;</div>
         <div style="font-family:Georgia,serif;font-weight:bold;font-size:15px;color:{{BR_PRIMARY}};margin-top:8px;">Susține o bursă</div>
         <div style="font-family:Arial,sans-serif;font-size:12px;line-height:1.6;color:#C9BEB5;margin-top:4px;">Ajută un copil să continue școala.</div>
       </td>
-      <td class="mgrid mcol-last" width="50%" valign="top" style="width:50%;padding:22px 0 0 16px;">
+      <td width="32" class="mspacer" style="width:32px;font-size:0;line-height:0;">&nbsp;</td>
+      <td class="mgrid mcol-last" valign="top">
         <div style="font-family:Arial,sans-serif;font-size:20px;">&#127760;</div>
         <div style="font-family:Georgia,serif;font-weight:bold;font-size:15px;color:{{BR_PRIMARY}};margin-top:8px;">Distribuie povestea</div>
         <div style="font-family:Arial,sans-serif;font-size:12px;line-height:1.6;color:#C9BEB5;margin-top:4px;">Trimite mai departe — s-ar putea să ajute pe cineva.</div>
