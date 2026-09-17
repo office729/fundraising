@@ -8,13 +8,17 @@ import { createClient } from "@/lib/supabase/server";
 // Newsletter PF/PJ cereau /api/newsletter/imgbb-upload — inexistentă aici
 // (moștenită din SOI_CRM, unde ținta era serviciul extern imgbb.com, cu o
 // cheie API separată). Nu mai avem nevoie de imgbb: platforma are deja
-// Supabase Storage configurat și un bucket public de imagini ("campanii",
-// vezi scripts/setup-storage.mjs) — refolosit aici, ca la logo-ul din Setări
-// (setari/actions.ts). Tool-ul are deja fallback grațios dacă ruta lipsește
-// sau eșuează (Newsman cere poza la lipire), deci acest fix e o îmbunătățire,
-// nu o reparare de crash.
-const BUCKET = "campanii";
-const MAX_BYTES = 5 * 1024 * 1024;
+// Supabase Storage configurat, refolosit aici ca la logo-ul din Setări
+// (setari/actions.ts) — bucket "org-branding", NU "campanii": bucket-ul
+// "campanii" din scripts/setup-storage.mjs nu există deloc în acest proiect
+// Supabase (verificat live — scriptul n-a fost rulat niciodată aici), deci
+// ar fi eșuat la fel ca ruta veche. "org-branding" există și funcționează
+// deja (2MB limită — poza comprimată client-side la 600px încape lejer).
+// Tool-ul are deja fallback grațios dacă ruta lipsește sau eșuează (Newsman
+// cere poza la lipire), deci acest fix e o îmbunătățire, nu o reparare de
+// crash.
+const BUCKET = "org-branding";
+const MAX_BYTES = 2 * 1024 * 1024;
 
 type Ctx = { params: Promise<{ orgSlug: string }> };
 
