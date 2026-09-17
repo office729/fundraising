@@ -436,6 +436,20 @@ create policy fundraising_updates_admin_delete on fundraising_updates
         and role in ('owner', 'admin')
     )
   );
+create policy fundraising_updates_admin_update on fundraising_updates
+  for update using (
+    org_id in (
+      select org_id from memberships
+      where user_id = nullif(current_setting('app.current_user_id', true), '')::uuid
+        and role in ('owner', 'admin')
+    )
+  ) with check (
+    org_id in (
+      select org_id from memberships
+      where user_id = nullif(current_setting('app.current_user_id', true), '')::uuid
+        and role in ('owner', 'admin')
+    )
+  );
 -- ============================================================================
 -- 5. Verificare de izolare — OBLIGATORIE, și DIN NOU prin pooler (nu doar
 --    conexiune directă — vezi CAPCANA #3):
@@ -463,5 +477,5 @@ create policy fundraising_updates_admin_delete on fundraising_updates
 --           donatori_reali(3), formular230_beneficiari(5),
 --           formular230_campanii_email(3), formular230_submissions(3),
 --           fundraising_donations(6), fundraising_pages(5),
---           fundraising_updates(3), invites(4), memberships(2),
---           organizations(5) = 49 politici.
+--           fundraising_updates(4), invites(4), memberships(2),
+--           organizations(5) = 50 politici.
