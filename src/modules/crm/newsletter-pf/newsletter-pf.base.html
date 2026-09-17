@@ -126,6 +126,7 @@
       <option value="design_acuarela">✦ Design: Acuarelă</option>
       <option value="design_poveste">✦ Design: Poveste ilustrată</option>
       <option value="design_radiografie">✦ Design: Radiografie</option>
+      <option value="design_givewell">✦ Design: Impact</option>
     </select>
 
     <h2>Branding (antet)</h2>
@@ -157,7 +158,7 @@
       <label>Suma 3</label>
       <input type="text" id="G3" value="300 lei">
     </div>
-    <div class="tplfields" data-tpl="design_standard,design_eveniment_elegant,design_acuarela,design_poveste,design_radiografie" style="display:none;">
+    <div class="tplfields" data-tpl="design_standard,design_eveniment_elegant,design_acuarela,design_poveste,design_radiografie,design_givewell" style="display:none;">
       <h2>Conținut design</h2>
       <div class="hint">Câmpuri pentru șabloanele de <b>design vizual</b>. Luna, linkul butonului și poza (la „Foto-first") se iau din câmpurile de mai jos (Email / Poza).</div>
       <label>Titlu principal</label>
@@ -1007,6 +1008,160 @@
 </table>
 </td></tr></table>
 </body></html></script>
+<script type="text/plain" id="tpl_givewell"><!DOCTYPE html>
+<html lang="ro"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{D_HEADLINE}}</title>
+<!--[if mso]><style>.container{width:600px;}</style><![endif]-->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Merriweather:wght@700;900&display=swap" rel="stylesheet">
+<style>@media only screen and (max-width:600px){.container{width:100%!important}.mh1{font-size:26px!important}.mpad{padding-left:26px!important;padding-right:26px!important}.mcol{display:block!important;width:100%!important;padding:0 0 16px 0!important}.mcol-last{padding-bottom:0!important}.mgrid{display:block!important;width:100%!important;padding-bottom:14px!important}.mspacer{display:none!important}.mphoto{padding-top:18px!important}.mphotoimg{max-width:100%!important}}</style></head>
+<body style="margin:0;padding:0;background-color:#F4F1E8;-webkit-text-size-adjust:100%;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#F4F1E8;">{{PREHEADER}}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F4F1E8" style="font-family:'Poppins',Arial,sans-serif;"><tr><td align="center" style="padding:26px 12px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" class="container" style="width:600px;max-width:600px;background-color:#ffffff;">
+
+  <!-- Antet -->
+  <tr><td bgcolor="#17301F" style="padding:18px 30px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+      <td align="left" valign="middle">
+<!--LOGO_START-->
+        <img src="{{LOGO_IMG}}" alt="" style="display:block;max-height:30px;max-width:170px;width:auto;height:auto;">
+<!--LOGO_END-->
+<!--LOGOTXT_START-->
+        <span style="font-family:'Merriweather',Georgia,serif;font-weight:900;font-size:18px;color:#ffffff;">Salvează o inimă</span>
+<!--LOGOTXT_END-->
+      </td>
+      <td align="right" valign="middle">
+        <span style="font-family:'Poppins',Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:1.5px;color:#BFE24C;text-transform:uppercase;">Newsletter &middot; {{LUNA}}</span>
+      </td>
+    </tr></table>
+  </td></tr>
+
+  <!-- Hero -->
+  <tr><td bgcolor="#17301F" style="background:linear-gradient(135deg,#1E3A2B,#102015);padding:0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#17301F"><tr><td class="mpad" style="padding:48px 40px 44px;">
+      <div style="font-family:'Poppins',Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;color:#BFE24C;text-transform:uppercase;">#ÎmpreunăPutem</div>
+      <h1 class="mh1" style="font-family:'Merriweather',Georgia,serif;font-weight:900;font-size:34px;line-height:1.2;color:#ffffff;margin:14px 0 0;">{{D_HEADLINE}}</h1>
+      <p style="font-family:'Poppins',Arial,sans-serif;font-size:14px;line-height:1.7;color:#CFE0D2;margin:16px 0 0;max-width:460px;">{{D_LEAD}}</p>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:24px;"><tr>
+        <td bgcolor="#BFE24C" style="border-radius:999px;"><a href="{{LINK}}" target="_blank" style="display:inline-block;padding:14px 30px;font-family:'Poppins',Arial,sans-serif;font-size:13px;font-weight:700;color:#17301F;text-decoration:none;border-radius:999px;">{{D_CTA}}</a></td>
+        <td width="12" style="font-size:0;line-height:0;">&nbsp;</td>
+        <td style="border:1.5px solid rgba(255,255,255,.55);border-radius:999px;"><a href="{{LINK}}" target="_blank" style="display:inline-block;padding:12px 26px;font-family:'Poppins',Arial,sans-serif;font-size:13px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:999px;">Află mai multe</a></td>
+      </tr></table>
+    </td></tr></table>
+  </td></tr>
+
+  <!-- Ribură decorativă lime — ecoul benzii verzi-crud din design -->
+  <tr><td bgcolor="#BFE24C" style="padding:0;line-height:0;font-size:0;height:8px;">&nbsp;</td></tr>
+
+  <!-- Misiunea noastră -->
+  <tr><td class="mpad" style="padding:40px 40px 8px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+      <td valign="middle" class="mcol" width="330" style="width:330px;padding-right:24px;">
+        <div style="font-family:'Poppins',Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;color:#8FA893;text-transform:uppercase;">Misiunea noastră</div>
+        <div style="font-family:'Merriweather',Georgia,serif;font-weight:900;font-size:22px;color:#17301F;margin-top:6px;">Nicio familie nu ar trebui să lupte singură</div>
+        <p style="font-family:'Poppins',Arial,sans-serif;font-size:13px;line-height:1.7;color:#5B6B5E;margin:12px 0 0;">Credem că fiecare copil merită șansa la un tratament la timp — și că, atunci când oamenii se adună, până și cele mai grele cazuri capătă o soluție.</p>
+      </td>
+      <td valign="middle" class="mcol mphoto" width="180" style="width:180px;">
+        <img src="{{D_FOTO}}" width="180" class="mphotoimg" alt="" style="display:block;width:100%;max-width:180px;height:auto;border-radius:16px;">
+      </td>
+    </tr></table>
+  </td></tr>
+
+  <!-- Cauzele noastre — grilă 2x2 pe 4 culori, ecoul secțiunii colorate din design -->
+  <tr><td class="mpad" style="padding:36px 40px 0;">
+    <div style="font-family:'Poppins',Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;color:#8FA893;text-transform:uppercase;text-align:center;">Cauzele noastre</div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:16px;"><tr>
+      <td class="mgrid" valign="top">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#17301F" style="border-radius:14px;"><tr><td style="padding:22px 20px;">
+          <div style="font-size:20px;">&#127973;</div>
+          <div style="font-family:'Merriweather',Georgia,serif;font-weight:900;font-size:14px;color:#ffffff;margin-top:8px;">Sănătate</div>
+          <div style="font-family:'Poppins',Arial,sans-serif;font-size:11px;line-height:1.6;color:#B9CBBB;margin-top:4px;">Tratamente și îngrijire pentru copii bolnavi.</div>
+        </td></tr></table>
+      </td>
+      <td width="14" class="mspacer" style="width:14px;font-size:0;line-height:0;">&nbsp;</td>
+      <td class="mgrid" valign="top">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#5FAE9B" style="border-radius:14px;"><tr><td style="padding:22px 20px;">
+          <div style="font-size:20px;">&#127891;</div>
+          <div style="font-family:'Merriweather',Georgia,serif;font-weight:900;font-size:14px;color:#0F2A22;margin-top:8px;">Educație</div>
+          <div style="font-family:'Poppins',Arial,sans-serif;font-size:11px;line-height:1.6;color:#123027;margin-top:4px;">Sprijin ca fiecare copil să meargă la școală.</div>
+        </td></tr></table>
+      </td>
+    </tr>
+    <tr><td colspan="3" height="14" class="mspacer" style="height:14px;font-size:0;line-height:0;">&nbsp;</td></tr>
+    <tr>
+      <td class="mgrid" valign="top">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#3E5FA6" style="border-radius:14px;"><tr><td style="padding:22px 20px;">
+          <div style="font-size:20px;">&#128167;</div>
+          <div style="font-family:'Merriweather',Georgia,serif;font-weight:900;font-size:14px;color:#ffffff;margin-top:8px;">Apă curată</div>
+          <div style="font-family:'Poppins',Arial,sans-serif;font-size:11px;line-height:1.6;color:#CBD8EF;margin-top:4px;">Acces la apă potabilă în comunități izolate.</div>
+        </td></tr></table>
+      </td>
+      <td width="14" class="mspacer" style="width:14px;font-size:0;line-height:0;">&nbsp;</td>
+      <td class="mgrid mcol-last" valign="top">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#E8730D" style="border-radius:14px;"><tr><td style="padding:22px 20px;">
+          <div style="font-size:20px;">&#127968;</div>
+          <div style="font-family:'Merriweather',Georgia,serif;font-weight:900;font-size:14px;color:#ffffff;margin-top:8px;">Adăpost</div>
+          <div style="font-family:'Poppins',Arial,sans-serif;font-size:11px;line-height:1.6;color:#FBE3CE;margin-top:4px;">Un acoperiș sigur pentru familii aflate în nevoie.</div>
+        </td></tr></table>
+      </td>
+    </tr></table>
+  </td></tr>
+
+  <!-- Cifrele impactului -->
+  <tr><td class="mpad" style="padding:40px 40px 0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+      <td align="center" class="mgrid" width="33%" style="padding:0 6px;">
+        <div style="font-family:'Merriweather',Georgia,serif;font-weight:900;font-size:26px;color:#17301F;">{{D_N1}}</div>
+        <div style="font-family:'Poppins',Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;color:#8FA893;text-transform:uppercase;margin-top:4px;">{{D_L1}}</div>
+      </td>
+      <td align="center" class="mgrid" width="33%" style="padding:0 6px;border-left:1px solid #EDE8DA;border-right:1px solid #EDE8DA;">
+        <div style="font-family:'Merriweather',Georgia,serif;font-weight:900;font-size:26px;color:#17301F;">{{D_N2}}</div>
+        <div style="font-family:'Poppins',Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;color:#8FA893;text-transform:uppercase;margin-top:4px;">{{D_L2}}</div>
+      </td>
+      <td align="center" class="mgrid mcol-last" width="33%" style="padding:0 6px;">
+        <div style="font-family:'Merriweather',Georgia,serif;font-weight:900;font-size:26px;color:#17301F;">{{D_N3}}</div>
+        <div style="font-family:'Poppins',Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;color:#8FA893;text-transform:uppercase;margin-top:4px;">{{D_L3}}</div>
+      </td>
+    </tr></table>
+  </td></tr>
+
+  <!-- Testimonial -->
+  <tr><td class="mpad" style="padding:40px 40px 0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#DCEFE9" style="border-radius:18px;"><tr><td align="center" style="padding:28px 34px;">
+      <div style="font-family:'Merriweather',Georgia,serif;font-style:italic;font-weight:700;font-size:17px;line-height:1.6;color:#17301F;">&#8222;{{D_QUOTE}}&#8221;</div>
+      <div style="font-family:'Poppins',Arial,sans-serif;font-size:12px;font-weight:700;color:#5FAE9B;margin-top:14px;">&mdash; {{D_QAUTHOR}}</div>
+    </td></tr></table>
+  </td></tr>
+
+  <!-- Progresul campaniei — fond portocaliu, ecoul secțiunii CTA din design -->
+  <tr><td class="mpad" style="padding:40px 40px 0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#E8730D" style="border-radius:18px;"><tr><td align="center" style="padding:30px 34px;">
+      <div style="font-family:'Merriweather',Georgia,serif;font-weight:900;font-size:24px;color:#ffffff;">{{D_STATBIG}}</div>
+      <div style="font-family:'Poppins',Arial,sans-serif;font-size:12px;color:#FBE3CE;margin-top:4px;">{{D_STATLABEL}}</div>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:20px;"><tr>
+        <td width="{{BAR_PCT}}%" height="10" bgcolor="#ffffff" style="width:{{BAR_PCT}}%;height:10px;font-size:0;line-height:0;border-radius:6px 0 0 6px;">&nbsp;</td>
+        <td width="{{BAR_REST}}%" height="10" bgcolor="rgba(255,255,255,.35)" style="width:{{BAR_REST}}%;height:10px;font-size:0;line-height:0;border-radius:0 6px 6px 0;">&nbsp;</td>
+      </tr></table>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:14px;"><tr>
+        <td align="left"><span style="font-family:'Poppins',Arial,sans-serif;font-size:11px;color:#FBE3CE;">Strâns</span><br><span style="font-family:'Merriweather',Georgia,serif;font-weight:900;font-size:18px;color:#ffffff;">{{SUMA_TXT}}&nbsp;&euro;</span></td>
+        <td align="right"><span style="font-family:'Poppins',Arial,sans-serif;font-size:11px;color:#FBE3CE;">Obiectiv</span><br><span style="font-family:'Merriweather',Georgia,serif;font-weight:900;font-size:18px;color:#ffffff;">{{TINTA_TXT}}&nbsp;&euro;</span></td>
+      </tr></table>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:22px auto 0;"><tr><td bgcolor="#17301F" style="border-radius:999px;"><a href="{{LINK}}" target="_blank" style="display:inline-block;padding:14px 34px;font-family:'Poppins',Arial,sans-serif;font-size:13px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:999px;">{{D_CTA}}</a></td></tr></table>
+    </td></tr></table>
+  </td></tr>
+
+  <!-- Footer -->
+  <tr><td align="center" style="padding:36px 40px 16px;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;"><tr>
+      <td style="padding:0 4px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" valign="middle" bgcolor="#1877F2" width="28" height="28" style="width:28px;height:28px;border-radius:50%;"><a href="https://www.facebook.com/vlad.placinta" target="_blank" style="display:block;width:28px;height:28px;line-height:28px;font-size:12px;font-weight:800;color:#ffffff;text-decoration:none;text-align:center;border-radius:50%;">f</a></td></tr></table></td>
+      <td style="padding:0 4px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" valign="middle" bgcolor="#0A66C2" width="28" height="28" style="width:28px;height:28px;border-radius:50%;"><a href="https://www.linkedin.com/in/vlad-placinta/" target="_blank" style="display:block;width:28px;height:28px;line-height:28px;font-size:10px;font-weight:800;color:#ffffff;text-decoration:none;text-align:center;border-radius:50%;">in</a></td></tr></table></td>
+      <td style="padding:0 4px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" valign="middle" bgcolor="#000000" width="28" height="28" style="width:28px;height:28px;border-radius:50%;"><a href="https://www.tiktok.com/@vladplacinta0" target="_blank" style="display:block;width:28px;height:28px;line-height:28px;font-size:11px;font-weight:800;color:#ffffff;text-decoration:none;text-align:center;border-radius:50%;">&#9834;</a></td></tr></table></td>
+      <td style="padding:0 4px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" valign="middle" bgcolor="#E1306C" width="28" height="28" style="width:28px;height:28px;border-radius:50%;"><a href="https://www.instagram.com/salveazaoinima.ro/" target="_blank" style="display:block;width:28px;height:28px;line-height:28px;font-size:11px;font-weight:800;color:#ffffff;text-decoration:none;text-align:center;border-radius:50%;">&#9678;</a></td></tr></table></td>
+    </tr></table>
+  </td></tr>
+  <tr><td align="center" style="padding:0 40px 36px;font-family:'Poppins',Arial,sans-serif;font-size:12px;line-height:1.6;color:#8FA893;">Asociația salvează o inimă &middot; salveazaoinima.ro &middot; <a href="##NEWSMAN:list_unsubscribe##" style="color:#8FA893;">Dezabonare</a></td></tr>
+</table>
+</td></tr></table>
+</body></html></script>
 <script type="text/plain" id="letterDefault">[Text de exemplu — șterge-l și scrie povestea reală a cazului înainte de a trimite.]
 
 Te rog, oprește-te o clipă. Astăzi vreau să-ți vorbesc despre Ana.
@@ -1298,7 +1453,7 @@ function syncFields(){
     els[i].style.display = (list.indexOf(t)>=0) ? '' : 'none';
   }
 }
-var DESIGN_TPL={design_standard:'tpl_standard',design_eveniment_elegant:'tpl_eveniment_elegant',design_acuarela:'tpl_acuarela',design_poveste:'tpl_poveste',design_radiografie:'tpl_radiografie'};
+var DESIGN_TPL={design_standard:'tpl_standard',design_eveniment_elegant:'tpl_eveniment_elegant',design_acuarela:'tpl_acuarela',design_poveste:'tpl_poveste',design_radiografie:'tpl_radiografie',design_givewell:'tpl_givewell'};
 function isDesign(){var e=document.getElementById('TEMPLATE');return e&&DESIGN_TPL[e.value];}
 function build(forExport, letterOverride){
   var _d=isDesign();
@@ -1740,9 +1895,10 @@ var TPL_META = {
   design_eveniment_elegant: {icon:'🎟️', name:'Eveniment elegant', theme:'Invitație elegantă — dată, oră, locație, invitat special'},
   design_acuarela: {icon:'🎨', name:'Acuarelă', theme:'Culori pastel, blând și delicat'},
   design_poveste: {icon:'📖', name:'Poveste ilustrată', theme:'Stil de carte pentru copii, jucăuș'},
-  design_radiografie: {icon:'🩻', name:'Radiografie', theme:'Monocrom, medical, contrast dramatic'}
+  design_radiografie: {icon:'🩻', name:'Radiografie', theme:'Monocrom, medical, contrast dramatic'},
+  design_givewell: {icon:'🌿', name:'Impact', theme:'Verde-lămâie & portocaliu — misiune, cauze, cifre de impact'}
 };
-var TPL_ORDER = ['design_standard','apel','urgent','design_eveniment_elegant','design_acuarela','design_poveste','design_radiografie'];
+var TPL_ORDER = ['design_standard','apel','urgent','design_givewell','design_eveniment_elegant','design_acuarela','design_poveste','design_radiografie'];
 function renderGalleryGrid(containerId, order){
   var el = document.getElementById(containerId);
   var html = '';
