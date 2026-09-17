@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 
 import type { OrgContext } from "@/lib/auth/guard";
 import { withOrgSession } from "@/lib/auth/guard";
+import { getLimiteleEfective, subCota } from "@/lib/billing/quota";
 import { appUsers, companies, contacts } from "@/lib/db/schema";
 import { companyToRow, CONSENT_TOOL2DB, CONTACT_COLS, rowToCompany } from "@/lib/crm/mapping";
 import { orgOwnerMaps } from "@/lib/crm/org-owners";
@@ -72,6 +73,21 @@ const patchCompany = withOrgSession(async (ctx, id: string, req: Request) => {
       .returning({ id: companies.id });
     if (!upd[0]) return NextResponse.json({ error: "not_found" }, { status: 404 });
   } else {
+    // Cota de companii — la fel ca la adaugaFirma (crm/companii/actions.ts),
+    // singura altă cale de creare a unei firme. Doar aici, nu și la UPDATE.
+    const limite = getLimiteleEfective(ctx.orgPackage, ctx.orgCustomPlanConfig);
+    if (limite.companiiPj !== null) {
+      const [{ firmeCount }] = await ctx.db
+        .select({ firmeCount: sql<number>`count(*)`.mapWith(Number) })
+        .from(companies)
+        .where(and(eq(companies.orgId, ctx.orgId), isNull(companies.deletedAt)));
+      if (!subCota(firmeCount, limite.companiiPj)) {
+        return NextResponse.json(
+          { error: "quota_exceeded", message: `Limita de ${limite.companiiPj} companii a pachetului tău a fost atinsă.` },
+          { status: 403 },
+        );
+      }
+    }
     // INSERT: fără rând existent de mers peste — `extra` e direct patch-ul primit
     // (referențierea `companies.extra` aici arunca "missing FROM-clause entry",
     // motivul real din spatele erorii 500 la adăugarea unei firme noi din tool).

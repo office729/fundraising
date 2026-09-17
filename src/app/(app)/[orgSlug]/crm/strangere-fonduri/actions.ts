@@ -2,12 +2,13 @@
 
 import { randomUUID } from "node:crypto";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 
 import { withOrgAdmin } from "@/lib/auth/guard";
 import type { CustomPlanConfigSaved } from "@/lib/billing/custom-plan";
+import { getLimiteleEfective, subCota } from "@/lib/billing/quota";
 import { getTemplatesDisponibile, type CampaignPageTemplate } from "@/lib/campaign-templates";
-import { fundraisingDonations, fundraisingPages, fundraisingUpdates, organizations } from "@/lib/db/schema";
+import { donatoriReali, fundraisingDonations, fundraisingPages, fundraisingUpdates, organizations } from "@/lib/db/schema";
 import { htmlEmailMultumireDonatie, subiectEmailMultumireDonatie } from "@/lib/donation-email-template";
 import { emailConfigurat, trimiteEmail } from "@/lib/email";
 import { crediteazaPaginaSiDonator } from "@/lib/fundraising-credit";
@@ -273,6 +274,35 @@ export const adaugaDonatieOfflineAction = withOrgAdmin(
     const emailDonator = emailRaw ? normalizeazaEmail(emailRaw) : "";
     if (emailDonator && !EMAIL_RE.test(emailDonator)) {
       return { error: "Adresa de email nu e validă.", ok: false };
+    }
+
+    // Cota de persoane fizice — DOAR aici (introducere manuală de admin), NU
+    // și în crediteazaPaginaSiDonator (folosită și de webhook-ul Stripe): o
+    // donație reală, deja plătită, nu trebuie blocată niciodată din cauza unei
+    // cote — ar însemna bani încasați dar nicăieri înregistrați. Verificăm
+    // doar dacă emailul chiar ar crea un donator NOU (unul existent doar își
+    // actualizează suma, nu ocupă un loc nou).
+    if (emailDonator) {
+      const limite = getLimiteleEfective(ctx.orgPackage, ctx.orgCustomPlanConfig);
+      if (limite.contactePf !== null) {
+        const existentDeja = await ctx.db
+          .select({ id: donatoriReali.id })
+          .from(donatoriReali)
+          .where(and(eq(donatoriReali.orgId, ctx.orgId), eq(donatoriReali.email, emailDonator)))
+          .limit(1);
+        if (!existentDeja[0]) {
+          const [{ donatoriCount }] = await ctx.db
+            .select({ donatoriCount: sql<number>`count(*)`.mapWith(Number) })
+            .from(donatoriReali)
+            .where(eq(donatoriReali.orgId, ctx.orgId));
+          if (!subCota(donatoriCount, limite.contactePf)) {
+            return {
+              error: `Ai atins limita de ${limite.contactePf} persoane fizice a pachetului tău — treci la un pachet mai mare ca să adaugi donatori noi.`,
+              ok: false,
+            };
+          }
+        }
+      }
     }
 
     const pagina = await ctx.db

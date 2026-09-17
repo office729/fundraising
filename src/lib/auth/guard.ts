@@ -3,6 +3,7 @@ import "server-only";
 import { sql } from "drizzle-orm";
 import { notFound, redirect } from "next/navigation";
 
+import type { CustomPlanConfigSaved } from "@/lib/billing/custom-plan";
 import { db } from "@/lib/db";
 import type { DomeniuActivitate } from "@/lib/campaign-templates";
 
@@ -23,6 +24,9 @@ export type OrgContext = {
   orgCif: string | null;
   orgDomeniuActivitate: DomeniuActivitate | null;
   orgPackage: "trial" | "start" | "crestere" | "impact" | "custom";
+  // Doar pentru pachetul "custom" — cotele reale (utilizatori/contactePf/
+  // companiiPj) diferă de PACKAGE_LIMITS, vezi lib/billing/quota.ts.
+  orgCustomPlanConfig: CustomPlanConfigSaved | null;
   orgSubscriptionStatus: string;
   orgCreatedAt: Date;
   orgReferralCode: string | null;
@@ -104,6 +108,7 @@ export function withOrgSession<A extends unknown[], R>(
         orgCif: found.org.cif,
         orgDomeniuActivitate: found.org.domeniuActivitate,
         orgPackage: found.org.package,
+        orgCustomPlanConfig: found.org.customPlanConfig as CustomPlanConfigSaved | null,
         orgSubscriptionStatus: found.org.subscriptionStatus,
         orgCreatedAt: found.org.createdAt,
         orgReferralCode: found.org.referralCode,
@@ -155,6 +160,7 @@ export function requireOrgAccess(orgSlug: string): Promise<OrgAccess> {
     orgCif: ctx.orgCif,
     orgDomeniuActivitate: ctx.orgDomeniuActivitate,
     orgPackage: ctx.orgPackage,
+    orgCustomPlanConfig: ctx.orgCustomPlanConfig,
     orgSubscriptionStatus: ctx.orgSubscriptionStatus,
     orgCreatedAt: ctx.orgCreatedAt,
     orgReferralCode: ctx.orgReferralCode,

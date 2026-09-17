@@ -1,11 +1,13 @@
 "use server";
 
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 
 import { ensureAppUser, getAuthUser } from "@/lib/auth/dal";
+import type { CustomPlanConfigSaved } from "@/lib/billing/custom-plan";
+import { getLimiteleEfective, subCota } from "@/lib/billing/quota";
 import { db } from "@/lib/db";
-import { invites, memberships } from "@/lib/db/schema";
+import { invites, memberships, organizations } from "@/lib/db/schema";
 
 export type InviteLookup = {
   email: string;
@@ -80,6 +82,30 @@ export async function acceptInviteAction(token: string): Promise<{ error: string
       await tx.execute(sql`select set_config('app.current_user_email', ${authUser.email}, true)`);
       const appUser = await ensureAppUser(tx as unknown as typeof db, authUser.email!);
       await tx.execute(sql`select set_config('app.current_user_id', ${appUser.id}, true)`);
+
+      // Plasă de siguranță pentru cazul (rar) în care organizația a coborât de
+      // pachet DUPĂ ce invitația a fost trimisă — createInvite (echipa/actions.ts)
+      // rezervă deja un loc la trimitere, deci în mod normal nu se ajunge aici.
+      const orgRow = await tx
+        .select({ package: organizations.package, customPlanConfig: organizations.customPlanConfig })
+        .from(organizations)
+        .where(eq(organizations.id, invite.orgId))
+        .limit(1);
+      const limite = getLimiteleEfective(
+        orgRow[0]?.package ?? "trial",
+        (orgRow[0]?.customPlanConfig as CustomPlanConfigSaved | null) ?? null,
+      );
+      if (limite.utilizatori !== null) {
+        const [{ membriCount }] = await tx
+          .select({ membriCount: sql<number>`count(*)`.mapWith(Number) })
+          .from(memberships)
+          .where(eq(memberships.orgId, invite.orgId));
+        if (!subCota(membriCount, limite.utilizatori)) {
+          throw new Error(
+            `Organizația a atins limita de ${limite.utilizatori} utilizatori a pachetului ei — nu mai poate primi membri noi momentan.`,
+          );
+        }
+      }
 
       await tx
         .insert(memberships)

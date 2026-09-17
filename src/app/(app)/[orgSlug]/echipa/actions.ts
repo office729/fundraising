@@ -2,9 +2,10 @@
 
 import { randomUUID } from "node:crypto";
 
-import { eq } from "drizzle-orm";
+import { and, eq, gt, isNull, sql } from "drizzle-orm";
 
 import { withOrgAdmin } from "@/lib/auth/guard";
+import { getLimiteleEfective, subCota } from "@/lib/billing/quota";
 import { appUsers, invites, memberships } from "@/lib/db/schema";
 
 export type MemberRow = { userId: string; email: string; name: string | null; role: string };
@@ -57,6 +58,25 @@ export type InviteState = { error: string | null; token: string | null };
 
 export const createInvite = withOrgAdmin(
   async (ctx, email: string, role: "admin" | "member"): Promise<{ token: string }> => {
+    // Cota de utilizatori (membri + invitații încă în așteptare, care ar
+    // deveni membri dacă sunt acceptate) — vezi lib/billing/quota.ts.
+    const limite = getLimiteleEfective(ctx.orgPackage, ctx.orgCustomPlanConfig);
+    if (limite.utilizatori !== null) {
+      const [{ membriCount }] = await ctx.db
+        .select({ membriCount: sql<number>`count(*)`.mapWith(Number) })
+        .from(memberships)
+        .where(eq(memberships.orgId, ctx.orgId));
+      const [{ invitatiiCount }] = await ctx.db
+        .select({ invitatiiCount: sql<number>`count(*)`.mapWith(Number) })
+        .from(invites)
+        .where(and(eq(invites.orgId, ctx.orgId), isNull(invites.acceptedAt), gt(invites.expiresAt, new Date())));
+      if (!subCota(membriCount + invitatiiCount, limite.utilizatori)) {
+        throw new Error(
+          `Ai atins limita de ${limite.utilizatori} utilizatori a pachetului tău — anulează o invitație în așteptare sau treci la un pachet mai mare.`,
+        );
+      }
+    }
+
     const token = randomUUID().replace(/-/g, "");
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     await ctx.db.insert(invites).values({

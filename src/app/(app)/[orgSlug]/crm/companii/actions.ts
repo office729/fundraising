@@ -2,9 +2,10 @@
 
 import { randomUUID } from "node:crypto";
 
-import { and, asc, eq, isNotNull, sql } from "drizzle-orm";
+import { and, asc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 
 import { type OrgContext, withOrgSession } from "@/lib/auth/guard";
+import { getLimiteleEfective, subCota } from "@/lib/billing/quota";
 import { companies, companyNotite, companySponsorizari, contacts } from "@/lib/db/schema";
 
 export type ActionState = { error: string | null };
@@ -183,6 +184,19 @@ export const adaugaFirma = withOrgSession(async (ctx, _prev: AdaugaFirmaState, f
   const site = String(formData.get("site") ?? "").trim();
 
   if (!nume) return { error: "Numele firmei e obligatoriu." };
+
+  const limite = getLimiteleEfective(ctx.orgPackage, ctx.orgCustomPlanConfig);
+  if (limite.companiiPj !== null) {
+    const [{ firmeCount }] = await ctx.db
+      .select({ firmeCount: sql<number>`count(*)`.mapWith(Number) })
+      .from(companies)
+      .where(and(eq(companies.orgId, ctx.orgId), isNull(companies.deletedAt)));
+    if (!subCota(firmeCount, limite.companiiPj)) {
+      return {
+        error: `Ai atins limita de ${limite.companiiPj} companii a pachetului tău — șterge o firmă existentă sau treci la un pachet mai mare.`,
+      };
+    }
+  }
 
   const id = randomUUID();
   await ctx.db.insert(companies).values({
