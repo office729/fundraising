@@ -1,7 +1,9 @@
 import Link from "next/link";
 
 import { requireOrgAccess } from "@/lib/auth/guard";
+import { orgHasToolAccess } from "@/lib/billing/packages";
 import { Editor } from "@/modules/crm/crm-pj/components/editor";
+import { ToolLocked } from "@/modules/crm/shared/tool-locked";
 
 export default async function CrmPjPage({
   params,
@@ -11,6 +13,10 @@ export default async function CrmPjPage({
   const { orgSlug } = await params;
   const access = await requireOrgAccess(orgSlug);
   const userName = access.userName || access.userEmail;
+
+  if (!orgHasToolAccess(access.orgPackage, access.orgCustomPlanConfig, "crm-pj")) {
+    return <ToolLocked orgSlug={orgSlug} toolName="CRM Companii & Sponsorizări" />;
+  }
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">

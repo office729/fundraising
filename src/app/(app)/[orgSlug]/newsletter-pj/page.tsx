@@ -1,14 +1,20 @@
 import Link from "next/link";
 
 import { requireOrgAccess } from "@/lib/auth/guard";
+import { orgHasToolAccess } from "@/lib/billing/packages";
 import { NEWSLETTER_PJ_HTML } from "@/modules/crm/newsletter-pj/newsletter-pj-html";
 import { StandaloneToolFrame } from "@/modules/crm/shared/standalone-tool-frame";
+import { ToolLocked } from "@/modules/crm/shared/tool-locked";
 
 const TITLE = "Generator newsletter — persoane juridice";
 
 export default async function NewsletterPjPage({ params }: { params: Promise<{ orgSlug: string }> }) {
   const { orgSlug } = await params;
-  await requireOrgAccess(orgSlug);
+  const access = await requireOrgAccess(orgSlug);
+
+  if (!orgHasToolAccess(access.orgPackage, access.orgCustomPlanConfig, "newsletter-pj")) {
+    return <ToolLocked orgSlug={orgSlug} toolName={TITLE} />;
+  }
 
   return (
     <div className="relative left-1/2 -ml-[50vw] flex h-screen w-screen flex-col overflow-hidden">

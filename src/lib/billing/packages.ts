@@ -33,8 +33,20 @@ export const ALL_TOOLS: ToolId[] = [
   "program-lucru",
 ];
 
-export function orgHasToolAccess(_pkg: OrgPackage, _tool: ToolId): boolean {
-  return true;
+// Pachetele fixe (trial/start/crestere/impact) includ TOATE instrumentele —
+// intenționat, per comentariul de mai sus. DOAR planul personalizat
+// diferențiază pe instrument (7 lei/instrument bifat în constructorul de
+// plan, vezi custom-plan-builder.tsx) — înainte, funcția asta returna mereu
+// `true` necondiționat și nu era apelată nicăieri, deci un client care alegea
+// 0 instrumente la planul personalizat avea acces identic cu unul care le
+// bifa pe toate.
+export function orgHasToolAccess(
+  pkg: OrgPackage,
+  customPlanConfig: { tools: ToolId[] } | null,
+  tool: ToolId,
+): boolean {
+  if (pkg !== "custom") return true;
+  return (customPlanConfig?.tools ?? []).includes(tool);
 }
 
 // `null` = nelimitat.
