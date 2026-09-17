@@ -1,4 +1,4 @@
-import { boolean, index, integer, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { boolean, date, index, integer, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 import { appUsers } from "./app-users";
 import { campaignPageTemplate, fundraisingDonationStatus, fundraisingPageStatus } from "./enums";
@@ -128,6 +128,12 @@ export const fundraisingUpdates = pgTable(
       .references(() => organizations.id, { onDelete: "cascade" }),
     titlu: text("titlu").notNull(),
     continut: text("continut").notNull(),
+    // Dată aleasă de admin la publicare/editare (nu "când a apăsat butonul") —
+    // permite adăugarea retroactivă a unor repere („21 mai 2021 — turnarea
+    // fundației"), la fel ca panoul de „Noutăți” de la Fundația Nektarios.
+    // Folosită pentru sortare și afișare pe pagina publică — createdAt rămâne
+    // strict un audit trail intern, neafișat.
+    data: date("data", { mode: "date" }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [

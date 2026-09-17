@@ -11,7 +11,7 @@ import { EmptyState } from "../../components/ui/states";
 import { formatDataOra } from "../../lib/format";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { STRANGERE_FONDURI_DICT } from "@/lib/i18n/dictionaries/strangere-fonduri";
-import { AddOfflineDonationButton, AddUpdateButton, CopyPageLinkButton, DeleteUpdateButton, ImageUploadCard, ToggleStatusButton } from "../client";
+import { AddOfflineDonationButton, AddUpdateButton, CopyPageLinkButton, DeleteUpdateButton, EditUpdateButton, ImageUploadCard, ToggleStatusButton } from "../client";
 import { BeneficiarCard } from "../beneficiar-card";
 import { AgentCard } from "../agent-card";
 import { listMesajeCampanie } from "../agent-actions";
@@ -55,7 +55,7 @@ const getPaginaSiDonatii = withOrgSession(async (ctx, id: string) => {
     .select()
     .from(fundraisingUpdates)
     .where(eq(fundraisingUpdates.pageId, id))
-    .orderBy(desc(fundraisingUpdates.createdAt));
+    .orderBy(desc(fundraisingUpdates.data));
 
   // Fără JOIN pe app_users — staff-ul nu are politică RLS care să-i permită
   // să vadă rândul app_users al beneficiarului; email e denormalizat pe
@@ -279,9 +279,17 @@ export default async function PaginaDetaliuPage({ params }: { params: Promise<{ 
                 <div className="min-w-0">
                   <p className="text-[13px] font-medium text-[var(--ci-text)]">{a.titlu}</p>
                   <p className="mt-0.5 whitespace-pre-wrap text-[12px] text-[var(--ci-text-muted)]">{a.continut}</p>
-                  <p className="mt-1 text-[11px] text-[var(--ci-text-faint)]">{formatDataOra(a.createdAt.toISOString())}</p>
+                  <p className="mt-1 text-[11px] text-[var(--ci-text-faint)]">
+                    {a.data.toLocaleDateString("ro-RO", { day: "numeric", month: "long", year: "numeric" })}
+                  </p>
                 </div>
-                <DeleteUpdateButton orgSlug={orgSlug} id={a.id} />
+                <div className="flex shrink-0 items-center gap-1">
+                  <EditUpdateButton
+                    orgSlug={orgSlug}
+                    actualizare={{ id: a.id, titlu: a.titlu, continut: a.continut, data: a.data.toISOString().slice(0, 10) }}
+                  />
+                  <DeleteUpdateButton orgSlug={orgSlug} id={a.id} />
+                </div>
               </div>
             ))}
           </div>

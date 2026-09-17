@@ -8,29 +8,36 @@ import { Dialog } from "../components/ui/dialog";
 import { Input, Label } from "../components/ui/input";
 import { useLocale } from "../lib/locale-context";
 import { STRANGERE_FONDURI_DICT } from "@/lib/i18n/dictionaries/strangere-fonduri";
-import { adaugaActualizareAction } from "./actions";
+import { editeazaActualizareAction } from "./actions";
 
-export function AddUpdateDialog({
+export type ActualizareEditabila = {
+  id: string;
+  titlu: string;
+  continut: string;
+  data: string; // "YYYY-MM-DD", gata pentru <input type="date">
+};
+
+export function EditUpdateDialog({
   open,
   onClose,
   orgSlug,
-  pageId,
+  actualizare,
 }: {
   open: boolean;
   onClose: () => void;
   orgSlug: string;
-  pageId: string;
+  actualizare: ActualizareEditabila;
 }) {
   const router = useRouter();
   const locale = useLocale();
-  const dict = STRANGERE_FONDURI_DICT[locale].addUpdateDialog;
+  const dict = STRANGERE_FONDURI_DICT[locale].editUpdateDialog;
   const [pending, setPending] = useState(false);
   const [eroare, setEroare] = useState("");
 
   async function onSubmit(formData: FormData) {
     setPending(true);
     setEroare("");
-    const rezultat = await adaugaActualizareAction(orgSlug, { error: null }, formData);
+    const rezultat = await editeazaActualizareAction(orgSlug, actualizare.id, { error: null }, formData);
     setPending(false);
     if (rezultat.error) {
       setEroare(rezultat.error);
@@ -43,22 +50,20 @@ export function AddUpdateDialog({
   return (
     <Dialog open={open} onClose={onClose} title={dict.title} width="max-w-md">
       <div className="space-y-3">
-        <p className="text-[13px] text-[var(--ci-text-muted)]">{dict.intro}</p>
         <form action={onSubmit} className="space-y-3">
-          <input type="hidden" name="pageId" value={pageId} />
           <div>
             <Label>{dict.data}</Label>
             <input
               type="date"
               name="data"
               required
-              defaultValue={new Date().toISOString().slice(0, 10)}
+              defaultValue={actualizare.data}
               className="w-full rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-[13px] text-[var(--ci-text)]"
             />
           </div>
           <div>
             <Label>{dict.titlu}</Label>
-            <Input name="titlu" required placeholder={dict.titluPlaceholder} />
+            <Input name="titlu" required defaultValue={actualizare.titlu} />
           </div>
           <div>
             <Label>{dict.continut}</Label>
@@ -66,6 +71,7 @@ export function AddUpdateDialog({
               name="continut"
               required
               rows={5}
+              defaultValue={actualizare.continut}
               className="w-full rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-[13px] text-[var(--ci-text)]"
             />
           </div>
@@ -77,7 +83,7 @@ export function AddUpdateDialog({
               {dict.anuleaza}
             </Button>
             <Button type="submit" variant="primary" disabled={pending}>
-              {pending ? dict.sePublica : dict.publicaActualizarea}
+              {pending ? dict.seSalveaza : dict.salveazaModificarile}
             </Button>
           </div>
         </form>

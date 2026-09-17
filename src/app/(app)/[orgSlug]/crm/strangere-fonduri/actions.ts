@@ -176,6 +176,17 @@ export type AdaugaActualizareState = { error: string | null };
 // Postată de owner/admin, vizibilă public pe pagina campaniei (vezi
 // fundraising_updates_public_select) — text simplu, fără poză (deferred
 // până se configurează Supabase Storage).
+// `data` e opțională la trimitere (input HTML `type="date"` gol dacă
+// utilizatorul o șterge) — implicit azi, ca formularul să rămână simplu de
+// completat rapid.
+function parseazaDataActualizare(formData: FormData): Date | { error: string } {
+  const dataRaw = String(formData.get("data") ?? "").trim();
+  if (!dataRaw) return new Date();
+  const data = new Date(dataRaw);
+  if (Number.isNaN(data.getTime())) return { error: "Data introdusă nu e validă." };
+  return data;
+}
+
 export const adaugaActualizareAction = withOrgAdmin(
   async (ctx, _prevState: AdaugaActualizareState, formData: FormData): Promise<AdaugaActualizareState> => {
     const pageId = String(formData.get("pageId") ?? "").trim();
@@ -185,6 +196,8 @@ export const adaugaActualizareAction = withOrgAdmin(
     if (!pageId || !titlu || !continut) {
       return { error: "Completează titlul și conținutul actualizării." };
     }
+    const data = parseazaDataActualizare(formData);
+    if ("error" in data) return data;
 
     const pagina = await ctx.db
       .select({ id: fundraisingPages.id })
@@ -199,7 +212,33 @@ export const adaugaActualizareAction = withOrgAdmin(
       orgId: ctx.orgId,
       titlu,
       continut,
+      data,
     });
+
+    return { error: null };
+  },
+);
+
+export type EditeazaActualizareState = { error: string | null };
+
+// Editare — titlu/conținut/dată, org_id filtrat explicit (defense-in-depth,
+// ca la editeazaPaginaAdminAction). Nu schimbă pageId — o actualizare nu se
+// mută niciodată pe altă pagină.
+export const editeazaActualizareAction = withOrgAdmin(
+  async (ctx, id: string, _prevState: EditeazaActualizareState, formData: FormData): Promise<EditeazaActualizareState> => {
+    const titlu = String(formData.get("titlu") ?? "").trim();
+    const continut = String(formData.get("continut") ?? "").trim();
+
+    if (!titlu || !continut) {
+      return { error: "Completează titlul și conținutul actualizării." };
+    }
+    const data = parseazaDataActualizare(formData);
+    if ("error" in data) return data;
+
+    await ctx.db
+      .update(fundraisingUpdates)
+      .set({ titlu, continut, data })
+      .where(and(eq(fundraisingUpdates.id, id), eq(fundraisingUpdates.orgId, ctx.orgId)));
 
     return { error: null };
   },

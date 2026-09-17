@@ -12,6 +12,7 @@ import { AddOfflineDonationDialog } from "./add-offline-donation-dialog";
 import { AddPageDialog } from "./add-page-dialog";
 import { AddUpdateDialog } from "./add-update-dialog";
 import { EditPageDialog, type PaginaEditabila } from "./edit-page-dialog";
+import { EditUpdateDialog, type ActualizareEditabila } from "./edit-update-dialog";
 import {
   actualizeazaImaginePaginaAction,
   comutaStatusPaginaStrangereFonduri,
@@ -145,6 +146,25 @@ export function AddOfflineDonationButton({ orgSlug, pageId }: { orgSlug: string;
         <HandCoins className="h-3.5 w-3.5" /> {dict.adaugaDonatieOffline}
       </Button>
       <AddOfflineDonationDialog open={open} onClose={() => setOpen(false)} orgSlug={orgSlug} pageId={pageId} />
+    </>
+  );
+}
+
+export function EditUpdateButton({ orgSlug, actualizare }: { orgSlug: string; actualizare: ActualizareEditabila }) {
+  const locale = useLocale();
+  const dict = STRANGERE_FONDURI_DICT[locale].client;
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        title={dict.editeazaActualizarea}
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--ci-radius-btn)] text-[var(--ci-text-faint)] hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)]"
+      >
+        <Pencil className="h-3.5 w-3.5" />
+      </button>
+      <EditUpdateDialog open={open} onClose={() => setOpen(false)} orgSlug={orgSlug} actualizare={actualizare} />
     </>
   );
 }

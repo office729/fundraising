@@ -59,7 +59,7 @@ const getPaginaPublica = cache(async (orgSlug: string, pageSlug: string) => {
       .select()
       .from(fundraisingUpdates)
       .where(eq(fundraisingUpdates.pageId, pagina[0].id))
-      .orderBy(desc(fundraisingUpdates.createdAt));
+      .orderBy(desc(fundraisingUpdates.data));
 
     const [{ totalDonatii }] = await tx
       .select({ totalDonatii: sql<number>`count(*)::int` })
@@ -233,7 +233,7 @@ export default async function PaginaStrangereFonduriPage({
                   <p className="text-[13px] font-bold text-ink">{a.titlu}</p>
                   <p className="mt-1.5 whitespace-pre-wrap text-[14px] leading-relaxed text-body">{a.continut}</p>
                   <p className="mt-2 text-xs text-muted-2">
-                    {a.createdAt.toLocaleDateString("ro-RO", { day: "numeric", month: "long", year: "numeric" })}
+                    {a.data.toLocaleDateString("ro-RO", { day: "numeric", month: "long", year: "numeric" })}
                   </p>
                 </div>
               ))}
