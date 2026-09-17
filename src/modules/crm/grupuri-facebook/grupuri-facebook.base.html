@@ -261,7 +261,11 @@ const TEMPLATES = {
  "Anunțuri & Publicitate":"URGENT | [NUME], [VÂRSTĂ] ani, are nevoie de [SUMĂ] pentru [DIAGNOSTIC].\nDonează în 30 de secunde: [LINK CAMPANIE]\nAsociația „salvează o inimă\" — transparență totală, toate plățile publicate. O distribuire poate salva o viață."
 };
 const POSTARI_ZI = 15;   // 15 grupuri / coleg / zi
-const DEFAULT_SYNC = "/api/grupuri-sync"; // punte Supabase a platformei (izolat, nu mai atinge Firebase)
+/* Sincronizare reală per organizație, prin crm-kv/[path] (listă albă — vezi
+   route.ts). Țintea /api/grupuri-sync, inexistent aici (moștenit din
+   SOI_CRM) — modificările rămâneau doar în localStorage, niciodată văzute de
+   colegi. __FA_ORG_SLUG__ e înlocuit la randare — vezi StandaloneToolFrame. */
+const DEFAULT_SYNC = "/api/__FA_ORG_SLUG__/crm-kv";
 
 /* ============ JUDEȚ / LOCALITATE ============ */
 const JUDET_RULES = [
@@ -350,9 +354,9 @@ const FB = {
   url(){ return (S.sync.url||'').replace(/\/$/,''); },
   ok(){ const u=this.url(); return /^https:\/\/.+/.test(u) || u.indexOf('/api/')===0; },
   async put(slice,obj){ if(!this.ok())return false; obj._t=nowSrv();
-    try{ const r=await fetch(this.url()+'/soi-grupuri-v1/'+slice+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(obj)}); syncClock(r); if(!r||!r.ok){ syncWarn(); return false; } return true; }catch(e){ syncWarn(); return false; } },
+    try{ const r=await fetch(this.url()+'/grupuri-'+slice,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(obj)}); syncClock(r); if(!r||!r.ok){ syncWarn(); return false; } return true; }catch(e){ syncWarn(); return false; } },
   async get(slice){ if(!this.ok())return null;
-    try{ const r=await fetch(this.url()+'/soi-grupuri-v1/'+slice+'.json'); syncClock(r); if(!r||!r.ok)return null; return await r.json(); }catch(e){ return null; } }
+    try{ const r=await fetch(this.url()+'/grupuri-'+slice); syncClock(r); if(!r||!r.ok)return null; return await r.json(); }catch(e){ return null; } }
 };
 let localT={config:0,note:0,stare:0};
 /* union pe id, păstrând ordinea + valorile locale; elementele din tombstone nu revin */

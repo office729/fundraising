@@ -34,6 +34,11 @@ const ALLOWED_KEYS = new Set([
   "soi-plan2-puls",
   "soi-plan2-test",
   "soi-plan2-suma-auto",
+  // Împărțire grupuri Facebook (config/notițe/stare postări) — înainte lovea
+  // ruta inexistentă /api/grupuri-sync/soi-grupuri-v1/*.
+  "grupuri-config",
+  "grupuri-note",
+  "grupuri-stare",
 ]);
 const ALLOWED_GET = ALLOWED_KEYS;
 const ALLOWED_PUT = ALLOWED_KEYS;
