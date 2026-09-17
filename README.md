@@ -1,20 +1,44 @@
 # Fundraising Academy
 
 Platformă SaaS multi-tenant: ONG-urile își fac cont și primesc acces la un
-set de instrumente de fundraising (CRM PJ, CRM PF, rapoarte, șabloane,
-generator de contract de sponsorizare), pe bază de abonament lunar.
+CRM complet și un set de instrumente de fundraising (rapoarte, newsletter,
+contracte de sponsorizare/D177, pagini publice de strângere de fonduri cu
+donații prin Stripe), pe bază de abonament lunar.
 
-Vezi planul de arhitectură complet pentru context și fazare.
+## Stare curentă
 
-## Stare curentă: Faza 0 — Fundație
+Platforma e funcțională de cap la coadă, live la
+fundraising-academy-one.vercel.app, cu izolare de tenant prin RLS
+(`set_config` transacțional, NU query-uri globale).
 
-Ce există: schema de bază (organizations/memberships/app_users), autentificare
-Supabase, izolare de tenant prin RLS (`set_config` transacțional, NU query-uri
-globale), flux de signup (cont → organizație nouă → owner) și login, un
-Control Tower gol care listează instrumentele (fără acces real la ele încă).
+Ce există:
+- Autentificare Supabase, signup (cont → organizație nouă → owner), login,
+  invitații de echipă (cu cotă de utilizatori aplicată per pachet).
+- CRM complet: persoane fizice, Formular 230, companii (inclusiv D177/20%),
+  beneficiari & proiecte, donații, strângere de fonduri (pagini publice +
+  checkout Stripe pentru donatori), panou beneficiari, presă & grupuri
+  locale, fonduri & plăți, RFM/segmentare, comunicare, automatizări,
+  task-uri, documente, rapoarte.
+- Instrumente portate ca pagini standalone: CRM PJ/Prospectare, CRM
+  Voluntari, Program de lucru, Împărțire grupuri Facebook, Comunicate,
+  Newsletter PF/PJ, One Pager companii, Raport activitate companii.
+- Billing real prin Stripe, cu preț dinamic (`price_data`, fără Produse/
+  Prețuri pre-create în Dashboard) — atât pentru donațiile de pe paginile
+  publice de campanie, cât și pentru abonamentul ONG-ului la platformă
+  (checkout + webhook complet: plată reușită, expirare sesiune, reînnoire
+  abonament, refund/dispută, anulare/schimbare abonament). Fără cheile
+  Stripe reale completate, checkout-ul arată un mesaj grațios ("Plățile nu
+  sunt încă activate") în loc să proceseze plăți — vezi mai jos.
+- Sistem de referral: link unic per organizație, 50% reducere (o singură
+  dată) la primul abonament plătit al organizației recomandate.
+- Cote pe pachet (utilizatori/contacte PF/companii PJ) aplicate efectiv la
+  inserare, nu doar afișate în UI; acces per instrument aplicat efectiv
+  pentru planul personalizat (pachetele fixe includ mereu toate
+  instrumentele, diferă doar prin cote).
 
-Ce NU există încă: niciun instrument portat (CRM PJ/PF, rapoarte etc.),
-billing Stripe, invitații de echipă.
+Ce nu există încă: cont Stripe real (cheile sunt necompletate — singurul
+pas care mai lipsește ca plățile să fie efectiv procesate) și facturare
+anuală prin checkout (arătată azi doar informativ, fără flux propriu).
 
 ## Setup local (necesită acțiune manuală — nu poate fi automatizat de aici)
 
@@ -33,7 +57,7 @@ billing Stripe, invitații de echipă.
    după primul push (FORCE RLS + politici nu se creează automat de Drizzle).
 7. `npm run dev`
 
-### Verificare de izolare (obligatorie înainte de a considera Faza 0 gata)
+### Verificare de izolare (recomandată după orice schimbare de schemă/RLS)
 
 Vezi secțiunea 5 din `documentation/rls-setup.sql` — creează 2 conturi de
 test cu 2 organizații separate și confirmă manual că un query fără
@@ -44,7 +68,18 @@ DOAR datele din org A.
 
 - ✅ Repo GitHub creat și urcat: **`github.com/office729/fundraising`** (2026-09-04).
   Pe un laptop nou: `git clone https://github.com/office729/fundraising.git`.
-- Creat proiect Vercel legat de acel repo, cu variabilele de mediu de mai sus.
-- Creat cont/produse Stripe (test + live) — necesar abia din Faza 1.
-- Confirmat maparea pachet → instrumente din `lib/billing/packages.ts`
-  (momentan e un strawman din planul aprobat) și prețurile lunare.
+- ✅ Proiect Vercel legat de acel repo, cu variabilele de mediu de mai sus
+  (mai puțin Stripe — vezi punctul următor).
+- ⬜ Creat cont Stripe (test + live) și completat `STRIPE_SECRET_KEY` /
+  `STRIPE_WEBHOOK_SECRET` în Vercel. Codul e gata de asta (checkout donații
+  + abonamente ONG, cu preț dinamic, fără niciun Produs/Preț de configurat
+  manual în Dashboard) — rămâne doar crearea contului și a webhook-ului.
+  La configurarea webhook-ului în Stripe Dashboard, activează evenimentele
+  folosite de `src/app/api/stripe/webhook/route.ts`: `checkout.session.completed`,
+  `checkout.session.expired`, `invoice.paid`, `charge.refunded`,
+  `charge.dispute.created`, `customer.subscription.deleted`,
+  `customer.subscription.updated`.
+- ✅ Maparea pachet → instrumente din `lib/billing/packages.ts` — pachetele
+  fixe (trial/start/creștere/impact) includ toate instrumentele, diferă doar
+  prin cote; planul personalizat diferențiază per instrument, aplicat
+  efectiv prin `orgHasToolAccess`.
