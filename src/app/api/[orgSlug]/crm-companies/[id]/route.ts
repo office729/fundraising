@@ -9,6 +9,15 @@ import { orgOwnerMaps } from "@/lib/crm/org-owners";
 
 type Ctx = { params: Promise<{ orgSlug: string; id: string }> };
 
+// `id` vine direct din URL — un segment nevalid (ex. tool-ul vechi cerea o rută
+// separată "contact-activity" care nu există aici) altfel ajungea neschimbat
+// într-un eq(companies.id, id) și Postgres arunca "invalid input syntax for
+// type uuid", adică 500 în loc de 404.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function isUuid(id: string): boolean {
+  return UUID_RE.test(id);
+}
+
 async function loadOne(ctx: OrgContext, id: string) {
   const rows = await ctx.db
     .select()
@@ -43,7 +52,6 @@ const patchCompany = withOrgSession(async (ctx, id: string, req: Request) => {
   for (const [k, v] of Object.entries(cols)) if (v !== undefined) set[k] = v;
   set.updatedAt = new Date();
   set.updatedBy = ctx.userId;
-  set.extra = sql`coalesce(${companies.extra}, '{}'::jsonb) || ${JSON.stringify(extra)}::jsonb`;
 
   // UPSERT: tool-ul „Adaugă firmă" generează un id NOU (uuid) și trimite direct
   // un PATCH pe el — nu există o rută POST separată de creare. Dacă id-ul nu
@@ -55,18 +63,24 @@ const patchCompany = withOrgSession(async (ctx, id: string, req: Request) => {
     .limit(1);
 
   if (existing[0]) {
+    // UPDATE: merge peste `extra` existent — `companies.extra` referă rândul
+    // curent, valid doar aici (la INSERT nu există încă niciun rând de referit).
     const upd = await ctx.db
       .update(companies)
-      .set(set)
+      .set({ ...set, extra: sql`coalesce(${companies.extra}, '{}'::jsonb) || ${JSON.stringify(extra)}::jsonb` })
       .where(and(eq(companies.id, id), eq(companies.orgId, ctx.orgId), isNull(companies.deletedAt)))
       .returning({ id: companies.id });
     if (!upd[0]) return NextResponse.json({ error: "not_found" }, { status: 404 });
   } else {
+    // INSERT: fără rând existent de mers peste — `extra` e direct patch-ul primit
+    // (referențierea `companies.extra` aici arunca "missing FROM-clause entry",
+    // motivul real din spatele erorii 500 la adăugarea unei firme noi din tool).
     await ctx.db.insert(companies).values({
       id,
       orgId: ctx.orgId,
       nume: (set.nume as string) || "—",
       ...set,
+      extra,
     } as typeof companies.$inferInsert);
   }
 
@@ -126,15 +140,18 @@ const deleteCompany = withOrgSession(async (ctx, id: string) => {
 
 export async function GET(_req: Request, { params }: Ctx) {
   const { orgSlug, id } = await params;
+  if (!isUuid(id)) return NextResponse.json({ error: "not_found" }, { status: 404 });
   return getCompany(orgSlug, id);
 }
 
 export async function PATCH(req: Request, { params }: Ctx) {
   const { orgSlug, id } = await params;
+  if (!isUuid(id)) return NextResponse.json({ error: "bad_request" }, { status: 400 });
   return patchCompany(orgSlug, id, req);
 }
 
 export async function DELETE(_req: Request, { params }: Ctx) {
   const { orgSlug, id } = await params;
+  if (!isUuid(id)) return NextResponse.json({ error: "not_found" }, { status: 404 });
   return deleteCompany(orgSlug, id);
 }
