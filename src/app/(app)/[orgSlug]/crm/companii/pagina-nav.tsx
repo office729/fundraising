@@ -32,14 +32,14 @@ export function PaginaNav({ pagina, pageCount, total, pageSize }: { pagina: numb
         <button
           onClick={() => mergiLa(pagina - 1)}
           disabled={pagina <= 1}
-          className="inline-flex h-8 items-center rounded-lg border border-[var(--ci-border)] px-3 text-[13px] font-medium text-[var(--ci-text)] transition-colors hover:bg-[var(--ci-surface-2)] disabled:cursor-not-allowed disabled:opacity-40"
+          className="inline-flex h-8 items-center rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-3 text-[13px] font-medium text-[var(--ci-text)] transition-colors hover:bg-[var(--ci-surface-2)] disabled:cursor-not-allowed disabled:opacity-40"
         >
           {dict.inapoi}
         </button>
         <button
           onClick={() => mergiLa(pagina + 1)}
           disabled={pagina >= pageCount}
-          className="inline-flex h-8 items-center rounded-lg border border-[var(--ci-border)] px-3 text-[13px] font-medium text-[var(--ci-text)] transition-colors hover:bg-[var(--ci-surface-2)] disabled:cursor-not-allowed disabled:opacity-40"
+          className="inline-flex h-8 items-center rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-3 text-[13px] font-medium text-[var(--ci-text)] transition-colors hover:bg-[var(--ci-surface-2)] disabled:cursor-not-allowed disabled:opacity-40"
         >
           {dict.inainte}
         </button>

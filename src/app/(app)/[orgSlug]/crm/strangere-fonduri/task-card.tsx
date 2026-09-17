@@ -92,21 +92,21 @@ export function TaskCard({
   return (
     <Card>
       <CardHeader title="Sarcinile beneficiarului" subtitle="Sarcini generale sau de sponsorizare — beneficiarul e notificat automat" />
-      <form action={formAction} className="flex flex-col gap-2 rounded-lg border border-[var(--ci-border)] p-3">
+      <form action={formAction} className="flex flex-col gap-2 rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] p-3">
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          <select name="tip" value={tip} onChange={(e) => setTip(e.target.value as "generala" | "sponsorizare")} className="rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm">
+          <select name="tip" value={tip} onChange={(e) => setTip(e.target.value as "generala" | "sponsorizare")} className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm">
             <option value="generala">Sarcină generală</option>
             <option value="sponsorizare">Sponsorizare</option>
           </select>
-          <input name="titlu" required placeholder="Titlu sarcină" className="rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
-          <input name="dataLimita" type="date" className="rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
+          <input name="titlu" required placeholder="Titlu sarcină" className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
+          <input name="dataLimita" type="date" className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
         </div>
-        <textarea name="descriere" rows={2} placeholder="Descriere (opțional)" className="rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
+        <textarea name="descriere" rows={2} placeholder="Descriere (opțional)" className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
         {tip === "sponsorizare" && (
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            <input name="companie" placeholder="Companie sponsor" className="rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
-            <input name="suma" type="number" min={1} step={1} placeholder="Sumă sponsorizare" className="rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
-            <input name="canalRecomandat" placeholder="Canal recomandat" className="rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
+            <input name="companie" placeholder="Companie sponsor" className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
+            <input name="suma" type="number" min={1} step={1} placeholder="Sumă sponsorizare" className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
+            <input name="canalRecomandat" placeholder="Canal recomandat" className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
             <div className="col-span-2 flex flex-col gap-1 sm:col-span-3">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-[11px] font-medium text-[var(--ci-text-muted)]">Text de mulțumire pentru sponsor</span>
@@ -119,7 +119,7 @@ export function TaskCard({
                   {aiMultumirePending ? "Se generează…" : "✨ Generează cu AI"}
                 </button>
               </div>
-              <textarea ref={textMultumireRef} name="textMultumire" rows={2} placeholder="Text de mulțumire pentru sponsor" className="rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
+              <textarea ref={textMultumireRef} name="textMultumire" rows={2} placeholder="Text de mulțumire pentru sponsor" className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
             </div>
           </div>
         )}
@@ -133,7 +133,7 @@ export function TaskCard({
         {taskuri.length ? (
           <div className="flex flex-col gap-2">
             {taskuri.map((t) => (
-              <div key={t.id} className="rounded-lg border border-[var(--ci-border)] px-3.5 py-2.5">
+              <div key={t.id} className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] px-3.5 py-2.5">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <span className="text-[13px] font-medium text-[var(--ci-text)]">{t.titlu}</span>

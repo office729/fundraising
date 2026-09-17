@@ -58,7 +58,7 @@ export function AddDonationDialog({
   return (
     <Dialog open={open} onClose={onClose} title={dict.title} width="max-w-sm">
       <div className="space-y-3">
-        <p className="rounded-lg border border-dashed border-[var(--ci-border)] bg-[var(--ci-surface-2)] px-3 py-2 text-[12px] text-[var(--ci-text-muted)]">
+        <p className="rounded-[var(--ci-radius-card)] border border-dashed border-[var(--ci-border)] bg-[var(--ci-surface-2)] px-3 py-2 text-[12px] text-[var(--ci-text-muted)]">
           {dict.avertisment}
         </p>
         <div>
@@ -85,7 +85,7 @@ export function AddDonationDialog({
           <Input value={campanie} onChange={(e) => setCampanie(e.target.value)} placeholder={dict.campaniePlaceholder} />
         </div>
 
-        <div className="space-y-2 rounded-lg border border-[var(--ci-border)] p-3">
+        <div className="space-y-2 rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] p-3">
           <Checkbox label={dict.donatieRecurenta} checked={recurenta} onChange={setRecurenta} />
           <Checkbox label={dict.legataDeProiect} checked={esteProiect} onChange={setEsteProiect} />
           {esteProiect && (

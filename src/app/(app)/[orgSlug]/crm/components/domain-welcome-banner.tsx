@@ -51,7 +51,7 @@ export function DomainWelcomeBanner({
   if (tpl.familie === "natural-ancorat") {
     return (
       <div className="flex items-center gap-3.5">
-        <div className="h-12 w-12 shrink-0 rounded-2xl bg-[var(--ci-primary-soft)]" />
+        <div className="h-12 w-12 shrink-0 rounded-[var(--ci-radius-btn)] bg-[var(--ci-primary-soft)]" />
         <div>
           {titlu}
           {sub}
@@ -67,7 +67,7 @@ export function DomainWelcomeBanner({
       // gândit pentru fundaluri deschise (navy închis pe alb). Suprascriem
       // AICI variabila, nu în dicționar — restul familiilor (fundal deschis)
       // au nevoie de --ci-text neschimbat (navy), doar aici fundalul e închis.
-      <div className="relative overflow-hidden rounded-lg bg-[var(--ci-primary)] px-6 py-5 [--ci-text:#fff]">
+      <div className="relative overflow-hidden rounded-[var(--ci-radius-card)] bg-[var(--ci-primary)] px-6 py-5 [--ci-text:#fff]">
         <div
           aria-hidden="true"
           className="absolute inset-y-0 right-0 w-24 bg-white/10"

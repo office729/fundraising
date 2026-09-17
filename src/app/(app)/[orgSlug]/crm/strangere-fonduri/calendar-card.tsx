@@ -70,7 +70,7 @@ export function CalendarCard({ orgSlug, pageId, items }: { orgSlug: string; page
       {items.length ? (
         <div className="flex flex-col gap-2">
           {items.map((it) => (
-            <div key={it.id} className="rounded-lg border border-[var(--ci-border)] px-3.5 py-2.5">
+            <div key={it.id} className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] px-3.5 py-2.5">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-[12px] font-semibold text-[var(--ci-text)]">
                   {new Date(it.ziua).toLocaleDateString("ro-RO", { day: "numeric", month: "short" })} · {it.obiectiv}

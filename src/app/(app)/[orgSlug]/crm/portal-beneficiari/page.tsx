@@ -35,7 +35,7 @@ export default async function PortalBeneficiariPage({ params }: { params: Promis
               <a
                 key={t.id}
                 href={`/${orgSlug}/crm/strangere-fonduri/${t.campaignPageId}`}
-                className="flex items-center justify-between gap-2 rounded-lg border border-[var(--ci-border)] px-3.5 py-2.5 hover:border-[var(--ci-border-strong)]"
+                className="flex items-center justify-between gap-2 rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] px-3.5 py-2.5 hover:border-[var(--ci-border-strong)]"
               >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
@@ -65,7 +65,7 @@ export default async function PortalBeneficiariPage({ params }: { params: Promis
               <a
                 key={c.id}
                 href={`/${orgSlug}/crm/strangere-fonduri/${c.id}`}
-                className="flex items-center justify-between gap-2 rounded-lg border border-[var(--ci-border)] px-3.5 py-2.5 hover:border-[var(--ci-border-strong)]"
+                className="flex items-center justify-between gap-2 rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] px-3.5 py-2.5 hover:border-[var(--ci-border-strong)]"
               >
                 <span className="truncate text-[13px] font-medium text-[var(--ci-text)]">{c.titlu}</span>
                 <Badge tone="amber" icon={false}>

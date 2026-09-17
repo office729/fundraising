@@ -237,7 +237,7 @@ export default function DonatorProfilPage() {
             return donatii.length || donatiiManuale.length ? (
               <div className="space-y-2">
                 {donatiiManuale.map((d) => (
-                  <div key={d.id} className="flex items-center justify-between rounded-lg border border-[var(--ci-primary-soft)] bg-[var(--ci-primary-soft)]/40 px-3.5 py-2.5">
+                  <div key={d.id} className="flex items-center justify-between rounded-[var(--ci-radius-card)] border border-[var(--ci-primary-soft)] bg-[var(--ci-primary-soft)]/40 px-3.5 py-2.5">
                     <div>
                       <p className="text-[13px] font-medium text-[var(--ci-text)]">{d.campanie}</p>
                       <p className="mt-0.5 flex flex-wrap items-center gap-1 text-[12px] text-[var(--ci-text-muted)]">
@@ -251,7 +251,7 @@ export default function DonatorProfilPage() {
                   </div>
                 ))}
                 {donatii.map((d) => (
-                  <div key={d.id} className="flex items-center justify-between rounded-lg border border-[var(--ci-border)] px-3.5 py-2.5">
+                  <div key={d.id} className="flex items-center justify-between rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] px-3.5 py-2.5">
                     <div>
                       <p className="text-[13px] font-medium text-[var(--ci-text)]">{d.campanie}</p>
                       <p className="text-[12px] text-[var(--ci-text-muted)]">{formatData(d.data)}{d.recurenta ? ` · ${dict.donatii.recurenta}` : ""}</p>
@@ -271,7 +271,7 @@ export default function DonatorProfilPage() {
             return toate.length ? (
               <div className="space-y-2">
                 {toate.map((c) => (
-                  <div key={c.id} className="rounded-lg border border-[var(--ci-border)] px-3.5 py-2.5">
+                  <div key={c.id} className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] px-3.5 py-2.5">
                     <div className="flex items-center justify-between">
                       <Badge tone="neutral">{c.tip}</Badge>
                       <span className="text-[12px] text-[var(--ci-text-muted)]">{formatDataRelativa(c.la)}</span>
@@ -338,7 +338,7 @@ export default function DonatorProfilPage() {
                 {toateTaskurile.length ? (
                   <div className="space-y-2">
                     {toateTaskurile.map((t) => (
-                      <div key={t.id} className="flex items-center justify-between rounded-lg border border-[var(--ci-border)] px-3.5 py-2.5">
+                      <div key={t.id} className="flex items-center justify-between rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] px-3.5 py-2.5">
                         <div>
                           <p className="text-[13px] font-medium text-[var(--ci-text)]">{t.titlu}</p>
                           <p className="text-[12px] text-[var(--ci-text-muted)]">
@@ -410,7 +410,7 @@ function QuickAction({
   external?: boolean;
   onClick?: () => void;
 }) {
-  const cls = `inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-[13px] font-medium transition-colors ${
+  const cls = `inline-flex h-9 items-center gap-1.5 rounded-[var(--ci-radius-btn)] px-3 text-[13px] font-medium transition-colors ${
     primary
       ? "bg-[var(--ci-primary)] text-white hover:bg-[var(--ci-primary-hover)]"
       : "border border-[var(--ci-border)] text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]"
@@ -448,7 +448,7 @@ function NoteCard({ nota, donatorId }: { nota: Notita; donatorId: string }) {
   }
 
   return (
-    <div className="rounded-xl border border-[var(--ci-border)] bg-[var(--ci-surface)] p-3.5 shadow-[var(--ci-shadow-sm)]">
+    <div className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-3.5 shadow-[var(--ci-card-shadow)]">
       {editare ? (
         <div className="space-y-2">
           <Textarea value={text} onChange={(e) => setText(e.target.value)} rows={2} autoFocus />
@@ -456,14 +456,14 @@ function NoteCard({ nota, donatorId }: { nota: Notita; donatorId: string }) {
             <button
               onClick={() => { setText(nota.text); setEditare(false); }}
               aria-label={dict.anuleazaEditarea}
-              className="flex h-7 w-7 items-center justify-center rounded-lg text-[var(--ci-text-muted)] hover:bg-[var(--ci-surface-2)]"
+              className="flex h-7 w-7 items-center justify-center rounded-[var(--ci-radius-btn)] text-[var(--ci-text-muted)] hover:bg-[var(--ci-surface-2)]"
             >
               <XIcon className="h-3.5 w-3.5" />
             </button>
             <button
               onClick={salveaza}
               aria-label={dict.salveazaNotita}
-              className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--ci-green-soft)] text-[var(--ci-green)] hover:opacity-80"
+              className="flex h-7 w-7 items-center justify-center rounded-[var(--ci-radius-btn)] bg-[var(--ci-green-soft)] text-[var(--ci-green)] hover:opacity-80"
             >
               <Check className="h-3.5 w-3.5" />
             </button>
@@ -482,14 +482,14 @@ function NoteCard({ nota, donatorId }: { nota: Notita; donatorId: string }) {
             <button
               onClick={() => setEditare(true)}
               aria-label={dict.editeazaNotita}
-              className="rounded-lg p-1.5 text-[var(--ci-text-faint)] hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)]"
+              className="rounded-[var(--ci-radius-btn)] p-1.5 text-[var(--ci-text-faint)] hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)]"
             >
               <Pencil className="h-3.5 w-3.5" />
             </button>
             <button
               onClick={() => stergeNotita(donatorId, nota.id)}
               aria-label={dict.stergeNotita}
-              className="rounded-lg p-1.5 text-[var(--ci-text-faint)] hover:bg-[var(--ci-red-soft)] hover:text-[var(--ci-red)]"
+              className="rounded-[var(--ci-radius-btn)] p-1.5 text-[var(--ci-text-faint)] hover:bg-[var(--ci-red-soft)] hover:text-[var(--ci-red)]"
             >
               <Trash2 className="h-3.5 w-3.5" />
             </button>

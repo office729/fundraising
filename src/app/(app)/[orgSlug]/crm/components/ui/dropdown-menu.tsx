@@ -32,7 +32,7 @@ export function DropdownMenu({
       {open && (
         <div
           className={cn(
-            "absolute z-40 mt-1.5 min-w-44 overflow-hidden rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] py-1 shadow-[var(--ci-shadow-lg)]",
+            "absolute z-40 mt-1.5 min-w-44 overflow-hidden rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] py-1 shadow-[var(--ci-shadow-lg)]",
             align === "end" ? "right-0" : "left-0",
           )}
         >

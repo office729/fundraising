@@ -39,7 +39,7 @@ export function BeneficiariPanel({ orgSlug, beneficiari }: { orgSlug: string; be
   const editeaza = beneficiari.find((b) => b.id === editeazaId) ?? null;
 
   return (
-    <div className="rounded-xl border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4">
+    <div className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="text-[13px] font-semibold text-[var(--ci-text)]">{dict.titlu}</p>
@@ -84,7 +84,7 @@ export function BeneficiariPanel({ orgSlug, beneficiari }: { orgSlug: string; be
                     <button
                       onClick={() => setEditeazaId(b.id)}
                       title={dict.editeazaContul}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg text-[var(--ci-text-faint)] hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)]"
+                      className="flex h-7 w-7 items-center justify-center rounded-[var(--ci-radius-btn)] text-[var(--ci-text-faint)] hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)]"
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </button>
@@ -142,7 +142,7 @@ function CopyLinkCell({ orgSlug, slug, shortCode }: { orgSlug: string; slug: str
   return (
     <button
       onClick={copiaza}
-      className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 font-mono text-[12px] text-[var(--ci-blue)] hover:bg-[var(--ci-blue-soft)]"
+      className="inline-flex items-center gap-1.5 rounded-[var(--ci-radius-btn)] px-2 py-1 font-mono text-[12px] text-[var(--ci-blue)] hover:bg-[var(--ci-blue-soft)]"
       title={dict.copiazaLink}
     >
       {shortCode ? `/s/${shortCode}` : `/${slug}`}
@@ -177,7 +177,7 @@ function StergeButton({ orgSlug, id, nume }: { orgSlug: string; id: string; nume
       onClick={sterge}
       disabled={seSterge}
       title={dict.stergeContul}
-      className="flex h-7 w-7 items-center justify-center rounded-lg text-[var(--ci-text-faint)] hover:bg-[var(--ci-red-soft)] hover:text-[var(--ci-red)] disabled:opacity-50"
+      className="flex h-7 w-7 items-center justify-center rounded-[var(--ci-radius-btn)] text-[var(--ci-text-faint)] hover:bg-[var(--ci-red-soft)] hover:text-[var(--ci-red)] disabled:opacity-50"
     >
       <Trash2 className="h-3.5 w-3.5" />
     </button>

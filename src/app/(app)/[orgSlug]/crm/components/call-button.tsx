@@ -105,7 +105,7 @@ export function CallButton({ telefon, nume, companyId }: { telefon: string; nume
           type="button"
           onClick={suna}
           title={`Sună ${telefon}`}
-          className="flex h-7 w-7 items-center justify-center rounded-lg text-[var(--ci-text-faint)] hover:bg-[var(--ci-green-soft)] hover:text-[var(--ci-green)]"
+          className="flex h-7 w-7 items-center justify-center rounded-[var(--ci-radius-btn)] text-[var(--ci-text-faint)] hover:bg-[var(--ci-green-soft)] hover:text-[var(--ci-green)]"
         >
           <Phone className="h-3.5 w-3.5" />
         </button>

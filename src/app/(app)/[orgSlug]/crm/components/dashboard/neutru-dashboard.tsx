@@ -36,7 +36,7 @@ export function NeutruDashboard({ base, dict, kpis, actiuni, evolutie, pipeline,
         <CardHeader title={dict.actionCenter.title} subtitle={dict.actionCenter.subtitle} />
         <div className="space-y-2">
           {actiuni.map((a) => (
-            <div key={a.id} className="flex items-center gap-3 rounded-lg border border-[var(--ci-border)] px-3.5 py-3">
+            <div key={a.id} className="flex items-center gap-3 rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] px-3.5 py-3">
               <Badge tone={PRIORITATE_TONE[a.prioritate]}>{prioritateLabels[a.prioritate]}</Badge>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[13px] font-medium text-[var(--ci-text)]">{a.motiv}</p>
@@ -46,7 +46,7 @@ export function NeutruDashboard({ base, dict, kpis, actiuni, evolutie, pipeline,
               </div>
               <Link
                 href={`${base}/${a.href}`}
-                className="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg border border-[var(--ci-border)] px-3 text-[12px] font-medium text-[var(--ci-text)] transition-colors hover:border-[var(--ci-primary)] hover:text-[var(--ci-primary)]"
+                className="inline-flex h-8 shrink-0 items-center gap-1 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-3 text-[12px] font-medium text-[var(--ci-text)] transition-colors hover:border-[var(--ci-primary)] hover:text-[var(--ci-primary)]"
               >
                 {dict.actionCenter.resolve} <ArrowRight className="h-3 w-3" />
               </Link>
@@ -84,7 +84,7 @@ export function NeutruDashboard({ base, dict, kpis, actiuni, evolutie, pipeline,
           </div>
           <Link
             href={`${base}/companii`}
-            className="mt-4 flex items-center justify-center gap-1.5 rounded-lg border border-[var(--ci-border)] py-2 text-[13px] font-medium text-[var(--ci-text)] transition-colors hover:border-[var(--ci-primary)] hover:text-[var(--ci-primary)]"
+            className="mt-4 flex items-center justify-center gap-1.5 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] py-2 text-[13px] font-medium text-[var(--ci-text)] transition-colors hover:border-[var(--ci-primary)] hover:text-[var(--ci-primary)]"
           >
             {dict.pipeline.seeAll} <ArrowRight className="h-3.5 w-3.5" />
           </Link>
@@ -108,7 +108,7 @@ export function NeutruDashboard({ base, dict, kpis, actiuni, evolutie, pipeline,
               <Link
                 key={b.id}
                 href={`${base}/beneficiari/${b.id}`}
-                className="rounded-xl border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4 shadow-[var(--ci-shadow-sm)] transition-shadow hover:shadow-[var(--ci-shadow-md)]"
+                className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4 shadow-[var(--ci-card-shadow)] transition-shadow hover:shadow-[var(--ci-shadow-md)]"
               >
                 <div className="mb-2 flex items-center justify-between">
                   <p className="text-sm font-semibold text-[var(--ci-text)]">{b.nume}</p>
@@ -154,7 +154,7 @@ function Row({ label, value, tone }: { label: string; value: string; tone?: "amb
 
 function TeamStat({ icon: Icon, label, value }: { icon: typeof Users2; label: string; value: number }) {
   return (
-    <div className="rounded-lg bg-[var(--ci-surface-2)] p-3.5">
+    <div className="rounded-[var(--ci-radius-card)] bg-[var(--ci-surface-2)] p-3.5">
       <Icon className="mb-2 h-4 w-4 text-[var(--ci-text-muted)]" />
       <p className="ci-tabular text-lg font-bold text-[var(--ci-text)]">{value}</p>
       <p className="text-[12px] text-[var(--ci-text-muted)]">{label}</p>

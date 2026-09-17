@@ -86,7 +86,7 @@ export function TagPills({
   }
 
   return (
-    <div className="rounded-xl border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4">
+    <div className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <p className="text-[13px] font-semibold text-[var(--ci-text)]">{dict.title}</p>

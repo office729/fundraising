@@ -63,7 +63,7 @@ export default function RfmPage() {
             <Card key={d.segment}>
               <div className="flex items-start gap-3">
                 <span
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--ci-radius-btn)]"
                   style={{ background: `var(--ci-${SEGMENT_TONE[d.segment] === "neutral" ? "surface-2" : SEGMENT_TONE[d.segment] + "-soft"})` }}
                 >
                   <Icon className="h-5 w-5" style={{ color: SEGMENT_TONE[d.segment] === "neutral" ? "var(--ci-text-muted)" : `var(--ci-${SEGMENT_TONE[d.segment]})` }} />
@@ -77,19 +77,19 @@ export default function RfmPage() {
                 </div>
               </div>
 
-              <div className="mt-3 flex items-center justify-between rounded-lg bg-[var(--ci-surface-2)] px-3 py-2">
+              <div className="mt-3 flex items-center justify-between rounded-[var(--ci-radius-card)] bg-[var(--ci-surface-2)] px-3 py-2">
                 <span className="text-[12px] text-[var(--ci-text-muted)]">{dict.sumaGrup}</span>
                 <span className="ci-tabular text-[13px] font-semibold text-[var(--ci-text)]">{formatSuma(d.valoare)}</span>
               </div>
 
-              <div className="mt-3 rounded-lg border border-[var(--ci-border)] px-3 py-2.5">
+              <div className="mt-3 rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] px-3 py-2.5">
                 <p className="text-[11px] font-semibold tracking-wide text-[var(--ci-text-faint)] uppercase">{dict.ceAiDeFacut}</p>
                 <p className="mt-0.5 text-[13px] font-medium text-[var(--ci-text)]">{SEGMENT_RECOMANDARE[d.segment]}</p>
               </div>
 
               <button
                 disabled={d.count === 0}
-                className="mt-3 w-full rounded-lg border border-[var(--ci-border)] py-1.5 text-[12px] font-medium text-[var(--ci-text)] transition-colors hover:border-[var(--ci-primary)] hover:text-[var(--ci-primary)] disabled:cursor-not-allowed disabled:opacity-40"
+                className="mt-3 w-full rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] py-1.5 text-[12px] font-medium text-[var(--ci-text)] transition-colors hover:border-[var(--ci-primary)] hover:text-[var(--ci-primary)] disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {dict.creazaCampanie}
               </button>

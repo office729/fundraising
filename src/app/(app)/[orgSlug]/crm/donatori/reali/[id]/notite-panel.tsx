@@ -82,7 +82,7 @@ function NotaCard({ orgSlug, nota }: { orgSlug: string; nota: Notita }) {
   }
 
   return (
-    <div className="rounded-xl border border-[var(--ci-border)] bg-[var(--ci-surface)] p-3.5 shadow-[var(--ci-shadow-sm)]">
+    <div className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-3.5 shadow-[var(--ci-card-shadow)]">
       {editare ? (
         <div className="space-y-2">
           <Textarea value={text} onChange={(e) => setText(e.target.value)} rows={2} autoFocus />
@@ -93,7 +93,7 @@ function NotaCard({ orgSlug, nota }: { orgSlug: string; nota: Notita }) {
                 setEditare(false);
               }}
               aria-label={dict.anuleazaEditarea}
-              className="flex h-7 w-7 items-center justify-center rounded-lg text-[var(--ci-text-muted)] hover:bg-[var(--ci-surface-2)]"
+              className="flex h-7 w-7 items-center justify-center rounded-[var(--ci-radius-btn)] text-[var(--ci-text-muted)] hover:bg-[var(--ci-surface-2)]"
             >
               <XIcon className="h-3.5 w-3.5" />
             </button>
@@ -101,7 +101,7 @@ function NotaCard({ orgSlug, nota }: { orgSlug: string; nota: Notita }) {
               onClick={salveaza}
               disabled={pending}
               aria-label={dict.salveazaNotita}
-              className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--ci-green-soft)] text-[var(--ci-green)] hover:opacity-80 disabled:opacity-50"
+              className="flex h-7 w-7 items-center justify-center rounded-[var(--ci-radius-btn)] bg-[var(--ci-green-soft)] text-[var(--ci-green)] hover:opacity-80 disabled:opacity-50"
             >
               <Check className="h-3.5 w-3.5" />
             </button>
@@ -117,10 +117,10 @@ function NotaCard({ orgSlug, nota }: { orgSlug: string; nota: Notita }) {
             </p>
           </div>
           <div className="flex shrink-0 gap-0.5">
-            <button onClick={() => setEditare(true)} aria-label={dict.editeazaNotita} className="rounded-lg p-1.5 text-[var(--ci-text-faint)] hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)]">
+            <button onClick={() => setEditare(true)} aria-label={dict.editeazaNotita} className="rounded-[var(--ci-radius-btn)] p-1.5 text-[var(--ci-text-faint)] hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)]">
               <Pencil className="h-3.5 w-3.5" />
             </button>
-            <button onClick={sterge2} disabled={sterge} aria-label={dict.stergeNotita} className="rounded-lg p-1.5 text-[var(--ci-text-faint)] hover:bg-[var(--ci-red-soft)] hover:text-[var(--ci-red)] disabled:opacity-50">
+            <button onClick={sterge2} disabled={sterge} aria-label={dict.stergeNotita} className="rounded-[var(--ci-radius-btn)] p-1.5 text-[var(--ci-text-faint)] hover:bg-[var(--ci-red-soft)] hover:text-[var(--ci-red)] disabled:opacity-50">
               <Trash2 className="h-3.5 w-3.5" />
             </button>
           </div>

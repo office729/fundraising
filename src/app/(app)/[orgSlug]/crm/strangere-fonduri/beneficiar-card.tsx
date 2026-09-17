@@ -39,7 +39,7 @@ function BeneficiarActivView({ orgSlug, beneficiar }: { orgSlug: string; benefic
   return (
     <Card>
       <CardHeader title="Beneficiar" subtitle="Contul dedicat campaniei" />
-      <div className="flex items-center justify-between rounded-lg border border-[var(--ci-border)] px-3.5 py-2.5">
+      <div className="flex items-center justify-between rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] px-3.5 py-2.5">
         <div>
           <p className="text-[13px] font-medium text-[var(--ci-text)]">{beneficiar.email}</p>
           <p className="text-[12px] text-[var(--ci-text-muted)]">Cont activ</p>
@@ -70,7 +70,7 @@ function InviteInAsteptareView({ invite }: { invite: InviteActiv }) {
   return (
     <Card>
       <CardHeader title="Beneficiar" subtitle="Invitație trimisă, în așteptare" />
-      <div className="rounded-lg border border-[var(--ci-border)] px-3.5 py-2.5">
+      <div className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] px-3.5 py-2.5">
         <p className="text-[13px] font-medium text-[var(--ci-text)]">{invite.email}</p>
         <p className="mt-1 text-[12px] text-[var(--ci-text-muted)]">
           Expiră la {new Date(invite.expiresAt).toLocaleDateString("ro-RO")}
@@ -104,7 +104,7 @@ function InvitaBeneficiarForm({ orgSlug, pageId }: { orgSlug: string; pageId: st
     <Card>
       <CardHeader title="Beneficiar" subtitle="Invită beneficiarul (sau reprezentantul familiei) în panoul lui dedicat" />
       {url ? (
-        <div className="rounded-lg border border-[var(--ci-border)] bg-[var(--ci-green-soft)] px-3.5 py-2.5">
+        <div className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-green-soft)] px-3.5 py-2.5">
           <p className="text-[13px] font-medium text-[var(--ci-text)]">Invitație creată — trimite-i link-ul:</p>
           <div className="mt-2 flex items-center gap-2">
             <input readOnly value={url} className="min-w-0 flex-1 truncate rounded border border-[var(--ci-border)] bg-[var(--ci-surface)] px-2 py-1 text-[12px] text-[var(--ci-text-muted)]" />
@@ -121,7 +121,7 @@ function InvitaBeneficiarForm({ orgSlug, pageId }: { orgSlug: string; pageId: st
               type="email"
               name="email"
               required
-              className="mt-1 w-full rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm"
               placeholder="familia@example.com"
             />
           </label>

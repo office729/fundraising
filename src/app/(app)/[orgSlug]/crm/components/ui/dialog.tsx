@@ -48,7 +48,7 @@ export function Dialog({
           <button
             onClick={onClose}
             aria-label="Închide"
-            className="rounded-lg p-1.5 text-[var(--ci-text-muted)] transition-colors hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)]"
+            className="rounded-[var(--ci-radius-btn)] p-1.5 text-[var(--ci-text-muted)] transition-colors hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)]"
           >
             <X className="h-4 w-4" />
           </button>

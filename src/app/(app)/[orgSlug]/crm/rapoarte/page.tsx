@@ -27,7 +27,7 @@ export default function RapoartePage() {
         </div>
         <button
           onClick={() => window.print()}
-          className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--ci-border)] px-3.5 text-sm font-medium text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]"
+          className="inline-flex h-9 items-center gap-1.5 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-3.5 text-sm font-medium text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]"
         >
           <Printer className="h-4 w-4" /> {dict.printeaza}
         </button>
@@ -38,7 +38,7 @@ export default function RapoartePage() {
           <button
             key={key}
             onClick={() => setActive(key)}
-            className={`rounded-xl border p-4 text-left transition-colors ${
+            className={`rounded-[var(--ci-radius-btn)] border p-4 text-left transition-colors ${
               active === key
                 ? "border-[var(--ci-primary)] bg-[var(--ci-primary-soft)]"
                 : "border-[var(--ci-border)] bg-[var(--ci-surface)] hover:border-[var(--ci-border-strong)]"

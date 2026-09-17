@@ -147,7 +147,7 @@ export default function InstrumentePage() {
               {cat.instrumente.map((inst) => {
                 const instDict = (catDict.instrumente as Record<string, { titlu: string; descriere: string }>)[inst.key];
                 return (
-                  <div key={inst.key} className="rounded-xl border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4 shadow-[var(--ci-shadow-sm)]">
+                  <div key={inst.key} className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4 shadow-[var(--ci-card-shadow)]">
                     <div className="mb-2 flex items-center justify-between">
                       <span className="flex items-center gap-1.5 text-[12px] font-medium" style={{ color: cat.culoare }}>
                         <span className="h-1.5 w-1.5 rounded-full" style={{ background: cat.culoare }} /> {catDict.nume.split(" ")[0]}
@@ -203,7 +203,7 @@ export default function InstrumentePage() {
               </Button>
             </div>
             <div className="mt-4 border-t border-[var(--ci-border)] pt-4">
-              <div className="flex items-start gap-2 rounded-lg bg-[var(--ci-red-soft)] px-3.5 py-2.5">
+              <div className="flex items-start gap-2 rounded-[var(--ci-radius-card)] bg-[var(--ci-red-soft)] px-3.5 py-2.5">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--ci-red)]" />
                 <div className="flex-1">
                   <p className="text-[13px] font-medium text-[var(--ci-red)]">{dict.dateImportate.resetareCompleta}</p>
@@ -237,9 +237,9 @@ function ToolButton({
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-3 rounded-lg border border-[var(--ci-border)] px-3.5 py-3 text-left transition-colors hover:border-[var(--ci-primary)] hover:bg-[var(--ci-primary-soft)]"
+      className="flex items-center gap-3 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-3.5 py-3 text-left transition-colors hover:border-[var(--ci-primary)] hover:bg-[var(--ci-primary-soft)]"
     >
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--ci-surface-2)] text-[var(--ci-text-muted)]">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--ci-radius-btn)] bg-[var(--ci-surface-2)] text-[var(--ci-text-muted)]">
         <Icon className="h-4 w-4" />
       </span>
       <span>

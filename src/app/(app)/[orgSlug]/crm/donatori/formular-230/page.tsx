@@ -205,7 +205,7 @@ export default async function Formular230StatsPage({
         {submisiiPagina.length ? (
           <div className="space-y-2">
             {submisiiPagina.map((s) => (
-              <div key={s.id} className="flex items-center justify-between rounded-lg border border-[var(--ci-border)] px-3.5 py-2.5">
+              <div key={s.id} className="flex items-center justify-between rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] px-3.5 py-2.5">
                 <div className="min-w-0">
                   <p className="truncate text-[13px] font-medium text-[var(--ci-text)]">{s.nume} {s.prenume}</p>
                   <p className="truncate text-[12px] text-[var(--ci-text-muted)]">{s.email} · {s.telefon || dict.raspunsuri.faraTelefon} · {s.judet || dict.raspunsuri.judetNecunoscut}</p>
@@ -273,7 +273,7 @@ export default async function Formular230StatsPage({
             <Link
               href={hrefPagina(paginaCuruenta - 1)}
               aria-disabled={paginaCuruenta <= 1}
-              className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[12.5px] font-medium ${paginaCuruenta <= 1 ? "pointer-events-none text-[var(--ci-text-faint)]" : "text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]"}`}
+              className={`flex items-center gap-1 rounded-[var(--ci-radius-btn)] px-2.5 py-1.5 text-[12.5px] font-medium ${paginaCuruenta <= 1 ? "pointer-events-none text-[var(--ci-text-faint)]" : "text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]"}`}
             >
               <ChevronLeft className="h-3.5 w-3.5" /> {dict.raspunsuri.anterior}
             </Link>
@@ -281,7 +281,7 @@ export default async function Formular230StatsPage({
             <Link
               href={hrefPagina(paginaCuruenta + 1)}
               aria-disabled={paginaCuruenta >= totalPagini}
-              className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[12.5px] font-medium ${paginaCuruenta >= totalPagini ? "pointer-events-none text-[var(--ci-text-faint)]" : "text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]"}`}
+              className={`flex items-center gap-1 rounded-[var(--ci-radius-btn)] px-2.5 py-1.5 text-[12.5px] font-medium ${paginaCuruenta >= totalPagini ? "pointer-events-none text-[var(--ci-text-faint)]" : "text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]"}`}
             >
               {dict.raspunsuri.urmator} <ChevronRight className="h-3.5 w-3.5" />
             </Link>

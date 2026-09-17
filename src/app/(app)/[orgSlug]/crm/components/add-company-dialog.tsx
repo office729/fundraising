@@ -136,7 +136,7 @@ export function AddCompanyDialog({
               <Label>Poziția (bifează una sau mai multe)</Label>
               <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
                 {POZITII_CONTACT.map((p) => (
-                  <label key={p} className="flex items-center gap-1.5 rounded-lg border border-[var(--ci-border)] px-2 py-1.5 text-[11px] font-medium text-[var(--ci-text)]">
+                  <label key={p} className="flex items-center gap-1.5 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-2 py-1.5 text-[11px] font-medium text-[var(--ci-text)]">
                     <input type="checkbox" checked={pozitii.includes(p)} onChange={() => togglePozitie(p)} className="h-3.5 w-3.5 rounded border-[var(--ci-border)]" />
                     {p}
                   </label>
@@ -177,7 +177,7 @@ export function AddCompanyDialog({
               <Input type="date" value={dataPropunerii} onChange={(e) => setDataPropunerii(e.target.value)} />
             </div>
 
-            <label className="flex items-center gap-2 rounded-lg border border-[var(--ci-border)] px-3 py-2.5 text-[13px] font-medium text-[var(--ci-primary)]">
+            <label className="flex items-center gap-2 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-3 py-2.5 text-[13px] font-medium text-[var(--ci-primary)]">
               <input type="checkbox" checked={prioritar} onChange={(e) => setPrioritar(e.target.checked)} className="h-4 w-4 rounded border-[var(--ci-border)]" />
               <Heart className="h-3.5 w-3.5" fill={prioritar ? "var(--ci-primary)" : "none"} />
               Contact prioritar / om direct de contact

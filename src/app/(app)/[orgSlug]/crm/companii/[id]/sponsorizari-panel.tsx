@@ -59,7 +59,7 @@ export function SponsorizariPanel({ companyId, sponsorizari }: { companyId: stri
       ) : (
         <div className="space-y-2">
           {sponsorizari.map((s) => (
-            <div key={s.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[var(--ci-border)] px-3.5 py-2.5">
+            <div key={s.id} className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] px-3.5 py-2.5">
               <div className="min-w-0">
                 <p className="text-[13px] font-medium text-[var(--ci-text)]">
                   {formatData(s.data)} {s.proiect && <span className="font-normal text-[var(--ci-text-muted)]">· {s.proiect}</span>}

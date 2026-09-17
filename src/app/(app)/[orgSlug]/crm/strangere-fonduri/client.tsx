@@ -53,7 +53,7 @@ export function EditPageButton({
       <button
         onClick={() => setOpen(true)}
         title={dict.editeazaPagina}
-        className="flex h-7 w-7 items-center justify-center rounded-lg text-[var(--ci-text-faint)] hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)]"
+        className="flex h-7 w-7 items-center justify-center rounded-[var(--ci-radius-btn)] text-[var(--ci-text-faint)] hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)]"
       >
         <Pencil className="h-3.5 w-3.5" />
       </button>
@@ -112,7 +112,7 @@ export function CopyPageLinkButton({ orgSlug, pageSlug }: { orgSlug: string; pag
     <button
       onClick={copiaza}
       title={dict.copiazaLinkPagina}
-      className="flex h-7 w-7 items-center justify-center rounded-lg text-[var(--ci-text-faint)] hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)]"
+      className="flex h-7 w-7 items-center justify-center rounded-[var(--ci-radius-btn)] text-[var(--ci-text-faint)] hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)]"
     >
       {copiat ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
     </button>
@@ -171,7 +171,7 @@ export function DeleteUpdateButton({ orgSlug, id }: { orgSlug: string; id: strin
       onClick={sterge}
       disabled={seSterge}
       title={dict.stergeActualizarea}
-      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[var(--ci-text-faint)] hover:bg-[var(--ci-red-soft)] hover:text-[var(--ci-red)] disabled:opacity-50"
+      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--ci-radius-btn)] text-[var(--ci-text-faint)] hover:bg-[var(--ci-red-soft)] hover:text-[var(--ci-red)] disabled:opacity-50"
     >
       <Trash2 className="h-3.5 w-3.5" />
     </button>
@@ -200,7 +200,7 @@ export function ToggleStatusButton({ orgSlug, id, status }: { orgSlug: string; i
       onClick={comuta}
       disabled={seSchimba}
       title={inchide ? dict.inchidePagina : dict.redeschidePagina}
-      className="flex h-7 w-7 items-center justify-center rounded-lg text-[var(--ci-text-faint)] hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)] disabled:opacity-50"
+      className="flex h-7 w-7 items-center justify-center rounded-[var(--ci-radius-btn)] text-[var(--ci-text-faint)] hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)] disabled:opacity-50"
     >
       {inchide ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
     </button>
@@ -233,7 +233,7 @@ export function DeletePageButton({ orgSlug, id, titlu }: { orgSlug: string; id: 
       onClick={sterge}
       disabled={seSterge}
       title={dict.stergePagina}
-      className="flex h-7 w-7 items-center justify-center rounded-lg text-[var(--ci-text-faint)] hover:bg-[var(--ci-red-soft)] hover:text-[var(--ci-red)] disabled:opacity-50"
+      className="flex h-7 w-7 items-center justify-center rounded-[var(--ci-radius-btn)] text-[var(--ci-text-faint)] hover:bg-[var(--ci-red-soft)] hover:text-[var(--ci-red)] disabled:opacity-50"
     >
       <Trash2 className="h-3.5 w-3.5" />
     </button>
@@ -256,13 +256,13 @@ export function ImageUploadCard({ orgSlug, pageId, imagineUrl }: { orgSlug: stri
   }, [state.ok]);
 
   return (
-    <div className="rounded-xl border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4">
+    <div className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4">
       <p className="text-[13px] font-semibold text-[var(--ci-text)]">{dict.pozaCopertaTitle}</p>
       <p className="mt-0.5 text-[12px] text-[var(--ci-text-muted)]">{dict.pozaCopertaDesc}</p>
       <div className="mt-3 flex flex-wrap items-center gap-3">
         {imagineUrl && (
           // eslint-disable-next-line @next/next/no-img-element -- domeniu Supabase Storage dinamic, nu merită next/image aici
-          <img src={imagineUrl} alt="" className="h-16 w-24 rounded-lg border border-[var(--ci-border)] object-cover" />
+          <img src={imagineUrl} alt="" className="h-16 w-24 rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] object-cover" />
         )}
         <form action={formAction} className="flex items-center gap-2">
           <input
@@ -270,7 +270,7 @@ export function ImageUploadCard({ orgSlug, pageId, imagineUrl }: { orgSlug: stri
             name="imagine"
             accept="image/jpeg,image/png,image/webp,image/gif"
             required
-            className="text-[12px] text-[var(--ci-text-muted)] file:mr-2 file:rounded-lg file:border-0 file:bg-[var(--ci-surface-2)] file:px-2.5 file:py-1.5 file:text-[12px] file:font-medium file:text-[var(--ci-text)]"
+            className="text-[12px] text-[var(--ci-text-muted)] file:mr-2 file:rounded-[var(--ci-radius-btn)] file:border-0 file:bg-[var(--ci-surface-2)] file:px-2.5 file:py-1.5 file:text-[12px] file:font-medium file:text-[var(--ci-text)]"
           />
           <Button type="submit" variant="secondary" size="sm" disabled={pending}>
             <ImageUp className="h-3.5 w-3.5" /> {pending ? dict.seIncarca : imagineUrl ? dict.schimba : dict.incarca}

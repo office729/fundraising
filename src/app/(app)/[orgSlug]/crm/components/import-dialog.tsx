@@ -164,7 +164,7 @@ export function ImportDialog({ open, onClose, tip }: { open: boolean; onClose: (
             <p className="mb-1.5 text-[13px] font-medium text-[var(--ci-text)]">Fișier</p>
             <button
               onClick={() => inputRef.current?.click()}
-              className="flex w-full flex-col items-center gap-2 rounded-lg border-2 border-dashed border-[var(--ci-border)] px-4 py-8 text-center transition-colors hover:border-[var(--ci-primary)] hover:bg-[var(--ci-primary-soft)]"
+              className="flex w-full flex-col items-center gap-2 rounded-[var(--ci-radius-btn)] border-2 border-dashed border-[var(--ci-border)] px-4 py-8 text-center transition-colors hover:border-[var(--ci-primary)] hover:bg-[var(--ci-primary-soft)]"
             >
               <Upload className="h-5 w-5 text-[var(--ci-text-faint)]" />
               <span className="text-[13px] font-medium text-[var(--ci-text)]">
@@ -189,7 +189,7 @@ export function ImportDialog({ open, onClose, tip }: { open: boolean; onClose: (
         {seParseaza && <p className="text-[13px] text-[var(--ci-text-muted)]">Se citește fișierul…</p>}
 
         {eroare && (
-          <div className="flex items-start gap-2 rounded-lg bg-[var(--ci-red-soft)] px-3.5 py-2.5 text-[13px] text-[var(--ci-red)]">
+          <div className="flex items-start gap-2 rounded-[var(--ci-radius-card)] bg-[var(--ci-red-soft)] px-3.5 py-2.5 text-[13px] text-[var(--ci-red)]">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /> {eroare}
           </div>
         )}
@@ -203,7 +203,7 @@ export function ImportDialog({ open, onClose, tip }: { open: boolean; onClose: (
                   {rows.length} {rows.length === 1 ? "rând găsit" : "rânduri găsite"} · {coloaneFisier.length} coloane
                 </p>
               </div>
-              <div className="ci-scrollbar overflow-x-auto rounded-lg border border-[var(--ci-border)]">
+              <div className="ci-scrollbar overflow-x-auto rounded-[var(--ci-radius-card)] border border-[var(--ci-border)]">
                 <table className="w-full border-collapse text-[12px]">
                   <thead>
                     <tr className="bg-[var(--ci-surface-2)] text-left text-[var(--ci-text-muted)]">
@@ -253,7 +253,7 @@ export function ImportDialog({ open, onClose, tip }: { open: boolean; onClose: (
                 })}
               </div>
               {!numeMapat && (
-                <div className="mt-1 flex items-start gap-2 rounded-lg bg-[var(--ci-red-soft)] px-3.5 py-2.5 text-[13px] text-[var(--ci-red)]">
+                <div className="mt-1 flex items-start gap-2 rounded-[var(--ci-radius-card)] bg-[var(--ci-red-soft)] px-3.5 py-2.5 text-[13px] text-[var(--ci-red)]">
                   <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                   Selectează coloana cu numele mai sus — fără ea nu poți importa (rândurile ar fi toate nume identice, ca data trecută).
                 </div>
@@ -263,13 +263,13 @@ export function ImportDialog({ open, onClose, tip }: { open: boolean; onClose: (
         )}
 
         {rezultatEroare && (
-          <div className="flex items-start gap-2 rounded-lg bg-[var(--ci-red-soft)] px-3.5 py-2.5 text-[13px] text-[var(--ci-red)]">
+          <div className="flex items-start gap-2 rounded-[var(--ci-radius-card)] bg-[var(--ci-red-soft)] px-3.5 py-2.5 text-[13px] text-[var(--ci-red)]">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /> {rezultatEroare}
           </div>
         )}
 
         {importat !== null && (
-          <div className="space-y-2 rounded-lg bg-[var(--ci-green-soft)] px-3.5 py-2.5 text-[13px] text-[var(--ci-green)]">
+          <div className="space-y-2 rounded-[var(--ci-radius-card)] bg-[var(--ci-green-soft)] px-3.5 py-2.5 text-[13px] text-[var(--ci-green)]">
             <p className="font-medium">
               {importat} {tip === "donatori" ? "donatori adăugați" : "companii adăugate"} — le vezi în listă.
             </p>

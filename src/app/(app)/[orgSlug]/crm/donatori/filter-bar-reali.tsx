@@ -36,7 +36,7 @@ export function FilterBarReali() {
       }}
     >
       <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={dict.cautaPlaceholder} className="h-9 w-72" />
-      <button type="submit" className="h-9 rounded-lg bg-[var(--ci-primary)] px-4 text-[13px] font-semibold text-white hover:opacity-90">
+      <button type="submit" className="h-9 rounded-[var(--ci-radius-btn)] bg-[var(--ci-primary)] px-4 text-[13px] font-semibold text-white hover:opacity-90">
         {dict.cauta}
       </button>
     </form>

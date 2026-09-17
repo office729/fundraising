@@ -120,7 +120,7 @@ export function UploadDocumentDialog({ open, onClose }: { open: boolean; onClose
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            className="flex w-full flex-col items-center gap-2 rounded-lg border-2 border-dashed border-[var(--ci-border)] px-4 py-6 text-center transition-colors hover:border-[var(--ci-primary)] hover:bg-[var(--ci-primary-soft)]"
+            className="flex w-full flex-col items-center gap-2 rounded-[var(--ci-radius-btn)] border-2 border-dashed border-[var(--ci-border)] px-4 py-6 text-center transition-colors hover:border-[var(--ci-primary)] hover:bg-[var(--ci-primary-soft)]"
           >
             <Upload className="h-5 w-5 text-[var(--ci-text-faint)]" />
             <span className="text-[13px] font-medium text-[var(--ci-text)]">{fisier ? fisier.name : dict.alegeFisier}</span>
@@ -129,7 +129,7 @@ export function UploadDocumentDialog({ open, onClose }: { open: boolean; onClose
         </div>
 
         {eroare && (
-          <div className="flex items-start gap-2 rounded-lg bg-[var(--ci-red-soft)] px-3.5 py-2.5 text-[13px] text-[var(--ci-red)]">
+          <div className="flex items-start gap-2 rounded-[var(--ci-radius-card)] bg-[var(--ci-red-soft)] px-3.5 py-2.5 text-[13px] text-[var(--ci-red)]">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /> {eroare}
           </div>
         )}

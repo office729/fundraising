@@ -69,7 +69,7 @@ export function FilterBar({ responsabili }: { responsabili: { id: string; name: 
   }
 
   return (
-    <div className="space-y-3 rounded-xl border border-[var(--ci-border)] bg-[var(--ci-surface)] p-3.5">
+    <div className="space-y-3 rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-3.5">
       <form
         className="flex flex-wrap items-center gap-2"
         onSubmit={(e) => {
@@ -83,14 +83,14 @@ export function FilterBar({ responsabili }: { responsabili: { id: string; name: 
           placeholder={dict.cautaPlaceholder}
           className="h-9 w-72"
         />
-        <button type="submit" className="h-9 rounded-lg bg-[var(--ci-primary)] px-4 text-[13px] font-semibold text-white hover:opacity-90">
+        <button type="submit" className="h-9 rounded-[var(--ci-radius-btn)] bg-[var(--ci-primary)] px-4 text-[13px] font-semibold text-white hover:opacity-90">
           {dict.cauta}
         </button>
         <button
           type="button"
           onClick={() => setExtins((v) => !v)}
           aria-expanded={extins}
-          className="ml-auto flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12.5px] font-medium text-[var(--ci-text-muted)] transition-colors hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)]"
+          className="ml-auto flex items-center gap-1.5 rounded-[var(--ci-radius-btn)] px-2.5 py-1.5 text-[12.5px] font-medium text-[var(--ci-text-muted)] transition-colors hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)]"
         >
           <SlidersHorizontal className="h-3.5 w-3.5" />
           {dict.filtre}
@@ -124,7 +124,7 @@ export function FilterBar({ responsabili }: { responsabili: { id: string; name: 
             type="month"
             defaultValue={f.luna}
             onChange={(e) => push({ luna: e.target.value })}
-            className="h-8 rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-2 text-[12px] text-[var(--ci-text)]"
+            className="h-8 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-2 text-[12px] text-[var(--ci-text)]"
           />
         )}
         {f.perioadaTip === "saptamana" && (
@@ -132,7 +132,7 @@ export function FilterBar({ responsabili }: { responsabili: { id: string; name: 
             type="week"
             defaultValue={f.saptamana}
             onChange={(e) => push({ saptamana: e.target.value })}
-            className="h-8 rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-2 text-[12px] text-[var(--ci-text)]"
+            className="h-8 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-2 text-[12px] text-[var(--ci-text)]"
           />
         )}
         <span className="mx-1 text-[var(--ci-border)]">|</span>
@@ -140,20 +140,20 @@ export function FilterBar({ responsabili }: { responsabili: { id: string; name: 
           type="date"
           value={dataStart}
           onChange={(e) => setDataStart(e.target.value)}
-          className="h-8 rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-2 text-[12px] text-[var(--ci-text)]"
+          className="h-8 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-2 text-[12px] text-[var(--ci-text)]"
         />
         <span className="text-[12px] text-[var(--ci-text-faint)]">–</span>
         <input
           type="date"
           value={dataSfarsit}
           onChange={(e) => setDataSfarsit(e.target.value)}
-          className="h-8 rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-2 text-[12px] text-[var(--ci-text)]"
+          className="h-8 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-2 text-[12px] text-[var(--ci-text)]"
         />
         <button
           type="button"
           disabled={!dataStart || !dataSfarsit}
           onClick={() => push({ perioada: "interval", dataStart, dataSfarsit })}
-          className="h-8 rounded-lg bg-[var(--ci-primary)] px-3 text-[12px] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+          className="h-8 rounded-[var(--ci-radius-btn)] bg-[var(--ci-primary)] px-3 text-[12px] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {dict.aplica}
         </button>

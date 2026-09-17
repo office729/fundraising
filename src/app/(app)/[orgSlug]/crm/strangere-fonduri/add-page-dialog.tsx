@@ -53,7 +53,7 @@ export function AddPageDialog({ open, onClose, orgSlug }: { open: boolean; onClo
               name="poveste"
               required
               rows={4}
-              className="w-full rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-[13px] text-[var(--ci-text)]"
+              className="w-full rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-[13px] text-[var(--ci-text)]"
             />
           </div>
           <div>

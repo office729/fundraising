@@ -61,7 +61,7 @@ export default function OnePagerPage() {
             {topBeneficiari.map((b) => {
               const pct = Math.round((b.sumaStransa / b.obiectiv) * 100);
               return (
-                <div key={b.id} className="rounded-lg border border-[var(--ci-border)] p-3">
+                <div key={b.id} className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] p-3">
                   <p className="text-[13px] font-medium text-[var(--ci-text)]">{b.nume}</p>
                   <p className="text-[12px] text-[var(--ci-text-muted)]">{b.localitate}</p>
                   <ProgressBar value={pct} className="mt-2" />

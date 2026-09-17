@@ -50,7 +50,7 @@ export default function FonduriPlatiPage() {
           <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">{dict.title}</h1>
           <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">{dict.subtitle(filtered.length)}</p>
         </div>
-        <button className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--ci-border)] px-3.5 text-sm font-medium text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]">
+        <button className="inline-flex h-9 items-center gap-1.5 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-3.5 text-sm font-medium text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]">
           <Download className="h-4 w-4" /> {dict.export}
         </button>
       </div>

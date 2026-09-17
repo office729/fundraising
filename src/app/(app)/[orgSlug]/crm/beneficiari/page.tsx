@@ -30,7 +30,7 @@ export default function BeneficiariPage() {
             <button
               key={b.id}
               onClick={() => router.push(`/${orgSlug}/crm/beneficiari/${b.id}`)}
-              className="rounded-xl border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4 text-left shadow-[var(--ci-shadow-sm)] transition-shadow hover:shadow-[var(--ci-shadow-md)]"
+              className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4 text-left shadow-[var(--ci-card-shadow)] transition-shadow hover:shadow-[var(--ci-shadow-md)]"
             >
               <div className="mb-2 flex items-center justify-between">
                 <p className="text-sm font-semibold text-[var(--ci-text)]">{b.nume}</p>

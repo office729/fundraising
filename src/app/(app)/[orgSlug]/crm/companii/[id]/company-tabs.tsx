@@ -105,7 +105,7 @@ export function CompanyTabs({
           ) : (
             <div className="space-y-2">
               {activitate.map((a, i) => (
-                <div key={i} className="flex items-center justify-between rounded-lg border border-[var(--ci-border)] px-3.5 py-2.5">
+                <div key={i} className="flex items-center justify-between rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] px-3.5 py-2.5">
                   <span className="text-[13px] text-[var(--ci-text)]">{a.text}</span>
                   <span className="shrink-0 text-[12px] text-[var(--ci-text-muted)]">{formatDataOra(a.la)}</span>
                 </div>

@@ -78,14 +78,14 @@ export function EditPageDialog({
               <img
                 src={pagina.imagineUrl}
                 alt=""
-                className="mb-2 aspect-video w-full rounded-lg border border-[var(--ci-border)] object-cover"
+                className="mb-2 aspect-video w-full rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] object-cover"
               />
             )}
             <input
               type="file"
               name="imagine"
               accept="image/jpeg,image/png,image/webp,image/gif"
-              className="w-full text-[12px] text-[var(--ci-text-muted)] file:mr-2 file:rounded-lg file:border-0 file:bg-[var(--ci-surface-2)] file:px-2.5 file:py-1.5 file:text-[12px] file:font-medium file:text-[var(--ci-text)]"
+              className="w-full text-[12px] text-[var(--ci-text-muted)] file:mr-2 file:rounded-[var(--ci-radius-btn)] file:border-0 file:bg-[var(--ci-surface-2)] file:px-2.5 file:py-1.5 file:text-[12px] file:font-medium file:text-[var(--ci-text)]"
             />
             <p className="mt-1 text-[11.5px] text-[var(--ci-text-faint)]">{dict.pozaCopertaNota}</p>
           </div>
@@ -108,7 +108,7 @@ export function EditPageDialog({
               required
               rows={5}
               defaultValue={pagina.poveste}
-              className="w-full rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-[13px] text-[var(--ci-text)]"
+              className="w-full rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-[13px] text-[var(--ci-text)]"
             />
           </div>
           <div>
@@ -142,7 +142,7 @@ export function EditPageDialog({
                         defaultChecked={pagina.template === id}
                         className="peer sr-only"
                       />
-                      <div className="h-10 w-full rounded-lg border border-[var(--ci-border)] bg-gradient-to-br from-brand-blue to-brand-green peer-checked:border-brand-green peer-checked:ring-2 peer-checked:ring-brand-green" />
+                      <div className="h-10 w-full rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-gradient-to-br from-brand-blue to-brand-green peer-checked:border-brand-green peer-checked:ring-2 peer-checked:ring-brand-green" />
                       <span className="mt-1 block text-center text-[11px] font-medium text-[var(--ci-text-muted)]">
                         {tpl.nume}
                       </span>

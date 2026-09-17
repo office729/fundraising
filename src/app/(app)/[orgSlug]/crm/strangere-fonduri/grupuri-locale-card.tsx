@@ -12,7 +12,7 @@ export function GrupuriLocaleCard({ orgSlug, grupuri, publicateIds }: { orgSlug:
       {grupuri.length ? (
         <div className="flex flex-col gap-2">
           {grupuri.map((g) => (
-            <div key={g.id} className="flex items-center justify-between gap-2 rounded-lg border border-[var(--ci-border)] px-3.5 py-2.5">
+            <div key={g.id} className="flex items-center justify-between gap-2 rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] px-3.5 py-2.5">
               <div className="min-w-0">
                 <a href={g.link} target="_blank" rel="noreferrer" className="truncate text-[13px] font-medium text-[var(--ci-text)] hover:underline">
                   {g.nume}
@@ -31,7 +31,7 @@ export function GrupuriLocaleCard({ orgSlug, grupuri, publicateIds }: { orgSlug:
           ))}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[var(--ci-border)] px-6 py-10 text-center">
+        <div className="flex flex-col items-center justify-center rounded-[var(--ci-radius-card)] border border-dashed border-[var(--ci-border)] px-6 py-10 text-center">
           <p className="ci-display text-sm font-semibold text-[var(--ci-text)]">Niciun grup local pentru județul campaniei</p>
           <p className="mt-1 text-[13px] text-[var(--ci-text-muted)]">
             Adaugă grupuri din{" "}

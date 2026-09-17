@@ -65,7 +65,7 @@ export default function ComunicarePage() {
                 <span className="absolute top-1 -left-[27px] flex h-6 w-6 items-center justify-center rounded-full border-2 border-[var(--ci-surface)] bg-[var(--ci-surface-2)] text-[var(--ci-text-muted)]">
                   <Icon className="h-3 w-3" />
                 </span>
-                <div className="rounded-xl border border-[var(--ci-border)] bg-[var(--ci-surface)] p-3.5 shadow-[var(--ci-shadow-sm)]">
+                <div className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-3.5 shadow-[var(--ci-card-shadow)]">
                   <div className="mb-1.5 flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <Badge tone={TIP_TONE[c.tip]}>{TIP_LABEL[c.tip]}</Badge>

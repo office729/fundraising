@@ -58,7 +58,7 @@ export function ContactePanel({ companyId, contacte }: { companyId: string; cont
       ) : (
         <div className="space-y-2">
           {contacte.map((c) => (
-            <div key={c.id} className="rounded-xl border border-[var(--ci-border)] bg-[var(--ci-surface)] px-4 py-3">
+            <div key={c.id} className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-4 py-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="truncate text-[14px] font-semibold text-[var(--ci-text)]">
                   {c.nume}

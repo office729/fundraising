@@ -32,7 +32,7 @@ export function KpiCard({
   return (
     <Link
       href={href}
-      className="group flex flex-col rounded-xl border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4 shadow-[var(--ci-shadow-sm)] transition-shadow hover:shadow-[var(--ci-shadow-md)]"
+      className="group flex flex-col rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4 shadow-[var(--ci-card-shadow)] transition-shadow hover:shadow-[var(--ci-shadow-md)]"
     >
       <div className="mb-1 flex items-start gap-1.5">
         <p className="line-clamp-1 text-[13px] leading-tight font-medium text-[var(--ci-text-muted)]">{label}</p>

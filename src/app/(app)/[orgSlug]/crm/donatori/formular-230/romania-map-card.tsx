@@ -30,7 +30,7 @@ export function RomaniaMapCard({ dupaJudet }: { dupaJudet: Record<string, number
   );
 
   return (
-    <div className="rounded-xl border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4">
+    <div className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-[13px] font-semibold text-[var(--ci-text)]">{dict.title}</p>

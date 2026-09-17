@@ -120,7 +120,7 @@ export function EditarePanel({ companyId, firma }: { companyId: string; firma: F
           type="button"
           onClick={onSterge}
           disabled={sterge}
-          className="inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-[13px] font-medium text-[var(--ci-red)] hover:bg-[var(--ci-red-soft)] disabled:opacity-50"
+          className="inline-flex h-9 items-center gap-1.5 rounded-[var(--ci-radius-btn)] px-3 text-[13px] font-medium text-[var(--ci-red)] hover:bg-[var(--ci-red-soft)] disabled:opacity-50"
         >
           <Trash2 className="h-3.5 w-3.5" /> {dict.stergeFirma}
         </button>

@@ -52,7 +52,7 @@ export default function RaportCompaniiPage() {
           <Select value={responsabil} onChange={(e) => setResponsabil(e.target.value)} className="w-44">
             {RESPONSABILI.map((r) => <option key={r} value={r}>{r}</option>)}
           </Select>
-          <input type="month" value={luna} onChange={(e) => setLuna(e.target.value)} className="h-9 rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 text-sm text-[var(--ci-text)]" />
+          <input type="month" value={luna} onChange={(e) => setLuna(e.target.value)} className="h-9 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 text-sm text-[var(--ci-text)]" />
           <Button variant="secondary" onClick={() => window.print()}>
             <Printer className="h-3.5 w-3.5" /> {dict.printeaza}
           </Button>
@@ -69,7 +69,7 @@ export default function RaportCompaniiPage() {
         <CardHeader title={dict.firmeActivitate.title} subtitle={dict.firmeActivitate.subtitle(filtrate.length)} />
         <div className="space-y-2">
           {filtrate.map((c) => (
-            <div key={c.id} className="flex items-center justify-between rounded-lg border border-[var(--ci-border)] px-3.5 py-2.5">
+            <div key={c.id} className="flex items-center justify-between rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] px-3.5 py-2.5">
               <div>
                 <p className="text-[13px] font-medium text-[var(--ci-text)]">{c.nume}</p>
                 <p className="text-[12px] text-[var(--ci-text-muted)]">{c.responsabil} · {dict.ultimaActivitate(formatData(c.ultimaActivitateLa))}</p>

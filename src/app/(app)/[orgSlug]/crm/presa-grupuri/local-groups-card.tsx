@@ -49,19 +49,19 @@ export function LocalGroupsCard({ orgSlug, grupuri }: { orgSlug: string; grupuri
   return (
     <Card>
       <CardHeader title="Grupuri locale" subtitle="Facebook / WhatsApp — bază globală de organizație, filtrată pe județ pentru fiecare campanie" />
-      <form action={formAction} className="grid grid-cols-2 gap-2 rounded-lg border border-[var(--ci-border)] p-3 sm:grid-cols-3">
-        <input name="judet" required placeholder="Județ (ex. Cluj)" className="rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
-        <input name="localitate" placeholder="Localitate (opțional)" className="rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
-        <select name="platforma" defaultValue="facebook" className="rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm">
+      <form action={formAction} className="grid grid-cols-2 gap-2 rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] p-3 sm:grid-cols-3">
+        <input name="judet" required placeholder="Județ (ex. Cluj)" className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
+        <input name="localitate" placeholder="Localitate (opțional)" className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
+        <select name="platforma" defaultValue="facebook" className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm">
           {Object.entries(PLATFORMA_LABEL).map(([v, l]) => (
             <option key={v} value={v}>
               {l}
             </option>
           ))}
         </select>
-        <input name="nume" required placeholder="Nume grup" className="rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
-        <input name="link" required placeholder="Link grup" className="rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
-        <input name="categorie" placeholder="Categorie (opțional)" className="rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
+        <input name="nume" required placeholder="Nume grup" className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
+        <input name="link" required placeholder="Link grup" className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
+        <input name="categorie" placeholder="Categorie (opțional)" className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
         <Button type="submit" disabled={pending} className="justify-self-start">
           {pending ? "Se adaugă..." : "Adaugă grup"}
         </Button>
@@ -72,7 +72,7 @@ export function LocalGroupsCard({ orgSlug, grupuri }: { orgSlug: string; grupuri
         {grupuri.length ? (
           <div className="flex flex-col gap-2">
             {grupuri.map((g) => (
-              <div key={g.id} className="flex items-center justify-between gap-2 rounded-lg border border-[var(--ci-border)] px-3.5 py-2.5">
+              <div key={g.id} className="flex items-center justify-between gap-2 rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] px-3.5 py-2.5">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <a href={g.link} target="_blank" rel="noreferrer" className="truncate text-[13px] font-medium text-[var(--ci-text)] hover:underline">

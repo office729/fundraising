@@ -42,7 +42,7 @@ export function PanouBeneficiari({ orgSlug, beneficiari }: { orgSlug: string; be
     <Card>
       <CardHeader title="Toți beneficiarii" subtitle={`${filtrati.length} din ${beneficiari.length} — filtrează după județ, status sau agent`} />
       <div className="mb-3 flex flex-wrap gap-2">
-        <select value={judetFiltru} onChange={(e) => setJudetFiltru(e.target.value)} className="rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-1.5 text-[13px]">
+        <select value={judetFiltru} onChange={(e) => setJudetFiltru(e.target.value)} className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-1.5 text-[13px]">
           <option value="toate">Toate județele</option>
           {judete.map((j) => (
             <option key={j} value={j}>
@@ -50,12 +50,12 @@ export function PanouBeneficiari({ orgSlug, beneficiari }: { orgSlug: string; be
             </option>
           ))}
         </select>
-        <select value={statusFiltru} onChange={(e) => setStatusFiltru(e.target.value)} className="rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-1.5 text-[13px]">
+        <select value={statusFiltru} onChange={(e) => setStatusFiltru(e.target.value)} className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-1.5 text-[13px]">
           <option value="toate">Toate statusurile</option>
           <option value="activ">Activ</option>
           <option value="dezactivat">Dezactivat</option>
         </select>
-        <select value={agentFiltru} onChange={(e) => setAgentFiltru(e.target.value)} className="rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-1.5 text-[13px]">
+        <select value={agentFiltru} onChange={(e) => setAgentFiltru(e.target.value)} className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-1.5 text-[13px]">
           <option value="toate">Toți agenții</option>
           {agenti.map((a) => (
             <option key={a} value={a}>
@@ -73,7 +73,7 @@ export function PanouBeneficiari({ orgSlug, beneficiari }: { orgSlug: string; be
               <a
                 key={b.id}
                 href={`/${orgSlug}/crm/strangere-fonduri/${b.campaignPageId}`}
-                className="flex items-center justify-between gap-3 rounded-lg border border-[var(--ci-border)] px-3.5 py-2.5 hover:border-[var(--ci-border-strong)]"
+                className="flex items-center justify-between gap-3 rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] px-3.5 py-2.5 hover:border-[var(--ci-border-strong)]"
               >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">

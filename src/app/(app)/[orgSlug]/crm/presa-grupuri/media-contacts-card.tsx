@@ -45,20 +45,20 @@ export function MediaContactsCard({ orgSlug, contacte }: { orgSlug: string; cont
   return (
     <Card>
       <CardHeader title="Contacte de presă locală" subtitle="Bază globală de organizație, filtrată pe județ pentru fiecare campanie" />
-      <form action={formAction} className="grid grid-cols-2 gap-2 rounded-lg border border-[var(--ci-border)] p-3 sm:grid-cols-3">
-        <input name="judet" required placeholder="Județ (ex. Cluj)" className="rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
-        <select name="tip" defaultValue="publicatie" className="rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm">
+      <form action={formAction} className="grid grid-cols-2 gap-2 rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] p-3 sm:grid-cols-3">
+        <input name="judet" required placeholder="Județ (ex. Cluj)" className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
+        <select name="tip" defaultValue="publicatie" className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm">
           {Object.entries(TIP_LABEL).map(([v, l]) => (
             <option key={v} value={v}>
               {l}
             </option>
           ))}
         </select>
-        <input name="numeRedactie" required placeholder="Nume redacție" className="rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
-        <input name="email" type="email" placeholder="Email (opțional)" className="rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
-        <input name="telefon" placeholder="Telefon (opțional)" className="rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
-        <input name="persoanaContact" placeholder="Persoană de contact (opțional)" className="rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
-        <input name="website" placeholder="Website (opțional)" className="col-span-2 rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm sm:col-span-2" />
+        <input name="numeRedactie" required placeholder="Nume redacție" className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
+        <input name="email" type="email" placeholder="Email (opțional)" className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
+        <input name="telefon" placeholder="Telefon (opțional)" className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
+        <input name="persoanaContact" placeholder="Persoană de contact (opțional)" className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
+        <input name="website" placeholder="Website (opțional)" className="col-span-2 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm sm:col-span-2" />
         <Button type="submit" disabled={pending} className="justify-self-start">
           {pending ? "Se adaugă..." : "Adaugă contact"}
         </Button>
@@ -69,7 +69,7 @@ export function MediaContactsCard({ orgSlug, contacte }: { orgSlug: string; cont
         {contacte.length ? (
           <div className="flex flex-col gap-2">
             {contacte.map((c) => (
-              <div key={c.id} className="flex items-center justify-between gap-2 rounded-lg border border-[var(--ci-border)] px-3.5 py-2.5">
+              <div key={c.id} className="flex items-center justify-between gap-2 rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] px-3.5 py-2.5">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-[13px] font-medium text-[var(--ci-text)]">{c.numeRedactie}</span>

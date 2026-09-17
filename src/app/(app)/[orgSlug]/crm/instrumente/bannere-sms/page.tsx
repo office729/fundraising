@@ -1011,7 +1011,7 @@ export default function BannereSmsPage() {
                   type="button"
                   onClick={() => setTemplateKey(tpl.key)}
                   className={cn(
-                    "overflow-hidden rounded-lg border-2 text-left transition-all",
+                    "overflow-hidden rounded-[var(--ci-radius-btn)] border-2 text-left transition-all",
                     templateKey === tpl.key
                       ? "border-[var(--ci-primary)] ring-2 ring-[var(--ci-primary)]/25"
                       : "border-[var(--ci-border)] hover:border-[var(--ci-border-strong)]",
@@ -1035,7 +1035,7 @@ export default function BannereSmsPage() {
           <div>
             <Label>{dict.logoOng}</Label>
             {orgLogoImg ? (
-              <div className="flex items-center gap-2 rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface-2)] px-3 py-2">
+              <div className="flex items-center gap-2 rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface-2)] px-3 py-2">
                 {brand && (
                   <span
                     className="h-5 w-5 shrink-0 rounded-full border border-[var(--ci-border)]"
@@ -1065,7 +1065,7 @@ export default function BannereSmsPage() {
                   loadOrgLogoFile(e.dataTransfer.files?.[0]);
                 }}
                 className={cn(
-                  "flex h-16 w-full flex-col items-center justify-center gap-1 rounded-lg border border-dashed text-center transition-colors",
+                  "flex h-16 w-full flex-col items-center justify-center gap-1 rounded-[var(--ci-radius-btn)] border border-dashed text-center transition-colors",
                   logoDragOver ? "border-[var(--ci-primary)] bg-[var(--ci-primary)]/5" : "border-[var(--ci-border-strong)] hover:border-[var(--ci-primary)]",
                 )}
               >
@@ -1087,7 +1087,7 @@ export default function BannereSmsPage() {
             <Label>{dict.foto}</Label>
             {photoImg ? (
               <>
-                <div className="flex items-center gap-2 rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface-2)] px-3 py-2">
+                <div className="flex items-center gap-2 rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface-2)] px-3 py-2">
                   <span className="flex-1 truncate text-[12.5px] text-[var(--ci-text)]">{photoName}</span>
                   <button
                     type="button"
@@ -1131,7 +1131,7 @@ export default function BannereSmsPage() {
                   loadPhotoFile(e.dataTransfer.files?.[0]);
                 }}
                 className={cn(
-                  "flex h-20 w-full flex-col items-center justify-center gap-1 rounded-lg border border-dashed text-center transition-colors",
+                  "flex h-20 w-full flex-col items-center justify-center gap-1 rounded-[var(--ci-radius-btn)] border border-dashed text-center transition-colors",
                   dragOver ? "border-[var(--ci-primary)] bg-[var(--ci-primary)]/5" : "border-[var(--ci-border-strong)] hover:border-[var(--ci-primary)]",
                 )}
               >
@@ -1197,7 +1197,7 @@ export default function BannereSmsPage() {
                 </button>
               </div>
               <div
-                className="w-full overflow-hidden rounded-lg shadow-[var(--ci-shadow-md)]"
+                className="w-full overflow-hidden rounded-[var(--ci-radius-card)] shadow-[var(--ci-shadow-md)]"
                 style={{ aspectRatio: `${format.w} / ${format.h}`, maxHeight: "70vh" }}
               >
                 <canvas

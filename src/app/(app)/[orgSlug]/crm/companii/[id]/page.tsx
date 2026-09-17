@@ -40,7 +40,7 @@ export default async function CompanieProfilPage({ params }: { params: Promise<{
       <Card>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-start gap-4">
-            <span className="flex h-14 w-14 items-center justify-center rounded-xl bg-[var(--ci-primary-soft)] text-[var(--ci-primary)]">
+            <span className="flex h-14 w-14 items-center justify-center rounded-[var(--ci-radius-btn)] bg-[var(--ci-primary-soft)] text-[var(--ci-primary)]">
               <Building2 className="h-6 w-6" />
             </span>
             <div>

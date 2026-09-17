@@ -85,7 +85,7 @@ export default function BeneficiarProfilPage() {
             return donatii.length ? (
               <div className="space-y-2">
                 {donatii.map((d) => (
-                  <div key={d.id} className="flex items-center justify-between rounded-lg border border-[var(--ci-border)] px-3.5 py-2.5">
+                  <div key={d.id} className="flex items-center justify-between rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] px-3.5 py-2.5">
                     <div>
                       <p className="text-[13px] font-medium text-[var(--ci-text)]">{d.sursaNume}</p>
                       <p className="text-[12px] text-[var(--ci-text-muted)]">{formatData(d.data)}</p>
@@ -109,7 +109,7 @@ export default function BeneficiarProfilPage() {
             return plati.length ? (
               <div className="space-y-2">
                 {plati.map((p) => (
-                  <div key={p.id} className="flex items-center justify-between rounded-lg border border-[var(--ci-border)] px-3.5 py-2.5">
+                  <div key={p.id} className="flex items-center justify-between rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] px-3.5 py-2.5">
                     <div>
                       <p className="text-[13px] font-medium text-[var(--ci-text)]">{formatData(p.la)}</p>
                       <p className="text-[12px] text-[var(--ci-text-muted)]">{p.documentJustificativ ?? dict.faraDocument}</p>

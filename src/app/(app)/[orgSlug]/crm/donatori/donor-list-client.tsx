@@ -175,7 +175,7 @@ export function DonatoriListClient() {
               setSunat(d.id, true);
             }}
             title={multumit ? dict.call.titleMultumit : sunat ? dict.call.titleSunat : dict.call.titleDeSunat}
-            className="flex items-center gap-1.5 rounded-md px-1.5 py-1 text-[12px] transition-colors hover:bg-[var(--ci-surface-2)]"
+            className="flex items-center gap-1.5 rounded-[var(--ci-radius-btn)] px-1.5 py-1 text-[12px] transition-colors hover:bg-[var(--ci-surface-2)]"
           >
             <Phone className={`h-3.5 w-3.5 ${multumit ? "text-[var(--ci-green)]" : sunat ? "text-[var(--ci-blue)]" : "text-[var(--ci-text-faint)]"}`} />
             {multumit ? dict.call.multumit : sunat ? dict.call.sunat : dict.call.deSunat}
@@ -209,7 +209,7 @@ export function DonatoriListClient() {
         <button
           type="button"
           onClick={() => setFiltreDeschise((v) => !v)}
-          className={`inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-[13px] font-medium transition-colors ${
+          className={`inline-flex h-9 items-center gap-1.5 rounded-[var(--ci-radius-btn)] border px-3 text-[13px] font-medium transition-colors ${
             filtreDeschise || chip !== "toti"
               ? "border-[var(--ci-blue)] bg-[var(--ci-blue-soft)] text-[var(--ci-blue)]"
               : "border-[var(--ci-border)] text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]"
@@ -223,7 +223,7 @@ export function DonatoriListClient() {
         {(q || chip !== "toti") && (
           <button
             onClick={() => { setQ(""); setChip("toti"); }}
-            className="inline-flex h-9 items-center gap-1 rounded-lg px-2.5 text-[12px] font-medium text-[var(--ci-text-muted)] hover:text-[var(--ci-text)]"
+            className="inline-flex h-9 items-center gap-1 rounded-[var(--ci-radius-btn)] px-2.5 text-[12px] font-medium text-[var(--ci-text-muted)] hover:text-[var(--ci-text)]"
           >
             <X className="h-3.5 w-3.5" /> {dict.resetFilters}
           </button>
@@ -231,7 +231,7 @@ export function DonatoriListClient() {
       </div>
 
       {filtreDeschise && (
-        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--ci-border)] bg-[var(--ci-surface)] p-3">
+        <div className="flex flex-wrap items-center gap-2 rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-3">
           {CHIP_KEYS.map((key) => {
             const activ = chip === key;
             return (

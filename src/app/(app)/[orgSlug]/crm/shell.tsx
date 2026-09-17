@@ -501,7 +501,7 @@ function NotificationsButton({ base }: { base: string }) {
         <Bell className="h-4 w-4" />
       </button>
       {open && (
-        <div className="absolute top-full right-0 z-50 mt-1.5 w-80 rounded-xl border border-[var(--ci-border)] bg-[var(--ci-surface)] p-2 shadow-[var(--ci-shadow-md)]">
+        <div className="absolute top-full right-0 z-50 mt-1.5 w-80 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-2 shadow-[var(--ci-shadow-md)]">
           <p className="px-2 py-1.5 text-[12px] font-semibold text-[var(--ci-text)]">
             {intarziate.length > 0 ? `${intarziate.length} task-uri întârziate` : "Nicio notificare"}
           </p>

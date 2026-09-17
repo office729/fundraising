@@ -57,7 +57,7 @@ export default function AutomatizariPage() {
                 setSelected(a);
               }
             }}
-            className="cursor-pointer rounded-xl border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4 text-left shadow-[var(--ci-shadow-sm)] transition-shadow hover:shadow-[var(--ci-shadow-md)]"
+            className="cursor-pointer rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4 text-left shadow-[var(--ci-card-shadow)] transition-shadow hover:shadow-[var(--ci-shadow-md)]"
           >
             <div className="mb-2 flex items-start justify-between gap-2">
               <p className="text-[13px] font-semibold text-[var(--ci-text)]">{a.nume}</p>
@@ -74,7 +74,7 @@ export default function AutomatizariPage() {
       <SidePanel open={!!selected} onClose={() => setSelected(null)} title={selected?.nume ?? ""} subtitle={selected?.descriere}>
         {selected && (
           <div>
-            <div className="mb-5 flex items-center justify-between rounded-lg bg-[var(--ci-surface-2)] px-3.5 py-2.5">
+            <div className="mb-5 flex items-center justify-between rounded-[var(--ci-radius-card)] bg-[var(--ci-surface-2)] px-3.5 py-2.5">
               <span className="text-[13px] font-medium text-[var(--ci-text)]">{dict.automatizareActiva}</span>
               <Toggle checked={selected.activa} onChange={() => toggle(selected.id)} />
             </div>

@@ -71,7 +71,7 @@ export function CalendarLucruButton() {
               <Link
                 key={r.id}
                 href={`/${orgSlug}/crm/companii/${r.id}`}
-                className="flex items-center justify-between rounded-lg border border-[var(--ci-border)] px-3 py-2 text-[13px] hover:bg-[var(--ci-surface-2)]"
+                className="flex items-center justify-between rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] px-3 py-2 text-[13px] hover:bg-[var(--ci-surface-2)]"
               >
                 <span className="min-w-0 truncate font-medium text-[var(--ci-text)]">
                   {r.nume} {r.judet && <span className="font-normal text-[var(--ci-text-muted)]">· {r.judet}</span>}
@@ -93,7 +93,7 @@ export function TopButton() {
   return (
     <Link
       href={`/${orgSlug}/crm/companii?top=1`}
-      className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-[var(--ci-border)] px-3.5 text-sm font-medium text-[var(--ci-text)] transition-colors hover:border-[var(--ci-border-strong)] hover:bg-[var(--ci-surface-2)]"
+      className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-3.5 text-sm font-medium text-[var(--ci-text)] transition-colors hover:border-[var(--ci-border-strong)] hover:bg-[var(--ci-surface-2)]"
     >
       <Trophy className="h-3.5 w-3.5" /> {dict.top2000}
     </Link>

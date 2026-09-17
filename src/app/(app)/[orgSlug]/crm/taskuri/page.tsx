@@ -118,7 +118,7 @@ export default function TaskuriPage() {
       <Button variant="primary" onClick={() => setDialogOpen(true)}>{dict.taskNou}</Button>
 
       {grupuri.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-[var(--ci-border)] px-4 py-8 text-center text-[13px] text-[var(--ci-text-muted)]">
+        <p className="rounded-[var(--ci-radius-card)] border border-dashed border-[var(--ci-border)] px-4 py-8 text-center text-[13px] text-[var(--ci-text-muted)]">
           {dict.niciunTask}
         </p>
       ) : (
@@ -148,7 +148,7 @@ function TaskRow({ t, linkHref }: { t: Task; linkHref: string; onOpen: () => voi
   const intarziat = !inchis && eTrecut(t.termenLa) && !eDataAzi(t.termenLa);
 
   return (
-    <div className={`flex flex-wrap items-center gap-3 rounded-xl border px-4 py-3 ${intarziat ? "border-[var(--ci-red-soft)]" : "border-[var(--ci-border)]"} bg-[var(--ci-surface)]`}>
+    <div className={`flex flex-wrap items-center gap-3 rounded-[var(--ci-radius-card)] border px-4 py-3 ${intarziat ? "border-[var(--ci-red-soft)]" : "border-[var(--ci-border)]"} bg-[var(--ci-surface)]`}>
       <input
         type="checkbox"
         checked={inchis}
@@ -168,16 +168,16 @@ function TaskRow({ t, linkHref }: { t: Task; linkHref: string; onOpen: () => voi
         type="date"
         value={t.termenLa.slice(0, 10)}
         onChange={(e) => e.target.value && setTaskTermen(t.id, new Date(e.target.value).toISOString())}
-        className="h-8 shrink-0 rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-2 text-[12px] text-[var(--ci-text)]"
+        className="h-8 shrink-0 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-2 text-[12px] text-[var(--ci-text)]"
       />
       <button
         type="button"
         onClick={() => setTaskTermen(t.id, new Date(ziuaUrmatoare(t.termenLa)).toISOString())}
-        className="shrink-0 rounded-lg border border-[var(--ci-border)] px-2.5 py-1.5 text-[12px] font-medium text-[var(--ci-text-muted)] transition-colors hover:border-[var(--ci-primary)] hover:text-[var(--ci-primary)]"
+        className="shrink-0 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-2.5 py-1.5 text-[12px] font-medium text-[var(--ci-text-muted)] transition-colors hover:border-[var(--ci-primary)] hover:text-[var(--ci-primary)]"
       >
         {dict.maine}
       </button>
-      <button type="button" onClick={() => stergeTask(t.id)} title={dict.stergeTaskul} className="shrink-0 rounded-lg p-1.5 text-[var(--ci-text-faint)] hover:bg-[var(--ci-red-soft)] hover:text-[var(--ci-red)]">
+      <button type="button" onClick={() => stergeTask(t.id)} title={dict.stergeTaskul} className="shrink-0 rounded-[var(--ci-radius-btn)] p-1.5 text-[var(--ci-text-faint)] hover:bg-[var(--ci-red-soft)] hover:text-[var(--ci-red)]">
         <X className="h-3.5 w-3.5" />
       </button>
     </div>
@@ -209,7 +209,7 @@ function StatTile({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-xl border p-4 text-left transition-shadow hover:shadow-[var(--ci-shadow-md)] ${
+      className={`rounded-[var(--ci-radius-btn)] border p-4 text-left transition-shadow hover:shadow-[var(--ci-shadow-md)] ${
         activ ? TONE_BG[tone] : "border-[var(--ci-border)] bg-[var(--ci-surface)]"
       }`}
     >

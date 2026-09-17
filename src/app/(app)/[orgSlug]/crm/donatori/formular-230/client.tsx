@@ -56,7 +56,7 @@ export function PdfButton({ submisie, beneficiar }: { submisie: DateFormular230P
       onClick={genereaza}
       disabled={seGenereaza}
       title={dict.descarcaPdf}
-      className="flex h-7 w-7 items-center justify-center rounded-lg text-[var(--ci-text-faint)] hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)] disabled:opacity-50"
+      className="flex h-7 w-7 items-center justify-center rounded-[var(--ci-radius-btn)] text-[var(--ci-text-faint)] hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)] disabled:opacity-50"
     >
       <FileDown className="h-3.5 w-3.5" />
     </button>
@@ -124,7 +124,7 @@ export function DeleteButton({ orgSlug, id, nume }: { orgSlug: string; id: strin
       onClick={sterge}
       disabled={seSterge}
       title={dict.stergeRaspuns}
-      className="flex h-7 w-7 items-center justify-center rounded-lg text-[var(--ci-text-faint)] hover:bg-[var(--ci-red-soft)] hover:text-[var(--ci-red)] disabled:opacity-50"
+      className="flex h-7 w-7 items-center justify-center rounded-[var(--ci-radius-btn)] text-[var(--ci-text-faint)] hover:bg-[var(--ci-red-soft)] hover:text-[var(--ci-red)] disabled:opacity-50"
     >
       <Trash2 className="h-3.5 w-3.5" />
     </button>

@@ -56,7 +56,7 @@ export default function CrmSetariPage() {
         <CardHeader title={dict.integrari.title} subtitle={dict.integrari.subtitle} />
         <div className="space-y-2">
           {INTEGRARI.map((i) => (
-            <div key={i.nume} className="flex items-center justify-between rounded-lg border border-[var(--ci-border)] px-3.5 py-3">
+            <div key={i.nume} className="flex items-center justify-between rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] px-3.5 py-3">
               <div>
                 <p className="text-[13px] font-medium text-[var(--ci-text)]">{i.nume}</p>
                 <p className="text-[12px] text-[var(--ci-text-muted)]">{i.descriere}</p>
@@ -91,7 +91,7 @@ function ColumnChip({ label, active, onClick }: { label: string; active: boolean
 
 function RoleRow({ rol, poate }: { rol: string; poate: string }) {
   return (
-    <div className="rounded-lg border border-[var(--ci-border)] px-3.5 py-2.5">
+    <div className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] px-3.5 py-2.5">
       <p className="text-[13px] font-medium text-[var(--ci-text)]">{rol}</p>
       <p className="mt-0.5 text-[12px] text-[var(--ci-text-muted)]">{poate}</p>
     </div>

@@ -38,8 +38,8 @@ export default function DocumentePage() {
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {documenteLocale.map((d) => (
-            <div key={d.id} className="flex items-start gap-3 rounded-xl border border-[var(--ci-border)] bg-[var(--ci-surface)] p-3.5">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--ci-primary-soft)] text-[var(--ci-primary)]">
+            <div key={d.id} className="flex items-start gap-3 rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-3.5">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--ci-radius-btn)] bg-[var(--ci-primary-soft)] text-[var(--ci-primary)]">
                 <FileText className="h-4 w-4" />
               </span>
               <a href={d.fisierData} download={d.nume} className="min-w-0 flex-1 hover:opacity-80">
@@ -49,15 +49,15 @@ export default function DocumentePage() {
               <button
                 onClick={() => stergeDocumentLocal(d.id)}
                 aria-label={dict.stergeDocumentul}
-                className="shrink-0 rounded-lg p-1.5 text-[var(--ci-text-faint)] hover:bg-[var(--ci-red-soft)] hover:text-[var(--ci-red)]"
+                className="shrink-0 rounded-[var(--ci-radius-btn)] p-1.5 text-[var(--ci-text-faint)] hover:bg-[var(--ci-red-soft)] hover:text-[var(--ci-red)]"
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
             </div>
           ))}
           {DOCUMENTE.map((d) => (
-            <div key={d.id} className="flex items-start gap-3 rounded-xl border border-[var(--ci-border)] bg-[var(--ci-surface)] p-3.5">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--ci-surface-2)] text-[var(--ci-text-muted)]">
+            <div key={d.id} className="flex items-start gap-3 rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-3.5">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--ci-radius-btn)] bg-[var(--ci-surface-2)] text-[var(--ci-text-muted)]">
                 <FileText className="h-4 w-4" />
               </span>
               <div className="min-w-0">

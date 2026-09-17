@@ -48,7 +48,7 @@ export function AgentCard({
     return (
       <Card>
         <CardHeader title="Agent dedicat" subtitle="Colegul care coordonează campania cu beneficiarul" />
-        <div className="rounded-lg border border-[var(--ci-border)] px-3.5 py-2.5">
+        <div className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] px-3.5 py-2.5">
           <p className="text-[13px] font-medium text-[var(--ci-text)]">{agent.nume || agent.email}</p>
           <p className="text-[12px] text-[var(--ci-text-muted)]">{agent.email}</p>
           {agent.bio && <p className="mt-1.5 text-[12.5px] text-[var(--ci-text-muted)]">{agent.bio}</p>}
@@ -78,7 +78,7 @@ export function AgentCard({
             name="agentUserId"
             required
             defaultValue=""
-            className="mt-1 w-full rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm"
+            className="mt-1 w-full rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm"
           >
             <option value="" disabled>
               Alege...
@@ -92,19 +92,19 @@ export function AgentCard({
         </label>
         <label className="text-[13px] font-medium text-[var(--ci-text)]">
           Prezentare scurtă (opțional)
-          <input name="bio" className="mt-1 w-full rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
+          <input name="bio" className="mt-1 w-full rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
         </label>
         <label className="text-[13px] font-medium text-[var(--ci-text)]">
           Program de disponibilitate (opțional)
           <input
             name="programDisponibilitate"
-            className="mt-1 w-full rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm"
+            className="mt-1 w-full rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm"
             placeholder="ex. Luni-Vineri, 9:00-17:00"
           />
         </label>
         <label className="text-[13px] font-medium text-[var(--ci-text)]">
           Contact aprobat (opțional)
-          <input name="contactAprobat" className="mt-1 w-full rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
+          <input name="contactAprobat" className="mt-1 w-full rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
         </label>
         <div className="flex gap-2">
           <Button type="submit" disabled={pending}>

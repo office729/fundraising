@@ -25,7 +25,7 @@ export function Pagination({
           onClick={() => onChange(page - 1)}
           disabled={page <= 1}
           aria-label="Pagina anterioară"
-          className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--ci-border)] text-[var(--ci-text-muted)] transition-colors hover:bg-[var(--ci-surface-2)] disabled:cursor-not-allowed disabled:opacity-40"
+          className="flex h-8 w-8 items-center justify-center rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] text-[var(--ci-text-muted)] transition-colors hover:bg-[var(--ci-surface-2)] disabled:cursor-not-allowed disabled:opacity-40"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
@@ -36,7 +36,7 @@ export function Pagination({
           onClick={() => onChange(page + 1)}
           disabled={page >= pageCount}
           aria-label="Pagina următoare"
-          className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--ci-border)] text-[var(--ci-text-muted)] transition-colors hover:bg-[var(--ci-surface-2)] disabled:cursor-not-allowed disabled:opacity-40"
+          className="flex h-8 w-8 items-center justify-center rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] text-[var(--ci-text-muted)] transition-colors hover:bg-[var(--ci-surface-2)] disabled:cursor-not-allowed disabled:opacity-40"
         >
           <ChevronRight className="h-4 w-4" />
         </button>

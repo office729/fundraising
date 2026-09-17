@@ -22,7 +22,7 @@ export function DemoDatasetSection() {
         type="button"
         onClick={() => setDeschis((v) => !v)}
         aria-expanded={deschis}
-        className="flex items-center gap-2 rounded-lg border border-dashed border-[var(--ci-border)] bg-[var(--ci-surface-2)] px-3.5 py-2 text-left transition-colors hover:border-[var(--ci-border-strong)]"
+        className="flex items-center gap-2 rounded-[var(--ci-radius-btn)] border border-dashed border-[var(--ci-border)] bg-[var(--ci-surface-2)] px-3.5 py-2 text-left transition-colors hover:border-[var(--ci-border-strong)]"
       >
         <Badge tone="purple" icon={false}>
           {dict.badge}

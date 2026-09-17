@@ -67,7 +67,7 @@ export function DataTable<T>({
         <DropdownMenu
           align="end"
           trigger={
-            <button className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--ci-border)] px-2.5 text-[12px] font-medium text-[var(--ci-text-muted)] transition-colors hover:bg-[var(--ci-surface-2)]">
+            <button className="inline-flex h-8 items-center gap-1.5 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-2.5 text-[12px] font-medium text-[var(--ci-text-muted)] transition-colors hover:bg-[var(--ci-surface-2)]">
               <SlidersHorizontal className="h-3.5 w-3.5" /> Coloane
             </button>
           }
@@ -93,7 +93,7 @@ export function DataTable<T>({
         </DropdownMenu>
       </div>
 
-      <div className="ci-scrollbar overflow-x-auto rounded-xl border border-[var(--ci-border)]">
+      <div className="ci-scrollbar overflow-x-auto rounded-[var(--ci-radius-card)] border border-[var(--ci-border)]">
         <table className="w-full border-collapse text-sm">
           <thead>
             {table.getHeaderGroups().map((hg) => (

@@ -102,7 +102,7 @@ export default async function StrangereFonduriPage({ params }: { params: Promise
           <CardHeader title={dict.topDonatori.title} subtitle={dict.topDonatori.subtitle} />
           <div className="space-y-1.5">
             {topDonatori.map((d, i) => (
-              <div key={d.id} className="flex items-center justify-between rounded-lg px-2.5 py-1.5 text-[13px]">
+              <div key={d.id} className="flex items-center justify-between rounded-[var(--ci-radius-card)] px-2.5 py-1.5 text-[13px]">
                 <div className="flex min-w-0 items-center gap-2.5">
                   <span className="ci-tabular w-5 shrink-0 font-bold text-[var(--ci-primary)]">#{i + 1}</span>
                   <span className="truncate font-medium text-[var(--ci-text)]">
@@ -122,7 +122,7 @@ export default async function StrangereFonduriPage({ params }: { params: Promise
         {pagini.length ? (
           <div className="space-y-2">
             {pagini.map((p) => (
-              <div key={p.id} className="flex items-center justify-between rounded-lg border border-[var(--ci-border)] px-3.5 py-2.5">
+              <div key={p.id} className="flex items-center justify-between rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] px-3.5 py-2.5">
                 <Link href={`/${orgSlug}/crm/strangere-fonduri/${p.id}`} className="min-w-0 hover:opacity-80">
                   <p className="truncate text-[13px] font-medium text-[var(--ci-text)]">{p.titlu}</p>
                   <p className="truncate text-[12px] text-[var(--ci-text-muted)]">
@@ -141,7 +141,7 @@ export default async function StrangereFonduriPage({ params }: { params: Promise
                     target="_blank"
                     rel="noreferrer"
                     title={dict.vezPaginaPublica}
-                    className="flex h-7 w-7 items-center justify-center rounded-lg text-[var(--ci-text-faint)] hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)]"
+                    className="flex h-7 w-7 items-center justify-center rounded-[var(--ci-radius-btn)] text-[var(--ci-text-faint)] hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)]"
                   >
                     <ExternalLink className="h-3.5 w-3.5" />
                   </a>
