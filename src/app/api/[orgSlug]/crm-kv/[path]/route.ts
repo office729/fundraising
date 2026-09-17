@@ -5,13 +5,38 @@ import { withOrgSession } from "@/lib/auth/guard";
 import { crmKv } from "@/lib/db/schema";
 
 // KV pentru starea ne-relațională a tool-urilor portate (CRM PJ, Prospectare,
-// CRM Voluntari), per organizație. Doar chei pe listă albă, ca să nu devină
-// un depozit generic. "email_opens" lipsea din listă deși CRM PJ/Prospectare
-// o cer la fiecare încărcare — răspundea mereu 400 (vezi crm-pj.base.html /
-// prospectare.base.html, loadOpens()). "voluntari-*" sunt cheile CRM Voluntari
-// (roster/sarcini/cazuri) — înainte loveau ruta inexistentă /api/voluntari-sync.
-const ALLOWED_GET = new Set(["tasks", "config", "email_opens", "voluntari-roster", "voluntari-tasks", "voluntari-cazuri"]);
-const ALLOWED_PUT = new Set(["tasks", "config", "email_opens", "voluntari-roster", "voluntari-tasks", "voluntari-cazuri"]);
+// CRM Voluntari, Program de lucru), per organizație. Doar chei pe listă albă,
+// ca să nu devină un depozit generic — GET/PUT identice, deci un singur set.
+const ALLOWED_KEYS = new Set([
+  // CRM PJ / Prospectare. "email_opens" lipsea deși ambele îl cer la fiecare
+  // încărcare — răspundea mereu 400 (vezi *.base.html, loadOpens()).
+  "tasks",
+  "config",
+  "email_opens",
+  // CRM Voluntari (roster/sarcini/cazuri) — înainte loveau ruta inexistentă
+  // /api/voluntari-sync.
+  "voluntari-roster",
+  "voluntari-tasks",
+  "voluntari-cazuri",
+  // Program de lucru — înainte lovea ruta inexistentă /api/program-sync;
+  // numele "soi-plan2-*" sunt cele originale din program-lucru.base.html
+  // (nu le-am mai redenumit, ca să nu umblu la fiecare apel din tool).
+  "soi-plan2-tombs",
+  "soi-plan2-cazuri",
+  "soi-plan2-bife",
+  "soi-plan2-praguri",
+  "soi-plan2-overrides",
+  "soi-plan2-absenti",
+  "soi-plan2-rutina-custom",
+  "soi-plan2-rutina-off",
+  "soi-plan2-rutina-ovr",
+  "soi-plan2-extra",
+  "soi-plan2-puls",
+  "soi-plan2-test",
+  "soi-plan2-suma-auto",
+]);
+const ALLOWED_GET = ALLOWED_KEYS;
+const ALLOWED_PUT = ALLOWED_KEYS;
 
 type Ctx = { params: Promise<{ orgSlug: string; path: string }> };
 

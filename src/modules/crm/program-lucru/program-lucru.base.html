@@ -241,8 +241,13 @@ const stersRecent=k=>{
    ROVR e cheiat fără dată (pers|titlu), ca să se aplice în toate zilele */
 const isRutKey=k=>String(k).indexOf('rut|')===0;
 const rovrKey=k=>String(k).split('|').slice(2).join('|');
-/* Andrei poate lipi aici linkul bazei, ca fișierul trimis colegelor să vină gata conectat: */
-const SYNC_IMPLICIT='/api/program-sync';
+/* Sincronizare reală per organizație, prin crm-kv/[path] (listă albă de chei
+   — vezi route.ts) — SYNC_IMPLICIT țintea /api/program-sync, inexistent aici
+   (moștenit neschimbat din SOI_CRM), deci echipa nu vedea niciodată munca
+   celorlalți, doar copia locală (localStorage, tot funcțională — de-asta
+   tool-ul PĂREA să meargă). __FA_ORG_SLUG__ e înlocuit la randare — vezi
+   StandaloneToolFrame. */
+const SYNC_IMPLICIT='/api/__FA_ORG_SLUG__/crm-kv';
 function citesteSyncUrl(){
   let u=''; try{u=localStorage.getItem('soi-plan2-sync-url')||'';}catch(e){}
   SYNC_URL=SYNC_IMPLICIT;
@@ -252,7 +257,7 @@ function urlCheie(key){
   let b=(SYNC_URL||'').trim().replace(/\/+$/,'');
   if(!b)return '';
   if(b.toLowerCase().endsWith('.json'))b=b.slice(0,-5);
-  return b+'/'+key+'.json';
+  return b+'/'+key; /* crm-kv/[path] nu folosește sufix .json */
 }
 /* Timp de SERVER: fiecare răspuns de la punte are antetul HTTP „Date" (ceasul
    serverului). Calculăm offset-ul față de ceasul local, ca timestamp-urile de
