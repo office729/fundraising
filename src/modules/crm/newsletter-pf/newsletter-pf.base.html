@@ -979,10 +979,12 @@ function hookFile(id){
     document.getElementById(id).style.display = 'none';
     refresh();
 
-    // Încărcare automată online prin puntea platformei (cheia stă pe server, nu în browser)
+    // Încărcare automată online prin Supabase Storage (bucket "campanii") — nu
+    // mai e nevoie de o cheie imgbb, autentificarea vine din cookie-ul sesiunii.
+    // __FA_ORG_SLUG__ e înlocuit la randare, ca la celelalte tool-uri portate.
     tag.querySelector('span').textContent = f.name + ' → se încarcă…';
     compressPhoto(f, function(dataURI){
-      fetch('/api/newsletter/imgbb-upload', {
+      fetch('/api/__FA_ORG_SLUG__/newsletter/imgbb-upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ image: dataURI.split(',')[1] })   // doar partea base64
