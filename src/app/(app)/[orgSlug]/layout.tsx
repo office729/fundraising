@@ -152,7 +152,7 @@ export default async function OrgLayout({
           propriul div (max-w-xl/-2xl, cu mx-auto acolo) — vezi
           setari/page.tsx și echipa/page.tsx. */}
       <main className="px-4 py-6 sm:px-6 sm:py-8">
-        <OnboardingCallPrompt show={showOnboarding} dict={dict.onboardingCall} />
+        <OnboardingCallPrompt show={showOnboarding} orgSlug={orgSlug} dict={dict.onboardingCall} />
         {children}
       </main>
     </div>

@@ -5,19 +5,23 @@ import { useState } from "react";
 import { CalendlyInlineWidget } from "@/components/calendly-inline-widget";
 import { CALENDLY_CONSULTANTA_URL } from "@/lib/calendly";
 import type { DashboardDict } from "@/lib/i18n/dictionaries/dashboard";
+import { usePersistentDismiss } from "./use-persistent-dismiss";
 
 // Bandă discretă (nu blochează, spre deosebire de OnboardingBrandingGate) —
 // aceeași condiție de vizibilitate ca gate-ul de branding (org nouă, fără
-// logo, owner/admin), afișată SUB acel modal dacă e activ. Dismiss-ul e doar
-// pe sesiunea curentă (nu persistat în DB), la fel ca gate-ul de branding.
+// logo, owner/admin), afișată SUB acel modal dacă e activ. Dismiss-ul e
+// persistat în localStorage (per browser, nu în DB) — la fel ca gate-ul de
+// branding, ca să nu reapară la fiecare încărcare de pagină.
 export function OnboardingCallPrompt({
   show,
+  orgSlug,
   dict,
 }: {
   show: boolean;
+  orgSlug: string;
   dict: DashboardDict["onboardingCall"];
 }) {
-  const [dismissed, setDismissed] = useState(false);
+  const { dismissed, dismiss } = usePersistentDismiss(`fa-onboarding-call-dismissed-${orgSlug}`);
   const [open, setOpen] = useState(false);
 
   if (!show || dismissed) return null;
@@ -44,7 +48,7 @@ export function OnboardingCallPrompt({
           </button>
           <button
             type="button"
-            onClick={() => setDismissed(true)}
+            onClick={dismiss}
             className="text-sm font-medium whitespace-nowrap text-muted transition hover:text-ink"
           >
             {dict.dismiss}
