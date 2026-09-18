@@ -80,6 +80,9 @@
   .gBody { padding:14px 16px 16px; }
   .gName { font-size:14px; font-weight:800; color:#1F1B17; margin:0 0 4px; }
   .gTheme { font-size:12px; color:#7A736A; margin:0; line-height:1.45; }
+  .gCard[data-recomandat="1"] { border-color:#3FA85C; }
+  .gBadge { position:absolute; top:8px; left:8px; z-index:2; background:#3FA85C; color:#fff; font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:999px; letter-spacing:.02em; }
+  #gRecNota { font-size:12.5px; color:#3FA85C; font-weight:700; margin:32px 0 -6px; }
   #galleryBtn { display:none; }
 </style>
 </head>
@@ -94,6 +97,7 @@
   <div class="gGrid" id="gGridContinut"></div>
 
   <h2 class="gsec">Stiluri de design</h2>
+  <p id="gRecNota" style="display:none;"></p>
   <div class="gGrid" id="gGridDesign"></div>
 </div>
 
@@ -1461,20 +1465,46 @@ var TPL_META = {
 };
 var TPL_ORDER_CONTINUT = ['d177','propunere','multumire','raport','eveniment','bunvenit'];
 var TPL_ORDER_DESIGN = ['design_editorial','design_eveniment_elegant','design_foto','design_bold','design_minimal','design_gazeta','design_warm','design_modular','design_scrisoare','design_manifest','design_chitanta','design_cronologie','design_certificat'];
-function renderGalleryGrid(containerId, order){
+
+/* Domeniul de activitate al organizației (injectat la randare — gol dacă nu
+   e ales) + stilurile de DESIGN recomandate pentru el (subset din
+   TPL_ORDER_DESIGN, curatoriat în lib/newsletter-design-templates.ts).
+   Galeria de CONȚINUT (TPL_ORDER_CONTINUT) nu e afectată — tipul mesajului
+   nu ține de identitatea vizuală a domeniului. Doar reordonează, nu ascunde
+   niciun stil. */
+var FA_DOMENIU_ACTIVITATE = '__FA_DOMENIU_ACTIVITATE__';
+var FA_DESIGN_RECOMANDAT = __FA_DESIGN_RECOMANDAT__;
+var FA_DOMENIU_NUME = {copii:'Copii',animale:'Animale',mediu:'Mediu',educatie:'Educație',sanatate:'Sănătate',social_incluziune:'Social / Incluziune',cultura:'Cultură',sport:'Sport',altele:'Modern'}[FA_DOMENIU_ACTIVITATE] || '';
+
+function ordinePentruDomeniu(order, recomandat){
+  if (!recomandat || !recomandat.length) return order;
+  var recSet = order.filter(function(v){ return recomandat.indexOf(v) !== -1; });
+  recSet.sort(function(a,b){ return recomandat.indexOf(a) - recomandat.indexOf(b); });
+  var rest = order.filter(function(v){ return recomandat.indexOf(v) === -1; });
+  return recSet.concat(rest);
+}
+
+function renderGalleryGrid(containerId, order, recomandate){
   var el = document.getElementById(containerId);
+  var ordineFinala = recomandate ? ordinePentruDomeniu(order, FA_DESIGN_RECOMANDAT) : order;
   var html = '';
-  order.forEach(function(val){
+  ordineFinala.forEach(function(val){
     var m = TPL_META[val];
-    html += '<button type="button" class="gCard" data-tpl-choice="' + val + '">'
-      + '<div class="gSwatch"><iframe class="gThumbFrame" tabindex="-1" aria-hidden="true"></iframe></div>'
+    var recomandat = recomandate && FA_DESIGN_RECOMANDAT.indexOf(val) !== -1;
+    html += '<button type="button" class="gCard" data-tpl-choice="' + val + '"' + (recomandat ? ' data-recomandat="1"' : '') + '>'
+      + '<div class="gSwatch">' + (recomandat ? '<span class="gBadge">Recomandat</span>' : '') + '<iframe class="gThumbFrame" tabindex="-1" aria-hidden="true"></iframe></div>'
       + '<div class="gBody"><p class="gName">' + m.name + '</p><p class="gTheme">' + m.theme + '</p></div>'
       + '</button>';
   });
   el.innerHTML = html;
 }
-renderGalleryGrid('gGridContinut', TPL_ORDER_CONTINUT);
-renderGalleryGrid('gGridDesign', TPL_ORDER_DESIGN);
+renderGalleryGrid('gGridContinut', TPL_ORDER_CONTINUT, false);
+renderGalleryGrid('gGridDesign', TPL_ORDER_DESIGN, true);
+if (FA_DESIGN_RECOMANDAT.length && FA_DOMENIU_NUME) {
+  var nota = document.getElementById('gRecNota');
+  nota.textContent = 'Recomandat pentru domeniul vostru — ' + FA_DOMENIU_NUME;
+  nota.style.display = 'block';
+}
 
 /* Randează o previzualizare REALĂ (nu iconițe) în fiecare card — reface
    HTML-ul exact ca la generarea finală (build()), doar cu TEMPLATE
