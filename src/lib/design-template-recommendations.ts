@@ -12,15 +12,22 @@ import type { DomeniuActivitate } from "./campaign-templates";
 // familiilor de layout din campaign-templates.ts (cald-protector/natural-
 // ancorat/indraznet-dinamic/elegant-editorial) — ajustează liber listele,
 // designul rămâne la tine.
+// `design_familie`/`design_vitalitate`/`design_comunitate`/`design_adapost`/
+// `design_natura`/`design_avant`/`design_orizont`/`design_muzeu` — 8 design-uri
+// dedicate, structural proprii per domeniu (nu doar recolorate), cercetate pe
+// baza unor identități vizuale reale (St. Jude, Susan G. Komen, Habitat for
+// Humanity, WWF, Special Olympics, identitate muzeală) — vezi TPL_META din
+// newsletter-pf.base.html. Fiecare domeniu recomandă întâi propriul design
+// dedicat, apoi cel mai apropiat design generic existent ca a doua opțiune.
 export const NEWSLETTER_PF_DESIGN_RECOMANDAT: Record<DomeniuActivitate, string[]> = {
-  copii: ["design_poveste", "design_acuarela", "design_givewell"],
-  sanatate: ["design_radiografie", "design_acuarela", "design_givewell"],
-  social_incluziune: ["design_acuarela", "design_givewell", "design_eveniment_elegant"],
-  animale: ["design_givewell", "design_acuarela"],
-  mediu: ["design_givewell", "design_acuarela"],
-  sport: ["design_eveniment_elegant", "design_givewell"],
-  educatie: ["design_eveniment_elegant", "design_givewell"],
-  cultura: ["design_eveniment_elegant", "design_givewell"],
+  copii: ["design_familie", "design_poveste", "design_acuarela"],
+  sanatate: ["design_vitalitate", "design_radiografie", "design_acuarela"],
+  social_incluziune: ["design_comunitate", "design_acuarela", "design_givewell"],
+  animale: ["design_adapost", "design_givewell", "design_acuarela"],
+  mediu: ["design_natura", "design_givewell", "design_acuarela"],
+  sport: ["design_avant", "design_eveniment_elegant", "design_givewell"],
+  educatie: ["design_orizont", "design_eveniment_elegant", "design_givewell"],
+  cultura: ["design_muzeu", "design_eveniment_elegant", "design_givewell"],
   altele: [],
 };
 
