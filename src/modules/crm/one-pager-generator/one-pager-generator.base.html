@@ -16,6 +16,37 @@
   select#TEMPLATE { width:100%; padding:9px 10px; border:1.5px solid #E4DFD7; border-radius:8px; font-size:13px; font-family:inherit; background:#fff; cursor:pointer; }
   select#TEMPLATE:focus { outline:none; border-color:#E0263C; }
   #recNota { font-size:11.5px; color:#3FA85C; font-weight:700; margin-top:5px; display:none; }
+  /* ===== Trigger + galerie vizuală pentru alegerea layout-ului — înlocuiește
+     dropdown-ul nativ lung (29 opțiuni) cu o galerie de carduri cu miniatură
+     reală a fiecărui layout, ca la Newsletter PF/PJ. Select-ul #TEMPLATE
+     rămâne în DOM (ascuns) — tot codul existent care îi citește/scrie
+     valoarea (build/refresh/draft) funcționează neschimbat. */
+  .layout-trigger { width:100%; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border:1.5px solid #E4DFD7; border-radius:8px; background:#fff; cursor:pointer; font-family:inherit; font-size:13px; font-weight:700; color:#1F1B17; text-align:left; }
+  .layout-trigger:hover { border-color:#E0263C; }
+  .layout-trigger:focus-visible { outline:2px solid #E0263C; outline-offset:2px; }
+  .layout-trigger .ltc { flex-shrink:0; font-size:11px; font-weight:800; color:#C41D33; background:#FAF2EF; padding:5px 10px; border-radius:999px; }
+  .layout-modal-bg { position:fixed; inset:0; background:rgba(31,27,23,.55); display:none; align-items:flex-start; justify-content:center; z-index:60; padding:40px 16px; overflow-y:auto; }
+  .layout-modal-bg.show { display:flex; }
+  .layout-modal { background:#F2EFEA; border-radius:18px; max-width:1180px; width:100%; padding:24px 24px 32px; }
+  .layout-modal-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
+  .layout-modal-head h3 { margin:0; font-size:18px; font-family:Georgia,serif; color:#1F1B17; }
+  .layout-modal-head button { border:0; background:#fff; width:34px; height:34px; border-radius:50%; font-size:16px; cursor:pointer; color:#55504A; }
+  .layout-modal-head button:hover { color:#C41D33; }
+  .gGrid { display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; margin-top:14px; }
+  @media (max-width:900px){ .gGrid { grid-template-columns:repeat(2, 1fr); } }
+  @media (max-width:560px){ .gGrid { grid-template-columns:1fr; } .layout-modal { padding:18px 14px 24px; } }
+  .gCard { display:flex; flex-direction:column; align-items:stretch; text-align:left; cursor:pointer; background:#fff; border:1.5px solid #E4DFD7; border-radius:14px; padding:0; overflow:hidden; transition:transform .15s, box-shadow .15s, border-color .15s; font-family:inherit; }
+  .gCard:hover { transform:translateY(-3px); box-shadow:0 10px 24px rgba(31,27,23,.12); border-color:#C41D33; }
+  .gCard:focus-visible { outline:2px solid #E0263C; outline-offset:2px; }
+  .gCard[data-current="1"] { border-color:#C41D33; box-shadow:0 0 0 2px rgba(196,29,51,.18); }
+  .gSwatch { height:220px; position:relative; overflow:hidden; background:#F2EFEA; }
+  .gThumbFrame { position:absolute; top:0; left:0; width:850px; height:2600px; border:0; pointer-events:none; transform-origin:top left; background:#fff; }
+  .gBody { padding:12px 14px 14px; }
+  .gName { font-size:13.5px; font-weight:800; color:#1F1B17; margin:0; }
+  .gTheme { font-size:11.5px; color:#7A736A; margin:4px 0 0; line-height:1.4; }
+  .gCard[data-recomandat="1"] { border-color:#3FA85C; }
+  .gBadge { position:absolute; top:8px; left:8px; z-index:2; background:#3FA85C; color:#fff; font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:999px; }
+  #gRecNota { text-align:center; font-size:12.5px; color:#3FA85C; font-weight:700; margin:2px 0 10px; }
   .form { width:400px; min-width:300px; max-width:80vw; flex-shrink:0; overflow-y:auto; background:#fff; padding:18px 20px 60px 20px; order:1; }
   #dragHandle { flex:0 0 6px; width:6px; cursor:col-resize; background:#EAE5DC; border-left:1px solid #E4DFD7; border-right:1px solid #E4DFD7; order:2; position:relative; }
   #dragHandle:hover, #dragHandle.dragging { background:#E0263C; }
@@ -70,7 +101,8 @@
   <div class="form">
     <h2>Aspect</h2>
     <label>Layout</label>
-    <select id="TEMPLATE"></select>
+    <button type="button" id="layoutTrigger" class="layout-trigger"><span id="layoutTriggerName">Alege un layout</span><span class="ltc">Schimbă</span></button>
+    <select id="TEMPLATE" style="display:none;"></select>
     <p id="recNota"></p>
 
     <h2>Branding</h2>
@@ -143,6 +175,16 @@
   </div>
 </div>
 <div class="ok" id="ok" role="status" aria-live="polite"></div>
+<div class="layout-modal-bg" id="layoutModalBg">
+  <div class="layout-modal">
+    <div class="layout-modal-head">
+      <h3>Alege un layout</h3>
+      <button type="button" id="layoutModalClose" aria-label="Închide">✕</button>
+    </div>
+    <p id="gRecNota" style="display:none;"></p>
+    <div class="gGrid" id="gGrid"></div>
+  </div>
+</div>
 
 <script type="text/plain" id="tpl_standard"><!DOCTYPE html>
 <html lang="ro"><head><meta charset="UTF-8">
@@ -3577,6 +3619,95 @@ function populeazaSelectorTemplate(){
 }
 populeazaSelectorTemplate();
 
+/* Ordinea recomandate-întâi, reutilizată și de galeria de carduri (aceeași
+   logică din populeazaSelectorTemplate, extrasă ca să nu se dubleze). */
+function ordineLayoutRecomandate(){
+  var ordine = TPL_ORDER.slice();
+  if (!FA_DESIGN_RECOMANDAT.length) return ordine;
+  var rec = ordine.filter(function(v){ return FA_DESIGN_RECOMANDAT.indexOf(v) !== -1; });
+  rec.sort(function(a,b){ return FA_DESIGN_RECOMANDAT.indexOf(a) - FA_DESIGN_RECOMANDAT.indexOf(b); });
+  var rest = ordine.filter(function(v){ return FA_DESIGN_RECOMANDAT.indexOf(v) === -1; });
+  return rec.concat(rest);
+}
+function renderLayoutGallery(){
+  var el = document.getElementById('gGrid');
+  var ordine = ordineLayoutRecomandate();
+  var html = '';
+  ordine.forEach(function(val){
+    var m = TPL_META[val];
+    var recomandat = FA_DESIGN_RECOMANDAT.indexOf(val) !== -1;
+    html += '<button type="button" class="gCard" data-tpl-choice="' + val + '"' + (recomandat ? ' data-recomandat="1"' : '') + '>'
+      + '<div class="gSwatch">' + (recomandat ? '<span class="gBadge">Recomandat</span>' : '') + '<iframe class="gThumbFrame" tabindex="-1" aria-hidden="true"></iframe></div>'
+      + '<div class="gBody"><p class="gName">' + m.name + '</p><p class="gTheme">' + m.theme + '</p></div>'
+      + '</button>';
+  });
+  el.innerHTML = html;
+  if (FA_DESIGN_RECOMANDAT.length && FA_DOMENIU_NUME) {
+    var nota = document.getElementById('gRecNota');
+    nota.textContent = '⭐ Recomandat pentru domeniul vostru — ' + FA_DOMENIU_NUME;
+    nota.style.display = 'block';
+  }
+  document.querySelectorAll('.gCard').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var val = btn.getAttribute('data-tpl-choice');
+      var sel = document.getElementById('TEMPLATE');
+      sel.value = val;
+      sel.dispatchEvent(new Event('change', {bubbles:true}));
+      closeLayoutModal();
+    });
+  });
+}
+renderLayoutGallery();
+function updateLayoutTriggerLabel(){
+  var val = document.getElementById('TEMPLATE').value || 'standard';
+  var m = TPL_META[val];
+  var lbl = document.getElementById('layoutTriggerName');
+  if (m && lbl) lbl.textContent = m.name;
+  document.querySelectorAll('.gCard').forEach(function(c){
+    c.setAttribute('data-current', c.getAttribute('data-tpl-choice') === val ? '1' : '0');
+  });
+}
+function fillLayoutThumbnails(){
+  var teEl = document.getElementById('TEMPLATE');
+  var original = teEl.value;
+  document.querySelectorAll('.gCard').forEach(function(card){
+    var val = card.getAttribute('data-tpl-choice');
+    teEl.value = val;
+    var html = build();
+    var fr = card.querySelector('.gThumbFrame');
+    if (fr) fr.srcdoc = html;
+  });
+  teEl.value = original;
+}
+function sizeLayoutThumbs(){
+  document.querySelectorAll('.gSwatch').forEach(function(sw){
+    var fr = sw.querySelector('.gThumbFrame');
+    var w = sw.clientWidth;
+    if (!fr || !w) return;
+    fr.style.transform = 'scale(' + (w / 850) + ')';
+  });
+}
+function openLayoutModal(){
+  document.getElementById('layoutModalBg').classList.add('show');
+  fillLayoutThumbnails();
+  sizeLayoutThumbs();
+  updateLayoutTriggerLabel();
+}
+function closeLayoutModal(){
+  document.getElementById('layoutModalBg').classList.remove('show');
+}
+document.getElementById('layoutTrigger').addEventListener('click', openLayoutModal);
+document.getElementById('layoutModalClose').addEventListener('click', closeLayoutModal);
+document.getElementById('layoutModalBg').addEventListener('click', function(e){
+  if (e.target === e.currentTarget) closeLayoutModal();
+});
+document.addEventListener('keydown', function(e){
+  if (e.key === 'Escape' && document.getElementById('layoutModalBg').classList.contains('show')) closeLayoutModal();
+});
+window.addEventListener('resize', function(){
+  if (document.getElementById('layoutModalBg').classList.contains('show')) sizeLayoutThumbs();
+});
+
 function tplCurent(){
   var val = document.getElementById('TEMPLATE').value || 'standard';
   return document.getElementById('tpl_' + val).textContent;
@@ -3645,6 +3776,7 @@ function build(){
 function refresh(){
   document.getElementById('frame').srcdoc = build();
   saveDraft();
+  updateLayoutTriggerLabel();
 }
 
 var DRAFT_KEY = 'soi_draft_onepager_v1';
