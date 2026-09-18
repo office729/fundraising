@@ -3592,6 +3592,32 @@ var TPL_ORDER = ['standard','warm','minimal','bold','editorial','copii','sanatat
    ascunde niciunul, toate rămân alegeri valide. */
 var FA_DOMENIU_ACTIVITATE = '__FA_DOMENIU_ACTIVITATE__';
 var FA_DESIGN_RECOMANDAT = __FA_DESIGN_RECOMANDAT__;
+/* Doar pentru TESTARE: ?domeniu=sport în URL-ul paginii suprascrie local
+   domeniul organizației (fără să atingă Setări sau baza de date), ca să
+   poți verifica rapid recomandările pentru fiecare domeniu fără cont nou.
+   Oglindește ONE_PAGER_DESIGN_RECOMANDAT din lib/design-template-
+   recommendations.ts — dacă acea listă se schimbă, actualizează și aici. */
+(function(){
+  try {
+    var qp = new URLSearchParams(window.parent.location.search);
+    var over = qp.get('domeniu');
+    var MAP = {
+      copii: ["copii", "impuls", "scut", "warm"],
+      sanatate: ["sanatate", "hotarare", "stea", "warm"],
+      social_incluziune: ["social", "cerc", "blazon", "warm"],
+      animale: ["animale", "garda", "refugiu", "minimal"],
+      mediu: ["mediu", "semnal", "insigna", "minimal"],
+      sport: ["sport", "laur", "start", "bold"],
+      educatie: ["educatie", "pagina", "creion", "bold"],
+      cultura: ["cultura", "galerie", "cortina", "editorial"],
+      altele: []
+    };
+    if (over && MAP.hasOwnProperty(over)) {
+      FA_DOMENIU_ACTIVITATE = over;
+      FA_DESIGN_RECOMANDAT = MAP[over];
+    }
+  } catch(e){}
+})();
 var FA_DOMENIU_NUME = {copii:'Copii',animale:'Animale',mediu:'Mediu',educatie:'Educație',sanatate:'Sănătate',social_incluziune:'Social / Incluziune',cultura:'Cultură',sport:'Sport',altele:'Modern'}[FA_DOMENIU_ACTIVITATE] || '';
 
 function populeazaSelectorTemplate(){
