@@ -47,15 +47,17 @@ export const NEWSLETTER_PF_DESIGN_RECOMANDAT: Record<DomeniuActivitate, string[]
 // generic existent ca a doua/a treia opțiune.
 // Al doilea design dedicat per domeniu — aceleași 8 identități noi ca la
 // Newsletter PF (impuls/hotarare/cerc/garda/semnal/laur/pagina/galerie).
+// Al treilea design dedicat — aceleași 8 identități noi ca la PF
+// (scut/stea/blazon/refugiu/insigna/start/creion/cortina).
 export const NEWSLETTER_PJ_DESIGN_RECOMANDAT: Record<DomeniuActivitate, string[]> = {
-  copii: ["design_familie", "design_impuls", "design_warm"],
-  sanatate: ["design_vitalitate", "design_hotarare", "design_scrisoare"],
-  social_incluziune: ["design_comunitate", "design_cerc", "design_scrisoare"],
-  animale: ["design_adapost", "design_garda", "design_foto"],
-  mediu: ["design_natura", "design_semnal", "design_foto"],
-  sport: ["design_avant", "design_laur", "design_bold"],
-  educatie: ["design_orizont", "design_pagina", "design_certificat"],
-  cultura: ["design_muzeu", "design_galerie", "design_editorial"],
+  copii: ["design_familie", "design_impuls", "design_scut", "design_warm"],
+  sanatate: ["design_vitalitate", "design_hotarare", "design_stea", "design_scrisoare"],
+  social_incluziune: ["design_comunitate", "design_cerc", "design_blazon", "design_scrisoare"],
+  animale: ["design_adapost", "design_garda", "design_refugiu", "design_foto"],
+  mediu: ["design_natura", "design_semnal", "design_insigna", "design_foto"],
+  sport: ["design_avant", "design_laur", "design_start", "design_bold"],
+  educatie: ["design_orizont", "design_pagina", "design_creion", "design_certificat"],
+  cultura: ["design_muzeu", "design_galerie", "design_cortina", "design_editorial"],
   altele: [],
 };
 
