@@ -36,19 +36,22 @@ export const NEWSLETTER_PJ_DESIGN_RECOMANDAT: Record<DomeniuActivitate, string[]
   altele: [],
 };
 
-// Generator one-pager — 5 layout-uri (`standard` + 4 noi), grupate pe
-// aceleași familii ca CAMPAIGN_TEMPLATES din campaign-templates.ts
-// (cald-protector/natural-ancorat/indraznet-dinamic/elegant-editorial),
-// ca recomandarea să fie consistentă cu restul platformei. `altele` rămâne
-// fără recomandare — implicit "standard", la fel ca înainte.
+// Generator one-pager — 13 layout-uri: cele 5 generice (`standard` + 4
+// familii) plus câte UNUL nou, dedicat, per domeniu (copii/sanatate/social/
+// animale/mediu/sport/educatie/cultura) — cercetat pe baza unor identități
+// vizuale reale (St. Jude, Susan G. Komen, Habitat for Humanity, WWF,
+// Special Olympics, identitate muzeală) și construit ca layout structural
+// propriu, nu doar recolorat. Fiecare domeniu recomandă întâi propriul
+// design dedicat, apoi cel mai apropiat design generic ca a doua opțiune.
+// `altele` rămâne fără recomandare — implicit "standard".
 export const ONE_PAGER_DESIGN_RECOMANDAT: Record<DomeniuActivitate, string[]> = {
-  copii: ["warm"],
-  sanatate: ["warm"],
-  social_incluziune: ["warm"],
-  animale: ["minimal"],
-  mediu: ["minimal"],
-  sport: ["bold"],
-  educatie: ["bold"],
-  cultura: ["editorial"],
+  copii: ["copii", "warm"],
+  sanatate: ["sanatate", "warm"],
+  social_incluziune: ["social", "warm"],
+  animale: ["animale", "minimal"],
+  mediu: ["mediu", "minimal"],
+  sport: ["sport", "bold"],
+  educatie: ["educatie", "bold"],
+  cultura: ["cultura", "editorial"],
   altele: [],
 };
