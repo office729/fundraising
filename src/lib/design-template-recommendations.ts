@@ -22,17 +22,21 @@ import type { DomeniuActivitate } from "./campaign-templates";
 // Al doilea design dedicat per domeniu (impuls/hotarare/cerc/garda/semnal/
 // laur/pagina/galerie) — UNICEF, American Cancer Society, United Way,
 // RSPCA, Greenpeace, Laureus Sport for Good, Room to Read, identitate de
-// galerie modernă. Fiecare domeniu recomandă acum ambele design-uri
-// dedicate, apoi cel mai apropiat design generic existent.
+// galerie modernă. Al treilea design dedicat (scut/stea/blazon/refugiu/
+// insigna/start/creion/cortina) — Save the Children, Make-A-Wish, Armata
+// Salvării, Best Friends Animal Society, Sierra Club, Right To Play,
+// Pencils of Promise, eleganța unei săli de spectacol. Fiecare domeniu
+// recomandă acum toate cele trei design-uri dedicate, apoi cel mai
+// apropiat design generic existent.
 export const NEWSLETTER_PF_DESIGN_RECOMANDAT: Record<DomeniuActivitate, string[]> = {
-  copii: ["design_familie", "design_impuls", "design_poveste"],
-  sanatate: ["design_vitalitate", "design_hotarare", "design_radiografie"],
-  social_incluziune: ["design_comunitate", "design_cerc", "design_acuarela"],
-  animale: ["design_adapost", "design_garda", "design_givewell"],
-  mediu: ["design_natura", "design_semnal", "design_givewell"],
-  sport: ["design_avant", "design_laur", "design_eveniment_elegant"],
-  educatie: ["design_orizont", "design_pagina", "design_eveniment_elegant"],
-  cultura: ["design_muzeu", "design_galerie", "design_eveniment_elegant"],
+  copii: ["design_familie", "design_impuls", "design_scut", "design_poveste"],
+  sanatate: ["design_vitalitate", "design_hotarare", "design_stea", "design_radiografie"],
+  social_incluziune: ["design_comunitate", "design_cerc", "design_blazon", "design_acuarela"],
+  animale: ["design_adapost", "design_garda", "design_refugiu", "design_givewell"],
+  mediu: ["design_natura", "design_semnal", "design_insigna", "design_givewell"],
+  sport: ["design_avant", "design_laur", "design_start", "design_eveniment_elegant"],
+  educatie: ["design_orizont", "design_pagina", "design_creion", "design_eveniment_elegant"],
+  cultura: ["design_muzeu", "design_galerie", "design_cortina", "design_eveniment_elegant"],
   altele: [],
 };
 
