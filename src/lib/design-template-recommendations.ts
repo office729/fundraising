@@ -31,15 +31,20 @@ export const NEWSLETTER_PF_DESIGN_RECOMANDAT: Record<DomeniuActivitate, string[]
   altele: [],
 };
 
+// Aceleași 8 design-uri dedicate ca la Newsletter PF (identică identitate
+// vizuală, adaptată la placeholder-ele și tonul de companie-parteneră ale
+// PJ — vezi TPL_META din newsletter-pj.base.html). Fiecare domeniu
+// recomandă întâi propriul design dedicat, apoi cel mai apropiat design
+// generic existent ca a doua/a treia opțiune.
 export const NEWSLETTER_PJ_DESIGN_RECOMANDAT: Record<DomeniuActivitate, string[]> = {
-  copii: ["design_warm", "design_scrisoare", "design_foto"],
-  sanatate: ["design_scrisoare", "design_chitanta", "design_minimal"],
-  social_incluziune: ["design_scrisoare", "design_warm", "design_chitanta"],
-  animale: ["design_foto", "design_minimal"],
-  mediu: ["design_foto", "design_minimal"],
-  sport: ["design_bold", "design_manifest"],
-  educatie: ["design_certificat", "design_cronologie", "design_bold"],
-  cultura: ["design_editorial", "design_gazeta", "design_cronologie"],
+  copii: ["design_familie", "design_warm", "design_scrisoare"],
+  sanatate: ["design_vitalitate", "design_scrisoare", "design_chitanta"],
+  social_incluziune: ["design_comunitate", "design_scrisoare", "design_warm"],
+  animale: ["design_adapost", "design_foto", "design_minimal"],
+  mediu: ["design_natura", "design_foto", "design_minimal"],
+  sport: ["design_avant", "design_bold", "design_manifest"],
+  educatie: ["design_orizont", "design_certificat", "design_cronologie"],
+  cultura: ["design_muzeu", "design_editorial", "design_gazeta"],
   altele: [],
 };
 
