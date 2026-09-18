@@ -9,10 +9,11 @@
 // pentru toți apelanții existenți.
 //
 // `domeniuActivitate`/`designRecomandat` (opționale) — aceeași logică de
-// no-op sigur: doar Newsletter PF/PJ au azi placeholder-ele
-// __FA_DOMENIU_ACTIVITATE__/__FA_DESIGN_RECOMANDAT__ în .base.html (vezi
-// lib/newsletter-design-templates.ts), ca galeria de start să urce primele
-// stilurile potrivite domeniului organizației.
+// no-op sigur: doar Newsletter PF/PJ și Generator one-pager au azi
+// placeholder-ele __FA_DOMENIU_ACTIVITATE__/__FA_DESIGN_RECOMANDAT__ în
+// .base.html (vezi lib/design-template-recommendations.ts), ca galeria/
+// selectorul de start să urce primele stilurile potrivite domeniului
+// organizației.
 export function StandaloneToolFrame({
   html,
   title,

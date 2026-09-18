@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { requireOrgAccess } from "@/lib/auth/guard";
 import { orgHasToolAccess } from "@/lib/billing/packages";
-import { NEWSLETTER_PJ_DESIGN_RECOMANDAT } from "@/lib/newsletter-design-templates";
+import { NEWSLETTER_PJ_DESIGN_RECOMANDAT } from "@/lib/design-template-recommendations";
 import { NEWSLETTER_PJ_HTML } from "@/modules/crm/newsletter-pj/newsletter-pj-html";
 import { StandaloneToolFrame } from "@/modules/crm/shared/standalone-tool-frame";
 import { ToolLocked } from "@/modules/crm/shared/tool-locked";

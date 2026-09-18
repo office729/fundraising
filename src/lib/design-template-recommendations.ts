@@ -35,3 +35,20 @@ export const NEWSLETTER_PJ_DESIGN_RECOMANDAT: Record<DomeniuActivitate, string[]
   cultura: ["design_editorial", "design_gazeta", "design_cronologie"],
   altele: [],
 };
+
+// Generator one-pager — 5 layout-uri (`standard` + 4 noi), grupate pe
+// aceleași familii ca CAMPAIGN_TEMPLATES din campaign-templates.ts
+// (cald-protector/natural-ancorat/indraznet-dinamic/elegant-editorial),
+// ca recomandarea să fie consistentă cu restul platformei. `altele` rămâne
+// fără recomandare — implicit "standard", la fel ca înainte.
+export const ONE_PAGER_DESIGN_RECOMANDAT: Record<DomeniuActivitate, string[]> = {
+  copii: ["warm"],
+  sanatate: ["warm"],
+  social_incluziune: ["warm"],
+  animale: ["minimal"],
+  mediu: ["minimal"],
+  sport: ["bold"],
+  educatie: ["bold"],
+  cultura: ["editorial"],
+  altele: [],
+};

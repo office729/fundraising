@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { requireOrgAccess } from "@/lib/auth/guard";
 import { orgHasToolAccess } from "@/lib/billing/packages";
+import { ONE_PAGER_DESIGN_RECOMANDAT } from "@/lib/design-template-recommendations";
 import { ONE_PAGER_GENERATOR_HTML } from "@/modules/crm/one-pager-generator/one-pager-generator-html";
 import { StandaloneToolFrame } from "@/modules/crm/shared/standalone-tool-frame";
 import { ToolLocked } from "@/modules/crm/shared/tool-locked";
@@ -26,7 +27,13 @@ export default async function OnePagerGeneratorPage({ params }: { params: Promis
         <span className="font-display text-sm font-semibold text-ink">{TITLE}</span>
       </header>
       <div className="min-h-0 flex-1">
-        <StandaloneToolFrame html={ONE_PAGER_GENERATOR_HTML} title={TITLE} orgSlug={orgSlug} />
+        <StandaloneToolFrame
+          html={ONE_PAGER_GENERATOR_HTML}
+          title={TITLE}
+          orgSlug={orgSlug}
+          domeniuActivitate={access.orgDomeniuActivitate}
+          designRecomandat={access.orgDomeniuActivitate ? ONE_PAGER_DESIGN_RECOMANDAT[access.orgDomeniuActivitate] : []}
+        />
       </div>
     </div>
   );
