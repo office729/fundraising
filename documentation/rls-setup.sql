@@ -66,8 +66,8 @@
 
 -- 1. Rolurile (parole generate pentru proiectul office729/Fundraising Academy —
 --    dacă rulezi asta pe un proiect nou, înlocuiește-le cu altele generate).
-create role migrator login password 'JTl4xNr4PXpZIioW9ZRBb_i6EkgyJwfG' createdb;
-create role app_user login password 'FKQt7LWHq13hYI_agadT0hxwp6NFK8he' nobypassrls;
+create role migrator login password '<PAROLA-MIGRATOR>' createdb;
+create role app_user login password '<PAROLA-APP-USER>' nobypassrls;
 
 grant all on schema public to migrator;
 alter schema public owner to migrator;

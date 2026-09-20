@@ -21,7 +21,7 @@ const csp = [
   `font-src 'self' data: https://fonts.gstatic.com`,
   // `data:` — necesar ca fetch() să poată citi imaginea semnăturii olografe
   // (canvas.toDataURL) la completarea PDF-ului Formularului 230 (pdf-lib).
-  `connect-src 'self' data: https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://calendly.com${isDev ? " ws:" : ""}`,
+  `connect-src 'self' data: https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://calendly.com https://*.ingest.sentry.io https://*.ingest.de.sentry.io${isDev ? " ws:" : ""}`,
   `frame-src 'self' https://checkout.stripe.com https://billing.stripe.com https://calendly.com`,
   `frame-ancestors 'none'`,
   `form-action 'self' https://*.supabase.co https://checkout.stripe.com`,
