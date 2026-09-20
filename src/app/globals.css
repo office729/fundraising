@@ -2,7 +2,7 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Brandul real Fundraising Academy (din pagina de prezentare/prețuri) —
+/* Brandul real Alexandrit (din pagina de prezentare/prețuri) —
    albastru #154A85 + verde #3FA85C, Manrope + Sora. */
 :root {
   --brand-blue: #154a85;

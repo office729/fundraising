@@ -1,5 +1,5 @@
 -- ============================================================================
--- Fundraising Academy — configurare izolare de tenant (Row Level Security)
+-- Alexandrit — configurare izolare de tenant (Row Level Security)
 -- ============================================================================
 -- Rulează manual în Supabase SQL Editor, o singură dată per proiect
 -- (staging și producție sunt proiecte Supabase SEPARATE — rulează în ambele).
@@ -64,7 +64,7 @@
 --               cândva, FORCE ROW LEVEL SECURITY tot aplică politicile.
 -- ============================================================================
 
--- 1. Rolurile (parole generate pentru proiectul office729/Fundraising Academy —
+-- 1. Rolurile (parole generate pentru proiectul office729/Alexandrit —
 --    dacă rulezi asta pe un proiect nou, înlocuiește-le cu altele generate).
 create role migrator login password '<PAROLA-MIGRATOR>' createdb;
 create role app_user login password '<PAROLA-APP-USER>' nobypassrls;

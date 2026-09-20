@@ -20,7 +20,7 @@ export const STUDII_DE_CAZ_DICT = {
       },
       abordare: {
         titlu: "Abordarea",
-        desc: "Vlad Plăcintă, președintele asociației, a construit sistemul de fundraising, comunicarea cu donatorii și relația cu companiile sponsor — aceleași principii predate azi în cadrul cursurilor și consilierii 1 la 1 din Fundraising Academy, și susținute acum de instrumentele din Hub Fundraising (CRM persoane fizice/juridice, documente de sponsorizare 20% și D177).",
+        desc: "Vlad Plăcintă, președintele asociației, a construit sistemul de fundraising, comunicarea cu donatorii și relația cu companiile sponsor — aceleași principii predate azi în cadrul cursurilor și consilierii 1 la 1 din Alexandrit, și susținute acum de instrumentele din Hub Fundraising (CRM persoane fizice/juridice, documente de sponsorizare 20% și D177).",
       },
       rezultat: {
         titlu: "Rezultatul",
@@ -50,7 +50,7 @@ export const STUDII_DE_CAZ_DICT = {
       },
       abordare: {
         titlu: "The approach",
-        desc: "Vlad Plăcintă, the association's president, built the fundraising system, donor communication and the relationship with sponsor companies — the same principles taught today in Fundraising Academy's courses and 1-on-1 consulting, and now backed by the Fundraising Hub tools (individual/company CRM, 20% sponsorship and D177 documents).",
+        desc: "Vlad Plăcintă, the association's president, built the fundraising system, donor communication and the relationship with sponsor companies — the same principles taught today in Alexandrit's courses and 1-on-1 consulting, and now backed by the Fundraising Hub tools (individual/company CRM, 20% sponsorship and D177 documents).",
       },
       rezultat: {
         titlu: "The result",

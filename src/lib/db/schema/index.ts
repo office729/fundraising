@@ -1,4 +1,4 @@
-// Schema Drizzle a bazei de date Fundraising Academy.
+// Schema Drizzle a bazei de date Alexandrit.
 // Tabele de platformă (organizații, membri) aici; tabelele de date ale
 // fiecărui instrument (crm-pj, crm-pf etc.) se adaugă câte un fișier nou,
 // fiecare cu coloană org_id + politică RLS de izolare (Faza 2+).

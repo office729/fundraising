@@ -1,4 +1,4 @@
-# Fundraising Academy
+# Alexandrit
 
 Platformă SaaS multi-tenant: ONG-urile își fac cont și primesc acces la un
 CRM complet și un set de instrumente de fundraising (rapoarte, newsletter,

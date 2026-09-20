@@ -5,7 +5,7 @@ import { orgDomeniuActivitate, orgPackage, subscriptionStatus } from "./enums";
 
 // O organizație = un ONG client. Fiecare tabel de date de tenant (companii,
 // donatori etc.) are un FK org_id către acest tabel, izolat prin RLS
-// (vezi documentation/rls-setup.sql) — Fundraising Academy NU citește
+// (vezi documentation/rls-setup.sql) — Alexandrit NU citește
 // direct aceste date în producție.
 export const organizations = pgTable("organizations", {
   id: uuid("id").defaultRandom().primaryKey(),

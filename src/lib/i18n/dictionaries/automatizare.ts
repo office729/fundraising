@@ -41,7 +41,7 @@ export const AUTOMATIZARE_DICT = {
     bridgeText: "Nu primești doar un site sau o automatizare izolată — primești un sistem construit pentru organizația ta, care centralizează donatorii, companiile, contractele, plățile și comunicarea într-un singur loc, ușor de folosit de întreaga echipă.",
     administreziTitlu: "O singură platformă pentru întreaga activitate de fundraising",
     administreziDesc: "Nu mai trebuie să păstrezi donatorii într-un Excel, companiile într-un alt document, contractele în foldere separate și activitățile echipei în aplicații diferite.",
-    administreziIntro: "Cu platforma Fundraising Academy poți administra:",
+    administreziIntro: "Cu platforma Alexandrit poți administra:",
     administrezi: [
       "Donatorii persoane fizice",
       "Companiile și sponsorii",
@@ -100,7 +100,7 @@ export const AUTOMATIZARE_DICT = {
     bridgeText: "You don't just get a site or an isolated automation — you get a system built for your organization, centralizing donors, companies, contracts, payments and communication in one place, easy for the whole team to use.",
     administreziTitlu: "One platform for your entire fundraising activity",
     administreziDesc: "No more keeping donors in a spreadsheet, companies in another document, contracts in separate folders, and the team's activities across different apps.",
-    administreziIntro: "With the Fundraising Academy platform you can manage:",
+    administreziIntro: "With the Alexandrit platform you can manage:",
     administrezi: [
       "Individual donors",
       "Companies and sponsors",

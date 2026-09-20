@@ -111,7 +111,7 @@ export default async function LandingPage({
         </div>
       </section>
 
-      {/* De ce Fundraising Academy */}
+      {/* De ce Alexandrit */}
       <section className="bg-panel-2 px-[6%] py-16">
         <h2 className="font-display mx-auto max-w-2xl text-center text-[32px] font-bold text-ink">{dict.valori.title}</h2>
         <div className="mx-auto mt-10 grid max-w-5xl grid-cols-1 gap-6 sm:grid-cols-3">

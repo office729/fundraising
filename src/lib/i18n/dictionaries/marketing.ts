@@ -45,7 +45,7 @@ export const MARKETING_DICT = {
       ],
     },
     valori: {
-      title: "De ce Fundraising Academy?",
+      title: "De ce Alexandrit?",
       items: [
         { t: "Construită pe o fundație solidă, care a strâns 28M€", d: "Fiecare instrument pornește din nevoi reale, testate în activitatea Asociației Salvează o Inimă, nu din presupuneri." },
         { t: "Toate instrumentele, într-un singur abonament", d: "CRM, pagini de donație, rapoarte și newslettere — nu plătești separat pentru fiecare unealtă, doar pentru capacitate." },
@@ -142,7 +142,7 @@ export const MARKETING_DICT = {
       ],
     },
     valori: {
-      title: "Why Fundraising Academy?",
+      title: "Why Alexandrit?",
       items: [
         { t: "Built on a solid foundation that raised €28M", d: "Every tool starts from a real need, tested in Asociația Salvează o Inimă's own work — not from guesswork." },
         { t: "Every tool, in one subscription", d: "CRM, donation pages, reports and newsletters — you don't pay separately per tool, only for capacity." },

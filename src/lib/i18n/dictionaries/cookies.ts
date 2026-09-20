@@ -13,7 +13,7 @@ export const COOKIES_DICT = {
     },
     s2: {
       titlu: "2. Cookie-uri strict necesare, folosite efectiv de platformă",
-      introBefore: "Platforma Fundraising Academy folosește exclusiv cookie-uri",
+      introBefore: "Platforma Alexandrit folosește exclusiv cookie-uri",
       introBold: "strict necesare",
       introAfter: "pentru autentificare — nu folosim cookie-uri de marketing, publicitate sau analiză a traficului bazate pe identificatori individuali.",
       tabelHeaders: { cookie: "Cookie", scop: "Scop", durata: "Durată" },
@@ -50,7 +50,7 @@ export const COOKIES_DICT = {
     },
     s2: {
       titlu: "2. Strictly necessary cookies, actually used by the platform",
-      introBefore: "The Fundraising Academy platform uses exclusively",
+      introBefore: "The Alexandrit platform uses exclusively",
       introBold: "strictly necessary",
       introAfter: "cookies for authentication — we do not use marketing, advertising, or traffic-analysis cookies based on individual identifiers.",
       tabelHeaders: { cookie: "Cookie", scop: "Purpose", durata: "Duration" },

@@ -2,6 +2,7 @@
 
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 
@@ -44,15 +45,8 @@ export function SiteHeader({ dict }: { dict: MarketingDict }) {
   return (
     <header className="border-b border-line bg-panel">
       <div className="mx-auto flex h-20 max-w-6xl items-center justify-between px-6">
-        <Link href="/" className="flex items-center gap-2.5" onClick={() => setDeschis(false)}>
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-blue font-display text-base font-extrabold text-white">
-            FA
-          </span>
-          <span className="font-display text-base leading-tight font-bold text-brand-blue">
-            Fundraising
-            <br />
-            Academy
-          </span>
+        <Link href="/" className="flex items-center" onClick={() => setDeschis(false)} aria-label="Alexandrit">
+          <Image src="/alexandrit-logo.webp" alt="Alexandrit" width={2000} height={667} priority className="h-12 w-auto" />
         </Link>
 
         <nav className="hidden items-center gap-6 lg:flex">
@@ -135,7 +129,9 @@ export function SiteFooter({ dict }: { dict: MarketingDict }) {
     <footer className="bg-[#1a2332] px-[6%] py-14 text-white">
       <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 sm:grid-cols-3">
         <div>
-          <p className="font-display text-base font-bold">Fundraising Academy</p>
+          <span className="inline-block rounded-lg bg-white px-3 py-2">
+            <Image src="/alexandrit-logo.webp" alt="Alexandrit" width={2000} height={667} className="h-9 w-auto" />
+          </span>
           <p className="mt-2 text-sm text-white/60">{dict.footer.tagline}</p>
         </div>
         <div>

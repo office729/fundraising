@@ -1,4 +1,4 @@
-// Sursă de adevăr: pagina de prețuri "Hub Fundraising" (Fundraising Academy).
+// Sursă de adevăr: pagina de prețuri "Hub Fundraising" (Alexandrit).
 // Toate pachetele plătite includ TOATE instrumentele — diferența dintre
 // START / CREȘTERE / IMPACT e prin COTE (utilizatori, contacte, generări
 // lunare), nu prin acces la instrumente. "trial" (14 zile, fără card) are

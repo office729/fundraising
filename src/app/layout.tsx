@@ -24,7 +24,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Fundraising Academy",
+  title: "Alexandrit",
   description: "Instrumente de fundraising pentru ONG-uri din România",
 };
 

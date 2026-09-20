@@ -4,7 +4,7 @@ export const CE_FACEM_DICT = {
   ro: {
     breadcrumb: "Ce facem?",
     eyebrow: "Ce facem?",
-    titlu: "Patru moduri de a lucra cu Fundraising Academy",
+    titlu: "Patru moduri de a lucra cu Alexandrit",
     subtitlu: "De la un curs structurat, la instrumente pe care le folosești zilnic — alegi ce se potrivește etapei în care se află organizația ta.",
     servicii: [
       {
@@ -36,7 +36,7 @@ export const CE_FACEM_DICT = {
   en: {
     breadcrumb: "What we do?",
     eyebrow: "What we do?",
-    titlu: "Four ways to work with Fundraising Academy",
+    titlu: "Four ways to work with Alexandrit",
     subtitlu: "From a structured course to tools you use daily — pick what fits the stage your organization is at.",
     servicii: [
       {

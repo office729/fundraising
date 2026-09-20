@@ -8,7 +8,7 @@ import { usePersistentDismiss } from "./use-persistent-dismiss";
 
 // Panou de prim contact — apare după autentificare cât timp organizația nu
 // are logo încărcat, ca identitatea ei (nume, logo, culoare) să înlocuiască
-// branding-ul demonstrativ „Fundraising Academy" din antet și din CRM.
+// branding-ul demonstrativ „Alexandrit" din antet și din CRM.
 //
 // Dismiss-ul e persistat în localStorage (per browser, NU în DB — un owner
 // care se loghează de pe alt device tot îl vede, intenționat) — altfel

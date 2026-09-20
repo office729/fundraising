@@ -17,7 +17,7 @@ export const GDPR_DICT = {
       items: [
         "Date de cont: nume, email, parolă (stocată criptat prin furnizorul de autentificare).",
         "Date de contact trimise prin formulare sau email (nume, telefon, mesaj).",
-        "Date introduse voluntar de client în CRM-ul propriu din Hub Fundraising (donatori, companii, contracte) — acestea aparțin organizației client, nu Fundraising Academy; sunt izolate per organizație.",
+        "Date introduse voluntar de client în CRM-ul propriu din Hub Fundraising (donatori, companii, contracte) — acestea aparțin organizației client, nu Alexandrit; sunt izolate per organizație.",
         "Date tehnice minime (cookie-uri de sesiune) — vezi Politica de cookies.",
       ],
     },
@@ -44,7 +44,7 @@ export const GDPR_DICT = {
     },
     s8: {
       titlu: "8. Datele din CRM-ul clienților (organizații ONG)",
-      text: "Pentru organizațiile care folosesc Hub Fundraising, Fundraising Academy acționează ca persoană împuternicită (procesator) pentru datele donatorilor/companiilor introduse de organizație în propriul CRM — organizația rămâne operator pentru acele date. [DE COMPLETAT — dacă e cazul, un Acord de Prelucrare a Datelor (DPA) separat, semnat cu fiecare organizație client.]",
+      text: "Pentru organizațiile care folosesc Hub Fundraising, Alexandrit acționează ca persoană împuternicită (procesator) pentru datele donatorilor/companiilor introduse de organizație în propriul CRM — organizația rămâne operator pentru acele date. [DE COMPLETAT — dacă e cazul, un Acord de Prelucrare a Datelor (DPA) separat, semnat cu fiecare organizație client.]",
     },
   },
   en: {
@@ -63,7 +63,7 @@ export const GDPR_DICT = {
       items: [
         "Account data: name, email, password (stored encrypted by the authentication provider).",
         "Contact data submitted via forms or email (name, phone, message).",
-        "Data voluntarily entered by the client into their own CRM within Fundraising Hub (donors, companies, contracts) — this belongs to the client organization, not Fundraising Academy; it is isolated per organization.",
+        "Data voluntarily entered by the client into their own CRM within Fundraising Hub (donors, companies, contracts) — this belongs to the client organization, not Alexandrit; it is isolated per organization.",
         "Minimal technical data (session cookies) — see the Cookie Policy.",
       ],
     },
@@ -90,7 +90,7 @@ export const GDPR_DICT = {
     },
     s8: {
       titlu: "8. Data in client CRMs (NGO organizations)",
-      text: "For organizations using Fundraising Hub, Fundraising Academy acts as a data processor for the donor/company data entered by the organization into its own CRM — the organization remains the controller for that data. [TO COMPLETE — if applicable, a separate Data Processing Agreement (DPA) signed with each client organization.]",
+      text: "For organizations using Fundraising Hub, Alexandrit acts as a data processor for the donor/company data entered by the organization into its own CRM — the organization remains the controller for that data. [TO COMPLETE — if applicable, a separate Data Processing Agreement (DPA) signed with each client organization.]",
     },
   },
 } satisfies Record<Locale, unknown>;

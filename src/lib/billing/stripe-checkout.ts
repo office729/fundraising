@@ -69,7 +69,7 @@ export async function creeazaSesiuneAbonament(
       {
         price_data: {
           currency: "ron",
-          product_data: { name: `Fundraising Academy — ${params.packageLabel}` },
+          product_data: { name: `Alexandrit — ${params.packageLabel}` },
           unit_amount: params.pretLunar * 100,
           recurring: { interval: "month" },
         },

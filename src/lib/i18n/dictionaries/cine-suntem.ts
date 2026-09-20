@@ -7,9 +7,9 @@ export const CINE_SUNTEM_DICT = {
     eyebrow: "Cine suntem?",
     titlu: "Ghidez ONG-uri spre succes prin campanii eficiente și strategii clare",
     paragrafe: [
-      "Suntem echipa Fundraising Academy și ne-am unit experiența, cunoștințele și pasiunea pentru a ajuta organizațiile nonprofit să își dezvolte campanii de fundraising eficiente, bine structurate și cu impact real.",
+      "Suntem echipa Alexandrit și ne-am unit experiența, cunoștințele și pasiunea pentru a ajuta organizațiile nonprofit să își dezvolte campanii de fundraising eficiente, bine structurate și cu impact real.",
       "Platforma are la bază experiența de peste 14 ani a lui Vlad Plăcintă, președintele Asociației „Salvează o inimă”, dar și munca unei echipe implicate zi de zi în comunicare, fundraising, relația cu donatorii și companiile. Împreună, am contribuit la strângerea a peste 27 de milioane de euro și la susținerea a sute de campanii umanitare.",
-      "Prin Fundraising Academy, vă oferim metode testate, instrumente practice și îndrumare personalizată, astfel încât organizația dumneavoastră să poată atrage mai mulți donatori, să construiască parteneriate durabile și să obțină rezultate mai bune.",
+      "Prin Alexandrit, vă oferim metode testate, instrumente practice și îndrumare personalizată, astfel încât organizația dumneavoastră să poată atrage mai mulți donatori, să construiască parteneriate durabile și să obțină rezultate mai bune.",
       "La fiecare pas, veți avea alături o echipă care înțelege provocările reale ale unui ONG și care își dorește să vă ajute să transformați binele pe care îl faceți într-un impact tot mai puternic în comunitate.",
     ],
     statsTitlu: "Experiența echipei noastre, construită prin muncă, implicare și rezultate reale.",
@@ -44,9 +44,9 @@ export const CINE_SUNTEM_DICT = {
     eyebrow: "About us",
     titlu: "I guide NGOs to success through effective campaigns and clear strategies",
     paragrafe: [
-      "We're the Fundraising Academy team, and we've combined our experience, knowledge and passion to help nonprofit organizations build effective, well-structured fundraising campaigns with real impact.",
+      "We're the Alexandrit team, and we've combined our experience, knowledge and passion to help nonprofit organizations build effective, well-structured fundraising campaigns with real impact.",
       "The platform is built on Vlad Plăcintă's 14+ years of experience as president of Asociația „Salvează o inimă”, as well as the work of a team involved daily in communication, fundraising, and relationships with donors and companies. Together, we've contributed to raising over €27 million and supporting hundreds of humanitarian campaigns.",
-      "Through Fundraising Academy, we offer you tested methods, practical tools and personalized guidance, so your organization can attract more donors, build lasting partnerships, and get better results.",
+      "Through Alexandrit, we offer you tested methods, practical tools and personalized guidance, so your organization can attract more donors, build lasting partnerships, and get better results.",
       "At every step, you'll have a team that understands the real challenges of running an NGO and wants to help you turn the good you do into an ever-stronger impact on your community.",
     ],
     statsTitlu: "Our team's experience, built through work, dedication and real results.",
