@@ -29,7 +29,6 @@ import {
   Upload,
   Users,
   Wrench,
-  Workflow,
   X,
 } from "lucide-react";
 import Image from "next/image";
@@ -105,7 +104,6 @@ function buildNav(dict: DashboardDict, orgSlug: string): { section: string; item
       section: dict.nav.sectionOperare,
       items: [
         { href: "comunicare", label: dict.nav.comunicare, icon: MessageSquare },
-        { href: "automatizari", label: dict.nav.automatizari, icon: Workflow },
         { href: "taskuri", label: dict.nav.taskuri, icon: ClipboardList },
         { href: "documente", label: dict.nav.documente, icon: FileText },
         { href: "rapoarte", label: dict.nav.rapoarte, icon: FileText },
