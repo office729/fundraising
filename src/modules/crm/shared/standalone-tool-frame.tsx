@@ -1,3 +1,5 @@
+import { SandboxedFrame } from "./sandboxed-frame";
+
 // Instrument portat EXACT ca la CRM PJ (design neatins) — rulat într-un
 // iframe srcDoc (aceeași origine → localStorage propriu, izolat per tool).
 // Spre deosebire de editor.tsx-ul lui CRM PJ, majoritatea acestor instrumente
@@ -32,7 +34,7 @@ export function StandaloneToolFrame({
   finalHtml = finalHtml.replaceAll("__FA_DESIGN_RECOMANDAT__", JSON.stringify(designRecomandat ?? []));
   return (
     <div className="h-full">
-      <iframe srcDoc={finalHtml} title={title} className="h-full w-full border-0" />
+      <SandboxedFrame html={finalHtml} title={title} orgSlug={orgSlug} />
     </div>
   );
 }
