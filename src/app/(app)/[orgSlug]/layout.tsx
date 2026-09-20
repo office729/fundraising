@@ -8,7 +8,7 @@ import { LanguageSwitcher } from "@/components/language-switcher";
 import { DASHBOARD_DICT } from "@/lib/i18n/dictionaries/dashboard";
 import { getLocale } from "@/lib/i18n/get-locale";
 
-import { logoutAction } from "./actions";
+import { LogoutForm } from "./logout-form";
 import { OnboardingBrandingGate } from "./onboarding-branding-gate";
 import { OnboardingCallPrompt } from "./onboarding-call-prompt";
 import { Paywall } from "./paywall";
@@ -133,14 +133,7 @@ export default async function OrgLayout({
               {dict.header.roles[access.role as keyof typeof dict.header.roles] ?? access.role}
             </span>
             <LanguageSwitcher locale={locale} />
-            <form action={logoutAction}>
-              <button
-                type="submit"
-                className="text-[13px] font-medium text-muted transition hover:text-brand-blue"
-              >
-                {dict.header.logout}
-              </button>
-            </form>
+            <LogoutForm className="text-[13px] font-medium text-muted transition hover:text-brand-blue">{dict.header.logout}</LogoutForm>
           </div>
         </div>
       </header>

@@ -4,7 +4,6 @@ import { requireOrgAccess } from "@/lib/auth/guard";
 import { orgHasToolAccess } from "@/lib/billing/packages";
 import { NEWSLETTER_PJ_DESIGN_RECOMANDAT } from "@/lib/design-template-recommendations";
 import { NEWSLETTER_PJ_HTML } from "@/modules/crm/newsletter-pj/newsletter-pj-html";
-import { getOrgCustomization } from "@/lib/org-customizations";
 import { StandaloneToolFrame } from "@/modules/crm/shared/standalone-tool-frame";
 import { ToolLocked } from "@/modules/crm/shared/tool-locked";
 
@@ -29,7 +28,6 @@ export default async function NewsletterPjPage({ params }: { params: Promise<{ o
       </header>
       <div className="min-h-0 flex-1">
         <StandaloneToolFrame
-          htmlOverride={getOrgCustomization(orgSlug).toolHtml?.["newsletter-pj"]}
           html={NEWSLETTER_PJ_HTML}
           title={TITLE}
           orgSlug={orgSlug}

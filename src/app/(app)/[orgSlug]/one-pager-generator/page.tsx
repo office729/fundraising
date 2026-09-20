@@ -4,7 +4,6 @@ import { requireOrgAccess } from "@/lib/auth/guard";
 import { orgHasToolAccess } from "@/lib/billing/packages";
 import { ONE_PAGER_DESIGN_RECOMANDAT } from "@/lib/design-template-recommendations";
 import { ONE_PAGER_GENERATOR_HTML } from "@/modules/crm/one-pager-generator/one-pager-generator-html";
-import { getOrgCustomization } from "@/lib/org-customizations";
 import { StandaloneToolFrame } from "@/modules/crm/shared/standalone-tool-frame";
 import { ToolLocked } from "@/modules/crm/shared/tool-locked";
 
@@ -29,7 +28,6 @@ export default async function OnePagerGeneratorPage({ params }: { params: Promis
       </header>
       <div className="min-h-0 flex-1">
         <StandaloneToolFrame
-          htmlOverride={getOrgCustomization(orgSlug).toolHtml?.["one-pager-generator"]}
           html={ONE_PAGER_GENERATOR_HTML}
           title={TITLE}
           orgSlug={orgSlug}

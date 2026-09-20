@@ -1,9 +1,11 @@
+import { requireOrgAccess } from "@/lib/auth/guard";
 import { boldsignConfigurat } from "@/lib/boldsign";
 
 import { SemnaturaForm } from "./semnatura-form";
 
 export default async function SemnaturaDigitalaPage({ params }: { params: Promise<{ orgSlug: string }> }) {
   const { orgSlug } = await params;
+  const access = await requireOrgAccess(orgSlug);
   return (
     <div className="mx-auto max-w-3xl space-y-5">
       <div>
@@ -12,7 +14,7 @@ export default async function SemnaturaDigitalaPage({ params }: { params: Promis
           Trimite contracte de sponsorizare, acorduri sau alte documente PDF la semnat electronic, prin BoldSign. Semnatarii primesc linkul pe email și semnează de pe orice dispozitiv.
         </p>
       </div>
-      <SemnaturaForm orgSlug={orgSlug} configurat={boldsignConfigurat()} />
+      <SemnaturaForm orgSlug={orgSlug} configurat={boldsignConfigurat()} poateTrimite={access.role === "owner" || access.role === "admin"} />
     </div>
   );
 }

@@ -43,6 +43,9 @@ const ALLOWED_KEYS = new Set([
 const ALLOWED_GET = ALLOWED_KEYS;
 const ALLOWED_PUT = ALLOWED_KEYS;
 
+// Un document de stare al unui tool nu are ce căuta la sute de MB.
+const MAX_BYTES = 2 * 1024 * 1024;
+
 type Ctx = { params: Promise<{ orgSlug: string; path: string }> };
 
 const getKv = withOrgSession(async (ctx, path: string) => {
@@ -57,9 +60,12 @@ const getKv = withOrgSession(async (ctx, path: string) => {
 
 const putKv = withOrgSession(async (ctx, path: string, req: Request) => {
   if (!ALLOWED_PUT.has(path)) return NextResponse.json({ error: "bad_path" }, { status: 400 });
+  if (Number(req.headers.get("content-length") ?? 0) > MAX_BYTES) return NextResponse.json({ error: "too_large" }, { status: 413 });
   let body: unknown;
   try {
-    body = await req.json();
+    const text = await req.text();
+    if (text.length > MAX_BYTES) return NextResponse.json({ error: "too_large" }, { status: 413 });
+    body = JSON.parse(text);
   } catch {
     return NextResponse.json({ error: "bad_request" }, { status: 400 });
   }

@@ -1,8 +1,22 @@
+import { createHmac, timingSafeEqual } from "node:crypto";
+
 // Client minimal pentru API-ul BoldSign (semnătură electronică). Cheia se ia din
 // variabila de mediu BOLDSIGN_API_KEY (adăugată de administrator în Vercel);
 // dacă lipsește, integrarea apare ca „neconfigurată" și nu se trimite nimic.
-// BOLDSIGN_API_URL e opțional (regiunea EU folosește https://api-eu.boldsign.com).
-const API_URL = process.env.BOLDSIGN_API_URL || "https://api.boldsign.com";
+// Implicit regiunea UE (date personale în SEE). Un cont creat pe regiunea SUA cere
+// BOLDSIGN_API_URL=https://api.boldsign.com.
+const API_URL = process.env.BOLDSIGN_API_URL || "https://api-eu.boldsign.com";
+
+// Semnătură (HMAC) care leagă un documentId de organizația care l-a trimis: fără
+// ea, un membru al altei organizații nu poate cere statusul unui document străin.
+export function tokenDocument(orgSlug: string, documentId: string): string {
+  return createHmac("sha256", process.env.BOLDSIGN_API_KEY ?? "").update(`${orgSlug}:${documentId}`).digest("hex");
+}
+export function tokenValid(orgSlug: string, documentId: string, token: string): boolean {
+  const asteptat = Buffer.from(tokenDocument(orgSlug, documentId));
+  const primit = Buffer.from(token);
+  return asteptat.length === primit.length && timingSafeEqual(asteptat, primit);
+}
 
 export function boldsignConfigurat(): boolean {
   return Boolean(process.env.BOLDSIGN_API_KEY);
@@ -17,13 +31,12 @@ export type StatusDocument = {
   semnatari: { nume: string; email: string; status: string }[];
 };
 
+// Nu întoarcem clientului mesajul brut al furnizorului (poate conține detalii interne).
 async function mesajEroare(r: Response): Promise<string> {
-  try {
-    const j = (await r.json()) as { error?: string; message?: string; errors?: unknown };
-    return j.error || j.message || `BoldSign a răspuns cu eroare ${r.status}.`;
-  } catch {
-    return `BoldSign a răspuns cu eroare ${r.status}.`;
-  }
+  if (r.status === 401 || r.status === 403) return "Cheia BoldSign nu este validă sau nu are drepturi. Verifică setările integrării.";
+  if (r.status === 429) return "Prea multe cereri către BoldSign. Încearcă din nou peste câteva minute.";
+  if (r.status >= 500) return "BoldSign nu răspunde momentan. Încearcă din nou mai târziu.";
+  return "BoldSign a refuzat documentul. Verifică fișierul PDF și adresele de email.";
 }
 
 // Trimite un PDF la semnat. Fiecare semnatar primește un câmp de semnătură plasat

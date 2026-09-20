@@ -122,7 +122,6 @@ function buildNav(dict: DashboardDict, orgSlug: string): { section: string; item
       ...g.items
         .filter((i) => !pers.hiddenNav?.includes(i.href))
         .map((i) => (pers.navLabels?.[i.href] ? { ...i, label: pers.navLabels[i.href] } : i)),
-      ...(pers.extraNav ?? []).filter((e) => e.section === g.section).map((e) => ({ href: e.href, label: e.label, icon: Wrench })),
     ],
   }));
 }

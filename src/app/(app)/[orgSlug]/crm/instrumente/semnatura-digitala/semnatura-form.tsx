@@ -9,7 +9,7 @@ import { Card, CardHeader } from "../../components/ui/card";
 import { Input, Label } from "../../components/ui/input";
 import { trimiteDocumentLaSemnat, verificaStatusDocument } from "./actions";
 
-type Trimis = { documentId: string; titlu: string; la: string; status: string };
+type Trimis = { documentId: string; titlu: string; la: string; status: string; token: string };
 
 const STATUS_RO: Record<string, string> = {
   InProgress: "Așteaptă semnături",
@@ -57,7 +57,7 @@ function useTrimise(orgSlug: string) {
   return [lista, salveaza] as const;
 }
 
-export function SemnaturaForm({ orgSlug, configurat }: { orgSlug: string; configurat: boolean }) {
+export function SemnaturaForm({ orgSlug, configurat, poateTrimite }: { orgSlug: string; configurat: boolean; poateTrimite: boolean }) {
   const [semnatari, setSemnatari] = useState([{ nume: "", email: "" }]);
   const [eroare, setEroare] = useState<string | null>(null);
   const [mesajOk, setMesajOk] = useState<string | null>(null);
@@ -77,7 +77,7 @@ export function SemnaturaForm({ orgSlug, configurat }: { orgSlug: string; config
         setEroare(r.error);
         return;
       }
-      salveaza([{ documentId: r.documentId!, titlu: r.titlu!, la: new Date().toISOString(), status: "InProgress" }, ...lista]);
+      salveaza([{ documentId: r.documentId!, titlu: r.titlu!, la: new Date().toISOString(), status: "InProgress", token: r.token! }, ...lista]);
       setMesajOk("Documentul a fost trimis. Semnatarii primesc un email cu linkul de semnare.");
       formular.reset();
       setSemnatari([{ nume: "", email: "" }]);
@@ -86,7 +86,7 @@ export function SemnaturaForm({ orgSlug, configurat }: { orgSlug: string; config
 
   async function actualizeaza(documentId: string) {
     setSeActualizeaza(documentId);
-    const r = await verificaStatusDocument(orgSlug, documentId);
+    const r = await verificaStatusDocument(orgSlug, documentId, lista.find((d) => d.documentId === documentId)?.token ?? "");
     setSeActualizeaza(null);
     if (!r.ok) {
       setEroare(r.error);
@@ -101,6 +101,12 @@ export function SemnaturaForm({ orgSlug, configurat }: { orgSlug: string; config
         <p className="rounded-[var(--ci-radius-card)] bg-[var(--ci-amber-soft)] px-3.5 py-2.5 text-[13px] text-[var(--ci-text)]">
           Integrarea BoldSign nu e configurată încă pentru această platformă (lipsește cheia API). Formularul de mai jos devine activ după ce cheia e adăugată.
           Integrările nu sunt incluse în prețul abonamentului — se fac la cerere.
+        </p>
+      )}
+
+      {!poateTrimite && (
+        <p className="rounded-[var(--ci-radius-card)] bg-[var(--ci-surface-2)] px-3.5 py-2.5 text-[13px] text-[var(--ci-text)]">
+          Doar administratorii organizației pot trimite documente la semnat. Cere unui admin să îl trimită.
         </p>
       )}
 
@@ -161,7 +167,7 @@ export function SemnaturaForm({ orgSlug, configurat }: { orgSlug: string; config
           {eroare && <p className="text-[13px] text-[var(--ci-red)]">{eroare}</p>}
           {mesajOk && <p className="text-[13px] text-[var(--ci-green)]">{mesajOk}</p>}
 
-          <Button type="submit" variant="primary" disabled={pending || !configurat}>
+          <Button type="submit" variant="primary" disabled={pending || !configurat || !poateTrimite}>
             <FileSignature className="h-3.5 w-3.5" /> {pending ? "Se trimite…" : "Trimite la semnat"}
           </Button>
         </form>

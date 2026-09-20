@@ -1762,7 +1762,9 @@ async function zipCitesteIntrare(buf,nume){
       const ln=dv.getUint16(off+26,true),lx=dv.getUint16(off+28,true),ds=off+30+ln+lx,data=u8.subarray(ds,ds+csz);
       if(met===0)return new TextDecoder().decode(data);
       const st=new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
-      return new TextDecoder().decode(await new Response(st).arrayBuffer());
+      const rez=new Uint8Array(await new Response(st).arrayBuffer());
+      if(rez.length>20*1024*1024)return null;
+      return new TextDecoder().decode(rez);
     }
     p+=46+nl+xl+cl;
   }
@@ -1833,6 +1835,7 @@ function extrageSarcini(text){
 }
 async function incarcaFisaPostului(inp){
   const f=inp.files&&inp.files[0];if(!f)return;
+  if(f.size>5*1024*1024){toast('Fișierul depășește 5 MB — alege unul mai mic sau lipește sarcinile manual.');return;}
   toast('Citesc '+f.name+'…');
   const text=await extrageText(f),linii=text?extrageSarcini(text):[];
   FISA_REV={pers:FISA_PERS,nume:f.name,linii:linii,citit:!!text};
