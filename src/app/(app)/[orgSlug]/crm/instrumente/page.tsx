@@ -7,7 +7,7 @@ import { useParams } from "next/navigation";
 import { useLocale } from "../lib/locale-context";
 import { INSTRUMENTE_DICT } from "@/lib/i18n/dictionaries/instrumente";
 
-type CategorieKey = "rapoarte" | "campanii" | "generatoare";
+type CategorieKey = "rapoarte" | "campanii" | "generatoare" | "documente";
 type InstrumentDef = { key: string; href: string };
 
 // Instrumentele reale din Control Tower-ul salveazaoinima.org.ro. Cele cu href
@@ -29,6 +29,11 @@ const CATEGORII: { key: CategorieKey; culoare: string; instrumente: InstrumentDe
     key: "generatoare",
     culoare: "var(--ci-red)",
     instrumente: [{ key: "onePagerGenerator", href: "/one-pager-generator" }],
+  },
+  {
+    key: "documente",
+    culoare: "var(--ci-blue)",
+    instrumente: [{ key: "semnaturaDigitala", href: "semnatura-digitala" }],
   },
 ];
 

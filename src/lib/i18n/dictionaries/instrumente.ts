@@ -44,6 +44,12 @@ export const INSTRUMENTE_DICT = {
             onePagerGenerator: { titlu: "Generator one-pager", descriere: "Creează o prezentare editabilă de o pagină, cu logo, misiune, cifre de impact și contact." },
           },
         },
+        documente: {
+          nume: "Documente",
+          instrumente: {
+            semnaturaDigitala: { titlu: "Semnătură digitală", descriere: "Trimite contracte și acorduri PDF la semnat electronic, prin BoldSign." },
+          },
+        },
       },
       importExport: "Import & Export",
       import: { title: "Import", subtitle: "Fișier CSV, Excel sau JSON, cu antet pe primul rând", importaPF: "Importă persoane fizice", donatori: "Donatori", importaPJ: "Importă persoane juridice", companii: "Companii" },
@@ -177,6 +183,12 @@ export const INSTRUMENTE_DICT = {
           instrumente: {
             bannereSms: { titlu: "SMS banner generator", descriere: "Create graphic banners for SMS campaigns." },
             onePagerGenerator: { titlu: "One-pager generator", descriere: "Create an editable one-page overview — logo, mission, impact figures and contact." },
+          },
+        },
+        documente: {
+          nume: "Documents",
+          instrumente: {
+            semnaturaDigitala: { titlu: "Digital signature", descriere: "Send contracts and PDF agreements for e-signature through BoldSign." },
           },
         },
       },
