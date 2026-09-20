@@ -12,13 +12,13 @@ import {
   FileText,
   Gauge,
   HandCoins,
+  HandHeart,
   HeartHandshake,
   HelpCircle,
   Landmark,
   LayoutGrid,
   Menu,
   MessageSquare,
-  Newspaper,
   Plus,
   Search,
   Settings,
@@ -77,10 +77,11 @@ function buildNav(dict: DashboardDict): { section: string; items: { href: string
     {
       section: dict.nav.sectionRelatii,
       items: [
-        { href: "donatori", label: dict.nav.donatori, icon: Users },
-        { href: "donatori/formular-230", label: dict.nav.formular230, icon: FileSignature },
         { href: "companii", label: dict.nav.companii, icon: Building2 },
         { href: "companii?marcaj=d177", label: dict.nav.companiiD177, icon: Landmark },
+        { href: "donatori", label: dict.nav.donatori, icon: Users },
+        { href: "/crm-voluntari", label: dict.nav.voluntari, icon: HandHeart },
+        { href: "donatori/formular-230", label: dict.nav.formular230, icon: FileSignature },
         { href: "beneficiari", label: dict.nav.beneficiari, icon: HeartHandshake },
       ],
     },
@@ -90,7 +91,6 @@ function buildNav(dict: DashboardDict): { section: string; items: { href: string
         { href: "donatii", label: dict.nav.donatii, icon: Sparkles },
         { href: "strangere-fonduri", label: dict.nav.strangereFonduri, icon: HandCoins },
         { href: "portal-beneficiari", label: dict.nav.portalBeneficiari, icon: HeartHandshake },
-        { href: "presa-grupuri", label: dict.nav.presaGrupuri, icon: Newspaper },
         { href: "fonduri-plati", label: dict.nav.fonduriPlati, icon: Banknote },
         { href: "rfm", label: dict.nav.rfm, icon: LayoutGrid },
       ],
@@ -308,12 +308,16 @@ function NavGroups({
   // mai specific (path mai lung) care se potrivește ȘI pe query — câștigătorul
   // se ține minte după item.href BRUT (unic per item), nu după path-ul deja
   // calculat (care poate fi identic între „Companii" și „Companii D177").
+  // href care începe cu "/" e ABSOLUT față de organizație (ex. „/crm-voluntari"
+  // stă la /[orgSlug]/crm-voluntari, în afara /crm) — celelalte sunt relative la /crm.
+  const root = base.replace(/\/crm$/, "");
+  const rezolva = (itemPath: string) => (itemPath.startsWith("/") ? `${root}${itemPath}` : itemPath ? `${base}/${itemPath}` : base);
   const toate = nav.flatMap((g) => g.items);
   let castigator: string | null = null;
   let castigatorLen = -1;
   for (const item of toate) {
     const [itemPath, itemQuery = ""] = item.href.split("?");
-    const href = itemPath ? `${base}/${itemPath}` : base;
+    const href = rezolva(itemPath);
     const potrivit = (pathname === href || (itemPath !== "" && pathname?.startsWith(href + "/"))) && itemQuery === query;
     if (potrivit && href.length > castigatorLen) {
       castigator = item.href;
@@ -338,7 +342,7 @@ function NavGroups({
           <div className="space-y-0.5">
             {group.items.map((item) => {
               const [itemPath, itemQuery = ""] = item.href.split("?");
-              const href = itemPath ? `${base}/${itemPath}` : base;
+              const href = rezolva(itemPath);
               const active = item.href === castigator;
               const Icon = item.icon;
               return (

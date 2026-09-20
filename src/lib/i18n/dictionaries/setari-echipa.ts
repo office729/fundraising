@@ -18,6 +18,9 @@ export const SETARI_ECHIPA_DICT = {
       integrariList: {
         stripe: { nume: "Stripe", descriere: "Colectare plăți online pentru sponsorizări." },
         mailchimp: { nume: "Mailchimp", descriere: "Sincronizare listă donatori pentru newsletter." },
+        newsman: { nume: "Newsman", descriere: "Conectare prin API pentru trimiterea newsletterelor și sincronizarea listelor." },
+        theMarketer: { nume: "The Marketer", descriere: "Conectare prin API pentru newslettere și automatizări de email marketing." },
+        brevo: { nume: "Brevo", descriere: "Conectare prin API pentru newslettere și campanii de email." },
         googleCalendar: { nume: "Google Calendar", descriere: "Sincronizare taskuri cu termen și întâlniri." },
       },
       neconectatTooltip: "Disponibil când modulul e conectat la date reale",
@@ -126,6 +129,9 @@ export const SETARI_ECHIPA_DICT = {
       integrariList: {
         stripe: { nume: "Stripe", descriere: "Online payment collection for sponsorships." },
         mailchimp: { nume: "Mailchimp", descriere: "Sync the donor list for the newsletter." },
+        newsman: { nume: "Newsman", descriere: "API connection for sending newsletters and syncing lists." },
+        theMarketer: { nume: "The Marketer", descriere: "API connection for newsletters and email marketing automations." },
+        brevo: { nume: "Brevo", descriere: "API connection for newsletters and email campaigns." },
         googleCalendar: { nume: "Google Calendar", descriere: "Sync tasks with due dates and meetings." },
       },
       neconectatTooltip: "Available once the module is connected to real data",

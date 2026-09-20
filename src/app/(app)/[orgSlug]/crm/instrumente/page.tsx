@@ -40,14 +40,6 @@ const CATEGORII: { key: CategorieKey; culoare: string; instrumente: InstrumentDe
     ],
   },
   {
-    key: "rapoarte",
-    culoare: "var(--ci-blue)",
-    instrumente: [
-      { key: "raportCompanii", href: "raport-companii" },
-      { key: "onePager", href: "one-pager" },
-    ],
-  },
-  {
     key: "organizare",
     culoare: "var(--ci-amber)",
     instrumente: [{ key: "programLucru", href: "/program-lucru" }],
@@ -56,19 +48,14 @@ const CATEGORII: { key: CategorieKey; culoare: string; instrumente: InstrumentDe
     key: "campanii",
     culoare: "var(--ci-purple)",
     instrumente: [
-      { key: "grupuriFacebook", href: "/grupuri-facebook" },
       { key: "newsletterPf", href: "/newsletter-pf" },
       { key: "newsletterPj", href: "/newsletter-pj" },
-      { key: "comunicate", href: "/comunicate" },
     ],
   },
   {
     key: "generatoare",
     culoare: "var(--ci-red)",
-    instrumente: [
-      { key: "bannereSms", href: "bannere-sms" },
-      { key: "onePagerGenerator", href: "/one-pager-generator" },
-    ],
+    instrumente: [{ key: "onePagerGenerator", href: "/one-pager-generator" }],
   },
 ];
 

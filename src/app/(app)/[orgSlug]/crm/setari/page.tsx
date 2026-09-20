@@ -13,7 +13,7 @@ export default function CrmSetariPage() {
   const dict = SETARI_ECHIPA_DICT[locale].crmSetari;
   const [coloaneD, setColoaneD] = useState(dict.coloane.donatori);
   const [coloaneC, setColoaneC] = useState(dict.coloane.companii);
-  const INTEGRARI = [dict.integrariList.stripe, dict.integrariList.mailchimp, dict.integrariList.googleCalendar];
+  const INTEGRARI = [dict.integrariList.stripe, dict.integrariList.mailchimp, dict.integrariList.newsman, dict.integrariList.theMarketer, dict.integrariList.brevo, dict.integrariList.googleCalendar];
 
   function toggle(list: string[], setList: (v: string[]) => void, item: string) {
     setList(list.includes(item) ? list.filter((x) => x !== item) : [...list, item]);
