@@ -49,7 +49,7 @@ export function SiteHeader({ dict }: { dict: MarketingDict }) {
           <Image src="/alexandrit-logo.webp" alt="Alexandrit" width={1730} height={332} priority className="h-7 w-auto sm:h-9" />
         </Link>
 
-        <nav className="hidden items-center gap-6 xl:flex">
+        <nav className="hidden items-center gap-5 lg:flex xl:gap-6">
           {dict.nav.map((item) => {
             const activ = pathname === item.href;
             return (
@@ -69,13 +69,13 @@ export function SiteHeader({ dict }: { dict: MarketingDict }) {
         <div className="flex shrink-0 items-center gap-3">
           <Link
             href="/hub#consultanta"
-            className="hidden rounded-md bg-brand-green px-4 py-2 text-sm font-bold whitespace-nowrap text-white transition hover:bg-brand-green-hover sm:inline-block"
+            className="hidden rounded-md bg-brand-green px-4 py-2 text-sm font-bold whitespace-nowrap text-white transition hover:bg-brand-green-hover sm:inline-block lg:hidden xl:inline-block"
           >
             {dict.header.consulting}
           </Link>
           <Link
             href="/login"
-            className="hidden rounded-md border border-line px-4 py-2 text-sm font-bold whitespace-nowrap text-ink transition hover:border-brand-blue hover:text-brand-blue xl:inline-block"
+            className="hidden rounded-md border border-line px-4 py-2 text-sm font-bold whitespace-nowrap text-ink transition hover:border-brand-blue hover:text-brand-blue lg:inline-block"
           >
             {dict.header.login}
           </Link>
@@ -83,7 +83,7 @@ export function SiteHeader({ dict }: { dict: MarketingDict }) {
             type="button"
             onClick={() => setDeschis((v) => !v)}
             aria-label={deschis ? dict.header.closeMenu : dict.header.openMenu}
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-ink xl:hidden"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-ink lg:hidden"
           >
             {deschis ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
@@ -91,7 +91,7 @@ export function SiteHeader({ dict }: { dict: MarketingDict }) {
       </div>
 
       {deschis && (
-        <nav className="flex flex-col gap-1 border-t border-line px-6 py-3 xl:hidden">
+        <nav className="flex flex-col gap-1 border-t border-line px-6 py-3 lg:hidden">
           {dict.nav.map((item) => (
             <Link
               key={item.href}
