@@ -32,7 +32,7 @@ export const DASHBOARD_DICT = {
       rapoarte: "Rapoarte",
       instrumente: "Instrumente",
       consultanta: "Consultanță cu Vlad",
-      setari: "Setări",
+      setari: "Integrări",
     },
     sidebar: {
       restrange: "Restrânge meniul",
@@ -86,7 +86,7 @@ export const DASHBOARD_DICT = {
       rapoarte: "Reports",
       instrumente: "Tools",
       consultanta: "Consultation with Vlad",
-      setari: "Settings",
+      setari: "Integrations",
     },
     sidebar: {
       restrange: "Collapse menu",
