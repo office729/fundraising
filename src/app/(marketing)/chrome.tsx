@@ -129,9 +129,7 @@ export function SiteFooter({ dict }: { dict: MarketingDict }) {
     <footer className="bg-[#1a2332] px-[6%] py-14 text-white">
       <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 sm:grid-cols-3">
         <div>
-          <span className="inline-block rounded-lg bg-white px-3 py-2">
-            <Image src="/alexandrit-logo.webp" alt="Alexandrit" width={1730} height={332} className="h-8 w-auto" />
-          </span>
+          <Image src="/alexandrit-logo-alb.png" alt="Alexandrit" width={1730} height={332} className="h-9 w-auto" />
           <p className="mt-2 text-sm text-white/60">{dict.footer.tagline}</p>
         </div>
         <div>
@@ -165,7 +163,7 @@ export function SiteFooter({ dict }: { dict: MarketingDict }) {
           </div>
         </div>
       </div>
-      <p className="mx-auto mt-10 max-w-6xl text-xs text-white/40">© 2026 fundrasingacademy.ro</p>
+      <p className="mx-auto mt-10 max-w-6xl text-xs text-white/40">© 2026 alexandrit.ro</p>
     </footer>
   );
 }
