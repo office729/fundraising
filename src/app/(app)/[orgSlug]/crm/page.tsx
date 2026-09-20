@@ -137,6 +137,8 @@ export default function CrmDashboardPage() {
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-6">
+      <TaskuriCard taskuri={taskuriLive} base={base} locale={locale} />
+
       <DomainWelcomeBanner salut={salut} nume="Vlad" subtitle={dict.summary(actiuni.length, blocate)} />
 
       {/* Filtrul de perioadă rămâne identic pentru orice familie — e un
@@ -167,8 +169,6 @@ export default function CrmDashboardPage() {
       </div>
 
       <FamilyDashboard {...dashboardData} />
-
-      <TaskuriCard taskuri={taskuriLive} base={base} locale={locale} />
     </div>
   );
 }
