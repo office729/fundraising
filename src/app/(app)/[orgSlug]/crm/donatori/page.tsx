@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { Badge } from "../components/ui/badge";
+import { ImportExportPanel } from "../components/import-export-panel";
 import { Card } from "../components/ui/card";
 import { EmptyState } from "../components/ui/states";
 import { formatDataRelativa } from "../lib/format";
@@ -116,6 +117,8 @@ async function DonatoriContent({
           <PaginaNavReali pagina={filtru.pagina} pageCount={lista.pageCount} total={lista.total} />
         </div>
       </Card>
+
+      <ImportExportPanel tip="donatori" />
 
       <DemoDatasetSection />
     </div>

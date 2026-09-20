@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { Badge } from "../components/ui/badge";
+import { ImportExportPanel } from "../components/import-export-panel";
 import { Card } from "../components/ui/card";
 import { EmptyState } from "../components/ui/states";
 import { formatDataRelativa } from "../lib/format";
@@ -113,6 +114,8 @@ async function CompaniiContent({
           <PaginaNav pagina={filtru.pagina} pageCount={lista.pageCount} total={lista.total} pageSize={lista.pageSize} />
         </div>
       </Card>
+
+      <ImportExportPanel tip="companii" />
     </div>
   );
 }

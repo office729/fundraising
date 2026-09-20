@@ -219,6 +219,21 @@ export const MAX_IMPORT_ROWS = 3000;
 
 export type ImportResult<T> = { rows: T[]; ok: boolean; trunchiat: boolean };
 
+// Fiecare import își notează câte rânduri a adăugat, ca „Șterge ultimul fișier
+// importat" să poată scoate exact ultimul lot (rândurile se adaugă la coadă).
+const EMPTY_NUM_ARRAY: number[] = [];
+function pushBatch(key: string, n: number) {
+  if (n <= 0) return;
+  writeAll(key + "-loturi", [...readAll<number[]>(key + "-loturi", EMPTY_NUM_ARRAY), n]);
+}
+function popBatch(key: string) {
+  const loturi = readAll<number[]>(key + "-loturi", EMPTY_NUM_ARRAY);
+  const rows = readAll<unknown[]>(key, []);
+  const n = loturi.length ? loturi[loturi.length - 1] : rows.length;
+  writeAll(key, rows.slice(0, Math.max(0, rows.length - n)));
+  writeAll(key + "-loturi", loturi.slice(0, -1));
+}
+
 export function getImportedDonatori<T>(): T[] {
   return readAll<T[]>(IMPORTED_DONATORI_KEY, EMPTY_ARRAY as T[]);
 }
@@ -227,10 +242,18 @@ export function addImportedDonatori<T>(rows: T[]): ImportResult<T> {
   const trunchiat = combinate.length > MAX_IMPORT_ROWS;
   const all = trunchiat ? combinate.slice(0, MAX_IMPORT_ROWS) : combinate;
   const ok = writeAll(IMPORTED_DONATORI_KEY, all);
+  if (ok) pushBatch(IMPORTED_DONATORI_KEY, all.length - (combinate.length - rows.length));
   return { rows: all, ok, trunchiat };
 }
 export function clearImportedDonatori() {
   writeAll(IMPORTED_DONATORI_KEY, []);
+  writeAll(IMPORTED_DONATORI_KEY + "-loturi", []);
+}
+export function getImportBatchesDonatori(): number[] {
+  return readAll<number[]>(IMPORTED_DONATORI_KEY + "-loturi", EMPTY_NUM_ARRAY);
+}
+export function clearLastImportDonatori() {
+  popBatch(IMPORTED_DONATORI_KEY);
 }
 
 let donatorCounter = 0;
@@ -273,10 +296,18 @@ export function addImportedCompanii<T>(rows: T[]): ImportResult<T> {
   const trunchiat = combinate.length > MAX_IMPORT_ROWS;
   const all = trunchiat ? combinate.slice(0, MAX_IMPORT_ROWS) : combinate;
   const ok = writeAll(IMPORTED_COMPANII_KEY, all);
+  if (ok) pushBatch(IMPORTED_COMPANII_KEY, all.length - (combinate.length - rows.length));
   return { rows: all, ok, trunchiat };
 }
 export function clearImportedCompanii() {
   writeAll(IMPORTED_COMPANII_KEY, []);
+  writeAll(IMPORTED_COMPANII_KEY + "-loturi", []);
+}
+export function getImportBatchesCompanii(): number[] {
+  return readAll<number[]>(IMPORTED_COMPANII_KEY + "-loturi", EMPTY_NUM_ARRAY);
+}
+export function clearLastImportCompanii() {
+  popBatch(IMPORTED_COMPANII_KEY);
 }
 
 let companieCounter = 0;
