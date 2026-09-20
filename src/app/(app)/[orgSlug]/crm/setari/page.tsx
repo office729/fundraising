@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-
 import { Badge } from "../components/ui/badge";
 import { Card, CardHeader } from "../components/ui/card";
 import { Tooltip } from "../components/ui/tooltip";
@@ -11,13 +9,7 @@ import { SETARI_ECHIPA_DICT } from "@/lib/i18n/dictionaries/setari-echipa";
 export default function CrmSetariPage() {
   const locale = useLocale();
   const dict = SETARI_ECHIPA_DICT[locale].crmSetari;
-  const [coloaneD, setColoaneD] = useState(dict.coloane.donatori);
-  const [coloaneC, setColoaneC] = useState(dict.coloane.companii);
   const INTEGRARI = [dict.integrariList.stripe, dict.integrariList.euplatesc, dict.integrariList.smartfintech, dict.integrariList.mailchimp, dict.integrariList.newsman, dict.integrariList.theMarketer, dict.integrariList.brevo, dict.integrariList.googleCalendar, dict.integrariList.make, dict.integrariList.canva, dict.integrariList.boldsign, dict.integrariList.website];
-
-  function toggle(list: string[], setList: (v: string[]) => void, item: string) {
-    setList(list.includes(item) ? list.filter((x) => x !== item) : [...list, item]);
-  }
 
   return (
     <div className="mx-auto max-w-[900px] space-y-5">
@@ -25,24 +17,6 @@ export default function CrmSetariPage() {
         <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">{dict.title}</h1>
         <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">{dict.subtitle}</p>
       </div>
-
-      <Card>
-        <CardHeader title={dict.coloaneDonatori.title} subtitle={dict.coloaneDonatori.subtitle} />
-        <div className="flex flex-wrap gap-2">
-          {dict.coloane.donatori.map((c) => (
-            <ColumnChip key={c} label={c} active={coloaneD.includes(c)} onClick={() => toggle(coloaneD, setColoaneD, c)} />
-          ))}
-        </div>
-      </Card>
-
-      <Card>
-        <CardHeader title={dict.coloaneCompanii.title} subtitle={dict.coloaneCompanii.subtitle} />
-        <div className="flex flex-wrap gap-2">
-          {dict.coloane.companii.map((c) => (
-            <ColumnChip key={c} label={c} active={coloaneC.includes(c)} onClick={() => toggle(coloaneC, setColoaneC, c)} />
-          ))}
-        </div>
-      </Card>
 
       <Card>
         <CardHeader title={dict.roluri.title} subtitle={dict.roluri.subtitle} />
@@ -72,21 +46,6 @@ export default function CrmSetariPage() {
         </div>
       </Card>
     </div>
-  );
-}
-
-function ColumnChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`rounded-full border px-3 py-1.5 text-[12px] font-medium transition-colors ${
-        active
-          ? "border-[var(--ci-primary)] bg-[var(--ci-primary-soft)] text-[var(--ci-primary)]"
-          : "border-[var(--ci-border)] text-[var(--ci-text-muted)] hover:border-[var(--ci-border-strong)]"
-      }`}
-    >
-      {label}
-    </button>
   );
 }
 
