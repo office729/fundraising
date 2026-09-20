@@ -12,6 +12,7 @@ import {
   FileSignature,
   FileText,
   Gauge,
+  GraduationCap,
   HandCoins,
   HandHeart,
   HeartHandshake,
@@ -64,6 +65,7 @@ import {
 } from "./lib/local-store";
 import { useDonatori } from "./lib/use-data";
 import { TASKURI, type Task } from "./mock";
+import { getOrgCustomization } from "@/lib/org-customizations";
 
 const EMPTY_TASKURI_GLOBALE: Task[] = [];
 const EMPTY_STATUS_MAP: Record<string, Task["status"]> = {};
@@ -73,8 +75,8 @@ const EMPTY_VAZUTE_MAP: Record<string, boolean> = {};
 
 // Etichetele vin din dicționarul RO/EN (vezi lib/i18n/dictionaries/dashboard.ts)
 // — restul (href/icon) rămâne fix, doar textul se traduce.
-function buildNav(dict: DashboardDict): { section: string; items: { href: string; label: string; icon: typeof Gauge }[] }[] {
-  return [
+function buildNav(dict: DashboardDict, orgSlug: string): { section: string; items: { href: string; label: string; icon: typeof Gauge }[] }[] {
+  const baza = [
     { section: "", items: [{ href: "", label: dict.nav.home, icon: Gauge }] },
     {
       section: dict.nav.sectionRelatii,
@@ -108,10 +110,23 @@ function buildNav(dict: DashboardDict): { section: string; items: { href: string
         { href: "documente", label: dict.nav.documente, icon: FileText },
         { href: "rapoarte", label: dict.nav.rapoarte, icon: FileText },
         { href: "instrumente", label: dict.nav.instrumente, icon: Wrench },
+        { href: "consultanta", label: dict.nav.consultanta, icon: GraduationCap },
       ],
     },
     { section: "", items: [{ href: "setari", label: dict.nav.setari, icon: Settings }] },
   ];
+  // personalizări agreate cu ONG-ul respectiv (vezi lib/org-customizations.ts) — pentru
+  // orice alt cont rămâne meniul standard, neschimbat
+  const pers = getOrgCustomization(orgSlug);
+  return baza.map((g) => ({
+    ...g,
+    items: [
+      ...g.items
+        .filter((i) => !pers.hiddenNav?.includes(i.href))
+        .map((i) => (pers.navLabels?.[i.href] ? { ...i, label: pers.navLabels[i.href] } : i)),
+      ...(pers.extraNav ?? []).filter((e) => e.section === g.section).map((e) => ({ href: e.href, label: e.label, icon: Wrench })),
+    ],
+  }));
 }
 
 export function CrmShell({
@@ -304,7 +319,7 @@ function NavGroups({
   dict: DashboardDict;
   onNavigate: () => void;
 }) {
-  const nav = buildNav(dict);
+  const nav = buildNav(dict, base.split("/")[1] ?? "");
   // Nav-ul e o listă plată, nu o ierarhie reală — dar unele rute (ex.
   // „Formularul 230" la donatori/formular-230) sunt sub-căi ale altui item
   // (donatori), și altele (ex. „Companii D177") au ACELAȘI path, doar alt

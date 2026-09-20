@@ -1,6 +1,7 @@
 import { requireOrgAccess } from "@/lib/auth/guard";
 import { PROSPECTARE_HTML } from "@/modules/crm/prospectare/prospectare-html";
 import { CrmToolPage } from "../crm/tool-page";
+import { getOrgCustomization } from "@/lib/org-customizations";
 import { StandaloneToolFrame } from "@/modules/crm/shared/standalone-tool-frame";
 
 const TITLE = "CRM Prospectare Corporate";
@@ -11,7 +12,7 @@ export default async function ProspectarePage({ params }: { params: Promise<{ or
 
   return (
     <CrmToolPage orgSlug={orgSlug} access={access}>
-      <StandaloneToolFrame html={PROSPECTARE_HTML} title={TITLE} orgSlug={orgSlug} />
+      <StandaloneToolFrame htmlOverride={getOrgCustomization(orgSlug).toolHtml?.["prospectare"]} html={PROSPECTARE_HTML} title={TITLE} orgSlug={orgSlug} />
     </CrmToolPage>
   );
 }

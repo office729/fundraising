@@ -31,6 +31,7 @@ export const DASHBOARD_DICT = {
       documente: "Documente",
       rapoarte: "Rapoarte",
       instrumente: "Instrumente",
+      consultanta: "Consultanță cu Vlad",
       setari: "Setări",
     },
     sidebar: {
@@ -84,6 +85,7 @@ export const DASHBOARD_DICT = {
       documente: "Documents",
       rapoarte: "Reports",
       instrumente: "Tools",
+      consultanta: "Consultation with Vlad",
       setari: "Settings",
     },
     sidebar: {

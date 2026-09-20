@@ -20,14 +20,17 @@ export function StandaloneToolFrame({
   orgSlug,
   domeniuActivitate,
   designRecomandat,
+  htmlOverride,
 }: {
   html: string;
   title: string;
   orgSlug: string;
   domeniuActivitate?: string | null;
   designRecomandat?: string[];
+  // varianta proprie a instrumentului, agreată cu ONG-ul (lib/org-customizations.ts)
+  htmlOverride?: string;
 }) {
-  let finalHtml = html.replaceAll("__FA_ORG_SLUG__", orgSlug);
+  let finalHtml = (htmlOverride ?? html).replaceAll("__FA_ORG_SLUG__", orgSlug);
   finalHtml = finalHtml.replaceAll("__FA_DOMENIU_ACTIVITATE__", domeniuActivitate ?? "");
   finalHtml = finalHtml.replaceAll("__FA_DESIGN_RECOMANDAT__", JSON.stringify(designRecomandat ?? []));
   return (
