@@ -10,6 +10,7 @@ import { ElegantEditorialDashboard } from "./components/dashboard/elegant-editor
 import { IndraznetDinamicDashboard } from "./components/dashboard/indraznet-dinamic-dashboard";
 import { NaturalAncoratDashboard } from "./components/dashboard/natural-ancorat-dashboard";
 import { NeutruDashboard } from "./components/dashboard/neutru-dashboard";
+import { TaskuriCard } from "./components/dashboard/taskuri-card";
 import type { DashboardData } from "./components/dashboard/types";
 import { useLocale } from "./lib/locale-context";
 import { useDomeniu } from "./lib/domeniu-context";
@@ -166,6 +167,8 @@ export default function CrmDashboardPage() {
       </div>
 
       <FamilyDashboard {...dashboardData} />
+
+      <TaskuriCard taskuri={taskuriLive} base={base} locale={locale} />
     </div>
   );
 }

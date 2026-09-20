@@ -154,6 +154,10 @@ export function CrmShell({
   const [searchOpen, setSearchOpen] = useState(false);
   const pathname = usePathname();
   const base = `/${orgSlug}/crm`;
+  // Căutarea pe persoane fizice nu are sens în Companii, Instrumente, Consultanță și în
+  // instrumentele HTML (care stau în afara /crm) — acolo n-o afișăm.
+  const cautarePersoaneFizice =
+    (pathname ?? "").startsWith(base) && !["/companii", "/instrumente", "/consultanta"].some((x) => (pathname ?? "").startsWith(base + x));
   const dict = DASHBOARD_DICT[locale];
 
   useEffect(() => {
@@ -247,7 +251,7 @@ export function CrmShell({
           {/* Căutarea de mai jos e doar pe persoane fizice (mock) — pe Companii,
               unde există deja o căutare reală, server-side, în FilterBar, n-o
               mai afișăm (era redundantă și confuza cu cea reală). */}
-          {!pathname.startsWith(`${base}/companii`) && (
+          {cautarePersoaneFizice && (
             <button
               onClick={() => setSearchOpen(true)}
               className="flex h-9 w-9 shrink-0 items-center gap-2 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface-2)] px-3 text-[13px] text-[var(--ci-text-faint)] transition-colors hover:border-[var(--ci-border-strong)] sm:w-auto md:w-72"
