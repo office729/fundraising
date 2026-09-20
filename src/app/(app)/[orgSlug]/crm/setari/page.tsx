@@ -13,7 +13,7 @@ export default function CrmSetariPage() {
   const dict = SETARI_ECHIPA_DICT[locale].crmSetari;
   const [coloaneD, setColoaneD] = useState(dict.coloane.donatori);
   const [coloaneC, setColoaneC] = useState(dict.coloane.companii);
-  const INTEGRARI = [dict.integrariList.stripe, dict.integrariList.mailchimp, dict.integrariList.newsman, dict.integrariList.theMarketer, dict.integrariList.brevo, dict.integrariList.googleCalendar];
+  const INTEGRARI = [dict.integrariList.stripe, dict.integrariList.mailchimp, dict.integrariList.newsman, dict.integrariList.theMarketer, dict.integrariList.brevo, dict.integrariList.googleCalendar, dict.integrariList.make];
 
   function toggle(list: string[], setList: (v: string[]) => void, item: string) {
     setList(list.includes(item) ? list.filter((x) => x !== item) : [...list, item]);
@@ -54,6 +54,7 @@ export default function CrmSetariPage() {
 
       <Card>
         <CardHeader title={dict.integrari.title} subtitle={dict.integrari.subtitle} />
+        <p className="mb-3 rounded-[var(--ci-radius-card)] bg-[var(--ci-amber-soft)] px-3.5 py-2.5 text-[12px] text-[var(--ci-text)]">{dict.integrari.nota}</p>
         <div className="space-y-2">
           {INTEGRARI.map((i) => (
             <div key={i.nume} className="flex items-center justify-between rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] px-3.5 py-3">

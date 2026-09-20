@@ -14,7 +14,11 @@ export const SETARI_ECHIPA_DICT = {
       roluri: { title: "Roluri interne", subtitle: "Ce poate face fiecare rol în modulul CRM" },
       ownerAdmin: { rol: "Owner / Admin", poate: "Vede tot, editează tot, gestionează integrări și echipă." },
       membru: { rol: "Membru", poate: "Vede tot, editează donatori/companii/taskuri alocate lui sau echipei." },
-      integrari: { title: "Integrări", subtitle: "Necesită conectare backend — momentan doar previzualizare" },
+      integrari: {
+        title: "Integrări",
+        subtitle: "Necesită conectare backend — momentan doar previzualizare",
+        nota: "Integrările nu sunt incluse în prețul abonamentului — se realizează la cerere, pe baza unei oferte separate. Scrie-ne sau programează o consultanță ca să discutăm ce ți se potrivește.",
+      },
       integrariList: {
         stripe: { nume: "Stripe", descriere: "Colectare plăți online pentru sponsorizări." },
         mailchimp: { nume: "Mailchimp", descriere: "Sincronizare listă donatori pentru newsletter." },
@@ -22,6 +26,7 @@ export const SETARI_ECHIPA_DICT = {
         theMarketer: { nume: "The Marketer", descriere: "Conectare prin API pentru newslettere și automatizări de email marketing." },
         brevo: { nume: "Brevo", descriere: "Conectare prin API pentru newslettere și campanii de email." },
         googleCalendar: { nume: "Google Calendar", descriere: "Sincronizare taskuri cu termen și întâlniri." },
+        make: { nume: "Make.com", descriere: "Automatizări între platformă și alte aplicații (scenarii, webhook-uri, notificări)." },
       },
       neconectatTooltip: "Disponibil când modulul e conectat la date reale",
       neconectat: "neconectat",
@@ -125,7 +130,11 @@ export const SETARI_ECHIPA_DICT = {
       roluri: { title: "Internal roles", subtitle: "What each role can do in the CRM module" },
       ownerAdmin: { rol: "Owner / Admin", poate: "Sees everything, edits everything, manages integrations and the team." },
       membru: { rol: "Member", poate: "Sees everything, edits donors/companies/tasks assigned to them or the team." },
-      integrari: { title: "Integrations", subtitle: "Requires a backend connection — preview only for now" },
+      integrari: {
+        title: "Integrations",
+        subtitle: "Requires a backend connection — preview only for now",
+        nota: "Integrations are not included in the subscription price — they are built on request, with a separate quote. Get in touch or book a consultation to discuss what fits you.",
+      },
       integrariList: {
         stripe: { nume: "Stripe", descriere: "Online payment collection for sponsorships." },
         mailchimp: { nume: "Mailchimp", descriere: "Sync the donor list for the newsletter." },
@@ -133,6 +142,7 @@ export const SETARI_ECHIPA_DICT = {
         theMarketer: { nume: "The Marketer", descriere: "API connection for newsletters and email marketing automations." },
         brevo: { nume: "Brevo", descriere: "API connection for newsletters and email campaigns." },
         googleCalendar: { nume: "Google Calendar", descriere: "Sync tasks with due dates and meetings." },
+        make: { nume: "Make.com", descriere: "Automations between the platform and other apps (scenarios, webhooks, notifications)." },
       },
       neconectatTooltip: "Available once the module is connected to real data",
       neconectat: "not connected",
