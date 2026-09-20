@@ -262,7 +262,7 @@ export function CrmShell({
           <Avatar name={userName} size="sm" />
         </header>
 
-        <main className="ci-scrollbar flex-1 overflow-y-auto px-6 py-6">
+        <main className="ci-scrollbar relative flex-1 overflow-y-auto px-6 py-6">
           <DomeniuProvider domeniu={orgDomeniuActivitate}>
             <LocaleProvider locale={locale}>{children}</LocaleProvider>
           </DomeniuProvider>
