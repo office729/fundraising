@@ -12,8 +12,8 @@ export const SETARI_ECHIPA_DICT = {
         companii: ["Industrie", "Județ", "Status", "Sponsorizat", "Ultima activitate", "Responsabil"],
       },
       roluri: { title: "Roluri interne", subtitle: "Ce poate face fiecare rol în modulul CRM" },
-      ownerAdmin: { rol: "Owner / Admin", poate: "Vede tot, editează tot, gestionează integrări și echipă." },
-      membru: { rol: "Membru", poate: "Vede tot, editează donatori/companii/taskuri alocate lui sau echipei." },
+      ownerAdmin: { rol: "Owner / Admin", poate: "Lucrează în tot CRM-ul, plus gestionează echipa (invitații, roluri), brandingul organizației și trimiterile în masă (ex. campania Formular 230)." },
+      membru: { rol: "Membru", poate: "Lucrează în tot CRM-ul: vede și editează donatori, companii, taskuri și instrumente. Nu are acces la echipă, setările organizației și trimiterile în masă." },
       integrari: {
         title: "Integrări",
         subtitle: "Necesită conectare backend — momentan doar previzualizare",
@@ -133,8 +133,8 @@ export const SETARI_ECHIPA_DICT = {
         companii: ["Industry", "County", "Status", "Sponsored", "Last activity", "Owner"],
       },
       roluri: { title: "Internal roles", subtitle: "What each role can do in the CRM module" },
-      ownerAdmin: { rol: "Owner / Admin", poate: "Sees everything, edits everything, manages integrations and the team." },
-      membru: { rol: "Member", poate: "Sees everything, edits donors/companies/tasks assigned to them or the team." },
+      ownerAdmin: { rol: "Owner / Admin", poate: "Works across the whole CRM, plus manages the team (invites, roles), the organisation's branding and bulk sends (e.g. the Form 230 campaign)." },
+      membru: { rol: "Member", poate: "Works across the whole CRM: views and edits donors, companies, tasks and tools. No access to the team, organisation settings or bulk sends." },
       integrari: {
         title: "Integrations",
         subtitle: "Requires a backend connection — preview only for now",
