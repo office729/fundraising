@@ -46,7 +46,7 @@ export function SiteHeader({ dict }: { dict: MarketingDict }) {
     <header className="border-b border-line bg-panel">
       <div className="mx-auto flex h-20 max-w-6xl items-center justify-between px-6">
         <Link href="/" className="flex items-center" onClick={() => setDeschis(false)} aria-label="Alexandrit">
-          <Image src="/alexandrit-logo.webp" alt="Alexandrit" width={1730} height={332} priority className="h-11 w-auto" />
+          <Image src="/alexandrit-logo.webp" alt="Alexandrit" width={1730} height={332} priority className="h-10 w-auto sm:h-14" />
         </Link>
 
         <nav className="hidden items-center gap-6 lg:flex">
@@ -130,7 +130,7 @@ export function SiteFooter({ dict }: { dict: MarketingDict }) {
       <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 sm:grid-cols-3">
         <div>
           <span className="inline-block rounded-lg bg-white px-3 py-2">
-            <Image src="/alexandrit-logo.webp" alt="Alexandrit" width={1730} height={332} className="h-9 w-auto" />
+            <Image src="/alexandrit-logo.webp" alt="Alexandrit" width={1730} height={332} className="h-12 w-auto" />
           </span>
           <p className="mt-2 text-sm text-white/60">{dict.footer.tagline}</p>
         </div>
