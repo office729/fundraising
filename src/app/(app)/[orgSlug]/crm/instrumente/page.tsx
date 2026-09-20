@@ -21,7 +21,7 @@ import { useCompanii, useDonatori } from "../lib/use-data";
 import { useLocale } from "../lib/locale-context";
 import { INSTRUMENTE_DICT } from "@/lib/i18n/dictionaries/instrumente";
 
-type CategorieKey = "crm" | "rapoarte" | "organizare" | "campanii" | "generatoare";
+type CategorieKey = "rapoarte" | "campanii" | "generatoare";
 type InstrumentDef = { key: string; href: string };
 
 // Instrumentele reale din Control Tower-ul salveazaoinima.org.ro. Cele cu href
@@ -31,19 +31,6 @@ type InstrumentDef = { key: string; href: string };
 // mai simple, pe date demonstrative, care mai trăiesc doar sub /crm/instrumente/<href>
 // (fără echivalent HTML real portat încă).
 const CATEGORII: { key: CategorieKey; culoare: string; instrumente: InstrumentDef[] }[] = [
-  {
-    key: "crm",
-    culoare: "var(--ci-green)",
-    instrumente: [
-      { key: "crmVoluntari", href: "/crm-voluntari" },
-      { key: "prospectare", href: "/prospectare" },
-    ],
-  },
-  {
-    key: "organizare",
-    culoare: "var(--ci-amber)",
-    instrumente: [{ key: "programLucru", href: "/program-lucru" }],
-  },
   {
     key: "campanii",
     culoare: "var(--ci-purple)",

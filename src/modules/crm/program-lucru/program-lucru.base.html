@@ -120,8 +120,8 @@ input[type=range].fs::-moz-range-thumb{height:19px;width:19px;border-radius:50%;
   <div class="userbox">Eu sunt:
     <select id="whoami" onchange="setUser(this.value)">
       <option value="">— alege —</option>
-      <option>Andreea</option><option>Paula</option><option>Ștefania</option>
-      <option>Vlad</option><option>Gabriel</option><option>Andrei</option>
+      <option>Ioana</option><option>Mihaela</option><option>Diana</option>
+      <option>Radu</option><option>Tudor</option><option>Cosmin</option>
     </select>
   </div>
 </header>
@@ -141,16 +141,17 @@ input[type=range].fs::-moz-range-thumb{height:19px;width:19px;border-radius:50%;
 <div id="out"><div class="empty">Se încarcă…</div></div>
 </div>
 <input type="file" id="fisier" accept="application/json" style="display:none" onchange="incarcaProiect(this)">
+<input type="file" id="fisaFile" style="display:none" onchange="incarcaFisaPostului(this)">
 <div class="toast" id="toast"></div>
 <script>
 /* ================== CONSTANTE ================== */
-const ECHIPA=['Andreea','Paula','Ștefania','Vlad'];
-const FETELE=['Andreea','Paula','Ștefania']; /* fundraising — ascunse față de Gabriel/Andrei */
-const ROL={Andreea:'Manager Fundraising — presă & firme calde',Paula:'Manager Fundraising — companii locale & voluntari','Ștefania':'Asistent Manager Fundraising — conținut social',Vlad:'Coordonator — plăți, dezvoltare, conținut & campanie'};
-const RESPONSABILI=['Paula','Andreea','Ștefania'];
-const TOTI=['Andreea','Paula','Ștefania','Vlad','Gabriel','Andrei'];
+const ECHIPA=['Ioana','Mihaela','Diana','Radu'];
+const FETELE=['Ioana','Mihaela','Diana']; /* fundraising — ascunse față de Tudor/Cosmin */
+const ROL={Ioana:'Manager Fundraising — presă & firme calde',Mihaela:'Manager Fundraising — companii locale & voluntari','Diana':'Asistent Manager Fundraising — conținut social',Radu:'Coordonator — plăți, dezvoltare, conținut & campanie'};
+const RESPONSABILI=['Mihaela','Ioana','Diana'];
+const TOTI=['Ioana','Mihaela','Diana','Radu','Tudor','Cosmin'];
 function eFata(p){return FETELE.indexOf(p)>=0;}
-function eExtern(p){return p==='Gabriel'||p==='Andrei';} /* în afara programului de fundraising */
+function eExtern(p){return p==='Tudor'||p==='Cosmin';} /* în afara programului de fundraising */
 const TIERS={
   7:{lab:'Foarte urgent',cls:'t7',pr:1,posts:15,upd:1},
   15:{lab:'Urgent',cls:'t15',pr:2,posts:15,upd:2},
@@ -178,33 +179,34 @@ const hhmm=v=>String(Math.floor(v/60)).padStart(2,'0')+':'+String(v%60).padStart
 
 /* sarcini care umplu golurile — utile, nu umplutură */
 const FLEX={
- Andreea:['Sună 3 companii care au refuzat anul trecut — între timp s-au schimbat bugetele',
+ Ioana:['Sună 3 companii care au refuzat anul trecut — între timp s-au schimbat bugetele',
    'Actualizează lista de jurnaliști: cine mai scrie despre sănătate, ce contact avem',
    'Scrie o poveste de succes pentru site, dintr-un caz încheiat',
    'Verifică mențiunile asociației în presă din ultima săptămână',
    'Pregătește întrebările pentru următorul interviu cu o familie',
    'Revizuiește un comunicat vechi și fă din el un șablon refolosibil',
    'Caută 5 fundații și programe de finanțare pentru care ne calificăm'],
- Paula:['Reactivare firme: sună 5 companii care au donat anul trecut',
+ Mihaela:['Reactivare firme: sună 5 companii care au donat anul trecut',
    'Verifică ce grupuri au devenit inactive și scoate-le din lot',
    'Sună 5 voluntari noi din listă și explică-le cum lucrăm',
    'Pregătește materiale pentru voluntari: texte gata de copiat, imagini',
    'Curăță CRM-ul de duplicate și contacte moarte',
    'Caută grupuri noi în județele unde nu avem acoperire',
    'Fă lista firmelor din zona următorului caz, înainte să-l preluăm'],
- 'Ștefania':['Analizează ce postări au mers cel mai bine și notează tiparul',
+ 'Diana':['Analizează ce postări au mers cel mai bine și notează tiparul',
    'Pregătește 3 șabloane de carduri pentru pragurile următoare',
    'Colectează testimoniale de la familiile cazurilor încheiate',
    'Planifică o serie de storyuri pentru săptămâna viitoare',
    'Arhivează materialele cazurilor închise, pe foldere',
    'Caută conturi și pagini noi de urmărit pentru distribuire',
    'Scrie textele de mulțumire gata de folosit la praguri'],
- Vlad:['Verifică facturile scadente și statusul plăților',
+ Radu:['Verifică facturile scadente și statusul plăților',
    'Idei de îmbunătățire pentru generatoare — notează și prioritizează',
    'Analiză rapidă a traficului pe site și a conversiilor',
    'Pregătește conținut pentru postările de mâine']
 };
 /* ================== STARE ================== */
+let FISA_REV=null, FISA_PERS='';
 let CAZURI=[], BIFE={}, PRAGURI={}, EXTRA=[], OVERRIDES={}, ABSENTI={}, RUTINA_CUSTOM=[], RUTINA_OFF={}, ROVR={}, USER='', VIEW='zi', ZI=todayIso(), FILTRU='', FORM=false, EDITCAZ='', EDITEXTRA='', EDITSLOT='', EDITCONCEDIU='', EDITRUTINA='';
 function hashStr(s){let h=0;s=String(s);for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return h;}
 const uid=()=>'c'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
@@ -588,66 +590,66 @@ function rutinaBaza(iso){
   };
 
   /* --- ANDREEA: presă & firme calde --- */
-  P('Andreea','Pitch de presă pentru {C}: 5 redacții noi contactate',60,'d',15);
-  if(w===3||w===4)P('Andreea','Email de mulțumire redacțiilor care au scris despre {C}',40,'d',10);
-  A('Andreea','Firme calde din CRM: apeluri și emailuri de follow-up',45,'d');
-  POST('Andreea');
-  P('Andreea','3–5 link-uri media pentru {C} + tracker actualizat',40,'p',10);
-  A('Andreea','LinkedIn: prieteni noi țintit + răspuns la comentarii',15,'p');
-  A('Andreea','Prospectare: 10 companii noi cu profil potrivit + date de contact',30,'p');
-  A('Andreea','Reactivare donatori: 20 de mesaje personale către donatorii cazurilor anterioare',30,'p');
-  A('Andreea','Actualizare CRM după apeluri: etapă, următorul pas, termen',20,'p');
-  if(w===3)A('Andreea','Mesaj WhatsApp: anunțul campaniei noi trimis pe liste și contacte',20,'d');
-  if(w===5)A('Andreea','Mesaj pe grupul de WhatsApp: rezumatul săptămânii',20,'p');
-  if(w===3)A('Andreea','Actualizarea bazei de jurnaliști: cine scrie despre sănătate, ce contact avem',30,'p');
-  if(w===5)A('Andreea','Planul de presă pentru săptămâna viitoare: ce cazuri, ce redacții, ce unghi',40,'d');
-  if(w===5)A('Andreea','Raportul articolelor obținute săptămâna aceasta + ce a mers',30,'p');
+  P('Ioana','Pitch de presă pentru {C}: 5 redacții noi contactate',60,'d',15);
+  if(w===3||w===4)P('Ioana','Email de mulțumire redacțiilor care au scris despre {C}',40,'d',10);
+  A('Ioana','Firme calde din CRM: apeluri și emailuri de follow-up',45,'d');
+  POST('Ioana');
+  P('Ioana','3–5 link-uri media pentru {C} + tracker actualizat',40,'p',10);
+  A('Ioana','LinkedIn: prieteni noi țintit + răspuns la comentarii',15,'p');
+  A('Ioana','Prospectare: 10 companii noi cu profil potrivit + date de contact',30,'p');
+  A('Ioana','Reactivare donatori: 20 de mesaje personale către donatorii cazurilor anterioare',30,'p');
+  A('Ioana','Actualizare CRM după apeluri: etapă, următorul pas, termen',20,'p');
+  if(w===3)A('Ioana','Mesaj WhatsApp: anunțul campaniei noi trimis pe liste și contacte',20,'d');
+  if(w===5)A('Ioana','Mesaj pe grupul de WhatsApp: rezumatul săptămânii',20,'p');
+  if(w===3)A('Ioana','Actualizarea bazei de jurnaliști: cine scrie despre sănătate, ce contact avem',30,'p');
+  if(w===5)A('Ioana','Planul de presă pentru săptămâna viitoare: ce cazuri, ce redacții, ce unghi',40,'d');
+  if(w===5)A('Ioana','Raportul articolelor obținute săptămâna aceasta + ce a mers',30,'p');
 
   /* --- PAULA: companii locale --- */
-  P('Paula','Telefoane către companii locale din zona cazului {C}',60,'d',20);
-  A('Paula','Search 10 companii locale noi + completare CRM',20,'d');
-  POST('Paula');
-  P('Paula','Search grupuri locale și județene pentru {C} + cerere de intrare',30,'p',10);
-  if(w===2)P('Paula','One-pager actualizat pentru {C} către companiile în discuție',60,'p',20);
-  A('Paula','LinkedIn: distribuire + interacțiune cu comentariile',15,'p');
-  A('Paula','40 de voluntari: trimite postarea zilei — fiecare pe Facebook + 2 grupuri',45,'p');
-  if(w===3)A('Paula','Voluntari: apeluri către cei mai activi 5 + recrutare de voluntari noi',30,'d');
-  if(w===5)A('Paula','Voluntari: mulțumire pentru săptămâna aceasta + actualizarea listei',20,'p');
-  A('Paula','Actualizare CRM după telefoane + lista de sunat de mâine',25,'p');
-  if(w===3)A('Paula','Verificare grupuri: cereri acceptate, reguli, cine e administrator',20,'p');
-  if(w===1||w===4)A('Paula','Documente pentru firme: contract de sponsorizare, facturi, adeverințe',30,'p');
-  if(w===4)A('Paula','Raport companii: câte contactate, câte au răspuns, câte au alocat',30,'p');
+  P('Mihaela','Telefoane către companii locale din zona cazului {C}',60,'d',20);
+  A('Mihaela','Search 10 companii locale noi + completare CRM',20,'d');
+  POST('Mihaela');
+  P('Mihaela','Search grupuri locale și județene pentru {C} + cerere de intrare',30,'p',10);
+  if(w===2)P('Mihaela','One-pager actualizat pentru {C} către companiile în discuție',60,'p',20);
+  A('Mihaela','LinkedIn: distribuire + interacțiune cu comentariile',15,'p');
+  A('Mihaela','40 de voluntari: trimite postarea zilei — fiecare pe Facebook + 2 grupuri',45,'p');
+  if(w===3)A('Mihaela','Voluntari: apeluri către cei mai activi 5 + recrutare de voluntari noi',30,'d');
+  if(w===5)A('Mihaela','Voluntari: mulțumire pentru săptămâna aceasta + actualizarea listei',20,'p');
+  A('Mihaela','Actualizare CRM după telefoane + lista de sunat de mâine',25,'p');
+  if(w===3)A('Mihaela','Verificare grupuri: cereri acceptate, reguli, cine e administrator',20,'p');
+  if(w===1||w===4)A('Mihaela','Documente pentru firme: contract de sponsorizare, facturi, adeverințe',30,'p');
+  if(w===4)A('Mihaela','Raport companii: câte contactate, câte au răspuns, câte au alocat',30,'p');
 
   /* --- ȘTEFANIA: conținut social --- */
-  P('Ștefania','Conținut pentru {C}: foto, card, reel',80,'d',20);
-  if(w===2||w===5)P('Ștefania','TikTok pentru {C}: montaj și publicare',60,'d',20);
-  POST('Ștefania');
-  P('Ștefania','Story cu contorul pentru {C}',30,'p',10);
-  P('Ștefania','Programare postări de seară pentru {C} (Instagram, Facebook)',40,'p',10);
-  A('Ștefania','Răspuns la comentarii și mesaje pe conturile de social media',20,'p');
-  A('Ștefania','LinkedIn: o postare + adăugare prieteni noi, țintit',20,'p');
-  A('Ștefania','Bancă de conținut: 3 postări pregătite în avans pentru mâine',40,'p');
-  A('Ștefania','Cere familiilor materiale foto și video pentru zilele următoare',20,'p');
-  A('Ștefania','Reactivare donatori: 20 de mesaje personale către donatorii cazurilor anterioare',30,'p');
-  if(w===5)A('Ștefania','Planul de conținut pentru săptămâna viitoare, pe cazurile active',40,'d');
-  if(w===5)A('Ștefania','Analiza performanței postărilor: ce format a mers, ce nu',30,'p');
+  P('Diana','Conținut pentru {C}: foto, card, reel',80,'d',20);
+  if(w===2||w===5)P('Diana','TikTok pentru {C}: montaj și publicare',60,'d',20);
+  POST('Diana');
+  P('Diana','Story cu contorul pentru {C}',30,'p',10);
+  P('Diana','Programare postări de seară pentru {C} (Instagram, Facebook)',40,'p',10);
+  A('Diana','Răspuns la comentarii și mesaje pe conturile de social media',20,'p');
+  A('Diana','LinkedIn: o postare + adăugare prieteni noi, țintit',20,'p');
+  A('Diana','Bancă de conținut: 3 postări pregătite în avans pentru mâine',40,'p');
+  A('Diana','Cere familiilor materiale foto și video pentru zilele următoare',20,'p');
+  A('Diana','Reactivare donatori: 20 de mesaje personale către donatorii cazurilor anterioare',30,'p');
+  if(w===5)A('Diana','Planul de conținut pentru săptămâna viitoare, pe cazurile active',40,'d');
+  if(w===5)A('Diana','Analiza performanței postărilor: ce format a mers, ce nu',30,'p');
 
   /* --- VLAD: coordonare, plăți, dezvoltare & conținut propriu --- */
-  A('Vlad','💳 Plăți facturi — verifică scadențele și achită ce e de plată',20,'d');
-  A('Vlad','Update plăți pe site',15,'d');
-  A('Vlad','Update baza de date Wallaxy',20,'d');
-  A('Vlad','Statistici Google Analytics + website: ce a mers, ce urmărim',20,'d');
-  A('Vlad','1 postare pe LinkedIn',15,'p');
-  A('Vlad','2 postări pe social media',20,'p');
-  A('Vlad','🤖 Răspunsuri automate prin PostJelly la 5 campanii cu impact',15,'p');
-  if(w===2||w===5)A('Vlad','📣 Postare mesaj comunitate pe Facebook — pagina „Salvează o inimă" + „Vlad Plăcintă"',15,'p');
-  A('Vlad','Dezvoltare generatoare + update-uri la instrumente',60,'p');
-  if(w>=1&&w<=3)A('Vlad','📰 Update presă scrisă pe site — după ce publică Andreea',20,'p');
-  if(w===1||w===4)A('Vlad','📧 Newsletter — campanie de strângere de fonduri',45,'d');
-  if(w===2)A('Vlad','⬆️ Încărcare caz nou (marțea)',45,'d');
-  if(w===2)A('Vlad','🔔 Notificare în aplicație la lansarea campaniei noi',5,'d');
-  if(w===4)A('Vlad','🎥 Live Zoom (diseară) — pregătire și susținere',45,'p');
-  if(w===5)A('Vlad','👥 Ședința de echipă: pregătire și conducere — bilanț, blocaje, ce preluăm și lansăm',30,'d');
+  A('Radu','💳 Plăți facturi — verifică scadențele și achită ce e de plată',20,'d');
+  A('Radu','Update plăți pe site',15,'d');
+  A('Radu','Update baza de date de contacte',20,'d');
+  A('Radu','Statistici Google Analytics + website: ce a mers, ce urmărim',20,'d');
+  A('Radu','1 postare pe LinkedIn',15,'p');
+  A('Radu','2 postări pe social media',20,'p');
+  A('Radu','🤖 Răspunsuri automate la 5 campanii cu impact',15,'p');
+  if(w===2||w===5)A('Radu','📣 Postare mesaj comunitate pe Facebook — pagina organizației + pagina personală a coordonatorului',15,'p');
+  A('Radu','Dezvoltare generatoare + update-uri la instrumente',60,'p');
+  if(w>=1&&w<=3)A('Radu','📰 Update presă scrisă pe site — după ce publică Ioana',20,'p');
+  if(w===1||w===4)A('Radu','📧 Newsletter — campanie de strângere de fonduri',45,'d');
+  if(w===2)A('Radu','⬆️ Încărcare caz nou (marțea)',45,'d');
+  if(w===2)A('Radu','🔔 Notificare în aplicație la lansarea campaniei noi',5,'d');
+  if(w===4)A('Radu','🎥 Live Zoom (diseară) — pregătire și susținere',45,'p');
+  if(w===5)A('Radu','👥 Ședința de echipă: pregătire și conducere — bilanț, blocaje, ce preluăm și lansăm',30,'d');
 
   return g;
 }
@@ -664,15 +666,15 @@ function rutina(iso){
 
 /* ================== PLANUL UNUI CAZ (marginal, doar ce ține de cazul acela) ================== */
 function planCaz(cz){
-  const N=cz.zile, T=TIERS[N]||TIERS[30], R=cz.resp||'Paula', plan={};
+  const N=cz.zile, T=TIERS[N]||TIERS[30], R=cz.resp||'Mihaela', plan={};
   const add=(d,pers,t,dur,bloc)=>{const k=addDays(cz.start,d-1);(plan[k]=plan[k]||[]).push({pers,t:t.replace('{C}',cz.nume),dur:dur||30,bloc:bloc||'d'});};
 
   /* ZIUA 1 — preluare & lansare */
-  add(1,R,'Predă lui Vlad dosarul medical și verifică pagina cazului pe site',20,'d');
+  add(1,R,'Predă lui Radu dosarul medical și verifică pagina cazului pe site',20,'d');
   add(1,R,'Acord scris de la familie (foto/video) + ghidul de postare trimis pe WhatsApp',45,'d');
-  add(1,R,'Brief video pentru Gabriel: ce filmăm, cu cine, când — și termenul de livrare',25,'d');
-  add(1,'Ștefania','Pachetul vizual de lansare: foto caz, card de start, story',45,'p');
-  add(1,R,'Cere lui Andrei scenariile Make pentru caz: postări programate + alerte la praguri',10,'p');
+  add(1,R,'Brief video pentru Tudor: ce filmăm, cu cine, când — și termenul de livrare',25,'d');
+  add(1,'Diana','Pachetul vizual de lansare: foto caz, card de start, story',45,'p');
+  add(1,R,'Cere lui Cosmin scenariile Make pentru caz: postări programate + alerte la praguri',10,'p');
   add(1,'Familia','Postează cazul pe Facebook (profil personal) și îl distribuie prietenilor',0,'p');
   add(1,'Familia','Trimite linkul pe WhatsApp la toate grupurile personale: familie, bloc, colegi',0,'p');
   add(1,'Familia','Face lista celor 20 de oameni care sigur ajută — și îi sună pe rând',0,'p');
@@ -693,27 +695,27 @@ function planCaz(cz){
   let prZi=0;
   for(let d=minPR;d<=Math.max(minPR,N-3);d++){if(dow(addDays(cz.start,d-1))===1){prZi=d;break;}}
   if(!prZi)prZi=Math.min(minPR,N);
-  add(prZi,'Andreea','Comunicat de presă pentru caz: redactare, trimitere, follow-up telefonic',90,'d');
+  add(prZi,'Ioana','Comunicat de presă pentru caz: redactare, trimitere, follow-up telefonic',90,'d');
   add(prZi,'Familia','Postează 3 link-uri media',0,'p');
   for(let k=1;k<=2;k++)if(prZi+k<=N)add(prZi+k,'Familia','5 link-uri media postate',0,'p');
 
   /* VERIFICARE PRAG 60% */
   const zPrag=Math.max(3,Math.round(N*0.6));
-  add(zPrag,R,'⚠️ Prag 60%: semnalează-i lui Vlad unde suntem cu suma',10,'d');
+  add(zPrag,R,'⚠️ Prag 60%: semnalează-i lui Radu unde suntem cu suma',10,'d');
   add(zPrag,R,'Planul B pentru caz: relansare video, val nou de companii, ambasadori',45,'d');
 
   /* ULTIMELE ZILE */
   if(N>4){
-    add(N-2,R,'Cere lui Vlad newsletterul „ultima sută de metri" și lui Gabriel varianta scurtă de final',15,'d');
-    add(N-2,'Ștefania','Video de urgență: cât mai lipsește',45,'d');
+    add(N-2,R,'Cere lui Radu newsletterul „ultima sută de metri" și lui Tudor varianta scurtă de final',15,'d');
+    add(N-2,'Diana','Video de urgență: cât mai lipsește',45,'d');
   }
 
   /* ZIUA FINALĂ */
-  add(N,R,'Confirmă cu Vlad plata către clinică și publicarea ordinelor de plată',15,'d');
-  add(N,R,'Cere lui Andrei emailul de mulțumire către toți donatorii campaniei',10,'p');
-  add(N,'Ștefania','Carduri de mulțumire pentru companii și donatori',45,'p');
-  add(N,R,'Cere lui Gabriel videoclipul de mulțumire pentru companiile care au susținut',10,'d');
-  add(N,'Andreea','Mulțumire nominală companiilor care au alocat sume',45,'d');
+  add(N,R,'Confirmă cu Radu plata către clinică și publicarea ordinelor de plată',15,'d');
+  add(N,R,'Cere lui Cosmin emailul de mulțumire către toți donatorii campaniei',10,'p');
+  add(N,'Diana','Carduri de mulțumire pentru companii și donatori',45,'p');
+  add(N,R,'Cere lui Tudor videoclipul de mulțumire pentru companiile care au susținut',10,'d');
+  add(N,'Ioana','Mulțumire nominală companiilor care au alocat sume',45,'d');
   add(N,R,'Raportul final al cazului: sume, articole, companii, ce a mers',45,'p');
   add(N,R,'Pregătește debriefingul cazului pentru ședința de vineri',20,'p');
 
@@ -721,10 +723,10 @@ function planCaz(cz){
   if(cz.mod==='intretinere'){
     for(let d=2;d<=N;d++){
       const w=dow(addDays(cz.start,d-1));
-      if(w===2){add(d,R,'5 postări în grupuri pentru {C}',15,'p');add(d,R,'Verificare sumă și raportare către Vlad — {C}',10,'d');
+      if(w===2){add(d,R,'5 postări în grupuri pentru {C}',15,'p');add(d,R,'Verificare sumă și raportare către Radu — {C}',10,'d');
         add(d,'Familia','Distribuie cazul în 3 grupuri și trimite 5 mesaje directe',0,'p');}
       if(w===3)add(d,R,'Contact cu familia {C} + lista lor săptămânală pe WhatsApp',20,'d');
-      if(w===4){add(d,'Ștefania','Story cu contorul pentru {C}',10,'p');add(d,R,'5 postări în grupuri pentru {C}',15,'p');}
+      if(w===4){add(d,'Diana','Story cu contorul pentru {C}',10,'p');add(d,R,'5 postări în grupuri pentru {C}',15,'p');}
       if(w===5){add(d,R,'Update săptămânal {C}: sumă, noutăți medicale, mulțumiri',25,'p');
         add(d,'Familia','Update pe Facebook + mulțumiri celor care au donat',0,'p');}
     }
@@ -772,17 +774,17 @@ function sarciniZiBrut(iso){
     [50,75].forEach(x=>{
       const k='prag|'+cz.id+'|'+x;
       if(PRAGURI[cz.id+'|prag'+x]&&!BIFE[k])
-        out.push({pers:'Ștefania',t:'🎬 Video '+x+'% pentru '+cz.nume+' — montaj și postare pe TikTok, Facebook și Instagram',dur:60,bloc:'d',caz:cz.nume,cazId:cz.id,zile:cz.zile,ziN:diffDays(cz.start,iso)+1,key:k});
+        out.push({pers:'Diana',t:'🎬 Video '+x+'% pentru '+cz.nume+' — montaj și postare pe TikTok, Facebook și Instagram',dur:60,bloc:'d',caz:cz.nume,cazId:cz.id,zile:cz.zile,ziN:diffDays(cz.start,iso)+1,key:k});
     });
-    /* Vlad: card de evoluție + update pe site la fiecare prag atins (25/50/75/100) */
+    /* Radu: card de evoluție + update pe site la fiecare prag atins (25/50/75/100) */
     [25,50,75,100].forEach(x=>{
       const kv='pragv|'+cz.id+'|'+x;
       if(PRAGURI[cz.id+'|prag'+x]&&!BIFE[kv])
-        out.push({pers:'Vlad',t:'📊 Card evoluție '+x+'% pentru '+cz.nume+' + update pe site cu pragul atins',dur:20,bloc:'d',caz:cz.nume,cazId:cz.id,zile:cz.zile,ziN:diffDays(cz.start,iso)+1,key:kv});
+        out.push({pers:'Radu',t:'📊 Card evoluție '+x+'% pentru '+cz.nume+' + update pe site cu pragul atins',dur:20,bloc:'d',caz:cz.nume,cazId:cz.id,zile:cz.zile,ziN:diffDays(cz.start,iso)+1,key:kv});
     });
   });
-  /* sarcini date de Vlad */
-  EXTRA.filter(e=>!e.sters&&e.data===iso).forEach(e=>{const pr=prioExtra(e);out.push({pers:e.pers,prio:pr,t:(pr==='urg'?'🔥 ':pr==='imp'?'⭐ ':'')+'📌 '+e.t+' — de la '+(e.by||'Vlad'),dur:+e.dur||30,bloc:e.bloc||'d',caz:'',cazId:'extra',zile:0,key:'extra|'+e.id});});
+  /* sarcini date de Radu */
+  EXTRA.filter(e=>!e.sters&&e.data===iso).forEach(e=>{const pr=prioExtra(e);out.push({pers:e.pers,prio:pr,t:(pr==='urg'?'🔥 ':pr==='imp'?'⭐ ':'')+'📌 '+e.t+' — de la '+(e.by||'Radu'),dur:+e.dur||30,bloc:e.bloc||'d',caz:'',cazId:'extra',zile:0,key:'extra|'+e.id});});
   rutina(iso).forEach(t=>{
     if(viitor&&t.cazId&&BLOCATI.indexOf(t.pers)>=0)return;
     out.push(Object.assign({caz:'',cazId:'gen',zile:0},t,{key:'rut|'+iso+'|'+slug(t.pers)+'|'+(t.cazId&&t.cazId!=='gen'?t.cazId+'|':'')+slug(t.t).slice(0,44)}));
@@ -967,7 +969,7 @@ function randSetari(){
     +'<input type="text" id="sync_url" value="'+esc(SYNC_URL)+'" placeholder="https://…firebasedatabase.app/plan-cazuri-XXXX" style="flex:1;min-width:280px">'
     +'<button class="btn primary small" onclick="setSyncUrl()">Salvează & testează</button></div>'
     +'<div class="frow mini" id="sync_msg" style="border:none;padding-top:0">Același link se lipește o singură dată pe fiecare calculator din echipă. După aceea, tot ce lucrează oricine se salvează automat pentru toți — bife, cazuri, sume, sarcini.</div>'
-    +'<details style="padding:10px 15px 14px;font-size:12.5px;color:var(--muted)"><summary style="cursor:pointer;font-weight:700;color:var(--ink)">Cum se obține linkul — ghid pentru Andrei (~10 minute, gratuit)</summary>'
+    +'<details style="padding:10px 15px 14px;font-size:12.5px;color:var(--muted)"><summary style="cursor:pointer;font-weight:700;color:var(--ink)">Cum se obține linkul — ghid pentru Cosmin (~10 minute, gratuit)</summary>'
     +'<ol style="margin:10px 0 0 18px;line-height:1.7">'
     +'<li>Intră pe <b>console.firebase.google.com</b> cu contul Google al asociației → <b>Add project</b> → nume: <i>salveaza-o-inima-plan</i> → dezactivează Google Analytics → Create.</li>'
     +'<li>În meniul din stânga: <b>Build → Realtime Database → Create database</b> → alege <b>Belgium (europe-west1)</b> → <b>Start in locked mode</b> → Enable.</li>'
@@ -1003,7 +1005,7 @@ function randZi(){
   const w=dow(ZI), lucru=(w>=1&&w<=5), active=cazuriActive(ZI);
   let h='<div class="info">📆 <b>'+fmtZi(ZI)+'</b> · '+(active.length?active.length+' campanii active: '+active.map(c=>esc(c.nume)+' <span class="mini">(resp. '+esc(c.resp)+')</span>').join(', '):'nicio campanie activă')+'</div>';
   if(!lucru)h+='<div class="warn">Weekend — apar doar sarcinile familiei.</div>';
-  /* Gabriel/Andrei nu văd grila/agendele fetelor; fetele nu văd sarcinile lui Gabriel/Andrei. Vlad vede tot. */
+  /* Tudor/Cosmin nu văd grila/agendele fetelor; fetele nu văd sarcinile lui Tudor/Cosmin. Radu vede tot. */
   const euExtern=eExtern(USER), euFata=eFata(USER);
   if(!euExtern){
     h+='<div class="grid">'+ECHIPA.map(p=>{
@@ -1021,9 +1023,9 @@ function randZi(){
   /* sarcinile punctuale ale colegilor din afara programului de fundraising */
   const altii=TOTI.filter(p=>{
     if(ECHIPA.indexOf(p)>=0) return false;
-    if(euExtern) return p===USER; /* Gabriel vede doar ale lui */
-    if(euFata) return false; /* fetele nu văd Gabriel/Andrei */
-    return true; /* Vlad / nesetat: vede pe toți externii */
+    if(euExtern) return p===USER; /* Tudor vede doar ale lui */
+    if(euFata) return false; /* fetele nu văd Tudor/Cosmin */
+    return true; /* Radu / nesetat: vede pe toți externii */
   }).sort((a,b)=>(a===USER?-1:0)-(b===USER?-1:0));
   altii.forEach(p=>{
     const ale=EXTRA.filter(e=>!e.sters&&e.data===ZI&&e.pers===p);
@@ -1045,7 +1047,7 @@ function randZi(){
     else if(euFata && eExtern(FILTRU)) cine=[USER].concat(FETELE.filter(p=>p!==USER));
     else cine=[FILTRU];
   } else if(euExtern){
-    cine=[USER]; /* Gabriel/Andrei: doar agenda proprie, fără fete */
+    cine=[USER]; /* Tudor/Cosmin: doar agenda proprie, fără fete */
   } else if(USER){
     cine=[USER].concat(ECHIPA.filter(p=>p!==USER));
   } else {
@@ -1138,7 +1140,7 @@ function randCazuri(){
       +'<label>Părinți</label><input type="text" id="f_parinti" placeholder="nume și prenume" style="width:180px">'
       +'<label>Localitate</label><input type="text" id="f_localitate" placeholder="ex: Botoșani" style="width:140px">'
       +'<label>Județ</label><input type="text" id="f_judet" placeholder="ex: Botoșani" style="width:130px">'
-      +'<label>Link site</label><input type="text" id="f_link" placeholder="https://salveazaoinima.ro/…" style="width:210px">'
+      +'<label>Link site</label><input type="text" id="f_link" placeholder="https://exemplu.ro/…" style="width:210px">'
       +'<button class="btn primary" onclick="adaugaCaz()">Adaugă</button>'
       +'<button class="btn" onclick="FORM=false;render()">Renunț</button></div>'
       +'<div id="prev"></div></div>';
@@ -1166,7 +1168,7 @@ function randCazuri(){
         +'<label>Termen</label><select id="ed_zile">'+Object.keys(TIERS).map(z=>'<option value="'+z+'"'+(+z===+cz.zile?' selected':'')+'>'+z+' zile · '+TIERS[z].lab+'</option>').join('')+'</select>'
         +'<label>Localitate</label><input type="text" id="ed_localitate" value="'+esc(cz.localitate||'')+'" placeholder="ex: Botoșani" style="width:140px">'
         +'<label>Județ</label><input type="text" id="ed_judet" value="'+esc(cz.judet||'')+'" placeholder="ex: Botoșani" style="width:130px">'
-        +'<label>Link site</label><input type="text" id="ed_link" value="'+esc(cz.link||'')+'" placeholder="https://salveazaoinima.ro/…" style="flex:1;min-width:210px">'
+        +'<label>Link site</label><input type="text" id="ed_link" value="'+esc(cz.link||'')+'" placeholder="https://exemplu.ro/…" style="flex:1;min-width:210px">'
         +'<button class="btn primary small" onclick="salveazaEditCaz(\''+cz.id+'\')">Salvează corecturile</button>'
         +'<button class="btn small" onclick="EDITCAZ=\'\';render()">Renunț</button>'
         +'<span class="mini" style="flex-basis:100%">Numele se schimbă peste tot, fără să se piardă nimic. Dacă schimbi startul sau termenul, programul se recalculează — bifele de pe zilele mutate ajung la restanțe.</span></div>';
@@ -1196,7 +1198,7 @@ function randCazuri(){
       +'<div class="freqhead">Praguri — se aprind singure din sumă</div><div class="prag">'
       +[25,50,75,100].map(x=>{const k=cz.id+'|prag'+x, vid=BIFE['prag|'+cz.id+'|'+x], areVideo=(x===50||x===75);
         return '<button class="pragbtn '+(PRAGURI[k]?'on':'')+'" onclick="togglePrag(\''+k+'\')">'+x+'%'+(PRAGURI[k]?(areVideo?(vid?' ✓ video':' · video de făcut'):' ✓'):'')+'</button>';}).join('')+'</div>'
-      +'<div class="frow mini">Când suma trece de 50% sau 75%, Ștefania primește automat în agendă sarcina de video (TikTok, Facebook, Instagram) și apare alertă până e bifată.</div>'
+      +'<div class="frow mini">Când suma trece de 50% sau 75%, Diana primește automat în agendă sarcina de video (TikTok, Facebook, Instagram) și apare alertă până e bifată.</div>'
       +notiteHtml(cz)+'</div>';
   });
   return h;
@@ -1229,7 +1231,7 @@ function notiteHtml(cz){
   nts.slice().reverse().forEach(n=>{
     h+='<div class="slot"><div class="hh">'+esc(String(n.la||'').slice(8,10)+'.'+String(n.la||'').slice(5,7))+'</div>'
       +'<div class="bd">'+esc(n.text)+'<span class="byline">— '+esc(n.de||'?')+'</span></div>'
-      +((n.de===USER||USER==='Vlad')?'<button class="btn small" onclick="stergeNotita(\''+cz.id+'\',\''+n.id+'\')">✕</button>':'')
+      +((n.de===USER||USER==='Radu')?'<button class="btn small" onclick="stergeNotita(\''+cz.id+'\',\''+n.id+'\')">✕</button>':'')
       +'</div>';
   });
   h+='<div class="frow" style="border:none"><input type="text" id="nt_'+cz.id+'" placeholder="Ceva important pentru colegi — ex: familia răspunde doar după 14:00; mâine sunați la clinică" style="flex:1;min-width:220px" onkeydown="if(event.key===\'Enter\')adaugaNotita(\''+cz.id+'\')">'
@@ -1322,7 +1324,7 @@ function setSuma(id,val,auto){
   });
   saveCaz();savePrag();render();
   const cuVideo=noi.filter(x=>x===50||x===75);
-  toast(noi.length?'🎉 '+c.nume+' a atins '+noi.join('% și ')+'%'+(cuVideo.length?' — video pentru Ștefania!':' ✓'):'Sumă actualizată ✓');
+  toast(noi.length?'🎉 '+c.nume+' a atins '+noi.join('% și ')+'%'+(cuVideo.length?' — video pentru Diana!':' ✓'):'Sumă actualizată ✓');
 }
 /* ============ PRELUAREA SUMELOR DE PE SITE ============ */
 function numarSuma(x){
@@ -1541,7 +1543,7 @@ function randListaExtra(titlu,lista){
 }
 function randExtra(){
   const potiNotifica='Notification' in window;
-  let h='<div class="info">Oricine poate da o sarcină oricui — Andreea către Paula, Paula către Ștefania, oricare către Vlad, Gabriel sau Andrei. Sarcina apare în ziua aleasă direct în agenda persoanei, marcată cu 📌, iar colegul e anunțat chiar aici, în program: banner mov + sunet'
+  let h='<div class="info">Oricine poate da o sarcină oricui — Ioana către Mihaela, Mihaela către Diana, oricare către Radu, Tudor sau Cosmin. Sarcina apare în ziua aleasă direct în agenda persoanei, marcată cu 📌, iar colegul e anunțat chiar aici, în program: banner mov + sunet'
    +(potiNotifica?' + notificare de browser dacă are pagina deschisă':'')
    +'. Totul ajunge la el în cel mult 10–15 secunde.</div>';
   if(potiNotifica&&Notification.permission==='default')
@@ -1720,7 +1722,8 @@ function elimRest(key){
 
 function randFise(){
   const azi=dow(todayIso())>=1&&dow(todayIso())<=5?todayIso():addDays(todayIso(),8-dow(todayIso())||1);
-  let h='<div class="info">Fișa se generează din motorul programului: tot ce apare aici ajunge automat în „Ziua mea", cu oră și bifă.</div>';
+  let h='<div class="info">Fișa se generează din motorul programului: tot ce apare aici ajunge automat în „Ziua mea", cu oră și bifă. Cu „Încarcă fișa postului" (orice fișier) sarcinile din ea intră singure în program.</div>';
+  if(FISA_REV)h+=randFisaRev();
   ECHIPA.forEach(p=>{
     const zileSapt=[1,2,3,4,5].map(w=>{let d=todayIso();for(let i=0;i<7;i++){if(dow(addDays(d,i))===w)return addDays(d,i);}return d;});
     const set=new Map();
@@ -1729,7 +1732,7 @@ function randFise(){
       set.set(k,(set.get(k)||new Set()).add(ZILE[dow(iso)]));
     }));
     h+='<div class="card"><div class="chead"><b>'+p+'</b><span class="sub">'+ROL[p]+'</span>'
-      +'<span class="right"><button class="btn small" onclick="fisaWord(\''+p+'\')">📄 Word</button></span></div>';
+      +'<span class="right"><button class="btn small" onclick="deschideFisa(\''+p+'\')">📎 Încarcă fișa postului</button> <button class="btn small" onclick="fisaWord(\''+p+'\')">📄 Word</button></span></div>'+fisaInfo(p);
     [...set.entries()].forEach(([t,zile])=>{
       const et=zile.size===5?'zilnic':[...zile].join(', ');
       h+='<div class="slot"><div class="hh">'+et+'</div><div class="bd">'+esc(t)+'</div></div>';
@@ -1743,6 +1746,131 @@ function randFise(){
     h+='</div>';
   });
   return h;
+}
+/* ===== ÎNCARCĂ FIȘA POSTULUI — orice fișier; sarcinile din ea intră automat în programul de lucru ===== */
+function deschideFisa(p){FISA_PERS=p;const f=document.getElementById('fisaFile');f.value='';f.click();}
+async function zipCitesteIntrare(buf,nume){
+  const dv=new DataView(buf),u8=new Uint8Array(buf);
+  let eocd=-1;for(let i=u8.length-22;i>=Math.max(0,u8.length-70000);i--){if(dv.getUint32(i,true)===0x06054b50){eocd=i;break;}}
+  if(eocd<0)return null;
+  const n=dv.getUint16(eocd+10,true);let p=dv.getUint32(eocd+16,true);
+  for(let k=0;k<n;k++){
+    if(dv.getUint32(p,true)!==0x02014b50)break;
+    const met=dv.getUint16(p+10,true),csz=dv.getUint32(p+20,true),nl=dv.getUint16(p+28,true),xl=dv.getUint16(p+30,true),cl=dv.getUint16(p+32,true),off=dv.getUint32(p+42,true);
+    const nm=new TextDecoder().decode(u8.subarray(p+46,p+46+nl));
+    if(nm===nume){
+      const ln=dv.getUint16(off+26,true),lx=dv.getUint16(off+28,true),ds=off+30+ln+lx,data=u8.subarray(ds,ds+csz);
+      if(met===0)return new TextDecoder().decode(data);
+      const st=new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+      return new TextDecoder().decode(await new Response(st).arrayBuffer());
+    }
+    p+=46+nl+xl+cl;
+  }
+  return null;
+}
+function xmlInText(x){
+  return x.replace(/<\/(w:p|text:p|text:h)>/g,'\n').replace(/<(w:tab|text:tab)\s*\/>/g,' ').replace(/<(w:br|text:line-break)\s*\/>/g,'\n').replace(/<[^>]+>/g,'')
+    .replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&amp;/g,'&');
+}
+async function pdfInText(buf){
+  const s=new TextDecoder('latin1').decode(new Uint8Array(buf));let out='';
+  const re=/stream\r?\n([\s\S]*?)\r?\nendstream/g;let m;
+  const un=q=>q.replace(/\\([nrtbf()\\])/g,(z,c)=>({n:'\n',r:'',t:' ',b:'',f:'',')':')','(':'(','\\':'\\'}[c])).replace(/\\(\d{3})/g,(z,o)=>String.fromCharCode(parseInt(o,8)));
+  while((m=re.exec(s))){
+    let body=m[1];
+    try{
+      const bytes=Uint8Array.from(body,c=>c.charCodeAt(0));
+      const st=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate'));
+      body=new TextDecoder('latin1').decode(await new Response(st).arrayBuffer());
+    }catch(e){}
+    if(body.indexOf('BT')<0)continue;
+    body.replace(/\[((?:[^\]\\]|\\.)*)\]\s*TJ|\(((?:[^)\\]|\\.)*)\)\s*Tj|T\*|ET/g,(a,tj,t)=>{
+      if(a==='T*'||a==='ET'){out+='\n';return a;}
+      const raw=tj!=null?(tj.match(/\(((?:[^)\\]|\\.)*)\)/g)||[]).map(x=>x.slice(1,-1)).join(''):t;
+      out+=un(raw);
+      return a;
+    });
+  }
+  return out;
+}
+function textCitibil(t){const l=(t.match(/[A-Za-zĂÂÎȘȚăâîșț]/g)||[]).length;return t.length>20&&l/t.length>0.45;}
+async function extrageText(file){
+  const ext=(file.name.split('.').pop()||'').toLowerCase(),buf=await file.arrayBuffer();
+  let t='';
+  try{
+    if(ext==='docx')t=xmlInText(await zipCitesteIntrare(buf,'word/document.xml')||'');
+    else if(ext==='odt')t=xmlInText(await zipCitesteIntrare(buf,'content.xml')||'');
+    else if(ext==='pdf')t=await pdfInText(buf);
+    else{
+      t=new TextDecoder('utf-8').decode(buf);
+      if(/^(html?|xml)$/.test(ext))t=xmlInText(t.replace(/<(br|\/p|\/li|\/div|\/h\d)[^>]*>/gi,'\n'));
+      if(ext==='rtf')t=t.replace(/\\par[d]?/g,'\n').replace(/\\'([0-9a-f]{2})/gi,(a,h)=>String.fromCharCode(parseInt(h,16))).replace(/\{\\\*[^}]*\}|\\[a-z]+-?\d* ?|[{}]/gi,'');
+    }
+  }catch(e){t='';}
+  return textCitibil(t)?t:'';
+}
+function extrageSarcini(text){
+  const lines=text.replace(/\r/g,'').split('\n').map(l=>l.replace(/\s+/g,' ').trim()).filter(Boolean);
+  const BUL=/^([•●▪◦·\-–—*]|\d+[.)]|[a-z][.)])\s+/i,HEAD=/^(atribu[țt]ii|responsabilit[ăa][țt]i|sarcini|activit[ăa][țt]i|obiective|duties|responsibilities|tasks)/i;
+  let src=lines;const i0=lines.findIndex(l=>HEAD.test(l)&&l.length<90);
+  if(i0>=0){
+    const sec=[];
+    for(let i=i0+1;i<lines.length;i++){
+      const l=lines[i],eTitlu=!BUL.test(l)&&l.length<60&&(/:$/.test(l)||(l===l.toUpperCase()&&/[A-ZĂÂÎȘȚ]/.test(l)));
+      if(eTitlu&&sec.length)break;
+      sec.push(l);
+    }
+    if(sec.length)src=sec;
+  }
+  const out=[];
+  src.forEach(l=>{
+    const bul=BUL.test(l);
+    if(!bul&&out.length&&/^[a-zăâîșț]/.test(l)&&out[out.length-1].raw){out[out.length-1].t+=' '+l;return;}
+    if(!bul&&/:$/.test(l))return;
+    out.push({t:l.replace(BUL,''),raw:bul});
+  });
+  return out.map(o=>o.t.replace(/[;,.]+$/,'').trim()).filter(t=>t.length>=8&&t.length<=220).slice(0,30);
+}
+async function incarcaFisaPostului(inp){
+  const f=inp.files&&inp.files[0];if(!f)return;
+  toast('Citesc '+f.name+'…');
+  const text=await extrageText(f),linii=text?extrageSarcini(text):[];
+  FISA_REV={pers:FISA_PERS,nume:f.name,linii:linii,citit:!!text};
+  setView('fisa');window.scrollTo(0,0);
+  toast(linii.length?linii.length+' sarcini găsite în fișă ✓':'Nu am putut citi textul — lipește sarcinile mai jos');
+}
+function anuleazaFisa(){FISA_REV=null;render();}
+function ziDinLinie(l,mod,i){
+  const D={luni:1,'marți':2,marti:2,miercuri:3,joi:4,vineri:5},z=[];
+  Object.keys(D).forEach(k=>{if(new RegExp('\\b'+k+'\\b','i').test(l)&&z.indexOf(D[k])<0)z.push(D[k]);});
+  if(z.length)return z.sort();
+  if(/zilnic|în fiecare zi|in fiecare zi/i.test(l))return [1,2,3,4,5];
+  if(/s[ăa]pt[ăa]m[âa]nal/i.test(l))return [5];
+  return mod==='zilnic'?[1,2,3,4,5]:[(i%5)+1];
+}
+function confirmaFisa(){
+  if(!FISA_REV)return;
+  const p=FISA_REV.pers,mod=document.getElementById('fisa_mod').value,dur=+document.getElementById('fisa_dur').value||30,bloc=document.getElementById('fisa_bloc').value;
+  const linii=document.getElementById('fisa_txt').value.split('\n').map(l=>l.trim()).filter(Boolean);
+  if(!linii.length){alert('Nu e nicio sarcină de adăugat.');return;}
+  RUTINA_CUSTOM.forEach(r=>{if(r.src==='fisa'&&r.pers===p&&!r.sters){r.sters=true;r.mod_la=acum();}});
+  linii.forEach((t,i)=>RUTINA_CUSTOM.push({id:uid(),pers:p,t:t,dur:dur,bloc:bloc,prio:'',zile:ziDinLinie(t,mod,i),src:'fisa',fisa:FISA_REV.nume,mod_la:acum()}));
+  saveRutinaCustom();FISA_REV=null;render();toast(linii.length+' sarcini din fișă → programul lui '+p+' ✓');
+}
+function randFisaRev(){
+  const r=FISA_REV;
+  let h='<div class="card" style="border-color:var(--blue)"><div class="chead"><b>📎 Fișa postului — '+esc(r.pers)+'</b><span class="sub">'+esc(r.nume)+'</span></div>';
+  h+='<div class="mini" style="margin:4px 0">'+(r.citit?'Am extras sarcinile din fișă. Verifică-le, editează sau șterge rânduri (câte o sarcină pe rând), apoi confirmă — intră în „Ziua mea" cu oră și bifă. Poți scrie „zilnic", „vineri" etc. în rând ca să fixezi zilele.':'Nu am putut citi textul din acest fișier (format nesuportat sau scanat). Lipește mai jos sarcinile din fișa postului, câte una pe rând.')+'</div>';
+  h+='<textarea id="fisa_txt" rows="10" style="width:100%;font:inherit;padding:8px;border:1px solid var(--line);border-radius:8px">'+esc(r.linii.join('\n'))+'</textarea>';
+  h+='<div class="frow" style="border:none;margin-top:8px"><select id="fisa_mod"><option value="rotativ">rotativ pe zilele săptămânii</option><option value="zilnic">în fiecare zi</option></select>'
+    +'<select id="fisa_dur">'+[15,20,30,45,60].map(d=>'<option value="'+d+'"'+(d===30?' selected':'')+'>'+d+' min</option>').join('')+'</select>'
+    +'<select id="fisa_bloc"><option value="d">dimineața</option><option value="p">după-amiaza</option></select>'
+    +'<button class="btn primary small" onclick="confirmaFisa()">✔ Adaugă în programul lui '+esc(r.pers)+'</button><button class="btn small" onclick="anuleazaFisa()">Anulează</button></div></div>';
+  return h;
+}
+function fisaInfo(p){
+  const m=RUTINA_CUSTOM.filter(r=>!r.sters&&r.src==='fisa'&&r.pers===p);
+  return m.length?'<div class="mini" style="padding:2px 2px 6px">📎 Din fișa încărcată „'+esc(m[0].fisa||'')+'": '+m.length+' sarcini în program</div>':'';
 }
 function fisaWord(p){
   let items=[];
