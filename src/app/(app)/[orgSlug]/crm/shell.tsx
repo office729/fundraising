@@ -84,9 +84,8 @@ function buildNav(dict: DashboardDict, orgSlug: string): { section: string; item
         { href: "/prospectare", label: dict.nav.prospectare, icon: Target },
         { href: "companii?marcaj=d177", label: dict.nav.companiiD177, icon: Landmark },
         { href: "donatori", label: dict.nav.donatori, icon: Users },
-        { href: "/crm-voluntari", label: dict.nav.voluntari, icon: HandHeart },
-        { href: "/program-lucru", label: dict.nav.programLucru, icon: CalendarClock },
         { href: "donatori/formular-230", label: dict.nav.formular230, icon: FileSignature },
+        { href: "/crm-voluntari", label: dict.nav.voluntari, icon: HandHeart },
         { href: "beneficiari", label: dict.nav.beneficiari, icon: HeartHandshake },
       ],
     },
@@ -95,23 +94,29 @@ function buildNav(dict: DashboardDict, orgSlug: string): { section: string; item
       items: [
         { href: "donatii", label: dict.nav.donatii, icon: Sparkles },
         { href: "strangere-fonduri", label: dict.nav.strangereFonduri, icon: HandCoins },
-        { href: "portal-beneficiari", label: dict.nav.portalBeneficiari, icon: HeartHandshake },
         { href: "fonduri-plati", label: dict.nav.fonduriPlati, icon: Banknote },
         { href: "rfm", label: dict.nav.rfm, icon: LayoutGrid },
+        { href: "portal-beneficiari", label: dict.nav.portalBeneficiari, icon: HeartHandshake },
       ],
     },
     {
       section: dict.nav.sectionOperare,
       items: [
-        { href: "comunicare", label: dict.nav.comunicare, icon: MessageSquare },
         { href: "taskuri", label: dict.nav.taskuri, icon: ClipboardList },
+        { href: "comunicare", label: dict.nav.comunicare, icon: MessageSquare },
+        { href: "/program-lucru", label: dict.nav.programLucru, icon: CalendarClock },
         { href: "documente", label: dict.nav.documente, icon: FileText },
         { href: "rapoarte", label: dict.nav.rapoarte, icon: FileText },
-        { href: "instrumente", label: dict.nav.instrumente, icon: Wrench },
-        { href: "consultanta", label: dict.nav.consultanta, icon: GraduationCap },
       ],
     },
-    { section: "", items: [{ href: "setari", label: dict.nav.setari, icon: Settings }] },
+    {
+      section: dict.nav.sectionPlatforma,
+      items: [
+        { href: "instrumente", label: dict.nav.instrumente, icon: Wrench },
+        { href: "consultanta", label: dict.nav.consultanta, icon: GraduationCap },
+        { href: "setari", label: dict.nav.setari, icon: Settings },
+      ],
+    },
   ];
   // personalizări agreate cu ONG-ul respectiv (vezi lib/org-customizations.ts) — pentru
   // orice alt cont rămâne meniul standard, neschimbat

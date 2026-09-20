@@ -4,6 +4,7 @@ import { AlertTriangle, CalendarClock, CheckCircle2, ListTodo, X } from "lucide-
 import { useParams, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
+import { DemoBanner } from "../components/demo-banner";
 import { Button } from "../components/ui/button";
 import { Input, Label, Select } from "../components/ui/input";
 import { Dialog } from "../components/ui/dialog";
@@ -107,6 +108,12 @@ export default function TaskuriPage() {
         <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">{dict.title}</h1>
         <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">{dict.subtitle}</p>
       </div>
+
+      <DemoBanner>
+        {locale === "ro"
+          ? "Date demonstrative: taskurile de aici sunt exemple, iar cele create de tine se păstrează doar în acest browser, nu pe server."
+          : "Demo data: the tasks here are examples, and the ones you create are kept only in this browser, not on the server."}
+      </DemoBanner>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatTile icon={ListTodo} label={dict.stats.azi} value={counts.azi} tone="blue" activ={filtru === "azi"} onClick={() => setFiltru(filtru === "azi" ? "toate" : "azi")} />

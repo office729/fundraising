@@ -10,6 +10,7 @@ import { ElegantEditorialDashboard } from "./components/dashboard/elegant-editor
 import { IndraznetDinamicDashboard } from "./components/dashboard/indraznet-dinamic-dashboard";
 import { NaturalAncoratDashboard } from "./components/dashboard/natural-ancorat-dashboard";
 import { NeutruDashboard } from "./components/dashboard/neutru-dashboard";
+import { DemoBanner } from "./components/demo-banner";
 import { TaskuriCard } from "./components/dashboard/taskuri-card";
 import type { DashboardData } from "./components/dashboard/types";
 import { useLocale } from "./lib/locale-context";
@@ -137,6 +138,12 @@ export default function CrmDashboardPage() {
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-6">
+      <DemoBanner>
+        {locale === "ro"
+          ? "Date demonstrative: taskurile și indicatorii de pe această pagină sunt exemple și se păstrează doar în acest browser, nu pe server."
+          : "Demo data: the tasks and indicators on this page are examples and are kept only in this browser, not on the server."}
+      </DemoBanner>
+
       <TaskuriCard taskuri={taskuriLive} base={base} locale={locale} />
 
       <DomainWelcomeBanner salut={salut} nume="Vlad" subtitle={dict.summary(actiuni.length, blocate)} />
