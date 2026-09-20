@@ -21,6 +21,8 @@ export const SETARI_ECHIPA_DICT = {
       },
       integrariList: {
         stripe: { nume: "Stripe", descriere: "Colectare plăți online pentru sponsorizări." },
+        euplatesc: { nume: "EuPlătesc", descriere: "Procesator de plăți din România pentru donații și sponsorizări online, în lei." },
+        smartfintech: { nume: "SmartFintech", descriere: "Plăți și servicii financiare conectate la donații, sponsorizări și rapoarte." },
         mailchimp: { nume: "Mailchimp", descriere: "Sincronizare listă donatori pentru newsletter." },
         newsman: { nume: "Newsman", descriere: "Conectare prin API pentru trimiterea newsletterelor și sincronizarea listelor." },
         theMarketer: { nume: "The Marketer", descriere: "Conectare prin API pentru newslettere și automatizări de email marketing." },
@@ -140,6 +142,8 @@ export const SETARI_ECHIPA_DICT = {
       },
       integrariList: {
         stripe: { nume: "Stripe", descriere: "Online payment collection for sponsorships." },
+        euplatesc: { nume: "EuPlătesc", descriere: "Romanian payment processor for online donations and sponsorships, in RON." },
+        smartfintech: { nume: "SmartFintech", descriere: "Payments and financial services connected to donations, sponsorships and reports." },
         mailchimp: { nume: "Mailchimp", descriere: "Sync the donor list for the newsletter." },
         newsman: { nume: "Newsman", descriere: "API connection for sending newsletters and syncing lists." },
         theMarketer: { nume: "The Marketer", descriere: "API connection for newsletters and email marketing automations." },
