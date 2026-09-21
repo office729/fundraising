@@ -6,7 +6,7 @@ export const COOKIES_DICT = {
     eyebrow: "Legal",
     titlu: "Politica de cookies",
     actualizatLabel: "Ultima actualizare",
-    actualizat: "[DE COMPLETAT — data publicării]",
+    actualizat: "21 septembrie 2026",
     banner: {
       titlu: "Cookie-uri și statistici",
       text: "Folosim cookie-uri strict necesare pentru autentificare. Cu acordul tău, folosim și Google Analytics pentru statistici anonime despre utilizarea site-ului. Poți schimba alegerea oricând.",
@@ -49,7 +49,7 @@ export const COOKIES_DICT = {
       titlu: "5. Cookie-uri terțe",
       textBefore: "Dacă activezi autentificarea cu Google, Google poate seta propriile cookie-uri în timpul procesului de autentificare, conform",
       linkText: "politicii de confidențialitate Google",
-      textAfter: ". [DE COMPLETAT — orice alt serviciu terț adăugat ulterior, de exemplu procesatorul de plăți.]",
+      textAfter: ". Procesatorul de plăți (de exemplu Stripe) poate seta, pe pagina lui securizată de plată, cookie-uri proprii, necesare procesării plății.",
     },
     s5: {
       titlu: "6. Cum gestionezi cookie-urile",
@@ -61,7 +61,7 @@ export const COOKIES_DICT = {
     eyebrow: "Legal",
     titlu: "Cookie Policy",
     actualizatLabel: "Last updated",
-    actualizat: "[TO COMPLETE — publication date]",
+    actualizat: "September 21, 2026",
     banner: {
       titlu: "Cookies and statistics",
       text: "We use strictly necessary cookies for sign-in. With your consent, we also use Google Analytics for anonymous statistics about how the site is used. You can change your choice at any time.",
@@ -104,7 +104,7 @@ export const COOKIES_DICT = {
       titlu: "5. Third-party cookies",
       textBefore: "If you enable sign-in with Google, Google may set its own cookies during the authentication process, per the",
       linkText: "Google privacy policy",
-      textAfter: ". [TO COMPLETE — any other third-party service added later, for example the payment processor.]",
+      textAfter: ". The payment processor (for example Stripe) may set its own cookies on its secure payment page, needed to process the payment.",
     },
     s5: {
       titlu: "6. Managing cookies",

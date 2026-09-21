@@ -1,27 +1,6 @@
 import Link from "next/link";
 
-export function DraftBanner({ locale }: { locale: "ro" | "en" }) {
-  return (
-    <div className="mx-auto mb-8 max-w-3xl rounded-xl border-2 border-brand-amber bg-brand-amber-soft px-5 py-4 text-[13.5px] leading-relaxed text-ink">
-      {locale === "ro" ? (
-        <>
-          <strong>Proiect (draft)</strong> — text generic de plecare, generat automat. Conține câmpuri de completat
-          (marcate <code className="rounded bg-white/60 px-1">[DE COMPLETAT]</code>) și trebuie verificat de un jurist
-          înainte de a fi considerat definitiv sau folosit ca politică oficială a organizației.
-        </>
-      ) : (
-        <>
-          <strong>Draft</strong> — generic starting text, generated automatically. Contains fields to fill in
-          (marked <code className="rounded bg-white/60 px-1">[TO COMPLETE]</code>) and must be reviewed by a lawyer
-          before being considered final or used as the organization&rsquo;s official policy.
-        </>
-      )}
-    </div>
-  );
-}
-
 export function LegalLayout({
-  locale,
   homeLabel,
   eyebrow,
   titlu,
@@ -29,7 +8,7 @@ export function LegalLayout({
   actualizat,
   children,
 }: {
-  locale: "ro" | "en";
+  locale?: "ro" | "en";
   homeLabel: string;
   eyebrow: string;
   titlu: string;
@@ -54,8 +33,6 @@ export function LegalLayout({
             {actualizatLabel}: {actualizat}
           </p>
         </div>
-
-        <DraftBanner locale={locale} />
 
         <div className="mx-auto flex max-w-3xl flex-col gap-6 text-[14.5px] leading-relaxed text-body">{children}</div>
       </section>
