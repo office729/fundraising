@@ -7,7 +7,7 @@ export const PREMII_DICT = {
     eyebrow: "Premii și distincții",
     titlu: "Premii și distincții — Vlad Plăcintă",
     paragrafe: [
-      "Sunt Vlad Plăcintă, președintele Asociației „Salvează o Inimă” și fondatorul Alexandrit. De-a lungul anilor, m-am dedicat în totalitate sprijinirii cauzelor umanitare și dezvoltării strategiilor eficiente de fundraising pentru ONG-uri. Am reușit să strâng peste 22 milioane de euro prin diverse campanii care au salvat sute de vieți.",
+      "Sunt Vlad Plăcintă, președintele Asociației „Salvează o Inimă” și fondatorul Alexandrit. De-a lungul anilor, m-am dedicat în totalitate sprijinirii cauzelor umanitare și dezvoltării strategiilor eficiente de fundraising pentru ONG-uri. Am reușit să strâng peste 28 milioane de euro prin diverse campanii care au salvat sute de vieți.",
       "Activitatea mea a fost recunoscută prin numeroase premii, care reflectă nu doar eforturile personale, ci și impactul major pe care l-am avut în comunitate. Printre distincțiile obținute se numără titlul de „Omul Anului 2023”, un premiu care onorează 12 ani de activitate neîntreruptă în sprijinul celor mai vulnerabili.",
     ],
     distinctieMajora: "Distincție majoră",
@@ -37,7 +37,7 @@ export const PREMII_DICT = {
     eyebrow: "Awards and honors",
     titlu: "Awards and honors — Vlad Plăcintă",
     paragrafe: [
-      "I'm Vlad Plăcintă, president of Asociația „Salvează o Inimă” and founder of Alexandrit. Over the years, I've fully dedicated myself to supporting humanitarian causes and developing effective fundraising strategies for NGOs. I've raised over €22 million through various campaigns that have saved hundreds of lives.",
+      "I'm Vlad Plăcintă, president of Asociația „Salvează o Inimă” and founder of Alexandrit. Over the years, I've fully dedicated myself to supporting humanitarian causes and developing effective fundraising strategies for NGOs. I've raised over €28 million through various campaigns that have saved hundreds of lives.",
       "My work has been recognized through numerous awards, reflecting not just personal effort but the major impact I've had in the community. Among the honors received is the „Man of the Year 2023” title, an award honoring 12 years of continuous work in support of the most vulnerable.",
     ],
     distinctieMajora: "Major honor",

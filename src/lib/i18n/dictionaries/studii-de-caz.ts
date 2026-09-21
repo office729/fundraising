@@ -7,10 +7,10 @@ export const STUDII_DE_CAZ_DICT = {
     titlu: "Cum arată rezultatele, în practică",
     caz: {
       eyebrow: "Asociația Salvează o Inimă",
-      titlu: "De la înființare la peste 22 de milioane de euro strânși",
+      titlu: "De la înființare la peste 28 de milioane de euro strânși",
       stats: [
         { v: "28M €", l: "strânși" },
-        { v: "690+", l: "campanii" },
+        { v: "700+", l: "campanii" },
         { v: "1000+", l: "beneficiari" },
         { v: "14 ani", l: "de activitate" },
       ],
@@ -24,7 +24,7 @@ export const STUDII_DE_CAZ_DICT = {
       },
       rezultat: {
         titlu: "Rezultatul",
-        desc: "Peste 22 de milioane de euro strânși în peste 14 ani de activitate, prin peste 690 de campanii umanitare care au ajuns la peste 1.000 de beneficiari.",
+        desc: "Peste 28 de milioane de euro strânși în peste 14 ani de activitate, prin peste 700 de campanii umanitare care au ajuns la peste 1.000 de beneficiari.",
       },
       cta: "Discută despre situația ONG-ului tău",
     },
@@ -37,10 +37,10 @@ export const STUDII_DE_CAZ_DICT = {
     titlu: "What results look like, in practice",
     caz: {
       eyebrow: "Asociația Salvează o Inimă",
-      titlu: "From founding to over €22 million raised",
+      titlu: "From founding to over €28 million raised",
       stats: [
         { v: "€28M", l: "raised" },
-        { v: "690+", l: "campaigns" },
+        { v: "700+", l: "campaigns" },
         { v: "1000+", l: "beneficiaries" },
         { v: "14 yrs", l: "of activity" },
       ],
@@ -54,7 +54,7 @@ export const STUDII_DE_CAZ_DICT = {
       },
       rezultat: {
         titlu: "The result",
-        desc: "Over €22 million raised across more than 14 years of activity, through 690+ humanitarian campaigns that reached over 1,000 beneficiaries.",
+        desc: "Over €28 million raised across more than 14 years of activity, through 700+ humanitarian campaigns that reached over 1,000 beneficiaries.",
       },
       cta: "Discuss your NGO's situation",
     },

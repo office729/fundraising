@@ -11,13 +11,13 @@ export const VLAD_PLACINTA_DICT = {
     subtitlu: "Președintele Asociației „Salvează o Inimă” și fondatorul Alexandrit",
     paragrafe: [
       "Sunt Vlad Plăcintă, președintele Asociației „Salvează o Inimă” și fondatorul Alexandrit. De peste 14 ani mă dedic sprijinirii cauzelor umanitare și dezvoltării strategiilor de fundraising pentru ONG-uri.",
-      "Prin campaniile pe care le-am coordonat am reușit să strâng peste 22 de milioane de euro, bani care au salvat sute de vieți. Din această experiență a apărut Alexandrit: metode testate, instrumente practice și îndrumare personalizată pentru organizațiile care vor să strângă mai multe fonduri, să aibă donatori fideli și parteneriate durabile.",
+      "Prin campaniile pe care le-am coordonat am reușit să strâng peste 28 de milioane de euro, bani care au salvat sute de vieți. Din această experiență a apărut Alexandrit: metode testate, instrumente practice și îndrumare personalizată pentru organizațiile care vor să strângă mai multe fonduri, să aibă donatori fideli și parteneriate durabile.",
       "Activitatea mea a fost recunoscută prin numeroase premii, între care titlul de „Omul Anului 2023”, acordat pentru 12 ani de activitate neîntreruptă în sprijinul celor mai vulnerabili.",
     ],
     cifre: [
       { v: "14+ ani", l: "de experiență în fundraising" },
-      { v: "22 mil. €", l: "strânși prin campanii" },
-      { v: "500+", l: "campanii reușite" },
+      { v: "28 mil. €", l: "strânși prin campanii" },
+      { v: "700+", l: "campanii reușite" },
       { v: "1 la 1", l: "mentorat direct" },
     ],
     lucruTitlu: "Cum lucrezi cu mine",
@@ -41,13 +41,13 @@ export const VLAD_PLACINTA_DICT = {
     subtitlu: "President of Asociația „Salvează o Inimă” and founder of Alexandrit",
     paragrafe: [
       "I am Vlad Plăcintă, president of Asociația „Salvează o Inimă” and founder of Alexandrit. For over 14 years I have dedicated myself to supporting humanitarian causes and building fundraising strategies for NGOs.",
-      "Through the campaigns I have led, I have raised over €22 million, money that saved hundreds of lives. Alexandrit grew out of that experience: tested methods, practical tools and personal guidance for organisations that want to raise more, keep loyal donors and build lasting partnerships.",
+      "Through the campaigns I have led, I have raised over €28 million, money that saved hundreds of lives. Alexandrit grew out of that experience: tested methods, practical tools and personal guidance for organisations that want to raise more, keep loyal donors and build lasting partnerships.",
       "My work has been recognised with numerous awards, including „Man of the Year 2023”, given for 12 years of uninterrupted work supporting the most vulnerable.",
     ],
     cifre: [
       { v: "14+ years", l: "of fundraising experience" },
-      { v: "€22M", l: "raised through campaigns" },
-      { v: "500+", l: "successful campaigns" },
+      { v: "€28M", l: "raised through campaigns" },
+      { v: "700+", l: "successful campaigns" },
       { v: "1-on-1", l: "direct mentoring" },
     ],
     lucruTitlu: "How we can work together",
