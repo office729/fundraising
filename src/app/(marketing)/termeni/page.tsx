@@ -2,6 +2,7 @@ import { getLocale } from "@/lib/i18n/get-locale";
 import { TERMENI_DICT } from "@/lib/i18n/dictionaries/termeni";
 
 import { LegalLayout, Sectiune } from "../legal-shared";
+import { titluPagina } from "@/lib/page-titles";
 
 export default async function TermeniPage() {
   const locale = await getLocale();
@@ -31,4 +32,8 @@ export default async function TermeniPage() {
       ))}
     </LegalLayout>
   );
+}
+
+export async function generateMetadata() {
+  return { title: await titluPagina("termeni") };
 }

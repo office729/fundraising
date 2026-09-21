@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { getLocale } from "@/lib/i18n/get-locale";
 import { STUDII_DE_CAZ_DICT } from "@/lib/i18n/dictionaries/studii-de-caz";
+import { titluPagina } from "@/lib/page-titles";
 
 export default async function StudiiDeCazPage() {
   const locale = await getLocale();
@@ -68,4 +69,8 @@ export default async function StudiiDeCazPage() {
       </section>
     </main>
   );
+}
+
+export async function generateMetadata() {
+  return { title: await titluPagina("studii-de-caz") };
 }

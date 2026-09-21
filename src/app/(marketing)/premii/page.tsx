@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { getLocale } from "@/lib/i18n/get-locale";
 import { PREMII_DICT } from "@/lib/i18n/dictionaries/premii";
+import { titluPagina } from "@/lib/page-titles";
 
 export default async function PremiiPage() {
   const locale = await getLocale();
@@ -78,4 +79,8 @@ export default async function PremiiPage() {
       </section>
     </main>
   );
+}
+
+export async function generateMetadata() {
+  return { title: await titluPagina("premii") };
 }

@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { getLocale } from "@/lib/i18n/get-locale";
 import { PORTOFOLIU_CLIENTI_DICT } from "@/lib/i18n/dictionaries/portofoliu-clienti";
+import { titluPagina } from "@/lib/page-titles";
 
 export default async function PortofoliuClientiPage() {
   const locale = await getLocale();
@@ -57,4 +58,8 @@ export default async function PortofoliuClientiPage() {
       </section>
     </main>
   );
+}
+
+export async function generateMetadata() {
+  return { title: await titluPagina("portofoliu-clienti") };
 }

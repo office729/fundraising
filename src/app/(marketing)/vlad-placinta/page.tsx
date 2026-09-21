@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { getLocale } from "@/lib/i18n/get-locale";
 import { VLAD_PLACINTA_DICT } from "@/lib/i18n/dictionaries/vlad-placinta";
+import { titluPagina } from "@/lib/page-titles";
 
 export default async function VladPlacintaPage() {
   const locale = await getLocale();
@@ -80,4 +81,8 @@ export default async function VladPlacintaPage() {
       </section>
     </main>
   );
+}
+
+export async function generateMetadata() {
+  return { title: await titluPagina("vlad-placinta") };
 }

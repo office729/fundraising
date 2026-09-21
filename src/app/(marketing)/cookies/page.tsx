@@ -3,6 +3,7 @@ import { getLocale } from "@/lib/i18n/get-locale";
 import { COOKIES_DICT } from "@/lib/i18n/dictionaries/cookies";
 
 import { LegalLayout, Sectiune } from "../legal-shared";
+import { titluPagina } from "@/lib/page-titles";
 
 export default async function CookiesPage() {
   const locale = await getLocale();
@@ -95,4 +96,8 @@ export default async function CookiesPage() {
       </Sectiune>
     </LegalLayout>
   );
+}
+
+export async function generateMetadata() {
+  return { title: await titluPagina("cookies") };
 }

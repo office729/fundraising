@@ -27,7 +27,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Alexandrit",
+  // Fiecare pagină își pune titlul propriu (lib/page-titles.ts); sufixul e adăugat aici.
+  title: { default: "Alexandrit", template: "%s — Alexandrit" },
   description: "Instrumente de fundraising pentru ONG-uri din România",
 };
 

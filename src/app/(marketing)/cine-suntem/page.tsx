@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { getLocale } from "@/lib/i18n/get-locale";
 import { CINE_SUNTEM_DICT } from "@/lib/i18n/dictionaries/cine-suntem";
+import { titluPagina } from "@/lib/page-titles";
 
 export default async function CineSuntemPage() {
   const locale = await getLocale();
@@ -86,4 +87,8 @@ export default async function CineSuntemPage() {
       </section>
     </main>
   );
+}
+
+export async function generateMetadata() {
+  return { title: await titluPagina("cine-suntem") };
 }

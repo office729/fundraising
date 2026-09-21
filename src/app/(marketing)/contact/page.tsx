@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { getLocale } from "@/lib/i18n/get-locale";
 import { CONTACT_DICT } from "@/lib/i18n/dictionaries/contact";
+import { titluPagina } from "@/lib/page-titles";
 
 function initiale(nume: string) {
   return nume
@@ -95,4 +96,8 @@ export default async function ContactPage() {
       </section>
     </main>
   );
+}
+
+export async function generateMetadata() {
+  return { title: await titluPagina("contact") };
 }
