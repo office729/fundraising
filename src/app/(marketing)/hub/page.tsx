@@ -6,66 +6,7 @@ import { getLocale } from "@/lib/i18n/get-locale";
 import { HUB_DICT } from "@/lib/i18n/dictionaries/hub";
 
 import { CustomPlanCalculator } from "./custom-plan-calculator";
-
-type Plan = (typeof HUB_DICT)["ro"]["abonamente"][number];
-
-// Ordinea din dict.abonamente e mereu START, CREȘTERE, IMPACT (ro ȘI en —
-// numele pachetelor rămân neschimbate, doar restul textelor se traduc) —
-// vezi lib/i18n/dictionaries/hub.ts. planKey duce alegerea către /signup,
-// ca actions.ts s-o înregistreze direct pe organizația nou creată (vezi
-// signupAction) — fără asta, alegerea de pe hub se pierde la signup.
-const PLAN_KEYS = ["start", "crestere", "impact"] as const;
-
-function PricingCard({
-  plan,
-  planKey,
-  perLuna,
-  popularBadge,
-}: {
-  plan: Plan;
-  planKey: (typeof PLAN_KEYS)[number];
-  perLuna: string;
-  popularBadge: string;
-}) {
-  return (
-    <div
-      className={`relative flex flex-col gap-3.5 rounded-2xl border bg-panel p-7 ${
-        plan.popular ? "border-2 border-brand-green shadow-[0_12px_32px_rgba(63,168,92,0.16)]" : "border-line"
-      }`}
-    >
-      {plan.popular && (
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-brand-green px-4 py-1 text-xs font-extrabold tracking-wide whitespace-nowrap text-white">
-          {popularBadge}
-        </div>
-      )}
-      <div className="text-[12.5px] font-extrabold tracking-wide text-brand-green uppercase">{plan.tag}</div>
-      <h3 className="font-display text-[22px] font-bold text-ink">
-        {plan.nume} — {plan.pret}
-        {perLuna}
-      </h3>
-      <p className="text-[15px] leading-relaxed text-ink italic">&bdquo;{plan.citat}&rdquo;</p>
-      <p className="text-[14.5px] leading-relaxed text-muted">{plan.desc}</p>
-      <div className="flex flex-1 flex-col gap-2 border-t border-line pt-3.5">
-        {plan.items.map((item) => (
-          <div key={item} className="flex gap-2 text-[13.5px] leading-relaxed text-body">
-            <span className="flex-none font-extrabold text-brand-green">✓</span>
-            {item}
-          </div>
-        ))}
-      </div>
-      <Link
-        href={`/signup?plan=${planKey}`}
-        className={`rounded-md py-3 text-center font-bold transition ${
-          plan.popular
-            ? "bg-brand-green text-white hover:bg-brand-green-hover"
-            : "border border-brand-blue text-brand-blue hover:border-brand-blue-hover hover:text-brand-blue-hover"
-        }`}
-      >
-        {plan.cta}
-      </Link>
-    </div>
-  );
-}
+import { PlansSection } from "./plans-section";
 
 export default async function HubPage() {
   const locale = await getLocale();
@@ -114,17 +55,23 @@ export default async function HubPage() {
           <p className="mt-2 text-base leading-relaxed text-muted">{dict.abonamenteDesc2}</p>
         </div>
 
-        <div className="mx-auto mb-11 grid max-w-[1200px] grid-cols-1 items-stretch gap-[22px] md:grid-cols-3">
-          {dict.abonamente.map((plan, i) => (
-            <PricingCard
-              key={plan.nume}
-              plan={plan}
-              planKey={PLAN_KEYS[i]}
-              perLuna={dict.perLuna}
-              popularBadge={dict.popularBadge}
-            />
-          ))}
-        </div>
+        <PlansSection
+          plans={dict.abonamente}
+          locale={locale}
+          texte={{
+            facturareTitlu: dict.facturareTitlu,
+            facturareLunar: dict.facturareLunar,
+            facturareAnual: dict.facturareAnual,
+            facturareReducere: dict.facturareReducere,
+            perLuna: dict.perLuna,
+            perAn: dict.perAn,
+            pretFinalLabel: dict.pretFinalLabel,
+            echivalentLunar: dict.echivalentLunar,
+            facturatAnual: dict.facturatAnual,
+            facturatLunar: dict.facturatLunar,
+            popularBadge: dict.popularBadge,
+          }}
+        />
 
         <CustomPlanCalculator locale={locale} dict={dict} />
 
@@ -145,17 +92,7 @@ export default async function HubPage() {
           ))}
         </div>
 
-        <div className="mx-auto grid max-w-[1200px] grid-cols-1 gap-[22px] sm:grid-cols-2">
-          <div className="rounded-xl border border-line p-[26px]">
-            <h3 className="font-display mb-3 text-[17px] font-bold text-ink">{dict.anualeTitlu}</h3>
-            <div className="flex flex-col gap-2 text-[14.5px] text-body">
-              {dict.anuale.map((a) => (
-                <div key={a.label}>
-                  {a.label}: <strong>{a.pret}</strong>
-                </div>
-              ))}
-            </div>
-          </div>
+        <div className="mx-auto max-w-[1200px]">
           <div className="rounded-xl border border-line p-[26px]">
             <h3 className="font-display mb-3 text-[17px] font-bold text-ink">{dict.optiuniTitlu}</h3>
             <div className="flex flex-col gap-2 text-[14.5px] text-body">
