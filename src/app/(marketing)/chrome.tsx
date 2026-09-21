@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Menu, X } from "lucide-react";
+import { ChevronDown, Menu, ShieldCheck, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -202,14 +202,10 @@ export function SiteFooter({ dict }: { dict: MarketingDict }) {
             <Link href="/cookies" className="text-sm text-white/75 hover:text-white">
               {dict.footer.cookies}
             </Link>
-            <a href="mailto:vlad.placinta@alexandrit.ro" className="mt-2 text-sm text-white/75 hover:text-white">
-              vlad.placinta@alexandrit.ro
-            </a>
-            <span className="text-sm text-white/75">0757 401 042 · {dict.footer.location}</span>
           </div>
         </div>
       </div>
-      <div className="mx-auto mt-10 grid max-w-6xl grid-cols-1 gap-8 border-t border-white/10 pt-8 sm:grid-cols-3">
+      <div className="mx-auto mt-10 grid max-w-6xl grid-cols-1 gap-8 border-t border-white/10 pt-8 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <p className="text-xs font-bold tracking-wide text-white/50 uppercase">{dict.footer.companyTitle}</p>
           <div className="mt-3 flex flex-col gap-1 text-sm text-white/75">
@@ -218,11 +214,49 @@ export function SiteFooter({ dict }: { dict: MarketingDict }) {
             ))}
           </div>
         </div>
-        <div className="sm:col-span-2">
+        <div>
+          <p className="text-xs font-bold tracking-wide text-white/50 uppercase">{dict.footer.contactTitle}</p>
+          <div className="mt-3 flex flex-col gap-3 text-sm text-white/75">
+            {dict.footer.contact.map((c) => (
+              <div key={c.email} className="flex flex-col">
+                <span className="text-[12px] text-white/50">
+                  {c.nume} · {c.rol}
+                </span>
+                <a href={`mailto:${c.email}`} className="hover:text-white">
+                  {c.email}
+                </a>
+                <a href={`tel:${c.tel}`} className="hover:text-white">
+                  {c.telefon}
+                </a>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="lg:col-span-2">
           <p className="text-xs font-bold tracking-wide text-white/50 uppercase">{dict.footer.objectiveTitle}</p>
           <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/75">{dict.footer.objective}</p>
         </div>
       </div>
+
+      <div className="mx-auto mt-8 flex max-w-6xl flex-wrap items-center gap-3 border-t border-white/10 pt-6">
+        <span className="text-xs font-bold tracking-wide text-white/50 uppercase">{dict.footer.anpcTitle}</span>
+        {dict.footer.anpc.map((l) => (
+          <a
+            key={l.label}
+            href={l.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2.5 rounded-lg border border-white/20 bg-white/5 px-3.5 py-2 transition hover:border-white/50 hover:bg-white/10"
+          >
+            <ShieldCheck className="h-5 w-5 shrink-0 text-[#9ce2af]" />
+            <span className="flex flex-col leading-tight">
+              <span className="text-[13px] font-bold text-white">{l.label}</span>
+              <span className="text-[11px] text-white/60">{l.sub}</span>
+            </span>
+          </a>
+        ))}
+      </div>
+
       <p className="mx-auto mt-8 max-w-6xl text-xs text-white/40">© 2026 alexandrit.ro · MEDIGROUPPLUS SRL</p>
     </footer>
   );

@@ -89,6 +89,16 @@ export const MARKETING_DICT = {
     },
     footer: {
       tagline: "Platforma CRM pentru ONG-uri din România.",
+      contactTitle: "Contact",
+      contact: [
+        { rol: "Consiliere", nume: "Vlad Plăcintă", email: "vlad.placinta@alexandrit.ro", telefon: "0757 401 042", tel: "0757401042" },
+        { rol: "Suport tehnic", nume: "Andrei Plăcintă", email: "andrei.placinta@alexandrit.ro", telefon: "0721 425 650", tel: "0721425650" },
+      ],
+      anpcTitle: "Protecția consumatorilor",
+      anpc: [
+        { label: "ANPC — SAL", sub: "Soluționarea alternativă a litigiilor", href: "https://anpc.ro/ce-este-sal/" },
+        { label: "SOL", sub: "Soluționarea online a litigiilor (UE)", href: "https://ec.europa.eu/consumers/odr" },
+      ],
       companyTitle: "Operator",
       company: [
         "MEDIGROUPPLUS SRL",
@@ -202,6 +212,16 @@ export const MARKETING_DICT = {
     },
     footer: {
       tagline: "The CRM platform for NGOs in Romania.",
+      contactTitle: "Contact",
+      contact: [
+        { rol: "Consulting", nume: "Vlad Plăcintă", email: "vlad.placinta@alexandrit.ro", telefon: "0757 401 042", tel: "0757401042" },
+        { rol: "Technical support", nume: "Andrei Plăcintă", email: "andrei.placinta@alexandrit.ro", telefon: "0721 425 650", tel: "0721425650" },
+      ],
+      anpcTitle: "Consumer protection",
+      anpc: [
+        { label: "ANPC — SAL", sub: "Alternative dispute resolution", href: "https://anpc.ro/ce-este-sal/" },
+        { label: "SOL", sub: "EU online dispute resolution", href: "https://ec.europa.eu/consumers/odr" },
+      ],
       companyTitle: "Operator",
       company: [
         "MEDIGROUPPLUS SRL",
