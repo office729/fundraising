@@ -9,7 +9,18 @@ export const AUTOMATIZARE_DICT = {
       { titlu: "Integrare sisteme de plată", desc: "Conectăm procesatorul de plăți potrivit pentru ONG-ul tău, cu donații unice și recurente direct pe pagina de campanie." },
       { titlu: "Integrare semnătură digitală", desc: "Contracte de sponsorizare semnate electronic, cu flux de aprobare — fără drumuri și fără hârtii." },
       { titlu: "Platformă de fundraising la comandă", desc: "Un sistem construit special pentru organizația ta: CRM, campanii, rapoarte și automatizări, adaptate exact la modul tău de lucru." },
-      { titlu: "Website pentru ONG-ul tău", desc: "O prezență profesionistă, cu formular de donații integrat, gata în 10–15 zile lucrătoare." },
+      {
+        titlu: "Website pentru ONG-ul tău",
+        desc: "O prezență profesionistă, cu formular de donații integrat, gata în 10–15 zile lucrătoare. Pornim de la identitatea organizației și de la ce vrei să comunici, iar tu primești un site pe care îl poți actualiza singur.",
+        puncte: [
+          "Pagini de prezentare: despre organizație, proiecte și campanii, echipă, contact",
+          "Formular de donații integrat, cu plata online securizată",
+          "Legat de CRM-ul Alexandrit: donatorii și mesajele ajung direct în platformă",
+          "Design adaptat identității ONG-ului (logo, culori) și afișare corectă pe telefon",
+          "Pagini legale pregătite: termeni, confidențialitate, cookie-uri",
+          "Instruire scurtă pentru actualizarea conținutului",
+        ],
+      },
     ],
     automatizariExemple: [
       {
@@ -68,7 +79,18 @@ export const AUTOMATIZARE_DICT = {
       { titlu: "Payment system integration", desc: "We connect the right payment processor for your NGO, with one-time and recurring donations directly on the campaign page." },
       { titlu: "Digital signature integration", desc: "Sponsorship contracts signed electronically, with an approval flow — no trips, no paperwork." },
       { titlu: "Custom fundraising platform", desc: "A system built specifically for your organization: CRM, campaigns, reports and automations, tailored exactly to how you work." },
-      { titlu: "A website for your NGO", desc: "A professional presence with an integrated donation form, ready in 10–15 business days." },
+      {
+        titlu: "A website for your NGO",
+        desc: "A professional presence with an integrated donation form, ready in 10–15 business days. We start from your organization's identity and what you want to say, and you get a site you can update yourself.",
+        puncte: [
+          "Presentation pages: about the organization, projects and campaigns, team, contact",
+          "Integrated donation form with secure online payment",
+          "Connected to the Alexandrit CRM: donors and messages go straight into the platform",
+          "Design matched to your NGO's identity (logo, colors) that displays well on mobile",
+          "Legal pages ready: terms, privacy, cookies",
+          "Short training on updating the content",
+        ],
+      },
     ],
     automatizariExemple: [
       {

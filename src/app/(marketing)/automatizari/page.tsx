@@ -20,6 +20,16 @@ export default async function AutomatizarePage() {
             <div key={s.titlu} className="rounded-xl border border-line bg-panel p-6">
               <h2 className="font-display text-base font-bold text-ink">{s.titlu}</h2>
               <p className="mt-2 text-[13.5px] leading-relaxed text-muted">{s.desc}</p>
+              {"puncte" in s && s.puncte && (
+                <div className="mt-4 flex flex-col gap-2 border-t border-line pt-4">
+                  {s.puncte.map((p) => (
+                    <div key={p} className="flex gap-2 text-[13px] leading-relaxed text-body">
+                      <span className="flex-none font-extrabold text-brand-green">✓</span>
+                      {p}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
           {dict.automatizariExemple.map((g) => (
