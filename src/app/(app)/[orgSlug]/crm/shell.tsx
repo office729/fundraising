@@ -10,7 +10,6 @@ import {
   ClipboardList,
   Command,
   FileSignature,
-  FileText,
   Gauge,
   GraduationCap,
   HandCoins,
@@ -106,7 +105,6 @@ function buildNav(dict: DashboardDict, orgSlug: string): { section: string; item
         { href: "taskuri", label: dict.nav.taskuri, icon: ClipboardList },
         { href: "comunicare", label: dict.nav.comunicare, icon: MessageSquare },
         { href: "/program-lucru", label: dict.nav.programLucru, icon: CalendarClock },
-        { href: "rapoarte", label: dict.nav.rapoarte, icon: FileText },
       ],
     },
     {
