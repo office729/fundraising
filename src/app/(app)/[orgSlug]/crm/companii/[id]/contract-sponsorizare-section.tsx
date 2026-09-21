@@ -142,7 +142,7 @@ export function ContractSponsorizareSection({ firma }: { firma: FirmaContract })
           <Input type="date" value={v.data} onChange={setCamp("data")} />
         </div>
         <div>
-          <Label>Caz asociat (opțional)</Label>
+          <Label>Proiect asociat (opțional)</Label>
           <Input value={v.caz} onChange={setCamp("caz")} />
         </div>
         <div>

@@ -48,7 +48,7 @@ export function buildContract(v: ContractVals, tip: ContractTip, config: OngConf
  const gsuma = (x: unknown) =>{const n=(""+(x==null?"":x)).replace(/[^\d]/g,"");return n?Number(n).toLocaleString("ro-RO"):"____";};
  const sediu=(v.judet&&(""+v.judet).trim())?(g(v.sediu)+", jud. "+g(v.judet)):g(v.sediu);
  const dt=(v.data&&/^\d{4}-\d{2}-\d{2}$/.test(v.data))?v.data.split("-").reverse().join("."):g(v.data);
- const foot=`<p style="font-size:9pt;color:#666;margin-top:22px">Format: ${tip==="d177"?"D177 — redirecţionare impozit pe profit":"20% — sponsorizare directă"}${(v.caz&&v.caz.trim())?" · Caz asociat: "+g(v.caz):""}${(v.resp&&v.resp.trim())?" · Responsabil: "+g(v.resp):""}</p>`;
+ const foot=`<p style="font-size:9pt;color:#666;margin-top:22px">Format: ${tip==="d177"?"D177 — redirecţionare impozit pe profit":"20% — sponsorizare directă"}${(v.caz&&v.caz.trim())?" · Proiect asociat: "+g(v.caz):""}${(v.resp&&v.resp.trim())?" · Responsabil: "+g(v.resp):""}</p>`;
  const H=`<div style="text-align:center;margin-bottom:18px"><div style="font-size:16pt;font-weight:bold;letter-spacing:1px">CONTRACT DE SPONSORIZARE</div>${tip==="d177"?`<div style="font-size:11pt;margin-top:4px">Nr. ${g(v.nr)} / ${dt}</div>`:``}</div>`;
  const semn=`<table style="width:100%;margin-top:34px"><tr><td style="text-align:center;width:50%;vertical-align:top">SPONSOR<br><br><br>${g(v.nume)}<br>${g(v.rep)}<br>${g(v.fct)}</td><td style="text-align:center;width:50%;vertical-align:top">BENEFICIAR<br><br><br>${g(config.ongNume)}<br>${g(config.ongReprezentant)}<br>${g(config.ongFunctie)}</td></tr></table>`;
  let b: string;
