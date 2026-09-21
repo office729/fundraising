@@ -89,6 +89,14 @@ export const MARKETING_DICT = {
     },
     footer: {
       tagline: "Platforma CRM pentru ONG-uri din România.",
+      companyTitle: "Operator",
+      company: [
+        "MEDIGROUPPLUS SRL",
+        "CUI 38103518 · J07/617/2017",
+        "Str. Prieteniei nr. 4, sat Boscoteni, com. Frumușica, jud. Botoșani",
+      ],
+      objectiveTitle: "Obiectivul nostru",
+      objective: "Să educăm și să sprijinim ONG-urile în crearea de campanii de fundraising eficiente, oferindu-le instrumentele și cunoștințele necesare pentru a atrage donatori și a-și susține cauzele.",
       navTitle: "Navigare",
       nav: [
         { href: "/cine-suntem", label: "Cine suntem?" },
@@ -194,6 +202,14 @@ export const MARKETING_DICT = {
     },
     footer: {
       tagline: "The CRM platform for NGOs in Romania.",
+      companyTitle: "Operator",
+      company: [
+        "MEDIGROUPPLUS SRL",
+        "Tax ID 38103518 · J07/617/2017",
+        "Str. Prieteniei nr. 4, Boscoteni village, Frumușica commune, Botoșani county",
+      ],
+      objectiveTitle: "Our objective",
+      objective: "To educate and support NGOs in building effective fundraising campaigns, giving them the tools and knowledge they need to attract donors and support their causes.",
       navTitle: "Navigation",
       nav: [
         { href: "/cine-suntem", label: "About us" },

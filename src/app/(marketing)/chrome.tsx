@@ -209,7 +209,21 @@ export function SiteFooter({ dict }: { dict: MarketingDict }) {
           </div>
         </div>
       </div>
-      <p className="mx-auto mt-10 max-w-6xl text-xs text-white/40">© 2026 alexandrit.ro</p>
+      <div className="mx-auto mt-10 grid max-w-6xl grid-cols-1 gap-8 border-t border-white/10 pt-8 sm:grid-cols-3">
+        <div>
+          <p className="text-xs font-bold tracking-wide text-white/50 uppercase">{dict.footer.companyTitle}</p>
+          <div className="mt-3 flex flex-col gap-1 text-sm text-white/75">
+            {dict.footer.company.map((linie) => (
+              <span key={linie}>{linie}</span>
+            ))}
+          </div>
+        </div>
+        <div className="sm:col-span-2">
+          <p className="text-xs font-bold tracking-wide text-white/50 uppercase">{dict.footer.objectiveTitle}</p>
+          <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/75">{dict.footer.objective}</p>
+        </div>
+      </div>
+      <p className="mx-auto mt-8 max-w-6xl text-xs text-white/40">© 2026 alexandrit.ro · MEDIGROUPPLUS SRL</p>
     </footer>
   );
 }

@@ -14,19 +14,30 @@ export const GDPR_DICT = {
       {
         titlu: "1. Cine suntem și în ce calitate prelucrăm date",
         paragrafe: [
-          "MEDIGROUPPLUS SRL (CUI 38103518, J07/617/2017, înființată la 17 august 2017; sediul social: [DE COMPLETAT — adresa sediului social]) operează platforma Alexandrit („Platforma”) și site-ul alexandrit.ro.",
-          "Avem două calități diferite: (a) operator de date pentru datele proprii ale vizitatorilor site-ului, ale clienților noștri și ale utilizatorilor Platformei (cont, abonament, facturare, comunicare, consiliere); (b) persoană împuternicită pentru datele pe care organizațiile client (ONG-uri) le introduc în CRM-ul lor — donatori, sponsori, voluntari, beneficiari, angajați. Pentru acestea din urmă, operatorul este organizația client (vezi punctul 9).",
+          "MEDIGROUPPLUS SRL (CUI 38103518, J07/617/2017, cod CAEN 7311; sediul social: Str. Prieteniei nr. 4, sat Boscoteni, comuna Frumușica, județul Botoșani) operează platforma Alexandrit („Platforma”) și site-ul alexandrit.ro și este operator de date pentru datele proprii ale vizitatorilor site-ului, ale clienților noștri și ale utilizatorilor Platformei (cont, abonament, facturare, comunicare, consiliere).",
+          "Alexandrit nu preia date cu caracter personal de la parteneri. Datele donatorilor, sponsorilor, voluntarilor, beneficiarilor sau angajaților unei organizații partenere nu devin datele noastre: rămân sub controlul exclusiv al organizației, în spațiul ei izolat din Platformă, noi nu le folosim în scopuri proprii, nu le comunicăm altora și nu le combinăm cu alte date. Furnizăm doar infrastructura tehnică prin care organizația își gestionează propriile date, în calitate de persoană împuternicită (vezi punctul 9).",
           "Contact pentru orice aspect legat de datele personale: vlad.placinta@alexandrit.ro, telefon 0757 401 042.",
         ],
       },
       {
-        titlu: "2. Ce date prelucrăm în calitate de operator",
-        paragrafe: ["Pe site și în Platformă, pentru propriile noastre scopuri, putem prelucra:"],
+        titlu: "Definiții",
         puncte: [
-          "date de cont: nume, email, rolul în organizație, parola (stocată criptat, prin furnizorul de autentificare);",
-          "date de facturare și de plată ale clienților: denumire, CUI, adresă, istoricul facturilor și al abonamentelor (datele cardului sunt prelucrate exclusiv de procesatorul de plăți și nu ajung la noi);",
-          "date de contact transmise prin formulare, email, telefon sau la programarea unei consilieri (nume, telefon, mesaj, intervalul ales);",
-          "date tehnice minime: adresă IP, tip de browser, jurnale de securitate și erori, cookie-uri de sesiune; cookie-uri de analiză doar cu consimțământul tău (vezi Politica de cookies).",
+          "Date cu caracter personal — orice informație privind o persoană fizică identificată sau identificabilă;",
+          "Operator — cel care stabilește scopurile și mijloacele prelucrării; Persoană împuternicită — cel care prelucrează date în numele operatorului;",
+          "Client / Organizație — ONG-ul sau alt partener care își creează un cont în Platformă;",
+          "Utilizator — persoana care accesează Platforma prin contul unui Client; Vizitator — persoana care accesează site-ul fără cont;",
+          "Site — alexandrit.ro; GDPR — Regulamentul (UE) 2016/679.",
+        ],
+      },
+      {
+        titlu: "2. Ce date prelucrăm în calitate de operator",
+        paragrafe: ["Pe site și în Platformă, pentru propriile noastre scopuri, prelucrăm date doar în următoarele situații:"],
+        puncte: [
+          "Formularele de contact și programările: nume, email, telefon, mesaj, intervalul ales — pentru a-ți răspunde și a organiza consilierea;",
+          "Crearea contului și achiziționarea serviciilor: nume, email, rolul în organizație, parola (stocată criptat, prin furnizorul de autentificare), date de facturare (denumire, CUI, adresă), istoricul facturilor și al abonamentelor; datele cardului sunt prelucrate exclusiv de procesatorul de plăți și nu ajung la noi;",
+          "Newsletter și comunicări comerciale: adresa de email și preferințele, doar dacă ți-ai dat consimțământul;",
+          "Cookie-uri: cookie-uri necesare funcționării (sesiune) și, doar cu acordul tău, cookie-uri de analiză — vezi Politica de cookies;",
+          "Vizitatorii site-ului: date tehnice minime (adresă IP, tip de browser, jurnale de securitate și erori).",
         ],
       },
       {
@@ -86,9 +97,10 @@ export const GDPR_DICT = {
         ],
       },
       {
-        titlu: "9. Datele din CRM-ul organizațiilor client (persoană împuternicită)",
+        titlu: "9. Datele partenerilor: Alexandrit nu le preia (persoană împuternicită)",
         paragrafe: [
-          "Organizația care folosește Platforma este operator pentru datele persoanelor din CRM-ul său (donatori, sponsori, voluntari, beneficiari, angajați, contacte) și decide scopurile și temeiul prelucrării, informarea persoanelor și retenția. Noi acționăm ca persoană împuternicită și prelucrăm aceste date doar pentru a furniza serviciul și conform instrucțiunilor documentate ale organizației.",
+          "Organizația care folosește Platforma este operator pentru datele persoanelor din CRM-ul său (donatori, sponsori, voluntari, beneficiari, angajați, contacte) și decide singură scopurile și temeiul prelucrării, informarea persoanelor și perioada de păstrare. Alexandrit nu preia aceste date, nu le achiziționează și nu le folosește pentru scopuri proprii, de marketing sau de altă natură.",
+          "Rolul nostru este strict tehnic: găzduim aplicația în care organizația își introduce și gestionează datele, izolat de alte organizații, ca persoană împuternicită. Nu accesăm datele unei organizații decât la cererea ei, pentru suport tehnic, sau când legea ne obligă; nu le comunicăm terților (în afara sub-procesatorilor tehnici de la punctul 4) și nu le combinăm cu alte date.",
           "Prin acordul de prelucrare încheiat cu fiecare organizație ne angajăm, printre altele, să: păstrăm confidențialitatea; aplicăm măsuri de securitate adecvate; folosim sub-procesatori doar cu informarea organizației; asistăm organizația în exercitarea drepturilor persoanelor vizate; o notificăm fără întârzieri nejustificate despre incidente; și, la încetarea contractului, ștergem sau returnăm datele, în afara celor pe care legea ne obligă să le păstrăm.",
           "Organizația se asigură că are temei legal pentru datele introduse (consimțământ, contract, interes legitim), că își informează persoanele vizate și respectă regulile privind comunicările comerciale, inclusiv dezabonarea.",
         ],
@@ -108,6 +120,10 @@ export const GDPR_DICT = {
         titlu: "12. Modificări ale acestei politici",
         paragrafe: ["Putem actualiza această politică; versiunea în vigoare este cea publicată aici, cu data ultimei actualizări. Pentru modificări importante te anunțăm prin email sau în Platformă."],
       },
+      {
+        titlu: "13. Domeniul de aplicare",
+        paragrafe: ["Această politică se aplică site-ului alexandrit.ro și Platformei Alexandrit. Nu răspundem pentru politicile de confidențialitate ale altor site-uri către care pot trimite linkuri (ale organizațiilor partenere sau ale terților); te rugăm să le citești separat."],
+      },
     ] satisfies SectiuneLegala[],
   },
   en: {
@@ -120,19 +136,30 @@ export const GDPR_DICT = {
       {
         titlu: "1. Who we are and in what capacity we process data",
         paragrafe: [
-          "MEDIGROUPPLUS SRL (Tax ID 38103518, J07/617/2017, established August 17, 2017; registered office: [TO COMPLETE — registered address]) operates the Alexandrit platform (the “Platform”) and the alexandrit.ro website.",
-          "We act in two capacities: (a) as data controller for our own data about website visitors, our customers and Platform users (account, subscription, invoicing, communication, consulting); (b) as data processor for the data that customer organizations (NGOs) enter into their CRM — donors, sponsors, volunteers, beneficiaries, employees. For the latter, the controller is the customer organization (see section 9).",
+          "MEDIGROUPPLUS SRL (Tax ID 38103518, J07/617/2017, CAEN 7311; registered office: Str. Prieteniei nr. 4, Boscoteni village, Frumușica commune, Botoșani county) operates the Alexandrit platform (the “Platform”) and the alexandrit.ro website and is the data controller for our own data about website visitors, our customers and Platform users (account, subscription, invoicing, communication, consulting).",
+          "Alexandrit does not take over personal data from partners. The data of donors, sponsors, volunteers, beneficiaries or employees of a partner organization does not become ours: it stays under the organization's exclusive control, in its isolated space in the Platform; we do not use it for our own purposes, do not disclose it to others and do not combine it with other data. We only provide the technical infrastructure through which the organization manages its own data, as a data processor (see section 9).",
           "Contact for anything concerning personal data: vlad.placinta@alexandrit.ro, phone 0757 401 042.",
         ],
       },
       {
-        titlu: "2. What data we process as controller",
-        paragrafe: ["On the website and in the Platform, for our own purposes, we may process:"],
+        titlu: "Definitions",
         puncte: [
-          "account data: name, email, role in the organization, password (stored encrypted through the authentication provider);",
-          "customers' billing and payment data: name, tax ID, address, invoice and subscription history (card data is processed exclusively by the payment processor and never reaches us);",
-          "contact data sent via forms, email, phone or when booking a consultation (name, phone, message, chosen slot);",
-          "minimal technical data: IP address, browser type, security and error logs, session cookies; analytics cookies only with your consent (see the Cookie Policy).",
+          "Personal data — any information relating to an identified or identifiable natural person;",
+          "Controller — who determines the purposes and means of processing; Processor — who processes data on the controller's behalf;",
+          "Customer / Organization — the NGO or other partner creating an account in the Platform;",
+          "User — a person accessing the Platform through a Customer's account; Visitor — a person accessing the site without an account;",
+          "Site — alexandrit.ro; GDPR — Regulation (EU) 2016/679.",
+        ],
+      },
+      {
+        titlu: "2. What data we process as controller",
+        paragrafe: ["On the website and in the Platform, for our own purposes, we process data only in the following situations:"],
+        puncte: [
+          "Contact forms and bookings: name, email, phone, message, chosen slot — to reply to you and organize the consultation;",
+          "Account creation and purchase of services: name, email, role in the organization, password (stored encrypted through the authentication provider), billing details (name, tax ID, address), invoice and subscription history; card data is processed exclusively by the payment processor and never reaches us;",
+          "Newsletter and marketing communications: email address and preferences, only if you have given consent;",
+          "Cookies: cookies needed for operation (session) and, only with your consent, analytics cookies — see the Cookie Policy;",
+          "Website visitors: minimal technical data (IP address, browser type, security and error logs).",
         ],
       },
       {
@@ -192,9 +219,10 @@ export const GDPR_DICT = {
         ],
       },
       {
-        titlu: "9. Data in customer organizations' CRM (data processor)",
+        titlu: "9. Partners' data: Alexandrit does not take it over (data processor)",
         paragrafe: [
-          "The organization using the Platform is the controller of the data of the people in its CRM (donors, sponsors, volunteers, beneficiaries, employees, contacts) and decides the purposes and legal basis of processing, notice to individuals and retention. We act as processor and process this data only to provide the service and on the organization's documented instructions.",
+          "The organization using the Platform is the controller of the data of the people in its CRM (donors, sponsors, volunteers, beneficiaries, employees, contacts) and alone decides the purposes and legal basis of processing, notice to individuals and retention. Alexandrit does not take over this data, does not acquire it and does not use it for its own, marketing or any other purposes.",
+          "Our role is strictly technical: we host the application in which the organization enters and manages its data, isolated from other organizations, as a data processor. We do not access an organization's data except at its request, for technical support, or when the law requires us to; we do not disclose it to third parties (other than the technical sub-processors in section 4) and do not combine it with other data.",
           "Under the data processing agreement concluded with each organization we undertake, among other things, to: keep it confidential; apply appropriate security measures; use sub-processors only with notice to the organization; assist the organization in handling data subjects' rights; notify it without undue delay of incidents; and, at the end of the contract, delete or return the data, except what the law requires us to keep.",
           "The organization ensures it has a legal basis for the data entered (consent, contract, legitimate interest), that it informs its data subjects and follows the rules on commercial communications, including unsubscribing.",
         ],
@@ -213,6 +241,10 @@ export const GDPR_DICT = {
       {
         titlu: "12. Changes to this policy",
         paragrafe: ["We may update this policy; the version in force is the one published here with the last-updated date. For important changes we notify you by email or in the Platform."],
+      },
+      {
+        titlu: "13. Scope",
+        paragrafe: ["This policy applies to the alexandrit.ro website and the Alexandrit Platform. We are not responsible for the privacy policies of other sites we may link to (of partner organizations or third parties); please read them separately."],
       },
     ] satisfies SectiuneLegala[],
   },
