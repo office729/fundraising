@@ -17,13 +17,15 @@ export type Beneficiar = {
 
 const rng = mulberry32(303);
 
+// Proiecte demonstrative (nu cazuri individuale). Câmpul „varsta” nu se mai afișează; rămâne 0
+// doar pentru compatibilitatea tipului cu datele importate.
 const DATA: Array<[string, number, string, "activa" | "finalizata" | "urgenta", string, number]> = [
-  ["Maria Ionescu", 7, "Iași", "urgenta", "Are nevoie de o intervenție chirurgicală urgentă la inimă.", 85000],
-  ["David Popa", 12, "Cluj-Napoca", "activa", "Luptă cu leucemie și are nevoie de tratament continuu.", 120000],
-  ["Ștefan Enache", 5, "Constanța", "activa", "Recuperare după un accident, are nevoie de fizioterapie.", 45000],
-  ["Ioana Marin", 9, "Timișoara", "finalizata", "Operație de corectare a coloanei, campanie încheiată cu succes.", 60000],
-  ["Andrei Toma", 3, "Brașov", "activa", "Diagnosticat cu o boală genetică rară, necesită tratament specializat.", 200000],
-  ["Elena Dobre", 14, "București", "urgenta", "Are nevoie de un transplant și tratament post-operator.", 150000],
+  ["Cabinet de fizioterapie pentru copii", 0, "Iași", "urgenta", "Dotarea unui cabinet de fizioterapie pentru copii din medii vulnerabile.", 85000],
+  ["Tabăra de vară „Aripi”", 0, "Cluj-Napoca", "activa", "O tabără de vară pentru 60 de copii din familii cu venituri mici.", 120000],
+  ["Ateliere educaționale în școlile rurale", 0, "Constanța", "activa", "Materiale și mentori pentru ateliere de după-școală în 12 comune.", 45000],
+  ["Renovarea centrului de zi", 0, "Timișoara", "finalizata", "Renovarea și dotarea centrului de zi pentru vârstnici, încheiată cu succes.", 60000],
+  ["Program de burse pentru elevi", 0, "Brașov", "activa", "Burse lunare pentru 40 de elevi cu rezultate bune din familii vulnerabile.", 200000],
+  ["Masa caldă pentru vârstnici", 0, "București", "urgenta", "Mese calde zilnice pentru 150 de vârstnici care locuiesc singuri.", 150000],
 ];
 
 export const BENEFICIARI: Beneficiar[] = DATA.map(([nume, varsta, localitate, statusCampanie, poveste, obiectiv], i) => {

@@ -5,11 +5,11 @@ export const BENEFICIARI_DICT = {
     lista: {
       title: "Beneficiari & proiecte",
       subtitle: (n: number) => `${n} beneficiari`,
-      varstaLocalitate: (varsta: number, localitate: string) => `${varsta} ani · ${localitate}`,
+      varstaLocalitate: (_varsta: number, localitate: string) => localitate,
     },
     profil: {
       breadcrumb: "Beneficiari & proiecte",
-      varstaLocalitateZile: (varsta: number, localitate: string, zile: number) => `${varsta} ani · ${localitate} · ${zile} zile active`,
+      varstaLocalitateZile: (_varsta: number, localitate: string, zile: number) => `${localitate} · ${zile} zile active`,
       din: "din",
       cardFinanciar: { title: "Card financiar", subtitle: "Fiecare valoare are un sens diferit — vezi explicația la ⓘ" },
       fin: {
@@ -42,11 +42,11 @@ export const BENEFICIARI_DICT = {
     lista: {
       title: "Beneficiaries & projects",
       subtitle: (n: number) => `${n} beneficiaries`,
-      varstaLocalitate: (varsta: number, localitate: string) => `${varsta} yrs · ${localitate}`,
+      varstaLocalitate: (_varsta: number, localitate: string) => localitate,
     },
     profil: {
       breadcrumb: "Beneficiaries & projects",
-      varstaLocalitateZile: (varsta: number, localitate: string, zile: number) => `${varsta} yrs · ${localitate} · ${zile} active days`,
+      varstaLocalitateZile: (_varsta: number, localitate: string, zile: number) => `${localitate} · ${zile} active days`,
       din: "of",
       cardFinanciar: { title: "Financial card", subtitle: "Each value has a different meaning — see the explanation at ⓘ" },
       fin: {

@@ -34,7 +34,7 @@ export const DASHBOARD_HOME_DICT = {
       anTrecut: "An anterior",
     },
     pipeline: { titlePrefix: "Pipeline D177 / 20%", inLucru: (n: number) => `${n} companii în lucru`, seeAll: "Vezi toate companiile" },
-    proiecte: { title: "Proiecte active", subtitle: "Beneficiari cu strângere de fonduri în desfășurare", seeAll: "Vezi toate", urgenta: "Urgentă", activa: "Activă", zileActive: (n: number) => `${n} zile active`, din: "din" },
+    proiecte: { title: "Proiecte active", subtitle: "Proiecte cu strângere de fonduri în desfășurare", seeAll: "Vezi toate", urgenta: "Urgentă", activa: "Activă", zileActive: (n: number) => `${n} zile active`, din: "din" },
     team: { title: "Activitatea echipei", subtitle: "Ultimele 30 de zile", calls: "Apeluri (real, Twilio)", emails: "Emailuri", meetings: "Întâlniri", tasksDone: "Taskuri rezolvate" },
   },
   en: {
@@ -67,7 +67,7 @@ export const DASHBOARD_HOME_DICT = {
       anTrecut: "Previous year",
     },
     pipeline: { titlePrefix: "D177 / 20% pipeline", inLucru: (n: number) => `${n} companies in progress`, seeAll: "See all companies" },
-    proiecte: { title: "Active projects", subtitle: "Beneficiaries with fundraising in progress", seeAll: "See all", urgenta: "Urgent", activa: "Active", zileActive: (n: number) => `${n} days active`, din: "of" },
+    proiecte: { title: "Active projects", subtitle: "Projects with fundraising in progress", seeAll: "See all", urgenta: "Urgent", activa: "Active", zileActive: (n: number) => `${n} days active`, din: "of" },
     team: { title: "Team activity", subtitle: "Last 30 days", calls: "Calls (live, Twilio)", emails: "Emails", meetings: "Meetings", tasksDone: "Tasks completed" },
   },
 } satisfies Record<Locale, unknown>;
