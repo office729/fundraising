@@ -48,6 +48,11 @@ export default async function PremiiPage() {
                 )}
                 <h3 className="font-display text-[15px] font-bold text-ink">{p.titlu}</h3>
                 <p className="mt-1.5 text-[13.5px] leading-relaxed text-muted">{p.desc}</p>
+                {p.link && (
+                  <a href={p.link} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-[13px] font-bold text-brand-blue hover:underline">
+                    {locale === "ro" ? "Citește mai mult →" : "Read more →"}
+                  </a>
+                )}
               </div>
             </div>
           ))}

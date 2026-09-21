@@ -34,6 +34,7 @@ export const CINE_SUNTEM_DICT = {
     exploreazaTitlu: "Explorează mai departe",
     exploreaza: [
       { label: "Portofoliu", href: "/portofoliu" },
+      { label: "Vlad Plăcintă", href: "/vlad-placinta" },
       { label: "Premii Vlad Plăcintă", href: "/premii" },
       { label: "Hub Fundraising", href: "/hub" },
     ],
@@ -71,6 +72,7 @@ export const CINE_SUNTEM_DICT = {
     exploreazaTitlu: "Explore further",
     exploreaza: [
       { label: "Portfolio", href: "/portofoliu" },
+      { label: "Vlad Plăcintă", href: "/vlad-placinta" },
       { label: "Vlad Plăcintă Awards", href: "/premii" },
       { label: "Fundraising Hub", href: "/hub" },
     ],

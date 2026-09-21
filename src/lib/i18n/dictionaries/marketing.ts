@@ -86,6 +86,7 @@ export const MARKETING_DICT = {
       nav: [
         { href: "/cine-suntem", label: "Cine suntem?" },
         { href: "/portofoliu", label: "Portofoliu" },
+        { href: "/vlad-placinta", label: "Vlad Plăcintă" },
         { href: "/premii", label: "Premii Vlad Plăcintă" },
         { href: "/hub", label: "Hub Fundraising" },
         { href: "/portofoliu-clienti", label: "Portofoliu Clienți" },
@@ -183,6 +184,7 @@ export const MARKETING_DICT = {
       nav: [
         { href: "/cine-suntem", label: "About us" },
         { href: "/portofoliu", label: "Portfolio" },
+        { href: "/vlad-placinta", label: "Vlad Plăcintă" },
         { href: "/premii", label: "Vlad Plăcintă Awards" },
         { href: "/hub", label: "Fundraising Hub" },
         { href: "/portofoliu-clienti", label: "Client Portfolio" },
