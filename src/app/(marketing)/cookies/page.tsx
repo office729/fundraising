@@ -1,3 +1,4 @@
+import { CookieSettingsButton } from "@/components/analytics-consent";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { COOKIES_DICT } from "@/lib/i18n/dictionaries/cookies";
 
@@ -46,6 +47,30 @@ export default async function CookiesPage() {
         </div>
       </Sectiune>
 
+      <Sectiune titlu={dict.sAnalytics.titlu}>
+        <p>{dict.sAnalytics.text}</p>
+        <div className="overflow-x-auto rounded-lg border border-line">
+          <table className="w-full text-left text-[13px]">
+            <thead className="bg-panel-2">
+              <tr>
+                <th className="p-2.5 font-semibold text-ink">{dict.sAnalytics.tabelHeaders.cookie}</th>
+                <th className="p-2.5 font-semibold text-ink">{dict.sAnalytics.tabelHeaders.scop}</th>
+                <th className="p-2.5 font-semibold text-ink">{dict.sAnalytics.tabelHeaders.durata}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {dict.sAnalytics.randuri.map((c) => (
+                <tr key={c.nume} className="border-t border-line">
+                  <td className="p-2.5 font-mono text-[12px] text-brand-blue">{c.nume}</td>
+                  <td className="p-2.5 text-body">{c.scop}</td>
+                  <td className="p-2.5 text-muted-2">{c.durata}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Sectiune>
+
       <Sectiune titlu={dict.s3.titlu}>
         <p>
           {dict.s3.textBefore} <code>localStorage</code> {dict.s3.textAfter}
@@ -64,6 +89,9 @@ export default async function CookiesPage() {
 
       <Sectiune titlu={dict.s5.titlu}>
         <p>{dict.s5.text}</p>
+        <div>
+          <CookieSettingsButton label={dict.setariLabel} />
+        </div>
       </Sectiune>
     </LegalLayout>
   );
