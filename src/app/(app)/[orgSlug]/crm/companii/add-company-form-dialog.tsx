@@ -79,6 +79,16 @@ export function AddCompanyFormDialog({
             <Input name="cui" placeholder={dict.cuiPlaceholder} />
           </div>
         </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <Label>{dict.sumaContract}</Label>
+            <Input name="sumaContract" type="number" min="0" step="1" inputMode="numeric" placeholder={dict.sumaContractPlaceholder} />
+          </div>
+          <div>
+            <Label>{dict.nrContractLabel}</Label>
+            <Input name="numarContract" placeholder={dict.nrContractPlaceholder} />
+          </div>
+        </div>
 
         <div className="border-t border-[var(--ci-border)] pt-3">
           <p className="mb-2.5 text-[13px] font-semibold text-[var(--ci-text)]">{dict.persoanaContact}</p>

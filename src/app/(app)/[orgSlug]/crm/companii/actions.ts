@@ -204,8 +204,12 @@ export const adaugaFirma = withOrgSession(async (ctx, _prev: AdaugaFirmaState, f
   const judet = String(formData.get("judet") ?? "").trim();
   const industrie = String(formData.get("industrie") ?? "").trim();
   const site = String(formData.get("site") ?? "").trim();
+  const numarContract = String(formData.get("numarContract") ?? "").trim();
+  const sumaBruta = String(formData.get("sumaContract") ?? "").trim();
+  const sumaContract = sumaBruta ? Math.round(Number(sumaBruta)) : null;
 
   if (!nume) return { error: "Numele firmei e obligatoriu." };
+  if (sumaContract !== null && (!Number.isFinite(sumaContract) || sumaContract < 0)) return { error: "Suma contractului trebuie să fie un număr pozitiv." };
 
   const limite = getLimiteleEfective(ctx.orgPackage, ctx.orgCustomPlanConfig);
   if (limite.companiiPj !== null) {
@@ -229,6 +233,8 @@ export const adaugaFirma = withOrgSession(async (ctx, _prev: AdaugaFirmaState, f
     judet: judet || null,
     industrie: industrie || null,
     site: site || null,
+    numarContract: numarContract || null,
+    sumaPropusa: sumaContract,
     updatedBy: ctx.userId,
   });
   return { error: null, id };
