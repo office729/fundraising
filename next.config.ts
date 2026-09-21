@@ -42,6 +42,10 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Adresa veche a paginii „Automatizări" rămâne funcțională.
+  async redirects() {
+    return [{ source: "/automatizare", destination: "/automatizari", permanent: true }];
+  },
   async headers() {
     // Aceleași headere de securitate peste tot, inclusiv /api/stripe/webhook —
     // Stripe ignoră headerele orientate spre pagini din răspuns, deci nu

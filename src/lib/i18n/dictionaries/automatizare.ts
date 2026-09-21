@@ -2,7 +2,7 @@ import type { Locale } from "../config";
 
 export const AUTOMATIZARE_DICT = {
   ro: {
-    h1: "Automatizare, integrări și platforme construite pentru ONG-ul tău",
+    h1: "Automatizări, integrări și platforme construite pentru ONG-ul tău",
     subtitlu: "De la automatizări Make.com și integrarea sistemelor de plată și semnătură digitală, până la o platformă completă de fundraising sau un website nou — construim exact ce are nevoie organizația ta.",
     servicii: [
       { titlu: "Automatizare Make.com", desc: "Fluxuri automate între CRM, plăți, comunicare și restul aplicațiilor tale — mesaje, notificări și sarcini care se generează singure." },

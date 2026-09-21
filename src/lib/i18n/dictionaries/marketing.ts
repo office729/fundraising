@@ -13,7 +13,7 @@ export const MARKETING_DICT = {
       { href: "/cine-suntem", label: "Cine suntem?" },
       { href: "/ce-facem", label: "Ce facem?" },
       { href: "/hub", label: "Hub Fundraising" },
-      { href: "/automatizare", label: "Automatizare" },
+      { href: "/automatizari", label: "Automatizări" },
       { href: "/contact", label: "Contact" },
     ],
     header: {
@@ -113,7 +113,7 @@ export const MARKETING_DICT = {
       { href: "/cine-suntem", label: "About us" },
       { href: "/ce-facem", label: "What we do" },
       { href: "/hub", label: "Fundraising Hub" },
-      { href: "/automatizare", label: "Automation" },
+      { href: "/automatizari", label: "Automation" },
       { href: "/contact", label: "Contact" },
     ],
     header: {
