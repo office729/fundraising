@@ -4,23 +4,11 @@ import { Check } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
+import { ETAPE } from "@/lib/etape-companie";
+
 import { Card } from "../../components/ui/card";
 import { useLocale } from "../../lib/locale-context";
 import { seteazaEtapa } from "../actions";
-
-const ETAPE = [
-  { k: "nou", ro: "Nou", en: "New" },
-  { k: "pe_viitor", ro: "Pe viitor", en: "Later" },
-  { k: "email", ro: "Email trimis", en: "Email sent" },
-  { k: "mesaj", ro: "Mesaj trimis", en: "Message sent" },
-  { k: "onepager", ro: "One pager trimis", en: "One-pager sent" },
-  { k: "telefon", ro: "Discuție telefonică", en: "Phone call" },
-  { k: "online", ro: "Întâlnire online", en: "Online meeting" },
-  { k: "contract_trimis", ro: "Contract trimis", en: "Contract sent" },
-  { k: "contract_semnat", ro: "Contract semnat", en: "Contract signed" },
-  { k: "contract_asteptare", ro: "În așteptare", en: "On hold" },
-  { k: "sponsorizat", ro: "Sponsorizat", en: "Sponsored" },
-] as const;
 
 // Etapa în pipeline: etapele până la cea curentă apar bifate, cea curentă e evidențiată,
 // „Respins” marchează firma ca pierdută. Se salvează la click.

@@ -106,6 +106,9 @@ const POLICIES = [
   `create policy company_notite_tenant_isolation on company_notite
     using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
     with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy company_stage_log_tenant_isolation on company_stage_log
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
   // apeluri: membrii organizației văd doar apelurile proprii (SELECT normal).
   // Scrierea (creare la inițiere, actualizare status/durată la finalizare) o
   // fac DOAR webhook-urile Twilio (context server, de încredere — validare
@@ -528,6 +531,7 @@ const FORCE_TABLES = [
   "crm_kv",
   "company_sponsorizari",
   "company_notite",
+  "company_stage_log",
   "apeluri",
   "invites",
   "formular230_submissions",

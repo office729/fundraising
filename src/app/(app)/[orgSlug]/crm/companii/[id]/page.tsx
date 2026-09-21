@@ -9,6 +9,7 @@ import { getLocale } from "@/lib/i18n/get-locale";
 import { COMPANII_DICT } from "@/lib/i18n/dictionaries/companii";
 import { getCompanieDetaliu } from "../queries";
 import { CompanyTabs } from "./company-tabs";
+import { IstoricEtape } from "./istoric-etape";
 import { ContractSponsorizareSection } from "./contract-sponsorizare-section";
 import { PipelineCard } from "./pipeline-card";
 import { ScorCard } from "./scor-card";
@@ -23,7 +24,7 @@ export default async function CompanieProfilPage({ params }: { params: Promise<{
   const locale = await getLocale();
   const dict = COMPANII_DICT[locale].detail;
 
-  const { companie: c, sponsorizari, notite, contacte, responsabili } = data;
+  const { companie: c, sponsorizari, notite, contacte, responsabili, jurnalEtape } = data;
 
   const activitate = [
     ...sponsorizari.map((s) => ({
@@ -88,6 +89,8 @@ export default async function CompanieProfilPage({ params }: { params: Promise<{
       />
 
       <PipelineCard companyId={c.id} stage={c.stage} status={c.status} />
+
+      <IstoricEtape intrari={jurnalEtape} locale={locale} />
 
       <TagPills
         companyId={c.id}

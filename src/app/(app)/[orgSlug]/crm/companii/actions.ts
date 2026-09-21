@@ -6,7 +6,7 @@ import { and, asc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 
 import { type OrgContext, withOrgSession } from "@/lib/auth/guard";
 import { getLimiteleEfective, subCota } from "@/lib/billing/quota";
-import { companies, companyNotite, companySponsorizari, contacts } from "@/lib/db/schema";
+import { companies, companyNotite, companySponsorizari, companyStageLog, contacts } from "@/lib/db/schema";
 
 export type ActionState = { error: string | null };
 
@@ -180,15 +180,31 @@ export const comutaContactCheie = withOrgSession(async (ctx, id: string, cheie: 
 // „sponsorizat” o marchează câștigată; orice altă etapă redeschide o firmă respinsă.
 const ETAPE_VALIDE = new Set(["nou", "pe_viitor", "email", "mesaj", "onepager", "telefon", "online", "contract_trimis", "contract_semnat", "contract_asteptare", "sponsorizat"]);
 export const seteazaEtapa = withOrgSession(async (ctx, companyId: string, etapa: string): Promise<ActionState> => {
-  if (etapa === "respins") {
-    await ctx.db.update(companies).set({ status: "lost" }).where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId)));
-    return { error: null };
-  }
-  if (!ETAPE_VALIDE.has(etapa)) return { error: "Etapă necunoscută." };
-  await ctx.db
-    .update(companies)
-    .set({ stage: etapa as (typeof companies.$inferInsert)["stage"], status: etapa === "sponsorizat" ? "won" : "open" })
-    .where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId)));
+  if (etapa !== "respins" && !ETAPE_VALIDE.has(etapa)) return { error: "Etapă necunoscută." };
+
+  const [curent] = await ctx.db
+    .select({ stage: companies.stage, status: companies.status })
+    .from(companies)
+    .where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId)))
+    .limit(1);
+  if (!curent) return { error: "Firma nu a fost găsită." };
+
+  const stageNou = (etapa === "respins" ? curent.stage : etapa) as NonNullable<(typeof companies.$inferInsert)["stage"]>;
+  const statusNou = etapa === "respins" ? "lost" : etapa === "sponsorizat" ? "won" : "open";
+
+  // Jurnal și update DOAR dacă s-a schimbat ceva (nu la fiecare click pe aceeași etapă).
+  if (stageNou === curent.stage && statusNou === curent.status) return { error: null };
+
+  await ctx.db.update(companies).set({ stage: stageNou, status: statusNou }).where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId)));
+  await ctx.db.insert(companyStageLog).values({
+    orgId: ctx.orgId,
+    companyId,
+    fromStage: curent.stage,
+    toStage: stageNou,
+    fromStatus: curent.status,
+    toStatus: statusNou,
+    byUserId: ctx.userId,
+  });
   return { error: null };
 });
 

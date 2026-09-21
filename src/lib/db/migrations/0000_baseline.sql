@@ -357,6 +357,19 @@ CREATE TABLE "company_sponsorizari" (
 );
 --> statement-breakpoint
 ALTER TABLE "company_sponsorizari" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+CREATE TABLE "company_stage_log" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"org_id" uuid NOT NULL,
+	"company_id" uuid NOT NULL,
+	"from_stage" text,
+	"to_stage" text NOT NULL,
+	"from_status" text,
+	"to_status" text NOT NULL,
+	"by_user_id" uuid,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+ALTER TABLE "company_stage_log" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 CREATE TABLE "contacts" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"org_id" uuid NOT NULL,
@@ -626,6 +639,9 @@ ALTER TABLE "company_notite" ADD CONSTRAINT "company_notite_created_by_app_users
 ALTER TABLE "company_sponsorizari" ADD CONSTRAINT "company_sponsorizari_org_id_organizations_id_fk" FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "company_sponsorizari" ADD CONSTRAINT "company_sponsorizari_company_id_companies_id_fk" FOREIGN KEY ("company_id") REFERENCES "public"."companies"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "company_sponsorizari" ADD CONSTRAINT "company_sponsorizari_created_by_app_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."app_users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "company_stage_log" ADD CONSTRAINT "company_stage_log_org_id_organizations_id_fk" FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "company_stage_log" ADD CONSTRAINT "company_stage_log_company_id_companies_id_fk" FOREIGN KEY ("company_id") REFERENCES "public"."companies"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "company_stage_log" ADD CONSTRAINT "company_stage_log_by_user_id_app_users_id_fk" FOREIGN KEY ("by_user_id") REFERENCES "public"."app_users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "contacts" ADD CONSTRAINT "contacts_org_id_organizations_id_fk" FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "contacts" ADD CONSTRAINT "contacts_company_id_companies_id_fk" FOREIGN KEY ("company_id") REFERENCES "public"."companies"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "contacts" ADD CONSTRAINT "contacts_consent_by_app_users_id_fk" FOREIGN KEY ("consent_by") REFERENCES "public"."app_users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -697,6 +713,8 @@ CREATE INDEX "company_notite_company_idx" ON "company_notite" USING btree ("comp
 CREATE INDEX "company_sponsorizari_org_idx" ON "company_sponsorizari" USING btree ("org_id");--> statement-breakpoint
 CREATE INDEX "company_sponsorizari_company_idx" ON "company_sponsorizari" USING btree ("company_id");--> statement-breakpoint
 CREATE INDEX "company_sponsorizari_data_idx" ON "company_sponsorizari" USING btree ("data");--> statement-breakpoint
+CREATE INDEX "company_stage_log_org_idx" ON "company_stage_log" USING btree ("org_id");--> statement-breakpoint
+CREATE INDEX "company_stage_log_company_idx" ON "company_stage_log" USING btree ("company_id","created_at");--> statement-breakpoint
 CREATE INDEX "contacts_org_idx" ON "contacts" USING btree ("org_id");--> statement-breakpoint
 CREATE INDEX "contacts_company_idx" ON "contacts" USING btree ("company_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "crm_kv_org_path_unique" ON "crm_kv" USING btree ("org_id","path");--> statement-breakpoint

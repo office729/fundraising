@@ -80,3 +80,26 @@ export const apeluri = pgTable(
     index("apeluri_created_at_idx").on(t.createdAt),
   ],
 ).enableRLS();
+
+// Jurnal de tranziții în pipeline: cine a mutat firma dintr-o etapă în alta și când.
+// Se scrie DOAR când etapa (sau statusul) chiar se schimbă. from_* = null la prima mutare
+// înregistrată. orgId denormalizat — RLS simplu, ca la restul tabelelor CRM.
+export const companyStageLog = pgTable(
+  "company_stage_log",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    companyId: uuid("company_id")
+      .notNull()
+      .references(() => companies.id, { onDelete: "cascade" }),
+    fromStage: text("from_stage"),
+    toStage: text("to_stage").notNull(),
+    fromStatus: text("from_status"),
+    toStatus: text("to_status").notNull(),
+    byUserId: uuid("by_user_id").references(() => appUsers.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index("company_stage_log_org_idx").on(t.orgId), index("company_stage_log_company_idx").on(t.companyId, t.createdAt)],
+).enableRLS();

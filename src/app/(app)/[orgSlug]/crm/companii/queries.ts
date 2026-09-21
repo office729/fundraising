@@ -1,7 +1,7 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 
 import { withOrgSession } from "@/lib/auth/guard";
-import { appUsers, companies, companyNotite, companySponsorizari, contacts, memberships } from "@/lib/db/schema";
+import { appUsers, companies, companyNotite, companySponsorizari, companyStageLog, contacts, memberships } from "@/lib/db/schema";
 
 import { calculeazaInterval, type FiltruCompanii, TOP_LIMIT } from "./lib/filters";
 
@@ -12,7 +12,11 @@ const PAGE_SIZE = 25;
 // (aceleași firme numărate = aceleași firme afișate).
 function conditiiComune(f: FiltruCompanii) {
   const cond = [sql`1=1`];
-  if (f.q.trim()) cond.push(sql`${companies.nume} ilike ${"%" + f.q.trim() + "%"}`);
+  // Căutare insensibilă la diacritice și la majuscule (fără extensia unaccent): normalizăm ambele
+  // părți — „Țiriac Asigurări” găsește „TIRIAC ASIGURARI” și invers.
+  if (f.q.trim()) {
+    cond.push(sql`translate(lower(${companies.nume}), 'ăâîșțşţ', 'aaistst') like translate(lower(${"%" + f.q.trim() + "%"}), 'ăâîșțşţ', 'aaistst')`);
+  }
   if (f.judet !== "toate") cond.push(eq(companies.judet, f.judet));
   if (f.responsabil !== "toti") cond.push(eq(companies.ownerId, f.responsabil));
   if (f.contact === "cu") {
@@ -82,7 +86,18 @@ export const getCompaniiLista = withOrgSession(async (ctx, filtru: FiltruCompani
     .from(companies)
     .leftJoin(appUsers, eq(appUsers.id, companies.ownerId))
     .where(where)
-    .orderBy(filtru.top ? desc(sql`coalesce(${companies.sumaSponsorizata}, 0)`) : desc(companies.updatedAt))
+    // Ordinea implicită: firmele „lucrate” întâi (au responsabil, altă etapă decât „nou”, alt status
+    // decât „open” sau sponsorizări), apoi după suma sponsorizată, apoi după suma disponibilă.
+    .orderBy(
+      ...(filtru.top
+        ? [desc(sql`coalesce(${companies.sumaSponsorizata}, 0)`)]
+        : [
+            sql`(case when (${companies.ownerId} is not null or ${companies.stage} <> 'nou' or ${companies.status} <> 'open' or coalesce(${companies.sumaSponsorizata}, 0) > 0) then 1 else 0 end) desc`,
+            sql`coalesce(${companies.sumaSponsorizata}, -1) desc`,
+            sql`coalesce(${companies.sumaDisponibila}, -1) desc`,
+            desc(companies.id),
+          ]),
+    )
     .limit(PAGE_SIZE)
     .offset((filtru.pagina - 1) * PAGE_SIZE);
 
@@ -169,7 +184,7 @@ export const getCompanieDetaliu = withOrgSession(async (ctx, id: string) => {
   // tranzacție (withOrgSession) care se închide imediat ce funcția revine.
   await ctx.db.update(companies).set({ lastViewedAt: new Date() }).where(eq(companies.id, id));
 
-  const [sponsorizari, notite, contacteFirma, responsabili] = await Promise.all([
+  const [sponsorizari, notite, contacteFirma, responsabili, jurnalEtape] = await Promise.all([
     ctx.db.select().from(companySponsorizari).where(eq(companySponsorizari.companyId, id)).orderBy(desc(companySponsorizari.data)),
     ctx.db
       .select({ id: companyNotite.id, text: companyNotite.text, createdAt: companyNotite.createdAt, editatLa: companyNotite.editatLa, autorNume: appUsers.name })
@@ -183,7 +198,22 @@ export const getCompanieDetaliu = withOrgSession(async (ctx, id: string) => {
       .from(memberships)
       .innerJoin(appUsers, eq(appUsers.id, memberships.userId))
       .where(eq(memberships.orgId, ctx.orgId)),
+    ctx.db
+      .select({
+        id: companyStageLog.id,
+        fromStage: companyStageLog.fromStage,
+        toStage: companyStageLog.toStage,
+        fromStatus: companyStageLog.fromStatus,
+        toStatus: companyStageLog.toStatus,
+        createdAt: companyStageLog.createdAt,
+        autor: appUsers.name,
+      })
+      .from(companyStageLog)
+      .leftJoin(appUsers, eq(appUsers.id, companyStageLog.byUserId))
+      .where(eq(companyStageLog.companyId, id))
+      .orderBy(desc(companyStageLog.createdAt))
+      .limit(100),
   ]);
 
-  return { companie, sponsorizari, notite, contacte: contacteFirma, responsabili };
+  return { companie, sponsorizari, notite, contacte: contacteFirma, responsabili, jurnalEtape };
 });
