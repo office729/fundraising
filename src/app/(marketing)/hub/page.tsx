@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import { CalendlyInlineWidget } from "@/components/calendly-inline-widget";
@@ -142,6 +143,19 @@ export default async function HubPage() {
             </span>
             <h2 className="font-display mt-2 text-[28px] font-bold text-ink">{dict.consultantaTitlu}</h2>
             <p className="mt-3 max-w-md text-base leading-relaxed text-muted">{dict.consultantaDesc}</p>
+            <figure className="mt-6 max-w-[360px] overflow-hidden rounded-2xl border border-line bg-panel">
+              <Image
+                src="/vlad-placinta.webp"
+                alt="Vlad Plăcintă"
+                width={900}
+                height={1037}
+                sizes="(min-width: 1024px) 360px, 90vw"
+                className="h-auto w-full"
+              />
+              <figcaption className="px-4 py-3 text-[13.5px] text-muted">
+                <span className="font-display font-bold text-ink">Vlad Plăcintă</span>
+              </figcaption>
+            </figure>
           </div>
           <CalendlyInlineWidget url={CALENDLY_CONSULTANTA_URL} loadingLabel={dict.consultantaLoading} />
         </div>
