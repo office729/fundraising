@@ -18,7 +18,7 @@ export const MARKETING_DICT = {
     ],
     header: {
       consulting: "Consiliere 1 la 1",
-      login: "Autentificare / Creează cont",
+      login: "Autentificare / Cont nou",
       openMenu: "Deschide meniul",
       closeMenu: "Închide meniul",
     },
@@ -118,7 +118,7 @@ export const MARKETING_DICT = {
     ],
     header: {
       consulting: "1-on-1 Consulting",
-      login: "Log in / Create account",
+      login: "Log in / Sign up",
       openMenu: "Open menu",
       closeMenu: "Close menu",
     },
