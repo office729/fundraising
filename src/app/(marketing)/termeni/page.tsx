@@ -16,38 +16,19 @@ export default async function TermeniPage() {
       actualizatLabel={dict.actualizatLabel}
       actualizat={dict.actualizat}
     >
-      <Sectiune titlu={dict.s1.titlu}>
-        <p>{dict.s1.text}</p>
-      </Sectiune>
-
-      <Sectiune titlu={dict.s2.titlu}>
-        <p>{dict.s2.text}</p>
-      </Sectiune>
-
-      <Sectiune titlu={dict.s3.titlu}>
-        <p>
-          {dict.s3.text1Before} <code>/hub</code> {dict.s3.text1After}
-        </p>
-        <p>{dict.s3.text2}</p>
-      </Sectiune>
-
-      <Sectiune titlu={dict.s4.titlu}>
-        <p>{dict.s4.text}</p>
-      </Sectiune>
-
-      <Sectiune titlu={dict.s5.titlu}>
-        <p>{dict.s5.text}</p>
-      </Sectiune>
-
-      <Sectiune titlu={dict.s6.titlu}>
-        <p>{dict.s6.text}</p>
-      </Sectiune>
-
-      <Sectiune titlu={dict.s7.titlu}>
-        <p>
-          {dict.s7.textBefore} <strong>vlad.placinta@alexandrit.ro</strong>, 0757 401 042.
-        </p>
-      </Sectiune>
+      {dict.sectiuni.map((s) => (
+        <Sectiune key={s.titlu} titlu={s.titlu}>
+          {s.paragrafe?.map((p) => <p key={p}>{p}</p>)}
+          {s.puncte && (
+            <ul className="list-disc pl-5">
+              {s.puncte.map((p) => (
+                <li key={p}>{p}</li>
+              ))}
+            </ul>
+          )}
+          {s.incheiere?.map((p) => <p key={p}>{p}</p>)}
+        </Sectiune>
+      ))}
     </LegalLayout>
   );
 }
