@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Manrope, Sora } from "next/font/google";
 
 import { AnalyticsConsent } from "@/components/analytics-consent";
+import { AnalyticsEvents } from "@/components/analytics-events";
 import { COOKIES_DICT } from "@/lib/i18n/dictionaries/cookies";
 import { getLocale } from "@/lib/i18n/get-locale";
 
@@ -50,6 +51,7 @@ export default async function RootLayout({
       <body className="min-h-full">
         {children}
         <AnalyticsConsent texts={COOKIES_DICT[locale].banner} />
+        <AnalyticsEvents />
       </body>
     </html>
   );

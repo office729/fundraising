@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 
+import { semnalizeazaEveniment } from "@/lib/analytics-server";
 import { ensureAppUser } from "@/lib/auth/dal";
 import { citestePlanulAlesDinFormular } from "@/lib/billing/plan-from-form";
 import { db } from "@/lib/db";
@@ -44,6 +45,10 @@ export async function signupAction(
   if (!data.user) {
     return { error: "Înregistrarea a eșuat — încearcă din nou." };
   }
+  // Contul de autentificare există acum — orice ramură de mai jos se încheie cu
+  // redirect(), deci clientul află de succes prin acest semnal scurt (vezi
+  // components/analytics-events.tsx; se trimite doar cu acordul pentru analiză).
+  await semnalizeazaEveniment("sign_up");
 
   // Cont creat printr-un link de invitație: NU se creează o organizație nouă —
   // doar rândul app_users; membership-ul (sau profilul de beneficiar) se

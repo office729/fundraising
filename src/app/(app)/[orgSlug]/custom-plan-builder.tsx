@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 
+import { trackEvent } from "@/lib/analytics";
 import { calculateCustomPlanBreakdown, type CustomPlanBreakdownKey } from "@/lib/billing/custom-plan";
 import { ALL_TOOLS, PACKAGE_LIMITS, type ToolId } from "@/lib/billing/packages";
 
@@ -122,6 +123,12 @@ export function CustomPlanBuilder({ orgSlug }: { orgSlug: string }) {
     startTransition(async () => {
       try {
         const { url } = await startCustomCheckoutAction(orgSlug, config);
+        trackEvent("begin_checkout", {
+          currency: "RON",
+          value: pret,
+          items: [{ item_name: "Plan personalizat", quantity: 1 }],
+          transport_type: "beacon",
+        });
         window.location.href = url;
       } catch {
         setEroare("Nu am putut porni plata — încearcă din nou sau scrie-ne la vlad.placinta@fundrasingacademy.ro.");

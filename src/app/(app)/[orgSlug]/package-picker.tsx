@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 
+import { trackEvent } from "@/lib/analytics";
 import { PACKAGE_LIMITS, PACKAGE_PRICE_ANUAL, type OrgPackage } from "@/lib/billing/packages";
 
 import { startCheckoutAction } from "./billing-actions";
@@ -41,6 +42,12 @@ export function PackagePicker({ orgSlug }: { orgSlug: string }) {
     startTransition(async () => {
       try {
         const { url } = await startCheckoutAction(orgSlug, pkg);
+        trackEvent("begin_checkout", {
+          currency: "RON",
+          value: PACKAGE_LIMITS[pkg].pretLunar ?? undefined,
+          items: [{ item_name: `Pachet ${PACHETE.find((p) => p.key === pkg)?.nume ?? pkg}`, quantity: 1 }],
+          transport_type: "beacon",
+        });
         window.location.href = url;
       } catch {
         setEroare("Nu am putut porni plata — încearcă din nou sau scrie-ne la vlad.placinta@fundrasingacademy.ro.");

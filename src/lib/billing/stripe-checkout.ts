@@ -77,7 +77,11 @@ export async function creeazaSesiuneAbonament(
       },
     ],
     ...(areDreptulLaReducere ? { discounts: [{ coupon: await asigurCuponReferral() }] } : {}),
-    success_url: `${params.origin}/${ctx.orgSlug}/crm?abonament=succes`,
+    // sid/v/p: doar pentru evenimentul `purchase` din Google Analytics
+    // (components/analytics-events.tsx) — le citește și le șterge din URL
+    // clientul; nu influențează activarea abonamentului (asta face webhook-ul).
+    // {CHECKOUT_SESSION_ID} e completat de Stripe la redirect.
+    success_url: `${params.origin}/${ctx.orgSlug}/crm?abonament=succes&sid={CHECKOUT_SESSION_ID}&v=${params.pretLunar}&p=${encodeURIComponent(params.packageLabel)}`,
     cancel_url: `${params.origin}/${ctx.orgSlug}/setari?abonament=anulat`,
     metadata: { type: "org_subscription", orgId: ctx.orgId },
     subscription_data: { metadata: { type: "org_subscription", orgId: ctx.orgId } },

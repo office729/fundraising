@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { trackEvent } from "@/lib/analytics";
+
 // Embed oficial Calendly (inline widget) — vezi
 // https://calendly.com/help/how-to-embed-calendly-in-a-react-app. Nu folosim
 // pachetul `react-calendly` (dependință în plus, nefolosită altundeva) — doar
@@ -29,6 +31,19 @@ export function CalendlyInlineWidget({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
+
+  // Calendly anunță prin postMessage când o programare a fost finalizată —
+  // singurul semnal pe care îl avem de la un embed cross-origin. Se trimite un
+  // lead către Google Analytics doar cu acordul pentru statistici.
+  useEffect(() => {
+    function onMessage(e: MessageEvent) {
+      if (e.origin !== "https://calendly.com") return;
+      if ((e.data as { event?: string } | null)?.event !== "calendly.event_scheduled") return;
+      trackEvent("generate_lead", { method: "calendly", page_path: window.location.pathname });
+    }
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;

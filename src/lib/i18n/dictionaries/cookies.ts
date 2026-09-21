@@ -28,6 +28,7 @@ export const COOKIES_DICT = {
       randuri: [
         { nume: "sb-*-auth-token", scop: "Menține sesiunea de autentificare (Supabase Auth) — te ține conectat între vizite.", durata: "Sesiune sau persistent, în funcție de „Rămâi conectat” bifat la autentificare" },
         { nume: "sb-*-auth-token-code-verifier", scop: "Verificare tehnică temporară pentru finalizarea autentificării (cod OAuth/email).", durata: "Câteva minute" },
+        { nume: "fa_evt", scop: "Semnal tehnic scurt, fără date personale: anunță pagina următoare că ți-ai creat contul, ca statistica să poată fi raportată doar dacă ai acceptat cookie-urile de analiză. Se șterge imediat ce e citit.", durata: "Maximum 2 minute" },
       ],
     },
     sAnalytics: {
@@ -82,6 +83,7 @@ export const COOKIES_DICT = {
       randuri: [
         { nume: "sb-*-auth-token", scop: "Maintains the authentication session (Supabase Auth) — keeps you signed in between visits.", durata: "Session or persistent, depending on whether \"Stay signed in\" was checked at login" },
         { nume: "sb-*-auth-token-code-verifier", scop: "Temporary technical verification to complete authentication (OAuth/email code).", durata: "A few minutes" },
+        { nume: "fa_evt", scop: "Short technical signal, no personal data: tells the next page you just created your account, so the statistic can be reported only if you accepted analytics cookies. Deleted as soon as it's read.", durata: "2 minutes at most" },
       ],
     },
     sAnalytics: {

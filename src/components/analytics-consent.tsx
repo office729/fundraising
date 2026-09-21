@@ -1,14 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import Script from "next/script";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 
-// ID-ul de măsurare Google Analytics 4 — public prin natura lui (apare în
-// codul paginii oricărui site care îl folosește), deci nu e secret.
-const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? "G-8R9P9XB8F1";
+import { CONSENT_KEY as STORAGE_KEY, ensureAnalyticsInit, GA_ID } from "@/lib/analytics";
 
-const STORAGE_KEY = "fa_cookie_consent";
 const REOPEN_EVENT = "fa-cookie-consent-reopen";
 const CHANGE_EVENT = "fa-cookie-consent-change";
 
@@ -96,17 +92,12 @@ export function AnalyticsConsent({ texts }: { texts: BannerTexts }) {
   const alegere = stare === "granted" || stare === "denied" ? stare : null;
   const bannerDeschis = stare === "unset" || (stare !== "pending" && redeschis);
 
+  useEffect(() => {
+    if (alegere === "granted") ensureAnalyticsInit();
+  }, [alegere]);
+
   return (
     <>
-      {alegere === "granted" && (
-        <>
-          <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} strategy="afterInteractive" />
-          <Script id="ga-init" strategy="afterInteractive">
-            {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_ID}');`}
-          </Script>
-        </>
-      )}
-
       {bannerDeschis && (
         <div
           role="dialog"
