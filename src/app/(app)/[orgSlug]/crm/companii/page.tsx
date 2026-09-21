@@ -6,7 +6,7 @@ import { ImportExportPanel } from "../components/import-export-panel";
 import { Card } from "../components/ui/card";
 import { EmptyState } from "../components/ui/states";
 import { formatDataRelativa } from "../lib/format";
-import { idScurt } from "@/lib/id-scurt";
+import { segmentFirma } from "@/lib/id-scurt";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { COMPANII_DICT } from "@/lib/i18n/dictionaries/companii";
 import { D177Badge } from "./d177-badge";
@@ -85,7 +85,7 @@ async function CompaniiContent({
             {lista.rows.map((c) => (
               <Link
                 key={c.id}
-                href={`/${orgSlug}/crm/companii/${idScurt(c.id)}`}
+                href={`/${orgSlug}/crm/companii/${segmentFirma(c.nume, c.id)}`}
                 className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 transition-colors hover:bg-[var(--ci-surface-2)]"
               >
                 <div className="min-w-0">

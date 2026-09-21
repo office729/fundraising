@@ -1,6 +1,6 @@
 "use client";
 
-import { idScurt } from "@/lib/id-scurt";
+import { idScurt, segmentFirma } from "@/lib/id-scurt";
 import { CalendarClock, Plus, Trophy, Upload } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -71,7 +71,7 @@ export function CalendarLucruButton() {
             {rows.map((r) => (
               <Link
                 key={r.id}
-                href={`/${orgSlug}/crm/companii/${idScurt(r.id)}`}
+                href={`/${orgSlug}/crm/companii/${segmentFirma(r.nume, r.id)}`}
                 className="flex items-center justify-between rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] px-3 py-2 text-[13px] hover:bg-[var(--ci-surface-2)]"
               >
                 <span className="min-w-0 truncate font-medium text-[var(--ci-text)]">

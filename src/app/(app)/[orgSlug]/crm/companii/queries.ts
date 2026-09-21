@@ -3,7 +3,7 @@ import { and, desc, eq, sql } from "drizzle-orm";
 import { withOrgSession } from "@/lib/auth/guard";
 import { appUsers, companies, companyNotite, companySponsorizari, companyStageLog, contacts, memberships } from "@/lib/db/schema";
 
-import { esteIdScurt } from "@/lib/id-scurt";
+import { citesteSegment, hexFaraCratime, LUNGIME_SUFIX, segmentFirma, slugFirma } from "@/lib/id-scurt";
 import { calculeazaInterval, type FiltruCompanii, TOP_LIMIT } from "./lib/filters";
 
 const PAGE_SIZE = 25;
@@ -172,32 +172,31 @@ export const getResponsabiliOrg = withOrgSession(async (ctx) => {
     .orderBy(appUsers.name);
 });
 
-export const getCompanieDetaliu = withOrgSession(async (ctx, id: string) => {
-  // `id` poate fi UUID-ul complet sau varianta scurtă (12 caractere hex) din adresele noi.
-  const scurt = esteIdScurt(id);
-  const rows = await ctx.db
+export const getCompanieDetaliu = withOrgSession(async (ctx, segment: string) => {
+  // `segment`: UUID complet, „denumire-c2607e5a” sau doar hex (adrese vechi). Vezi lib/id-scurt.ts.
+  const cerut = citesteSegment(segment);
+  if (!cerut) return null;
+  const conditie = cerut.tip === "uuid" ? eq(companies.id, cerut.id) : sql`replace(${companies.id}::text, '-', '') like ${cerut.prefix + "%"}`;
+  const candidate = await ctx.db
     .select()
     .from(companies)
-    .where(
-      and(
-        scurt ? sql`replace(${companies.id}::text, '-', '') like ${id.toLowerCase() + "%"}` : eq(companies.id, id),
-        eq(companies.orgId, ctx.orgId),
-        sql`${companies.deletedAt} is null`,
-      ),
-    )
+    .where(and(conditie, eq(companies.orgId, ctx.orgId), sql`${companies.deletedAt} is null`))
     .orderBy(companies.id)
-    .limit(1);
-  if (!rows[0]) return null;
-  const companie = rows[0];
-  id = companie.id; // de aici încolo, UUID-ul complet
+    .limit(5);
+  // la prefixe identice (foarte rar) se alege firma a cărei denumire se potrivește cu textul din adresă
+  const companie = (cerut.tip === "prefix" && cerut.slug ? candidate.find((c) => slugFirma(c.nume) === cerut.slug) : undefined) ?? candidate[0];
+  if (!companie) return null;
+  const id = companie.id; // de aici încolo, UUID-ul complet
 
-  // Adresa scurtă e folosită doar dacă nu există alt rând din organizație cu același prefix.
-  const prefix = id.replace(/-/g, "").slice(0, 12);
-  const [{ n: potriviri }] = await ctx.db
-    .select({ n: sql<number>`count(*)::int` })
+  // Adresa canonică: „denumire-<8 hex>”; dacă alt rând are aceeași denumire și același prefix, se folosește UUID-ul complet.
+  const canonic = segmentFirma(companie.nume, id);
+  const prefix8 = hexFaraCratime(id).slice(0, LUNGIME_SUFIX);
+  const aceleasiPrefix = await ctx.db
+    .select({ nume: companies.nume })
     .from(companies)
-    .where(and(eq(companies.orgId, ctx.orgId), sql`replace(${companies.id}::text, '-', '') like ${prefix + "%"}`));
-  const idScurtUnic = potriviri === 1;
+    .where(and(eq(companies.orgId, ctx.orgId), sql`replace(${companies.id}::text, '-', '') like ${prefix8 + "%"}`));
+  const segmentCanonic = aceleasiPrefix.filter((r) => slugFirma(r.nume) === slugFirma(companie.nume)).length > 1 ? id : canonic;
+
 
   // Bifează vizita — trebuie așteptat, nu fire-and-forget: rulează în aceeași
   // tranzacție (withOrgSession) care se închide imediat ce funcția revine.
@@ -234,5 +233,5 @@ export const getCompanieDetaliu = withOrgSession(async (ctx, id: string) => {
       .limit(100),
   ]);
 
-  return { companie, sponsorizari, notite, contacte: contacteFirma, responsabili, jurnalEtape, idScurtUnic };
+  return { companie, sponsorizari, notite, contacte: contacteFirma, responsabili, jurnalEtape, segmentCanonic };
 });

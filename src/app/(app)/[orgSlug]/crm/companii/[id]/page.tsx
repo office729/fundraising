@@ -5,7 +5,6 @@ import { Badge, type StatusTone } from "../../components/ui/badge";
 import { Breadcrumb } from "../../components/ui/breadcrumb";
 import { Card } from "../../components/ui/card";
 import { formatData, formatDataRelativa } from "../../lib/format";
-import { idScurt } from "@/lib/id-scurt";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { COMPANII_DICT } from "@/lib/i18n/dictionaries/companii";
 import { getCompanieDetaliu } from "../queries";
@@ -22,8 +21,8 @@ export default async function CompanieProfilPage({ params }: { params: Promise<{
   const { orgSlug, id } = await params;
   const data = await getCompanieDetaliu(orgSlug, id);
   if (!data) notFound();
-  // adresa lungă (UUID complet) → adresa scurtă, dacă prefixul e unic în organizație
-  if (id.length > 12 && data.idScurtUnic) redirect(`/${orgSlug}/crm/companii/${idScurt(data.companie.id)}`);
+  // adresa veche (UUID complet, doar hex) → adresa cu denumirea firmei
+  if (id !== data.segmentCanonic) redirect(`/${orgSlug}/crm/companii/${data.segmentCanonic}`);
   const locale = await getLocale();
   const dict = COMPANII_DICT[locale].detail;
 
