@@ -3,6 +3,7 @@ import { and, desc, eq, sql } from "drizzle-orm";
 import { withOrgSession } from "@/lib/auth/guard";
 import { appUsers, companies, companyNotite, companySponsorizari, companyStageLog, contacts, memberships } from "@/lib/db/schema";
 
+import { esteIdScurt } from "@/lib/id-scurt";
 import { calculeazaInterval, type FiltruCompanii, TOP_LIMIT } from "./lib/filters";
 
 const PAGE_SIZE = 25;
@@ -172,13 +173,31 @@ export const getResponsabiliOrg = withOrgSession(async (ctx) => {
 });
 
 export const getCompanieDetaliu = withOrgSession(async (ctx, id: string) => {
+  // `id` poate fi UUID-ul complet sau varianta scurtă (12 caractere hex) din adresele noi.
+  const scurt = esteIdScurt(id);
   const rows = await ctx.db
     .select()
     .from(companies)
-    .where(and(eq(companies.id, id), eq(companies.orgId, ctx.orgId), sql`${companies.deletedAt} is null`))
+    .where(
+      and(
+        scurt ? sql`replace(${companies.id}::text, '-', '') like ${id.toLowerCase() + "%"}` : eq(companies.id, id),
+        eq(companies.orgId, ctx.orgId),
+        sql`${companies.deletedAt} is null`,
+      ),
+    )
+    .orderBy(companies.id)
     .limit(1);
   if (!rows[0]) return null;
   const companie = rows[0];
+  id = companie.id; // de aici încolo, UUID-ul complet
+
+  // Adresa scurtă e folosită doar dacă nu există alt rând din organizație cu același prefix.
+  const prefix = id.replace(/-/g, "").slice(0, 12);
+  const [{ n: potriviri }] = await ctx.db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(companies)
+    .where(and(eq(companies.orgId, ctx.orgId), sql`replace(${companies.id}::text, '-', '') like ${prefix + "%"}`));
+  const idScurtUnic = potriviri === 1;
 
   // Bifează vizita — trebuie așteptat, nu fire-and-forget: rulează în aceeași
   // tranzacție (withOrgSession) care se închide imediat ce funcția revine.
@@ -215,5 +234,5 @@ export const getCompanieDetaliu = withOrgSession(async (ctx, id: string) => {
       .limit(100),
   ]);
 
-  return { companie, sponsorizari, notite, contacte: contacteFirma, responsabili, jurnalEtape };
+  return { companie, sponsorizari, notite, contacte: contacteFirma, responsabili, jurnalEtape, idScurtUnic };
 });

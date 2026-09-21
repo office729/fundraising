@@ -64,6 +64,7 @@ import {
 } from "./lib/local-store";
 import { useDonatori } from "./lib/use-data";
 import { TASKURI, type Task } from "./mock";
+import { idScurt } from "@/lib/id-scurt";
 import { getOrgCustomization } from "@/lib/org-customizations";
 
 const EMPTY_TASKURI_GLOBALE: Task[] = [];
@@ -479,7 +480,7 @@ function AddDialog({
         onClose={() => setCompanyOpen(false)}
         onCreated={(id) => {
           setCompanyOpen(false);
-          router.push(`${base}/companii/${id}`);
+          router.push(`${base}/companii/${idScurt(id)}`);
         }}
       />
     </>
