@@ -156,10 +156,13 @@ export function CrmShell({
   const [searchOpen, setSearchOpen] = useState(false);
   const pathname = usePathname();
   const base = `/${orgSlug}/crm`;
-  // Căutarea pe persoane fizice nu are sens în Companii, Instrumente, Consultanță și în
-  // instrumentele HTML (care stau în afara /crm) — acolo n-o afișăm.
+  // Căutarea pe persoane fizice nu are sens pe Acasă (dashboard-ul, fără listă
+  // de căutat), Companii, Instrumente, Consultanță și în instrumentele HTML
+  // (care stau în afara /crm) — acolo n-o afișăm.
   const cautarePersoaneFizice =
-    (pathname ?? "").startsWith(base) && !["/companii", "/instrumente", "/consultanta"].some((x) => (pathname ?? "").startsWith(base + x));
+    (pathname ?? "").startsWith(base) &&
+    pathname !== base &&
+    !["/companii", "/instrumente", "/consultanta"].some((x) => (pathname ?? "").startsWith(base + x));
   const dict = DASHBOARD_DICT[locale];
 
   useEffect(() => {
