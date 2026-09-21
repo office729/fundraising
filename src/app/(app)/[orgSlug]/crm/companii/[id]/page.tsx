@@ -112,16 +112,17 @@ export default async function CompanieProfilPage({ params }: { params: Promise<{
         notite={notite}
         contacte={contacte}
         activitate={activitate}
-      />
-
-      <ContractSponsorizareSection
-        firma={{
-          nume: c.nume, cui: c.cui, nrRegCom: c.nrRegCom, judet: c.judet, localitate: c.localitate, adresa: c.adresa,
-          administrator: c.administrator, sumaPropusa: c.sumaPropusa, numarContract: c.numarContract, dataSemnare: c.dataSemnare,
-          emailSemnatar: (contacte.find((ct) => ct.cheie && ct.email) ?? contacte.find((ct) => ct.email))?.email ?? null,
-          responsabil: responsabili.find((r) => r.id === c.ownerId)?.name ?? null,
-          mec20: c.mec20,
-        }}
+        contractSectiune={
+          <ContractSponsorizareSection
+                firma={{
+                  nume: c.nume, cui: c.cui, nrRegCom: c.nrRegCom, judet: c.judet, localitate: c.localitate, adresa: c.adresa,
+                  administrator: c.administrator, sumaPropusa: c.sumaPropusa, numarContract: c.numarContract, dataSemnare: c.dataSemnare,
+                  emailSemnatar: (contacte.find((ct) => ct.cheie && ct.email) ?? contacte.find((ct) => ct.email))?.email ?? null,
+                  responsabil: responsabili.find((r) => r.id === c.ownerId)?.name ?? null,
+                  mec20: c.mec20,
+                }}
+              />
+        }
       />
     </div>
   );

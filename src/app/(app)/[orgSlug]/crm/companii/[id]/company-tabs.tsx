@@ -32,12 +32,15 @@ export function CompanyTabs({
   notite,
   contacte,
   activitate,
+  contractSectiune,
 }: {
   firma: Firma;
   sponsorizari: Parameters<typeof SponsorizariPanel>[0]["sponsorizari"];
   notite: Parameters<typeof NotitePanel>[0]["notite"];
   contacte: Parameters<typeof ContactePanel>[0]["contacte"];
   activitate: { la: string; text: string }[];
+  // generatorul de contract de sponsorizare — se afișează DOAR în tabul „Contract”
+  contractSectiune?: React.ReactNode;
 }) {
   const locale = useLocale();
   const dict = COMPANII_DICT[locale].detail;
@@ -91,12 +94,15 @@ export function CompanyTabs({
         if (active === "sponsorizari") return <SponsorizariPanel companyId={c.id} sponsorizari={sponsorizari} />;
         if (active === "contract")
           return (
-            <ContractPanel
-              companyId={c.id}
-              numarContract={c.numarContract}
-              dataSemnare={c.dataSemnare}
-              contractStatus={c.contractStatus as "trimis" | "asteptare" | "semnat" | "anulat" | null}
-            />
+            <div className="space-y-6">
+              <ContractPanel
+                companyId={c.id}
+                numarContract={c.numarContract}
+                dataSemnare={c.dataSemnare}
+                contractStatus={c.contractStatus as "trimis" | "asteptare" | "semnat" | "anulat" | null}
+              />
+              {contractSectiune}
+            </div>
           );
         if (active === "notite") return <NotitePanel companyId={c.id} notite={notite} />;
         if (active === "activitate")
