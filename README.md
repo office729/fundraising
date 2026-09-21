@@ -70,15 +70,22 @@ DOAR datele din org A.
   Pe un laptop nou: `git clone https://github.com/office729/fundraising.git`.
 - ✅ Proiect Vercel legat de acel repo, cu variabilele de mediu de mai sus
   (mai puțin Stripe — vezi punctul următor).
-- ⬜ Creat cont Stripe (test + live) și completat `STRIPE_SECRET_KEY` /
-  `STRIPE_WEBHOOK_SECRET` în Vercel. Codul e gata de asta (checkout donații
-  + abonamente ONG, cu preț dinamic, fără niciun Produs/Preț de configurat
-  manual în Dashboard) — rămâne doar crearea contului și a webhook-ului.
-  La configurarea webhook-ului în Stripe Dashboard, activează evenimentele
-  folosite de `src/app/api/stripe/webhook/route.ts`: `checkout.session.completed`,
-  `checkout.session.expired`, `invoice.paid`, `charge.refunded`,
-  `charge.dispute.created`, `customer.subscription.deleted`,
-  `customer.subscription.updated`.
+- ⬜ **Plăți — două fluxuri separate, fără cont Stripe al platformei:**
+  1. *Abonamentele platformei* (49/149/299 lei/lună) se încasează prin **Netopia**.
+     De completat în Vercel: `NETOPIA_API_KEY`, `NETOPIA_POS_SIGNATURE`,
+     `NETOPIA_PUBLIC_KEY` (PEM al POS-ului, pentru verificarea IPN) și
+     `NETOPIA_ENV` (`sandbox` la test, `live` la producție). În contul Netopia,
+     URL-ul de notificare (IPN) e `https://<domeniu>/api/netopia/ipn` — îl trimite
+     aplicația la fiecare comandă, nu se setează manual. Fiecare plată = o lună de
+     acces (nu reînnoire automată); `organizations.current_period_end` decide.
+  2. *Donațiile* de pe paginile ONG-urilor se încasează în **contul Stripe al
+     fiecărui ONG**: își pune cheia secretă și secretul webhook-ului în Setări →
+     Plăți donații, iar webhook-ul lui indică `/api/stripe/webhook/<slug-ul lui>`.
+     Cheile se stochează criptate (AES-256-GCM) cu `ORG_SECRETS_KEY` din Vercel.
+- ✅ Migrarea `0001_netopia_stripe_org` (coloane Stripe pe `organizations` + tabelul
+  `platform_payments`) + politicile RLS din `scripts/restore-rls.mjs` — de aplicat pe
+  baza de producție înainte de deploy (`npm run db:migrate`, sau SQL-ul din
+  `src/lib/db/migrations/`).
 - ✅ Maparea pachet → instrumente din `lib/billing/packages.ts` — pachetele
   fixe (trial/start/creștere/impact) includ toate instrumentele, diferă doar
   prin cote; planul personalizat diferențiază per instrument, aplicat

@@ -120,15 +120,14 @@ export const PACKAGE_LIMITS: Record<Exclude<OrgPackage, "custom">, PackageLimits
 
 // Prețuri anuale — 2 luni gratuite (din pagina de prețuri). Doar informativ
 // azi (Paywall/Setări afișează prețul anual, dar checkout-ul real e
-// lunar-only — vezi lib/billing/stripe-checkout.ts).
+// lunar-only — vezi lib/billing/netopia-checkout.ts).
 export const PACKAGE_PRICE_ANUAL: Record<Exclude<OrgPackage, "trial" | "custom">, number> = {
   start: 490,
   crestere: 1490,
   impact: 2990,
 };
 
-// Niciun Price ID Stripe pre-creat — sesiunea de checkout a abonamentului
-// folosește preț DINAMIC (price_data), la fel ca donațiile (vezi
-// strangere-fonduri/[orgSlug]/[pageSlug]/actions.ts), pornind de la
-// `pretLunar` de mai sus. Niciun Produs/Preț de configurat manual în Stripe
-// Dashboard.
+// Abonamentul platformei se încasează prin Netopia (nu Stripe), lună de lună:
+// fiecare plată are prețul din `pretLunar` de mai sus, calculat server-side
+// (vezi lib/billing/netopia-checkout.ts). Nu există produse sau prețuri de
+// configurat manual în contul Netopia.

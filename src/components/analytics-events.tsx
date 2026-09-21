@@ -18,11 +18,6 @@ function citesteSiStergeSemnal(): string | null {
   return decodeURIComponent(m[1]);
 }
 
-function stergeParametri(url: URL, chei: string[]) {
-  chei.forEach((k) => url.searchParams.delete(k));
-  window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
-}
-
 export function AnalyticsEvents() {
   const pathname = usePathname();
 
@@ -54,7 +49,8 @@ export function AnalyticsEvents() {
     return () => document.removeEventListener("click", onClick, { capture: true });
   }, []);
 
-  // Semnale de la server (cont creat) și întoarcerea din Stripe (plată reușită).
+  // Semnal de la server (cont creat). Evenimentul `purchase` se trimite din pagina
+  // de rezultat a plății, doar când Netopia a confirmat-o (abonament/.../rezultat).
   // Rulează la fiecare schimbare de pagină, fiindcă redirect-ul unei acțiuni de
   // server e o navigare client-side, nu o reîncărcare.
   useEffect(() => {
@@ -62,34 +58,6 @@ export function AnalyticsEvents() {
       trackEvent("sign_up", { method: "email" });
     }
 
-    const url = new URL(window.location.href);
-    if (url.searchParams.get("abonament") === "succes") {
-      const sid = url.searchParams.get("sid") ?? "";
-      const cheie = `fa_purchase_${sid}`;
-      let deja = false;
-      try {
-        deja = !!sid && window.sessionStorage.getItem(cheie) === "1";
-      } catch {
-        // storage blocat: transaction_id deduplică oricum în GA4
-      }
-      if (!deja) {
-        const value = Number(url.searchParams.get("v"));
-        const pachet = url.searchParams.get("p") ?? undefined;
-        trackEvent("purchase", {
-          transaction_id: sid || undefined,
-          currency: "RON",
-          value: Number.isFinite(value) && value > 0 ? value : undefined,
-          items: [{ item_name: pachet, quantity: 1 }],
-        });
-        try {
-          if (sid) window.sessionStorage.setItem(cheie, "1");
-        } catch {
-          // ignorat
-        }
-      }
-      // Curățăm parametrii, ca o reîncărcare să nu retrimită evenimentul.
-      stergeParametri(url, ["abonament", "sid", "v", "p"]);
-    }
   }, [pathname]);
 
   return null;

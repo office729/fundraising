@@ -70,7 +70,11 @@ export async function updateSession(request: NextRequest, rewriteTo?: URL) {
     path.startsWith("/auth") ||
     path.startsWith("/invite/") ||
     path.startsWith("/invite-beneficiar/") ||
+    // Webhook-urile Stripe ale ONG-urilor (/api/stripe/webhook/<slug>) și IPN-ul
+    // Netopia (abonamentele platformei) — apelate de serverele lor, nu de un
+    // vizitator cu sesiune; fiecare rută își verifică singură semnătura.
     path.startsWith("/api/stripe/webhook") ||
+    path.startsWith("/api/netopia/ipn") ||
     // Cron-uri Vercel — invocate de infrastructura Vercel, nu de un vizitator
     // cu sesiune; ruta își face propria verificare (CRON_SECRET).
     path.startsWith("/api/cron/") ||

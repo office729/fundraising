@@ -1,16 +1,26 @@
+import "server-only";
+
 import { randomUUID } from "node:crypto";
 
 import { and, eq, ne, sql } from "drizzle-orm";
-import { NextResponse } from "next/server";
-import StripeSDK from "stripe";
 import type Stripe from "stripe";
 
 import { db } from "@/lib/db";
-import { fundraisingDonations, organizations } from "@/lib/db/schema";
+import { fundraisingDonations } from "@/lib/db/schema";
 import { htmlEmailMultumireDonatie, subiectEmailMultumireDonatie } from "@/lib/donation-email-template";
 import { emailConfigurat, trimiteEmail } from "@/lib/email";
 import { crediteazaPaginaSiDonator, decrediteazaPaginaSiDonator } from "@/lib/fundraising-credit";
-import { getStripe } from "@/lib/stripe";
+
+// Evenimentele Stripe ale DONAȚIILOR unui ONG, primite pe webhook-ul lui propriu
+// (/api/stripe/webhook/<orgSlug>, semnat cu secretul webhook al ONG-ului).
+// `orgId` e ONG-ul care a semnat evenimentul: orice donație pe care evenimentul
+// ar modifica trebuie să-i aparțină, altfel un ONG și-ar putea crea, din contul
+// lui Stripe, "donații" reușite în contul altei organizații.
+//
+// Returnează `false` doar la o eroare de procesare — ruta răspunde atunci cu
+// 500, ca Stripe să reîncerce livrarea (un 200 ar pierde definitiv o plată reală).
+
+type Ctx = { orgId: string; stripe: Stripe };
 
 // Trimite emailul de mulțumire DUPĂ ce tranzacția de creditare s-a închis (nu
 // ține conexiunea DB ocupată în timpul apelului HTTP către Resend) —
@@ -46,57 +56,12 @@ function idDin(ref: string | { id: string } | null | undefined): string | null {
   return typeof ref === "string" ? ref : ref.id;
 }
 
-// Statusul de abonament Stripe → enumul nostru intern (subscriptionStatus).
-// Stripe are mai multe stări decât noi urmărim — mapate pe cea mai apropiată.
-function statusOrgDinStripe(stripeStatus: Stripe.Subscription.Status): "trialing" | "active" | "past_due" | "canceled" | "incomplete" {
-  switch (stripeStatus) {
-    case "active":
-    case "trialing":
-      return "active";
-    case "past_due":
-    case "unpaid":
-    case "paused":
-      return "past_due";
-    case "canceled":
-    case "incomplete_expired":
-      return "canceled";
-    default:
-      return "incomplete";
-  }
-}
-
-function currentPeriodEndDin(subscription: Stripe.Subscription): Date | null {
-  const secunde = subscription.items.data[0]?.current_period_end;
-  return secunde ? new Date(secunde * 1000) : null;
-}
-
-// Singurul loc care confirmă o donație ca reușită — niciodată clientul
-// (pagina de mulțumire), doar acest webhook, verificat prin semnătura Stripe.
-// Actualizările pe fundraising_donations/fundraising_pages sunt gated prin
-// GUC-ul app.public_lookup (vezi scripts/restore-rls.mjs) — context server,
-// de încredere, la fel ca rezolvarea org_id în rutele publice de INSERT.
-export async function POST(req: Request) {
-  const signature = req.headers.get("stripe-signature");
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
-  if (!signature || !webhookSecret) {
-    return NextResponse.json({ error: "webhook_not_configured" }, { status: 400 });
-  }
-
-  const rawBody = await req.text();
-
-  let event: Stripe.Event;
-  try {
-    // Metodă statică — verifică doar semnătura HMAC cu STRIPE_WEBHOOK_SECRET,
-    // nu are nevoie de un client Stripe autentificat (getStripe()/STRIPE_SECRET_KEY).
-    // Altfel, o cheie API lipsă ar fi raportată greșit drept "semnătură invalidă",
-    // în loc de eroarea de configurare reală.
-    event = StripeSDK.webhooks.constructEvent(rawBody, signature, webhookSecret);
-  } catch (e) {
-    console.error("Semnătură webhook Stripe invalidă:", e);
-    return NextResponse.json({ error: "invalid_signature" }, { status: 400 });
-  }
-
+export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, stripe }: Ctx): Promise<boolean> {
+  // Singurul loc care confirmă o donație ca reușită — niciodată clientul
+  // (pagina de mulțumire), doar acest webhook, verificat prin semnătura Stripe.
+  // Actualizările pe fundraising_donations/fundraising_pages sunt gated prin
+  // GUC-ul app.public_lookup (vezi scripts/restore-rls.mjs) — context server,
+  // de încredere, la fel ca rezolvarea org_id în rutele publice de INSERT.
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
     let emailParams: Parameters<typeof trimiteEmailMultumireDacaSePoate>[0] | null = null;
@@ -107,7 +72,7 @@ export async function POST(req: Request) {
         const donatie = await tx
           .select()
           .from(fundraisingDonations)
-          .where(eq(fundraisingDonations.stripeSessionId, session.id))
+          .where(and(eq(fundraisingDonations.stripeSessionId, session.id), eq(fundraisingDonations.orgId, orgId)))
           .limit(1);
         if (!donatie[0]) return;
 
@@ -156,35 +121,9 @@ export async function POST(req: Request) {
       });
     } catch (e) {
       console.error("Eroare la procesarea checkout.session.completed:", e);
-      return NextResponse.json({ error: "processing_failed" }, { status: 500 });
+      return false;
     }
     if (emailParams) await trimiteEmailMultumireDacaSePoate(emailParams);
-
-    // Abonament al PLATFORMEI (nu o donație) — marcat prin metadata.type,
-    // vezi lib/billing/stripe-checkout.ts. Complet independent de blocul de
-    // mai sus: acela operează pe fundraising_donations și pur și simplu nu
-    // găsește niciun rând pentru o sesiune de abonament ONG.
-    if (session.metadata?.type === "org_subscription" && session.metadata.orgId) {
-      try {
-        const subscriptionId = idDin(session.subscription);
-        const subscription = subscriptionId ? await getStripe().subscriptions.retrieve(subscriptionId) : null;
-        await db.transaction(async (tx) => {
-          await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
-          await tx
-            .update(organizations)
-            .set({
-              subscriptionStatus: "active",
-              stripeCustomerId: idDin(session.customer),
-              stripeSubscriptionId: subscriptionId,
-              currentPeriodEnd: subscription ? currentPeriodEndDin(subscription) : null,
-            })
-            .where(eq(organizations.id, session.metadata!.orgId!));
-        });
-      } catch (e) {
-        console.error("Eroare la activarea abonamentului organizației:", e);
-        return NextResponse.json({ error: "processing_failed" }, { status: 500 });
-      }
-    }
   }
 
   if (event.type === "checkout.session.expired") {
@@ -195,7 +134,7 @@ export async function POST(req: Request) {
         await tx
           .update(fundraisingDonations)
           .set({ status: "esuata" })
-          .where(eq(fundraisingDonations.stripeSessionId, session.id));
+          .where(and(eq(fundraisingDonations.stripeSessionId, session.id), eq(fundraisingDonations.orgId, orgId)));
       });
     } catch (e) {
       console.error("Eroare la procesarea checkout.session.expired:", e);
@@ -214,16 +153,18 @@ export async function POST(req: Request) {
     if (invoice.billing_reason === "subscription_cycle" && subId) {
       let emailParams: Parameters<typeof trimiteEmailMultumireDacaSePoate>[0] | null = null;
       try {
-        const subscription = await getStripe().subscriptions.retrieve(subId);
+        const subscription = await stripe.subscriptions.retrieve(subId);
         const md = subscription.metadata;
-        if (md.pageId && md.orgId) {
+        // Metadata vine din contul Stripe al ONG-ului — nu are voie să indice
+        // altă organizație decât cea care a semnat evenimentul.
+        if (md.pageId && md.orgId === orgId) {
           await db.transaction(async (tx) => {
             await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
 
             const dejaExista = await tx
               .select({ id: fundraisingDonations.id })
               .from(fundraisingDonations)
-              .where(eq(fundraisingDonations.stripeSessionId, `invoice_${invoice.id}`))
+              .where(eq(fundraisingDonations.stripeSessionId, `invoice_${orgId}_${invoice.id}`))
               .limit(1);
             if (dejaExista[0]) return; // idempotent — webhook poate fi retrimis de Stripe
 
@@ -233,14 +174,14 @@ export async function POST(req: Request) {
             // corelarea unei eventuale rambursări a ACESTEI reînnoiri.
             // Facturile nu mai expun payment_intent direct (restructurat sub
             // InvoicePayments) — trebuie interogat separat.
-            const plati = await getStripe().invoicePayments.list({ invoice: invoice.id, limit: 1 });
+            const plati = await stripe.invoicePayments.list({ invoice: invoice.id, limit: 1 });
             const platoInvoice = plati.data[0]?.payment;
             const paymentIntentId = idDin(platoInvoice?.payment_intent) ?? idDin(platoInvoice?.charge);
 
             await tx.insert(fundraisingDonations).values({
               id: randomUUID(),
               pageId: md.pageId,
-              orgId: md.orgId,
+              orgId,
               numeDonator: md.numeDonator || null,
               emailDonator: md.emailDonator || null,
               telefonDonator: md.telefonDonator || null,
@@ -249,7 +190,9 @@ export async function POST(req: Request) {
               consimtamantGdpr: md.consimtamantGdpr === "true",
               consimtamantTermeni: md.consimtamantTermeni === "true",
               consimtamantWhatsapp: md.consimtamantWhatsapp === "true",
-              stripeSessionId: `invoice_${invoice.id}`,
+              // Prefixat cu orgId: id-urile de factură sunt unice doar în contul
+              // Stripe al fiecărui ONG, dar coloana e unică global.
+              stripeSessionId: `invoice_${orgId}_${invoice.id}`,
               recurenta: true,
               stripeSubscriptionId: subId,
               stripePaymentIntentId: paymentIntentId,
@@ -258,7 +201,7 @@ export async function POST(req: Request) {
 
             const info = await crediteazaPaginaSiDonator(tx, {
               pageId: md.pageId,
-              orgId: md.orgId,
+              orgId,
               suma,
               numeDonator: md.numeDonator || null,
               emailDonator: md.emailDonator || null,
@@ -273,23 +216,13 @@ export async function POST(req: Request) {
               info,
             };
           });
-        } else if (md.type === "org_subscription" && md.orgId) {
-          // Reînnoire lunară a abonamentului PLATFORMEI (nu o donație) —
-          // doar mută înainte `currentPeriodEnd`, fără niciun rând nou.
-          await db.transaction(async (tx) => {
-            await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
-            await tx
-              .update(organizations)
-              .set({ currentPeriodEnd: currentPeriodEndDin(subscription) })
-              .where(eq(organizations.id, md.orgId));
-          });
         }
       } catch (e) {
         console.error("Eroare la procesarea invoice.paid (reînnoire abonament):", e);
         // Răspuns de eroare — NU 200 — ca Stripe să reîncerce livrarea. Un 200
         // aici ar însemna că o reînnoire încasată real nu mai ajunge NICIODATĂ
         // în sumaStransa/donatoriReali, fără nicio alertă vizibilă.
-        return NextResponse.json({ error: "processing_failed" }, { status: 500 });
+        return false;
       }
       if (emailParams) await trimiteEmailMultumireDacaSePoate(emailParams);
     }
@@ -313,7 +246,7 @@ export async function POST(req: Request) {
         const donatie = await tx
           .select()
           .from(fundraisingDonations)
-          .where(eq(fundraisingDonations.stripePaymentIntentId, candidat))
+          .where(and(eq(fundraisingDonations.stripePaymentIntentId, candidat), eq(fundraisingDonations.orgId, orgId)))
           .limit(1);
         if (!donatie[0]) return; // nicio donație locală cu acest payment_intent
 
@@ -333,7 +266,7 @@ export async function POST(req: Request) {
       });
     } catch (e) {
       console.error("Eroare la procesarea charge.refunded/charge.dispute.created:", e);
-      return NextResponse.json({ error: "processing_failed" }, { status: 500 });
+      return false;
     }
   }
 
@@ -349,39 +282,13 @@ export async function POST(req: Request) {
         await tx
           .update(fundraisingDonations)
           .set({ abonamentActiv: false })
-          .where(eq(fundraisingDonations.stripeSubscriptionId, subscription.id));
-
-        if (subscription.metadata?.type === "org_subscription") {
-          await tx.update(organizations).set({ subscriptionStatus: "canceled" }).where(eq(organizations.stripeSubscriptionId, subscription.id));
-        }
+          .where(and(eq(fundraisingDonations.stripeSubscriptionId, subscription.id), eq(fundraisingDonations.orgId, orgId)));
       });
     } catch (e) {
       console.error("Eroare la procesarea customer.subscription.deleted:", e);
-      return NextResponse.json({ error: "processing_failed" }, { status: 500 });
+      return false;
     }
   }
 
-  // Schimbare de stare a abonamentului PLATFORMEI, altfel decât anularea de
-  // mai sus (ex. plată eșuată → "past_due", reactivat manual de client în
-  // Stripe → "active" din nou) — nu afectează deloc donațiile (donatorii
-  // recurenți nu au metadata.type = "org_subscription").
-  if (event.type === "customer.subscription.updated") {
-    const subscription = event.data.object as Stripe.Subscription;
-    if (subscription.metadata?.type === "org_subscription") {
-      try {
-        await db.transaction(async (tx) => {
-          await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
-          await tx
-            .update(organizations)
-            .set({ subscriptionStatus: statusOrgDinStripe(subscription.status), currentPeriodEnd: currentPeriodEndDin(subscription) })
-            .where(eq(organizations.stripeSubscriptionId, subscription.id));
-        });
-      } catch (e) {
-        console.error("Eroare la procesarea customer.subscription.updated:", e);
-        return NextResponse.json({ error: "processing_failed" }, { status: 500 });
-      }
-    }
-  }
-
-  return NextResponse.json({ received: true });
+  return true;
 }

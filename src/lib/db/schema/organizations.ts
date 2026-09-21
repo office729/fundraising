@@ -36,9 +36,20 @@ export const organizations = pgTable("organizations", {
   // de client.
   customPlanConfig: jsonb("custom_plan_config"),
   subscriptionStatus: subscriptionStatus("subscription_status").notNull().default("trialing"),
+  // Vechi — abonamentele PLATFORMEI se încasează acum prin Netopia (vezi
+  // platform_payments); coloanele rămân doar pentru rândurile mai vechi.
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
   currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
+  // Contul Stripe PROPRIU al ONG-ului, pentru donațiile primite pe paginile lui
+  // de campanie — platforma nu are cont Stripe. Cheia secretă și secretul
+  // webhook-ului sunt criptate (AES-256-GCM, cheia ORG_SECRETS_KEY din mediu) și
+  // nu se trimit niciodată către client; `donationStripeKeyHint` = ultimele 4
+  // caractere, doar pentru afișare în Setări.
+  donationStripeSecretEnc: text("donation_stripe_secret_enc"),
+  donationStripeWebhookSecretEnc: text("donation_stripe_webhook_secret_enc"),
+  donationStripeKeyHint: text("donation_stripe_key_hint"),
+  donationStripeConnectedAt: timestamp("donation_stripe_connected_at", { withTimezone: true }),
   // Referral: codul PROPRIU al organizației (generat leneș, la prima cerere —
   // vezi lib/referral.ts — nu la creare, ca să nu complice bootstrap-ul RLS
   // din signup) — orice organizație îl poate distribui ca

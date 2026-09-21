@@ -9,8 +9,8 @@ import type { OrgContext } from "./auth/guard";
 
 // Procentul de reducere pentru primul abonament plătit al unei organizații
 // care s-a înscris folosind codul de recomandare al alteia — vezi
-// lib/billing/stripe-checkout.ts pentru aplicarea efectivă (un cupon Stripe
-// reutilizabil, `duration: "once"`, deci acoperă exact prima factură).
+// lib/billing/netopia-checkout.ts pentru aplicarea efectivă (suma primei plăți
+// reușite se reduce cu procentul, calculat server-side).
 export const REFERRAL_DISCOUNT_PERCENT = 50;
 
 // Codul de recomandare al unei organizații nu se generează la creare (ar

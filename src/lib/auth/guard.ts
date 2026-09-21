@@ -28,6 +28,10 @@ export type OrgContext = {
   // companiiPj) diferă de PACKAGE_LIMITS, vezi lib/billing/quota.ts.
   orgCustomPlanConfig: CustomPlanConfigSaved | null;
   orgSubscriptionStatus: string;
+  // Sfârșitul perioadei plătite (abonamentul platformei, prin Netopia) — accesul
+  // se închide când trece, chiar dacă starea a rămas "active" (vezi
+  // lib/billing/trial.ts).
+  orgCurrentPeriodEnd: Date | null;
   orgCreatedAt: Date;
   orgReferralCode: string | null;
   orgReferredByOrgId: string | null;
@@ -110,6 +114,7 @@ export function withOrgSession<A extends unknown[], R>(
         orgPackage: found.org.package,
         orgCustomPlanConfig: found.org.customPlanConfig as CustomPlanConfigSaved | null,
         orgSubscriptionStatus: found.org.subscriptionStatus,
+        orgCurrentPeriodEnd: found.org.currentPeriodEnd,
         orgCreatedAt: found.org.createdAt,
         orgReferralCode: found.org.referralCode,
         orgReferredByOrgId: found.org.referredByOrgId,
@@ -162,6 +167,7 @@ export function requireOrgAccess(orgSlug: string): Promise<OrgAccess> {
     orgPackage: ctx.orgPackage,
     orgCustomPlanConfig: ctx.orgCustomPlanConfig,
     orgSubscriptionStatus: ctx.orgSubscriptionStatus,
+    orgCurrentPeriodEnd: ctx.orgCurrentPeriodEnd,
     orgCreatedAt: ctx.orgCreatedAt,
     orgReferralCode: ctx.orgReferralCode,
     orgReferredByOrgId: ctx.orgReferredByOrgId,

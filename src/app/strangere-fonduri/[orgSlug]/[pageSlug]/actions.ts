@@ -8,7 +8,7 @@ import { redirect } from "next/navigation";
 
 import { db } from "@/lib/db";
 import { fundraisingDonations, fundraisingPages, organizations } from "@/lib/db/schema";
-import { getStripe } from "@/lib/stripe";
+import { stripeOrgDupaSlug } from "@/lib/org-stripe";
 import { EMAIL_RE, normalizeazaEmail } from "@/lib/validation";
 
 export type DoneazaState = { error: string | null };
@@ -76,8 +76,17 @@ export async function doneazaAction(
     return { error: "Pagina nu a fost găsită sau nu mai este activă." };
   }
 
-  if (!process.env.STRIPE_SECRET_KEY) {
-    return { error: "Plățile nu sunt încă activate pentru această platformă — revino în curând." };
+  // Donația se încasează în contul Stripe al ONG-ului (nu al platformei) — dacă
+  // ONG-ul nu și-a conectat încă contul, nu există unde să trimitem plata.
+  let stripeOrg: Awaited<ReturnType<typeof stripeOrgDupaSlug>>;
+  try {
+    stripeOrg = await stripeOrgDupaSlug(orgSlug);
+  } catch (e) {
+    console.error("cheia Stripe a organizației nu a putut fi citită:", e);
+    return { error: "Plata nu poate fi pornită momentan — te rugăm să încerci mai târziu sau să contactezi organizația." };
+  }
+  if (!stripeOrg) {
+    return { error: "Această organizație nu și-a activat încă donațiile online — te rugăm să o contactezi direct." };
   }
 
   // Formularul e trimis prin POST, deci "origin" e de obicei prezent — dar
@@ -105,7 +114,7 @@ export async function doneazaAction(
       consimtamantWhatsapp: String(consimtamantWhatsapp),
     };
 
-    const session = await getStripe().checkout.sessions.create({
+    const session = await stripeOrg.stripe.checkout.sessions.create({
       mode: recurenta ? "subscription" : "payment",
       // payment_method_types intenționat NEsetat — Stripe Checkout arată
       // automat orice metodă activată în Dashboard-ul contului (Settings →

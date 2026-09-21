@@ -3,6 +3,7 @@
 // [orgSlug] ar fi umbrită de ruta statică și organizația ar deveni
 // inaccesibilă. Verificat manual la fiecare rută nouă adăugată la rădăcină.
 const RESERVED_SLUGS = new Set([
+  "abonament",
   "api",
   "auth",
   "automatizare",

@@ -15,3 +15,4 @@ export * from "./crm-kv";
 export * from "./formular230";
 export * from "./fundraising-pages";
 export * from "./beneficiar";
+export * from "./platform-payments";

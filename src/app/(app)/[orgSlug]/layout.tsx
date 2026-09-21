@@ -34,6 +34,7 @@ export default async function OrgLayout({
         createdAt: access.orgCreatedAt,
         subscriptionStatus: access.orgSubscriptionStatus,
         package: access.orgPackage,
+        currentPeriodEnd: access.orgCurrentPeriodEnd,
       },
       access.userEmail,
     )

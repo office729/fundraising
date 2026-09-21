@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { requireOrgAccess } from "@/lib/auth/guard";
@@ -9,6 +10,8 @@ import { BrandingForm } from "./branding-form";
 import { DomainForm } from "./domain-form";
 import { obtineDateReferral } from "./referral-actions";
 import { ReferralSection } from "./referral-section";
+import { obtineStatusStripeDonatii } from "./stripe-donatii-actions";
+import { StripeDonatiiSection } from "./stripe-donatii-section";
 
 export default async function SetariPage({
   params,
@@ -25,6 +28,9 @@ export default async function SetariPage({
   }
 
   const { cod, numarRecomandari } = await obtineDateReferral(orgSlug);
+  const stripeStatus = await obtineStatusStripeDonatii(orgSlug);
+  const hdrs = await headers();
+  const webhookOrigin = `${hdrs.get("x-forwarded-proto") ?? "https"}://${hdrs.get("x-forwarded-host") ?? hdrs.get("host")}`;
 
   return (
     <>
@@ -55,6 +61,7 @@ export default async function SetariPage({
       </div>
 
       <div className="mx-auto max-w-xl">
+        <StripeDonatiiSection orgSlug={orgSlug} webhookUrl={`${webhookOrigin}/api/stripe/webhook/${orgSlug}`} status={stripeStatus} />
         <ReferralSection cod={cod} numarRecomandari={numarRecomandari} locale={locale} />
       </div>
     </>

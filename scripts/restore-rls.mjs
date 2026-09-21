@@ -89,6 +89,23 @@ const POLICIES = [
   `create policy organizations_webhook_update on organizations for update using (
     nullif(current_setting('app.public_lookup', true), '') = 'true'
   )`,
+  // platform_payments — plățile abonamentului platformei (Netopia). Membrii
+  // organizației își pot CREA comenzi (INSERT) și le pot CITI (pagina de rezultat),
+  // dar NU le pot modifica: statusul ("reusita" etc.) îl fixează doar IPN-ul
+  // verificat al Netopia (api/netopia/ipn), în contextul de încredere
+  // app.public_lookup — altfel un membru și-ar putea marca singur plata reușită.
+  `create policy platform_payments_tenant_isolation on platform_payments for select using (
+    org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
+  )`,
+  `create policy platform_payments_member_insert on platform_payments for insert with check (
+    org_id = nullif(current_setting('app.current_org_id', true), '')::uuid and status = 'in_asteptare'
+  )`,
+  `create policy platform_payments_webhook_select on platform_payments for select using (
+    nullif(current_setting('app.public_lookup', true), '') = 'true'
+  )`,
+  `create policy platform_payments_webhook_update on platform_payments for update using (
+    nullif(current_setting('app.public_lookup', true), '') = 'true'
+  )`,
   `create policy companies_tenant_isolation on companies
     using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
     with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
@@ -524,6 +541,7 @@ const POLICIES = [
 
 const FORCE_TABLES = [
   "organizations",
+  "platform_payments",
   "memberships",
   "app_users",
   "companies",

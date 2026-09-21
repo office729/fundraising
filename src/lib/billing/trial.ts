@@ -22,21 +22,24 @@ export function trialDaysRemaining(orgCreatedAt: Date): number {
   return Math.max(0, Math.ceil(msLeft / (24 * 60 * 60 * 1000)));
 }
 
-// Blocat = proba s-a terminat ȘI nu există un abonament activ. "incomplete"
-// (pachet ales, sesiune Stripe pornită, plată neconfirmată încă) rămâne
-// blocat — vezi startCheckoutAction din billing-actions.ts: alegerea unui
-// pachet pornește imediat o sesiune Stripe Checkout reală, dar accesul se
-// activează abia la webhook-ul checkout.session.completed (api/stripe/
-// webhook/route.ts), niciodată optimist, înainte de confirmarea plății.
+// Blocat = proba s-a terminat ȘI nu există acces plătit valabil. Accesul plătit =
+// starea "active" ȘI perioada plătită încă nu a expirat — abonamentul platformei
+// se încasează lună de lună prin Netopia (plăți separate, nu reînnoire
+// automată), deci `currentPeriodEnd` decide, nu doar starea. O plată abia
+// pornită nu schimbă nimic: accesul se acordă doar când IPN-ul verificat al
+// Netopia o confirmă (api/netopia/ipn/route.ts), niciodată optimist.
+// `currentPeriodEnd` null cu stare "active" = rânduri mai vechi, fără dată de
+// sfârșit — rămân active, ca să nu blocăm pe nimeni retroactiv.
 export function isAccessBlocked(
   org: {
     createdAt: Date;
     subscriptionStatus: string;
     package: OrgPackage;
+    currentPeriodEnd?: Date | null;
   },
   userEmail?: string,
 ): boolean {
   if (isPlatformAdmin(userEmail)) return false;
-  if (org.subscriptionStatus === "active") return false;
+  if (org.subscriptionStatus === "active" && (!org.currentPeriodEnd || org.currentPeriodEnd > new Date())) return false;
   return trialDaysRemaining(org.createdAt) <= 0;
 }
