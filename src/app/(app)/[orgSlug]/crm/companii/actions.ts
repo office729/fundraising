@@ -170,6 +170,28 @@ export const adaugaContact = withOrgSession(async (ctx, _prev: AdaugaContactStat
   return { error: null };
 });
 
+// Contact „direct” / prioritar (inimioara din lista de contacte).
+export const comutaContactCheie = withOrgSession(async (ctx, id: string, cheie: boolean): Promise<ActionState> => {
+  await ctx.db.update(contacts).set({ cheie }).where(and(eq(contacts.id, id), eq(contacts.orgId, ctx.orgId)));
+  return { error: null };
+});
+
+// Etapa în pipeline. „respins” marchează firma ca pierdută (status lost) și păstrează etapa;
+// „sponsorizat” o marchează câștigată; orice altă etapă redeschide o firmă respinsă.
+const ETAPE_VALIDE = new Set(["nou", "pe_viitor", "email", "mesaj", "onepager", "telefon", "online", "contract_trimis", "contract_semnat", "contract_asteptare", "sponsorizat"]);
+export const seteazaEtapa = withOrgSession(async (ctx, companyId: string, etapa: string): Promise<ActionState> => {
+  if (etapa === "respins") {
+    await ctx.db.update(companies).set({ status: "lost" }).where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId)));
+    return { error: null };
+  }
+  if (!ETAPE_VALIDE.has(etapa)) return { error: "Etapă necunoscută." };
+  await ctx.db
+    .update(companies)
+    .set({ stage: etapa as (typeof companies.$inferInsert)["stage"], status: etapa === "sponsorizat" ? "won" : "open" })
+    .where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId)));
+  return { error: null };
+});
+
 export const stergeContact = withOrgSession(async (ctx, id: string): Promise<ActionState> => {
   await ctx.db.delete(contacts).where(and(eq(contacts.id, id), eq(contacts.orgId, ctx.orgId)));
   return { error: null };

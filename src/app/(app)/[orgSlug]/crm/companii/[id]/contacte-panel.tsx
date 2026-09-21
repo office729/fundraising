@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink, Trash2 } from "lucide-react";
+import { ExternalLink, Heart, Trash2 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -11,9 +11,12 @@ import { Input, Label } from "../../components/ui/input";
 import { EmptyState } from "../../components/ui/states";
 import { useLocale } from "../../lib/locale-context";
 import { COMPANII_DICT } from "@/lib/i18n/dictionaries/companii";
-import { adaugaContact, stergeContact } from "../actions";
+import { adaugaContact, comutaContactCheie, stergeContact } from "../actions";
 
-type Contact = { id: string; nume: string; rol: string | null; email: string | null; telefon: string | null; linkedin: string | null };
+type Contact = {
+  id: string; nume: string; rol: string | null; email: string | null; telefon: string | null; linkedin: string | null;
+  dept?: string | null; cheie?: boolean; consentStatus?: string | null;
+};
 
 export function ContactePanel({ companyId, contacte }: { companyId: string; contacte: Contact[] }) {
   const { orgSlug } = useParams<{ orgSlug: string }>();
@@ -38,6 +41,11 @@ export function ContactePanel({ companyId, contacte }: { companyId: string; cont
     router.refresh();
   }
 
+  async function comutaCheie(id: string, acum: boolean) {
+    await comutaContactCheie(orgSlug, id, !acum);
+    router.refresh();
+  }
+
   async function onSterge(id: string) {
     if (!window.confirm(dict.confirmaStergere)) return;
     setSterge(id);
@@ -47,9 +55,14 @@ export function ContactePanel({ companyId, contacte }: { companyId: string; cont
 
   return (
     <div className="space-y-3">
-      <div className="flex justify-end">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-[13px] text-[var(--ci-text-muted)]">
+          {locale === "ro" ? "Apasă " : "Tap "}
+          <Heart className="inline h-3.5 w-3.5 fill-current align-[-2px]" />
+          {locale === "ro" ? " ca să marchezi un contact direct." : " to mark a direct contact."}
+        </p>
         <Button variant="primary" onClick={() => setOpen(true)}>
-          {dict.adaugaContact}
+          + {dict.adaugaContact.replace(/^\+\s*/, "")}
         </Button>
       </div>
 
@@ -57,13 +70,28 @@ export function ContactePanel({ companyId, contacte }: { companyId: string; cont
         <EmptyState title={dict.niciunContact} />
       ) : (
         <div className="space-y-2">
-          {contacte.map((c) => (
+          {[...contacte].sort((a, b) => Number(!!b.cheie) - Number(!!a.cheie)).map((c) => (
             <div key={c.id} className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-4 py-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="truncate text-[14px] font-semibold text-[var(--ci-text)]">
-                  {c.nume}
-                  {c.rol && <span className="font-normal text-[var(--ci-text-muted)]"> — {c.rol}</span>}
-                </p>
+                <div className="flex min-w-0 items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => comutaCheie(c.id, !!c.cheie)}
+                    title={locale === "ro" ? "Contact prioritar / direct" : "Priority / direct contact"}
+                    aria-pressed={!!c.cheie}
+                    className={c.cheie ? "text-[var(--ci-red)]" : "text-[var(--ci-text-faint)] hover:text-[var(--ci-red)]"}
+                  >
+                    <Heart className={`h-5 w-5 ${c.cheie ? "fill-current" : ""}`} />
+                  </button>
+                  <p className="truncate text-[14px] font-semibold text-[var(--ci-text)]">
+                    {c.nume}
+                    {c.rol && <span className="font-normal text-[var(--ci-text-muted)]"> — {c.rol}</span>}
+                  </p>
+                  {c.consentStatus === "da" && (
+                    <span className="rounded-full bg-[var(--ci-green-soft)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--ci-green)]">{locale === "ro" ? "consimț." : "consent"}</span>
+                  )}
+                  {c.dept && <span className="rounded-full bg-[var(--ci-blue-soft)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--ci-blue)]">{c.dept}</span>}
+                </div>
                 <div className="flex shrink-0 items-center gap-2.5">
                   {c.telefon && <CallButton telefon={c.telefon} nume={c.nume} companyId={companyId} />}
                   {c.linkedin && (

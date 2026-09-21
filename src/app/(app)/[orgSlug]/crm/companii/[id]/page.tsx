@@ -9,6 +9,9 @@ import { getLocale } from "@/lib/i18n/get-locale";
 import { COMPANII_DICT } from "@/lib/i18n/dictionaries/companii";
 import { getCompanieDetaliu } from "../queries";
 import { CompanyTabs } from "./company-tabs";
+import { ContractSponsorizareSection } from "./contract-sponsorizare-section";
+import { PipelineCard } from "./pipeline-card";
+import { ScorCard } from "./scor-card";
 import { TagPills } from "./tag-pills";
 
 const CONTRACT_TONE: Record<string, StatusTone> = { trimis: "blue", asteptare: "amber", semnat: "green", anulat: "red" };
@@ -74,6 +77,18 @@ export default async function CompanieProfilPage({ params }: { params: Promise<{
         </div>
       </Card>
 
+      <ScorCard
+        base={`/${orgSlug}/crm`}
+        locale={locale}
+        input={{
+          sumaDisponibila: c.sumaDisponibila, ca: c.ca, profit: c.profit, nrAngajati: c.nrAngajati,
+          recurent: c.recurent, temperatura: c.temperatura, sumaSponsorizata: c.sumaSponsorizata, stage: c.stage,
+          contacte: contacte.map((ct) => ({ dept: ct.dept, cheie: ct.cheie })),
+        }}
+      />
+
+      <PipelineCard companyId={c.id} stage={c.stage} status={c.status} />
+
       <TagPills
         companyId={c.id}
         initial={{ temperatura: c.temperatura, recurent: c.recurent, d177: c.d177, mec20: c.mec20, decembrie: c.decembrie }}
@@ -94,6 +109,16 @@ export default async function CompanieProfilPage({ params }: { params: Promise<{
         notite={notite}
         contacte={contacte}
         activitate={activitate}
+      />
+
+      <ContractSponsorizareSection
+        firma={{
+          nume: c.nume, cui: c.cui, nrRegCom: c.nrRegCom, judet: c.judet, localitate: c.localitate, adresa: c.adresa,
+          administrator: c.administrator, sumaPropusa: c.sumaPropusa, numarContract: c.numarContract, dataSemnare: c.dataSemnare,
+          emailSemnatar: (contacte.find((ct) => ct.cheie && ct.email) ?? contacte.find((ct) => ct.email))?.email ?? null,
+          responsabil: responsabili.find((r) => r.id === c.ownerId)?.name ?? null,
+          mec20: c.mec20,
+        }}
       />
     </div>
   );

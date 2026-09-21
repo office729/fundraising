@@ -96,10 +96,6 @@ export function CompanyTabs({
               numarContract={c.numarContract}
               dataSemnare={c.dataSemnare}
               contractStatus={c.contractStatus as "trimis" | "asteptare" | "semnat" | "anulat" | null}
-              firma={{
-                nume: c.nume, cui: c.cui, nrRegCom: c.nrRegCom, judet: c.judet, localitate: c.localitate,
-                adresa: c.adresa, administrator: c.administrator, sumaPropusa: c.sumaPropusa,
-              }}
             />
           );
         if (active === "notite") return <NotitePanel companyId={c.id} notite={notite} />;
