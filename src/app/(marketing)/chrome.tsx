@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, X } from "lucide-react";
+import { ChevronDown, Menu, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -52,7 +52,38 @@ export function SiteHeader({ dict }: { dict: MarketingDict }) {
         <nav className="hidden items-center gap-4 lg:flex xl:gap-6">
           {/* „Acasă" lipsește de aici: logo-ul duce deja la prima pagină (rămâne în meniul de mobil). */}
           {dict.nav.filter((item) => item.href !== "/").map((item) => {
-            const activ = pathname === item.href;
+            const subPaginiActive = dict.navCineSuntem.some((x) => pathname === x.href);
+            const activ = pathname === item.href || (item.href === "/cine-suntem" && subPaginiActive);
+            if (item.href === "/cine-suntem") {
+              return (
+                <div key={item.href} className="group relative">
+                  <Link
+                    href={item.href}
+                    className={`flex items-center gap-1 text-sm font-medium whitespace-nowrap transition ${
+                      activ ? "border-b-2 border-brand-green text-brand-green" : "text-ink group-hover:text-brand-green"
+                    }`}
+                  >
+                    {item.label}
+                    <ChevronDown className="h-3.5 w-3.5 transition group-hover:rotate-180" />
+                  </Link>
+                  <div className="invisible absolute top-full left-1/2 z-30 -translate-x-1/2 pt-3 opacity-0 transition group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
+                    <div className="min-w-[220px] rounded-xl border border-line bg-panel p-2 shadow-[0_14px_36px_rgba(21,74,133,0.14)]">
+                      {dict.navCineSuntem.map((sub) => (
+                        <Link
+                          key={sub.href}
+                          href={sub.href}
+                          className={`block rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap transition ${
+                            pathname === sub.href ? "bg-brand-green-soft text-brand-green" : "text-ink hover:bg-panel-2 hover:text-brand-green"
+                          }`}
+                        >
+                          {sub.label}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              );
+            }
             return (
               <Link
                 key={item.href}
@@ -94,16 +125,30 @@ export function SiteHeader({ dict }: { dict: MarketingDict }) {
       {deschis && (
         <nav className="flex flex-col gap-1 border-t border-line px-6 py-3 lg:hidden">
           {dict.nav.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setDeschis(false)}
-              className={`rounded-lg px-2 py-2 text-sm font-medium ${
-                pathname === item.href ? "bg-brand-green-soft text-brand-green" : "text-ink hover:bg-panel-2"
-              }`}
-            >
-              {item.label}
-            </Link>
+            <div key={item.href} className="flex flex-col gap-1">
+              <Link
+                href={item.href}
+                onClick={() => setDeschis(false)}
+                className={`rounded-lg px-2 py-2 text-sm font-medium ${
+                  pathname === item.href ? "bg-brand-green-soft text-brand-green" : "text-ink hover:bg-panel-2"
+                }`}
+              >
+                {item.label}
+              </Link>
+              {item.href === "/cine-suntem" &&
+                dict.navCineSuntem.map((sub) => (
+                  <Link
+                    key={sub.href}
+                    href={sub.href}
+                    onClick={() => setDeschis(false)}
+                    className={`ml-4 rounded-lg px-2 py-1.5 text-[13.5px] font-medium ${
+                      pathname === sub.href ? "bg-brand-green-soft text-brand-green" : "text-muted hover:bg-panel-2 hover:text-ink"
+                    }`}
+                  >
+                    {sub.label}
+                  </Link>
+                ))}
+            </div>
           ))}
           <Link
             href="/hub#consultanta"

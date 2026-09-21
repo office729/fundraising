@@ -16,6 +16,12 @@ export const MARKETING_DICT = {
       { href: "/automatizari", label: "Automatizări" },
       { href: "/contact", label: "Contact" },
     ],
+    // Sub-paginile din „Cine suntem?" (meniu derulant în antet, indentate în meniul de mobil).
+    navCineSuntem: [
+      { href: "/vlad-placinta", label: "Vlad Plăcintă" },
+      { href: "/premii", label: "Premii Vlad Plăcintă" },
+      { href: "/portofoliu", label: "Portofoliu" },
+    ],
     header: {
       consulting: "Consiliere 1 la 1",
       login: "Autentificare / Cont nou",
@@ -115,6 +121,11 @@ export const MARKETING_DICT = {
       { href: "/hub", label: "Fundraising Hub" },
       { href: "/automatizari", label: "Automation" },
       { href: "/contact", label: "Contact" },
+    ],
+    navCineSuntem: [
+      { href: "/vlad-placinta", label: "Vlad Plăcintă" },
+      { href: "/premii", label: "Vlad Plăcintă Awards" },
+      { href: "/portofoliu", label: "Portfolio" },
     ],
     header: {
       consulting: "1-on-1 Consulting",
