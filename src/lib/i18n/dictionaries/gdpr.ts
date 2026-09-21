@@ -9,7 +9,7 @@ export const GDPR_DICT = {
     actualizat: "[DE COMPLETAT — data publicării]",
     s1: {
       titlu: "1. Operator de date",
-      text: "Operator: [DE COMPLETAT — denumirea legală a entității], sediu [DE COMPLETAT], CUI/CIF [DE COMPLETAT], contact: vlad.placinta@fundrasingacademy.ro.",
+      text: "Operator: [DE COMPLETAT — denumirea legală a entității], sediu [DE COMPLETAT], CUI/CIF [DE COMPLETAT], contact: vlad.placinta@alexandrit.ro.",
     },
     s2: {
       titlu: "2. Ce date colectăm",
@@ -55,7 +55,7 @@ export const GDPR_DICT = {
     actualizat: "[TO COMPLETE — publication date]",
     s1: {
       titlu: "1. Data controller",
-      text: "Controller: [TO COMPLETE — legal entity name], registered office [TO COMPLETE], Tax ID [TO COMPLETE], contact: vlad.placinta@fundrasingacademy.ro.",
+      text: "Controller: [TO COMPLETE — legal entity name], registered office [TO COMPLETE], Tax ID [TO COMPLETE], contact: vlad.placinta@alexandrit.ro.",
     },
     s2: {
       titlu: "2. What data we collect",

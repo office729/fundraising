@@ -7,7 +7,7 @@ export const TRIAL_DAYS = 14;
 // Contul(ele) administratorului platformei — niciodată blocate de perioada
 // de probă, indiferent de organizația în care lucrează. Nu afectează
 // clienții reali (vezi isAccessBlocked mai jos).
-const PLATFORM_ADMIN_EMAILS = ["vlad.placinta@fundrasingacademy.ro", "office@salveazaoinima.ro"];
+const PLATFORM_ADMIN_EMAILS = ["vlad.placinta@alexandrit.ro", "vlad.placinta@fundrasingacademy.ro", "office@salveazaoinima.ro"];
 
 export function isPlatformAdmin(userEmail?: string | null): boolean {
   return Boolean(userEmail && PLATFORM_ADMIN_EMAILS.includes(userEmail.toLowerCase()));

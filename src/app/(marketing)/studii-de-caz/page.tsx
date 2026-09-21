@@ -52,7 +52,7 @@ export default async function StudiiDeCazPage() {
           </div>
 
           <a
-            href="mailto:vlad.placinta@fundrasingacademy.ro"
+            href="mailto:vlad.placinta@alexandrit.ro"
             className="mt-8 inline-block rounded-md bg-brand-green px-6 py-3 font-bold text-white transition hover:bg-brand-green-hover"
           >
             {caz.cta}

@@ -49,7 +49,7 @@ export default async function PortofoliuPage() {
           <span className="text-xs font-extrabold tracking-wide text-brand-green uppercase">{dict.studiuCazEyebrow}</span>
           <h3 className="font-display mt-2 text-xl font-bold text-ink">{dict.studiuCazTitlu}</h3>
           <p className="mt-3 text-[14.5px] leading-relaxed text-muted">{dict.studiuCazDesc}</p>
-          <a href="mailto:vlad.placinta@fundrasingacademy.ro" className="mt-4 inline-block font-bold text-brand-green">
+          <a href="mailto:vlad.placinta@alexandrit.ro" className="mt-4 inline-block font-bold text-brand-green">
             {dict.studiuCazCta}
           </a>
         </div>
@@ -58,7 +58,7 @@ export default async function PortofoliuPage() {
       <section className="bg-brand-blue px-[6%] py-14 text-center text-white">
         <p className="mx-auto max-w-xl text-lg font-medium">{dict.bandaTitlu}</p>
         <a
-          href="mailto:vlad.placinta@fundrasingacademy.ro"
+          href="mailto:vlad.placinta@alexandrit.ro"
           className="mt-5 inline-block rounded-md bg-brand-green px-7 py-3.5 font-bold text-white transition hover:bg-brand-green-hover"
         >
           {dict.bandaCta}

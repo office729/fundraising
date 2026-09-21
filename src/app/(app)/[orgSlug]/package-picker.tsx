@@ -50,7 +50,7 @@ export function PackagePicker({ orgSlug }: { orgSlug: string }) {
         });
         window.location.href = url;
       } catch {
-        setEroare("Nu am putut porni plata — încearcă din nou sau scrie-ne la vlad.placinta@fundrasingacademy.ro.");
+        setEroare("Nu am putut porni plata — încearcă din nou sau scrie-ne la vlad.placinta@alexandrit.ro.");
         setSeIncarca(null);
       }
     });

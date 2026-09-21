@@ -14,6 +14,7 @@ export const MARKETING_DICT = {
       { href: "/ce-facem", label: "Ce facem?" },
       { href: "/hub", label: "Hub Fundraising" },
       { href: "/automatizare", label: "Automatizare" },
+      { href: "/contact", label: "Contact" },
     ],
     header: {
       consulting: "Consiliere 1 la 1",
@@ -90,6 +91,7 @@ export const MARKETING_DICT = {
         { href: "/premii", label: "Premii Vlad Plăcintă" },
         { href: "/hub", label: "Hub Fundraising" },
         { href: "/portofoliu-clienti", label: "Portofoliu Clienți" },
+        { href: "/contact", label: "Contact" },
         { href: "/", label: "Program Training" },
       ],
       legalTitle: "Legal & contact",
@@ -112,6 +114,7 @@ export const MARKETING_DICT = {
       { href: "/ce-facem", label: "What we do" },
       { href: "/hub", label: "Fundraising Hub" },
       { href: "/automatizare", label: "Automation" },
+      { href: "/contact", label: "Contact" },
     ],
     header: {
       consulting: "1-on-1 Consulting",
@@ -188,6 +191,7 @@ export const MARKETING_DICT = {
         { href: "/premii", label: "Vlad Plăcintă Awards" },
         { href: "/hub", label: "Fundraising Hub" },
         { href: "/portofoliu-clienti", label: "Client Portfolio" },
+        { href: "/contact", label: "Contact" },
         { href: "/", label: "Training Program" },
       ],
       legalTitle: "Legal & contact",

@@ -45,7 +45,7 @@ export default async function TermeniPage() {
 
       <Sectiune titlu={dict.s7.titlu}>
         <p>
-          {dict.s7.textBefore} <strong>vlad.placinta@fundrasingacademy.ro</strong>, 0752 753 540.
+          {dict.s7.textBefore} <strong>vlad.placinta@alexandrit.ro</strong>, 0757 401 042.
         </p>
       </Sectiune>
     </LegalLayout>

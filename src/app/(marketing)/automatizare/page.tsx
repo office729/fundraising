@@ -60,13 +60,13 @@ export default async function AutomatizarePage() {
         <p className="mx-auto mt-4 max-w-2xl text-[14.5px] leading-relaxed text-muted">{dict.ctaDesc}</p>
         <div className="mt-6 flex flex-wrap justify-center gap-3.5">
           <a
-            href="mailto:vlad.placinta@fundrasingacademy.ro"
+            href="mailto:vlad.placinta@alexandrit.ro"
             className="rounded-md bg-brand-green px-7 py-3.5 font-bold text-white transition hover:bg-brand-green-hover"
           >
             {dict.ctaPrimary}
           </a>
           <a
-            href="mailto:vlad.placinta@fundrasingacademy.ro"
+            href="mailto:vlad.placinta@alexandrit.ro"
             className="rounded-md border border-line px-7 py-3.5 font-bold text-ink transition hover:border-brand-blue hover:text-brand-blue"
           >
             {dict.ctaSecondary}

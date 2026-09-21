@@ -44,7 +44,7 @@ export default async function GdprPage() {
       <Sectiune titlu={dict.s6.titlu}>
         <p>{dict.s6.text1}</p>
         <p>
-          {dict.s6.text2Before} <strong>vlad.placinta@fundrasingacademy.ro</strong>.
+          {dict.s6.text2Before} <strong>vlad.placinta@alexandrit.ro</strong>.
         </p>
       </Sectiune>
 

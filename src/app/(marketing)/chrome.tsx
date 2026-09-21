@@ -16,10 +16,10 @@ export function TopBar({ dict, locale }: { dict: MarketingDict; locale: Locale }
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2">
         <span>
           {dict.topbar.help}{" "}
-          <a href="mailto:vlad.placinta@fundrasingacademy.ro" className="font-medium text-white hover:underline">
-            vlad.placinta@fundrasingacademy.ro
+          <a href="mailto:vlad.placinta@alexandrit.ro" className="font-medium text-white hover:underline">
+            vlad.placinta@alexandrit.ro
           </a>{" "}
-          · <a href="tel:0752753540" className="font-medium text-white hover:underline">0752 753 540</a>
+          · <a href="tel:0757401042" className="font-medium text-white hover:underline">0757 401 042</a>
         </span>
         <div className="flex items-center gap-4">
           <Link href="/studii-de-caz" className="hover:text-white">
@@ -28,7 +28,7 @@ export function TopBar({ dict, locale }: { dict: MarketingDict; locale: Locale }
           <Link href="/blog" className="hover:text-white">
             {dict.topbar.blog}
           </Link>
-          <a href="mailto:vlad.placinta@fundrasingacademy.ro" className="hover:text-white">
+          <a href="mailto:vlad.placinta@alexandrit.ro" className="hover:text-white">
             {dict.topbar.contact}
           </a>
           <LanguageSwitcher locale={locale} dark />
@@ -156,10 +156,10 @@ export function SiteFooter({ dict }: { dict: MarketingDict }) {
             <Link href="/cookies" className="text-sm text-white/75 hover:text-white">
               {dict.footer.cookies}
             </Link>
-            <a href="mailto:vlad.placinta@fundrasingacademy.ro" className="mt-2 text-sm text-white/75 hover:text-white">
-              vlad.placinta@fundrasingacademy.ro
+            <a href="mailto:vlad.placinta@alexandrit.ro" className="mt-2 text-sm text-white/75 hover:text-white">
+              vlad.placinta@alexandrit.ro
             </a>
-            <span className="text-sm text-white/75">0752 753 540 · {dict.footer.location}</span>
+            <span className="text-sm text-white/75">0757 401 042 · {dict.footer.location}</span>
           </div>
         </div>
       </div>

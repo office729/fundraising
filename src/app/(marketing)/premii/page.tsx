@@ -63,7 +63,7 @@ export default async function PremiiPage() {
         <p className="mx-auto max-w-lg text-lg font-medium">{dict.bandaTitlu}</p>
         <div className="mt-5 flex flex-wrap justify-center gap-3.5">
           <a
-            href="mailto:vlad.placinta@fundrasingacademy.ro"
+            href="mailto:vlad.placinta@alexandrit.ro"
             className="rounded-md bg-brand-green px-7 py-3.5 font-bold text-white transition hover:bg-brand-green-hover"
           >
             {dict.bandaCta}

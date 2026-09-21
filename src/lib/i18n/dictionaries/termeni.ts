@@ -9,7 +9,7 @@ export const TERMENI_DICT = {
     actualizat: "[DE COMPLETAT — data publicării]",
     s1: {
       titlu: "1. Despre acest document",
-      text: "Acești Termeni și condiții reglementează utilizarea site-ului fundrasingacademy.ro și a platformei Alexandrit (cursuri, consiliere, Hub Fundraising, servicii de implementare Automatizare & Implementare), operate de [DE COMPLETAT — denumirea legală a entității, ex. „Vlad Plăcintă PFA” / „Asociația ...”], cu sediul în [DE COMPLETAT — adresă], CUI/CIF [DE COMPLETAT].",
+      text: "Acești Termeni și condiții reglementează utilizarea site-ului alexandrit.ro și a platformei Alexandrit (cursuri, consiliere, Hub Fundraising, servicii de implementare Automatizare & Implementare), operate de [DE COMPLETAT — denumirea legală a entității, ex. „Vlad Plăcintă PFA” / „Asociația ...”], cu sediul în [DE COMPLETAT — adresă], CUI/CIF [DE COMPLETAT].",
     },
     s2: {
       titlu: "2. Serviciile oferite",
@@ -46,7 +46,7 @@ export const TERMENI_DICT = {
     actualizat: "[TO COMPLETE — publication date]",
     s1: {
       titlu: "1. About this document",
-      text: "These Terms and Conditions govern the use of the fundrasingacademy.ro website and the Alexandrit platform (courses, consulting, Fundraising Hub, Automation & Implementation services), operated by [TO COMPLETE — legal entity name, e.g. \"Vlad Plăcintă PFA\" / \"Asociația ...\"], registered at [TO COMPLETE — address], Tax ID [TO COMPLETE].",
+      text: "These Terms and Conditions govern the use of the alexandrit.ro website and the Alexandrit platform (courses, consulting, Fundraising Hub, Automation & Implementation services), operated by [TO COMPLETE — legal entity name, e.g. \"Vlad Plăcintă PFA\" / \"Asociația ...\"], registered at [TO COMPLETE — address], Tax ID [TO COMPLETE].",
     },
     s2: {
       titlu: "2. Services offered",

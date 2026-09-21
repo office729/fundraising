@@ -21,7 +21,7 @@ export default async function BlogPage() {
         <h1 className="font-display mx-auto mt-2 max-w-xl text-[28px] leading-tight font-bold text-ink">{dict.titlu}</h1>
         <p className="mx-auto mt-4 max-w-md text-[14.5px] leading-relaxed text-muted">{dict.desc}</p>
         <a
-          href="mailto:vlad.placinta@fundrasingacademy.ro"
+          href="mailto:vlad.placinta@alexandrit.ro"
           className="mt-6 inline-block rounded-md bg-brand-green px-7 py-3.5 font-bold text-white transition hover:bg-brand-green-hover"
         >
           {dict.cta}

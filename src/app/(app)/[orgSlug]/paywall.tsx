@@ -33,8 +33,8 @@ export function Paywall({ orgSlug, orgName }: { orgSlug: string; orgName: string
           </p>
           <p className="mt-2 text-sm text-muted">
             Probleme la plată? Scrie-ne direct la{" "}
-            <a href="mailto:vlad.placinta@fundrasingacademy.ro" className="font-medium text-brand-green">
-              vlad.placinta@fundrasingacademy.ro
+            <a href="mailto:vlad.placinta@alexandrit.ro" className="font-medium text-brand-green">
+              vlad.placinta@alexandrit.ro
             </a>
             .
           </p>

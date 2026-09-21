@@ -171,16 +171,16 @@ export default async function HubPage() {
         <p className="mx-auto mb-[26px] max-w-[480px] text-base text-muted">{dict.contactDesc}</p>
         <div className="flex flex-wrap justify-center gap-3.5">
           <a
-            href="mailto:vlad.placinta@fundrasingacademy.ro"
+            href="mailto:vlad.placinta@alexandrit.ro"
             className="rounded-md bg-brand-green px-7 py-3.5 font-bold text-white transition hover:bg-brand-green-hover"
           >
-            vlad.placinta@fundrasingacademy.ro
+            vlad.placinta@alexandrit.ro
           </a>
           <a
-            href="tel:0752753540"
+            href="tel:0757401042"
             className="rounded-md border-[1.5px] border-line px-7 py-3.5 font-bold text-brand-blue transition hover:border-brand-blue"
           >
-            0752 753 540
+            0757 401 042
           </a>
         </div>
       </section>
