@@ -11,6 +11,8 @@ import { PlansSection } from "./plans-section";
 
 // Calculatorul „Ai nevoie de altceva?" (plan personalizat) e ascuns momentan; pune true ca să reapară.
 const AFISEAZA_PLAN_PERSONALIZAT = false;
+// Tabelul de comparație a pachetelor e ascuns momentan; pune true ca să reapară.
+const AFISEAZA_COMPARATIE = false;
 
 export default async function HubPage() {
   const locale = await getLocale();
@@ -79,22 +81,24 @@ export default async function HubPage() {
 
         {AFISEAZA_PLAN_PERSONALIZAT && <CustomPlanCalculator locale={locale} dict={dict} />}
 
-        <div className="mx-auto mb-5 max-w-[1200px] overflow-auto rounded-xl border border-line bg-panel">
-          <div className="grid min-w-[700px] grid-cols-[1.6fr_1fr_1fr_1fr] bg-brand-blue">
-            <div className="font-display p-4 text-[13.5px] font-bold text-white">{dict.comparatieTitlu}</div>
-            <div className="font-display p-4 text-center text-[13.5px] font-bold text-white">START</div>
-            <div className="font-display p-4 text-center text-[13.5px] font-bold text-white">CREȘTERE</div>
-            <div className="font-display p-4 text-center text-[13.5px] font-bold text-white">IMPACT</div>
-          </div>
-          {dict.comparatie.map((row) => (
-            <div key={row.f} className="grid min-w-[700px] grid-cols-[1.6fr_1fr_1fr_1fr] border-t border-line text-[13.5px]">
-              <div className="p-3 px-4 font-semibold text-brand-blue">{row.f}</div>
-              <div className="p-3 px-4 text-center text-body">{row.v0}</div>
-              <div className="p-3 px-4 text-center text-body">{row.v1}</div>
-              <div className="p-3 px-4 text-center text-body">{row.v2}</div>
+        {AFISEAZA_COMPARATIE && (
+          <div className="mx-auto mb-5 max-w-[1200px] overflow-auto rounded-xl border border-line bg-panel">
+            <div className="grid min-w-[700px] grid-cols-[1.6fr_1fr_1fr_1fr] bg-brand-blue">
+              <div className="font-display p-4 text-[13.5px] font-bold text-white">{dict.comparatieTitlu}</div>
+              <div className="font-display p-4 text-center text-[13.5px] font-bold text-white">START</div>
+              <div className="font-display p-4 text-center text-[13.5px] font-bold text-white">CREȘTERE</div>
+              <div className="font-display p-4 text-center text-[13.5px] font-bold text-white">IMPACT</div>
             </div>
-          ))}
-        </div>
+            {dict.comparatie.map((row) => (
+              <div key={row.f} className="grid min-w-[700px] grid-cols-[1.6fr_1fr_1fr_1fr] border-t border-line text-[13.5px]">
+                <div className="p-3 px-4 font-semibold text-brand-blue">{row.f}</div>
+                <div className="p-3 px-4 text-center text-body">{row.v0}</div>
+                <div className="p-3 px-4 text-center text-body">{row.v1}</div>
+                <div className="p-3 px-4 text-center text-body">{row.v2}</div>
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className="mx-auto max-w-[1200px]">
           <div className="rounded-xl border border-line p-[26px]">
