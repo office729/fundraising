@@ -8,6 +8,9 @@ import { HUB_DICT } from "@/lib/i18n/dictionaries/hub";
 import { CustomPlanCalculator } from "./custom-plan-calculator";
 import { PlansSection } from "./plans-section";
 
+// Calculatorul „Ai nevoie de altceva?" (plan personalizat) e ascuns momentan; pune true ca să reapară.
+const AFISEAZA_PLAN_PERSONALIZAT = false;
+
 export default async function HubPage() {
   const locale = await getLocale();
   const dict = HUB_DICT[locale];
@@ -73,7 +76,7 @@ export default async function HubPage() {
           }}
         />
 
-        <CustomPlanCalculator locale={locale} dict={dict} />
+        {AFISEAZA_PLAN_PERSONALIZAT && <CustomPlanCalculator locale={locale} dict={dict} />}
 
         <div className="mx-auto mb-5 max-w-[1200px] overflow-auto rounded-xl border border-line bg-panel">
           <div className="grid min-w-[700px] grid-cols-[1.6fr_1fr_1fr_1fr] bg-brand-blue">
