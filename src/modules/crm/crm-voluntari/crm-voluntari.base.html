@@ -309,9 +309,9 @@
 <div class="app">
   <aside class="side">
     <div class="brand" id="brandHome" title="Acasă — Panou instrumente" role="link" tabindex="0">
-      <img class="logo" src="/icon-soi.png" alt="Salvează o inimă" />
+      <img class="logo" id="orgLogo" src="__FA_ORG_LOGO__" alt="__FA_ORG_NAME__" onerror="this.style.display='none'" />
       <div>
-        <div class="name">Salvează o inimă</div>
+        <div class="name">__FA_ORG_NAME__</div>
         <div class="sub">CRM Voluntari</div>
       </div>
     </div>
@@ -339,10 +339,6 @@
       <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l3-3 3 3 5-6"/></svg>
       Raport activitate
     </button>
-    <div class="side-foot">
-      Conectat ca <span class="who" id="whoName">—</span>
-      <div id="saveFlag" class="save-flag" style="margin-top:8px"><span class="dot"></span> Sincronizat</div>
-    </div>
   </aside>
 
   <main class="main" id="main">
@@ -554,6 +550,29 @@
     '</div>';
   }
 
+  // Voluntari demonstrativi (fictivi): apar doar când lista e goală și nu se salvează niciodată.
+  function reali(){ return state.volunteers.filter(function(v){ return String(v.id).indexOf("demo-")!==0; }); }
+  function seedDemo(){
+    var azi=new Date();
+    function zile(n){ var d=new Date(azi.getTime()-n*86400000); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+    var D=[
+      {n:"Andreea Popescu",t:"0722 111 222",e:"andreea.popescu@exemplu.ro",g:"1",tip:"Social media",z:3,c:true,r:"Maria Ionescu"},
+      {n:"Mihai Dumitrescu",t:"0733 222 333",e:"mihai.dumitrescu@exemplu.ro",g:"2",tip:"Caz",z:10,c:true,r:"Maria Ionescu"},
+      {n:"Ioana Constantinescu",t:"0744 333 444",e:"ioana.constantinescu@exemplu.ro",g:"3",tip:"Social media",z:21,c:true,r:"Andrei Stan"},
+      {n:"Radu Marinescu",t:"0755 444 555",e:"radu.marinescu@exemplu.ro",g:"1",tip:"Caz",z:35,c:false,r:"Andrei Stan"},
+      {n:"Elena Georgescu",t:"0766 555 666",e:"elena.georgescu@exemplu.ro",g:"4",tip:"Social media",z:6,c:true,r:"Maria Ionescu"},
+      {n:"Cristian Stoica",t:"0721 666 777",e:"cristian.stoica@exemplu.ro",g:"Nedistribuit",tip:"",z:1,c:false,r:""},
+      {n:"Alexandra Munteanu",t:"0731 777 888",e:"alexandra.munteanu@exemplu.ro",g:"5",tip:"Caz",z:14,c:true,r:"Andrei Stan"},
+      {n:"Bogdan Neagu",t:"0741 888 999",e:"bogdan.neagu@exemplu.ro",g:"2",tip:"Social media",z:60,c:true,r:"Maria Ionescu",activ:false}
+    ];
+    state.volunteers=D.map(function(x,i){
+      return normalize({ id:"demo-"+(i+1), nume:x.n, telefon:x.t, email:x.e, grup:x.g, tip:x.tip, responsabil:x.r,
+        activ:x.activ!==false, contactat:x.c, dataInscriere:zile(x.z+40), dataContact:x.c?zile(x.z):"",
+        vreaEmail:i%2===0, mesajSaptamanal:i%3!==0, whatsappGrup:i%2===1, canal:i%2===0?"Email":"WhatsApp",
+        notite:"Voluntar fictiv, pentru demonstrație." });
+    });
+  }
+
   function byId(id){ for(var i=0;i<state.volunteers.length;i++){ if(state.volunteers[i].id===id) return state.volunteers[i]; } return null; }
 
   // ---- Persistence ----
@@ -573,7 +592,7 @@
     if(saving){ return; }
     if(!dirty) return;
     saving=true; dirty=false;
-    var payload={ volunteers: state.volunteers, settings: state.settings, updatedBy: loginName, updatedAt: new Date().toISOString() };
+    var payload={ volunteers: reali(), settings: state.settings, updatedBy: loginName, updatedAt: new Date().toISOString() };
     fetch(API_BASE+"/crm-kv/"+KEY, {
       method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload)
     }).then(function(r){
@@ -586,7 +605,7 @@
     });
   }
   function saveNow(){
-    var payload={ volunteers: state.volunteers, settings: state.settings, updatedBy: loginName, updatedAt: new Date().toISOString() };
+    var payload={ volunteers: reali(), settings: state.settings, updatedBy: loginName, updatedAt: new Date().toISOString() };
     dirty=false;
     return fetch(API_BASE+"/crm-kv/"+KEY, {method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload)});
   }
@@ -658,6 +677,7 @@
           }
         }
       }
+      if(!state.volunteers.length) seedDemo();
       state.loaded=true; setFlag("ok"); render();
     }).catch(function(){
       state.loaded=true; setFlag("err");
@@ -761,7 +781,6 @@
                    (d==="list"&&(state.view==="list"||state.view==="profile"));
       b.classList.toggle("active", active);
     });
-    $("whoName").textContent = loginName || "—";
   }
 
   function render(){

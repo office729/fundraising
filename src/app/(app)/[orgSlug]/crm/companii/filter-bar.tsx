@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, SlidersHorizontal } from "lucide-react";
+import { ChevronDown, Settings } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
@@ -33,9 +33,8 @@ export function FilterBar({ responsabili }: { responsabili: { id: string; name: 
   const [dataSfarsit, setDataSfarsit] = useState(f.dataSfarsit);
 
   // Rândurile de filtre detaliate ocupă mult spațiu pe verticală — se restrâng
-  // implicit (doar căutarea rapidă rămâne mereu vizibilă) și se deschid automat
-  // dacă un filtru e deja activ, ca omul să nu creadă că nu mai există filtrul
-  // aplicat doar pentru că panoul e restrâns.
+  // implicit, în spatele rotiței (doar căutarea rapidă rămâne vizibilă); numărul
+  // de filtre active apare lângă rotiță, ca să se vadă că sunt aplicate.
   const filtreActive =
     (f.perioadaTip !== "toate" ? 1 : 0) +
     (f.responsabil !== "toti" ? 1 : 0) +
@@ -43,7 +42,7 @@ export function FilterBar({ responsabili }: { responsabili: { id: string; name: 
     (f.contact !== "toate" ? 1 : 0) +
     f.marcaje.length +
     (f.vezi !== "toata" ? 1 : 0);
-  const [extins, setExtins] = useState(filtreActive > 0);
+  const [extins, setExtins] = useState(false);
 
   function push(next: Record<string, string | string[] | null>) {
     const sp = new URLSearchParams(searchParams.toString());
@@ -92,7 +91,7 @@ export function FilterBar({ responsabili }: { responsabili: { id: string; name: 
           aria-expanded={extins}
           className="ml-auto flex items-center gap-1.5 rounded-[var(--ci-radius-btn)] px-2.5 py-1.5 text-[12.5px] font-medium text-[var(--ci-text-muted)] transition-colors hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)]"
         >
-          <SlidersHorizontal className="h-3.5 w-3.5" />
+          <Settings className={`h-4 w-4 transition-transform duration-300 ${extins ? "rotate-90" : ""}`} />
           {dict.filtre}
           {filtreActive > 0 && (
             <span className="ci-tabular rounded-full bg-[var(--ci-primary-soft)] px-1.5 py-0.5 text-[11px] font-semibold text-[var(--ci-primary)]">
@@ -203,7 +202,7 @@ export function FilterBar({ responsabili }: { responsabili: { id: string; name: 
           {dict.decembrie}
         </button>
         <button type="button" onClick={() => toggleMarcaj("caz")} className={pill(f.marcaje.includes("caz"))}>
-          {dict.caz}
+          {dict.proiect}
         </button>
 
         <span className="mx-1 text-[var(--ci-border)]">|</span>

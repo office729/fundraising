@@ -1,7 +1,7 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
-import { Download } from "lucide-react";
+import { Download, HandCoins, Hourglass, ShieldCheck, Wallet } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { DataTable } from "../components/data-table";
@@ -14,7 +14,21 @@ import { useLocale } from "../lib/locale-context";
 import { FONDURI_PLATI_DICT } from "@/lib/i18n/dictionaries/fonduri-plati";
 import { ALOCARI_PLATI, type AlocarePlata } from "../mock";
 
+// Pictograme proprii statusurilor (în loc de triunghiul de avertizare al insignei „amber”).
+const STATUS_ICON: Record<AlocarePlata["status"], typeof Wallet> = { incasat: Wallet, alocat: HandCoins, achitat: ShieldCheck, in_asteptare: Hourglass };
 const STATUS_TONE: Record<AlocarePlata["status"], StatusTone> = { incasat: "blue", alocat: "amber", achitat: "green", in_asteptare: "neutral" };
+
+function StatusPill({ status, label }: { status: AlocarePlata["status"]; label: string }) {
+  const Icon = STATUS_ICON[status];
+  return (
+    <Badge tone={STATUS_TONE[status]} icon={false} className="gap-1.5 py-1 pr-2.5 pl-1.5">
+      <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white/70 dark:bg-black/20">
+        <Icon className="h-2.5 w-2.5" strokeWidth={2.4} />
+      </span>
+      {label}
+    </Badge>
+  );
+}
 
 export default function FonduriPlatiPage() {
   const locale = useLocale();
@@ -39,7 +53,7 @@ export default function FonduriPlatiPage() {
     { accessorKey: "incasat", header: dict.columns.incasat, cell: ({ row }) => <span className="ci-tabular">{formatSuma(row.original.incasat, row.original.moneda)}</span> },
     { accessorKey: "alocat", header: dict.columns.alocat, cell: ({ row }) => <span className="ci-tabular">{formatSuma(row.original.alocat, row.original.moneda)}</span> },
     { accessorKey: "achitat", header: dict.columns.achitat, cell: ({ row }) => <span className="ci-tabular font-medium">{formatSuma(row.original.achitat, row.original.moneda)}</span> },
-    { accessorKey: "status", header: dict.columns.status, cell: ({ row }) => <Badge tone={STATUS_TONE[row.original.status]}>{STATUS_LABEL[row.original.status]}</Badge> },
+    { accessorKey: "status", header: dict.columns.status, cell: ({ row }) => <StatusPill status={row.original.status} label={STATUS_LABEL[row.original.status]} /> },
     { accessorKey: "la", header: dict.columns.data, cell: ({ row }) => formatData(row.original.la) },
   ];
 

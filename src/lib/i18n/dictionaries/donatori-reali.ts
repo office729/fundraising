@@ -7,6 +7,8 @@ export const DONATORI_REALI_DICT = {
     columns: { nume: "Nume", contact: "Contact", sursa: "Sursă", donatii: "Donații", totalDonat: "Total donat", ultimaDonatie: "Ultima donație" },
     faraTelefon: "fără telefon",
     whatsappBadge: "WhatsApp",
+    exempluBadge: "exemplu",
+    exempluNota: "Persoane fictive, doar pentru demonstrație. Dispar automat când primești primul donator real.",
     empty: { title: "Niciun donator real încă", description: "Apare aici automat, imediat ce cineva donează printr-o pagină de Strângere fonduri." },
     paginaNav: {
       pagina: (curent: number, total: string) => `Pagina ${curent} din ${total}`,
@@ -57,6 +59,8 @@ export const DONATORI_REALI_DICT = {
     columns: { nume: "Name", contact: "Contact", sursa: "Source", donatii: "Donations", totalDonat: "Total donated", ultimaDonatie: "Last donation" },
     faraTelefon: "no phone",
     whatsappBadge: "WhatsApp",
+    exempluBadge: "sample",
+    exempluNota: "Fictional people, for demonstration only. They disappear automatically when you get your first real donor.",
     empty: { title: "No real donor yet", description: "Appears here automatically as soon as someone donates through a Fundraising page." },
     paginaNav: {
       pagina: (curent: number, total: string) => `Page ${curent} of ${total}`,

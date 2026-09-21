@@ -11,7 +11,7 @@ export default async function CrmVoluntariPage({ params }: { params: Promise<{ o
 
   return (
     <CrmToolPage orgSlug={orgSlug} access={access}>
-      <StandaloneToolFrame html={CRM_VOLUNTARI_HTML} title={TITLE} orgSlug={orgSlug} />
+      <StandaloneToolFrame html={CRM_VOLUNTARI_HTML} title={TITLE} orgSlug={orgSlug} orgName={access.orgName} orgLogoUrl={access.orgLogoUrl} />
     </CrmToolPage>
   );
 }

@@ -4,7 +4,10 @@ export const BENEFICIARI_DICT = {
   ro: {
     lista: {
       title: "Beneficiari & proiecte",
-      subtitle: (n: number) => `${n} beneficiari`,
+      subtitle: (n: number) => `${n} beneficiari activi`,
+      arhiva: "Arhivă — proiecte încheiate",
+      arhivaDescriere: "Campaniile finalizate rămân aici, cu tot istoricul.",
+      arhivaGoala: "Nu există încă proiecte încheiate.",
       varstaLocalitate: (_varsta: number, localitate: string) => localitate,
     },
     profil: {
@@ -41,7 +44,10 @@ export const BENEFICIARI_DICT = {
   en: {
     lista: {
       title: "Beneficiaries & projects",
-      subtitle: (n: number) => `${n} beneficiaries`,
+      subtitle: (n: number) => `${n} active beneficiaries`,
+      arhiva: "Archive — completed projects",
+      arhivaDescriere: "Finished campaigns stay here, with their full history.",
+      arhivaGoala: "No completed projects yet.",
       varstaLocalitate: (_varsta: number, localitate: string) => localitate,
     },
     profil: {

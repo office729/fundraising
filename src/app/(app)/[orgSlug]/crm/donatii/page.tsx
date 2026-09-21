@@ -1,6 +1,7 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
+import { ChevronDown, Settings } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { DataTable } from "../components/data-table";
@@ -27,6 +28,8 @@ export default function DonatiiPage() {
   const [an, setAn] = useState("toate");
   const [luna, setLuna] = useState("toate");
   const [responsabil, setResponsabil] = useState("toate");
+  const [extins, setExtins] = useState(false);
+  const filtreActive = [moneda, sursa, an, luna, responsabil].filter((v) => v !== "toate").length;
 
   const ani = useMemo(
     () => Array.from(new Set(DONATII.map((d) => new Date(d.data).getFullYear()))).sort((a, b) => b - a),
@@ -69,9 +72,26 @@ export default function DonatiiPage() {
           <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">{dict.title}</h1>
           <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">{dict.subtitle(filtered.length)}</p>
         </div>
-        <p className="ci-tabular text-lg font-bold text-[var(--ci-text)]">{dict.totalRon} {formatSuma(total)}</p>
+        <div className="flex items-center gap-3">
+          <p className="ci-tabular text-lg font-bold text-[var(--ci-text)]">{dict.totalRon} {formatSuma(total)}</p>
+          <button
+            type="button"
+            onClick={() => setExtins((v) => !v)}
+            aria-expanded={extins}
+            aria-label={dict.filtre}
+            className="flex items-center gap-1.5 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-2.5 py-1.5 text-[12.5px] font-medium text-[var(--ci-text-muted)] transition-colors hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)]"
+          >
+            <Settings className={`h-4 w-4 transition-transform duration-300 ${extins ? "rotate-90" : ""}`} />
+            {dict.filtre}
+            {filtreActive > 0 && (
+              <span className="ci-tabular rounded-full bg-[var(--ci-primary-soft)] px-1.5 py-0.5 text-[11px] font-semibold text-[var(--ci-primary)]">{filtreActive}</span>
+            )}
+            <ChevronDown className={`h-3.5 w-3.5 transition-transform ${extins ? "rotate-180" : ""}`} />
+          </button>
+        </div>
       </div>
 
+      {extins && (
       <div className="flex flex-wrap gap-2">
         <Select value={sursa} onChange={(e) => setSursa(e.target.value)} className="w-40">
           <option value="toate">{dict.filters.toateSursele}</option>
@@ -109,6 +129,7 @@ export default function DonatiiPage() {
           ))}
         </Select>
       </div>
+      )}
 
       <DataTable data={filtered} columns={columns} pageSize={15} />
     </div>

@@ -524,7 +524,7 @@ async function fsLoad(reset){
     renderAll();
     if(DEMO_ACTIV){updateFsBar("Date demonstrative — "+DEMO_FIRME.length+" firme fictive");}else if(reset&&data.length===0){updateFsBar("0 firme — verifică baza de date.");}else updateFsBar();
     if(reset)fsRefreshTotal();saveCache();
-  }catch(e){updateFsBar();toast("Rețea: "+e.message);}
+  }catch(e){if(reset&&data.length===0){cargaDemo();if(data[0])selectedId=data[0].id;renderAll();updateFsBar("Date demonstrative — "+DEMO_FIRME.length+" firme fictive");}else{updateFsBar();toast("Rețea: "+e.message);}}
   fsLoading=false;
 }
 /* Sarcini + config: blob KV pe platformă (sarcinile se filtrează pe client) */

@@ -9,6 +9,7 @@ export const DONATII_DICT = {
     columns: { sursa: "Sursă", tip: "Tip", campanie: "Campanie", suma: "Sumă", recurenta: "Recurentă", data: "Data" },
     recurentaBadge: "recurentă",
     sursaTip: { donator: "donator", companie: "companie" },
+    filtre: "Filtre",
     filters: {
       toateSursele: "Toate sursele",
       persoaneFizice: "Persoane fizice",
@@ -27,6 +28,7 @@ export const DONATII_DICT = {
     columns: { sursa: "Source", tip: "Type", campanie: "Campaign", suma: "Amount", recurenta: "Recurring", data: "Date" },
     recurentaBadge: "recurring",
     sursaTip: { donator: "individual", companie: "company" },
+    filtre: "Filters",
     filters: {
       toateSursele: "All sources",
       persoaneFizice: "Individuals",
