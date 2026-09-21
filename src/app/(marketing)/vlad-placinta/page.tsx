@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import { getLocale } from "@/lib/i18n/get-locale";
@@ -21,15 +22,20 @@ export default async function VladPlacintaPage() {
       </div>
 
       <section className="px-[6%] py-14">
-        <div className="mx-auto max-w-3xl text-center">
-          <span className="text-xs font-extrabold tracking-wide text-brand-green uppercase">{dict.eyebrow}</span>
-          <h1 className="font-display mt-2 text-[34px] leading-tight font-bold text-ink">{dict.titlu}</h1>
-          <p className="mt-2 text-[15px] text-muted">{dict.subtitlu}</p>
-        </div>
-        <div className="mx-auto mt-8 flex max-w-3xl flex-col gap-4 text-[15px] leading-relaxed text-body">
-          {dict.paragrafe.map((p) => (
-            <p key={p}>{p}</p>
-          ))}
+        <div className="mx-auto grid max-w-5xl grid-cols-1 items-center gap-10 md:grid-cols-[0.8fr_1.2fr]">
+          <div className="mx-auto w-full max-w-[340px] overflow-hidden rounded-2xl border border-line bg-panel md:mx-0">
+            <Image src="/vlad-placinta.webp" alt="Vlad Plăcintă" width={900} height={1037} priority sizes="(min-width: 768px) 340px, 90vw" className="h-auto w-full" />
+          </div>
+          <div>
+            <span className="text-xs font-extrabold tracking-wide text-brand-green uppercase">{dict.eyebrow}</span>
+            <h1 className="font-display mt-2 text-[34px] leading-tight font-bold text-ink">{dict.titlu}</h1>
+            <p className="mt-2 text-[15px] text-muted">{dict.subtitlu}</p>
+            <div className="mt-6 flex flex-col gap-4 text-[15px] leading-relaxed text-body">
+              {dict.paragrafe.map((p) => (
+                <p key={p}>{p}</p>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
