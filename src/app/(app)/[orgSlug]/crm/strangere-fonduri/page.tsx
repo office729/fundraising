@@ -15,6 +15,7 @@ import { formatDataOra } from "../lib/format";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { STRANGERE_FONDURI_DICT } from "@/lib/i18n/dictionaries/strangere-fonduri";
 import { AddPageButton, CopyCreateLinkButton, CopyPageLinkButton, DeletePageButton, EditPageButton, ToggleStatusButton } from "./client";
+import { titluPagina } from "@/lib/page-titles";
 
 const getPagini = withOrgSession(async (ctx) => {
   const [{ totalStrans }] = await ctx.db
@@ -162,4 +163,8 @@ export default async function StrangereFonduriPage({ params }: { params: Promise
       </Card>
     </div>
   );
+}
+
+export async function generateMetadata() {
+  return { title: await titluPagina("crmStrangereFonduri") };
 }

@@ -14,6 +14,7 @@ import { FilterBarReali } from "./filter-bar-reali";
 import { parseFiltruDonatoriReali } from "./lib/filters";
 import { PaginaNavReali } from "./pagina-nav-reali";
 import { getDonatoriRealiLista, getStatisticiDonatoriReali } from "./queries";
+import { titluPagina } from "@/lib/page-titles";
 
 // Exemple fictive, afișate doar cât timp organizația nu are niciun donator real (nu se salvează nicăieri).
 const DONATORI_EXEMPLU = [
@@ -167,4 +168,8 @@ async function DonatoriContent({
       <DemoDatasetSection />
     </div>
   );
+}
+
+export async function generateMetadata() {
+  return { title: await titluPagina("crmDonatori") };
 }

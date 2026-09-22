@@ -1,6 +1,7 @@
 import { CalendlyInlineWidget } from "@/components/calendly-inline-widget";
 import { CALENDLY_CONSULTANTA_URL } from "@/lib/calendly";
 import { getLocale } from "@/lib/i18n/get-locale";
+import { titluPagina } from "@/lib/page-titles";
 
 const TEXT = {
   ro: {
@@ -34,4 +35,8 @@ export default async function ConsultantaPage() {
       <CalendlyInlineWidget url={CALENDLY_CONSULTANTA_URL} loadingLabel={t.loading} />
     </div>
   );
+}
+
+export async function generateMetadata() {
+  return { title: await titluPagina("crmConsultanta") };
 }

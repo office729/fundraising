@@ -1,8 +1,17 @@
 import { requireOrgAccess } from "@/lib/auth/guard";
 import { getLocale } from "@/lib/i18n/get-locale";
+import { titluPagina } from "@/lib/page-titles";
 
 import "./calm-impact.css";
 import { CrmShell } from "./shell";
+
+// Titlul de aici e pentru pagina de start a CRM (crm/page.tsx, componentă
+// client — nu poate exporta propriul generateMetadata). Fiecare subpagină cu
+// titlu mai specific (donatori, companii etc.) îl suprascrie prin propriul
+// layout.tsx sau, unde pagina e server component, direct din page.tsx.
+export async function generateMetadata() {
+  return { title: await titluPagina("crmAcasa") };
+}
 
 export default async function CrmLayout({
   children,

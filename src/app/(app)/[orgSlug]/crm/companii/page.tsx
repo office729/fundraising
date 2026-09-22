@@ -15,6 +15,7 @@ import { FilterBar } from "./filter-bar";
 import { parseFiltru } from "./lib/filters";
 import { PaginaNav } from "./pagina-nav";
 import { getCompaniiLista, getResponsabiliOrg, getStatisticiCompanii, getTotalFirme } from "./queries";
+import { titluPagina } from "@/lib/page-titles";
 
 export default function CompaniiPage({ params, searchParams }: { params: Promise<{ orgSlug: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   return (
@@ -135,4 +136,8 @@ function StatCard({ label, value, suffix, tone }: { label: string; value: string
       </p>
     </Card>
   );
+}
+
+export async function generateMetadata() {
+  return { title: await titluPagina("crmCompanii") };
 }

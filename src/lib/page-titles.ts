@@ -26,6 +26,29 @@ const TITLURI = {
   signup: { ro: "Creează cont", en: "Create account" },
   "forgot-password": { ro: "Resetare parolă", en: "Reset password" },
   "reset-password": { ro: "Parolă nouă", en: "New password" },
+
+  // Zona cu cont (organizație autentificată) — aceleași etichete ca în
+  // navigarea CRM (src/lib/i18n/dictionaries/dashboard.ts, dict.nav) sau în
+  // titlul h1 al paginii, cu sufixul „ — CRM" pentru cele a căror etichetă nu
+  // conține deja „CRM", ca să rămână clare și separat de restul site-ului în
+  // rapoartele Google Analytics „Pagini și ecrane".
+  orgSetari: { ro: "Setări", en: "Settings" },
+  orgEchipa: { ro: "Echipă", en: "Team" },
+  crmAcasa: { ro: "Tablou de bord — CRM", en: "Dashboard — CRM" },
+  crmDonatori: { ro: "CRM persoane fizice", en: "Individuals CRM" },
+  crmCompanii: { ro: "CRM Companii", en: "Companies CRM" },
+  crmBeneficiari: { ro: "Beneficiari & proiecte — CRM", en: "Beneficiaries & projects — CRM" },
+  crmDonatii: { ro: "Donații — CRM", en: "Donations — CRM" },
+  crmStrangereFonduri: { ro: "Strângere fonduri — CRM", en: "Fundraising pages — CRM" },
+  crmFonduriPlati: { ro: "Fonduri și plăți — CRM", en: "Funds & payments — CRM" },
+  crmRfm: { ro: "RFM & segmentare — CRM", en: "RFM & segmentation — CRM" },
+  crmPortalBeneficiari: { ro: "Panou beneficiari — CRM", en: "Beneficiary panel — CRM" },
+  crmTaskuri: { ro: "Taskuri — CRM", en: "Tasks — CRM" },
+  crmComunicare: { ro: "Comunicare — CRM", en: "Communication — CRM" },
+  crmInstrumente: { ro: "Instrumente — CRM", en: "Tools — CRM" },
+  crmConsultanta: { ro: "Consultanță cu Vlad — CRM", en: "Consultation with Vlad — CRM" },
+  crmIntegrari: { ro: "Integrări — CRM", en: "Integrations — CRM" },
+  crmPresaGrupuri: { ro: "Presă & grupuri locale — CRM", en: "Press & local groups — CRM" },
 } as const;
 
 export type PaginaCuTitlu = keyof typeof TITLURI;

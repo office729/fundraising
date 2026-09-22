@@ -12,6 +12,7 @@ import { obtineDateReferral } from "./referral-actions";
 import { ReferralSection } from "./referral-section";
 import { obtineStatusStripeDonatii } from "./stripe-donatii-actions";
 import { StripeDonatiiSection } from "./stripe-donatii-section";
+import { titluPagina } from "@/lib/page-titles";
 
 export default async function SetariPage({
   params,
@@ -66,4 +67,8 @@ export default async function SetariPage({
       </div>
     </>
   );
+}
+
+export async function generateMetadata() {
+  return { title: await titluPagina("orgSetari") };
 }

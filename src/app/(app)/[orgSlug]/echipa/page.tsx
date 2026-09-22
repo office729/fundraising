@@ -6,6 +6,7 @@ import { SETARI_ECHIPA_DICT } from "@/lib/i18n/dictionaries/setari-echipa";
 
 import { listMembers, listPendingInvites } from "./actions";
 import { InviteForm } from "./invite-form";
+import { titluPagina } from "@/lib/page-titles";
 
 export default async function EchipaPage({
   params,
@@ -80,4 +81,8 @@ export default async function EchipaPage({
       )}
     </div>
   );
+}
+
+export async function generateMetadata() {
+  return { title: await titluPagina("orgEchipa") };
 }
