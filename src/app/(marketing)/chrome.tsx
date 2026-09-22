@@ -4,11 +4,30 @@ import { ChevronDown, Menu, ShieldCheck, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { LanguageSwitcher } from "@/components/language-switcher";
 import type { Locale } from "@/lib/i18n/config";
 import type { MarketingDict } from "@/lib/i18n/dictionaries/marketing";
+
+// Seara (19:00–06:00, ora locală a vizitatorului, din fusul orar al
+// dispozitivului) — folosit pentru efectul „alexandrite" de pe siglă (vezi
+// .is-seara în globals.css). Pornește de la `false` (ca randarea de pe
+// server, care nu cunoaște fusul orar al vizitatorului) și se corectează
+// imediat după montare, ca să nu apară un bliț de culoare la încărcare.
+function useEsteSeara() {
+  const [seara, setSeara] = useState(false);
+  useEffect(() => {
+    function actualizeaza() {
+      const ora = new Date().getHours();
+      setSeara(ora >= 19 || ora < 6);
+    }
+    actualizeaza();
+    const id = setInterval(actualizeaza, 60_000);
+    return () => clearInterval(id);
+  }, []);
+  return seara;
+}
 
 export function TopBar({ dict, locale }: { dict: MarketingDict; locale: Locale }) {
   return (
@@ -41,12 +60,20 @@ export function TopBar({ dict, locale }: { dict: MarketingDict; locale: Locale }
 export function SiteHeader({ dict }: { dict: MarketingDict }) {
   const pathname = usePathname();
   const [deschis, setDeschis] = useState(false);
+  const seara = useEsteSeara();
 
   return (
     <header className="border-b border-line bg-panel">
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-6 px-6">
         <Link href="/" className="flex shrink-0 items-center" onClick={() => setDeschis(false)} aria-label="Alexandrit">
-          <Image src="/alexandrit-logo.webp" alt="Alexandrit" width={1730} height={332} priority className="brand-mark h-9 w-auto" />
+          <Image
+            src="/alexandrit-logo.webp"
+            alt="Alexandrit"
+            width={1730}
+            height={332}
+            priority
+            className={`brand-mark h-9 w-auto${seara ? " is-seara" : ""}`}
+          />
         </Link>
 
         <nav className="hidden items-center gap-4 lg:flex xl:gap-6">

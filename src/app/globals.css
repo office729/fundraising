@@ -62,15 +62,16 @@
   --line: #253044;
 }
 
-/* Sigla din antetul site-ului: seara (dark mode), gema își schimbă culoarea
-   spre mov/violet — ca efectul de „alexandrite” al pietrei prețioase, care
-   pare albastru-verzuie la lumina zilei și roșu-violet la lumină artificială.
-   E un filtru de culoare peste PNG-ul existent (fără un al doilea asset),
-   deci tranziția se vede și când comutăm tema, nu doar la încărcare. */
+/* Sigla din antetul site-ului: seara (19:00–06:00, ora locală a
+   vizitatorului — vezi clasa .is-seara pusă din chrome.tsx), gema își
+   schimbă culoarea spre mov/violet — ca efectul de „alexandrite” al pietrei
+   prețioase, care pare albastru-verzuie la lumina zilei și roșu-violet la
+   lumină artificială. Independent de tema clar/întunecat — e un filtru de
+   culoare peste PNG-ul existent (fără un al doilea asset). */
 .brand-mark {
   transition: filter 700ms ease;
 }
-.dark .brand-mark {
+.brand-mark.is-seara {
   filter: hue-rotate(55deg) saturate(1.15);
 }
 
