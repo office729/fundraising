@@ -9,7 +9,7 @@ export const GDPR_DICT = {
     eyebrow: "Legal",
     titlu: "Politica de confidențialitate (GDPR)",
     actualizatLabel: "Ultima actualizare",
-    actualizat: "21 septembrie 2026",
+    actualizat: "22 septembrie 2026",
     sectiuni: [
       {
         titlu: "1. Cine suntem și în ce calitate prelucrăm date",
@@ -57,7 +57,8 @@ export const GDPR_DICT = {
         puncte: [
           "Vercel — găzduirea aplicației și a site-ului;",
           "Supabase — baza de date și autentificarea (regiune UE);",
-          "Stripe și/sau alți procesatori de plăți integrați (de exemplu EuPlătesc) — plata abonamentelor și a donațiilor;",
+          "Stripe — plata donațiilor pe paginile de campanie, direct în contul Stripe propriu al fiecărei organizații (platforma nu deține un cont Stripe și nu vede datele cardului);",
+          "Netopia Payments — plata abonamentului platformei (numele, emailul și telefonul persoanei care plătește abonamentul, pe pagina de plată găzduită de Netopia);",
           "Oblio — emiterea și trimiterea facturilor fiscale;",
           "Resend sau alt serviciu de email tranzacțional — emailuri de cont, mulțumire și reamintire;",
           "Twilio — apeluri și mesaje, unde funcția este activată;",
@@ -131,7 +132,7 @@ export const GDPR_DICT = {
     eyebrow: "Legal",
     titlu: "Privacy Policy (GDPR)",
     actualizatLabel: "Last updated",
-    actualizat: "September 21, 2026",
+    actualizat: "September 22, 2026",
     sectiuni: [
       {
         titlu: "1. Who we are and in what capacity we process data",
@@ -179,7 +180,8 @@ export const GDPR_DICT = {
         puncte: [
           "Vercel — application and website hosting;",
           "Supabase — database and authentication (EU region);",
-          "Stripe and/or other integrated payment processors (for example EuPlătesc) — subscription and donation payments;",
+          "Stripe — donation payments on campaign pages, directly into each organization's own Stripe account (the platform has no Stripe account and never sees card data);",
+          "Netopia Payments — payment of the platform's own subscription (the name, email and phone of the person paying the subscription, on Netopia's hosted payment page);",
           "Oblio — issuing and sending tax invoices;",
           "Resend or another transactional email service — account, thank-you and reminder emails;",
           "Twilio — calls and messages, where the feature is enabled;",

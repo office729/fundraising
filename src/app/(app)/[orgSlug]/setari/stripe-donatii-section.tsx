@@ -3,6 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useState, useTransition } from "react";
 
+import type { Locale } from "@/lib/i18n/config";
+import { SETARI_ECHIPA_DICT } from "@/lib/i18n/dictionaries/setari-echipa";
+
 import {
   deconecteazaStripeDonatii,
   salveazaStripeDonatiiAction,
@@ -30,11 +33,14 @@ export function StripeDonatiiSection({
   orgSlug,
   webhookUrl,
   status,
+  locale,
 }: {
   orgSlug: string;
   webhookUrl: string;
   status: StripeDonatiiStatus;
+  locale: Locale;
 }) {
+  const dict = SETARI_ECHIPA_DICT[locale].orgSetari.stripeDonatii;
   const router = useRouter();
   const [state, formAction, pending] = useActionState<StripeDonatiiState, FormData>(
     salveazaStripeDonatiiAction.bind(null, orgSlug),
@@ -62,10 +68,11 @@ export function StripeDonatiiSection({
 
   return (
     <section className="mt-8 border-t border-line pt-6">
-      <h2 className="font-display text-lg font-bold text-ink">Plăți donații (Stripe)</h2>
+      <h2 className="font-display text-lg font-bold text-ink">{dict.title}</h2>
       <p className="mt-1 text-sm text-muted">
-        Donațiile de pe paginile tale de campanie se încasează direct în <strong>contul tău Stripe</strong>, nu prin
-        platformă. Ai nevoie de propriul cont pe stripe.com.
+        {dict.introBefore}
+        <strong>{dict.introBold}</strong>
+        {dict.introAfter}
       </p>
 
       <p
@@ -74,37 +81,38 @@ export function StripeDonatiiSection({
         }`}
       >
         {pregatit
-          ? `Conectat · ${status.hint ?? ""}`
+          ? dict.badge.conectat(status.hint ?? "")
           : status.conectat
-            ? "Cheia e salvată — mai lipsește secretul webhook-ului"
-            : "Neconectat — donațiile online nu funcționează încă"}
+            ? dict.badge.cheieSalvata
+            : dict.badge.neconectat}
       </p>
 
       {!status.criptareActiva && (
-        <p className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-          Serverul nu are încă activată criptarea cheilor, deci nu poți salva cheile acum. Contactează administratorul
-          platformei.
+        <p className="mt-3 rounded-lg border border-amber-300 bg-amber-100 p-3 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-200">
+          {dict.criptareInactiva}
         </p>
       )}
 
       <ol className="mt-4 list-decimal space-y-2 pl-5 text-sm leading-relaxed text-body">
-        <li>
-          Creează-ți cont pe <strong>stripe.com</strong> și activează-l (Stripe îți cere datele organizației și contul
-          bancar în care primești donațiile).
-        </li>
-        <li>
-          Din Stripe → <em>Developers → API keys</em> copiază <strong>Secret key</strong> (începe cu{" "}
-          <code>sk_live_</code>). Dacă preferi o cheie restricționată, dă-i permisiuni: Checkout Sessions (Write),
-          Subscriptions (Read), Invoices (Read).
-        </li>
-        <li>
-          Din <em>Developers → Webhooks → Add endpoint</em> pune adresa de mai jos și bifează evenimentele listate. Apoi
-          copiază <strong>Signing secret</strong> (începe cu <code>whsec_</code>).
-        </li>
+        {dict.pasi.map((pas, i) => (
+          <li key={i}>
+            {pas.map((parte, j) =>
+              parte.strong ? (
+                <strong key={j}>{parte.text}</strong>
+              ) : parte.em ? (
+                <em key={j}>{parte.text}</em>
+              ) : parte.code ? (
+                <code key={j}>{parte.text}</code>
+              ) : (
+                <span key={j}>{parte.text}</span>
+              ),
+            )}
+          </li>
+        ))}
       </ol>
 
       <div className="mt-4">
-        <p className="text-xs font-semibold text-ink">Adresa webhook-ului (Endpoint URL)</p>
+        <p className="text-xs font-semibold text-ink">{dict.webhookLabel}</p>
         <div className="mt-1 flex items-center gap-2">
           <code className="min-w-0 flex-1 overflow-x-auto rounded-lg border border-line bg-panel-2 px-3 py-2 text-xs text-body">
             {webhookUrl}
@@ -114,36 +122,36 @@ export function StripeDonatiiSection({
             onClick={copiaza}
             className="shrink-0 rounded-lg border border-line px-3 py-2 text-xs font-medium text-ink transition hover:bg-panel-2"
           >
-            {copiat ? "Copiat" : "Copiază"}
+            {copiat ? dict.copiat : dict.copiaza}
           </button>
         </div>
-        <p className="mt-2 text-xs text-muted">Evenimente de bifat: {EVENIMENTE.join(", ")}.</p>
+        <p className="mt-2 text-xs text-muted">{dict.evenimenteLabel(EVENIMENTE.join(", "))}</p>
       </div>
 
       <form action={formAction} className="mt-5 space-y-4">
         <label className="block text-sm font-medium text-ink">
-          Cheia secretă Stripe
+          {dict.cheieLabel}
           <input
             name="cheieSecreta"
             type="password"
             autoComplete="off"
-            placeholder={status.conectat ? "Lasă gol ca să păstrezi cheia salvată" : "sk_live_…"}
+            placeholder={status.conectat ? dict.cheiePlaceholderPastreaza : dict.cheiePlaceholderNou}
             className={input}
           />
         </label>
         <label className="block text-sm font-medium text-ink">
-          Secretul webhook-ului (Signing secret)
+          {dict.webhookSecretLabel}
           <input
             name="secretWebhook"
             type="password"
             autoComplete="off"
-            placeholder={status.areWebhook ? "Lasă gol ca să păstrezi secretul salvat" : "whsec_…"}
+            placeholder={status.areWebhook ? dict.webhookPlaceholderPastreaza : dict.webhookPlaceholderNou}
             className={input}
           />
         </label>
 
         {state.error && <p className="text-sm text-red-600">{state.error}</p>}
-        {state.ok && !state.error && <p className="text-sm text-brand-green">Salvat.</p>}
+        {state.ok && !state.error && <p className="text-sm text-brand-green-hover">{dict.salvat}</p>}
 
         <div className="flex flex-wrap items-center gap-3">
           <button
@@ -151,7 +159,7 @@ export function StripeDonatiiSection({
             disabled={pending || !status.criptareActiva}
             className="rounded-lg bg-brand-green px-4 py-2 text-sm font-bold text-white transition hover:bg-brand-green-hover disabled:opacity-50"
           >
-            {pending ? "Se salvează…" : "Salvează"}
+            {pending ? dict.seSalveaza : dict.salveaza}
           </button>
           {status.conectat && (
             <button
@@ -165,13 +173,11 @@ export function StripeDonatiiSection({
               }
               className="rounded-lg border border-line px-4 py-2 text-sm font-medium text-muted transition hover:text-red-600 disabled:opacity-50"
             >
-              Deconectează Stripe
+              {dict.deconecteaza}
             </button>
           )}
         </div>
-        <p className="text-xs text-muted">
-          Cheile sunt criptate înainte de salvare și nu mai sunt afișate niciodată. Le poți schimba oricând.
-        </p>
+        <p className="text-xs text-muted">{dict.footNote}</p>
       </form>
     </section>
   );

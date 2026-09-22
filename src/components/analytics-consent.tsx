@@ -124,7 +124,7 @@ export function AnalyticsConsent({ texts }: { texts: BannerTexts }) {
             <button
               type="button"
               onClick={() => alege("granted")}
-              className="rounded-md border border-line bg-panel px-4 py-2 text-sm font-bold text-ink transition hover:bg-panel-2"
+              className="rounded-md bg-brand-green px-4 py-2 text-sm font-bold text-white transition hover:bg-brand-green-hover"
             >
               {texts.accept}
             </button>

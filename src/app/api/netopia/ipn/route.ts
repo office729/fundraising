@@ -68,30 +68,42 @@ export async function POST(req: Request) {
           return; // nu acordăm acces pentru o sumă care nu corespunde
         }
 
+        // Exclus și "rambursata", nu doar "reusita": o confirmare de plată
+        // veche/întârziată, retrimisă de Netopia DUPĂ ce o rambursare a fost deja
+        // procesată, nu are voie s-o readucă la "reusita" și să recrediteze bani
+        // deja returnați — "reusita" nu mai e o stare finală o dată rambursată.
         const actualizat = await tx
           .update(platformPayments)
           .set({ status: "reusita", paidAt: new Date(), ntpId, netopiaStatus: status })
-          .where(and(eq(platformPayments.id, plata.id), sql`${platformPayments.status} <> 'reusita'`))
+          .where(and(eq(platformPayments.id, plata.id), sql`${platformPayments.status} not in ('reusita', 'rambursata')`))
           .returning({ id: platformPayments.id });
-        if (!actualizat[0]) return; // deja procesată
+        if (!actualizat[0]) return; // deja procesată sau deja rambursată
 
-        const org = (await tx.select().from(organizations).where(eq(organizations.id, plata.orgId)).limit(1))[0];
-        if (!org) return;
-        const acum = new Date();
         // O plată nouă prelungește accesul existent (nu-l suprapune): se adaugă
-        // după sfârșitul perioadei curente, dacă aceasta încă e activă.
-        const baza =
-          org.subscriptionStatus === "active" && org.currentPeriodEnd && org.currentPeriodEnd > acum ? org.currentPeriodEnd : acum;
-
-        await tx
+        // după sfârșitul perioadei curente, dacă aceasta încă e activă. Calculat
+        // ATOMIC, direct în UPDATE (GREATEST + interval), nu citit-apoi-scris în
+        // JS — altfel două confirmări de plată suprapuse pentru aceeași
+        // organizație (retrimitere IPN, două comenzi plătite aproape simultan)
+        // pot citi amândouă același currentPeriodEnd vechi înainte ca vreuna să
+        // scrie, iar a doua ar suprascrie prima în loc s-o extindă: o lună
+        // plătită s-ar pierde silențios. Postgres serializează UPDATE-uri pe
+        // ACELAȘI rând (blocare de rând sub MVCC), deci varianta de mai jos e
+        // corectă indiferent câte IPN-uri pentru aceeași organizație se
+        // procesează concurent. GREATEST ignoră NULL — dacă nu exista încă
+        // niciun currentPeriodEnd, pornește de la acum.
+        const actualizatOrg = await tx
           .update(organizations)
           .set({
             package: plata.package,
             customPlanConfig: plata.package === "custom" ? plata.planConfig : null,
             subscriptionStatus: "active",
-            currentPeriodEnd: plusLuni(baza, plata.luni),
+            currentPeriodEnd: sql`greatest(${organizations.currentPeriodEnd}, now()) + (${plata.luni} || ' months')::interval`,
           })
-          .where(eq(organizations.id, plata.orgId));
+          .where(eq(organizations.id, plata.orgId))
+          .returning({ id: organizations.id });
+        if (!actualizatOrg[0]) {
+          console.error("IPN Netopia: organizația comenzii nu mai există", { orderId, orgId: plata.orgId });
+        }
         return;
       }
 

@@ -82,7 +82,11 @@ export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, s
         // rezultat gol și iese fără să crediteze a doua oară (echivalentul
         // unui compare-and-swap la nivel de bază de date — un SELECT urmat de
         // un UPDATE necondiționat NU e suficient, ambele cereri ar putea citi
-        // "in_asteptare" înainte ca vreuna să facă commit).
+        // "in_asteptare" înainte ca vreuna să facă commit). Exclus și
+        // "rambursata", nu doar "reusita": o retrimitere veche/întârziată a
+        // acestui eveniment, ajunsă DUPĂ ce o rambursare a fost deja procesată,
+        // nu are voie s-o readucă la "reusita" și să recrediteze bani deja
+        // returnați — "reusita" nu mai e stare finală o dată rambursată.
         const actualizat = await tx
           .update(fundraisingDonations)
           .set({
@@ -95,9 +99,15 @@ export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, s
             // donație — acele evenimente nu poartă sesiunea Checkout.
             stripePaymentIntentId: idDin(session.payment_intent),
           })
-          .where(and(eq(fundraisingDonations.id, donatie[0].id), ne(fundraisingDonations.status, "reusita")))
+          .where(
+            and(
+              eq(fundraisingDonations.id, donatie[0].id),
+              ne(fundraisingDonations.status, "reusita"),
+              ne(fundraisingDonations.status, "rambursata"),
+            ),
+          )
           .returning({ id: fundraisingDonations.id });
-        if (!actualizat[0]) return; // deja procesată de o cerere concurentă/retrimisă
+        if (!actualizat[0]) return; // deja procesată/rambursată sau o cerere concurentă/retrimisă
 
         // Sincronizare cu CRM-ul organizației — donatorul real (nu prototipul
         // mock) apare/se actualizează automat, indiferent dacă a bifat

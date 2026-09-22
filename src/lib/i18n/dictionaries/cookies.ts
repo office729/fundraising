@@ -6,7 +6,7 @@ export const COOKIES_DICT = {
     eyebrow: "Legal",
     titlu: "Politica de cookies",
     actualizatLabel: "Ultima actualizare",
-    actualizat: "21 septembrie 2026",
+    actualizat: "22 septembrie 2026",
     banner: {
       titlu: "Cookie-uri și statistici",
       text: "Folosim cookie-uri strict necesare pentru autentificare. Cu acordul tău, folosim și Google Analytics pentru statistici anonime despre utilizarea site-ului. Poți schimba alegerea oricând.",
@@ -33,7 +33,7 @@ export const COOKIES_DICT = {
     },
     sAnalytics: {
       titlu: "3. Cookie-uri de analiză (doar cu acordul tău)",
-      text: "Dacă apeși „Accept statisticile”, încărcăm Google Analytics 4 (Google Ireland Limited), care ne arată, agregat, ce pagini sunt vizitate și cum ajung vizitatorii pe site. Dacă refuzi sau nu alegi, scriptul Google nu se încarcă deloc și nu se trimite nimic către Google. Poți retrage acordul oricând, iar cookie-urile de mai jos se șterg.",
+      text: "Dacă apeși „Accept statisticile”, încărcăm Google Analytics 4 (Google Ireland Limited), care ne arată, agregat, ce pagini sunt vizitate și cum ajung vizitatorii pe site — atât pe paginile publice, cât și, dacă ești membru al unei organizații autentificate, în interiorul platformei (CRM), unde se transmite și slug-ul organizației, ca să știm care organizație folosește platforma și cât de des. Trimitem și câteva evenimente cu nume clar (de exemplu la începerea unei probe gratuite, la crearea unui cont sau la o plată confirmată). Dacă refuzi sau nu alegi, scriptul Google nu se încarcă deloc și nu se trimite nimic către Google. Poți retrage acordul oricând, iar cookie-urile de mai jos se șterg.",
       tabelHeaders: { cookie: "Cookie", scop: "Scop", durata: "Durată" },
       randuri: [
         { nume: "_ga", scop: "Distinge vizitatorii, pentru statistici agregate (Google Analytics).", durata: "Până la 2 ani" },
@@ -49,7 +49,7 @@ export const COOKIES_DICT = {
       titlu: "5. Cookie-uri terțe",
       textBefore: "Dacă activezi autentificarea cu Google, Google poate seta propriile cookie-uri în timpul procesului de autentificare, conform",
       linkText: "politicii de confidențialitate Google",
-      textAfter: ". Procesatorul de plăți (de exemplu Stripe) poate seta, pe pagina lui securizată de plată, cookie-uri proprii, necesare procesării plății.",
+      textAfter: ". Procesatorii de plăți — Stripe (donații, în contul propriu al organizației) și Netopia (abonamentul platformei) — pot seta, pe pagina lor securizată de plată, cookie-uri proprii, necesare procesării plății.",
     },
     s5: {
       titlu: "6. Cum gestionezi cookie-urile",
@@ -61,7 +61,7 @@ export const COOKIES_DICT = {
     eyebrow: "Legal",
     titlu: "Cookie Policy",
     actualizatLabel: "Last updated",
-    actualizat: "September 21, 2026",
+    actualizat: "September 22, 2026",
     banner: {
       titlu: "Cookies and statistics",
       text: "We use strictly necessary cookies for sign-in. With your consent, we also use Google Analytics for anonymous statistics about how the site is used. You can change your choice at any time.",
@@ -88,7 +88,7 @@ export const COOKIES_DICT = {
     },
     sAnalytics: {
       titlu: "3. Analytics cookies (only with your consent)",
-      text: "If you press \"Accept statistics\", we load Google Analytics 4 (Google Ireland Limited), which shows us, in aggregate, which pages are visited and how visitors reach the site. If you decline or don't choose, the Google script isn't loaded at all and nothing is sent to Google. You can withdraw consent at any time, and the cookies below are deleted.",
+      text: "If you press \"Accept statistics\", we load Google Analytics 4 (Google Ireland Limited), which shows us, in aggregate, which pages are visited and how visitors reach the site — both on public pages and, if you're a member of a signed-in organization, inside the platform (CRM), where your organization's slug is also sent, so we know which organization is using the platform and how often. We also send a few clearly-named events (for example, starting a free trial, creating an account, or a confirmed payment). If you decline or don't choose, the Google script isn't loaded at all and nothing is sent to Google. You can withdraw consent at any time, and the cookies below are deleted.",
       tabelHeaders: { cookie: "Cookie", scop: "Purpose", durata: "Duration" },
       randuri: [
         { nume: "_ga", scop: "Distinguishes visitors, for aggregate statistics (Google Analytics).", durata: "Up to 2 years" },
@@ -104,7 +104,7 @@ export const COOKIES_DICT = {
       titlu: "5. Third-party cookies",
       textBefore: "If you enable sign-in with Google, Google may set its own cookies during the authentication process, per the",
       linkText: "Google privacy policy",
-      textAfter: ". The payment processor (for example Stripe) may set its own cookies on its secure payment page, needed to process the payment.",
+      textAfter: ". Payment processors — Stripe (donations, into the organization's own account) and Netopia (the platform's subscription) — may set their own cookies on their secure payment page, needed to process the payment.",
     },
     s5: {
       titlu: "6. Managing cookies",

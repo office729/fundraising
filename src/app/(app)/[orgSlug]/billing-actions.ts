@@ -13,7 +13,15 @@ const NUME_PACHET: Record<Exclude<OrgPackage, "trial" | "custom">, string> = {
   impact: "Pachet IMPACT",
 };
 
+// Adresa platformei, pentru notifyUrl/redirectUrl/cancelUrl trimise la Netopia.
+// Sursa e NEXT_PUBLIC_SITE_URL (fixă, din mediu), NU headerele cererii
+// (Origin/Host) — acelea pot fi influențate de client, iar un notifyUrl/
+// redirectUrl construit din ele ar putea trimite IPN-ul sau redirectul
+// post-plată în afara platformei. Fallback pe headere doar dacă variabila nu
+// e setată (mediu local de dezvoltare).
 async function origin(): Promise<string> {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  if (siteUrl) return siteUrl.replace(/\/$/, "");
   const hdrs = await headers();
   return hdrs.get("origin") ?? `${hdrs.get("x-forwarded-proto") ?? "https"}://${hdrs.get("host")}`;
 }

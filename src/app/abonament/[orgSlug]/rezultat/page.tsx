@@ -45,7 +45,9 @@ export default async function RezultatPlataPage({
       {plata?.status === "in_asteptare" && (
         <>
           <AutoRefresh />
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-line border-t-brand-green" />
+          <div role="status" aria-live="polite" className="h-8 w-8 animate-spin rounded-full border-2 border-line border-t-brand-green">
+            <span className="sr-only">Verificăm plata…</span>
+          </div>
           <h1 className="font-display mt-5 text-2xl font-bold text-ink">Verificăm plata…</h1>
           <p className="mt-2 text-[14.5px] leading-relaxed text-body">
             Așteptăm confirmarea de la bancă. De obicei durează câteva secunde; pagina se actualizează singură. Dacă ai
