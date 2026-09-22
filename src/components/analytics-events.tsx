@@ -3,7 +3,8 @@
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 
-import { trackEvent } from "@/lib/analytics";
+import { setContentGroup, trackEvent } from "@/lib/analytics";
+import { esteSlugRezervat } from "@/lib/reserved-slugs";
 
 // Cookie scurt setat de server (lib/analytics-server.ts) când o acțiune se
 // termină cu redirect (ex. crearea contului) — clientul nu are alt mod să afle
@@ -16,6 +17,17 @@ function citesteSiStergeSemnal(): string | null {
   if (!m) return null;
   document.cookie = `${EVT_COOKIE}=; Max-Age=0; path=/`;
   return decodeURIComponent(m[1]);
+}
+
+// Prima secțiune a căii decide: dacă e un slug rezervat (ruta statică — vezi
+// lib/reserved-slugs.ts), pagina e publică (marketing/autentificare); altfel,
+// primul segment e slug-ul unei organizații și pagina e din dashboard-ul ei.
+// Exact aceeași regulă pe care proxy.ts o folosește pentru rescrierea
+// domeniilor proprii — o singură sursă de adevăr pentru „ce e o pagină de org".
+function grupDeContinut(pathname: string): { group: "public" | "dashboard"; orgSlug?: string } {
+  const prim = pathname.split("/")[1] ?? "";
+  if (!prim || esteSlugRezervat(prim)) return { group: "public" };
+  return { group: "dashboard", orgSlug: prim };
 }
 
 export function AnalyticsEvents() {
@@ -58,6 +70,8 @@ export function AnalyticsEvents() {
       trackEvent("sign_up", { method: "email" });
     }
 
+    const { group, orgSlug } = grupDeContinut(pathname);
+    setContentGroup(group, orgSlug);
   }, [pathname]);
 
   return null;

@@ -7,10 +7,12 @@ const RESERVED_SLUGS = new Set([
   "api",
   "auth",
   "automatizare",
+  "automatizari",
   "beneficiar",
   "blog",
   "ce-facem",
   "cine-suntem",
+  "contact",
   "cookies",
   "f230",
   "favicon.ico",
@@ -30,6 +32,7 @@ const RESERVED_SLUGS = new Set([
   "strangere-fonduri",
   "studii-de-caz",
   "termeni",
+  "vlad-placinta",
 ]);
 
 export function esteSlugRezervat(slug: string): boolean {

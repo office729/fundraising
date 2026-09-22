@@ -50,3 +50,17 @@ export function trackEvent(name: string, params: Record<string, unknown> = {}) {
   ensureAnalyticsInit();
   (window as GtagWindow).gtag?.("event", name, params);
 }
+
+// Grupare de conținut (raport GA4 „Content group") — distinge paginile publice
+// de site (marketing/autentificare) de cele din dashboard-ul unei organizații
+// (/<orgSlug>/...), plus, pentru cele din dashboard, slug-ul organizației (ca
+// parametru simplu — pentru a apărea drept coloană separată în rapoarte,
+// trebuie înregistrat ca dimensiune personalizată în Admin → Definiții
+// dimensiuni). Nu inițializează singur măsurarea — dacă vizitatorul nu a
+// acceptat cookie-urile de analiză, gtag nu există încă și apelul nu face nimic.
+export function setContentGroup(group: "public" | "dashboard", orgSlug?: string) {
+  if (typeof window === "undefined" || !esteAcordDat()) return;
+  const params: Record<string, string> = { content_group: group };
+  if (orgSlug) params.org_slug = orgSlug;
+  (window as GtagWindow).gtag?.("set", params);
+}
