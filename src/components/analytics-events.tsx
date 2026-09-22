@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 
-import { setContentGroup, trackEvent } from "@/lib/analytics";
+import { trackEvent, trimitePaginaContext } from "@/lib/analytics";
 import { esteSlugRezervat } from "@/lib/reserved-slugs";
 
 // Cookie scurt setat de server (lib/analytics-server.ts) când o acțiune se
@@ -71,7 +71,7 @@ export function AnalyticsEvents() {
     }
 
     const { group, orgSlug } = grupDeContinut(pathname);
-    setContentGroup(group, orgSlug);
+    trimitePaginaContext(group, orgSlug, pathname);
   }, [pathname]);
 
   return null;

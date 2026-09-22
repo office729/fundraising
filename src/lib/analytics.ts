@@ -51,25 +51,19 @@ export function trackEvent(name: string, params: Record<string, unknown> = {}) {
   (window as GtagWindow).gtag?.("event", name, params);
 }
 
-// Grupare de conținut (raport GA4 „Content group") — distinge paginile publice
-// de site (marketing/autentificare) de cele din dashboard-ul unei organizații
-// (/<orgSlug>/...), plus, pentru cele din dashboard, slug-ul organizației (ca
-// parametru simplu — pentru a apărea drept coloană separată în rapoarte,
-// trebuie înregistrat ca dimensiune personalizată în Admin → Definiții
-// dimensiuni).
+// Distinge paginile publice de site (marketing/autentificare) de cele din
+// dashboard-ul unei organizații (/<orgSlug>/...) în rapoartele GA4, plus,
+// pentru cele din dashboard, slug-ul organizației.
 //
-// ensureAnalyticsInit() e apelat și aici (nu doar din AnalyticsConsent), la
-// fel ca în trackEvent — NU pentru a porni măsurarea fără acord (guard-ul de
-// mai sus oprește apelul mai devreme dacă nu există acord), ci ca acest apel
-// să nu depindă de ordinea în care rulează efectele altor componente: dacă
-// AnalyticsEvents (components/analytics-events.tsx) rulează înaintea
-// AnalyticsConsent la prima încărcare a paginii, `gtag` tot există deja când
-// ajunge aici, deci `content_group` chiar ajunge în cererea de page_view
-// inițială, nu se pierde silențios.
-export function setContentGroup(group: "public" | "dashboard", orgSlug?: string) {
-  if (typeof window === "undefined" || !esteAcordDat()) return;
-  ensureAnalyticsInit();
-  const params: Record<string, string> = { content_group: group };
-  if (orgSlug) params.org_slug = orgSlug;
-  (window as GtagWindow).gtag?.("set", params);
+// Trimis ca EVENIMENT propriu (`page_context`), nu prin `gtag('set', ...)` —
+// verificat direct, live, cu evenimente de test: `gtag('set', {content_group})`
+// NU se propagă la evenimentul automat `page_view` generat de Google (nici la
+// cel de la încărcare, nici la niciun eveniment ulterior trimis prin gtag),
+// deci acel parametru dispărea mereu din cererea reală. Un eveniment separat,
+// prin trackEvent() (deja verificat că ajunge corect), e mecanismul robust —
+// `content_group`/`org_slug` apar ca parametri de eveniment (ep.content_group,
+// ep.org_slug) și devin coloane filtrabile în rapoarte după ce sunt
+// înregistrate ca dimensiuni personalizate: Admin → Definiții dimensiuni.
+export function trimitePaginaContext(group: "public" | "dashboard", orgSlug?: string, pagePath?: string) {
+  trackEvent("page_context", { content_group: group, org_slug: orgSlug, page_path: pagePath });
 }
