@@ -65,6 +65,10 @@ export default async function PlatformAdminPage() {
       </div>
 
       <h2 className="mt-8 text-sm font-semibold text-ink">Cele mai mari tabele</h2>
+      <p className="mt-1 text-xs text-muted">
+        Tabelele sunt comune tuturor organizațiilor (nu una separată per client) — cresc cumulat, pe măsură ce fiecare ONG
+        își încarcă date reale: importă donatori/companii, înregistrează donații, creează pagini de colectare etc.
+      </p>
       <div className="mt-2 divide-y divide-line rounded-xl border border-line bg-panel">
         {tabele.map((t) => (
           <div key={t.nume} className="flex items-center justify-between px-4 py-2.5 text-sm">
