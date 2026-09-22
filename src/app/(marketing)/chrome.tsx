@@ -46,7 +46,7 @@ export function SiteHeader({ dict }: { dict: MarketingDict }) {
     <header className="border-b border-line bg-panel">
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-6 px-6">
         <Link href="/" className="flex shrink-0 items-center" onClick={() => setDeschis(false)} aria-label="Alexandrit">
-          <Image src="/alexandrit-logo.webp" alt="Alexandrit" width={1730} height={332} priority className="h-9 w-auto" />
+          <Image src="/alexandrit-logo.webp" alt="Alexandrit" width={1730} height={332} priority className="brand-mark h-9 w-auto" />
         </Link>
 
         <nav className="hidden items-center gap-4 lg:flex xl:gap-6">
