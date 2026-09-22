@@ -10,6 +10,7 @@ import { CAMPAIGN_TEMPLATES } from "@/lib/campaign-templates";
 import { db } from "@/lib/db";
 import { fundraisingDonations, fundraisingPages, fundraisingUpdates, organizations } from "@/lib/db/schema";
 
+import { CampaignFooter } from "../campaign-footer";
 import { DoneazaModal } from "./doneaza-modal";
 import { PaymentBadges } from "./payment-badges";
 import { ProgressRing } from "./progress-ring";
@@ -32,7 +33,11 @@ const COLOANE_DONATIE_PUBLICA = {
 const getPaginaPublica = cache(async (orgSlug: string, pageSlug: string) => {
   return db.transaction(async (tx) => {
     await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
-    const org = await tx.select({ id: organizations.id, name: organizations.name }).from(organizations).where(eq(organizations.slug, orgSlug)).limit(1);
+    const org = await tx
+      .select({ id: organizations.id, name: organizations.name, logoUrl: organizations.logoUrl, slogan: organizations.slogan, cif: organizations.cif })
+      .from(organizations)
+      .where(eq(organizations.slug, orgSlug))
+      .limit(1);
     if (!org[0]) return null;
 
     const pagina = await tx
@@ -226,6 +231,36 @@ export default async function PaginaStrangereFonduriPage({
               </div>
             </div>
 
+            {actualizari.length > 0 && (
+              <div className="mt-7">
+                <h2 className="font-display text-base font-bold text-ink">Actualizări</h2>
+                <div className="mt-4 flex flex-col">
+                  {actualizari.map((a, i) => (
+                    <div key={a.id} className="flex gap-4">
+                      <div className="flex flex-col items-center">
+                        <div className="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-full bg-brand-green text-white">
+                          <span className="text-lg leading-none font-extrabold">{a.data.toLocaleDateString("ro-RO", { day: "2-digit" })}</span>
+                          <span className="mt-0.5 text-[10px] leading-none font-bold uppercase">
+                            {a.data.toLocaleDateString("ro-RO", { month: "short" }).replace(".", "")}
+                          </span>
+                        </div>
+                        {i < actualizari.length - 1 && <div className="my-1 w-0.5 flex-1 bg-brand-green-soft" />}
+                      </div>
+                      <div className="mb-5 min-w-0 flex-1 rounded-2xl border border-line bg-panel-2 p-5">
+                        <div className="flex items-start justify-between gap-3">
+                          <p className="font-display text-sm font-bold text-ink">{a.titlu}</p>
+                          <span className="shrink-0 text-xs text-muted-2">
+                            {a.data.toLocaleDateString("ro-RO", { day: "numeric", month: "long", year: "numeric" })}
+                          </span>
+                        </div>
+                        <p className="mt-1.5 whitespace-pre-wrap text-[14px] leading-relaxed text-body">{a.continut}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="mt-6 grid gap-6 sm:grid-cols-[260px_minmax(0,1fr)]">
               <div className="h-fit rounded-2xl border border-brand-green-soft bg-brand-green-soft/60 p-5">
                 <p className="font-display text-sm font-bold text-ink">Susține campania</p>
@@ -251,23 +286,6 @@ export default async function PaginaStrangereFonduriPage({
             </div>
           </div>
         </div>
-
-        {actualizari.length > 0 && (
-          <section className="mt-8 rounded-3xl border border-line bg-panel p-6 shadow-sm sm:p-8">
-            <h2 className="font-display text-base font-bold text-ink">Actualizări</h2>
-            <div className="mt-4 flex flex-col gap-3">
-              {actualizari.map((a) => (
-                <div key={a.id} className="rounded-2xl border border-line bg-panel-2 p-5">
-                  <p className="text-[13px] font-bold text-ink">{a.titlu}</p>
-                  <p className="mt-1.5 whitespace-pre-wrap text-[14px] leading-relaxed text-body">{a.continut}</p>
-                  <p className="mt-2 text-xs text-muted-2">
-                    {a.data.toLocaleDateString("ro-RO", { day: "numeric", month: "long", year: "numeric" })}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
 
         {(topDonatori.length > 0 || recente.length > 0) && (
           <section id="toate-donatiile" className="mt-8 grid scroll-mt-6 gap-6 rounded-3xl border border-line bg-panel p-6 shadow-sm sm:grid-cols-2 sm:p-8">
@@ -345,6 +363,8 @@ export default async function PaginaStrangereFonduriPage({
           </section>
         )}
       </main>
+
+      <CampaignFooter orgSlug={orgSlug} orgName={org.name} orgLogoUrl={org.logoUrl} orgSlogan={org.slogan} orgCif={org.cif} />
     </div>
   );
 }

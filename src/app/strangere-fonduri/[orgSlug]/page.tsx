@@ -8,6 +8,7 @@ import { cache } from "react";
 import { db } from "@/lib/db";
 import { fundraisingPages, organizations } from "@/lib/db/schema";
 
+import { CampaignFooter } from "./campaign-footer";
 import { ProgressRing } from "./[pageSlug]/progress-ring";
 
 // Pagina-hub, publică, a organizației: toate campaniile ei într-un singur
@@ -19,7 +20,7 @@ const getOrgSiPaginile = cache(async (orgSlug: string) => {
   return db.transaction(async (tx) => {
     await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
     const [org] = await tx
-      .select({ id: organizations.id, name: organizations.name, logoUrl: organizations.logoUrl, slogan: organizations.slogan })
+      .select({ id: organizations.id, name: organizations.name, logoUrl: organizations.logoUrl, slogan: organizations.slogan, cif: organizations.cif })
       .from(organizations)
       .where(eq(organizations.slug, orgSlug))
       .limit(1);
@@ -104,6 +105,8 @@ export default async function PaginaOrgHub({ params }: { params: Promise<{ orgSl
           </details>
         )}
       </main>
+
+      <CampaignFooter orgSlug={orgSlug} orgName={org.name} orgLogoUrl={org.logoUrl} orgSlogan={org.slogan} orgCif={org.cif} />
     </div>
   );
 }
