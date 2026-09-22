@@ -1,6 +1,6 @@
 import { requireOrgAccess } from "@/lib/auth/guard";
 import { getLocale } from "@/lib/i18n/get-locale";
-import { titluPagina } from "@/lib/page-titles";
+import { titluAbsolut } from "@/lib/page-titles";
 
 import "./calm-impact.css";
 import { CrmShell } from "./shell";
@@ -10,7 +10,7 @@ import { CrmShell } from "./shell";
 // titlu mai specific (donatori, companii etc.) îl suprascrie prin propriul
 // layout.tsx sau, unde pagina e server component, direct din page.tsx.
 export async function generateMetadata() {
-  return { title: await titluPagina("crmAcasa") };
+  return titluAbsolut("crmAcasa");
 }
 
 export default async function CrmLayout({

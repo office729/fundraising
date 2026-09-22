@@ -2,7 +2,7 @@ import { Breadcrumb } from "../components/ui/breadcrumb";
 import { listLocalGroups, listMediaContacts } from "./actions";
 import { LocalGroupsCard } from "./local-groups-card";
 import { MediaContactsCard } from "./media-contacts-card";
-import { titluPagina } from "@/lib/page-titles";
+import { titluAbsolut } from "@/lib/page-titles";
 
 export default async function PresaGrupuriPage({ params }: { params: Promise<{ orgSlug: string }> }) {
   const { orgSlug } = await params;
@@ -25,5 +25,5 @@ export default async function PresaGrupuriPage({ params }: { params: Promise<{ o
 }
 
 export async function generateMetadata() {
-  return { title: await titluPagina("crmPresaGrupuri") };
+  return titluAbsolut("crmPresaGrupuri");
 }

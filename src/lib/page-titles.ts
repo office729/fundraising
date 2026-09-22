@@ -53,7 +53,22 @@ const TITLURI = {
 
 export type PaginaCuTitlu = keyof typeof TITLURI;
 
+// Ținut aici, nu doar în app/layout.tsx, ca titluAbsolut() (mai jos) să
+// producă EXACT același rezultat ca sufixul din template-ul layout-ului rădăcină.
+export const SUFIX_TITLU = " — Alexandrit";
+
 export async function titluPagina(pagina: PaginaCuTitlu): Promise<string> {
   const locale = await getLocale();
   return TITLURI[pagina][locale];
+}
+
+// Pentru pagini la mai mult de un nivel sub un layout care ȘI EL își setează
+// propriul titlu (crm/layout.tsx → crm/<sub>/page.tsx) — un titlu simplu
+// (string) definit de un layout întrerupe propagarea `template`-ului
+// moștenit din app/layout.tsx pentru copiii LUI, deci un titlu simplu la al
+// doilea nivel de sub crm/ ar rămâne fără sufix. `absolute` ocolește complet
+// moștenirea de template, deci rezultatul e determinist indiferent de câte
+// niveluri de layout există între rădăcină și pagină.
+export async function titluAbsolut(pagina: PaginaCuTitlu): Promise<{ title: { absolute: string } }> {
+  return { title: { absolute: `${await titluPagina(pagina)}${SUFIX_TITLU}` } };
 }

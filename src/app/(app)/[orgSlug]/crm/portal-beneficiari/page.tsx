@@ -4,7 +4,7 @@ import { Card, CardHeader } from "../components/ui/card";
 import { EmptyState } from "../components/ui/states";
 import { getPanouBeneficiari } from "./actions";
 import { PanouBeneficiari } from "./panou-beneficiari";
-import { titluPagina } from "@/lib/page-titles";
+import { titluAbsolut } from "@/lib/page-titles";
 
 const ACTIUNE_LABEL: Record<string, string> = {
   factura_incarcata: "Factură încărcată",
@@ -103,5 +103,5 @@ export default async function PortalBeneficiariPage({ params }: { params: Promis
 }
 
 export async function generateMetadata() {
-  return { title: await titluPagina("crmPortalBeneficiari") };
+  return titluAbsolut("crmPortalBeneficiari");
 }

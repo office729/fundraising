@@ -5,6 +5,7 @@ import { AnalyticsConsent } from "@/components/analytics-consent";
 import { AnalyticsEvents } from "@/components/analytics-events";
 import { COOKIES_DICT } from "@/lib/i18n/dictionaries/cookies";
 import { getLocale } from "@/lib/i18n/get-locale";
+import { SUFIX_TITLU } from "@/lib/page-titles";
 
 import "./globals.css";
 
@@ -28,7 +29,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   // Fiecare pagină își pune titlul propriu (lib/page-titles.ts); sufixul e adăugat aici.
-  title: { default: "Alexandrit", template: "%s — Alexandrit" },
+  title: { default: "Alexandrit", template: `%s${SUFIX_TITLU}` },
   description: "Instrumente de fundraising pentru ONG-uri din România",
 };
 

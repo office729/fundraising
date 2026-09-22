@@ -1,7 +1,7 @@
 import { CalendlyInlineWidget } from "@/components/calendly-inline-widget";
 import { CALENDLY_CONSULTANTA_URL } from "@/lib/calendly";
 import { getLocale } from "@/lib/i18n/get-locale";
-import { titluPagina } from "@/lib/page-titles";
+import { titluAbsolut } from "@/lib/page-titles";
 
 const TEXT = {
   ro: {
@@ -38,5 +38,5 @@ export default async function ConsultantaPage() {
 }
 
 export async function generateMetadata() {
-  return { title: await titluPagina("crmConsultanta") };
+  return titluAbsolut("crmConsultanta");
 }
