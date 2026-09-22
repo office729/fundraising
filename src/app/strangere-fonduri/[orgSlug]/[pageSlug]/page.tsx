@@ -112,7 +112,9 @@ export default async function PaginaStrangereFonduriPage({
   const fotoCampanie = pagina.imagineUrl ? <img src={pagina.imagineUrl} alt={pagina.titlu} className="h-full w-full object-cover" /> : null;
   const heroFallback = <div className="h-full w-full bg-gradient-to-br from-brand-blue to-brand-green" />;
   const eyebrow = (
-    <p className="text-xs font-bold tracking-wide text-brand-green uppercase">Campanie verificată de {org.name}</p>
+    <Link href={`/strangere-fonduri/${orgSlug}`} className="text-xs font-bold tracking-wide text-brand-green uppercase hover:underline">
+      Campanie verificată de {org.name}
+    </Link>
   );
   const titlu = <h1 className="font-display mt-1.5 text-[30px] leading-tight font-bold text-ink">{pagina.titlu}</h1>;
 
@@ -142,9 +144,12 @@ export default async function PaginaStrangereFonduriPage({
                   răzbătea aproape neschimbat, ilizibil cu text alb (~2.3:1
                   contrast măsurat pe auriu). Minim 20% negru chiar și sus. */}
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/65 to-black/20 px-6 pt-14 pb-5 sm:px-10">
-                <p className="text-xs font-bold tracking-wide text-white uppercase [text-shadow:0_1px_4px_rgba(0,0,0,0.85)]">
+                <Link
+                  href={`/strangere-fonduri/${orgSlug}`}
+                  className="text-xs font-bold tracking-wide text-white uppercase hover:underline [text-shadow:0_1px_4px_rgba(0,0,0,0.85)]"
+                >
                   Campanie verificată de {org.name}
-                </p>
+                </Link>
                 <h1 className="font-display mt-1.5 text-[28px] leading-tight font-bold text-white [text-shadow:0_1px_4px_rgba(0,0,0,0.85)] sm:text-[32px]">
                   {pagina.titlu}
                 </h1>
