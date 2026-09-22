@@ -36,3 +36,26 @@ export const topFirmeSponsori = withOrgSession(async (ctx) => {
     .limit(7);
   return rows.map((r) => ({ id: r.id, nume: r.nume, total: r.total, numar: r.numar, segment: segmentFirma(r.nume, r.id) }));
 });
+
+// Alertă de risc pe pipeline: firme care sponsorizau, dar n-au mai donat de
+// mult — genul de pierdere care se întâmplă din neatenție, nu din refuz.
+// Doar firme cu istoric real de sponsorizare (nu prospecți niciodată
+// abordați — aceia sunt un subiect diferit, de scor/prospectare).
+const PRAG_ZILE_RISC = 300; // ~10 luni
+export const companiiRiscPipeline = withOrgSession(async (ctx) => {
+  const rows = await ctx.db
+    .select({
+      id: companies.id,
+      nume: companies.nume,
+      ultimaData: sql<string>`max(${companySponsorizari.data})`,
+      zileDeLaUltima: sql<number>`(current_date - max(${companySponsorizari.data}))::int`,
+    })
+    .from(companySponsorizari)
+    .innerJoin(companies, sql`${companies.id} = ${companySponsorizari.companyId}`)
+    .where(and(sql`${companySponsorizari.orgId} = ${ctx.orgId}`, sql`${companies.deletedAt} is null`, sql`${companies.status} <> 'lost'`))
+    .groupBy(companies.id, companies.nume)
+    .having(sql`(current_date - max(${companySponsorizari.data})) >= ${PRAG_ZILE_RISC}`)
+    .orderBy(sql`max(${companySponsorizari.data}) asc`)
+    .limit(8);
+  return rows.map((r) => ({ id: r.id, nume: r.nume, ultimaData: r.ultimaData, luni: Math.floor(r.zileDeLaUltima / 30), segment: segmentFirma(r.nume, r.id) }));
+});

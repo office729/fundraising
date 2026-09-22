@@ -12,6 +12,7 @@ import { NaturalAncoratDashboard } from "./components/dashboard/natural-ancorat-
 import { NeutruDashboard } from "./components/dashboard/neutru-dashboard";
 import { DemoBanner } from "./components/demo-banner";
 import { TaskuriCard } from "./components/dashboard/taskuri-card";
+import { RiscPipelineCard } from "./components/dashboard/risc-pipeline-card";
 import { TopSponsoriCard } from "./components/dashboard/top-sponsori-card";
 import type { DashboardData } from "./components/dashboard/types";
 import { useLocale } from "./lib/locale-context";
@@ -177,6 +178,8 @@ export default function CrmDashboardPage() {
       </div>
 
       <FamilyDashboard {...dashboardData} />
+
+      <RiscPipelineCard orgSlug={orgSlug} ro={locale === "ro"} />
 
       <TopSponsoriCard orgSlug={orgSlug} ro={locale === "ro"} />
     </div>
