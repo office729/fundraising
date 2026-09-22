@@ -56,10 +56,19 @@ export function trackEvent(name: string, params: Record<string, unknown> = {}) {
 // (/<orgSlug>/...), plus, pentru cele din dashboard, slug-ul organizației (ca
 // parametru simplu — pentru a apărea drept coloană separată în rapoarte,
 // trebuie înregistrat ca dimensiune personalizată în Admin → Definiții
-// dimensiuni). Nu inițializează singur măsurarea — dacă vizitatorul nu a
-// acceptat cookie-urile de analiză, gtag nu există încă și apelul nu face nimic.
+// dimensiuni).
+//
+// ensureAnalyticsInit() e apelat și aici (nu doar din AnalyticsConsent), la
+// fel ca în trackEvent — NU pentru a porni măsurarea fără acord (guard-ul de
+// mai sus oprește apelul mai devreme dacă nu există acord), ci ca acest apel
+// să nu depindă de ordinea în care rulează efectele altor componente: dacă
+// AnalyticsEvents (components/analytics-events.tsx) rulează înaintea
+// AnalyticsConsent la prima încărcare a paginii, `gtag` tot există deja când
+// ajunge aici, deci `content_group` chiar ajunge în cererea de page_view
+// inițială, nu se pierde silențios.
 export function setContentGroup(group: "public" | "dashboard", orgSlug?: string) {
   if (typeof window === "undefined" || !esteAcordDat()) return;
+  ensureAnalyticsInit();
   const params: Record<string, string> = { content_group: group };
   if (orgSlug) params.org_slug = orgSlug;
   (window as GtagWindow).gtag?.("set", params);
