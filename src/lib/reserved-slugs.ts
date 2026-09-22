@@ -22,6 +22,7 @@ const RESERVED_SLUGS = new Set([
   "invite",
   "invite-beneficiar",
   "login",
+  "platform-admin",
   "portofoliu",
   "portofoliu-clienti",
   "premii",

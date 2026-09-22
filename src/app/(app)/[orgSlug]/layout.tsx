@@ -127,6 +127,15 @@ export default async function OrgLayout({
             >
               {dict.header.settings}
             </Link>
+            {isPlatformAdmin(access.userEmail) && (
+              <Link
+                href="/platform-admin"
+                className="text-[13px] font-medium text-muted transition hover:text-brand-blue"
+                title="Doar contul platformei"
+              >
+                DB
+              </Link>
+            )}
             <span
               className="rounded-full border px-2.5 py-1 text-xs font-medium text-muted"
               style={accent ? { borderColor: accent } : undefined}
