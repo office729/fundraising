@@ -27,7 +27,7 @@ export function DoneazaModal({ orgSlug, pageSlug, titlu }: { orgSlug: string; pa
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="w-full rounded-xl bg-brand-green px-6 py-3.5 text-center text-[15px] font-bold text-white shadow-sm transition hover:bg-brand-green-hover hover:shadow-md"
+        className="w-full rounded-lg bg-brand-green px-5 py-2.5 text-center text-[13.5px] font-bold text-white shadow-sm transition hover:bg-brand-green-hover hover:shadow-md"
       >
         Donează acum
       </button>
