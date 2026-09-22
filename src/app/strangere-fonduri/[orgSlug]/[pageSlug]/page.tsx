@@ -1,4 +1,5 @@
 import { and, desc, eq, sql } from "drizzle-orm";
+import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import Link from "next/link";
@@ -66,7 +67,22 @@ const getPaginaPublica = cache(async (orgSlug: string, pageSlug: string) => {
       .from(fundraisingDonations)
       .where(and(eq(fundraisingDonations.pageId, pagina[0].id), eq(fundraisingDonations.status, "reusita")));
 
-    return { org: org[0], pagina: pagina[0], recente, topDonatori, actualizari, totalDonatii };
+    // Alte campanii active ale aceleiași organizații — link către
+    // /strangere-fonduri/[orgSlug] (hub-ul organizației) pentru restul.
+    const alteCampanii = await tx
+      .select()
+      .from(fundraisingPages)
+      .where(
+        and(
+          eq(fundraisingPages.orgId, org[0].id),
+          eq(fundraisingPages.status, "activa"),
+          sql`${fundraisingPages.id} <> ${pagina[0].id}`,
+        ),
+      )
+      .orderBy(desc(fundraisingPages.sumaStransa))
+      .limit(3);
+
+    return { org: org[0], pagina: pagina[0], recente, topDonatori, actualizari, totalDonatii, alteCampanii };
   });
 });
 
@@ -99,7 +115,7 @@ export default async function PaginaStrangereFonduriPage({
   const data = await getPaginaPublica(orgSlug, pageSlug);
   if (!data) notFound();
 
-  const { org, pagina, recente, topDonatori, actualizari, totalDonatii } = data;
+  const { org, pagina, recente, topDonatori, actualizari, totalDonatii, alteCampanii } = data;
   const procent = pagina.sumaTinta ? Math.min(100, Math.round((pagina.sumaStransa / pagina.sumaTinta) * 100)) : null;
   const tpl = CAMPAIGN_TEMPLATES[pagina.template];
   // Header "origin" nu e trimis pe navigare GET simplă (doar pe fetch/POST
@@ -121,6 +137,13 @@ export default async function PaginaStrangereFonduriPage({
   return (
     <div className="min-h-screen bg-gradient-to-b from-brand-blue-soft/70 via-panel-2 to-panel-2" data-domeniu={pagina.template}>
       <main className="mx-auto max-w-3xl px-6 py-12 sm:py-16">
+        <Link
+          href={`/strangere-fonduri/${orgSlug}`}
+          className="mb-5 inline-flex items-center gap-1.5 text-[13px] font-semibold text-muted-2 transition hover:text-brand-blue"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" /> Acasă la {org.name}
+        </Link>
+
         <div className="overflow-hidden rounded-[var(--radius-hero)] border border-line bg-panel shadow-[0_20px_50px_-25px_rgba(21,74,133,0.35)]">
           {tpl.familie === "natural-ancorat" ? (
             <div className="flex flex-col gap-5 p-6 pb-0 sm:flex-row sm:items-end sm:pb-0 sm:p-8">
@@ -281,6 +304,44 @@ export default async function PaginaStrangereFonduriPage({
                 </div>
               </div>
             )}
+          </section>
+        )}
+
+        {alteCampanii.length > 0 && (
+          <section className="mt-8">
+            <div className="flex items-baseline justify-between gap-3">
+              <h2 className="font-display text-base font-bold text-ink">Alte campanii ale {org.name}</h2>
+              <Link href={`/strangere-fonduri/${orgSlug}`} className="shrink-0 text-[13px] font-medium text-brand-green hover:underline">
+                Vezi toate →
+              </Link>
+            </div>
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {alteCampanii.map((p) => {
+                const procentAlta = p.sumaTinta ? Math.min(100, Math.round((p.sumaStransa / p.sumaTinta) * 100)) : null;
+                return (
+                  <Link
+                    key={p.id}
+                    href={`/strangere-fonduri/${orgSlug}/${p.slug}`}
+                    data-domeniu={p.template}
+                    className="group flex items-center gap-4 overflow-hidden rounded-2xl border border-line bg-panel p-3 shadow-sm transition hover:shadow-[0_14px_36px_-18px_rgba(21,74,133,0.35)]"
+                  >
+                    <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-brand-blue to-brand-green">
+                      {p.imagineUrl && (
+                        // eslint-disable-next-line @next/next/no-img-element -- domeniu Supabase Storage dinamic
+                        <img src={p.imagineUrl} alt={p.titlu} className="h-full w-full object-cover transition duration-300 group-hover:scale-105" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-display truncate text-[14px] font-bold text-ink">{p.titlu}</p>
+                      <p className="mt-0.5 text-[12.5px] text-muted-2">
+                        {p.sumaStransa.toLocaleString("ro-RO")} lei{p.sumaTinta && ` din ${p.sumaTinta.toLocaleString("ro-RO")} lei`}
+                        {procentAlta != null && ` · ${procentAlta}%`}
+                      </p>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
           </section>
         )}
       </main>

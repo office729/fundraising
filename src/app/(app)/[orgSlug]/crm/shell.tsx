@@ -18,6 +18,7 @@ import {
   HelpCircle,
   Landmark,
   LayoutGrid,
+  LogOut,
   Menu,
   MessageSquare,
   Plus,
@@ -40,6 +41,7 @@ import type { DomeniuActivitate } from "@/lib/campaign-templates";
 import { DASHBOARD_DICT, type DashboardDict } from "@/lib/i18n/dictionaries/dashboard";
 import type { Locale } from "@/lib/i18n/config";
 
+import { LogoutForm } from "../logout-form";
 import { AddDonorDialog } from "./components/add-donor-dialog";
 import { DomeniuProvider } from "./lib/domeniu-context";
 import { LocaleProvider } from "./lib/locale-context";
@@ -136,6 +138,7 @@ export function CrmShell({
   orgBrandColor,
   orgDomeniuActivitate,
   userName,
+  role,
   locale,
   children,
 }: {
@@ -145,6 +148,7 @@ export function CrmShell({
   orgBrandColor: string | null;
   orgDomeniuActivitate: DomeniuActivitate | null;
   userName: string;
+  role: string;
   locale: Locale;
   children: ReactNode;
 }) {
@@ -280,7 +284,7 @@ export function CrmShell({
           >
             <HelpCircle className="h-4 w-4" />
           </button>
-          <Avatar name={userName} size="sm" />
+          <AvatarMenu userName={userName} orgSlug={orgSlug} role={role} />
         </header>
 
         <main className="ci-scrollbar relative flex-1 overflow-y-auto px-6 py-6">
@@ -481,6 +485,55 @@ function AddDialog({
         }}
       />
     </>
+  );
+}
+
+// Antetul CRM (spre deosebire de bara de sus a platformei, din layout.tsx)
+// nu avea nicio cale spre Deconectare — omul trebuia să știe să caute mai sus,
+// într-un link mic de text. Avatarul devine acum un meniu, ca-n orice SaaS.
+function AvatarMenu({ userName, orgSlug, role }: { userName: string; orgSlug: string; role: string }) {
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    function onDocClick(e: MouseEvent) {
+      if (!(e.target as HTMLElement).closest("[data-avatar-menu]")) setOpen(false);
+    }
+    document.addEventListener("click", onDocClick);
+    return () => document.removeEventListener("click", onDocClick);
+  }, [open]);
+
+  return (
+    <div className="relative" data-avatar-menu>
+      <button aria-label="Cont" onClick={() => setOpen((v) => !v)} className="rounded-full">
+        <Avatar name={userName} size="sm" />
+      </button>
+      {open && (
+        <div className="absolute top-full right-0 z-50 mt-1.5 w-56 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-1.5 shadow-[var(--ci-shadow-md)]">
+          <p className="truncate px-2.5 py-1.5 text-[12.5px] font-semibold text-[var(--ci-text)]">{userName}</p>
+          {(role === "owner" || role === "admin") && (
+            <Link
+              href={`/${orgSlug}/echipa`}
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 rounded-[var(--ci-radius-btn)] px-2.5 py-1.5 text-[13px] text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]"
+            >
+              <Users className="h-3.5 w-3.5 text-[var(--ci-text-muted)]" /> Echipă
+            </Link>
+          )}
+          <Link
+            href={`/${orgSlug}/setari`}
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2 rounded-[var(--ci-radius-btn)] px-2.5 py-1.5 text-[13px] text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]"
+          >
+            <Settings className="h-3.5 w-3.5 text-[var(--ci-text-muted)]" /> Setări
+          </Link>
+          <div className="my-1 border-t border-[var(--ci-border)]" />
+          <LogoutForm className="flex w-full items-center gap-2 rounded-[var(--ci-radius-btn)] px-2.5 py-1.5 text-left text-[13px] font-medium text-[var(--ci-red)] hover:bg-[var(--ci-surface-2)]">
+            <LogOut className="h-3.5 w-3.5" /> Deconectare
+          </LogoutForm>
+        </div>
+      )}
+    </div>
   );
 }
 

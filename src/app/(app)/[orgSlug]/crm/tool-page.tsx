@@ -21,6 +21,7 @@ export async function CrmToolPage({ orgSlug, access, children }: { orgSlug: stri
       orgBrandColor={access.orgBrandColor}
       orgDomeniuActivitate={access.orgDomeniuActivitate}
       userName={access.userName ?? access.userEmail}
+      role={access.role}
       locale={locale}
     >
       <div className="absolute inset-0">{children}</div>
