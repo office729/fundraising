@@ -1,8 +1,12 @@
-// Contract de sponsorizare — două formate (D177 și 20%), portat 1:1 din CRM PJ
-// (src/modules/crm/crm-pj/crm-pj.base.html, buildContract) ca să producă exact același document.
+// Contract de sponsorizare — trei formate (D177, 20% și angajament recurent
+// lunar). D177/mec20 sunt portate 1:1 din CRM PJ (src/modules/crm/crm-pj/
+// crm-pj.base.html, buildContract) ca să producă exact același document;
+// „recurent" e nou — pentru firme marcate „Recurent" (companies.recurent),
+// suma introdusă e lunară, nu unică (vezi lib/scor-companie.ts, care
+// tratează deja recurent=true drept relație caldă).
 // Fără semnătură electronică: se descarcă Word sau se tipărește PDF, iar semnarea se face în afara platformei.
 
-export type ContractTip = "d177" | "mec20";
+export type ContractTip = "d177" | "mec20" | "recurent";
 
 export type ContractVals = {
   nume: string;
@@ -48,8 +52,10 @@ export function buildContract(v: ContractVals, tip: ContractTip, config: OngConf
  const gsuma = (x: unknown) =>{const n=(""+(x==null?"":x)).replace(/[^\d]/g,"");return n?Number(n).toLocaleString("ro-RO"):"____";};
  const sediu=(v.judet&&(""+v.judet).trim())?(g(v.sediu)+", jud. "+g(v.judet)):g(v.sediu);
  const dt=(v.data&&/^\d{4}-\d{2}-\d{2}$/.test(v.data))?v.data.split("-").reverse().join("."):g(v.data);
- const foot=`<p style="font-size:9pt;color:#666;margin-top:22px">Format: ${tip==="d177"?"D177 — redirecţionare impozit pe profit":"20% — sponsorizare directă"}${(v.caz&&v.caz.trim())?" · Proiect asociat: "+g(v.caz):""}${(v.resp&&v.resp.trim())?" · Responsabil: "+g(v.resp):""}</p>`;
- const H=`<div style="text-align:center;margin-bottom:18px"><div style="font-size:16pt;font-weight:bold;letter-spacing:1px">CONTRACT DE SPONSORIZARE</div>${tip==="d177"?`<div style="font-size:11pt;margin-top:4px">Nr. ${g(v.nr)} / ${dt}</div>`:``}</div>`;
+ const FORMAT_LABEL = tip==="d177"?"D177 — redirecţionare impozit pe profit":tip==="mec20"?"20% — sponsorizare directă":"Angajament de sponsorizare recurentă lunară";
+ const foot=`<p style="font-size:9pt;color:#666;margin-top:22px">Format: ${FORMAT_LABEL}${(v.caz&&v.caz.trim())?" · Proiect asociat: "+g(v.caz):""}${(v.resp&&v.resp.trim())?" · Responsabil: "+g(v.resp):""}</p>`;
+ const TITLU = tip==="recurent"?"ANGAJAMENT DE SPONSORIZARE RECURENTĂ":"CONTRACT DE SPONSORIZARE";
+ const H=`<div style="text-align:center;margin-bottom:18px"><div style="font-size:16pt;font-weight:bold;letter-spacing:1px">${TITLU}</div>${tip==="d177"?`<div style="font-size:11pt;margin-top:4px">Nr. ${g(v.nr)} / ${dt}</div>`:tip==="recurent"?`<div style="font-size:11pt;margin-top:4px">Începând cu ${dt}</div>`:``}</div>`;
  const semn=`<table style="width:100%;margin-top:34px"><tr><td style="text-align:center;width:50%;vertical-align:top">SPONSOR<br><br><br>${g(v.nume)}<br>${g(v.rep)}<br>${g(v.fct)}</td><td style="text-align:center;width:50%;vertical-align:top">BENEFICIAR<br><br><br>${g(config.ongNume)}<br>${g(config.ongReprezentant)}<br>${g(config.ongFunctie)}</td></tr></table>`;
  let b: string;
  if(tip==="d177"){
@@ -78,6 +84,25 @@ export function buildContract(v: ContractVals, tip: ContractTip, config: OngConf
 <p><b>7.1.</b> Orice neînţelegeri vor fi soluţionate prin negocieri directe; dacă nu se ajunge la o înţelegere amiabilă, litigiile vor fi soluţionate de către instanţele competente.</p>
 <p><b>VIII. CLAUZE FINALE</b></p>
 <p><b>8.1.</b> Orice modificare se poate face doar printr-un act adiţional semnat de ambele părţi. Contractul reflectă în totalitate acordul părţilor.</p>${semn}`;
+ } else if(tip==="recurent"){
+  b=`<p><b>I. PĂRŢILE</b></p>
+<p><b>1.1.</b> ${g(v.nume)}, cu sediul social în ${sediu}, cu contul bancar ${g(v.iban)}, deschis la ${g(v.banca)}, înregistrată la Oficiul Registrului Comerţului sub nr. ${g(v.reg)}, cod unic de înregistrare ${g(v.cui)}, reprezentată legal de ${g(v.rep)}, având funcţia de ${g(v.fct)}, în calitate de <b>SPONSOR</b>,</p>
+<p>şi</p>
+<p><b>1.2.</b> ${og("ongNume")}, cu sediul social în ${og("ongSediu")}, cod de identificare fiscală ${og("ongCif")}, cu contul în lei ${og("ongIban")}, deschis la ${og("ongBanca")}, reprezentată legal de ${og("ongReprezentant")} — ${og("ongFunctie")}, în calitate de <b>BENEFICIAR</b>, au convenit prezentul angajament de sponsorizare recurentă, în conformitate cu Legea nr. 32/1994 privind sponsorizarea şi Legea nr. 227/2015 (Codul Fiscal).</p>
+<p><b>II. OBIECTUL ANGAJAMENTULUI</b></p>
+<p><b>2.1.</b> Sponsorul se angajează să susţină lunar activitatea ${og("ongNume")} cu suma de <b>${gsuma(v.suma)} RON/lună</b>, începând cu data de ${dt}.</p>
+<p><b>2.2.</b> Plata se efectuează lunar, în contul ${og("ongIban")}, deschis la ${og("ongBanca")}, până cel târziu în ultima zi lucrătoare a fiecărei luni calendaristice.</p>
+<p><b>III. DURATA ŞI ÎNCETAREA</b></p>
+<p><b>3.1.</b> Prezentul angajament este pe durată nedeterminată şi se reînnoieşte automat în fiecare lună, fără a fi necesară o nouă semnare.</p>
+<p><b>3.2.</b> Oricare dintre părţi poate înceta angajamentul în orice moment, printr-o notificare scrisă (inclusiv email) transmisă celeilalte părţi cu cel puţin 30 de zile înainte de data încetării. Plăţile deja efectuate rămân dobândite de Beneficiar.</p>
+<p><b>IV. OBLIGAŢIILE PĂRŢILOR</b></p>
+<p><b>4.1.</b> ${og("ongNume")} va folosi sumele primite exclusiv pentru activitatea sa umanitară şi va prezenta Sponsorului, la cerere, un raport privind modul de utilizare a fondurilor.</p>
+<p><b>4.2.</b> Beneficiarul poate menţiona public sponsorizarea recurentă a Sponsorului${config.ongSite?" pe "+og("ongSite"):""}, cu acordul prealabil al acestuia asupra materialelor folosite.</p>
+<p><b>4.3.</b> Sponsorul poate suspenda temporar plăţile, cu o notificare prealabilă de 15 zile, fără ca angajamentul să înceteze — reluarea se face fără o nouă semnare.</p>
+<p><b>V. PROTECŢIA DATELOR</b></p>
+<p><b>5.1.</b> Părţile respectă Regulamentul GDPR. Datele de contact ale reprezentanţilor sunt folosite exclusiv pentru derularea prezentului angajament şi şterse la încetarea acestuia, la solicitare scrisă (${og("ongEmail")}).</p>
+<p><b>VI. DISPOZIŢII FINALE</b></p>
+<p><b>6.1.</b> Orice modificare se face în scris, prin acordul ambelor părţi. Litigiile se soluţionează pe cale amiabilă, iar în lipsa unui acord, de către instanţele competente.</p>${semn}`;
  } else {
   b=`<p><b>I. PĂRŢILE CONTRACTANTE</b></p>
 <p><b>1.1.</b> ${g(v.nume)}, cu sediul social în ${sediu}, cu contul bancar ${g(v.iban)}, deschis la ${g(v.banca)}, înregistrată la Oficiul Registrului Comerţului sub nr. ${g(v.reg)}, cod unic de înregistrare ${g(v.cui)}, reprezentată legal la data semnării prezentului contract de ${g(v.rep)}, având funcţia de ${g(v.fct)}, în calitate de <b>SPONSOR</b>,</p>

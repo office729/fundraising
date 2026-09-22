@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { and, asc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 
 import { type OrgContext, withOrgSession } from "@/lib/auth/guard";
+import { celMaiRecentBilant, verificaStareFiscala } from "@/lib/anaf";
 import { getLimiteleEfective, subCota } from "@/lib/billing/quota";
 import { companies, companyNotite, companySponsorizari, companyStageLog, contacts } from "@/lib/db/schema";
 
@@ -254,6 +255,53 @@ export const adaugaFirma = withOrgSession(async (ctx, _prev: AdaugaFirmaState, f
     updatedBy: ctx.userId,
   });
   return { error: null, id };
+});
+
+// Scor de capacitate REAL: preia din ANAF (stare fiscală + ultimul bilanț
+// depus) și scrie direct în ca/profit/nrAngajati/anBilant — aceleași coloane
+// pe care lib/scor-companie.ts le folosește deja la „Mărime & profitabilitate",
+// deci scorul de pe fișă se actualizează singur, fără nicio schimbare acolo.
+// Nu suprascrie un CUI lipsă — echipa trebuie să-l completeze întâi (tab Editare).
+export type VerificaAnafState = ActionState & {
+  denumire?: string | null;
+  activ?: boolean;
+  anBilant?: number | null;
+};
+export const verificaAnaf = withOrgSession(async (ctx, companyId: string): Promise<VerificaAnafState> => {
+  const [firma] = await ctx.db.select({ cui: companies.cui }).from(companies).where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId))).limit(1);
+  if (!firma) return { error: "Firma nu a fost găsită." };
+  if (!firma.cui || !firma.cui.trim()) return { error: "Completează întâi CUI-ul firmei (tab Editare) — ANAF caută firmele după CUI." };
+
+  let stare: Awaited<ReturnType<typeof verificaStareFiscala>>;
+  try {
+    stare = await verificaStareFiscala(firma.cui);
+  } catch {
+    return { error: "ANAF nu a răspuns — încearcă din nou peste puțin timp." };
+  }
+  if (!stare) return { error: `Niciun rezultat ANAF pentru CUI ${firma.cui} — verifică dacă e corect.` };
+
+  const bilant = await celMaiRecentBilant(firma.cui).catch(() => null);
+
+  await ctx.db
+    .update(companies)
+    .set({
+      anafActiv: stare.activ,
+      anafVerificatLa: new Date(),
+      ...(bilant
+        ? {
+            ca: bilant.cifraAfaceri ?? undefined,
+            profit: bilant.profitNet ?? undefined,
+            profitTip: bilant.profitNet != null ? (bilant.profitNet >= 0 ? "profit" : "pierdere") : undefined,
+            nrAngajati: bilant.numarSalariati ?? undefined,
+            anBilant: bilant.an,
+            sursaFin: "ANAF",
+          }
+        : {}),
+      updatedBy: ctx.userId,
+    })
+    .where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId)));
+
+  return { error: null, denumire: stare.denumire, activ: stare.activ, anBilant: bilant?.an ?? null };
 });
 
 export type EditeazaFirmaState = ActionState;

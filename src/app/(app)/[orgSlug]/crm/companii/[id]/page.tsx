@@ -109,6 +109,7 @@ export default async function CompanieProfilPage({ params }: { params: Promise<{
           administrator: c.administrator, ca: c.ca, profit: c.profit, impozit: c.impozit, regimFiscal: c.regimFiscal,
           anBilant: c.anBilant, nrAngajati: c.nrAngajati, sumaDisponibila: c.sumaDisponibila, sumaPropusa: c.sumaPropusa,
           sumaSponsorizata: c.sumaSponsorizata, numarContract: c.numarContract, dataSemnare: c.dataSemnare, nota: c.nota,
+          anafActiv: c.anafActiv, anafVerificatLa: c.anafVerificatLa ? c.anafVerificatLa.toISOString() : null,
         }}
         sponsorizari={sponsorizari}
         notite={notite}
@@ -122,6 +123,7 @@ export default async function CompanieProfilPage({ params }: { params: Promise<{
                   emailSemnatar: (contacte.find((ct) => ct.cheie && ct.email) ?? contacte.find((ct) => ct.email))?.email ?? null,
                   responsabil: responsabili.find((r) => r.id === c.ownerId)?.name ?? null,
                   mec20: c.mec20,
+                  recurent: c.recurent,
                 }}
               />
         }

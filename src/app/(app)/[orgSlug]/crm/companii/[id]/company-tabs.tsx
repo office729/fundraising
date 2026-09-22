@@ -11,6 +11,7 @@ import { ContractPanel } from "./contract-panel";
 import { EditarePanel } from "./editare-panel";
 import { NotitePanel } from "./notite-panel";
 import { SponsorizariPanel } from "./sponsorizari-panel";
+import { VerificaAnafButton } from "./verifica-anaf-button";
 
 // Randare-prop (children ca funcție) pe <Tabs> — funcțiile nu pot traversa
 // granița Server → Client Component în React Server Components, de-aici
@@ -24,6 +25,7 @@ type Firma = {
   administrator: string | null; ca: number | null; profit: number | null; impozit: number | null; regimFiscal: string | null;
   anBilant: number | null; nrAngajati: number | null; sumaDisponibila: number | null; sumaPropusa: number | null;
   sumaSponsorizata: number | null; numarContract: string | null; dataSemnare: string | null; nota: string | null;
+  anafActiv: boolean | null; anafVerificatLa: string | null;
 };
 
 export function CompanyTabs({
@@ -79,7 +81,9 @@ export function CompanyTabs({
           );
         if (active === "financiar")
           return (
-            <Card>
+            <>
+              <VerificaAnafButton companyId={c.id} cui={c.cui} anafActiv={c.anafActiv} anafVerificatLa={c.anafVerificatLa} />
+              <Card>
               <InfoRow label={dict.info.ca} value={c.ca != null ? `${c.ca.toLocaleString("ro-RO")} RON` : null} />
               <InfoRow label={dict.info.profit} value={c.profit != null ? `${c.profit.toLocaleString("ro-RO")} RON` : null} />
               <InfoRow label={dict.info.impozit} value={c.impozit != null ? `${c.impozit.toLocaleString("ro-RO")} RON` : null} />
@@ -89,7 +93,8 @@ export function CompanyTabs({
               <InfoRow label={dict.info.sumaDisponibila} value={c.sumaDisponibila != null ? `${c.sumaDisponibila.toLocaleString("ro-RO")} RON` : null} />
               <InfoRow label={dict.info.sumaPropusa} value={c.sumaPropusa != null ? `${c.sumaPropusa.toLocaleString("ro-RO")} RON` : null} />
               <InfoRow label={dict.info.sumaSponsorizataTotal} value={`${(c.sumaSponsorizata ?? 0).toLocaleString("ro-RO")} RON`} />
-            </Card>
+              </Card>
+            </>
           );
         if (active === "sponsorizari") return <SponsorizariPanel companyId={c.id} sponsorizari={sponsorizari} />;
         if (active === "contract")

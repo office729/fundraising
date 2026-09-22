@@ -101,6 +101,12 @@ export const companies = pgTable(
     // distinct de updatedAt (editare de date), arată doar când a intrat
     // cineva ultima oară pe pagina ei.
     lastViewedAt: timestamp("last_viewed_at", { withTimezone: true }),
+    // Verificare ANAF (buton „Verifică ANAF" din tabul Financiar) — populează
+    // ca/profit/nrAngajati/anBilant de mai sus din date fiscale REALE
+    // (lib/anaf.ts), nu introduse manual. `anafActiv` = firma nu e inactivă
+    // fiscal/radiată la ANAF; null = niciodată verificată.
+    anafActiv: boolean("anaf_activ"),
+    anafVerificatLa: timestamp("anaf_verificat_la", { withTimezone: true }),
   },
   (t) => [
     index("companies_org_idx").on(t.orgId),

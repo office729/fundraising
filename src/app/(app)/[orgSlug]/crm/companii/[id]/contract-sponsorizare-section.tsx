@@ -27,11 +27,12 @@ export type FirmaContract = {
   emailSemnatar: string | null;
   responsabil: string | null;
   mec20: boolean;
+  recurent: boolean;
 };
 
 export function ContractSponsorizareSection({ firma }: { firma: FirmaContract }) {
   const { orgSlug } = useParams<{ orgSlug: string }>();
-  const [tip, setTip] = useState<ContractTip>(firma.mec20 ? "mec20" : "d177");
+  const [tip, setTip] = useState<ContractTip>(firma.recurent ? "recurent" : firma.mec20 ? "mec20" : "d177");
   const [v, setV] = useState<ContractVals>({
     nume: firma.nume,
     sediu: [firma.localitate, firma.adresa].filter((x) => x && x.trim()).join(", "),
@@ -64,7 +65,7 @@ export function ContractSponsorizareSection({ firma }: { firma: FirmaContract })
 
   const html = useMemo(() => buildContract(v, tip, ong), [v, tip, ong]);
   const setCamp = (k: keyof ContractVals) => (e: React.ChangeEvent<HTMLInputElement>) => setV((p) => ({ ...p, [k]: e.target.value }));
-  const numeFisier = `Contract_${tip === "d177" ? "D177" : "20la-suta"}_${(v.nume || "firma").replace(/[^a-zA-Z0-9]+/g, "_").slice(0, 40)}`;
+  const numeFisier = `${tip === "recurent" ? "Angajament_recurent" : "Contract"}_${tip === "d177" ? "D177" : tip === "mec20" ? "20la-suta" : "lunar"}_${(v.nume || "firma").replace(/[^a-zA-Z0-9]+/g, "_").slice(0, 40)}`;
 
   function descarcaWord() {
     const blob = new Blob(["\uFEFF" + html], { type: "application/msword" });
@@ -87,8 +88,9 @@ export function ContractSponsorizareSection({ firma }: { firma: FirmaContract })
     w.document.close();
   }
   function trimiteEmail() {
-    const subiect = `Contract de sponsorizare — ${ong.ongNume || ""}`.trim();
-    const corp = `Bună ziua,\n\nVă trimit atașat contractul de sponsorizare (${tip === "d177" ? "D177" : "20%"}) pentru ${v.nume}.\n\nCu mulțumiri,\n${v.resp || ""}`;
+    const formatText = tip === "d177" ? "D177" : tip === "mec20" ? "20%" : "angajament de sponsorizare recurentă lunară";
+    const subiect = `${tip === "recurent" ? "Angajament de sponsorizare recurentă" : "Contract de sponsorizare"} — ${ong.ongNume || ""}`.trim();
+    const corp = `Bună ziua,\n\nVă trimit atașat ${tip === "recurent" ? "angajamentul de sponsorizare recurentă" : "contractul de sponsorizare"} (${formatText}) pentru ${v.nume}.\n\nCu mulțumiri,\n${v.resp || ""}`;
     window.location.href = `mailto:${email}?subject=${encodeURIComponent(subiect)}&body=${encodeURIComponent(corp)}`;
   }
   async function salveazaOng() {
@@ -105,12 +107,12 @@ export function ContractSponsorizareSection({ firma }: { firma: FirmaContract })
     <Card>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-[15px] font-bold text-[var(--ci-text)]">Contract de sponsorizare</h2>
+          <h2 className="text-[15px] font-bold text-[var(--ci-text)]">{tip === "recurent" ? "Angajament de sponsorizare recurentă" : "Contract de sponsorizare"}</h2>
           <p className="mt-0.5 text-[12px] text-[var(--ci-text-muted)]">Precompletat cu datele firmei — verifică, completează ce lipsește și descarcă.</p>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-[12px] text-[var(--ci-text-muted)]">Format:</span>
-          {([["d177", "D177 (redirecționare impozit)"], ["mec20", "20% (sponsorizare directă)"]] as const).map(([k, label]) => (
+          {([["d177", "D177 (redirecționare impozit)"], ["mec20", "20% (sponsorizare directă)"], ["recurent", "Recurent lunar"]] as const).map(([k, label]) => (
             <button
               key={k}
               type="button"
@@ -130,12 +132,14 @@ export function ContractSponsorizareSection({ firma }: { firma: FirmaContract })
           ["nume", "Denumire sponsor"], ["cui", "CUI"], ["reg", "Nr. Reg. Com."],
           ["sediu", "Sediu (adresă)"], ["judet", "Județ"], ["iban", "IBAN"],
           ["banca", "Banca"], ["rep", "Reprezentant legal"], ["fct", "Funcție"],
-          ["suma", "Sumă (RON)"], ["nr", "Nr. contract"],
+          ["suma", tip === "recurent" ? "Sumă lunară (RON)" : "Sumă (RON)"], ["nr", "Nr. contract"],
         ] as [keyof ContractVals, string][]).map(([k, label]) => (
-          <div key={k}>
-            <Label>{label}</Label>
-            <Input value={v[k]} onChange={setCamp(k)} />
-          </div>
+          tip === "recurent" && k === "nr" ? null : (
+            <div key={k}>
+              <Label>{label}</Label>
+              <Input value={v[k]} onChange={setCamp(k)} />
+            </div>
+          )
         ))}
         <div>
           <Label>Data</Label>
