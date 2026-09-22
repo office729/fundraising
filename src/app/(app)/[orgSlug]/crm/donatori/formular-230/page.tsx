@@ -9,6 +9,7 @@ import { SLUG_PRINCIPAL } from "@/lib/formular230-constants";
 import { codJudetDinTextLiber, gasesteJudet } from "@/lib/judete";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { FORMULAR230_DICT } from "@/lib/i18n/dictionaries/formular230";
+import { titluAbsolut } from "@/lib/page-titles";
 import { intervalVarsta, varstaDinCnp, type IntervalVarsta } from "@/lib/varsta-cnp";
 
 import { Badge } from "../../components/ui/badge";
@@ -128,6 +129,10 @@ const getDate = withOrgSession(async (ctx, filtru: { an: string; judet: string; 
     tainuit: toate.length >= LIMITA_RANDURI,
   };
 });
+
+export async function generateMetadata() {
+  return titluAbsolut("crmFormular230");
+}
 
 export default async function Formular230StatsPage({
   params,

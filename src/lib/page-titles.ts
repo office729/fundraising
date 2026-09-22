@@ -49,6 +49,10 @@ const TITLURI = {
   crmConsultanta: { ro: "Consultanță cu Vlad — CRM", en: "Consultation with Vlad — CRM" },
   crmIntegrari: { ro: "Integrări — CRM", en: "Integrations — CRM" },
   crmPresaGrupuri: { ro: "Presă & grupuri locale — CRM", en: "Press & local groups — CRM" },
+  crmFormular230: { ro: "Formularul 230 — CRM", en: "Form 230 — CRM" },
+  crmProspectare: { ro: "CRM prospectare companii", en: "Company prospecting CRM" },
+  crmVoluntari: { ro: "CRM Voluntari", en: "Volunteers CRM" },
+  crmProgramLucru: { ro: "Program de lucru — CRM", en: "Work schedule — CRM" },
 } as const;
 
 export type PaginaCuTitlu = keyof typeof TITLURI;
