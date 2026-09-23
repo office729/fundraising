@@ -2498,7 +2498,7 @@ function adresareHint(){
   else if(mod === 'fullfallback'){ el.textContent = 'Cine are numele salvat vede „Dragă Andreea Popescu," — cine nu are, vede „Dragă ' + fb2 + ',". Sigur pentru liste mixte.'; }
   else { el.textContent = 'Cine are prenume vede „Dragă Andreea," — cine nu are, vede „Dragă ' + fb2 + ',". Sigur pentru liste mixte.'; }
 }
-function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 function letterHtml(txt){
   return txt.trim().split(/\n\s*\n/).map(function(p){
     var t = esc(p.trim())

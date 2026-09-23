@@ -2152,7 +2152,7 @@ var VARIANT = 'pj';
 var tpl = document.getElementById('tpl').textContent;
 document.getElementById('SCRISOARE').value = document.getElementById('letterDefault').textContent.trim();
 
-function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 var PSTYLE = 'margin:0 0 16px 0; font-size:17px; line-height:28px; color:#55504A;';
 function letterHtml(txt){
   return txt.trim().split(/\n\s*\n/).map(function(p){
