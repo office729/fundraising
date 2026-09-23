@@ -238,6 +238,87 @@ export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, s
     }
   }
 
+  // Donație unică prin fluxul express (Apple Pay/Google Pay/PayPal, vezi
+  // express-checkout-actions.ts) — spre deosebire de checkout.session.completed,
+  // aici rândul a fost inserat cu stripeSessionId = id-ul PaymentIntent-ului
+  // direct (nu al unei sesiuni Checkout). Corelarea prin stripeSessionId
+  // discriminează automat de PaymentIntent-urile create INTERN de o sesiune
+  // Checkout (fluxul vechi) — acelea au stripeSessionId = "cs_...", niciodată
+  // "pi_...", deci un payment_intent.succeeded provenit din fluxul vechi pur
+  // și simplu nu găsește niciun rând aici și iese fără efect.
+  if (event.type === "payment_intent.succeeded") {
+    const paymentIntent = event.data.object as Stripe.PaymentIntent;
+    let emailParams: Parameters<typeof trimiteEmailMultumireDacaSePoate>[0] | null = null;
+    try {
+      await db.transaction(async (tx) => {
+        await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
+
+        const donatie = await tx
+          .select()
+          .from(fundraisingDonations)
+          .where(and(eq(fundraisingDonations.stripeSessionId, paymentIntent.id), eq(fundraisingDonations.orgId, orgId)))
+          .limit(1);
+        if (!donatie[0]) return; // nu e un rând din fluxul express (probabil un PaymentIntent al fluxului Checkout)
+
+        // Același compare-and-swap ca la checkout.session.completed.
+        const actualizat = await tx
+          .update(fundraisingDonations)
+          .set({ status: "reusita", stripePaymentIntentId: paymentIntent.id })
+          .where(
+            and(
+              eq(fundraisingDonations.id, donatie[0].id),
+              ne(fundraisingDonations.status, "reusita"),
+              ne(fundraisingDonations.status, "rambursata"),
+            ),
+          )
+          .returning({ id: fundraisingDonations.id });
+        if (!actualizat[0]) return; // deja procesată sau o cerere concurentă/retrimisă
+
+        const info = await crediteazaPaginaSiDonator(tx, {
+          pageId: donatie[0].pageId,
+          orgId: donatie[0].orgId,
+          suma: donatie[0].suma,
+          numeDonator: donatie[0].numeDonator,
+          emailDonator: donatie[0].emailDonator,
+          telefonDonator: donatie[0].telefonDonator,
+          consimtamantWhatsapp: donatie[0].consimtamantWhatsapp,
+        });
+        emailParams = {
+          emailDonator: donatie[0].emailDonator,
+          numeDonator: donatie[0].numeDonator,
+          suma: donatie[0].suma,
+          recurenta: false,
+          info,
+        };
+      });
+    } catch (e) {
+      console.error("Eroare la procesarea payment_intent.succeeded:", e);
+      return false;
+    }
+    if (emailParams) await trimiteEmailMultumireDacaSePoate(emailParams);
+  }
+
+  if (event.type === "payment_intent.payment_failed") {
+    const paymentIntent = event.data.object as Stripe.PaymentIntent;
+    try {
+      await db.transaction(async (tx) => {
+        await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
+        await tx
+          .update(fundraisingDonations)
+          .set({ status: "esuata" })
+          .where(
+            and(
+              eq(fundraisingDonations.stripeSessionId, paymentIntent.id),
+              eq(fundraisingDonations.orgId, orgId),
+              eq(fundraisingDonations.status, "in_asteptare"),
+            ),
+          );
+      });
+    } catch (e) {
+      console.error("Eroare la procesarea payment_intent.payment_failed:", e);
+    }
+  }
+
   // Rambursare (parțială sau integrală) sau contestație de plată — bani care
   // nu (mai) reprezintă venit efectiv pentru donație/pagină. Corelăm
   // evenimentul cu donația prin stripePaymentIntentId (charge.refunded/

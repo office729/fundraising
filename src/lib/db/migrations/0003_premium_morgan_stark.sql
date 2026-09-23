@@ -1,0 +1,2 @@
+ALTER TABLE "organizations" ADD COLUMN "donation_stripe_publishable_key" text;--> statement-breakpoint
+ALTER TABLE "organizations" ADD COLUMN "donation_stripe_domain_verified_at" timestamp with time zone;

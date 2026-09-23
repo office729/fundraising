@@ -14,7 +14,6 @@ import { getLocale } from "@/lib/i18n/get-locale";
 
 import { CampaignFooter } from "../campaign-footer";
 import { DoneazaModal } from "./doneaza-modal";
-import { PaymentBadges } from "./payment-badges";
 import { ProgressRing } from "./progress-ring";
 import { RecentDonationsList } from "./recent-donations-list";
 import { ShareLinksClient } from "./share-links";
@@ -36,7 +35,14 @@ const getPaginaPublica = cache(async (orgSlug: string, pageSlug: string) => {
   return db.transaction(async (tx) => {
     await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
     const org = await tx
-      .select({ id: organizations.id, name: organizations.name, logoUrl: organizations.logoUrl, slogan: organizations.slogan, cif: organizations.cif })
+      .select({
+        id: organizations.id,
+        name: organizations.name,
+        logoUrl: organizations.logoUrl,
+        slogan: organizations.slogan,
+        cif: organizations.cif,
+        donationStripePublishableKey: organizations.donationStripePublishableKey,
+      })
       .from(organizations)
       .where(eq(organizations.slug, orgSlug))
       .limit(1);
@@ -270,13 +276,16 @@ export default async function PaginaStrangereFonduriPage({
                 <p className="mt-1 text-[12.5px] leading-relaxed text-muted-2">{t.campaignPage.sustineDescriere}</p>
                 <div className="mt-4">
                   {pagina.status === "activa" ? (
-                    <DoneazaModal orgSlug={orgSlug} pageSlug={pageSlug} titlu={pagina.titlu} locale={locale} />
+                    <DoneazaModal
+                      orgSlug={orgSlug}
+                      pageSlug={pageSlug}
+                      titlu={pagina.titlu}
+                      locale={locale}
+                      publishableKey={org.donationStripePublishableKey}
+                    />
                   ) : (
                     <p className="text-[13px] leading-relaxed text-muted-2">{t.campaignPage.campanieInchisa}</p>
                   )}
-                </div>
-                <div className="mt-4">
-                  <PaymentBadges />
                 </div>
                 <RecentDonationsList donatii={recente} locale={locale} />
               </div>

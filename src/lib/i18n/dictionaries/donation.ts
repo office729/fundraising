@@ -56,6 +56,9 @@ export const DONATION_DICT = {
       donezaLunaSufix: "lei/lună",
       donezaSufix: "lei",
       notaPlataSecurizata: "Plata se face securizat, pe pagina Stripe — metodele afișate acolo depind de dispozitiv.",
+      sauPlatesteRapid: "sau plătește rapid cu",
+      plataExpressEsuata: "Plata a eșuat — încearcă din nou sau folosește formularul de mai jos.",
+      sauCompleteazaFormular: "sau completează formularul",
     },
     thankYou: {
       titlu: "Mulțumim pentru donație!",
@@ -137,6 +140,9 @@ export const DONATION_DICT = {
       donezaLunaSufix: "lei/month",
       donezaSufix: "lei",
       notaPlataSecurizata: "Payment is processed securely on Stripe's page — the methods shown there depend on your device.",
+      sauPlatesteRapid: "or pay quickly with",
+      plataExpressEsuata: "Payment failed — try again or use the form below.",
+      sauCompleteazaFormular: "or fill in the form",
     },
     thankYou: {
       titlu: "Thank you for your donation!",
@@ -184,6 +190,7 @@ export const DONATE_ACTION_ERRORS = {
     stripeIndisponibil: "Plata nu poate fi pornită momentan — te rugăm să încerci mai târziu sau să contactezi organizația.",
     stripeNeconectat: "Această organizație nu și-a activat încă donațiile online — te rugăm să o contactezi direct.",
     plataEsuata: "Nu am putut porni plata — încearcă din nou.",
+    recurentaNesuportataExpress: "Plata rapidă (Apple Pay/Google Pay) e disponibilă doar pentru donații unice — pentru donații lunare, folosește formularul complet.",
   },
   en: {
     sumaMinima: "The minimum donation amount is 5 lei.",
@@ -195,5 +202,6 @@ export const DONATE_ACTION_ERRORS = {
     stripeIndisponibil: "Payment can't be started right now — please try again later or contact the organization.",
     stripeNeconectat: "This organization hasn't activated online donations yet — please contact them directly.",
     plataEsuata: "We couldn't start the payment — please try again.",
+    recurentaNesuportataExpress: "Express payment (Apple Pay/Google Pay) is only available for one-time donations — for monthly donations, use the full form.",
   },
 } as const satisfies Record<Locale, unknown>;

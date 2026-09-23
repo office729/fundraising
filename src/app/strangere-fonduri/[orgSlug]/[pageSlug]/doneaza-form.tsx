@@ -1,25 +1,38 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 
 import type { Locale } from "@/lib/i18n/config";
 import { DONATION_DICT } from "@/lib/i18n/dictionaries/donation";
 
 import { doneazaAction, type DoneazaState } from "./actions";
+import { ExpressCheckoutPanel } from "./express-checkout";
 
 const INITIAL: DoneazaState = { error: null };
 const SUME_RAPIDE = [25, 50, 100, 250];
 
-export function DoneazaForm({ orgSlug, pageSlug, locale }: { orgSlug: string; pageSlug: string; titlu: string; locale: Locale }) {
+export function DoneazaForm({
+  orgSlug,
+  pageSlug,
+  locale,
+  publishableKey,
+}: {
+  orgSlug: string;
+  pageSlug: string;
+  titlu: string;
+  locale: Locale;
+  publishableKey: string | null;
+}) {
   const action = doneazaAction.bind(null, orgSlug, pageSlug);
   const [state, formAction, pending] = useActionState(action, INITIAL);
   const [suma, setSuma] = useState(50);
   const [recurenta, setRecurenta] = useState(false);
   const t = DONATION_DICT[locale].donateForm;
+  const formRef = useRef<HTMLFormElement>(null);
 
   return (
-    <form action={formAction} className="mt-4 flex flex-col gap-3">
+    <form ref={formRef} action={formAction} className="mt-4 flex flex-col gap-3">
       {/* Honeypot — invizibil pentru oameni. */}
       <input type="text" name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />
 
@@ -74,6 +87,17 @@ export function DoneazaForm({ orgSlug, pageSlug, locale }: { orgSlug: string; pa
           className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink"
         />
       </label>
+
+      <ExpressCheckoutPanel
+        orgSlug={orgSlug}
+        pageSlug={pageSlug}
+        publishableKey={publishableKey}
+        suma={suma}
+        recurenta={recurenta}
+        formRef={formRef}
+        locale={locale}
+      />
+
       <label className="text-sm font-medium text-ink">
         {t.numeleTau}
         <input name="numeDonator" required className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink" />

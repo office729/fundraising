@@ -14,6 +14,7 @@ const RESERVED_SLUGS = new Set([
   "cine-suntem",
   "contact",
   "cookies",
+  ".well-known",
   "f230",
   "favicon.ico",
   "forgot-password",

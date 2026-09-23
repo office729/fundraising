@@ -17,11 +17,13 @@ export function DoneazaModal({
   pageSlug,
   titlu,
   locale,
+  publishableKey,
 }: {
   orgSlug: string;
   pageSlug: string;
   titlu: string;
   locale: Locale;
+  publishableKey: string | null;
 }) {
   const [open, setOpen] = useState(false);
   const t = DONATION_DICT[locale].donateModal;
@@ -108,7 +110,7 @@ export function DoneazaModal({
                 ✕
               </button>
             </div>
-            <DoneazaForm orgSlug={orgSlug} pageSlug={pageSlug} titlu={titlu} locale={locale} />
+            <DoneazaForm orgSlug={orgSlug} pageSlug={pageSlug} titlu={titlu} locale={locale} publishableKey={publishableKey} />
           </div>
         </div>
       )}

@@ -148,6 +148,20 @@ export const SETARI_ECHIPA_DICT = {
         salveaza: "Salvează",
         deconecteaza: "Deconectează Stripe",
         footNote: "Cheile sunt criptate înainte de salvare și nu mai sunt afișate niciodată. Le poți schimba oricând.",
+        expres: {
+          title: "Plată rapidă pe pagină (Apple Pay / Google Pay / PayPal)",
+          descriere:
+            "Opțional — pe lângă formularul obișnuit, donatorii pot plăti instant, fără redirecționare, direct pe pagina campaniei.",
+          cheiePublicabilaLabel: "Cheia publicabilă Stripe",
+          cheiePublicabilaPas: "Tot din Developers → API keys, copiază Publishable key (începe cu pk_live_).",
+          cheiePublicabilaPlaceholderNou: "pk_live_…",
+          cheiePublicabilaPlaceholderPastreaza: "Lasă gol ca să păstrezi cheia salvată",
+          domeniuTitle: "Domeniu verificat pentru Apple Pay/Google Pay",
+          domeniuVerificatLa: (data: string) => `Verificat pe ${data}`,
+          domeniuNeverificat: "Neverificat — butoanele Apple Pay/Google Pay nu vor apărea pe pagină",
+          activeazaDomeniu: "Activează Apple Pay / Google Pay",
+          seActiveaza: "Se activează…",
+        },
       },
     },
     onboardingGate: {
@@ -321,6 +335,20 @@ export const SETARI_ECHIPA_DICT = {
         salveaza: "Save",
         deconecteaza: "Disconnect Stripe",
         footNote: "Keys are encrypted before saving and are never shown again. You can change them at any time.",
+        expres: {
+          title: "Instant on-page payment (Apple Pay / Google Pay / PayPal)",
+          descriere:
+            "Optional — alongside the regular form, donors can pay instantly, with no redirect, right on the campaign page.",
+          cheiePublicabilaLabel: "Stripe publishable key",
+          cheiePublicabilaPas: "Also from Developers → API keys, copy the Publishable key (starts with pk_live_).",
+          cheiePublicabilaPlaceholderNou: "pk_live_…",
+          cheiePublicabilaPlaceholderPastreaza: "Leave empty to keep the saved key",
+          domeniuTitle: "Domain verified for Apple Pay/Google Pay",
+          domeniuVerificatLa: (data: string) => `Verified on ${data}`,
+          domeniuNeverificat: "Not verified — Apple Pay/Google Pay buttons won't appear on the page",
+          activeazaDomeniu: "Activate Apple Pay / Google Pay",
+          seActiveaza: "Activating…",
+        },
       },
     },
     onboardingGate: {

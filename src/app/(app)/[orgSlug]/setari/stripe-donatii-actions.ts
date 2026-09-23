@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { withOrgAdmin } from "@/lib/auth/guard";
 import { organizations } from "@/lib/db/schema";
 import { stripePentruCheie } from "@/lib/org-stripe";
-import { criptareConfigurata, cripteaza } from "@/lib/secret-box";
+import { criptareConfigurata, cripteaza, decripteaza } from "@/lib/secret-box";
 
 export type StripeDonatiiState = { error: string | null; ok: boolean };
 
@@ -15,6 +15,8 @@ export type StripeDonatiiStatus = {
   conectatLa: string | null;
   areWebhook: boolean;
   criptareActiva: boolean;
+  publishableKey: string | null;
+  domeniuVerificatLa: string | null;
 };
 
 export const obtineStatusStripeDonatii = withOrgAdmin(async (ctx): Promise<StripeDonatiiStatus> => {
@@ -24,6 +26,8 @@ export const obtineStatusStripeDonatii = withOrgAdmin(async (ctx): Promise<Strip
       webhook: organizations.donationStripeWebhookSecretEnc,
       hint: organizations.donationStripeKeyHint,
       la: organizations.donationStripeConnectedAt,
+      publishableKey: organizations.donationStripePublishableKey,
+      domeniuLa: organizations.donationStripeDomainVerifiedAt,
     })
     .from(organizations)
     .where(eq(organizations.id, ctx.orgId))
@@ -35,13 +39,16 @@ export const obtineStatusStripeDonatii = withOrgAdmin(async (ctx): Promise<Strip
     conectatLa: r?.la ? r.la.toISOString() : null,
     areWebhook: Boolean(r?.webhook),
     criptareActiva: criptareConfigurata(),
+    publishableKey: r?.publishableKey ?? null,
+    domeniuVerificatLa: r?.domeniuLa ? r.domeniuLa.toISOString() : null,
   };
 });
 
 const RE_CHEIE = /^(sk|rk)_(live|test)_[A-Za-z0-9]{10,}$/;
+const RE_CHEIE_PUBLICA = /^pk_(live|test)_[A-Za-z0-9]{10,}$/;
 const RE_WEBHOOK = /^whsec_[A-Za-z0-9]{10,}$/;
 
-const salveaza = withOrgAdmin(async (ctx, cheie: string, webhook: string): Promise<StripeDonatiiState> => {
+const salveaza = withOrgAdmin(async (ctx, cheie: string, webhook: string, cheiePublicabila: string): Promise<StripeDonatiiState> => {
   if (!criptareConfigurata()) {
     return {
       ok: false,
@@ -63,6 +70,9 @@ const salveaza = withOrgAdmin(async (ctx, cheie: string, webhook: string): Promi
   }
   if (webhook && !RE_WEBHOOK.test(webhook)) {
     return { ok: false, error: "Secretul webhook-ului nu are formatul corect — trebuie să înceapă cu whsec_…" };
+  }
+  if (cheiePublicabila && !RE_CHEIE_PUBLICA.test(cheiePublicabila)) {
+    return { ok: false, error: "Cheia publicabilă nu are formatul corect — trebuie să înceapă cu pk_live_… (sau pk_test_…)." };
   }
 
   const set: Partial<typeof organizations.$inferInsert> = {};
@@ -91,6 +101,9 @@ const salveaza = withOrgAdmin(async (ctx, cheie: string, webhook: string): Promi
     set.donationStripeConnectedAt = new Date();
   }
   if (webhook) set.donationStripeWebhookSecretEnc = cripteaza(webhook);
+  // Cheia publicabilă e menită să ajungă în browser — nu se criptează, la fel
+  // ca orice altă cheie "publishable" Stripe (asta e rostul ei).
+  if (cheiePublicabila) set.donationStripePublishableKey = cheiePublicabila;
 
   await ctx.db.update(organizations).set(set).where(eq(organizations.id, ctx.orgId));
   return { ok: true, error: null };
@@ -103,8 +116,46 @@ export async function salveazaStripeDonatiiAction(
 ): Promise<StripeDonatiiState> {
   const cheie = String(formData.get("cheieSecreta") ?? "").trim();
   const webhook = String(formData.get("secretWebhook") ?? "").trim();
-  return salveaza(orgSlug, cheie, webhook);
+  const cheiePublicabila = String(formData.get("cheiePublicabila") ?? "").trim();
+  return salveaza(orgSlug, cheie, webhook, cheiePublicabila);
 }
+
+// Domeniul principal al platformei — pagina publică de donații e servită de
+// aici implicit; se adaugă și domeniul propriu al ONG-ului (dacă are unul),
+// ca butoanele Apple Pay/Google Pay să funcționeze și acolo.
+const DOMENIU_PLATFORMA = "alexandrit.ro";
+
+// Înregistrează domeniile platformei ca "payment method domain" verificat pe
+// CONTUL Stripe al ONG-ului (necesar pentru Apple Pay/Google Pay direct pe
+// pagină — vezi express-checkout.tsx) — un singur apel acoperă toate
+// metodele deodată (Stripe verifică automat, fără fișier de găzduit).
+export const activeazaDomeniuPlataAction = withOrgAdmin(async (ctx): Promise<StripeDonatiiState> => {
+  const rows = await ctx.db
+    .select({ secret: organizations.donationStripeSecretEnc, customDomain: organizations.customDomain })
+    .from(organizations)
+    .where(eq(organizations.id, ctx.orgId))
+    .limit(1);
+  const r = rows[0];
+  if (!r?.secret) return { ok: false, error: "Conectează întâi cheia secretă Stripe." };
+
+  const domenii = [DOMENIU_PLATFORMA, ...(r.customDomain ? [r.customDomain] : [])];
+  try {
+    const stripe = stripePentruCheie(decripteaza(r.secret));
+    const existente = await stripe.paymentMethodDomains.list({ limit: 100 });
+    const dejaInregistrate = new Set(existente.data.map((d) => d.domain_name));
+    for (const domeniu of domenii) {
+      if (!dejaInregistrate.has(domeniu)) {
+        await stripe.paymentMethodDomains.create({ domain_name: domeniu });
+      }
+    }
+  } catch (e) {
+    console.error("înregistrare payment method domain Stripe:", e);
+    return { ok: false, error: "Nu am putut înregistra domeniul la Stripe acum. Încearcă din nou în câteva momente." };
+  }
+
+  await ctx.db.update(organizations).set({ donationStripeDomainVerifiedAt: new Date() }).where(eq(organizations.id, ctx.orgId));
+  return { ok: true, error: null };
+});
 
 export const deconecteazaStripeDonatii = withOrgAdmin(async (ctx): Promise<StripeDonatiiState> => {
   await ctx.db
@@ -114,6 +165,8 @@ export const deconecteazaStripeDonatii = withOrgAdmin(async (ctx): Promise<Strip
       donationStripeWebhookSecretEnc: null,
       donationStripeKeyHint: null,
       donationStripeConnectedAt: null,
+      donationStripePublishableKey: null,
+      donationStripeDomainVerifiedAt: null,
     })
     .where(eq(organizations.id, ctx.orgId));
   return { ok: true, error: null };

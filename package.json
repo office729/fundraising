@@ -22,6 +22,8 @@
     "@hookform/resolvers": "^5.9.1",
     "@pdf-lib/fontkit": "^1.1.1",
     "@sentry/nextjs": "^10.75.0",
+    "@stripe/react-stripe-js": "^6.11.0",
+    "@stripe/stripe-js": "^9.17.0",
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.111.0",
     "@tanstack/react-table": "^8.21.3",

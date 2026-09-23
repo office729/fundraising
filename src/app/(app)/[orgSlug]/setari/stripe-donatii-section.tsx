@@ -7,6 +7,7 @@ import type { Locale } from "@/lib/i18n/config";
 import { SETARI_ECHIPA_DICT } from "@/lib/i18n/dictionaries/setari-echipa";
 
 import {
+  activeazaDomeniuPlataAction,
   deconecteazaStripeDonatii,
   salveazaStripeDonatiiAction,
   type StripeDonatiiState,
@@ -20,6 +21,8 @@ const EVENIMENTE = [
   "charge.refunded",
   "charge.dispute.created",
   "customer.subscription.deleted",
+  "payment_intent.succeeded",
+  "payment_intent.payment_failed",
 ];
 
 const input =
@@ -48,6 +51,8 @@ export function StripeDonatiiSection({
   );
   const [deconectare, startDeconectare] = useTransition();
   const [copiat, setCopiat] = useState(false);
+  const [activareDomeniu, startActivareDomeniu] = useTransition();
+  const [eroareDomeniu, setEroareDomeniu] = useState<string | null>(null);
 
   // După o salvare reușită, reîncarcăm statusul (badge „Conectat", indiciu cheie).
   useEffect(() => {
@@ -150,6 +155,22 @@ export function StripeDonatiiSection({
           />
         </label>
 
+        <div className="border-t border-line pt-4">
+          <p className="text-sm font-semibold text-ink">{dict.expres.title}</p>
+          <p className="mt-1 text-xs text-muted">{dict.expres.descriere}</p>
+          <label className="mt-3 block text-sm font-medium text-ink">
+            {dict.expres.cheiePublicabilaLabel}
+            <input
+              name="cheiePublicabila"
+              type="text"
+              autoComplete="off"
+              placeholder={status.publishableKey ? dict.expres.cheiePublicabilaPlaceholderPastreaza : dict.expres.cheiePublicabilaPlaceholderNou}
+              className={input}
+            />
+          </label>
+          <p className="mt-1 text-xs text-muted">{dict.expres.cheiePublicabilaPas}</p>
+        </div>
+
         {state.error && <p className="text-sm text-red-600">{state.error}</p>}
         {state.ok && !state.error && <p className="text-sm text-brand-green-hover">{dict.salvat}</p>}
 
@@ -179,6 +200,36 @@ export function StripeDonatiiSection({
         </div>
         <p className="text-xs text-muted">{dict.footNote}</p>
       </form>
+
+      {status.conectat && (
+        <div className="mt-5 border-t border-line pt-4">
+          <p className="text-sm font-semibold text-ink">{dict.expres.domeniuTitle}</p>
+          <p className="mt-1 text-xs text-muted">
+            {status.domeniuVerificatLa
+              ? dict.expres.domeniuVerificatLa(new Date(status.domeniuVerificatLa).toLocaleDateString(locale === "ro" ? "ro-RO" : "en-US"))
+              : dict.expres.domeniuNeverificat}
+          </p>
+          {eroareDomeniu && <p className="mt-2 text-sm text-red-600">{eroareDomeniu}</p>}
+          <button
+            type="button"
+            disabled={activareDomeniu}
+            onClick={() =>
+              startActivareDomeniu(async () => {
+                setEroareDomeniu(null);
+                const rezultat = await activeazaDomeniuPlataAction(orgSlug);
+                if (!rezultat.ok) {
+                  setEroareDomeniu(rezultat.error);
+                  return;
+                }
+                router.refresh();
+              })
+            }
+            className="mt-2 rounded-lg border border-line px-4 py-2 text-sm font-medium text-ink transition hover:bg-panel-2 disabled:opacity-50"
+          >
+            {activareDomeniu ? dict.expres.seActiveaza : dict.expres.activeazaDomeniu}
+          </button>
+        </div>
+      )}
     </section>
   );
 }

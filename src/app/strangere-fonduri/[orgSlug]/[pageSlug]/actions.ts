@@ -18,25 +18,40 @@ export type DoneazaState = { error: string | null };
 const MAX_LEN = 200;
 const MAX_MESAJ_LEN = 1000;
 
-export async function doneazaAction(
+export type DateComuneDonatie = {
+  suma: number;
+  numeDonator: string;
+  emailDonator: string;
+  telefonDonator: string;
+  mesaj: string;
+  anonim: boolean;
+  recurenta: boolean;
+  consimtamantGdpr: boolean;
+  consimtamantTermeni: boolean;
+  consimtamantWhatsapp: boolean;
+  orgId: string;
+  pageId: string;
+  titlu: string;
+  stripeOrg: NonNullable<Awaited<ReturnType<typeof stripeOrgDupaSlug>>>;
+};
+
+// Validarea + rezolvarea comună (sumă, câmpuri, consimțăminte, pagina/org,
+// contul Stripe al ONG-ului) — folosită atât de fluxul clasic (Checkout
+// Session, mai jos) cât și de fluxul express (Apple Pay/Google Pay/PayPal,
+// vezi express-checkout-actions.ts), ca să nu se dubleze regulile în două
+// locuri care ar putea diverge silențios.
+export async function pregatesteDonatie(
   orgSlug: string,
   pageSlug: string,
-  _prevState: DoneazaState,
   formData: FormData,
-): Promise<DoneazaState> {
-  const errors = DONATE_ACTION_ERRORS[await getLocale()];
-
-  // Honeypot — un bot completează orice câmp, un om nu-l vede.
-  if (String(formData.get("website") ?? "").trim()) {
-    return { error: null };
-  }
-
+  errors: (typeof DONATE_ACTION_ERRORS)[keyof typeof DONATE_ACTION_ERRORS],
+): Promise<{ ok: false; error: string } | { ok: true; date: DateComuneDonatie }> {
   const suma = Math.round(Number(formData.get("suma")));
   if (!Number.isFinite(suma) || suma < 5) {
-    return { error: errors.sumaMinima };
+    return { ok: false, error: errors.sumaMinima };
   }
   if (suma > 50_000) {
-    return { error: errors.sumaMaxima };
+    return { ok: false, error: errors.sumaMaxima };
   }
 
   const numeDonator = String(formData.get("numeDonator") ?? "").trim().slice(0, MAX_LEN);
@@ -52,13 +67,13 @@ export async function doneazaAction(
   const consimtamantWhatsapp = formData.get("consimtamantWhatsapp") != null;
 
   if (!numeDonator || !emailDonator) {
-    return { error: errors.campuriObligatorii };
+    return { ok: false, error: errors.campuriObligatorii };
   }
   if (!EMAIL_RE.test(emailDonator)) {
-    return { error: errors.emailInvalid };
+    return { ok: false, error: errors.emailInvalid };
   }
   if (!consimtamantGdpr || !consimtamantTermeni) {
-    return { error: errors.acordObligatoriu };
+    return { ok: false, error: errors.acordObligatoriu };
   }
 
   const rezolvat = await db.transaction(async (tx) => {
@@ -77,7 +92,7 @@ export async function doneazaAction(
   });
 
   if (!rezolvat) {
-    return { error: errors.paginaNegasita };
+    return { ok: false, error: errors.paginaNegasita };
   }
 
   // Donația se încasează în contul Stripe al ONG-ului (nu al platformei) — dacă
@@ -87,11 +102,64 @@ export async function doneazaAction(
     stripeOrg = await stripeOrgDupaSlug(orgSlug);
   } catch (e) {
     console.error("cheia Stripe a organizației nu a putut fi citită:", e);
-    return { error: errors.stripeIndisponibil };
+    return { ok: false, error: errors.stripeIndisponibil };
   }
   if (!stripeOrg) {
-    return { error: errors.stripeNeconectat };
+    return { ok: false, error: errors.stripeNeconectat };
   }
+
+  return {
+    ok: true,
+    date: {
+      suma,
+      numeDonator,
+      emailDonator,
+      telefonDonator,
+      mesaj,
+      anonim,
+      recurenta,
+      consimtamantGdpr,
+      consimtamantTermeni,
+      consimtamantWhatsapp,
+      orgId: rezolvat.orgId,
+      pageId: rezolvat.pageId,
+      titlu: rezolvat.titlu,
+      stripeOrg,
+    },
+  };
+}
+
+export async function doneazaAction(
+  orgSlug: string,
+  pageSlug: string,
+  _prevState: DoneazaState,
+  formData: FormData,
+): Promise<DoneazaState> {
+  const errors = DONATE_ACTION_ERRORS[await getLocale()];
+
+  // Honeypot — un bot completează orice câmp, un om nu-l vede.
+  if (String(formData.get("website") ?? "").trim()) {
+    return { error: null };
+  }
+
+  const pregatit = await pregatesteDonatie(orgSlug, pageSlug, formData, errors);
+  if (!pregatit.ok) return { error: pregatit.error };
+  const {
+    suma,
+    numeDonator,
+    emailDonator,
+    telefonDonator,
+    mesaj,
+    anonim,
+    recurenta,
+    consimtamantGdpr,
+    consimtamantTermeni,
+    consimtamantWhatsapp,
+    orgId,
+    pageId,
+    titlu,
+    stripeOrg,
+  } = pregatit.date;
 
   // Formularul e trimis prin POST, deci "origin" e de obicei prezent — dar
   // păstrăm același fallback robust (host + protocol) ca pagina publică, în
@@ -107,8 +175,8 @@ export async function doneazaAction(
     // Checkout de unde s-o citim, doar abonamentul.
     const metadataDonatie = {
       donationId,
-      pageId: rezolvat.pageId,
-      orgId: rezolvat.orgId,
+      pageId,
+      orgId,
       numeDonator,
       emailDonator,
       telefonDonator,
@@ -131,7 +199,7 @@ export async function doneazaAction(
         {
           price_data: {
             currency: "ron",
-            product_data: { name: rezolvat.titlu },
+            product_data: { name: titlu },
             unit_amount: suma * 100,
             ...(recurenta ? { recurring: { interval: "month" as const } } : {}),
           },
@@ -141,7 +209,7 @@ export async function doneazaAction(
       success_url: `${origin}/strangere-fonduri/${orgSlug}/${pageSlug}/multumim?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/strangere-fonduri/${orgSlug}/${pageSlug}`,
       customer_email: emailDonator || undefined,
-      metadata: { donationId, pageId: rezolvat.pageId, orgId: rezolvat.orgId },
+      metadata: { donationId, pageId, orgId },
       ...(recurenta ? { subscription_data: { metadata: metadataDonatie } } : {}),
     });
     if (!session.url) throw new Error("stripe_session_no_url");
@@ -152,8 +220,8 @@ export async function doneazaAction(
     // ele pentru relația cu donatorul, indiferent de vizibilitatea publică.
     await db.insert(fundraisingDonations).values({
       id: donationId,
-      pageId: rezolvat.pageId,
-      orgId: rezolvat.orgId,
+      pageId,
+      orgId,
       numeDonator,
       emailDonator,
       telefonDonator: telefonDonator || null,

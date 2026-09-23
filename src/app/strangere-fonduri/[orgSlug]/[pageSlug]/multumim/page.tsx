@@ -36,12 +36,18 @@ export default async function MultumimPage({
   searchParams,
 }: {
   params: Promise<{ orgSlug: string; pageSlug: string }>;
-  searchParams: Promise<{ session_id?: string }>;
+  searchParams: Promise<{ session_id?: string; payment_intent?: string }>;
 }) {
   const { orgSlug, pageSlug } = await params;
-  const { session_id } = await searchParams;
+  // "session_id" vine de la fluxul Checkout Session (redirect clasic);
+  // "payment_intent" de la fluxul express (Apple Pay/Google Pay/PayPal —
+  // navigare client-side sau redirect Stripe cu return_url, vezi
+  // express-checkout.tsx) — aceeași coloană (stripeSessionId) reține
+  // identificatorul Stripe indiferent care e fluxul, deci căutarea rămâne una singură.
+  const { session_id, payment_intent } = await searchParams;
+  const sessionId = session_id ?? payment_intent;
   const [detaliu, locale] = await Promise.all([
-    session_id ? getDetaliuDonatie(session_id) : Promise.resolve(null),
+    sessionId ? getDetaliuDonatie(sessionId) : Promise.resolve(null),
     getLocale(),
   ]);
   const t = DONATION_DICT[locale];

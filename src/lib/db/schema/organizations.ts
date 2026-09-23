@@ -50,6 +50,18 @@ export const organizations = pgTable("organizations", {
   donationStripeWebhookSecretEnc: text("donation_stripe_webhook_secret_enc"),
   donationStripeKeyHint: text("donation_stripe_key_hint"),
   donationStripeConnectedAt: timestamp("donation_stripe_connected_at", { withTimezone: true }),
+  // Cheia PUBLICABILĂ (pk_live_/pk_test_) a contului Stripe al ONG-ului —
+  // spre deosebire de cheia secretă de mai sus, aceasta e menită să ajungă în
+  // browser (loadStripe pe pagina publică de donații, pentru butoanele
+  // Apple Pay/Google Pay/PayPal), deci NU se criptează.
+  donationStripePublishableKey: text("donation_stripe_publishable_key"),
+  // Ultima înregistrare reușită a domeniilor platformei (alexandrit.ro +
+  // domeniul propriu, dacă are) ca "payment method domain" verificat pe
+  // CONTUL Stripe al acestui ONG (stripe.paymentMethodDomains.create) — doar
+  // pentru un status afișat în Setări; nu e necesară funcțional, Stripe pur
+  // și simplu nu arată butoanele Apple Pay/Google Pay dacă domeniul nu e
+  // verificat, fără nicio eroare.
+  donationStripeDomainVerifiedAt: timestamp("donation_stripe_domain_verified_at", { withTimezone: true }),
   // Referral: codul PROPRIU al organizației (generat leneș, la prima cerere —
   // vezi lib/referral.ts — nu la creare, ca să nu complice bootstrap-ul RLS
   // din signup) — orice organizație îl poate distribui ca
