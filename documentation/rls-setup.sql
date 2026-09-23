@@ -55,6 +55,24 @@
 -- TREBUIE să aibă propriul predicat explicit de id/org_id — RLS nu-l oferă
 -- aici.
 --
+-- ⚠️⚠️ CAPCANA #5 (confirmată live — a picat /forgot-password în producție
+-- ~2 min după deploy): un tabel nou creat prin SQL Editor-ul din dashboard-ul
+-- Supabase rulează CA `postgres` (sau rolul dashboard-ului), NU ca `migrator`
+-- — `alter default privileges for role migrator ...` (secțiunea 1 de mai
+-- jos) NU se aplică automat, pentru că default privileges sunt scoparea pe
+-- rolul CREATOR, nu pe schema/tabel. Rezultatul: RLS complet corect
+-- (politica există, FORCE RLS activ), dar `app_user` nu are NICIUN GRANT pe
+-- tabel — orice INSERT/SELECT dă „permission denied for table", care în
+-- Next.js server actions apare doar ca 500 generic („A server error
+-- occurred"), fără niciun detaliu util pe client. Fix aplicat manual:
+-- `grant select, insert, update, delete on <tabel_nou> to app_user;` imediat
+-- după crearea tabelului. La orice tabel nou creat prin dashboard (nu prin
+-- `npm run db:generate` + migrare aplicată de `migrator`), rulează explicit
+-- acest GRANT înainte de a considera migrarea „gata" — verifică cu:
+-- select grantee, privilege_type from information_schema.role_table_grants
+--   where table_name = '<tabel_nou>' and grantee = 'app_user';
+-- (așteptat: SELECT, INSERT, UPDATE, DELETE, toate 4).
+--
 -- Model: DOUĂ roluri Postgres.
 --   migrator  — owner-ul schemei, folosit DOAR de CI/CD la `drizzle-kit push`/
 --               `migrate`. Parola lui NU ajunge niciodată în variabilele de
@@ -142,10 +160,13 @@ create policy app_users_self_update ON app_users
 -- organizations, nu există scop de izolat: politici complet permisive,
 -- siguranța reală vine din UPSERT-ul atomic din cod (INSERT ... ON CONFLICT
 -- ... DO UPDATE), nu din RLS. SELECT permisiv e necesar și pentru
--- INSERT ... RETURNING — vezi CAPCANA de mai jos (§336).
+-- INSERT ... RETURNING — vezi capcana despre asta mai jos, în secțiunea 4.
+-- Tabel creat prin dashboard, nu prin migrare `migrator` — vezi CAPCANA #5:
+-- GRANT-ul de mai jos e OBLIGATORIU, default privileges nu se aplică aici.
 alter table auth_rate_limits force row level security;
 create policy auth_rate_limits_all ON auth_rate_limits
   for all using (true) with check (true);
+grant select, insert, update, delete on auth_rate_limits to app_user;
 
 -- memberships: doar propriile membership-uri.
 create policy memberships_self ON memberships
