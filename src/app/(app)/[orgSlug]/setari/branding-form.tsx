@@ -173,8 +173,8 @@ export function BrandingForm({
               defaultChecked={!initialDomeniuActivitate}
               className="peer sr-only"
             />
-            <div className="flex h-14 flex-col items-center justify-center gap-1 rounded-lg border border-line bg-panel-2 text-muted peer-checked:border-brand-green peer-checked:ring-2 peer-checked:ring-brand-green">
-              <span className="text-[11px] font-medium">{dict.domeniuActivitate.alege}</span>
+            <div className="flex h-11 items-center justify-center rounded-lg border border-line bg-panel-2 px-1 text-center text-[11px] leading-tight font-medium text-muted peer-checked:border-brand-green peer-checked:ring-2 peer-checked:ring-brand-green">
+              {dict.domeniuActivitate.alege}
             </div>
           </label>
           {TOATE_DOMENIILE.map((id) => (
@@ -186,8 +186,9 @@ export function BrandingForm({
                 defaultChecked={initialDomeniuActivitate === id}
                 className="peer sr-only"
               />
-              <div className="flex h-14 flex-col items-center justify-center gap-1 rounded-lg border border-line bg-gradient-to-br from-brand-blue-soft to-brand-green-soft peer-checked:border-brand-green peer-checked:ring-2 peer-checked:ring-brand-green" />
-              <span className="mt-1 block text-center text-[11px] font-medium text-body">{dict.domeniuActivitate.optiuni[id]}</span>
+              <div className="flex h-11 items-center justify-center rounded-lg border border-line bg-gradient-to-br from-brand-blue-soft to-brand-green-soft px-1 text-center text-[11px] leading-tight font-medium text-body peer-checked:border-brand-green peer-checked:ring-2 peer-checked:ring-brand-green">
+                {dict.domeniuActivitate.optiuni[id]}
+              </div>
             </label>
           ))}
         </div>
