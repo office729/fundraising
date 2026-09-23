@@ -2190,22 +2190,22 @@ function build(forExport, letterOverride){
   var _d=isDesign();
   if(_d){
     var dout=document.getElementById(_d).textContent;
-    ['LINK','PREHEADER','PERIOADA','HERO','D_HEADLINE','D_LEAD','D_STATBIG','D_STATLABEL','D_QUOTE','D_QAUTHOR','D_N1','D_L1','D_N2','D_L2','D_N3','D_L3','D_CTA','TERMEN'].forEach(function(id){var e=document.getElementById(id);if(e){dout=dout.split('{{'+id+'}}').join(e.value);}});
+    ['LINK','PREHEADER','PERIOADA','HERO','D_HEADLINE','D_LEAD','D_STATBIG','D_STATLABEL','D_QUOTE','D_QAUTHOR','D_N1','D_L1','D_N2','D_L2','D_N3','D_L3','D_CTA','TERMEN'].forEach(function(id){var e=document.getElementById(id);if(e){dout=dout.split('{{'+id+'}}').join(esc(e.value));}});
     return dout;
   }
   var out = tpl;
   ['TITLU','HERO_TITLU','PREHEADER','PERIOADA','LINK','S1','S2','S3','S4','S5','HERO','LOGO_IMG','SLOGAN'].forEach(function(id){
-    out = out.split('{{' + id + '}}').join(document.getElementById(id).value);
+    out = out.split('{{' + id + '}}').join(esc(document.getElementById(id).value));
   });
   var hasLogo = !!document.getElementById('LOGO_IMG').value.trim();
   out = out.replace(hasLogo ? /<!--LOGOTXT_START-->[\s\S]*?<!--LOGOTXT_END-->/ : /<!--LOGO_START-->[\s\S]*?<!--LOGO_END-->/, '');
   if (!document.getElementById('SLOGAN').value.trim()) {
     out = out.replace(/<!--SLOGAN_START-->[\s\S]*?<!--SLOGAN_END-->/, '');
   }
-  ['EV_TITLU','EV_DATA','EV_LOC','CTA_TEXT','CTA_LINK','B1_TITLU','B1_TEXT','B2_TITLU','B2_TEXT','B3_TITLU','B3_TEXT'].forEach(function(id){ var e=document.getElementById(id); if(e){ out = out.split('{{'+id+'}}').join(e.value); } });
+  ['EV_TITLU','EV_DATA','EV_LOC','CTA_TEXT','CTA_LINK','B1_TITLU','B1_TEXT','B2_TITLU','B2_TEXT','B3_TITLU','B3_TEXT'].forEach(function(id){ var e=document.getElementById(id); if(e){ out = out.split('{{'+id+'}}').join(esc(e.value)); } });
   out = out.split('{{SCRISOARE}}').join(letterHtml(letterOverride != null ? letterOverride : document.getElementById('SCRISOARE').value));
   // TERMEN ultimul, ca să sincronizeze eticheta + subiect + preheader + scrisoarea deodată
-  out = out.split('{{TERMEN}}').join(document.getElementById('TERMEN').value);
+  out = out.split('{{TERMEN}}').join(esc(document.getElementById('TERMEN').value));
   var BLK = TPL_BLOCKS[currentTpl()];
   ['TERMEN','HTITLU','BTND177','BTNSEC','HOWTO','ABOUT','EVENT','BENEFITS','BIGSTATS','BTNSOFT'].forEach(function(b){
     if(!BLK[b]){ out = out.replace(new RegExp('<!--'+b+'_START-->[\\s\\S]*?<!--'+b+'_END-->'), ''); }

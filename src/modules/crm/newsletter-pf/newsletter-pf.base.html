@@ -2531,15 +2531,15 @@ function build(forExport, letterOverride){
   var _d=isDesign();
   if(_d){
     var dout=document.getElementById(_d).textContent;
-    var dfoto=files.FOTO?(files.FOTO.url?files.FOTO.url:(forExport?files.FOTO.name:files.FOTO.blob)):document.getElementById('FOTO').value;
+    var dfoto=files.FOTO?(files.FOTO.url?files.FOTO.url:(forExport?files.FOTO.name:files.FOTO.blob)):esc(document.getElementById('FOTO').value);
     dout=dout.split('{{D_FOTO}}').join(dfoto);
-    ['LINK','PREHEADER','LUNA','D_HEADLINE','D_LEAD','D_STATBIG','D_STATLABEL','D_QUOTE','D_QAUTHOR','D_N1','D_L1','D_N2','D_L2','D_N3','D_L3','D_CTA'].forEach(function(id){var e=document.getElementById(id);if(e){dout=dout.split('{{'+id+'}}').join(e.value);}});
+    ['LINK','PREHEADER','LUNA','D_HEADLINE','D_LEAD','D_STATBIG','D_STATLABEL','D_QUOTE','D_QAUTHOR','D_N1','D_L1','D_N2','D_L2','D_N3','D_L3','D_CTA'].forEach(function(id){var e=document.getElementById(id);if(e){dout=dout.split('{{'+id+'}}').join(esc(e.value));}});
     // Câmpuri suplimentare, folosite doar de șablonul „Standard" (logo din
     // antet + progresul campaniei, reluat din SUMA/TINTA) — no-op (split/join
     // fără potrivire) pentru celelalte șabloane de design, care nu au aceste token-uri.
     var dlogoSrc = files.LOGO_IMG
       ? (files.LOGO_IMG.url ? files.LOGO_IMG.url : (forExport ? files.LOGO_IMG.name : files.LOGO_IMG.blob))
-      : document.getElementById('LOGO_IMG').value;
+      : esc(document.getElementById('LOGO_IMG').value);
     dout = dout.split('{{LOGO_IMG}}').join(dlogoSrc);
     var dHasLogo = !!(dlogoSrc && dlogoSrc.trim());
     dout = dout.replace(dHasLogo ? /<!--LOGOTXT_START-->[\s\S]*?<!--LOGOTXT_END-->/ : /<!--LOGO_START-->[\s\S]*?<!--LOGO_END-->/, '');
@@ -2557,7 +2557,7 @@ function build(forExport, letterOverride){
   }
   var out = tpl;
   ['NUME','DIAGNOSTIC','VARSTA','PENTRU_NUME','LINK','PLATA','SMS_CUVANT','TITLU','PREHEADER','LUNA','S1','S2','S3','S4','S5'].forEach(function(id){
-    var v = document.getElementById(id).value;
+    var v = esc(document.getElementById(id).value);
     if(id === 'PENTRU_NUME'){ v = v.trim().replace(/\s+/g,'&nbsp;'); }
     out = out.split('{{' + id + '}}').join(v);
   });
@@ -2569,13 +2569,13 @@ function build(forExport, letterOverride){
   out = out.split('{{BAR_REST}}').join(pr.rest);
   var fotoSrc = files.FOTO
     ? (files.FOTO.url ? files.FOTO.url : (forExport ? files.FOTO.name : files.FOTO.blob))
-    : document.getElementById('FOTO').value;
+    : esc(document.getElementById('FOTO').value);
   out = out.split('{{FOTO}}').join(fotoSrc);
   var logoSrc = files.LOGO_IMG
     ? (files.LOGO_IMG.url ? files.LOGO_IMG.url : (forExport ? files.LOGO_IMG.name : files.LOGO_IMG.blob))
-    : document.getElementById('LOGO_IMG').value;
+    : esc(document.getElementById('LOGO_IMG').value);
   out = out.split('{{LOGO_IMG}}').join(logoSrc);
-  ['URG_TITLU','URG_TEXT','URG_DEADLINE','G1','G2','G3','SEMN_NUME','SEMN_FUNCTIE','SEMN_ORG','SEMN_TEL','EXTRA1_IMG','EXTRA2_IMG','EXTRA3_IMG','SLOGAN'].forEach(function(id){ var e=document.getElementById(id); if(e){ out = out.split('{{'+id+'}}').join(e.value); } });
+  ['URG_TITLU','URG_TEXT','URG_DEADLINE','G1','G2','G3','SEMN_NUME','SEMN_FUNCTIE','SEMN_ORG','SEMN_TEL','EXTRA1_IMG','EXTRA2_IMG','EXTRA3_IMG','SLOGAN'].forEach(function(id){ var e=document.getElementById(id); if(e){ out = out.split('{{'+id+'}}').join(esc(e.value)); } });
   var hasLogo = !!(logoSrc && logoSrc.trim());
   out = out.replace(hasLogo ? /<!--LOGOTXT_START-->[\s\S]*?<!--LOGOTXT_END-->/ : /<!--LOGO_START-->[\s\S]*?<!--LOGO_END-->/, '');
   if (!document.getElementById('SLOGAN').value.trim()) {
