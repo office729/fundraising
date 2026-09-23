@@ -21,7 +21,7 @@ import { formatDataOra } from "../../lib/format";
 import { BeneficiariPanel } from "./beneficiari-panel";
 import { CampanieEmailCard } from "./campanie-email-card";
 import { getUltimaCampanieEmail } from "./campanie-email-actions";
-import { CopyLinkButton, DeleteButton, PdfButton, ProcesatAnafCheckbox } from "./client";
+import { BackfillCnpButtonTemp, CopyLinkButton, DeleteButton, PdfButton, ProcesatAnafCheckbox } from "./client";
 import { ExportButtons } from "./export-buttons";
 import { FilterBar } from "./filter-bar";
 import { RomaniaMapCard } from "./romania-map-card";
@@ -183,7 +183,10 @@ export default async function Formular230StatsPage({
           <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">{dict.title}</h1>
           <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">{dict.subtitle}</p>
         </div>
-        <CopyLinkButton orgSlug={orgSlug} shortCode={beneficiari.find((b) => b.slug === SLUG_PRINCIPAL)?.shortCode ?? null} />
+        <div className="flex items-center gap-2">
+          <BackfillCnpButtonTemp orgSlug={orgSlug} />
+          <CopyLinkButton orgSlug={orgSlug} shortCode={beneficiari.find((b) => b.slug === SLUG_PRINCIPAL)?.shortCode ?? null} />
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">

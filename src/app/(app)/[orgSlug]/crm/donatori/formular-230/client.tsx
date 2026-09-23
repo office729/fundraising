@@ -8,7 +8,27 @@ import { Button } from "../../components/ui/button";
 import { completeazaFormular230Pdf, downloadPdfBytes, type DateBeneficiarPdf, type DateFormular230Pdf } from "@/lib/formular230-pdf";
 import { useLocale } from "../../lib/locale-context";
 import { FORMULAR230_DICT } from "@/lib/i18n/dictionaries/formular230";
-import { seteazaProcesatAnaf, stergeFormular230 } from "./actions";
+import { backfillCnpCriptatTemp, seteazaProcesatAnaf, stergeFormular230 } from "./actions";
+
+// TEMPORAR — se șterge după prima rulare reușită (vezi backfillCnpCriptatTemp).
+export function BackfillCnpButtonTemp({ orgSlug }: { orgSlug: string }) {
+  const [rezultat, setRezultat] = useState<string | null>(null);
+  const [seRuleaza, setSeRuleaza] = useState(false);
+  async function ruleaza() {
+    setSeRuleaza(true);
+    try {
+      const r = await backfillCnpCriptatTemp(orgSlug);
+      setRezultat(`${r.actualizate}/${r.total} criptate`);
+    } finally {
+      setSeRuleaza(false);
+    }
+  }
+  return (
+    <Button variant="secondary" onClick={ruleaza} disabled={seRuleaza}>
+      {rezultat ?? (seRuleaza ? "Se rulează..." : "Backfill CNP criptat (temp)")}
+    </Button>
+  );
+}
 
 export function CopyLinkButton({ orgSlug, shortCode }: { orgSlug: string; shortCode: string | null }) {
   const locale = useLocale();
