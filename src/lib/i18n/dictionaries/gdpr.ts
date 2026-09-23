@@ -9,7 +9,7 @@ export const GDPR_DICT = {
     eyebrow: "Legal",
     titlu: "Politica de confidențialitate (GDPR)",
     actualizatLabel: "Ultima actualizare",
-    actualizat: "22 septembrie 2026",
+    actualizat: "23 septembrie 2026",
     sectiuni: [
       {
         titlu: "1. Cine suntem și în ce calitate prelucrăm date",
@@ -64,13 +64,14 @@ export const GDPR_DICT = {
           "Twilio — apeluri și mesaje, unde funcția este activată;",
           "Calendly — programarea consilierilor 1 la 1;",
           "Google Analytics — statistici de utilizare, doar cu consimțământul tău;",
+          "Anthropic (Claude) — generare de conținut asistată de AI în modulul de strângere de fonduri (comunicate de presă, postări pentru rețele sociale, mesaje de mulțumire pentru sponsori), pe baza titlului campaniei, a poveștii, a sumelor și, pentru mesajele de mulțumire, a numelui sponsorului; funcție opțională, folosită doar când organizația apasă „Generează cu AI”;",
           "servicii de integrare activate la cerere de client (de exemplu Make.com, BoldSign, Newsman, Brevo, Mailchimp, Canva) — doar pentru clientul care le solicită.",
         ],
         incheiere: ["Nu vindem date personale. Le putem transmite autorităților doar când legea ne obligă. Lista actualizată a sub-procesatorilor ne poate fi cerută oricând la datele de contact de mai sus."],
       },
       {
         titlu: "5. Transferuri în afara Spațiului Economic European",
-        paragrafe: ["Unii furnizori (de exemplu Stripe, Google, Twilio, Vercel, Calendly) pot prelucra date și în afara SEE, în special în SUA. În aceste cazuri ne bazăm pe garanții prevăzute de GDPR: decizia de adecvare privind Cadrul UE–SUA de confidențialitate a datelor pentru furnizorii certificați sau clauzele contractuale standard, împreună cu măsuri suplimentare atunci când este necesar. Datele din baza de date a Platformei sunt găzduite în UE."],
+        paragrafe: ["Unii furnizori (de exemplu Stripe, Google, Twilio, Vercel, Calendly, Anthropic) pot prelucra date și în afara SEE, în special în SUA. În aceste cazuri ne bazăm pe garanții prevăzute de GDPR: decizia de adecvare privind Cadrul UE–SUA de confidențialitate a datelor pentru furnizorii certificați sau clauzele contractuale standard, împreună cu măsuri suplimentare atunci când este necesar. Datele din baza de date a Platformei sunt găzduite în UE."],
       },
       {
         titlu: "6. Cât timp păstrăm datele",
@@ -111,6 +112,7 @@ export const GDPR_DICT = {
         paragrafe: [
           "Unele organizații pot introduce în Platformă date despre sănătate sau despre minori (de exemplu în campanii pentru cazuri medicale). Acestea sunt categorii speciale de date (art. 9 GDPR) sau date care necesită protecție sporită. Organizația răspunde de obținerea consimțământului explicit al persoanei sau al reprezentantului legal, separat pentru date medicale, imagine și poveste, de limitarea datelor la ce este strict necesar și de respectarea dreptului de retragere a consimțământului.",
           "Recomandăm organizațiilor să nu introducă în câmpuri libere mai multe detalii medicale decât este necesar și să analizeze, împreună cu un specialist, necesitatea unei evaluări de impact asupra protecției datelor (DPIA) pentru aceste prelucrări.",
+          "Dacă organizația folosește funcția de generare de conținut cu AI (punctul 4), povestea campaniei este transmisă către Anthropic, ca sub-procesator — un motiv în plus să limitezi detaliile medicale din poveste la strictul necesar.",
         ],
       },
       {
@@ -132,7 +134,7 @@ export const GDPR_DICT = {
     eyebrow: "Legal",
     titlu: "Privacy Policy (GDPR)",
     actualizatLabel: "Last updated",
-    actualizat: "September 22, 2026",
+    actualizat: "September 23, 2026",
     sectiuni: [
       {
         titlu: "1. Who we are and in what capacity we process data",
@@ -187,13 +189,14 @@ export const GDPR_DICT = {
           "Twilio — calls and messages, where the feature is enabled;",
           "Calendly — booking 1-on-1 consultations;",
           "Google Analytics — usage statistics, only with your consent;",
+          "Anthropic (Claude) — AI-assisted content generation in the fundraising module (press releases, social media posts, sponsor thank-you messages), based on the campaign's title, story, amounts and, for thank-you messages, the sponsor's name; optional feature, used only when the organization clicks \"Generate with AI\";",
           "integration services enabled on a customer's request (for example Make.com, BoldSign, Newsman, Brevo, Mailchimp, Canva) — only for the customer who requests them.",
         ],
         incheiere: ["We do not sell personal data. We may disclose it to authorities only when required by law. The up-to-date list of sub-processors can be requested at any time at the contact details above."],
       },
       {
         titlu: "5. Transfers outside the European Economic Area",
-        paragrafe: ["Some providers (for example Stripe, Google, Twilio, Vercel, Calendly) may also process data outside the EEA, in particular in the USA. In these cases we rely on GDPR safeguards: the adequacy decision on the EU–US Data Privacy Framework for certified providers or standard contractual clauses, together with supplementary measures where necessary. The Platform's database is hosted in the EU."],
+        paragrafe: ["Some providers (for example Stripe, Google, Twilio, Vercel, Calendly, Anthropic) may also process data outside the EEA, in particular in the USA. In these cases we rely on GDPR safeguards: the adequacy decision on the EU–US Data Privacy Framework for certified providers or standard contractual clauses, together with supplementary measures where necessary. The Platform's database is hosted in the EU."],
       },
       {
         titlu: "6. How long we keep data",
@@ -234,6 +237,7 @@ export const GDPR_DICT = {
         paragrafe: [
           "Some organizations may enter health data or data about minors into the Platform (for example in campaigns for medical cases). These are special categories of data (Art. 9 GDPR) or data needing enhanced protection. The organization is responsible for obtaining the explicit consent of the person or legal representative, separately for medical data, image and story, for limiting the data to what is strictly necessary and for respecting the right to withdraw consent.",
           "We recommend that organizations do not enter more medical detail in free-text fields than necessary and assess, with a specialist, whether a data protection impact assessment (DPIA) is needed for such processing.",
+          "If the organization uses the AI content-generation feature (section 4), the campaign story is sent to Anthropic as a sub-processor — one more reason to keep the medical detail in the story to what is strictly necessary.",
         ],
       },
       {
