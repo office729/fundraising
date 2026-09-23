@@ -161,6 +161,8 @@ export const SETARI_ECHIPA_DICT = {
           domeniuNeverificat: "Neverificat — butoanele Apple Pay/Google Pay nu vor apărea pe pagină",
           activeazaDomeniu: "Activează Apple Pay / Google Pay",
           seActiveaza: "Se activează…",
+          scopRecurenta:
+            "Funcționează și pentru donații lunare. Dacă folosești o cheie restricționată, adaugă-i și permisiunile: Subscriptions (Write), Customers (Write), Products (Write) — altfel butoanele apar, dar o donație lunară prin ele ar eșua.",
         },
       },
     },
@@ -348,6 +350,8 @@ export const SETARI_ECHIPA_DICT = {
           domeniuNeverificat: "Not verified — Apple Pay/Google Pay buttons won't appear on the page",
           activeazaDomeniu: "Activate Apple Pay / Google Pay",
           seActiveaza: "Activating…",
+          scopRecurenta:
+            "Also works for monthly donations. If you're using a restricted key, add these permissions too: Subscriptions (Write), Customers (Write), Products (Write) — otherwise the buttons show up, but a monthly donation through them would fail.",
         },
       },
     },

@@ -158,6 +158,7 @@ export function StripeDonatiiSection({
         <div className="border-t border-line pt-4">
           <p className="text-sm font-semibold text-ink">{dict.expres.title}</p>
           <p className="mt-1 text-xs text-muted">{dict.expres.descriere}</p>
+          <p className="mt-1 text-xs text-muted">{dict.expres.scopRecurenta}</p>
           <label className="mt-3 block text-sm font-medium text-ink">
             {dict.expres.cheiePublicabilaLabel}
             <input

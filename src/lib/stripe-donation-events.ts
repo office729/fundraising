@@ -51,7 +51,10 @@ async function trimiteEmailMultumireDacaSePoate(params: {
   }
 }
 
-function idDin(ref: string | { id: string } | null | undefined): string | null {
+// Exportat — reutilizat și de express-checkout-actions.ts (donații recurente
+// prin fluxul express) ca să extragă id-ul PaymentIntent-ului unei facturi de
+// abonament, la crearea abonamentului, nu doar la reînnoire.
+export function idDin(ref: string | { id: string } | null | undefined): string | null {
   if (!ref) return null;
   return typeof ref === "string" ? ref : ref.id;
 }

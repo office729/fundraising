@@ -129,9 +129,10 @@ function ExpressCheckoutInner({
 // Butoane native Apple Pay/Google Pay/PayPal (ce e activat pe contul Stripe
 // al ONG-ului) direct în modalul de donație — alternativă rapidă la
 // formularul complet de mai jos, care rămâne mereu funcțional ca variantă de
-// bază. Nu se randează deloc dacă ONG-ul n-are cheie publicabilă, dacă
-// donatorul a ales "Lunar" (Faza 1 acoperă doar donații unice), sau dacă
-// niciun portofel nu e disponibil pe dispozitiv/browser.
+// bază. Funcționează și pentru donații lunare (Faza 2) — creează un abonament
+// în loc de o plată unică, vezi express-checkout-actions.ts. Nu se randează
+// deloc dacă ONG-ul n-are cheie publicabilă sau dacă niciun portofel nu e
+// disponibil pe dispozitiv/browser.
 export function ExpressCheckoutPanel({
   orgSlug,
   pageSlug,
@@ -149,16 +150,53 @@ export function ExpressCheckoutPanel({
   formRef: React.RefObject<HTMLFormElement | null>;
   locale: Locale;
 }) {
-  const [vizibil, setVizibil] = useState(false);
   const stripePromise = useMemo(() => (publishableKey ? getStripePromise(publishableKey) : null), [publishableKey]);
-  const t = DONATION_DICT[locale].donateForm;
+  if (!publishableKey || !stripePromise) return null;
 
-  if (!publishableKey || !stripePromise || recurenta) return null;
+  const mode = recurenta ? "subscription" : "payment";
+
+  return (
+    <ExpressCheckoutForMode
+      // Stripe nu permite schimbarea mode-ului pe o instanță Elements deja
+      // montată — key={mode} face ca React să remonteze tot subarborele curat
+      // la comutarea O singură dată ↔ Lunar, inclusiv starea de vizibilitate
+      // (pornește mereu de la `false`, nu rămâne cu valoarea mode-ului anterior).
+      key={mode}
+      mode={mode}
+      stripePromise={stripePromise}
+      orgSlug={orgSlug}
+      pageSlug={pageSlug}
+      suma={suma}
+      formRef={formRef}
+      locale={locale}
+    />
+  );
+}
+
+function ExpressCheckoutForMode({
+  mode,
+  stripePromise,
+  orgSlug,
+  pageSlug,
+  suma,
+  formRef,
+  locale,
+}: {
+  mode: "payment" | "subscription";
+  stripePromise: Promise<Stripe | null>;
+  orgSlug: string;
+  pageSlug: string;
+  suma: number;
+  formRef: React.RefObject<HTMLFormElement | null>;
+  locale: Locale;
+}) {
+  const [vizibil, setVizibil] = useState(false);
+  const t = DONATION_DICT[locale].donateForm;
 
   return (
     <div className={vizibil ? "flex flex-col gap-2" : "hidden"}>
       <p className="text-center text-xs font-medium text-muted-2">{t.sauPlatesteRapid}</p>
-      <Elements stripe={stripePromise} options={{ mode: "payment", amount: Math.round(Math.max(suma, 5) * 100), currency: "ron" }}>
+      <Elements stripe={stripePromise} options={{ mode, amount: Math.round(Math.max(suma, 5) * 100), currency: "ron" }}>
         <ExpressCheckoutInner
           orgSlug={orgSlug}
           pageSlug={pageSlug}
