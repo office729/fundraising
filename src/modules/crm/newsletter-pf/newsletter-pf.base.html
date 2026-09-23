@@ -3120,7 +3120,14 @@ function sizeGalleryThumbs(){
   });
 }
 fillGalleryThumbnails();
-sizeGalleryThumbs();
+// Citirea lui clientWidth imediat, sincron, poate prinde layout-ul grilei
+// ÎNAINTE ca browserul să-l fi așezat complet (mai ales la o navigare nouă,
+// ex. schimbarea domeniului din URL) — scala iese greșită și cardurile arată
+// „întinse" sau „restrânse" inconsistent. Un dublu requestAnimationFrame
+// garantează cel puțin un ciclu complet de layout+paint înainte de citire;
+// reluarea la window.load acoperă și reflow-uri târzii (fonturi, imagini).
+requestAnimationFrame(function(){ requestAnimationFrame(sizeGalleryThumbs); });
+window.addEventListener('load', sizeGalleryThumbs);
 var galleryResizeTimer;
 window.addEventListener('resize', function(){
   clearTimeout(galleryResizeTimer);
