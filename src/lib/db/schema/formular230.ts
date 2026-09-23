@@ -64,6 +64,10 @@ export const formular230Submissions = pgTable(
     nume: text("nume").notNull(),
     prenume: text("prenume").notNull(),
     initialaTatalui: text("initiala_tatalui"),
+    // Criptat (AES-256-GCM, lib/secret-box.ts) — scris criptat de la ruta POST
+    // (api/[orgSlug]/formular230/[beneficiarSlug]), decriptat o singură dată
+    // la citire în page.tsx din acest modul. Rândurile de dinainte de migrare
+    // rămân în clar (decripteazaSauLegacy le recunoaște după prefixul "v1.").
     cnp: text("cnp").notNull(),
     email: text("email").notNull(),
     telefon: text("telefon"),

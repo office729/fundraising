@@ -10,6 +10,7 @@ import { codJudetDinTextLiber, gasesteJudet } from "@/lib/judete";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { FORMULAR230_DICT } from "@/lib/i18n/dictionaries/formular230";
 import { titluAbsolut } from "@/lib/page-titles";
+import { decripteazaSauLegacy } from "@/lib/secret-box";
 import { intervalVarsta, varstaDinCnp, type IntervalVarsta } from "@/lib/varsta-cnp";
 
 import { Badge } from "../../components/ui/badge";
@@ -84,12 +85,16 @@ const getDate = withOrgSession(async (ctx, filtru: { an: string; judet: string; 
     conditii.push(lt(formular230Submissions.createdAt, new Date(Date.UTC(an + 1, 0, 1))));
   }
 
-  const toate = await ctx.db
+  const randuri = await ctx.db
     .select()
     .from(formular230Submissions)
     .where(and(...conditii))
     .orderBy(desc(formular230Submissions.createdAt))
     .limit(LIMITA_RANDURI);
+  // Decriptare o singură dată, aici — CNP e stocat criptat (vezi ruta POST din
+  // api/[orgSlug]/formular230/[beneficiarSlug]); rândurile vechi, dinainte de
+  // migrarea la criptare, rămân în clar (decripteazaSauLegacy le lasă neatinse).
+  const toate = randuri.map((s) => ({ ...s, cnp: decripteazaSauLegacy(s.cnp) }));
 
   // Județ/vârstă/localitate — filtrate în cod, nu SQL: județul răspunsurilor
   // vechi e text liber (înainte de dropdown-ul standardizat), iar vârsta vine

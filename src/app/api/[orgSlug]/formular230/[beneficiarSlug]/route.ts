@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 
 import { db } from "@/lib/db";
 import { formular230Beneficiari, formular230Submissions, organizations } from "@/lib/db/schema";
+import { cripteaza } from "@/lib/secret-box";
 import { EMAIL_RE } from "@/lib/validation";
 
 // Ruta de PRIMIRE a Formularului 230 — trebuie să fie accesibilă unui
@@ -101,7 +102,11 @@ export async function POST(req: Request, { params }: Ctx) {
         nume,
         prenume,
         initialaTatalui: str("initialaTatalui"),
-        cnp,
+        // CNP e date sensibile (identificator național unic) — se validează în
+        // clar mai sus, dar se stochează criptat (AES-256-GCM, vezi
+        // lib/secret-box.ts). Decriptarea are loc o singură dată, la citire, în
+        // pagina de statistici CRM (page.tsx din acest modul).
+        cnp: cripteaza(cnp),
         email,
         telefon: str("telefon"),
         strada: str("strada"),

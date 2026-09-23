@@ -41,3 +41,12 @@ export function decripteaza(payload: string): string {
   decipher.setAuthTag(Buffer.from(tag, "base64"));
   return Buffer.concat([decipher.update(Buffer.from(criptat, "base64")), decipher.final()]).toString("utf8");
 }
+
+// Pentru o coloană migrată LA criptare cu date deja existente în clar (ex.
+// CNP din formular230_submissions) — rândurile vechi rămân în clar până la
+// backfill, cele noi sunt mereu "v1....". Verifică prefixul explicit, nu
+// încearcă orbește decripteaza()+catch (ar ascunde o cheie greșită/coruptă
+// pe un rând deja criptat în loc s-o semnaleze).
+export function decripteazaSauLegacy(valoare: string): string {
+  return valoare.startsWith("v1.") ? decripteaza(valoare) : valoare;
+}

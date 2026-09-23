@@ -314,6 +314,12 @@ create policy formular230_public_insert on formular230_submissions
 -- foloseşte withOrgSession, nu withOrgAdmin.
 create policy formular230_member_delete on formular230_submissions
   for delete using (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid);
+-- LIPSEA inițial — la fel ca app_users_self_update/organizations_webhook_update
+-- de mai sus, fără ea `seteazaProcesatAnaf` (bifa "Procesat pentru ANAF") rula
+-- silențios pe 0 rânduri, fără nicio eroare vizibilă. Aceeași scopare ca
+-- SELECT/DELETE — orice membru, nu doar admin/owner.
+create policy formular230_member_update on formular230_submissions
+  for update using (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid);
 
 -- formular230_beneficiari (conturi/subconturi pentru Formularul 230, Faza 4)
 -- — SELECT pentru orice membru; scris (IBAN/CIF/șablon PDF) doar admin/owner.
@@ -509,7 +515,7 @@ create policy fundraising_updates_admin_update on fundraising_updates
 -- Așteptat: apeluri(3), app_users(3), auth_rate_limits(1), companies(1),
 --           company_notite(1), company_sponsorizari(1), contacts(1), crm_kv(1),
 --           donatori_reali(3), formular230_beneficiari(5),
---           formular230_campanii_email(3), formular230_submissions(3),
+--           formular230_campanii_email(3), formular230_submissions(4),
 --           fundraising_donations(6), fundraising_pages(5),
 --           fundraising_updates(4), invites(4), memberships(2),
---           organizations(5) = 51 politici.
+--           organizations(5) = 52 politici.
