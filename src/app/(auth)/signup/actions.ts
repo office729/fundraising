@@ -12,6 +12,8 @@ import { db } from "@/lib/db";
 import { memberships, organizations } from "@/lib/db/schema";
 import { formular230Beneficiari } from "@/lib/db/schema/formular230";
 import { SLUG_PRINCIPAL } from "@/lib/formular230-constants";
+import { AUTH_DICT } from "@/lib/i18n/dictionaries/auth";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { esteSlugRezervat } from "@/lib/reserved-slugs";
 import { genereazaCodScurt } from "@/lib/short-code";
 import { slugify } from "@/lib/slugify";
@@ -21,6 +23,7 @@ export async function signupAction(
   _prevState: { error: string | null },
   formData: FormData,
 ): Promise<{ error: string | null }> {
+  const errors = AUTH_DICT[await getLocale()].errors;
   const inviteToken = String(formData.get("inviteToken") ?? "").trim();
   const beneficiarInviteToken = String(formData.get("beneficiarInviteToken") ?? "").trim();
   const orgName = String(formData.get("orgName") ?? "").trim();
@@ -31,19 +34,23 @@ export async function signupAction(
   const password = String(formData.get("password") ?? "");
 
   if (!email || !password || (!inviteToken && !beneficiarInviteToken && !orgName)) {
-    return { error: "Completează toate câmpurile." };
+    return { error: errors.signupCampuri };
   }
   if (password.length < 8) {
-    return { error: "Parola trebuie să aibă cel puțin 8 caractere." };
+    return { error: errors.parolaMinim };
   }
 
   const supabase = await createClient();
+  // Mesajul Supabase (error.message) vine mereu în engleză, indiferent de
+  // limba UI — nu există un cod de eroare stabil pe care să-l mapăm 1:1 fără
+  // riscul de a ascunde detalii utile (email deja folosit, parolă slabă etc.);
+  // rămâne netradus intenționat, ca excepție de la restul acestui flux.
   const { data, error } = await supabase.auth.signUp({ email, password });
   if (error) {
     return { error: error.message };
   }
   if (!data.user) {
-    return { error: "Înregistrarea a eșuat — încearcă din nou." };
+    return { error: errors.signupEsuat };
   }
   // Contul de autentificare există acum — orice ramură de mai jos se încheie cu
   // redirect(), deci clientul află de succes prin acest semnal scurt (vezi

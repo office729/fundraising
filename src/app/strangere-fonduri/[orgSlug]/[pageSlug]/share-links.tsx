@@ -2,10 +2,14 @@
 
 import { useState } from "react";
 
-export function ShareLinksClient({ url, titlu }: { url: string; titlu: string }) {
-  const [copiat, setCopiat] = useState(false);
+import type { Locale } from "@/lib/i18n/config";
+import { DONATION_DICT } from "@/lib/i18n/dictionaries/donation";
 
-  const mesaj = `Susține „${titlu}” — ${url}`;
+export function ShareLinksClient({ url, titlu, locale }: { url: string; titlu: string; locale: Locale }) {
+  const [copiat, setCopiat] = useState(false);
+  const t = DONATION_DICT[locale].shareLinks;
+
+  const mesaj = `${t.sustine(titlu)} — ${url}`;
 
   async function copiaza() {
     await navigator.clipboard.writeText(url);
@@ -24,10 +28,10 @@ export function ShareLinksClient({ url, titlu }: { url: string; titlu: string })
         WhatsApp
       </a>
       <a
-        href={`mailto:?subject=${encodeURIComponent(`Susține „${titlu}”`)}&body=${encodeURIComponent(mesaj)}`}
+        href={`mailto:?subject=${encodeURIComponent(t.sustine(titlu))}&body=${encodeURIComponent(mesaj)}`}
         className="rounded-full border border-line px-3.5 py-1.5 text-[13px] font-bold text-ink transition hover:border-brand-blue hover:text-brand-blue"
       >
-        Email
+        {t.email}
       </a>
       <a
         href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`}
@@ -42,7 +46,7 @@ export function ShareLinksClient({ url, titlu }: { url: string; titlu: string })
         onClick={copiaza}
         className="rounded-full border border-line px-3.5 py-1.5 text-[13px] font-bold text-ink transition hover:border-brand-blue hover:text-brand-blue"
       >
-        {copiat ? "Copiat!" : "Copiază link"}
+        {copiat ? t.copiat : t.copiazaLink}
       </button>
     </div>
   );

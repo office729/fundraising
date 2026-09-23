@@ -7,12 +7,15 @@ import { findBeneficiaryProfile } from "@/lib/auth/beneficiar";
 import { ensureAppUser } from "@/lib/auth/dal";
 import { db } from "@/lib/db";
 import { memberships, organizations } from "@/lib/db/schema";
+import { AUTH_DICT } from "@/lib/i18n/dictionaries/auth";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { createClient } from "@/lib/supabase/server";
 
 export async function loginAction(
   _prevState: { error: string | null },
   formData: FormData,
 ): Promise<{ error: string | null }> {
+  const errors = AUTH_DICT[await getLocale()].errors;
   const email = String(formData.get("email") ?? "")
     .trim()
     .toLowerCase();
@@ -22,13 +25,13 @@ export async function loginAction(
   const ramaiConectat = formData.get("ramaiConectat") != null;
 
   if (!email || !password) {
-    return { error: "Completează emailul și parola." };
+    return { error: errors.loginCampuri };
   }
 
   const supabase = await createClient({ persist: ramaiConectat });
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) {
-    return { error: "Email sau parolă incorectă." };
+    return { error: errors.loginInvalid };
   }
 
   if (inviteToken) {

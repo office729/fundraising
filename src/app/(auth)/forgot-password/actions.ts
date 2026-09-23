@@ -2,6 +2,8 @@
 
 import { headers } from "next/headers";
 
+import { AUTH_DICT } from "@/lib/i18n/dictionaries/auth";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { createClient } from "@/lib/supabase/server";
 
 export async function forgotPasswordAction(
@@ -13,7 +15,7 @@ export async function forgotPasswordAction(
     .toLowerCase();
 
   if (!email) {
-    return { error: "Completează adresa de email.", trimis: false };
+    return { error: AUTH_DICT[await getLocale()].errors.forgotEmail, trimis: false };
   }
 
   const origin = (await headers()).get("origin") ?? "";

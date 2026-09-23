@@ -4,9 +4,11 @@ import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import { extractPlanQuery, planQueryString } from "@/lib/billing/plan-query";
+import type { Locale } from "@/lib/i18n/config";
+import type { AUTH_DICT } from "@/lib/i18n/dictionaries/auth";
 import { createClient } from "@/lib/supabase/client";
 
-export function GoogleButton() {
+export function GoogleButton({ dict }: { dict: (typeof AUTH_DICT)[Locale] }) {
   const [pending, setPending] = useState(false);
   const params = useSearchParams();
 
@@ -53,7 +55,7 @@ export function GoogleButton() {
           d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.3 5.6l6.5 5.5C39.9 37.1 44 31.5 44 24c0-1.3-.1-2.7-.4-3.5z"
         />
       </svg>
-      {pending ? "Se conectează..." : "Continuă cu Google"}
+      {pending ? dict.googleButton.seConecteaza : dict.googleButton.continua}
     </button>
   );
 }

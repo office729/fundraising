@@ -8,6 +8,8 @@ import { redirect } from "next/navigation";
 
 import { db } from "@/lib/db";
 import { fundraisingDonations, fundraisingPages, organizations } from "@/lib/db/schema";
+import { DONATE_ACTION_ERRORS } from "@/lib/i18n/dictionaries/donation";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { stripeOrgDupaSlug } from "@/lib/org-stripe";
 import { EMAIL_RE, normalizeazaEmail } from "@/lib/validation";
 
@@ -22,6 +24,8 @@ export async function doneazaAction(
   _prevState: DoneazaState,
   formData: FormData,
 ): Promise<DoneazaState> {
+  const errors = DONATE_ACTION_ERRORS[await getLocale()];
+
   // Honeypot — un bot completează orice câmp, un om nu-l vede.
   if (String(formData.get("website") ?? "").trim()) {
     return { error: null };
@@ -29,10 +33,10 @@ export async function doneazaAction(
 
   const suma = Math.round(Number(formData.get("suma")));
   if (!Number.isFinite(suma) || suma < 5) {
-    return { error: "Suma minimă pentru o donație este 5 lei." };
+    return { error: errors.sumaMinima };
   }
   if (suma > 50_000) {
-    return { error: "Pentru sume mai mari, te rugăm să ne contactezi direct." };
+    return { error: errors.sumaMaxima };
   }
 
   const numeDonator = String(formData.get("numeDonator") ?? "").trim().slice(0, MAX_LEN);
@@ -48,13 +52,13 @@ export async function doneazaAction(
   const consimtamantWhatsapp = formData.get("consimtamantWhatsapp") != null;
 
   if (!numeDonator || !emailDonator) {
-    return { error: "Numele și emailul sunt obligatorii." };
+    return { error: errors.campuriObligatorii };
   }
   if (!EMAIL_RE.test(emailDonator)) {
-    return { error: "Adresa de email nu e validă." };
+    return { error: errors.emailInvalid };
   }
   if (!consimtamantGdpr || !consimtamantTermeni) {
-    return { error: "Trebuie să fii de acord cu politica de date și cu termenii, ca să poți dona." };
+    return { error: errors.acordObligatoriu };
   }
 
   const rezolvat = await db.transaction(async (tx) => {
@@ -73,7 +77,7 @@ export async function doneazaAction(
   });
 
   if (!rezolvat) {
-    return { error: "Pagina nu a fost găsită sau nu mai este activă." };
+    return { error: errors.paginaNegasita };
   }
 
   // Donația se încasează în contul Stripe al ONG-ului (nu al platformei) — dacă
@@ -83,10 +87,10 @@ export async function doneazaAction(
     stripeOrg = await stripeOrgDupaSlug(orgSlug);
   } catch (e) {
     console.error("cheia Stripe a organizației nu a putut fi citită:", e);
-    return { error: "Plata nu poate fi pornită momentan — te rugăm să încerci mai târziu sau să contactezi organizația." };
+    return { error: errors.stripeIndisponibil };
   }
   if (!stripeOrg) {
-    return { error: "Această organizație nu și-a activat încă donațiile online — te rugăm să o contactezi direct." };
+    return { error: errors.stripeNeconectat };
   }
 
   // Formularul e trimis prin POST, deci "origin" e de obicei prezent — dar
@@ -164,7 +168,7 @@ export async function doneazaAction(
     });
   } catch (e) {
     console.error("creare sesiune Stripe / donatie esuata:", e);
-    return { error: "Nu am putut porni plata — încearcă din nou." };
+    return { error: errors.plataEsuata };
   }
 
   redirect(sessionUrl);

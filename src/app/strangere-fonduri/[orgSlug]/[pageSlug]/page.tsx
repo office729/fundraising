@@ -9,6 +9,8 @@ import { cache } from "react";
 import { CAMPAIGN_TEMPLATES } from "@/lib/campaign-templates";
 import { db } from "@/lib/db";
 import { fundraisingDonations, fundraisingPages, fundraisingUpdates, organizations } from "@/lib/db/schema";
+import { DONATION_DICT } from "@/lib/i18n/dictionaries/donation";
+import { getLocale } from "@/lib/i18n/get-locale";
 
 import { CampaignFooter } from "../campaign-footer";
 import { DoneazaModal } from "./doneaza-modal";
@@ -117,8 +119,9 @@ export default async function PaginaStrangereFonduriPage({
   params: Promise<{ orgSlug: string; pageSlug: string }>;
 }) {
   const { orgSlug, pageSlug } = await params;
-  const data = await getPaginaPublica(orgSlug, pageSlug);
+  const [data, locale] = await Promise.all([getPaginaPublica(orgSlug, pageSlug), getLocale()]);
   if (!data) notFound();
+  const t = DONATION_DICT[locale];
 
   const { org, pagina, recente, topDonatori, actualizari, totalDonatii, alteCampanii } = data;
   const procent = pagina.sumaTinta ? Math.min(100, Math.round((pagina.sumaStransa / pagina.sumaTinta) * 100)) : null;
@@ -134,7 +137,7 @@ export default async function PaginaStrangereFonduriPage({
   const heroFallback = <div className="h-full w-full bg-gradient-to-br from-brand-blue to-brand-green" />;
   const eyebrow = (
     <Link href={`/strangere-fonduri/${orgSlug}`} className="text-xs font-bold tracking-wide text-brand-green uppercase hover:underline">
-      Campanie verificată de {org.name}
+      {t.campaignPage.verificataDe(org.name)}
     </Link>
   );
   const titlu = <h1 className="font-display mt-1.5 text-[30px] leading-tight font-bold text-ink">{pagina.titlu}</h1>;
@@ -146,7 +149,7 @@ export default async function PaginaStrangereFonduriPage({
           href={`/strangere-fonduri/${orgSlug}`}
           className="mb-5 inline-flex items-center gap-1.5 text-[13px] font-semibold text-muted-2 transition hover:text-brand-blue"
         >
-          <ArrowLeft className="h-3.5 w-3.5" /> Acasă la {org.name}
+          <ArrowLeft className="h-3.5 w-3.5" /> {t.campaignPage.acasaLa(org.name)}
         </Link>
 
         <div className="overflow-hidden rounded-[var(--radius-hero)] border border-line bg-panel shadow-[0_20px_50px_-25px_rgba(21,74,133,0.35)]">
@@ -176,7 +179,7 @@ export default async function PaginaStrangereFonduriPage({
                   href={`/strangere-fonduri/${orgSlug}`}
                   className="text-xs font-bold tracking-wide text-white uppercase hover:underline [text-shadow:0_1px_4px_rgba(0,0,0,0.85)]"
                 >
-                  Campanie verificată de {org.name}
+                  {t.campaignPage.verificataDe(org.name)}
                 </Link>
                 <h1 className="font-display mt-1.5 text-[28px] leading-tight font-bold text-white [text-shadow:0_1px_4px_rgba(0,0,0,0.85)] sm:text-[32px]">
                   {pagina.titlu}
@@ -208,13 +211,13 @@ export default async function PaginaStrangereFonduriPage({
             )}
 
             <div className="mt-5">
-              <p className="text-xs font-semibold tracking-wide text-muted-2 uppercase">Distribuie această campanie</p>
-              <ShareLinksClient url={url} titlu={pagina.titlu} />
+              <p className="text-xs font-semibold tracking-wide text-muted-2 uppercase">{t.campaignPage.distribuie}</p>
+              <ShareLinksClient url={url} titlu={pagina.titlu} locale={locale} />
               <Link
                 href={`/strangere-fonduri/${orgSlug}/${pageSlug}/promovare`}
                 className="mt-2 inline-block text-[13px] font-medium text-brand-green hover:underline"
               >
-                Instrumente de promovare pentru susținători →
+                {t.campaignPage.instrumentePromovare}
               </Link>
             </div>
 
@@ -222,26 +225,26 @@ export default async function PaginaStrangereFonduriPage({
               {procent != null && <ProgressRing procent={procent} />}
               <div className="min-w-0">
                 <span className="font-display block text-2xl font-extrabold text-brand-blue sm:text-3xl">
-                  {pagina.sumaStransa.toLocaleString("ro-RO")} lei
+                  {t.campaignPage.leiSuma(pagina.sumaStransa.toLocaleString(t.numeLocale))}
                 </span>
                 <span className="text-sm text-muted-2">
-                  {pagina.sumaTinta && `din ${pagina.sumaTinta.toLocaleString("ro-RO")} lei · `}
-                  {totalDonatii.toLocaleString("ro-RO")} {totalDonatii === 1 ? "donație" : "donații"}
+                  {pagina.sumaTinta && t.campaignPage.dinTinta(pagina.sumaTinta.toLocaleString(t.numeLocale))}
+                  {totalDonatii.toLocaleString(t.numeLocale)} {totalDonatii === 1 ? t.campaignPage.donatie : t.campaignPage.donatii}
                 </span>
               </div>
             </div>
 
             {actualizari.length > 0 && (
               <div className="mt-7">
-                <h2 className="font-display text-base font-bold text-ink">Actualizări</h2>
+                <h2 className="font-display text-base font-bold text-ink">{t.campaignPage.actualizari}</h2>
                 <div className="mt-4 flex flex-col">
                   {actualizari.map((a, i) => (
                     <div key={a.id} className="flex gap-4">
                       <div className="flex flex-col items-center">
                         <div className="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-full bg-brand-green text-white">
-                          <span className="text-lg leading-none font-extrabold">{a.data.toLocaleDateString("ro-RO", { day: "2-digit" })}</span>
+                          <span className="text-lg leading-none font-extrabold">{a.data.toLocaleDateString(t.numeLocale, { day: "2-digit" })}</span>
                           <span className="mt-0.5 text-[10px] leading-none font-bold uppercase">
-                            {a.data.toLocaleDateString("ro-RO", { month: "short" }).replace(".", "")}
+                            {a.data.toLocaleDateString(t.numeLocale, { month: "short" }).replace(".", "")}
                           </span>
                         </div>
                         {i < actualizari.length - 1 && <div className="my-1 w-0.5 flex-1 bg-brand-green-soft" />}
@@ -250,7 +253,7 @@ export default async function PaginaStrangereFonduriPage({
                         <div className="flex items-start justify-between gap-3">
                           <p className="font-display text-sm font-bold text-ink">{a.titlu}</p>
                           <span className="shrink-0 text-xs text-muted-2">
-                            {a.data.toLocaleDateString("ro-RO", { day: "numeric", month: "long", year: "numeric" })}
+                            {a.data.toLocaleDateString(t.numeLocale, { day: "numeric", month: "long", year: "numeric" })}
                           </span>
                         </div>
                         <p className="mt-1.5 whitespace-pre-wrap text-[14px] leading-relaxed text-body">{a.continut}</p>
@@ -263,23 +266,19 @@ export default async function PaginaStrangereFonduriPage({
 
             <div className="mt-6 grid gap-6 sm:grid-cols-[260px_minmax(0,1fr)]">
               <div className="h-fit rounded-2xl border border-brand-green-soft bg-brand-green-soft/60 p-5">
-                <p className="font-display text-sm font-bold text-ink">Susține campania</p>
-                <p className="mt-1 text-[12.5px] leading-relaxed text-muted-2">
-                  Orice sumă contează — plata e securizată, procesată de Stripe.
-                </p>
+                <p className="font-display text-sm font-bold text-ink">{t.campaignPage.sustineCampania}</p>
+                <p className="mt-1 text-[12.5px] leading-relaxed text-muted-2">{t.campaignPage.sustineDescriere}</p>
                 <div className="mt-4">
                   {pagina.status === "activa" ? (
-                    <DoneazaModal orgSlug={orgSlug} pageSlug={pageSlug} titlu={pagina.titlu} />
+                    <DoneazaModal orgSlug={orgSlug} pageSlug={pageSlug} titlu={pagina.titlu} locale={locale} />
                   ) : (
-                    <p className="text-[13px] leading-relaxed text-muted-2">
-                      Această campanie este închisă și nu mai acceptă donații noi.
-                    </p>
+                    <p className="text-[13px] leading-relaxed text-muted-2">{t.campaignPage.campanieInchisa}</p>
                   )}
                 </div>
                 <div className="mt-4">
                   <PaymentBadges />
                 </div>
-                <RecentDonationsList donatii={recente} />
+                <RecentDonationsList donatii={recente} locale={locale} />
               </div>
 
               <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-body">{pagina.poveste}</p>
@@ -291,15 +290,19 @@ export default async function PaginaStrangereFonduriPage({
           <section id="toate-donatiile" className="mt-8 grid scroll-mt-6 gap-6 rounded-3xl border border-line bg-panel p-6 shadow-sm sm:grid-cols-2 sm:p-8">
             {topDonatori.length > 0 && (
               <div>
-                <h2 className="font-display text-base font-bold text-ink">Top donatori</h2>
+                <h2 className="font-display text-base font-bold text-ink">{t.campaignPage.topDonatori}</h2>
                 <div className="mt-4 flex flex-col gap-2">
                   {topDonatori.map((d, i) => (
                     <div key={d.id} className="flex items-center justify-between rounded-lg border border-line bg-panel-2 px-4 py-2.5">
                       <div className="flex items-center gap-2.5">
                         <span className="font-display text-sm font-extrabold text-brand-green">#{i + 1}</span>
-                        <span className="text-sm font-medium text-ink">{d.anonim || !d.numeDonator ? "Susținător anonim" : d.numeDonator}</span>
+                        <span className="text-sm font-medium text-ink">
+                          {d.anonim || !d.numeDonator ? t.campaignPage.susinatorAnonim : d.numeDonator}
+                        </span>
                       </div>
-                      <span className="ci-tabular text-sm font-bold text-brand-blue">{d.suma.toLocaleString("ro-RO")} lei</span>
+                      <span className="ci-tabular text-sm font-bold text-brand-blue">
+                        {t.campaignPage.leiSuma(d.suma.toLocaleString(t.numeLocale))}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -308,13 +311,17 @@ export default async function PaginaStrangereFonduriPage({
 
             {recente.length > 0 && (
               <div>
-                <h2 className="font-display text-base font-bold text-ink">Donații recente</h2>
+                <h2 className="font-display text-base font-bold text-ink">{t.campaignPage.donatiiRecente}</h2>
                 <div className="mt-4 flex flex-col gap-3">
                   {recente.map((d) => (
                     <div key={d.id} className="rounded-lg border border-line bg-panel-2 p-4">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-ink">{d.anonim || !d.numeDonator ? "Susținător anonim" : d.numeDonator}</span>
-                        <span className="ci-tabular text-sm font-bold text-brand-blue">{d.suma.toLocaleString("ro-RO")} lei</span>
+                        <span className="text-sm font-medium text-ink">
+                          {d.anonim || !d.numeDonator ? t.campaignPage.susinatorAnonim : d.numeDonator}
+                        </span>
+                        <span className="ci-tabular text-sm font-bold text-brand-blue">
+                          {t.campaignPage.leiSuma(d.suma.toLocaleString(t.numeLocale))}
+                        </span>
                       </div>
                       {d.mesaj && <p className="mt-1.5 text-[13px] leading-relaxed text-muted">{d.mesaj}</p>}
                     </div>
@@ -328,9 +335,9 @@ export default async function PaginaStrangereFonduriPage({
         {alteCampanii.length > 0 && (
           <section className="mt-8">
             <div className="flex items-baseline justify-between gap-3">
-              <h2 className="font-display text-base font-bold text-ink">Alte campanii ale {org.name}</h2>
+              <h2 className="font-display text-base font-bold text-ink">{t.campaignPage.alteCampanii(org.name)}</h2>
               <Link href={`/strangere-fonduri/${orgSlug}`} className="shrink-0 text-[13px] font-medium text-brand-green hover:underline">
-                Vezi toate →
+                {t.campaignPage.vezToate}
               </Link>
             </div>
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -352,7 +359,8 @@ export default async function PaginaStrangereFonduriPage({
                     <div className="min-w-0 flex-1">
                       <p className="font-display truncate text-[14px] font-bold text-ink">{p.titlu}</p>
                       <p className="mt-0.5 text-[12.5px] text-muted-2">
-                        {p.sumaStransa.toLocaleString("ro-RO")} lei{p.sumaTinta && ` din ${p.sumaTinta.toLocaleString("ro-RO")} lei`}
+                        {t.campaignPage.leiSuma(p.sumaStransa.toLocaleString(t.numeLocale))}
+                        {p.sumaTinta && ` ${t.campaignPage.dinTintaScurt(p.sumaTinta.toLocaleString(t.numeLocale))}`}
                         {procentAlta != null && ` · ${procentAlta}%`}
                       </p>
                     </div>
@@ -364,7 +372,7 @@ export default async function PaginaStrangereFonduriPage({
         )}
       </main>
 
-      <CampaignFooter orgSlug={orgSlug} orgName={org.name} orgLogoUrl={org.logoUrl} orgSlogan={org.slogan} orgCif={org.cif} />
+      <CampaignFooter orgSlug={orgSlug} orgName={org.name} orgLogoUrl={org.logoUrl} orgSlogan={org.slogan} orgCif={org.cif} locale={locale} />
     </div>
   );
 }

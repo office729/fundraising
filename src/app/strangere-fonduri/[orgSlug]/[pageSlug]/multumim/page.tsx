@@ -3,6 +3,8 @@ import Link from "next/link";
 
 import { db } from "@/lib/db";
 import { fundraisingDonations, fundraisingPages } from "@/lib/db/schema";
+import { DONATION_DICT } from "@/lib/i18n/dictionaries/donation";
+import { getLocale } from "@/lib/i18n/get-locale";
 
 // Stripe redirecționează aici imediat după plată — confirmarea REALĂ (marcarea
 // donației ca "reusita" și actualizarea sumei strânse) o face webhook-ul
@@ -38,31 +40,33 @@ export default async function MultumimPage({
 }) {
   const { orgSlug, pageSlug } = await params;
   const { session_id } = await searchParams;
-  const detaliu = session_id ? await getDetaliuDonatie(session_id) : null;
+  const [detaliu, locale] = await Promise.all([
+    session_id ? getDetaliuDonatie(session_id) : Promise.resolve(null),
+    getLocale(),
+  ]);
+  const t = DONATION_DICT[locale];
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-6 text-center">
       <span className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-green-soft text-2xl">🎉</span>
-      <h1 className="font-display mt-5 text-2xl font-bold text-ink">Mulțumim pentru donație!</h1>
+      <h1 className="font-display mt-5 text-2xl font-bold text-ink">{t.thankYou.titlu}</h1>
       {detaliu ? (
         <p className="mt-2 text-[14.5px] leading-relaxed text-body">
-          {detaliu.numeDonator ? `${detaliu.numeDonator}, mulțumim` : "Mulțumim"} pentru donația ta de{" "}
+          {detaliu.numeDonator ? t.thankYou.multumimNume(detaliu.numeDonator) : t.thankYou.multumim} {t.thankYou.pentruDonatia}{" "}
           <strong className="text-ink">
-            {detaliu.suma.toLocaleString("ro-RO")} lei{detaliu.recurenta ? " / lună" : ""}
+            {detaliu.suma.toLocaleString(t.numeLocale)} lei{detaliu.recurenta ? t.thankYou.lunaSufix : ""}
           </strong>{" "}
-          pentru <strong className="text-ink">{detaliu.pageTitlu}</strong>. Dacă ai lăsat un email, primești și
-          confirmarea acolo.
+          {t.thankYou.pentru} <strong className="text-ink">{detaliu.pageTitlu}</strong>
+          {t.thankYou.finalCuEmail}
         </p>
       ) : (
-        <p className="mt-2 text-[14.5px] leading-relaxed text-muted">
-          Plata a fost trimisă cu succes. Dacă ai lăsat un email, primești confirmarea acolo.
-        </p>
+        <p className="mt-2 text-[14.5px] leading-relaxed text-muted">{t.thankYou.faraDetaliu}</p>
       )}
       <Link
         href={`/strangere-fonduri/${orgSlug}/${pageSlug}`}
         className="mt-6 rounded-md bg-brand-green px-6 py-3 font-bold text-white transition hover:bg-brand-green-hover"
       >
-        Înapoi la pagină
+        {t.thankYou.inapoiLaPagina}
       </Link>
     </main>
   );
