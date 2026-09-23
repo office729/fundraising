@@ -23,9 +23,14 @@ export function DoneazaForm({ orgSlug, pageSlug, locale }: { orgSlug: string; pa
       {/* Honeypot — invizibil pentru oameni. */}
       <input type="text" name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />
 
-      <div className="inline-flex self-start overflow-hidden rounded-lg border border-line text-sm font-bold">
+      <div
+        role="group"
+        aria-label={t.frecventaLabel}
+        className="inline-flex self-start overflow-hidden rounded-lg border border-line text-sm font-bold"
+      >
         <button
           type="button"
+          aria-pressed={!recurenta}
           onClick={() => setRecurenta(false)}
           className={`px-4 py-2 transition ${!recurenta ? "bg-brand-green text-white" : "bg-panel text-ink"}`}
         >
@@ -33,6 +38,7 @@ export function DoneazaForm({ orgSlug, pageSlug, locale }: { orgSlug: string; pa
         </button>
         <button
           type="button"
+          aria-pressed={recurenta}
           onClick={() => setRecurenta(true)}
           className={`px-4 py-2 transition ${recurenta ? "bg-brand-green text-white" : "bg-panel text-ink"}`}
         >
@@ -41,11 +47,12 @@ export function DoneazaForm({ orgSlug, pageSlug, locale }: { orgSlug: string; pa
       </div>
       <input type="hidden" name="recurenta" value={recurenta ? "1" : ""} />
 
-      <div className="flex flex-wrap gap-2">
+      <div role="group" aria-label={t.sumeRapideLabel} className="flex flex-wrap gap-2">
         {SUME_RAPIDE.map((s) => (
           <button
             key={s}
             type="button"
+            aria-pressed={suma === s}
             onClick={() => setSuma(s)}
             className={`rounded-full border px-4 py-1.5 text-sm font-bold transition ${
               suma === s ? "border-brand-green bg-brand-green-soft text-brand-green" : "border-line text-ink hover:border-brand-blue"

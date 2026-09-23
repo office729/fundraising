@@ -36,8 +36,10 @@ export const DONATION_DICT = {
       inchide: "Închide",
     },
     donateForm: {
+      frecventaLabel: "Frecvența donației",
       oSingurataData: "O singură dată",
       lunar: "Lunar",
+      sumeRapideLabel: "Sume rapide",
       sumaLei: "Sumă (lei)",
       numeleTau: "Numele tău",
       email: "Email",
@@ -115,8 +117,10 @@ export const DONATION_DICT = {
       inchide: "Close",
     },
     donateForm: {
+      frecventaLabel: "Donation frequency",
       oSingurataData: "One time",
       lunar: "Monthly",
+      sumeRapideLabel: "Quick amounts",
       sumaLei: "Amount (lei)",
       numeleTau: "Your name",
       email: "Email",
