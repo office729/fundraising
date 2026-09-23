@@ -65,6 +65,7 @@ export const AUTH_DICT = {
       forgotEmail: "Completează adresa de email.",
       resetParoleDiferite: "Parolele nu coincid.",
       resetLinkExpirat: "Link-ul de resetare a expirat sau a fost deja folosit — cere unul nou.",
+      preaMulteIncercari: "Prea multe încercări — te rugăm să aștepți câteva minute și să încerci din nou.",
     },
   },
   en: {
@@ -127,6 +128,7 @@ export const AUTH_DICT = {
       forgotEmail: "Enter your email address.",
       resetParoleDiferite: "Passwords don't match.",
       resetLinkExpirat: "The reset link has expired or was already used — request a new one.",
+      preaMulteIncercari: "Too many attempts — please wait a few minutes and try again.",
     },
   },
 } as const satisfies Record<Locale, unknown>;

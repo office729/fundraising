@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { findBeneficiaryProfile } from "@/lib/auth/beneficiar";
 import { ensureAppUser } from "@/lib/auth/dal";
+import { obtineIpClient, verificaLimitaRata } from "@/lib/auth/rate-limit";
 import { db } from "@/lib/db";
 import { memberships, organizations } from "@/lib/db/schema";
 import { AUTH_DICT } from "@/lib/i18n/dictionaries/auth";
@@ -26,6 +27,13 @@ export async function loginAction(
 
   if (!email || !password) {
     return { error: errors.loginCampuri };
+  }
+
+  // 10 încercări/15 min per IP — suficient pentru un utilizator care-și
+  // greșește parola de câteva ori, dar blochează brute-force-ul pe un cont țintă.
+  const ip = await obtineIpClient();
+  if (!(await verificaLimitaRata("login", ip, 10, 15))) {
+    return { error: errors.preaMulteIncercari };
   }
 
   const supabase = await createClient({ persist: ramaiConectat });

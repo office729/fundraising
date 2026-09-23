@@ -134,6 +134,19 @@ create policy app_users_insert_self ON app_users
 create policy app_users_self_update ON app_users
   for update using (id = nullif(current_setting('app.current_user_id', true), '')::uuid);
 
+-- auth_rate_limits: contoare de limitare de rată pe /login, /signup,
+-- /forgot-password (src/lib/auth/rate-limit.ts) — scrise ÎNAINTE de orice
+-- autentificare, deci fără niciun context de user/org disponibil, la fel ca
+-- app_users_insert_self mai sus. Cheiat pe (actiune, identificator) — IP sau
+-- email țintă, niciodată date sensibile. Fără SELECT pe fundraising_pages/
+-- organizations, nu există scop de izolat: politici complet permisive,
+-- siguranța reală vine din UPSERT-ul atomic din cod (INSERT ... ON CONFLICT
+-- ... DO UPDATE), nu din RLS. SELECT permisiv e necesar și pentru
+-- INSERT ... RETURNING — vezi CAPCANA de mai jos (§336).
+alter table auth_rate_limits force row level security;
+create policy auth_rate_limits_all ON auth_rate_limits
+  for all using (true) with check (true);
+
 -- memberships: doar propriile membership-uri.
 create policy memberships_self ON memberships
   for select using (user_id = nullif(current_setting('app.current_user_id', true), '')::uuid);
@@ -472,10 +485,10 @@ create policy fundraising_updates_admin_update on fundraising_updates
 --    pierdut politici — re-rulează secțiunile 3 și 4 complet.
 -- ============================================================================
 -- select tablename, policyname, cmd from pg_policies where schemaname = 'public' order by tablename;
--- Așteptat: apeluri(3), app_users(3), companies(1), company_notite(1),
---           company_sponsorizari(1), contacts(1), crm_kv(1),
+-- Așteptat: apeluri(3), app_users(3), auth_rate_limits(1), companies(1),
+--           company_notite(1), company_sponsorizari(1), contacts(1), crm_kv(1),
 --           donatori_reali(3), formular230_beneficiari(5),
 --           formular230_campanii_email(3), formular230_submissions(3),
 --           fundraising_donations(6), fundraising_pages(5),
 --           fundraising_updates(4), invites(4), memberships(2),
---           organizations(5) = 50 politici.
+--           organizations(5) = 51 politici.

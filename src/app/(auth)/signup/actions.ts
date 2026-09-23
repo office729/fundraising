@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 
 import { semnalizeazaEveniment } from "@/lib/analytics-server";
 import { ensureAppUser } from "@/lib/auth/dal";
+import { obtineIpClient, verificaLimitaRata } from "@/lib/auth/rate-limit";
 import { citestePlanulAlesDinFormular } from "@/lib/billing/plan-from-form";
 import { db } from "@/lib/db";
 import { memberships, organizations } from "@/lib/db/schema";
@@ -38,6 +39,13 @@ export async function signupAction(
   }
   if (password.length < 8) {
     return { error: errors.parolaMinim };
+  }
+
+  // 5 conturi noi/oră per IP — creare de cont e rară pentru un utilizator
+  // real, dar o țintă pentru crearea automată în masă a conturilor.
+  const ip = await obtineIpClient();
+  if (!(await verificaLimitaRata("signup", ip, 5, 60))) {
+    return { error: errors.preaMulteIncercari };
   }
 
   const supabase = await createClient();
