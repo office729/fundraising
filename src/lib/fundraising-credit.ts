@@ -82,11 +82,12 @@ export async function crediteazaPaginaSiDonator(
 // Simetricul lui crediteazaPaginaSiDonator — apelat la rambursare/contestație
 // (doar pe donații venite prin Stripe; o donație offline ștearsă manual ar
 // trebui decreditată direct de acțiunea care o șterge, dacă/când se adaugă).
-// greatest(0, ...) evită sume negative dacă vreodată cache-ul era deja
-// desincronizat.
+// `suma` e DOAR delta rambursată acum (nu suma întreagă a donației — vezi
+// stripe-donation-events.ts pentru rambursări parțiale). greatest(0, ...)
+// evită sume negative dacă vreodată cache-ul era deja desincronizat.
 export async function decrediteazaPaginaSiDonator(
   tx: DbOrTx,
-  params: { pageId: string; orgId: string; suma: number; emailDonator: string | null },
+  params: { pageId: string; orgId: string; suma: number; emailDonator: string | null; integralRambursata: boolean },
 ) {
   await tx
     .update(fundraisingPages)
@@ -95,11 +96,14 @@ export async function decrediteazaPaginaSiDonator(
 
   if (!params.emailDonator) return;
 
+  // numarDonatii scade doar dacă donația a fost rambursată INTEGRAL — o
+  // rambursare parțială înseamnă că donatorul tot a donat, doar a primit
+  // înapoi o parte; nu trebuie să dispară din numărul lui de donații.
   await tx
     .update(donatoriReali)
     .set({
       totalDonat: sql`greatest(0, ${donatoriReali.totalDonat} - ${params.suma})`,
-      numarDonatii: sql`greatest(0, ${donatoriReali.numarDonatii} - 1)`,
+      ...(params.integralRambursata ? { numarDonatii: sql`greatest(0, ${donatoriReali.numarDonatii} - 1)` } : {}),
     })
     .where(and(eq(donatoriReali.orgId, params.orgId), eq(donatoriReali.email, params.emailDonator)));
 }

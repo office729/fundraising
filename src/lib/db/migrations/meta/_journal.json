@@ -15,6 +15,13 @@
       "when": 1789990428254,
       "tag": "0001_netopia_stripe_org",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790156518322,
+      "tag": "0002_breezy_weapon_omega",
+      "breakpoints": true
     }
   ]
 }

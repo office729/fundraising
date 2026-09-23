@@ -1,0 +1,1 @@
+ALTER TABLE "fundraising_donations" ADD COLUMN "suma_rambursata" integer DEFAULT 0 NOT NULL;

@@ -238,16 +238,24 @@ export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, s
     }
   }
 
-  // Rambursare sau contestație de plată — o donație deja "reusita" nu (mai)
-  // reprezintă bani primiți efectiv. Corelăm evenimentul cu donația prin
-  // stripePaymentIntentId (charge.refunded/charge.dispute.created nu poartă
-  // direct sesiunea Checkout sau factura) și decrementăm simetric.
+  // Rambursare (parțială sau integrală) sau contestație de plată — bani care
+  // nu (mai) reprezintă venit efectiv pentru donație/pagină. Corelăm
+  // evenimentul cu donația prin stripePaymentIntentId (charge.refunded/
+  // charge.dispute.created nu poartă direct sesiunea Checkout sau factura).
   if (event.type === "charge.refunded" || event.type === "charge.dispute.created") {
     const charge =
       event.type === "charge.dispute.created" ? (event.data.object as Stripe.Dispute).charge : (event.data.object as Stripe.Charge);
     const paymentIntentId = typeof charge === "string" ? null : idDin(charge.payment_intent);
     const chargeId = typeof charge === "string" ? charge : charge.id;
     const candidat = paymentIntentId ?? chargeId; // fallback rar: charge fără payment_intent
+
+    // Suma (în bani) purtată de eveniment: charge.refunded poartă
+    // amount_refunded, suma CUMULATIVĂ rambursată pe charge până acum — NU
+    // doar rambursarea curentă. O contestație poartă suma disputată.
+    const sumaEvenimentBani =
+      event.type === "charge.dispute.created"
+        ? (event.data.object as Stripe.Dispute).amount
+        : (event.data.object as Stripe.Charge).amount_refunded;
 
     try {
       await db.transaction(async (tx) => {
@@ -260,18 +268,53 @@ export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, s
           .limit(1);
         if (!donatie[0]) return; // nicio donație locală cu acest payment_intent
 
+        // O rambursare PARȚIALĂ (ex. 10 din 100 lei) nu are voie să
+        // decrementeze suma întreagă a donației din sumaStransa/totalDonat —
+        // doar diferența dintre ce s-a rambursat până acum și ce era deja
+        // înregistrat. amount_refunded al lui Stripe e mereu cumulativul pe
+        // charge, deci comparăm cu sumaRambursata reținută, nu presupunem
+        // orbește "toată donația". O contestație se adaugă la ce era deja
+        // rambursat (rar, dar posibil să coexiste pe același charge).
+        const sumaRambursataAnterior = donatie[0].sumaRambursata;
+        const sumaCumulativa =
+          event.type === "charge.dispute.created"
+            ? sumaRambursataAnterior + Math.round(sumaEvenimentBani / 100)
+            : Math.round(sumaEvenimentBani / 100);
+        const sumaRambursataNoua = Math.min(donatie[0].suma, Math.max(sumaRambursataAnterior, sumaCumulativa));
+        if (sumaRambursataNoua <= sumaRambursataAnterior) return; // eveniment vechi/retrimis — nimic nou de decrementat
+
+        const integralRambursata = sumaRambursataNoua >= donatie[0].suma;
+
+        // UPDATE atomic condiționat pe valoarea CITITĂ a sumaRambursata —
+        // compare-and-swap, la fel ca la checkout.session.completed: dacă
+        // Stripe retrimite evenimentul sau două rambursări parțiale ajung
+        // aproape simultan, doar o cerere găsește rândul neschimbat și
+        // decrementează; ne(status,...) exclude donații niciodată creditate
+        // (in_asteptare/esuata) — decrementarea lor ar scădea bani care
+        // n-au fost adăugați niciodată în sumaStransa/totalDonat.
         const actualizat = await tx
           .update(fundraisingDonations)
-          .set({ status: "rambursata" })
-          .where(and(eq(fundraisingDonations.id, donatie[0].id), eq(fundraisingDonations.status, "reusita")))
+          .set({
+            sumaRambursata: sumaRambursataNoua,
+            status: integralRambursata ? "rambursata" : "reusita",
+          })
+          .where(
+            and(
+              eq(fundraisingDonations.id, donatie[0].id),
+              eq(fundraisingDonations.sumaRambursata, sumaRambursataAnterior),
+              ne(fundraisingDonations.status, "in_asteptare"),
+              ne(fundraisingDonations.status, "esuata"),
+            ),
+          )
           .returning({ id: fundraisingDonations.id });
-        if (!actualizat[0]) return; // nu era "reusita" (deja rambursată/eșuată) — nimic de decrementat
+        if (!actualizat[0]) return; // altă cerere concurentă/retrimisă a apucat deja, sau donația nu era creditată
 
         await decrediteazaPaginaSiDonator(tx, {
           pageId: donatie[0].pageId,
           orgId: donatie[0].orgId,
-          suma: donatie[0].suma,
+          suma: sumaRambursataNoua - sumaRambursataAnterior,
           emailDonator: donatie[0].emailDonator,
+          integralRambursata,
         });
       });
     } catch (e) {

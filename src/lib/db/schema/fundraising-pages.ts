@@ -100,6 +100,13 @@ export const fundraisingDonations = pgTable(
     // că un donator lunar s-a oprit; irelevant (rămâne true) pentru donațiile
     // unice.
     abonamentActiv: boolean("abonament_activ").notNull().default(true),
+    // Suma cumulativă deja rambursată din `suma` (lei) — necesară pentru
+    // rambursări parțiale: charge.refunded poartă suma TOTALĂ rambursată pe
+    // charge până acum (Stripe amount_refunded), nu doar delta acestui
+    // eveniment. Fără acest câmp, fiecare eveniment ar decrementa din nou
+    // suma întreagă a donației din sumaStransa/totalDonat, deși doar o parte
+    // a fost efectiv returnată — vezi stripe-donation-events.ts.
+    sumaRambursata: integer("suma_rambursata").notNull().default(0),
     status: fundraisingDonationStatus("status").notNull().default("in_asteptare"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
