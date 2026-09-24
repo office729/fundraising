@@ -17,6 +17,8 @@ import {
 const EVENIMENTE = [
   "checkout.session.completed",
   "checkout.session.expired",
+  "checkout.session.async_payment_succeeded",
+  "checkout.session.async_payment_failed",
   "invoice.paid",
   "charge.refunded",
   "charge.dispute.created",

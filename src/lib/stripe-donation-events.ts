@@ -2,7 +2,7 @@ import "server-only";
 
 import { randomUUID } from "node:crypto";
 
-import { and, eq, ne, sql } from "drizzle-orm";
+import { and, eq, inArray, ne, sql } from "drizzle-orm";
 import type Stripe from "stripe";
 
 import { db } from "@/lib/db";
@@ -60,12 +60,49 @@ export function idDin(ref: string | { id: string } | null | undefined): string |
 }
 
 export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, stripe }: Ctx): Promise<boolean> {
+  // Există o donație a acestei organizații, încă "in_asteptare", legată de acest
+  // payment_intent? Fluxul express o are cu stripeSessionId = pi_...; fluxul
+  // Checkout o are cu id-ul sesiunii (aflat cu sessions.list). Erori Stripe →
+  // false (nu blocăm webhook-ul în bucle de retry pentru plăți care nu sunt ale noastre).
+  async function donatieNecreditataCuPaymentIntent(paymentIntentId: string): Promise<boolean> {
+    try {
+      const chei = [paymentIntentId];
+      const sesiuni = await stripe.checkout.sessions.list({ payment_intent: paymentIntentId, limit: 1 });
+      if (sesiuni.data[0]) chei.push(sesiuni.data[0].id);
+      return await db.transaction(async (tx) => {
+        await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
+        const rand = await tx
+          .select({ id: fundraisingDonations.id })
+          .from(fundraisingDonations)
+          .where(
+            and(
+              inArray(fundraisingDonations.stripeSessionId, chei),
+              eq(fundraisingDonations.orgId, orgId),
+              eq(fundraisingDonations.status, "in_asteptare"),
+            ),
+          )
+          .limit(1);
+        return Boolean(rand[0]);
+      });
+    } catch (e) {
+      console.error("Verificare donație necreditată eșuată:", e);
+      return false;
+    }
+  }
+
   // Singurul loc care confirmă o donație ca reușită — niciodată clientul
   // (pagina de mulțumire), doar acest webhook, verificat prin semnătura Stripe.
   // Actualizările pe fundraising_donations/fundraising_pages sunt gated prin
   // GUC-ul app.public_lookup (vezi scripts/restore-rls.mjs) — context server,
   // de încredere, la fel ca rezolvarea org_id în rutele publice de INSERT.
-  if (event.type === "checkout.session.completed") {
+  // Metodele cu decontare întârziată (debit bancar, voucher) trimit
+  // checkout.session.completed cu payment_status "unpaid" — banii NU sunt încă
+  // încasați, deci nu creditez; confirmarea vine ulterior prin
+  // checkout.session.async_payment_succeeded (același tratament, mai jos).
+  if (
+    (event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") &&
+    (event.data.object as Stripe.Checkout.Session).payment_status !== "unpaid"
+  ) {
     const session = event.data.object as Stripe.Checkout.Session;
     let emailParams: Parameters<typeof trimiteEmailMultumireDacaSePoate>[0] | null = null;
     try {
@@ -152,18 +189,27 @@ export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, s
     if (emailParams) await trimiteEmailMultumireDacaSePoate(emailParams);
   }
 
-  if (event.type === "checkout.session.expired") {
+  if (event.type === "checkout.session.expired" || event.type === "checkout.session.async_payment_failed") {
     const session = event.data.object as Stripe.Checkout.Session;
     try {
       await db.transaction(async (tx) => {
         await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
+        // Doar din "in_asteptare" — un eveniment întârziat nu are voie să
+        // coboare o donație deja creditată la "esuata".
         await tx
           .update(fundraisingDonations)
           .set({ status: "esuata" })
-          .where(and(eq(fundraisingDonations.stripeSessionId, session.id), eq(fundraisingDonations.orgId, orgId)));
+          .where(
+            and(
+              eq(fundraisingDonations.stripeSessionId, session.id),
+              eq(fundraisingDonations.orgId, orgId),
+              eq(fundraisingDonations.status, "in_asteptare"),
+            ),
+          );
       });
     } catch (e) {
-      console.error("Eroare la procesarea checkout.session.expired:", e);
+      console.error("Eroare la procesarea expirării/eșecului sesiunii Checkout:", e);
+      return false;
     }
   }
 
@@ -371,16 +417,24 @@ export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, s
         ? (event.data.object as Stripe.Dispute).amount
         : (event.data.object as Stripe.Charge).amount_refunded;
 
+    let nemapat = false;
     try {
       await db.transaction(async (tx) => {
         await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
 
+        // FOR UPDATE: două evenimente pe aceeași donație (ex. dispută + rambursare
+        // sosite la milisecunde) se serializează — altfel al doilea găsea
+        // sumaRambursata schimbat, CAS-ul pierdea și evenimentul se pierdea, cu 200.
         const donatie = await tx
           .select()
           .from(fundraisingDonations)
           .where(and(eq(fundraisingDonations.stripePaymentIntentId, candidat), eq(fundraisingDonations.orgId, orgId)))
-          .limit(1);
-        if (!donatie[0]) return; // nicio donație locală cu acest payment_intent
+          .limit(1)
+          .for("update");
+        if (!donatie[0]) {
+          nemapat = true;
+          return;
+        }
 
         // O rambursare PARȚIALĂ (ex. 10 din 100 lei) nu are voie să
         // decrementeze suma întreagă a donației din sumaStransa/totalDonat —
@@ -438,6 +492,16 @@ export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, s
       });
     } catch (e) {
       console.error("Eroare la procesarea charge.refunded/charge.dispute.created:", e);
+      return false;
+    }
+
+    // Nicio donație cu acest payment_intent: fie plata nu e a noastră (contul
+    // Stripe al ONG-ului poate încasa și altceva), fie evenimentul a sosit
+    // ÎNAINTEA celui de creditare (Stripe nu garantează ordinea). În al doilea
+    // caz un 200 ar pierde rambursarea, iar creditarea ulterioară ar număra bani
+    // deja returnați — răspundem 500 ca Stripe să reîncerce după ce donația e creditată.
+    if (nemapat && paymentIntentId && (await donatieNecreditataCuPaymentIntent(paymentIntentId))) {
+      console.warn("Rambursare/contestație sosită înaintea creditării — Stripe reîncearcă", { orgId, paymentIntentId });
       return false;
     }
   }
