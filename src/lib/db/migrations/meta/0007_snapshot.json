@@ -1,0 +1,5922 @@
+{
+  "id": "8b0cc79e-9737-4db8-872a-383ddf5fc0c7",
+  "prevId": "4c7a7c7e-4d85-4472-a16d-49c2be3ba35a",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.app_users": {
+      "name": "app_users",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "account_type": {
+          "name": "account_type",
+          "type": "account_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "app_users_email_unique": {
+          "name": "app_users_email_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "email"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.auth_rate_limits": {
+      "name": "auth_rate_limits",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "actiune": {
+          "name": "actiune",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "identificator": {
+          "name": "identificator",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "incercari": {
+          "name": "incercari",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "fereastra_start": {
+          "name": "fereastra_start",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "auth_rate_limits_actiune_identificator_idx": {
+          "name": "auth_rate_limits_actiune_identificator_idx",
+          "columns": [
+            {
+              "expression": "actiune",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "identificator",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.fundraising_audit_log": {
+      "name": "fundraising_audit_log",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor_app_user_id": {
+          "name": "actor_app_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "actiune": {
+          "name": "actiune",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entitate": {
+          "name": "entitate",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entitate_id": {
+          "name": "entitate_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "detalii": {
+          "name": "detalii",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "fundraising_audit_log_org_idx": {
+          "name": "fundraising_audit_log_org_idx",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "fundraising_audit_log_org_id_organizations_id_fk": {
+          "name": "fundraising_audit_log_org_id_organizations_id_fk",
+          "tableFrom": "fundraising_audit_log",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "fundraising_audit_log_actor_app_user_id_app_users_id_fk": {
+          "name": "fundraising_audit_log_actor_app_user_id_app_users_id_fk",
+          "tableFrom": "fundraising_audit_log",
+          "tableTo": "app_users",
+          "columnsFrom": [
+            "actor_app_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.fundraising_beneficiaries": {
+      "name": "fundraising_beneficiaries",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "app_user_id": {
+          "name": "app_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "campaign_page_id": {
+          "name": "campaign_page_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "beneficiar_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'activ'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "fundraising_beneficiaries_campaign_idx": {
+          "name": "fundraising_beneficiaries_campaign_idx",
+          "columns": [
+            {
+              "expression": "campaign_page_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "fundraising_beneficiaries_org_idx": {
+          "name": "fundraising_beneficiaries_org_idx",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "fundraising_beneficiaries_app_user_id_app_users_id_fk": {
+          "name": "fundraising_beneficiaries_app_user_id_app_users_id_fk",
+          "tableFrom": "fundraising_beneficiaries",
+          "tableTo": "app_users",
+          "columnsFrom": [
+            "app_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "fundraising_beneficiaries_campaign_page_id_fundraising_pages_id_fk": {
+          "name": "fundraising_beneficiaries_campaign_page_id_fundraising_pages_id_fk",
+          "tableFrom": "fundraising_beneficiaries",
+          "tableTo": "fundraising_pages",
+          "columnsFrom": [
+            "campaign_page_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "fundraising_beneficiaries_org_id_organizations_id_fk": {
+          "name": "fundraising_beneficiaries_org_id_organizations_id_fk",
+          "tableFrom": "fundraising_beneficiaries",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "fundraising_beneficiaries_app_user_id_unique": {
+          "name": "fundraising_beneficiaries_app_user_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "app_user_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.fundraising_beneficiary_invites": {
+      "name": "fundraising_beneficiary_invites",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "campaign_page_id": {
+          "name": "campaign_page_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "token": {
+          "name": "token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "invited_by": {
+          "name": "invited_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "accepted_at": {
+          "name": "accepted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "fundraising_beneficiary_invites_campaign_idx": {
+          "name": "fundraising_beneficiary_invites_campaign_idx",
+          "columns": [
+            {
+              "expression": "campaign_page_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "fundraising_beneficiary_invites_org_idx": {
+          "name": "fundraising_beneficiary_invites_org_idx",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "fundraising_beneficiary_invites_email_idx": {
+          "name": "fundraising_beneficiary_invites_email_idx",
+          "columns": [
+            {
+              "expression": "email",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "fundraising_beneficiary_invites_campaign_page_id_fundraising_pages_id_fk": {
+          "name": "fundraising_beneficiary_invites_campaign_page_id_fundraising_pages_id_fk",
+          "tableFrom": "fundraising_beneficiary_invites",
+          "tableTo": "fundraising_pages",
+          "columnsFrom": [
+            "campaign_page_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "fundraising_beneficiary_invites_org_id_organizations_id_fk": {
+          "name": "fundraising_beneficiary_invites_org_id_organizations_id_fk",
+          "tableFrom": "fundraising_beneficiary_invites",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "fundraising_beneficiary_invites_invited_by_app_users_id_fk": {
+          "name": "fundraising_beneficiary_invites_invited_by_app_users_id_fk",
+          "tableFrom": "fundraising_beneficiary_invites",
+          "tableTo": "app_users",
+          "columnsFrom": [
+            "invited_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "fundraising_beneficiary_invites_token_unique": {
+          "name": "fundraising_beneficiary_invites_token_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "token"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.fundraising_calendar_items": {
+      "name": "fundraising_calendar_items",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "campaign_page_id": {
+          "name": "campaign_page_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ziua": {
+          "name": "ziua",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "obiectiv": {
+          "name": "obiectiv",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "canal_recomandat": {
+          "name": "canal_recomandat",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "text_pregatit": {
+          "name": "text_pregatit",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "materiale_necesare": {
+          "name": "materiale_necesare",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "indemn": {
+          "name": "indemn",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "calendar_item_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'de_facut'"
+        },
+        "data_limita": {
+          "name": "data_limita",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "observatii_agent": {
+          "name": "observatii_agent",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "fundraising_calendar_items_campaign_idx": {
+          "name": "fundraising_calendar_items_campaign_idx",
+          "columns": [
+            {
+              "expression": "campaign_page_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "fundraising_calendar_items_org_idx": {
+          "name": "fundraising_calendar_items_org_idx",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "fundraising_calendar_items_campaign_ziua_idx": {
+          "name": "fundraising_calendar_items_campaign_ziua_idx",
+          "columns": [
+            {
+              "expression": "campaign_page_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "ziua",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "fundraising_calendar_items_campaign_page_id_fundraising_pages_id_fk": {
+          "name": "fundraising_calendar_items_campaign_page_id_fundraising_pages_id_fk",
+          "tableFrom": "fundraising_calendar_items",
+          "tableTo": "fundraising_pages",
+          "columnsFrom": [
+            "campaign_page_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "fundraising_calendar_items_org_id_organizations_id_fk": {
+          "name": "fundraising_calendar_items_org_id_organizations_id_fk",
+          "tableFrom": "fundraising_calendar_items",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.fundraising_campaign_agents": {
+      "name": "fundraising_campaign_agents",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "campaign_page_id": {
+          "name": "campaign_page_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "agent_user_id": {
+          "name": "agent_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "agent_nume": {
+          "name": "agent_nume",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "agent_email": {
+          "name": "agent_email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "bio": {
+          "name": "bio",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "program_disponibilitate": {
+          "name": "program_disponibilitate",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contact_aprobat": {
+          "name": "contact_aprobat",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "assigned_by": {
+          "name": "assigned_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "assigned_at": {
+          "name": "assigned_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "active": {
+          "name": "active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        }
+      },
+      "indexes": {
+        "fundraising_campaign_agents_campaign_idx": {
+          "name": "fundraising_campaign_agents_campaign_idx",
+          "columns": [
+            {
+              "expression": "campaign_page_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "fundraising_campaign_agents_org_idx": {
+          "name": "fundraising_campaign_agents_org_idx",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "fundraising_campaign_agents_campaign_page_id_fundraising_pages_id_fk": {
+          "name": "fundraising_campaign_agents_campaign_page_id_fundraising_pages_id_fk",
+          "tableFrom": "fundraising_campaign_agents",
+          "tableTo": "fundraising_pages",
+          "columnsFrom": [
+            "campaign_page_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "fundraising_campaign_agents_org_id_organizations_id_fk": {
+          "name": "fundraising_campaign_agents_org_id_organizations_id_fk",
+          "tableFrom": "fundraising_campaign_agents",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "fundraising_campaign_agents_agent_user_id_app_users_id_fk": {
+          "name": "fundraising_campaign_agents_agent_user_id_app_users_id_fk",
+          "tableFrom": "fundraising_campaign_agents",
+          "tableTo": "app_users",
+          "columnsFrom": [
+            "agent_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "fundraising_campaign_agents_assigned_by_app_users_id_fk": {
+          "name": "fundraising_campaign_agents_assigned_by_app_users_id_fk",
+          "tableFrom": "fundraising_campaign_agents",
+          "tableTo": "app_users",
+          "columnsFrom": [
+            "assigned_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.fundraising_generated_content": {
+      "name": "fundraising_generated_content",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "campaign_page_id": {
+          "name": "campaign_page_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "canal": {
+          "name": "canal",
+          "type": "continut_canal",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "titlu": {
+          "name": "titlu",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "text_complet": {
+          "name": "text_complet",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "text_scurt": {
+          "name": "text_scurt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "indemn": {
+          "name": "indemn",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sursa": {
+          "name": "sursa",
+          "type": "continut_sursa",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'sablon'"
+        },
+        "status": {
+          "name": "status",
+          "type": "continut_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'draft'"
+        },
+        "aprobat_de": {
+          "name": "aprobat_de",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "fundraising_generated_content_campaign_idx": {
+          "name": "fundraising_generated_content_campaign_idx",
+          "columns": [
+            {
+              "expression": "campaign_page_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "fundraising_generated_content_org_idx": {
+          "name": "fundraising_generated_content_org_idx",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "fundraising_generated_content_campaign_page_id_fundraising_pages_id_fk": {
+          "name": "fundraising_generated_content_campaign_page_id_fundraising_pages_id_fk",
+          "tableFrom": "fundraising_generated_content",
+          "tableTo": "fundraising_pages",
+          "columnsFrom": [
+            "campaign_page_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "fundraising_generated_content_org_id_organizations_id_fk": {
+          "name": "fundraising_generated_content_org_id_organizations_id_fk",
+          "tableFrom": "fundraising_generated_content",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "fundraising_generated_content_aprobat_de_app_users_id_fk": {
+          "name": "fundraising_generated_content_aprobat_de_app_users_id_fk",
+          "tableFrom": "fundraising_generated_content",
+          "tableTo": "app_users",
+          "columnsFrom": [
+            "aprobat_de"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.fundraising_group_posting_history": {
+      "name": "fundraising_group_posting_history",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "group_id": {
+          "name": "group_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "campaign_page_id": {
+          "name": "campaign_page_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "marcat_de": {
+          "name": "marcat_de",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "fundraising_group_posting_history_group_idx": {
+          "name": "fundraising_group_posting_history_group_idx",
+          "columns": [
+            {
+              "expression": "group_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "fundraising_group_posting_history_campaign_idx": {
+          "name": "fundraising_group_posting_history_campaign_idx",
+          "columns": [
+            {
+              "expression": "campaign_page_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "fundraising_group_posting_history_org_idx": {
+          "name": "fundraising_group_posting_history_org_idx",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "fundraising_group_posting_history_group_id_fundraising_local_groups_id_fk": {
+          "name": "fundraising_group_posting_history_group_id_fundraising_local_groups_id_fk",
+          "tableFrom": "fundraising_group_posting_history",
+          "tableTo": "fundraising_local_groups",
+          "columnsFrom": [
+            "group_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "fundraising_group_posting_history_campaign_page_id_fundraising_pages_id_fk": {
+          "name": "fundraising_group_posting_history_campaign_page_id_fundraising_pages_id_fk",
+          "tableFrom": "fundraising_group_posting_history",
+          "tableTo": "fundraising_pages",
+          "columnsFrom": [
+            "campaign_page_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "fundraising_group_posting_history_org_id_organizations_id_fk": {
+          "name": "fundraising_group_posting_history_org_id_organizations_id_fk",
+          "tableFrom": "fundraising_group_posting_history",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "fundraising_group_posting_history_marcat_de_app_users_id_fk": {
+          "name": "fundraising_group_posting_history_marcat_de_app_users_id_fk",
+          "tableFrom": "fundraising_group_posting_history",
+          "tableTo": "app_users",
+          "columnsFrom": [
+            "marcat_de"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.fundraising_invoices": {
+      "name": "fundraising_invoices",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "campaign_page_id": {
+          "name": "campaign_page_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "denumire": {
+          "name": "denumire",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "suma": {
+          "name": "suma",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "moneda": {
+          "name": "moneda",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'RON'"
+        },
+        "data": {
+          "name": "data",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "categorie": {
+          "name": "categorie",
+          "type": "invoice_categorie",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "observatii": {
+          "name": "observatii",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fisier_url": {
+          "name": "fisier_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "invoice_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'achitata'"
+        },
+        "incarcat_de": {
+          "name": "incarcat_de",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "fundraising_invoices_campaign_idx": {
+          "name": "fundraising_invoices_campaign_idx",
+          "columns": [
+            {
+              "expression": "campaign_page_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "fundraising_invoices_org_idx": {
+          "name": "fundraising_invoices_org_idx",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "fundraising_invoices_campaign_page_id_fundraising_pages_id_fk": {
+          "name": "fundraising_invoices_campaign_page_id_fundraising_pages_id_fk",
+          "tableFrom": "fundraising_invoices",
+          "tableTo": "fundraising_pages",
+          "columnsFrom": [
+            "campaign_page_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "fundraising_invoices_org_id_organizations_id_fk": {
+          "name": "fundraising_invoices_org_id_organizations_id_fk",
+          "tableFrom": "fundraising_invoices",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "fundraising_invoices_incarcat_de_app_users_id_fk": {
+          "name": "fundraising_invoices_incarcat_de_app_users_id_fk",
+          "tableFrom": "fundraising_invoices",
+          "tableTo": "app_users",
+          "columnsFrom": [
+            "incarcat_de"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.fundraising_local_groups": {
+      "name": "fundraising_local_groups",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "judet": {
+          "name": "judet",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "localitate": {
+          "name": "localitate",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "platforma": {
+          "name": "platforma",
+          "type": "local_group_platforma",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nume": {
+          "name": "nume",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "link": {
+          "name": "link",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "categorie": {
+          "name": "categorie",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reguli": {
+          "name": "reguli",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "local_group_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'activ'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "fundraising_local_groups_org_idx": {
+          "name": "fundraising_local_groups_org_idx",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "fundraising_local_groups_judet_idx": {
+          "name": "fundraising_local_groups_judet_idx",
+          "columns": [
+            {
+              "expression": "judet",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "fundraising_local_groups_org_id_organizations_id_fk": {
+          "name": "fundraising_local_groups_org_id_organizations_id_fk",
+          "tableFrom": "fundraising_local_groups",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.fundraising_media_contacts": {
+      "name": "fundraising_media_contacts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "judet": {
+          "name": "judet",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tip": {
+          "name": "tip",
+          "type": "media_contact_tip",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nume_redactie": {
+          "name": "nume_redactie",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "telefon": {
+          "name": "telefon",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "website": {
+          "name": "website",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "persoana_contact": {
+          "name": "persoana_contact",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status_contactare": {
+          "name": "status_contactare",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "fundraising_media_contacts_org_idx": {
+          "name": "fundraising_media_contacts_org_idx",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "fundraising_media_contacts_judet_idx": {
+          "name": "fundraising_media_contacts_judet_idx",
+          "columns": [
+            {
+              "expression": "judet",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "fundraising_media_contacts_org_id_organizations_id_fk": {
+          "name": "fundraising_media_contacts_org_id_organizations_id_fk",
+          "tableFrom": "fundraising_media_contacts",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.fundraising_messages": {
+      "name": "fundraising_messages",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "campaign_page_id": {
+          "name": "campaign_page_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sender_app_user_id": {
+          "name": "sender_app_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sender_nume": {
+          "name": "sender_nume",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sender_email": {
+          "name": "sender_email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "continut": {
+          "name": "continut",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "citit_la": {
+          "name": "citit_la",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "fundraising_messages_campaign_idx": {
+          "name": "fundraising_messages_campaign_idx",
+          "columns": [
+            {
+              "expression": "campaign_page_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "fundraising_messages_org_idx": {
+          "name": "fundraising_messages_org_idx",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "fundraising_messages_campaign_page_id_fundraising_pages_id_fk": {
+          "name": "fundraising_messages_campaign_page_id_fundraising_pages_id_fk",
+          "tableFrom": "fundraising_messages",
+          "tableTo": "fundraising_pages",
+          "columnsFrom": [
+            "campaign_page_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "fundraising_messages_org_id_organizations_id_fk": {
+          "name": "fundraising_messages_org_id_organizations_id_fk",
+          "tableFrom": "fundraising_messages",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "fundraising_messages_sender_app_user_id_app_users_id_fk": {
+          "name": "fundraising_messages_sender_app_user_id_app_users_id_fk",
+          "tableFrom": "fundraising_messages",
+          "tableTo": "app_users",
+          "columnsFrom": [
+            "sender_app_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.fundraising_notifications": {
+      "name": "fundraising_notifications",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "app_user_id": {
+          "name": "app_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tip": {
+          "name": "tip",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "titlu": {
+          "name": "titlu",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "continut": {
+          "name": "continut",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "link": {
+          "name": "link",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "citit": {
+          "name": "citit",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "fundraising_notifications_app_user_idx": {
+          "name": "fundraising_notifications_app_user_idx",
+          "columns": [
+            {
+              "expression": "app_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "fundraising_notifications_app_user_id_app_users_id_fk": {
+          "name": "fundraising_notifications_app_user_id_app_users_id_fk",
+          "tableFrom": "fundraising_notifications",
+          "tableTo": "app_users",
+          "columnsFrom": [
+            "app_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.fundraising_press_outreach_history": {
+      "name": "fundraising_press_outreach_history",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "press_release_id": {
+          "name": "press_release_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "media_contact_id": {
+          "name": "media_contact_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "data_trimiterii": {
+          "name": "data_trimiterii",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'trimis'"
+        }
+      },
+      "indexes": {
+        "fundraising_press_outreach_history_release_idx": {
+          "name": "fundraising_press_outreach_history_release_idx",
+          "columns": [
+            {
+              "expression": "press_release_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "fundraising_press_outreach_history_org_idx": {
+          "name": "fundraising_press_outreach_history_org_idx",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "fundraising_press_outreach_history_press_release_id_fundraising_press_releases_id_fk": {
+          "name": "fundraising_press_outreach_history_press_release_id_fundraising_press_releases_id_fk",
+          "tableFrom": "fundraising_press_outreach_history",
+          "tableTo": "fundraising_press_releases",
+          "columnsFrom": [
+            "press_release_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "fundraising_press_outreach_history_media_contact_id_fundraising_media_contacts_id_fk": {
+          "name": "fundraising_press_outreach_history_media_contact_id_fundraising_media_contacts_id_fk",
+          "tableFrom": "fundraising_press_outreach_history",
+          "tableTo": "fundraising_media_contacts",
+          "columnsFrom": [
+            "media_contact_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "fundraising_press_outreach_history_org_id_organizations_id_fk": {
+          "name": "fundraising_press_outreach_history_org_id_organizations_id_fk",
+          "tableFrom": "fundraising_press_outreach_history",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.fundraising_press_releases": {
+      "name": "fundraising_press_releases",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "campaign_page_id": {
+          "name": "campaign_page_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "continut": {
+          "name": "continut",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "press_release_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'draft'"
+        },
+        "aprobat_de": {
+          "name": "aprobat_de",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "fundraising_press_releases_campaign_idx": {
+          "name": "fundraising_press_releases_campaign_idx",
+          "columns": [
+            {
+              "expression": "campaign_page_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "fundraising_press_releases_org_idx": {
+          "name": "fundraising_press_releases_org_idx",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "fundraising_press_releases_campaign_page_id_fundraising_pages_id_fk": {
+          "name": "fundraising_press_releases_campaign_page_id_fundraising_pages_id_fk",
+          "tableFrom": "fundraising_press_releases",
+          "tableTo": "fundraising_pages",
+          "columnsFrom": [
+            "campaign_page_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "fundraising_press_releases_org_id_organizations_id_fk": {
+          "name": "fundraising_press_releases_org_id_organizations_id_fk",
+          "tableFrom": "fundraising_press_releases",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "fundraising_press_releases_aprobat_de_app_users_id_fk": {
+          "name": "fundraising_press_releases_aprobat_de_app_users_id_fk",
+          "tableFrom": "fundraising_press_releases",
+          "tableTo": "app_users",
+          "columnsFrom": [
+            "aprobat_de"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.fundraising_task_attachments": {
+      "name": "fundraising_task_attachments",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "task_id": {
+          "name": "task_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fisier_url": {
+          "name": "fisier_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "denumire": {
+          "name": "denumire",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "fundraising_task_attachments_task_idx": {
+          "name": "fundraising_task_attachments_task_idx",
+          "columns": [
+            {
+              "expression": "task_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "fundraising_task_attachments_org_idx": {
+          "name": "fundraising_task_attachments_org_idx",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "fundraising_task_attachments_task_id_fundraising_tasks_id_fk": {
+          "name": "fundraising_task_attachments_task_id_fundraising_tasks_id_fk",
+          "tableFrom": "fundraising_task_attachments",
+          "tableTo": "fundraising_tasks",
+          "columnsFrom": [
+            "task_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "fundraising_task_attachments_org_id_organizations_id_fk": {
+          "name": "fundraising_task_attachments_org_id_organizations_id_fk",
+          "tableFrom": "fundraising_task_attachments",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.fundraising_tasks": {
+      "name": "fundraising_tasks",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "campaign_page_id": {
+          "name": "campaign_page_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tip": {
+          "name": "tip",
+          "type": "task_tip",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'generala'"
+        },
+        "titlu": {
+          "name": "titlu",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "descriere": {
+          "name": "descriere",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "data_limita": {
+          "name": "data_limita",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "task_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'de_facut'"
+        },
+        "companie": {
+          "name": "companie",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "suma": {
+          "name": "suma",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "moneda": {
+          "name": "moneda",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "text_multumire": {
+          "name": "text_multumire",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "canal_recomandat": {
+          "name": "canal_recomandat",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "fundraising_tasks_campaign_idx": {
+          "name": "fundraising_tasks_campaign_idx",
+          "columns": [
+            {
+              "expression": "campaign_page_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "fundraising_tasks_org_idx": {
+          "name": "fundraising_tasks_org_idx",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "fundraising_tasks_campaign_page_id_fundraising_pages_id_fk": {
+          "name": "fundraising_tasks_campaign_page_id_fundraising_pages_id_fk",
+          "tableFrom": "fundraising_tasks",
+          "tableTo": "fundraising_pages",
+          "columnsFrom": [
+            "campaign_page_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "fundraising_tasks_org_id_organizations_id_fk": {
+          "name": "fundraising_tasks_org_id_organizations_id_fk",
+          "tableFrom": "fundraising_tasks",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "fundraising_tasks_created_by_app_users_id_fk": {
+          "name": "fundraising_tasks_created_by_app_users_id_fk",
+          "tableFrom": "fundraising_tasks",
+          "tableTo": "app_users",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.companies": {
+      "name": "companies",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nume": {
+          "name": "nume",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cui": {
+          "name": "cui",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nr_reg_com": {
+          "name": "nr_reg_com",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "judet": {
+          "name": "judet",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "localitate": {
+          "name": "localitate",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "adresa": {
+          "name": "adresa",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cod_postal": {
+          "name": "cod_postal",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "caen": {
+          "name": "caen",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "industrie": {
+          "name": "industrie",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "an_infiintare": {
+          "name": "an_infiintare",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "site": {
+          "name": "site",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "linkedin": {
+          "name": "linkedin",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "facebook": {
+          "name": "facebook",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "administrator": {
+          "name": "administrator",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ca": {
+          "name": "ca",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "profit": {
+          "name": "profit",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "profit_tip": {
+          "name": "profit_tip",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "impozit": {
+          "name": "impozit",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nr_angajati": {
+          "name": "nr_angajati",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sursa_fin": {
+          "name": "sursa_fin",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "an_bilant": {
+          "name": "an_bilant",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "regim_fiscal": {
+          "name": "regim_fiscal",
+          "type": "regim_fiscal",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'necunoscut'"
+        },
+        "suma_disponibila": {
+          "name": "suma_disponibila",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "suma_estimata": {
+          "name": "suma_estimata",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "suma_propusa": {
+          "name": "suma_propusa",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "suma_sponsorizata": {
+          "name": "suma_sponsorizata",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "recurent": {
+          "name": "recurent",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "frecventa": {
+          "name": "frecventa",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "campanie_230": {
+          "name": "campanie_230",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "temperatura": {
+          "name": "temperatura",
+          "type": "company_temperatura",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "d177": {
+          "name": "d177",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "d177_incasat": {
+          "name": "d177_incasat",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "mec20": {
+          "name": "mec20",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "decembrie": {
+          "name": "decembrie",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "numar_contract": {
+          "name": "numar_contract",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "data_semnare": {
+          "name": "data_semnare",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contract_status": {
+          "name": "contract_status",
+          "type": "company_contract_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "stage": {
+          "name": "stage",
+          "type": "company_stage",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'nou'"
+        },
+        "status": {
+          "name": "status",
+          "type": "company_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'open'"
+        },
+        "lost_reason": {
+          "name": "lost_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "probability": {
+          "name": "probability",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "owner_id": {
+          "name": "owner_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "followup_at": {
+          "name": "followup_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "close_target": {
+          "name": "close_target",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "media": {
+          "name": "media",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "trimestre": {
+          "name": "trimestre",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "istoric": {
+          "name": "istoric",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ong": {
+          "name": "ong",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "extra": {
+          "name": "extra",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "abordare_prin": {
+          "name": "abordare_prin",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "stil_abordare": {
+          "name": "stil_abordare",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nota": {
+          "name": "nota",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "updated_by": {
+          "name": "updated_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_viewed_at": {
+          "name": "last_viewed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "anaf_activ": {
+          "name": "anaf_activ",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "anaf_verificat_la": {
+          "name": "anaf_verificat_la",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "companies_org_idx": {
+          "name": "companies_org_idx",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "companies_judet_idx": {
+          "name": "companies_judet_idx",
+          "columns": [
+            {
+              "expression": "judet",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "companies_status_idx": {
+          "name": "companies_status_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "companies_stage_idx": {
+          "name": "companies_stage_idx",
+          "columns": [
+            {
+              "expression": "stage",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "companies_owner_idx": {
+          "name": "companies_owner_idx",
+          "columns": [
+            {
+              "expression": "owner_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "companies_cui_idx": {
+          "name": "companies_cui_idx",
+          "columns": [
+            {
+              "expression": "cui",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "companies_org_id_organizations_id_fk": {
+          "name": "companies_org_id_organizations_id_fk",
+          "tableFrom": "companies",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "companies_owner_id_app_users_id_fk": {
+          "name": "companies_owner_id_app_users_id_fk",
+          "tableFrom": "companies",
+          "tableTo": "app_users",
+          "columnsFrom": [
+            "owner_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "companies_updated_by_app_users_id_fk": {
+          "name": "companies_updated_by_app_users_id_fk",
+          "tableFrom": "companies",
+          "tableTo": "app_users",
+          "columnsFrom": [
+            "updated_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.apeluri": {
+      "name": "apeluri",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "company_id": {
+          "name": "company_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "catre_nume": {
+          "name": "catre_nume",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "catre_telefon": {
+          "name": "catre_telefon",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "initiator_id": {
+          "name": "initiator_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "twilio_call_sid": {
+          "name": "twilio_call_sid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "apel_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'initiat'"
+        },
+        "durata_secunde": {
+          "name": "durata_secunde",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "apeluri_org_idx": {
+          "name": "apeluri_org_idx",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "apeluri_company_idx": {
+          "name": "apeluri_company_idx",
+          "columns": [
+            {
+              "expression": "company_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "apeluri_created_at_idx": {
+          "name": "apeluri_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "apeluri_org_id_organizations_id_fk": {
+          "name": "apeluri_org_id_organizations_id_fk",
+          "tableFrom": "apeluri",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "apeluri_company_id_companies_id_fk": {
+          "name": "apeluri_company_id_companies_id_fk",
+          "tableFrom": "apeluri",
+          "tableTo": "companies",
+          "columnsFrom": [
+            "company_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "apeluri_initiator_id_app_users_id_fk": {
+          "name": "apeluri_initiator_id_app_users_id_fk",
+          "tableFrom": "apeluri",
+          "tableTo": "app_users",
+          "columnsFrom": [
+            "initiator_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.company_notite": {
+      "name": "company_notite",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "company_id": {
+          "name": "company_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "text": {
+          "name": "text",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "editat_la": {
+          "name": "editat_la",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "company_notite_org_idx": {
+          "name": "company_notite_org_idx",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "company_notite_company_idx": {
+          "name": "company_notite_company_idx",
+          "columns": [
+            {
+              "expression": "company_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "company_notite_org_id_organizations_id_fk": {
+          "name": "company_notite_org_id_organizations_id_fk",
+          "tableFrom": "company_notite",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "company_notite_company_id_companies_id_fk": {
+          "name": "company_notite_company_id_companies_id_fk",
+          "tableFrom": "company_notite",
+          "tableTo": "companies",
+          "columnsFrom": [
+            "company_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "company_notite_created_by_app_users_id_fk": {
+          "name": "company_notite_created_by_app_users_id_fk",
+          "tableFrom": "company_notite",
+          "tableTo": "app_users",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.company_sponsorizari": {
+      "name": "company_sponsorizari",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "company_id": {
+          "name": "company_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "suma": {
+          "name": "suma",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "data": {
+          "name": "data",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "proiect": {
+          "name": "proiect",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nota": {
+          "name": "nota",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "company_sponsorizari_org_idx": {
+          "name": "company_sponsorizari_org_idx",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "company_sponsorizari_company_idx": {
+          "name": "company_sponsorizari_company_idx",
+          "columns": [
+            {
+              "expression": "company_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "company_sponsorizari_data_idx": {
+          "name": "company_sponsorizari_data_idx",
+          "columns": [
+            {
+              "expression": "data",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "company_sponsorizari_org_id_organizations_id_fk": {
+          "name": "company_sponsorizari_org_id_organizations_id_fk",
+          "tableFrom": "company_sponsorizari",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "company_sponsorizari_company_id_companies_id_fk": {
+          "name": "company_sponsorizari_company_id_companies_id_fk",
+          "tableFrom": "company_sponsorizari",
+          "tableTo": "companies",
+          "columnsFrom": [
+            "company_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "company_sponsorizari_created_by_app_users_id_fk": {
+          "name": "company_sponsorizari_created_by_app_users_id_fk",
+          "tableFrom": "company_sponsorizari",
+          "tableTo": "app_users",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.company_stage_log": {
+      "name": "company_stage_log",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "company_id": {
+          "name": "company_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "from_stage": {
+          "name": "from_stage",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "to_stage": {
+          "name": "to_stage",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "from_status": {
+          "name": "from_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "to_status": {
+          "name": "to_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "by_user_id": {
+          "name": "by_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "company_stage_log_org_idx": {
+          "name": "company_stage_log_org_idx",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "company_stage_log_company_idx": {
+          "name": "company_stage_log_company_idx",
+          "columns": [
+            {
+              "expression": "company_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "company_stage_log_org_id_organizations_id_fk": {
+          "name": "company_stage_log_org_id_organizations_id_fk",
+          "tableFrom": "company_stage_log",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "company_stage_log_company_id_companies_id_fk": {
+          "name": "company_stage_log_company_id_companies_id_fk",
+          "tableFrom": "company_stage_log",
+          "tableTo": "companies",
+          "columnsFrom": [
+            "company_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "company_stage_log_by_user_id_app_users_id_fk": {
+          "name": "company_stage_log_by_user_id_app_users_id_fk",
+          "tableFrom": "company_stage_log",
+          "tableTo": "app_users",
+          "columnsFrom": [
+            "by_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.contacts": {
+      "name": "contacts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "company_id": {
+          "name": "company_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nume": {
+          "name": "nume",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rol": {
+          "name": "rol",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dept": {
+          "name": "dept",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "loc": {
+          "name": "loc",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "telefon": {
+          "name": "telefon",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "linkedin": {
+          "name": "linkedin",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "detalii": {
+          "name": "detalii",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cheie": {
+          "name": "cheie",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "consent_status": {
+          "name": "consent_status",
+          "type": "consent_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'necunoscut'"
+        },
+        "consent_at": {
+          "name": "consent_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "consent_source": {
+          "name": "consent_source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "consent_by": {
+          "name": "consent_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "contacts_org_idx": {
+          "name": "contacts_org_idx",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "contacts_company_idx": {
+          "name": "contacts_company_idx",
+          "columns": [
+            {
+              "expression": "company_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "contacts_org_id_organizations_id_fk": {
+          "name": "contacts_org_id_organizations_id_fk",
+          "tableFrom": "contacts",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "contacts_company_id_companies_id_fk": {
+          "name": "contacts_company_id_companies_id_fk",
+          "tableFrom": "contacts",
+          "tableTo": "companies",
+          "columnsFrom": [
+            "company_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "contacts_consent_by_app_users_id_fk": {
+          "name": "contacts_consent_by_app_users_id_fk",
+          "tableFrom": "contacts",
+          "tableTo": "app_users",
+          "columnsFrom": [
+            "consent_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "contacts_created_by_app_users_id_fk": {
+          "name": "contacts_created_by_app_users_id_fk",
+          "tableFrom": "contacts",
+          "tableTo": "app_users",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.crm_kv": {
+      "name": "crm_kv",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "path": {
+          "name": "path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "data": {
+          "name": "data",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "crm_kv_org_path_unique": {
+          "name": "crm_kv_org_path_unique",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "path",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "crm_kv_org_idx": {
+          "name": "crm_kv_org_idx",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "crm_kv_org_id_organizations_id_fk": {
+          "name": "crm_kv_org_id_organizations_id_fk",
+          "tableFrom": "crm_kv",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.formular230_beneficiari": {
+      "name": "formular230_beneficiari",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nume": {
+          "name": "nume",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "short_code": {
+          "name": "short_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "iban": {
+          "name": "iban",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cif": {
+          "name": "cif",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email_beneficiar": {
+          "name": "email_beneficiar",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "formular230_beneficiari_org_id_organizations_id_fk": {
+          "name": "formular230_beneficiari_org_id_organizations_id_fk",
+          "tableFrom": "formular230_beneficiari",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "formular230_beneficiari_short_code_unique": {
+          "name": "formular230_beneficiari_short_code_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "short_code"
+          ]
+        },
+        "formular230_beneficiari_org_slug_unique": {
+          "name": "formular230_beneficiari_org_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "org_id",
+            "slug"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.formular230_campanii_email": {
+      "name": "formular230_campanii_email",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "an": {
+          "name": "an",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nr_destinatari": {
+          "name": "nr_destinatari",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "trimis_de": {
+          "name": "trimis_de",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "formular230_campanii_email_org_id_organizations_id_fk": {
+          "name": "formular230_campanii_email_org_id_organizations_id_fk",
+          "tableFrom": "formular230_campanii_email",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "formular230_campanii_email_trimis_de_app_users_id_fk": {
+          "name": "formular230_campanii_email_trimis_de_app_users_id_fk",
+          "tableFrom": "formular230_campanii_email",
+          "tableTo": "app_users",
+          "columnsFrom": [
+            "trimis_de"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "formular230_campanii_email_org_an_unique": {
+          "name": "formular230_campanii_email_org_an_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "org_id",
+            "an"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.formular230_submissions": {
+      "name": "formular230_submissions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "beneficiar_id": {
+          "name": "beneficiar_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nume": {
+          "name": "nume",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "prenume": {
+          "name": "prenume",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "initiala_tatalui": {
+          "name": "initiala_tatalui",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cnp": {
+          "name": "cnp",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "telefon": {
+          "name": "telefon",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "strada": {
+          "name": "strada",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "numar": {
+          "name": "numar",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "judet": {
+          "name": "judet",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "localitate": {
+          "name": "localitate",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cod_postal": {
+          "name": "cod_postal",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bloc": {
+          "name": "bloc",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "scara": {
+          "name": "scara",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "etaj": {
+          "name": "etaj",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "apartament": {
+          "name": "apartament",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "distributie_2_ani": {
+          "name": "distributie_2_ani",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "consimtamant": {
+          "name": "consimtamant",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "termeni": {
+          "name": "termeni",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "semnatura": {
+          "name": "semnatura",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "an": {
+          "name": "an",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "procesat_anaf": {
+          "name": "procesat_anaf",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "formular230_org_idx": {
+          "name": "formular230_org_idx",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "formular230_created_idx": {
+          "name": "formular230_created_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "formular230_beneficiar_idx": {
+          "name": "formular230_beneficiar_idx",
+          "columns": [
+            {
+              "expression": "beneficiar_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "formular230_submissions_org_id_organizations_id_fk": {
+          "name": "formular230_submissions_org_id_organizations_id_fk",
+          "tableFrom": "formular230_submissions",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "formular230_submissions_beneficiar_id_formular230_beneficiari_id_fk": {
+          "name": "formular230_submissions_beneficiar_id_formular230_beneficiari_id_fk",
+          "tableFrom": "formular230_submissions",
+          "tableTo": "formular230_beneficiari",
+          "columnsFrom": [
+            "beneficiar_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.donator_notite": {
+      "name": "donator_notite",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "donator_id": {
+          "name": "donator_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "text": {
+          "name": "text",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "editat_la": {
+          "name": "editat_la",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "donator_notite_org_idx": {
+          "name": "donator_notite_org_idx",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "donator_notite_donator_idx": {
+          "name": "donator_notite_donator_idx",
+          "columns": [
+            {
+              "expression": "donator_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "donator_notite_org_id_organizations_id_fk": {
+          "name": "donator_notite_org_id_organizations_id_fk",
+          "tableFrom": "donator_notite",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "donator_notite_donator_id_donatori_reali_id_fk": {
+          "name": "donator_notite_donator_id_donatori_reali_id_fk",
+          "tableFrom": "donator_notite",
+          "tableTo": "donatori_reali",
+          "columnsFrom": [
+            "donator_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "donator_notite_created_by_app_users_id_fk": {
+          "name": "donator_notite_created_by_app_users_id_fk",
+          "tableFrom": "donator_notite",
+          "tableTo": "app_users",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.donatori_reali": {
+      "name": "donatori_reali",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nume": {
+          "name": "nume",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "telefon": {
+          "name": "telefon",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sursa": {
+          "name": "sursa",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "metoda_plata": {
+          "name": "metoda_plata",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'Card (Stripe)'"
+        },
+        "total_donat": {
+          "name": "total_donat",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "numar_donatii": {
+          "name": "numar_donatii",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "prima_donatie_la": {
+          "name": "prima_donatie_la",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "ultima_donatie_la": {
+          "name": "ultima_donatie_la",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "consimtamant_whatsapp": {
+          "name": "consimtamant_whatsapp",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "dezabonat_email_la": {
+          "name": "dezabonat_email_la",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "donatori_reali_org_email_idx": {
+          "name": "donatori_reali_org_email_idx",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "email",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "donatori_reali_org_idx": {
+          "name": "donatori_reali_org_idx",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "donatori_reali_org_id_organizations_id_fk": {
+          "name": "donatori_reali_org_id_organizations_id_fk",
+          "tableFrom": "donatori_reali",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.fundraising_donations": {
+      "name": "fundraising_donations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "page_id": {
+          "name": "page_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nume_donator": {
+          "name": "nume_donator",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email_donator": {
+          "name": "email_donator",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "telefon_donator": {
+          "name": "telefon_donator",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "suma": {
+          "name": "suma",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mesaj": {
+          "name": "mesaj",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "anonim": {
+          "name": "anonim",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "consimtamant_gdpr": {
+          "name": "consimtamant_gdpr",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "consimtamant_termeni": {
+          "name": "consimtamant_termeni",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "consimtamant_whatsapp": {
+          "name": "consimtamant_whatsapp",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "stripe_session_id": {
+          "name": "stripe_session_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "recurenta": {
+          "name": "recurenta",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "stripe_subscription_id": {
+          "name": "stripe_subscription_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "stripe_payment_intent_id": {
+          "name": "stripe_payment_intent_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "abonament_activ": {
+          "name": "abonament_activ",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "suma_rambursata": {
+          "name": "suma_rambursata",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "dispute_deduse": {
+          "name": "dispute_deduse",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "status": {
+          "name": "status",
+          "type": "fundraising_donation_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'in_asteptare'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "fundraising_donations_page_idx": {
+          "name": "fundraising_donations_page_idx",
+          "columns": [
+            {
+              "expression": "page_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "fundraising_donations_org_idx": {
+          "name": "fundraising_donations_org_idx",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "fundraising_donations_stripe_session_idx": {
+          "name": "fundraising_donations_stripe_session_idx",
+          "columns": [
+            {
+              "expression": "stripe_session_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "fundraising_donations_payment_intent_idx": {
+          "name": "fundraising_donations_payment_intent_idx",
+          "columns": [
+            {
+              "expression": "stripe_payment_intent_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "fundraising_donations_page_id_fundraising_pages_id_fk": {
+          "name": "fundraising_donations_page_id_fundraising_pages_id_fk",
+          "tableFrom": "fundraising_donations",
+          "tableTo": "fundraising_pages",
+          "columnsFrom": [
+            "page_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "fundraising_donations_org_id_organizations_id_fk": {
+          "name": "fundraising_donations_org_id_organizations_id_fk",
+          "tableFrom": "fundraising_donations",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.fundraising_pages": {
+      "name": "fundraising_pages",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "titlu": {
+          "name": "titlu",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "poveste": {
+          "name": "poveste",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "imagine_url": {
+          "name": "imagine_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "suma_tinta": {
+          "name": "suma_tinta",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "suma_stransa": {
+          "name": "suma_stransa",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "nume_creator": {
+          "name": "nume_creator",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email_creator": {
+          "name": "email_creator",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "judet": {
+          "name": "judet",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "localitate": {
+          "name": "localitate",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "consimtamant_gdpr": {
+          "name": "consimtamant_gdpr",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "status": {
+          "name": "status",
+          "type": "fundraising_page_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'activa'"
+        },
+        "template": {
+          "name": "template",
+          "type": "campaign_page_template",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'altele'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "fundraising_pages_org_slug_idx": {
+          "name": "fundraising_pages_org_slug_idx",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "slug",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "fundraising_pages_org_idx": {
+          "name": "fundraising_pages_org_idx",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "fundraising_pages_org_id_organizations_id_fk": {
+          "name": "fundraising_pages_org_id_organizations_id_fk",
+          "tableFrom": "fundraising_pages",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.fundraising_updates": {
+      "name": "fundraising_updates",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "page_id": {
+          "name": "page_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "titlu": {
+          "name": "titlu",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "continut": {
+          "name": "continut",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "data": {
+          "name": "data",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "fundraising_updates_page_idx": {
+          "name": "fundraising_updates_page_idx",
+          "columns": [
+            {
+              "expression": "page_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "fundraising_updates_org_idx": {
+          "name": "fundraising_updates_org_idx",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "fundraising_updates_page_id_fundraising_pages_id_fk": {
+          "name": "fundraising_updates_page_id_fundraising_pages_id_fk",
+          "tableFrom": "fundraising_updates",
+          "tableTo": "fundraising_pages",
+          "columnsFrom": [
+            "page_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "fundraising_updates_org_id_organizations_id_fk": {
+          "name": "fundraising_updates_org_id_organizations_id_fk",
+          "tableFrom": "fundraising_updates",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.organizations": {
+      "name": "organizations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "logo_url": {
+          "name": "logo_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "slogan": {
+          "name": "slogan",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "brand_color": {
+          "name": "brand_color",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "custom_domain": {
+          "name": "custom_domain",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cif": {
+          "name": "cif",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "domeniu_activitate": {
+          "name": "domeniu_activitate",
+          "type": "org_domeniu_activitate",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "package": {
+          "name": "package",
+          "type": "org_package",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'trial'"
+        },
+        "custom_plan_config": {
+          "name": "custom_plan_config",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "subscription_status": {
+          "name": "subscription_status",
+          "type": "subscription_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'trialing'"
+        },
+        "stripe_customer_id": {
+          "name": "stripe_customer_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "stripe_subscription_id": {
+          "name": "stripe_subscription_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "current_period_end": {
+          "name": "current_period_end",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "donation_stripe_secret_enc": {
+          "name": "donation_stripe_secret_enc",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "donation_stripe_webhook_secret_enc": {
+          "name": "donation_stripe_webhook_secret_enc",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "donation_stripe_key_hint": {
+          "name": "donation_stripe_key_hint",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "donation_stripe_connected_at": {
+          "name": "donation_stripe_connected_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "donation_stripe_publishable_key": {
+          "name": "donation_stripe_publishable_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "donation_stripe_domain_verified_at": {
+          "name": "donation_stripe_domain_verified_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "referral_code": {
+          "name": "referral_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "referred_by_org_id": {
+          "name": "referred_by_org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "organizations_referred_by_org_id_organizations_id_fk": {
+          "name": "organizations_referred_by_org_id_organizations_id_fk",
+          "tableFrom": "organizations",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "referred_by_org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "organizations_slug_unique": {
+          "name": "organizations_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug"
+          ]
+        },
+        "organizations_custom_domain_unique": {
+          "name": "organizations_custom_domain_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "custom_domain"
+          ]
+        },
+        "organizations_referral_code_unique": {
+          "name": "organizations_referral_code_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "referral_code"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.memberships": {
+      "name": "memberships",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "membership_role",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'member'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "memberships_org_user_unique": {
+          "name": "memberships_org_user_unique",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "memberships_org_id_organizations_id_fk": {
+          "name": "memberships_org_id_organizations_id_fk",
+          "tableFrom": "memberships",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "memberships_user_id_app_users_id_fk": {
+          "name": "memberships_user_id_app_users_id_fk",
+          "tableFrom": "memberships",
+          "tableTo": "app_users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.invites": {
+      "name": "invites",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "org_name": {
+          "name": "org_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "membership_role",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'member'"
+        },
+        "token": {
+          "name": "token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "invited_by": {
+          "name": "invited_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "accepted_at": {
+          "name": "accepted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "invites_org_idx": {
+          "name": "invites_org_idx",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "invites_email_idx": {
+          "name": "invites_email_idx",
+          "columns": [
+            {
+              "expression": "email",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "invites_org_id_organizations_id_fk": {
+          "name": "invites_org_id_organizations_id_fk",
+          "tableFrom": "invites",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "invites_invited_by_app_users_id_fk": {
+          "name": "invites_invited_by_app_users_id_fk",
+          "tableFrom": "invites",
+          "tableTo": "app_users",
+          "columnsFrom": [
+            "invited_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "invites_token_unique": {
+          "name": "invites_token_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "token"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.platform_payments": {
+      "name": "platform_payments",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "order_id": {
+          "name": "order_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ntp_id": {
+          "name": "ntp_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "package": {
+          "name": "package",
+          "type": "org_package",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "suma_lei": {
+          "name": "suma_lei",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "luni": {
+          "name": "luni",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "plan_config": {
+          "name": "plan_config",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "platform_payment_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'in_asteptare'"
+        },
+        "netopia_status": {
+          "name": "netopia_status",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "paid_at": {
+          "name": "paid_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "platform_payments_org_idx": {
+          "name": "platform_payments_org_idx",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "platform_payments_org_id_organizations_id_fk": {
+          "name": "platform_payments_org_id_organizations_id_fk",
+          "tableFrom": "platform_payments",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "platform_payments_order_id_unique": {
+          "name": "platform_payments_order_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "order_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    }
+  },
+  "enums": {
+    "public.account_type": {
+      "name": "account_type",
+      "schema": "public",
+      "values": [
+        "org",
+        "beneficiar"
+      ]
+    },
+    "public.apel_status": {
+      "name": "apel_status",
+      "schema": "public",
+      "values": [
+        "initiat",
+        "sunand",
+        "in_desfasurare",
+        "finalizat",
+        "esuat",
+        "fara_raspuns",
+        "ocupat"
+      ]
+    },
+    "public.beneficiar_status": {
+      "name": "beneficiar_status",
+      "schema": "public",
+      "values": [
+        "activ",
+        "dezactivat"
+      ]
+    },
+    "public.calendar_item_status": {
+      "name": "calendar_item_status",
+      "schema": "public",
+      "values": [
+        "de_facut",
+        "in_lucru",
+        "publicat",
+        "finalizat"
+      ]
+    },
+    "public.campaign_page_template": {
+      "name": "campaign_page_template",
+      "schema": "public",
+      "values": [
+        "copii",
+        "animale",
+        "mediu",
+        "educatie",
+        "sanatate",
+        "social_incluziune",
+        "cultura",
+        "sport",
+        "altele"
+      ]
+    },
+    "public.company_contract_status": {
+      "name": "company_contract_status",
+      "schema": "public",
+      "values": [
+        "trimis",
+        "asteptare",
+        "semnat",
+        "anulat"
+      ]
+    },
+    "public.company_stage": {
+      "name": "company_stage",
+      "schema": "public",
+      "values": [
+        "nou",
+        "pe_viitor",
+        "email",
+        "mesaj",
+        "onepager",
+        "telefon",
+        "online",
+        "contract_trimis",
+        "contract_semnat",
+        "contract_asteptare",
+        "contract_anulat",
+        "sponsorizat"
+      ]
+    },
+    "public.company_status": {
+      "name": "company_status",
+      "schema": "public",
+      "values": [
+        "open",
+        "won",
+        "lost",
+        "parked"
+      ]
+    },
+    "public.company_temperatura": {
+      "name": "company_temperatura",
+      "schema": "public",
+      "values": [
+        "cald",
+        "rece"
+      ]
+    },
+    "public.consent_status": {
+      "name": "consent_status",
+      "schema": "public",
+      "values": [
+        "da",
+        "nu",
+        "necunoscut"
+      ]
+    },
+    "public.continut_canal": {
+      "name": "continut_canal",
+      "schema": "public",
+      "values": [
+        "facebook",
+        "instagram",
+        "tiktok",
+        "whatsapp",
+        "grup_local",
+        "comunicat"
+      ]
+    },
+    "public.continut_status": {
+      "name": "continut_status",
+      "schema": "public",
+      "values": [
+        "draft",
+        "aprobat",
+        "publicat"
+      ]
+    },
+    "public.continut_sursa": {
+      "name": "continut_sursa",
+      "schema": "public",
+      "values": [
+        "sablon",
+        "ai"
+      ]
+    },
+    "public.fundraising_donation_status": {
+      "name": "fundraising_donation_status",
+      "schema": "public",
+      "values": [
+        "in_asteptare",
+        "reusita",
+        "esuata",
+        "rambursata"
+      ]
+    },
+    "public.fundraising_page_status": {
+      "name": "fundraising_page_status",
+      "schema": "public",
+      "values": [
+        "activa",
+        "inchisa"
+      ]
+    },
+    "public.invoice_categorie": {
+      "name": "invoice_categorie",
+      "schema": "public",
+      "values": [
+        "factura",
+        "plata",
+        "chitanta",
+        "proforma"
+      ]
+    },
+    "public.invoice_status": {
+      "name": "invoice_status",
+      "schema": "public",
+      "values": [
+        "achitata",
+        "in_asteptare"
+      ]
+    },
+    "public.local_group_platforma": {
+      "name": "local_group_platforma",
+      "schema": "public",
+      "values": [
+        "facebook",
+        "whatsapp",
+        "altul"
+      ]
+    },
+    "public.local_group_status": {
+      "name": "local_group_status",
+      "schema": "public",
+      "values": [
+        "activ",
+        "inactiv"
+      ]
+    },
+    "public.media_contact_tip": {
+      "name": "media_contact_tip",
+      "schema": "public",
+      "values": [
+        "publicatie",
+        "tv",
+        "radio",
+        "site"
+      ]
+    },
+    "public.membership_role": {
+      "name": "membership_role",
+      "schema": "public",
+      "values": [
+        "owner",
+        "admin",
+        "member"
+      ]
+    },
+    "public.org_domeniu_activitate": {
+      "name": "org_domeniu_activitate",
+      "schema": "public",
+      "values": [
+        "copii",
+        "animale",
+        "mediu",
+        "educatie",
+        "sanatate",
+        "social_incluziune",
+        "cultura",
+        "sport",
+        "altele"
+      ]
+    },
+    "public.org_package": {
+      "name": "org_package",
+      "schema": "public",
+      "values": [
+        "trial",
+        "start",
+        "crestere",
+        "impact",
+        "custom"
+      ]
+    },
+    "public.press_release_status": {
+      "name": "press_release_status",
+      "schema": "public",
+      "values": [
+        "draft",
+        "aprobat"
+      ]
+    },
+    "public.regim_fiscal": {
+      "name": "regim_fiscal",
+      "schema": "public",
+      "values": [
+        "profit",
+        "micro",
+        "pierdere",
+        "necunoscut"
+      ]
+    },
+    "public.subscription_status": {
+      "name": "subscription_status",
+      "schema": "public",
+      "values": [
+        "trialing",
+        "active",
+        "past_due",
+        "canceled",
+        "incomplete"
+      ]
+    },
+    "public.task_status": {
+      "name": "task_status",
+      "schema": "public",
+      "values": [
+        "de_facut",
+        "finalizata"
+      ]
+    },
+    "public.task_tip": {
+      "name": "task_tip",
+      "schema": "public",
+      "values": [
+        "generala",
+        "sponsorizare"
+      ]
+    },
+    "public.platform_payment_status": {
+      "name": "platform_payment_status",
+      "schema": "public",
+      "values": [
+        "in_asteptare",
+        "reusita",
+        "esuata",
+        "anulata",
+        "rambursata"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
