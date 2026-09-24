@@ -42,7 +42,7 @@ export async function crediteazaPaginaSiDonator(
   await tx
     .update(fundraisingPages)
     .set({ sumaStransa: sql`${fundraisingPages.sumaStransa} + ${params.suma}` })
-    .where(eq(fundraisingPages.id, params.pageId));
+    .where(and(eq(fundraisingPages.id, params.pageId), eq(fundraisingPages.orgId, params.orgId)));
 
   if (params.emailDonator) {
     const sursa = `Pagină strângere fonduri: ${rezultat[0]?.pageTitlu ?? "necunoscută"}`;
@@ -90,7 +90,7 @@ export async function recrediteazaPaginaSiDonator(
   await tx
     .update(fundraisingPages)
     .set({ sumaStransa: sql`${fundraisingPages.sumaStransa} + ${params.suma}` })
-    .where(eq(fundraisingPages.id, params.pageId));
+    .where(and(eq(fundraisingPages.id, params.pageId), eq(fundraisingPages.orgId, params.orgId)));
 
   if (!params.emailDonator) return;
 
@@ -116,7 +116,7 @@ export async function decrediteazaPaginaSiDonator(
   await tx
     .update(fundraisingPages)
     .set({ sumaStransa: sql`greatest(0, ${fundraisingPages.sumaStransa} - ${params.suma})` })
-    .where(eq(fundraisingPages.id, params.pageId));
+    .where(and(eq(fundraisingPages.id, params.pageId), eq(fundraisingPages.orgId, params.orgId)));
 
   if (!params.emailDonator) return;
 

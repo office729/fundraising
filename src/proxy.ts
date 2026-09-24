@@ -1,16 +1,12 @@
 import type { NextRequest } from "next/server";
 
+import { esteHostPlatforma } from "@/lib/platform-domains";
 import { esteSlugRezervat } from "@/lib/reserved-slugs";
 import { updateSession } from "@/lib/supabase/session";
 import { getSlugPentruDomeniu } from "@/lib/tenant-domain";
 
-// Host-urile platformei — orice altceva e candidat la lookup de domeniu
-// propriu de organizație (organizations.custom_domain). Localhost/*.local
-// acoperă dezvoltarea; *.vercel.app acoperă producția și preview deploys.
-function esteHostPlatforma(host: string): boolean {
-  const faraPort = host.split(":")[0];
-  return faraPort === "localhost" || faraPort.endsWith(".local") || faraPort.endsWith(".vercel.app");
-}
+// Host-urile platformei (lib/platform-domains.ts) nu trec niciodată prin lookup
+// de domeniu propriu; orice altceva e candidat (organizations.custom_domain).
 
 // Next.js 16: „Middleware" se numește „Proxy" (proxy.ts, export `proxy`).
 //

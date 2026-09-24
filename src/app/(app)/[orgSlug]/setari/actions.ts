@@ -8,6 +8,7 @@ import { withOrgAdmin } from "@/lib/auth/guard";
 import { TOATE_DOMENIILE, type DomeniuActivitate } from "@/lib/campaign-templates";
 import { organizations } from "@/lib/db/schema";
 import { cifValidFormat } from "@/lib/iban";
+import { domeniuRezervatPlatformei } from "@/lib/platform-domains";
 import { esteSlugRezervat } from "@/lib/reserved-slugs";
 import { createClient } from "@/lib/supabase/server";
 
@@ -166,6 +167,9 @@ export async function updateCustomDomainAction(
   const domain = raw || null;
   if (domain && !DOMAIN_RE.test(domain)) {
     return { error: "Domeniu invalid — scrie-l fără https:// sau /, ex. susinima.ro", ok: false };
+  }
+  if (domain && domeniuRezervatPlatformei(domain)) {
+    return { error: "Acest domeniu aparține platformei — folosește domeniul propriu al organizației.", ok: false };
   }
   try {
     await updateCustomDomainRow(orgSlug, domain);

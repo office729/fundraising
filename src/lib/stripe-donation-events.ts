@@ -6,7 +6,7 @@ import { and, eq, ne, sql } from "drizzle-orm";
 import type Stripe from "stripe";
 
 import { db } from "@/lib/db";
-import { fundraisingDonations } from "@/lib/db/schema";
+import { fundraisingDonations, fundraisingPages } from "@/lib/db/schema";
 import { htmlEmailMultumireDonatie, subiectEmailMultumireDonatie } from "@/lib/donation-email-template";
 import { emailConfigurat, trimiteEmail } from "@/lib/email";
 import { crediteazaPaginaSiDonator, decrediteazaPaginaSiDonator, recrediteazaPaginaSiDonator } from "@/lib/fundraising-credit";
@@ -180,6 +180,19 @@ export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, s
               .where(eq(fundraisingDonations.stripeSessionId, `invoice_${orgId}_${invoice.id}`))
               .limit(1);
             if (dejaExista[0]) return; // idempotent — webhook poate fi retrimis de Stripe
+
+            // pageId vine din metadata contului Stripe al ONG-ului — trebuie să
+            // fie o pagină a ACESTEI organizații, altfel un ONG și-ar putea
+            // insera "donații" (și suma strânsă) pe pagina altei organizații.
+            const pagina = await tx
+              .select({ id: fundraisingPages.id })
+              .from(fundraisingPages)
+              .where(and(eq(fundraisingPages.id, md.pageId), eq(fundraisingPages.orgId, orgId)))
+              .limit(1);
+            if (!pagina[0]) {
+              console.error("invoice.paid: pageId din metadata nu aparține organizației", { orgId, pageId: md.pageId });
+              return;
+            }
 
             const suma = Math.round(invoice.amount_paid / 100);
 
