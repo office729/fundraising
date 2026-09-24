@@ -1,12 +1,13 @@
 "use server";
 
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 
 import { withOrgAdmin, withOrgSession } from "@/lib/auth/guard";
 import { donatoriReali, formular230Beneficiari, formular230CampaniiEmail } from "@/lib/db/schema";
 import { emailConfigurat, trimiteEmailuriInLot } from "@/lib/email";
 import { SLUG_PRINCIPAL } from "@/lib/formular230-constants";
-import { htmlEmailF230, subiectEmailF230 } from "@/lib/formular230-email-template";
+import { linkDezabonare } from "@/lib/dezabonare";
+import { anteteDezabonare, htmlEmailF230, subiectEmailF230 } from "@/lib/formular230-email-template";
 
 export type CampanieState = { error: string | null; ok: boolean; nrDestinatari?: number };
 
@@ -42,7 +43,8 @@ export const trimiteCampanieEmailF230 = withOrgAdmin(async (ctx): Promise<Campan
   const donatori = await ctx.db
     .select({ email: donatoriReali.email, nume: donatoriReali.nume })
     .from(donatoriReali)
-    .where(eq(donatoriReali.orgId, ctx.orgId));
+    // Doar cei care NU s-au dezabonat de la emailurile de campanie.
+    .where(and(eq(donatoriReali.orgId, ctx.orgId), isNull(donatoriReali.dezabonatEmailLa)));
   if (!donatori.length) {
     return { error: "Nu există încă donatori reali către care să trimitem.", ok: false };
   }
@@ -53,7 +55,8 @@ export const trimiteCampanieEmailF230 = withOrgAdmin(async (ctx): Promise<Campan
   const { trimise } = await trimiteEmailuriInLot({
     destinatari: donatori,
     subiect: () => subiectEmailF230(ctx.orgName),
-    html: (d) => htmlEmailF230(ctx.orgName, d.nume, link),
+    html: (d) => htmlEmailF230(ctx.orgName, d.nume, link, linkDezabonare(baseUrl, ctx.orgId, d.email)),
+    headers: (d) => anteteDezabonare(linkDezabonare(baseUrl, ctx.orgId, d.email)),
   });
 
   await ctx.db.insert(formular230CampaniiEmail).values({

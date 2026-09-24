@@ -6,7 +6,22 @@ export function subiectEmailF230(orgName: string): string {
   return `Redirecționează 3,5% din impozit către ${orgName} — nu te costă nimic`;
 }
 
-export function htmlEmailF230(orgName: string, numeDonator: string, link: string): string {
+function esc(v: string): string {
+  return v.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+// Antetele de dezabonare (RFC 8058) — clientul de email arată butonul propriu
+// „Dezabonare"; POST-ul lovește /api/dezabonare cu aceeași semnătură ca linkul.
+export function anteteDezabonare(linkDezabonare: string): Record<string, string> {
+  return {
+    "List-Unsubscribe": `<${linkDezabonare.replace("/dezabonare?", "/api/dezabonare?")}>`,
+    "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+  };
+}
+
+export function htmlEmailF230(orgName: string, numeDonator: string, link: string, linkDezabonare: string): string {
+  orgName = esc(orgName);
+  numeDonator = esc(numeDonator);
   return `
     <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; color: #14213d;">
       <p>Bună, ${numeDonator}!</p>
@@ -23,6 +38,10 @@ export function htmlEmailF230(orgName: string, numeDonator: string, link: string
       </p>
       <p style="color:#64748b;font-size:13px;">
         Dacă linkul de mai sus nu funcționează, copiază-l direct în browser: ${link}
+      </p>
+      <p style="color:#94a3b8;font-size:12px;margin-top:24px;">
+        Primești acest email pentru că ai donat către ${orgName}.
+        <a href="${linkDezabonare}" style="color:#94a3b8;">Nu mai vreau emailuri de campanie</a>.
       </p>
     </div>
   `;

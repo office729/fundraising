@@ -180,6 +180,10 @@ export const donatoriReali = pgTable(
     // face upgrade (false→true), niciodată downgrade, ca o donație ulterioară
     // nebifată să nu-i șteargă acordul deja dat.
     consimtamantWhatsapp: boolean("consimtamant_whatsapp").notNull().default(false),
+    // Setat când donatorul s-a dezabonat de la emailurile de campanie (link
+    // semnat din email — lib/dezabonare.ts). Campaniile îi sar peste, pentru
+    // totdeauna; o donație nouă NU îl resetează (webhook-ul nu atinge coloana).
+    dezabonatEmailLa: timestamp("dezabonat_email_la", { withTimezone: true }),
   },
   (t) => [
     uniqueIndex("donatori_reali_org_email_idx").on(t.orgId, t.email),

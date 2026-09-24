@@ -1,12 +1,13 @@
 import { timingSafeEqual } from "node:crypto";
 
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 import { db } from "@/lib/db";
 import { donatoriReali, formular230Beneficiari, formular230CampaniiEmail, organizations } from "@/lib/db/schema";
 import { emailConfigurat, trimiteEmailuriInLot } from "@/lib/email";
-import { htmlEmailF230, subiectEmailF230 } from "@/lib/formular230-email-template";
+import { linkDezabonare } from "@/lib/dezabonare";
+import { anteteDezabonare, htmlEmailF230, subiectEmailF230 } from "@/lib/formular230-email-template";
 import { SLUG_PRINCIPAL } from "@/lib/formular230-constants";
 
 // Rulat zilnic de Vercel Cron (vezi vercel.json) — trimite O SINGURĂ dată pe
@@ -90,14 +91,16 @@ export async function GET(req: Request) {
       const donatori = await tx
         .select({ email: donatoriReali.email, nume: donatoriReali.nume })
         .from(donatoriReali)
-        .where(eq(donatoriReali.orgId, org.id));
+        // Doar cei care NU s-au dezabonat — fiecare email are link de dezabonare.
+        .where(and(eq(donatoriReali.orgId, org.id), isNull(donatoriReali.dezabonatEmailLa)));
       if (!donatori.length) continue;
 
       const link = `${baseUrl}/s/${beneficiar.shortCode}`;
       const { trimise } = await trimiteEmailuriInLot({
         destinatari: donatori,
         subiect: () => subiectEmailF230(org.name),
-        html: (d) => htmlEmailF230(org.name, d.nume, link),
+        html: (d) => htmlEmailF230(org.name, d.nume, link, linkDezabonare(baseUrl, org.id, d.email)),
+        headers: (d) => anteteDezabonare(linkDezabonare(baseUrl, org.id, d.email)),
       });
 
       await tx.insert(formular230CampaniiEmail).values({ orgId: org.id, an, nrDestinatari: trimise, trimisDe: null });

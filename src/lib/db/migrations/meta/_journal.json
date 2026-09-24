@@ -43,6 +43,13 @@
       "when": 1790233746545,
       "tag": "0005_eminent_madripoor",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790237615142,
+      "tag": "0006_rainy_toad_men",
+      "breakpoints": true
     }
   ]
 }

@@ -68,6 +68,8 @@ export async function updateSession(request: NextRequest, rewriteTo?: URL) {
     path === "/forgot-password" ||
     path === "/reset-password" ||
     path.startsWith("/auth") ||
+    path === "/dezabonare" ||
+    path === "/api/dezabonare" ||
     path.startsWith("/invite/") ||
     path.startsWith("/invite-beneficiar/") ||
     // Webhook-urile Stripe ale ONG-urilor (/api/stripe/webhook/<slug>) și IPN-ul

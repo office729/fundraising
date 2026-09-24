@@ -44,6 +44,9 @@ export async function trimiteEmailuriInLot(params: {
   destinatari: DestinatarEmail[];
   subiect: (d: DestinatarEmail) => string;
   html: (d: DestinatarEmail) => string;
+  // Antete per destinatar — ex. List-Unsubscribe / List-Unsubscribe-Post
+  // (RFC 8058), obligatorii pentru emailuri de campanie.
+  headers?: (d: DestinatarEmail) => Record<string, string>;
 }): Promise<{ trimise: number; esuate: number }> {
   const resend = getResend();
   const from = process.env.EMAIL_FROM;
@@ -61,6 +64,7 @@ export async function trimiteEmailuriInLot(params: {
         to: d.email,
         subject: params.subiect(d),
         html: params.html(d),
+        ...(params.headers ? { headers: params.headers(d) } : {}),
       })),
     );
     if (error) {

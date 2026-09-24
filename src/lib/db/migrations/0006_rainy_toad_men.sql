@@ -1,0 +1,1 @@
+ALTER TABLE "donatori_reali" ADD COLUMN "dezabonat_email_la" timestamp with time zone;

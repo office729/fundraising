@@ -232,6 +232,11 @@ const POLICIES = [
   `create policy formular230_campanii_email_cron_insert on formular230_campanii_email for insert with check (
     nullif(current_setting('app.public_lookup', true), '') = 'true'
   )`,
+  // Fără SELECT sub public_lookup, verificarea cron-ului „s-a trimis deja anul
+  // ăsta?" întorcea mereu 0 rânduri (RLS ascunde totul) — ar fi retrimis zilnic.
+  `create policy formular230_campanii_email_public_lookup_select on formular230_campanii_email for select using (
+    nullif(current_setting('app.public_lookup', true), '') = 'true'
+  )`,
 
   // fundraising_pages: conținutul paginii (titlu/poveste/țintă/suma strânsă)
   // e vizibil public INDIFERENT de status — nu e date sensibile, iar o
@@ -315,6 +320,12 @@ const POLICIES = [
     nullif(current_setting('app.public_lookup', true), '') = 'true'
   )`,
   `create policy donatori_reali_webhook_update on donatori_reali for update using (
+    nullif(current_setting('app.public_lookup', true), '') = 'true'
+  )`,
+  // SELECT sub public_lookup: cron-ul de reamintiri, dezabonarea (rută publică)
+  // și ON CONFLICT DO UPDATE / UPDATE ... WHERE din webhook-ul Stripe citesc
+  // rândurile prin RLS — fără el vedeau 0 rânduri (sau eroare la upsert).
+  `create policy donatori_reali_public_lookup_select on donatori_reali for select using (
     nullif(current_setting('app.public_lookup', true), '') = 'true'
   )`,
   // Aceeași creditare (crediteazaPaginaSiDonator) rulează și din contextul

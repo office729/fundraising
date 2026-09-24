@@ -389,6 +389,8 @@ create policy formular230_campanii_email_admin_insert on formular230_campanii_em
   );
 create policy formular230_campanii_email_cron_insert on formular230_campanii_email
   for insert with check (nullif(current_setting('app.public_lookup', true), '') = 'true');
+create policy formular230_campanii_email_public_lookup_select on formular230_campanii_email
+  for select using (nullif(current_setting('app.public_lookup', true), '') = 'true');
 --
 -- ⚠️ CAPCANĂ confirmată în Faza 0 (a produs o eroare reală la primul test):
 -- `INSERT ... RETURNING` re-verifică politica de SELECT a tabelului pentru
@@ -471,6 +473,10 @@ create policy donatori_reali_webhook_insert on donatori_reali
   for insert with check (nullif(current_setting('app.public_lookup', true), '') = 'true');
 create policy donatori_reali_webhook_update on donatori_reali
   for update using (nullif(current_setting('app.public_lookup', true), '') = 'true');
+-- SELECT sub public_lookup — vezi comentariul din scripts/restore-rls.mjs
+-- (cron reamintiri, dezabonare publică, upsert-ul din webhook Stripe).
+create policy donatori_reali_public_lookup_select on donatori_reali
+  for select using (nullif(current_setting('app.public_lookup', true), '') = 'true');
 
 -- Actualizări de campanie — text public (nu e sensibil), scris DOAR de
 -- owner/admin din CRM (nu susținători, nu public).
@@ -531,8 +537,8 @@ create policy fundraising_updates_admin_update on fundraising_updates
 -- select tablename, policyname, cmd from pg_policies where schemaname = 'public' order by tablename;
 -- Așteptat: apeluri(3), app_users(3), auth_rate_limits(1), companies(1),
 --           company_notite(1), company_sponsorizari(1), contacts(1), crm_kv(1),
---           donatori_reali(3), formular230_beneficiari(5),
---           formular230_campanii_email(3), formular230_submissions(4),
+--           donatori_reali(4), formular230_beneficiari(5),
+--           formular230_campanii_email(4), formular230_submissions(4),
 --           fundraising_donations(6), fundraising_pages(5),
 --           fundraising_updates(4), invites(4), memberships(2),
---           organizations(5) = 52 politici.
+--           organizations(5) = 54 politici.
