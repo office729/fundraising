@@ -79,6 +79,30 @@ export async function crediteazaPaginaSiDonator(
   return rezultat[0] ?? null;
 }
 
+// Inversul lui decrediteazaPaginaSiDonator — apelat când ONG-ul câștigă o
+// contestație (Stripe returnează banii). `suma` e exact cât s-a dedus la
+// contestație; `donatieRedevenitaActiva` = donația fusese rambursată integral
+// (numarDonatii scăzut cu 1) și acum nu mai e.
+export async function recrediteazaPaginaSiDonator(
+  tx: DbOrTx,
+  params: { pageId: string; orgId: string; suma: number; emailDonator: string | null; donatieRedevenitaActiva: boolean },
+) {
+  await tx
+    .update(fundraisingPages)
+    .set({ sumaStransa: sql`${fundraisingPages.sumaStransa} + ${params.suma}` })
+    .where(eq(fundraisingPages.id, params.pageId));
+
+  if (!params.emailDonator) return;
+
+  await tx
+    .update(donatoriReali)
+    .set({
+      totalDonat: sql`${donatoriReali.totalDonat} + ${params.suma}`,
+      ...(params.donatieRedevenitaActiva ? { numarDonatii: sql`${donatoriReali.numarDonatii} + 1` } : {}),
+    })
+    .where(and(eq(donatoriReali.orgId, params.orgId), eq(donatoriReali.email, params.emailDonator)));
+}
+
 // Simetricul lui crediteazaPaginaSiDonator — apelat la rambursare/contestație
 // (doar pe donații venite prin Stripe; o donație offline ștearsă manual ar
 // trebui decreditată direct de acțiunea care o șterge, dacă/când se adaugă).

@@ -1,0 +1,1 @@
+ALTER TABLE "fundraising_donations" ADD COLUMN "dispute_deduse" jsonb DEFAULT '{}'::jsonb NOT NULL;

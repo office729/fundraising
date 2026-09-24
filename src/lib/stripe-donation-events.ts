@@ -9,7 +9,7 @@ import { db } from "@/lib/db";
 import { fundraisingDonations } from "@/lib/db/schema";
 import { htmlEmailMultumireDonatie, subiectEmailMultumireDonatie } from "@/lib/donation-email-template";
 import { emailConfigurat, trimiteEmail } from "@/lib/email";
-import { crediteazaPaginaSiDonator, decrediteazaPaginaSiDonator } from "@/lib/fundraising-credit";
+import { crediteazaPaginaSiDonator, decrediteazaPaginaSiDonator, recrediteazaPaginaSiDonator } from "@/lib/fundraising-credit";
 
 // Evenimentele Stripe ale DONAȚIILOR unui ONG, primite pe webhook-ul lui propriu
 // (/api/stripe/webhook/<orgSlug>, semnat cu secretul webhook al ONG-ului).
@@ -327,9 +327,13 @@ export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, s
   // evenimentul cu donația prin stripePaymentIntentId (charge.refunded/
   // charge.dispute.created nu poartă direct sesiunea Checkout sau factura).
   if (event.type === "charge.refunded" || event.type === "charge.dispute.created") {
-    const charge =
-      event.type === "charge.dispute.created" ? (event.data.object as Stripe.Dispute).charge : (event.data.object as Stripe.Charge);
-    const paymentIntentId = typeof charge === "string" ? null : idDin(charge.payment_intent);
+    const dispute = event.type === "charge.dispute.created" ? (event.data.object as Stripe.Dispute) : null;
+    const charge = dispute ? dispute.charge : (event.data.object as Stripe.Charge);
+    // O contestație poartă charge ca simplu id (neexpandat) — payment_intent
+    // se citește direct de pe ea; altfel candidatul ar fi "ch_...", care nu
+    // coincide niciodată cu stripePaymentIntentId ("pi_...") și contestația
+    // nu ar găsi donația.
+    const paymentIntentId = dispute ? idDin(dispute.payment_intent) : typeof charge === "string" ? null : idDin(charge.payment_intent);
     const chargeId = typeof charge === "string" ? charge : charge.id;
     const candidat = paymentIntentId ?? chargeId; // fallback rar: charge fără payment_intent
 
@@ -360,6 +364,8 @@ export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, s
         // orbește "toată donația". O contestație se adaugă la ce era deja
         // rambursat (rar, dar posibil să coexiste pe același charge).
         const sumaRambursataAnterior = donatie[0].sumaRambursata;
+        // Contestație deja dedusă (eveniment retrimis) — altfel s-ar aduna a doua oară.
+        if (dispute && donatie[0].disputeDeduse[dispute.id] !== undefined) return;
         const sumaCumulativa =
           event.type === "charge.dispute.created"
             ? sumaRambursataAnterior + Math.round(sumaEvenimentBani / 100)
@@ -381,6 +387,9 @@ export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, s
           .set({
             sumaRambursata: sumaRambursataNoua,
             status: integralRambursata ? "rambursata" : "reusita",
+            ...(dispute
+              ? { disputeDeduse: { ...donatie[0].disputeDeduse, [dispute.id]: sumaRambursataNoua - sumaRambursataAnterior } }
+              : {}),
           })
           .where(
             and(
@@ -404,6 +413,62 @@ export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, s
     } catch (e) {
       console.error("Eroare la procesarea charge.refunded/charge.dispute.created:", e);
       return false;
+    }
+  }
+
+  // Contestație închisă în favoarea ONG-ului — Stripe returnează banii, deci
+  // suma dedusă la charge.dispute.created trebuie readusă în progresul
+  // campaniei/totalul donatorului. Alte rezultate ("lost") lasă deducerea.
+  // "warning_closed" = anchetă (inquiry) închisă fără chargeback.
+  if (event.type === "charge.dispute.closed") {
+    const dispute = event.data.object as Stripe.Dispute;
+    if (dispute.status === "won" || dispute.status === "warning_closed") {
+      const candidat = idDin(dispute.payment_intent) ?? (typeof dispute.charge === "string" ? dispute.charge : dispute.charge.id);
+      try {
+        await db.transaction(async (tx) => {
+          await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
+
+          const donatie = (
+            await tx
+              .select()
+              .from(fundraisingDonations)
+              .where(and(eq(fundraisingDonations.stripePaymentIntentId, candidat), eq(fundraisingDonations.orgId, orgId)))
+              .limit(1)
+          )[0];
+          if (!donatie) return;
+          const dedus = donatie.disputeDeduse[dispute.id];
+          if (dedus === undefined) return; // nedusă niciodată (sau deja inversată) — nimic de readus
+
+          const ramase = { ...donatie.disputeDeduse };
+          delete ramase[dispute.id];
+          const sumaNoua = Math.max(0, donatie.sumaRambursata - dedus);
+          const eraIntegral = donatie.status === "rambursata";
+
+          // Compare-and-swap pe sumaRambursata, ca la deducere — o retrimitere
+          // concurentă găsește rândul deja schimbat și iese.
+          const actualizat = await tx
+            .update(fundraisingDonations)
+            .set({
+              sumaRambursata: sumaNoua,
+              disputeDeduse: ramase,
+              ...(eraIntegral && sumaNoua < donatie.suma ? { status: "reusita" as const } : {}),
+            })
+            .where(and(eq(fundraisingDonations.id, donatie.id), eq(fundraisingDonations.sumaRambursata, donatie.sumaRambursata)))
+            .returning({ id: fundraisingDonations.id });
+          if (!actualizat[0]) return;
+
+          await recrediteazaPaginaSiDonator(tx, {
+            pageId: donatie.pageId,
+            orgId: donatie.orgId,
+            suma: dedus,
+            emailDonator: donatie.emailDonator,
+            donatieRedevenitaActiva: eraIntegral && sumaNoua < donatie.suma,
+          });
+        });
+      } catch (e) {
+        console.error("Eroare la procesarea charge.dispute.closed:", e);
+        return false;
+      }
     }
   }
 

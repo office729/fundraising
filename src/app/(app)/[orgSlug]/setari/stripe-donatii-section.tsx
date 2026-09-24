@@ -20,6 +20,7 @@ const EVENIMENTE = [
   "invoice.paid",
   "charge.refunded",
   "charge.dispute.created",
+  "charge.dispute.closed",
   "customer.subscription.deleted",
   "payment_intent.succeeded",
   "payment_intent.payment_failed",

@@ -1,4 +1,4 @@
-import { boolean, date, index, integer, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { boolean, date, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 import { appUsers } from "./app-users";
 import { campaignPageTemplate, fundraisingDonationStatus, fundraisingPageStatus } from "./enums";
@@ -107,6 +107,11 @@ export const fundraisingDonations = pgTable(
     // suma întreagă a donației din sumaStransa/totalDonat, deși doar o parte
     // a fost efectiv returnată — vezi stripe-donation-events.ts.
     sumaRambursata: integer("suma_rambursata").notNull().default(0),
+    // Contestații deduse din donație: id dispută Stripe → suma (lei) efectiv
+    // dedusă din sumaRambursata. Face idempotent charge.dispute.created (o
+    // retrimitere nu mai deduce a doua oară) și permite inversarea exactă a
+    // sumei la charge.dispute.closed câștigat de ONG.
+    disputeDeduse: jsonb("dispute_deduse").$type<Record<string, number>>().notNull().default({}),
     status: fundraisingDonationStatus("status").notNull().default("in_asteptare"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
