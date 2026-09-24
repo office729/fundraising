@@ -77,6 +77,9 @@ export async function updateSession(request: NextRequest, rewriteTo?: URL) {
     // vizitator cu sesiune; fiecare rută își verifică singură semnătura.
     path.startsWith("/api/stripe/webhook") ||
     path.startsWith("/api/netopia/ipn") ||
+    // Webhook-urile Twilio (voice, voice-status) — apelate de serverele Twilio;
+    // fiecare rută validează semnătura X-Twilio-Signature (403 altfel).
+    path.startsWith("/api/twilio/") ||
     // Cron-uri Vercel — invocate de infrastructura Vercel, nu de un vizitator
     // cu sesiune; ruta își face propria verificare (CRON_SECRET).
     path.startsWith("/api/cron/") ||
