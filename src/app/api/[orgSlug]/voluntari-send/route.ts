@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 import { withOrgSession } from "@/lib/auth/guard";
+import { verificaLimitaRata } from "@/lib/auth/rate-limit";
 import { crmKv } from "@/lib/db/schema";
 import { emailConfigurat, trimiteEmail, trimiteEmailuriInLot } from "@/lib/email";
 
@@ -49,6 +50,8 @@ function buildHtml(continut: string, semnatura: string): string {
   return `<div>${corp}</div>${sig}`;
 }
 
+const MAX_DESTINATARI = 500;
+
 type Ctx = { params: Promise<{ orgSlug: string }> };
 
 const postSend = withOrgSession(async (ctx, req: Request) => {
@@ -74,36 +77,53 @@ const postSend = withOrgSession(async (ctx, req: Request) => {
     return NextResponse.json({ ok: false, error: "Trimiterea de email nu e configurată pentru platformă." });
   }
 
-  const subiect = typeof body.subiect === "string" ? body.subiect : "";
-  const continut = typeof body.continut === "string" ? body.continut : "";
-  const semnatura = typeof body.semnatura === "string" ? body.semnatura : "";
+  // Fără CR/LF în subiect (header injection) și limite de lungime.
+  const subiect = (typeof body.subiect === "string" ? body.subiect : "").replace(/[\r\n]+/g, " ").slice(0, 200);
+  const continut = (typeof body.continut === "string" ? body.continut : "").slice(0, 20_000);
+  const semnatura = (typeof body.semnatura === "string" ? body.semnatura : "").slice(0, 2_000);
   if (!continut.trim()) {
     return NextResponse.json({ ok: false, error: "Scrie mesajul (subiect + conținut)." });
   }
 
-  let destinatari: { email: string; nume: string }[];
+  // Destinatarii se rezolvă DOAR din rosterul de voluntari al organizației
+  // (crm_kv "voluntari-roster"), niciodată din adrese trimise de client — altfel
+  // orice membru ar putea folosi expeditorul platformei (EMAIL_FROM) ca releu de
+  // spam/phishing către adrese arbitrare.
+  const rows = await ctx.db
+    .select({ data: crmKv.data })
+    .from(crmKv)
+    .where(and(eq(crmKv.orgId, ctx.orgId), eq(crmKv.path, "voluntari-roster")))
+    .limit(1);
+  const volunteers = ((rows[0]?.data as { volunteers?: Volunteer[] } | undefined)?.volunteers ?? []) as Volunteer[];
+
+  let selectati: Volunteer[];
   if (Array.isArray(body.contacte) && body.contacte.length) {
-    destinatari = body.contacte
-      .map((c) => {
-        const ct = c as Record<string, unknown>;
-        return { email: String(ct.email || "").trim(), nume: String(ct.nume || "").trim() };
-      })
-      .filter((d) => d.email);
+    const dupaEmail = new Map(volunteers.filter((v) => v.email).map((v) => [v.email.trim().toLowerCase(), v]));
+    selectati = body.contacte
+      .map((c) => dupaEmail.get(String((c as Record<string, unknown>).email || "").trim().toLowerCase()))
+      .filter((v): v is Volunteer => Boolean(v));
   } else {
-    const rows = await ctx.db
-      .select({ data: crmKv.data })
-      .from(crmKv)
-      .where(and(eq(crmKv.orgId, ctx.orgId), eq(crmKv.path, "voluntari-roster")))
-      .limit(1);
-    const volunteers = ((rows[0]?.data as { volunteers?: Volunteer[] } | undefined)?.volunteers ?? []) as Volunteer[];
-    destinatari = resolveAudience(volunteers, body.audience).map((v) => ({ email: v.email, nume: v.nume }));
+    selectati = resolveAudience(volunteers, body.audience);
   }
+  // Mesaj în masă: doar voluntarii care au acceptat emailuri (vreaEmail) —
+  // consimțământul se aplică server-side, nu depinde de ce trimite clientul.
+  // Un singur destinatar (mesaj individual) rămâne permis.
+  if (selectati.length > 1) selectati = selectati.filter((v) => v.vreaEmail);
+  let destinatari = [...new Map(selectati.map((v) => [v.email.trim().toLowerCase(), { email: v.email.trim(), nume: v.nume }])).values()];
 
   if (body.test) {
     destinatari = [{ email: ctx.userEmail, nume: ctx.userName || ctx.userEmail }];
   }
   if (!destinatari.length) {
     return NextResponse.json({ ok: false, error: "Niciun destinatar valid pentru email." });
+  }
+  if (destinatari.length > MAX_DESTINATARI) {
+    return NextResponse.json({ ok: false, error: `Prea mulți destinatari într-o trimitere (maxim ${MAX_DESTINATARI}).` });
+  }
+  // Plafon per organizație: cel mult 20 de trimiteri pe oră (testele către
+  // propria adresă nu contează).
+  if (!body.test && !(await verificaLimitaRata("voluntari-send", ctx.orgId, 20, 60))) {
+    return NextResponse.json({ ok: false, error: "Prea multe trimiteri într-o oră — încearcă mai târziu." }, { status: 429 });
   }
 
   const html = buildHtml(continut, semnatura);

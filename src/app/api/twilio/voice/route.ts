@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import twilio from "twilio";
 
+import { verificaLimitaRata } from "@/lib/auth/rate-limit";
 import { db } from "@/lib/db";
 import { apeluri } from "@/lib/db/schema";
 
@@ -42,6 +43,27 @@ export async function POST(req: Request) {
     });
   }
 
+  // Fără asta, orice membru cu token Voice poate suna ORICE număr — inclusiv
+  // premium/internaționale scumpe (toll fraud pe contul Twilio al platformei).
+  // Doar numere E.164 cu prefix permis (implicit România, +40); extinde prin
+  // TWILIO_ALLOWED_PREFIXES="+40,+44" dacă e nevoie.
+  const prefixePermise = (process.env.TWILIO_ALLOWED_PREFIXES || "+40").split(",").map((p) => p.trim()).filter(Boolean);
+  const numarNormalizat = catre.replace(/[\s().-]/g, "");
+  const esteE164 = /^\+[1-9]\d{7,14}$/.test(numarNormalizat);
+  if (!esteE164 || !prefixePermise.some((p) => numarNormalizat.startsWith(p))) {
+    return new NextResponse('<Response><Say language="ro-RO">Numărul nu este permis.</Say></Response>', {
+      status: 400,
+      headers: { "Content-Type": "text/xml" },
+    });
+  }
+  // Plafon per organizație: cel mult 60 de apeluri pe oră.
+  if (!(await verificaLimitaRata("apel-twilio", orgId, 60, 60))) {
+    return new NextResponse('<Response><Say language="ro-RO">Prea multe apeluri într-o oră.</Say></Response>', {
+      status: 429,
+      headers: { "Content-Type": "text/xml" },
+    });
+  }
+
   const apelId = crypto.randomUUID();
   try {
     await db.transaction(async (tx) => {
@@ -51,7 +73,7 @@ export async function POST(req: Request) {
         orgId,
         companyId: params.companyId || null,
         catreNume: params.catreNume || null,
-        catreTelefon: catre,
+        catreTelefon: numarNormalizat,
         initiatorId: initiatorId || null,
         status: "sunand",
       });
@@ -68,7 +90,7 @@ export async function POST(req: Request) {
     action: `${acasa}/api/twilio/voice-status?apelId=${apelId}`,
     method: "POST",
   });
-  dial.number(catre);
+  dial.number(numarNormalizat);
 
   return new NextResponse(twiml.toString(), { headers: { "Content-Type": "text/xml" } });
 }
