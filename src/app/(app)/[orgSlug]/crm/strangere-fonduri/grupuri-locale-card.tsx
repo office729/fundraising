@@ -1,5 +1,6 @@
 import { Badge } from "../components/ui/badge";
 import { Card, CardHeader } from "../components/ui/card";
+import { urlWebSigur } from "@/lib/validation";
 
 export type LocalGroupRow = { id: string; nume: string; platforma: "facebook" | "whatsapp" | "altul"; link: string; localitate: string | null };
 
@@ -14,7 +15,7 @@ export function GrupuriLocaleCard({ orgSlug, grupuri, publicateIds }: { orgSlug:
           {grupuri.map((g) => (
             <div key={g.id} className="flex items-center justify-between gap-2 rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] px-3.5 py-2.5">
               <div className="min-w-0">
-                <a href={g.link} target="_blank" rel="noreferrer" className="truncate text-[13px] font-medium text-[var(--ci-text)] hover:underline">
+                <a href={urlWebSigur(g.link) ?? "#"} target="_blank" rel="noreferrer" className="truncate text-[13px] font-medium text-[var(--ci-text)] hover:underline">
                   {g.nume}
                 </a>
                 <p className="truncate text-[12px] text-[var(--ci-text-muted)]">

@@ -4,6 +4,7 @@ import { and, eq } from "drizzle-orm";
 
 import { withOrgAdmin, withOrgSession } from "@/lib/auth/guard";
 import { fundraisingLocalGroups, fundraisingMediaContacts } from "@/lib/db/schema";
+import { urlWebSigur } from "@/lib/validation";
 
 const MEDIA_TIPURI = ["publicatie", "tv", "radio", "site"] as const;
 const GROUP_PLATFORME = ["facebook", "whatsapp", "altul"] as const;
@@ -23,6 +24,8 @@ export const adaugaMediaContactAction = withOrgAdmin(
     if (!judet) return { error: "Județul este obligatoriu." };
     if (!numeRedactie) return { error: "Numele redacției este obligatoriu." };
     if (!MEDIA_TIPURI.includes(tip as (typeof MEDIA_TIPURI)[number])) return { error: "Tip de contact invalid." };
+    const websiteBrut = String(formData.get("website") ?? "").trim();
+    if (websiteBrut && !urlWebSigur(websiteBrut)) return { error: "Website-ul nu e o adresă web validă (http/https)." };
 
     await ctx.db.insert(fundraisingMediaContacts).values({
       orgId: ctx.orgId,
@@ -31,7 +34,7 @@ export const adaugaMediaContactAction = withOrgAdmin(
       numeRedactie,
       email: String(formData.get("email") ?? "").trim() || null,
       telefon: String(formData.get("telefon") ?? "").trim() || null,
-      website: String(formData.get("website") ?? "").trim() || null,
+      website: urlWebSigur(websiteBrut),
       persoanaContact: String(formData.get("persoanaContact") ?? "").trim() || null,
     });
     return OK;
@@ -55,6 +58,8 @@ export const adaugaLocalGroupAction = withOrgAdmin(
     if (!judet) return { error: "Județul este obligatoriu." };
     if (!nume) return { error: "Numele grupului este obligatoriu." };
     if (!link) return { error: "Link-ul grupului este obligatoriu." };
+    const linkSigur = urlWebSigur(link);
+    if (!linkSigur) return { error: "Link-ul grupului nu e o adresă web validă (http/https)." };
     if (!GROUP_PLATFORME.includes(platforma as (typeof GROUP_PLATFORME)[number])) return { error: "Platformă invalidă." };
 
     await ctx.db.insert(fundraisingLocalGroups).values({
@@ -63,7 +68,7 @@ export const adaugaLocalGroupAction = withOrgAdmin(
       localitate: String(formData.get("localitate") ?? "").trim() || null,
       platforma: platforma as (typeof GROUP_PLATFORME)[number],
       nume,
-      link,
+      link: linkSigur,
       categorie: String(formData.get("categorie") ?? "").trim() || null,
     });
     return OK;

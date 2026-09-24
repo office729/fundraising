@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { urlWebSigur } from "@/lib/validation";
 
 import { marcheazaPublicatGrupAction } from "../actions";
 
@@ -27,7 +28,7 @@ export function GrupuriList({ grupuri, publicateIds }: { grupuri: GroupRow[]; pu
           <div key={g.id} className="rounded-xl border border-line bg-panel p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
-                <a href={g.link} target="_blank" rel="noreferrer" className="text-[13px] font-semibold text-ink hover:underline">
+                <a href={urlWebSigur(g.link) ?? "#"} target="_blank" rel="noreferrer" className="text-[13px] font-semibold text-ink hover:underline">
                   {g.nume}
                 </a>
                 <p className="mt-0.5 text-[12px] text-muted-2">

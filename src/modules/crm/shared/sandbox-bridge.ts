@@ -115,6 +115,11 @@ const METODE = new Set(["GET", "POST", "PUT", "PATCH", "DELETE"]);
 const MAX_BODY = 4 * 1024 * 1024;
 
 // Decide dacă un apel al instrumentului e permis și cu ce credențiale.
+// Rutele /api/<org>/... apelate efectiv de instrumentele HTML (verificat în
+// *.base.html): crm-kv/<cheie> (starea tool-urilor), crm-companies (listă, count,
+// <id>), voluntari-send, voluntari-activity, newsletter/imgbb-upload.
+const RUTE_TOOL = /^(crm-kv\/[^/]+|crm-companies(\/[^/]+)?|voluntari-send|voluntari-activity|newsletter\/imgbb-upload)\/?$/;
+
 export function politicaFetch(urlStr: string, orgSlug: string, hostOrigin: string): { ok: true; credentials: RequestCredentials } | { ok: false; error: string } {
   let u: URL;
   try {
@@ -123,9 +128,15 @@ export function politicaFetch(urlStr: string, orgSlug: string, hostOrigin: strin
     return { ok: false, error: "URL invalid" };
   }
   if (u.origin === hostOrigin) {
-    // doar API-ul organizației curente
-    if (u.pathname.startsWith(`/api/${orgSlug}/`)) return { ok: true, credentials: "same-origin" };
-    return { ok: false, error: "Cerere blocată: instrumentul poate apela doar API-ul organizației." };
+    // doar API-ul organizației curente, și doar rutele pe care le folosesc
+    // instrumentele (vezi RUTE_TOOL). Un script din datele unui instrument
+    // rulează cu sesiunea utilizatorului: fără listă, ar putea apela orice rută
+    // /api/<org>/... (ex. token Twilio Voice, trimiterea formularelor).
+    const prefix = `/api/${orgSlug}/`;
+    if (u.pathname.startsWith(prefix) && RUTE_TOOL.test(u.pathname.slice(prefix.length))) {
+      return { ok: true, credentials: "same-origin" };
+    }
+    return { ok: false, error: "Cerere blocată: instrumentul poate apela doar rutele API permise ale organizației." };
   }
   if (u.protocol === "https:") return { ok: true, credentials: "omit" };
   return { ok: false, error: "Cerere blocată: doar adrese https." };

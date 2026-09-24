@@ -7,6 +7,7 @@ import { and, asc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import { type OrgContext, withOrgSession } from "@/lib/auth/guard";
 import { celMaiRecentBilant, verificaStareFiscala } from "@/lib/anaf";
 import { getLimiteleEfective, subCota } from "@/lib/billing/quota";
+import { urlWebSigur } from "@/lib/validation";
 import { companies, companyNotite, companySponsorizari, companyStageLog, contacts } from "@/lib/db/schema";
 
 export type ActionState = { error: string | null };
@@ -154,6 +155,7 @@ export const adaugaContact = withOrgSession(async (ctx, _prev: AdaugaContactStat
   const linkedin = String(formData.get("linkedin") ?? "").trim();
 
   if (!companyId || !nume) return { error: "Numele contactului e obligatoriu." };
+  if (linkedin && !urlWebSigur(linkedin)) return { error: "Linkul LinkedIn nu e o adresă web validă (http/https)." };
   const firma = await ctx.db.select({ id: companies.id }).from(companies).where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId))).limit(1);
   if (!firma[0]) return { error: "Firma nu a fost găsită." };
 
@@ -165,7 +167,7 @@ export const adaugaContact = withOrgSession(async (ctx, _prev: AdaugaContactStat
     rol: rol || null,
     email: email || null,
     telefon: telefon || null,
-    linkedin: linkedin || null,
+    linkedin: urlWebSigur(linkedin),
     createdBy: ctx.userId,
   });
   return { error: null };
@@ -226,6 +228,7 @@ export const adaugaFirma = withOrgSession(async (ctx, _prev: AdaugaFirmaState, f
   const sumaContract = sumaBruta ? Math.round(Number(sumaBruta)) : null;
 
   if (!nume) return { error: "Numele firmei e obligatoriu." };
+  if (site && !urlWebSigur(site)) return { error: "Site-ul nu e o adresă web validă (http/https)." };
   if (sumaContract !== null && (!Number.isFinite(sumaContract) || sumaContract < 0)) return { error: "Suma contractului trebuie să fie un număr pozitiv." };
 
   const limite = getLimiteleEfective(ctx.orgPackage, ctx.orgCustomPlanConfig);
@@ -249,7 +252,7 @@ export const adaugaFirma = withOrgSession(async (ctx, _prev: AdaugaFirmaState, f
     cui: cui || null,
     judet: judet || null,
     industrie: industrie || null,
-    site: site || null,
+    site: urlWebSigur(site),
     numarContract: numarContract || null,
     sumaPropusa: sumaContract,
     updatedBy: ctx.userId,
@@ -320,6 +323,15 @@ export const editeazaFirma = withOrgSession(async (ctx, companyId: string, formD
   };
   const nume = str("nume");
   if (nume === null) return { error: "Numele firmei e obligatoriu." };
+  // Linkurile ajung în href-uri afișate altor utilizatori — doar http(s).
+  const urlCamp = (k: string) => {
+    const brut = str(k);
+    return brut ? urlWebSigur(brut) : brut;
+  };
+  for (const k of ["site", "linkedin", "facebook"]) {
+    const brut = str(k);
+    if (brut && !urlWebSigur(brut)) return { error: `Câmpul „${k}” nu e o adresă web validă (http/https).` };
+  }
 
   const r = await ctx.db
     .update(companies)
@@ -331,9 +343,9 @@ export const editeazaFirma = withOrgSession(async (ctx, companyId: string, formD
       adresa: str("adresa"),
       caen: str("caen"),
       industrie: str("industrie"),
-      site: str("site"),
-      linkedin: str("linkedin"),
-      facebook: str("facebook"),
+      site: urlCamp("site"),
+      linkedin: urlCamp("linkedin"),
+      facebook: urlCamp("facebook"),
       administrator: str("administrator"),
       ca: num("ca"),
       profit: num("profit"),
@@ -436,6 +448,9 @@ export const importaFirmeCsv = withOrgSession(async (ctx, csvText: string): Prom
       if (col === "ca" || col === "profit" || col === "nrAngajati") {
         const n = Math.round(Number(v.replace(/[^0-9-]/g, "")));
         if (Number.isFinite(n)) rand[col] = n;
+      } else if (col === "site") {
+        const url = urlWebSigur(v);
+        if (url) rand[col] = url;
       } else {
         rand[col] = v;
       }

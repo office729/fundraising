@@ -11,6 +11,7 @@ import { Input, Label } from "../../components/ui/input";
 import { EmptyState } from "../../components/ui/states";
 import { useLocale } from "../../lib/locale-context";
 import { COMPANII_DICT } from "@/lib/i18n/dictionaries/companii";
+import { urlWebSigur } from "@/lib/validation";
 import { adaugaContact, comutaContactCheie, stergeContact } from "../actions";
 
 type Contact = {
@@ -95,7 +96,7 @@ export function ContactePanel({ companyId, contacte }: { companyId: string; cont
                 <div className="flex shrink-0 items-center gap-2.5">
                   {c.telefon && <CallButton telefon={c.telefon} nume={c.nume} companyId={companyId} />}
                   {c.linkedin && (
-                    <a href={c.linkedin} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-[12px] font-medium text-[var(--ci-blue)] hover:underline">
+                    <a href={urlWebSigur(c.linkedin) ?? "#"} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-[12px] font-medium text-[var(--ci-blue)] hover:underline">
                       <ExternalLink className="h-3.5 w-3.5" /> {dict.linkedin}
                     </a>
                   )}
