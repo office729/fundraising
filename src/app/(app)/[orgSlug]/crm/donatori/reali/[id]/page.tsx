@@ -10,6 +10,7 @@ import { getLocale } from "@/lib/i18n/get-locale";
 import { DONATORI_REALI_DICT } from "@/lib/i18n/dictionaries/donatori-reali";
 
 import { getDonatorRealDetaliu } from "../../queries";
+import { GdprPanelDonator } from "./gdpr-panel";
 import { NotitePanelDonatorReal } from "./notite-panel";
 
 const STATUS_TONE: Record<string, StatusTone> = { in_asteptare: "amber", reusita: "green", esuata: "red", rambursata: "orange" };
@@ -18,7 +19,7 @@ export default async function DonatorRealProfilPage({ params }: { params: Promis
   const { orgSlug, id } = await params;
   const data = await getDonatorRealDetaliu(orgSlug, id);
   if (!data) notFound();
-  const { donator, donatii, notite } = data;
+  const { donator, donatii, notite, poateAdministra } = data;
   const locale = await getLocale();
   const dict = DONATORI_REALI_DICT[locale].detail;
   const statusLabel = dict.donatii.statusLabel;
@@ -66,6 +67,8 @@ export default async function DonatorRealProfilPage({ params }: { params: Promis
           {donator.consimtamantWhatsapp ? dict.whatsapp.daText : dict.whatsapp.nuText}
         </p>
       </Card>
+
+      {poateAdministra && <GdprPanelDonator donatorId={donator.id} nume={donator.nume} />}
 
       <Tabs
         tabs={[

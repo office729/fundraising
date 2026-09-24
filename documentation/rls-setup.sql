@@ -461,6 +461,10 @@ create policy fundraising_donations_webhook_select on fundraising_donations
   for select using (nullif(current_setting('app.public_lookup', true), '') = 'true');
 create policy fundraising_donations_webhook_update on fundraising_donations
   for update using (nullif(current_setting('app.public_lookup', true), '') = 'true');
+-- Anonimizare GDPR a unui donator (crm/donatori/reali/gdpr-actions.ts): UPDATE din
+-- contextul de membru; fără politică rula silențios pe 0 rânduri.
+create policy fundraising_donations_member_update on fundraising_donations
+  for update using (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid);
 
 -- Donatori REALI (nu prototipul mock din modulul CRM „Calm Impact") — un rând
 -- per persoană care a donat efectiv prin Stripe, upsert după org_id+email la
@@ -539,6 +543,6 @@ create policy fundraising_updates_admin_update on fundraising_updates
 --           company_notite(1), company_sponsorizari(1), contacts(1), crm_kv(1),
 --           donatori_reali(4), formular230_beneficiari(5),
 --           formular230_campanii_email(4), formular230_submissions(4),
---           fundraising_donations(6), fundraising_pages(5),
+--           fundraising_donations(7), fundraising_pages(5),
 --           fundraising_updates(4), invites(4), memberships(2),
---           organizations(5) = 54 politici.
+--           organizations(5) = 55 politici.

@@ -76,5 +76,5 @@ export const getDonatorRealDetaliu = withOrgSession(async (ctx, id: string) => {
       .orderBy(desc(donatorNotite.createdAt)),
   ]);
 
-  return { donator, donatii, notite };
+  return { donator, donatii, notite, poateAdministra: ctx.role === "owner" || ctx.role === "admin" };
 });

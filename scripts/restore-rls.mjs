@@ -310,6 +310,11 @@ const POLICIES = [
   `create policy fundraising_donations_member_insert on fundraising_donations for insert with check (
     org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
   )`,
+  // Anonimizarea la cererea GDPR a unui donator (crm/donatori/reali/gdpr-actions.ts)
+  // face UPDATE din contextul de membru — fără politică, rula silențios pe 0 rânduri.
+  `create policy fundraising_donations_member_update on fundraising_donations for update using (
+    org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
+  )`,
 
   // donatori_reali: doar organizația își vede propriii donatori reali;
   // scris DOAR de webhook-ul Stripe (upsert după org_id+email).
