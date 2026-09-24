@@ -2,7 +2,7 @@ import "server-only";
 
 import { randomUUID } from "node:crypto";
 
-import { and, eq, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 import type { OrgContext } from "@/lib/auth/guard";
 import { platformPayments } from "@/lib/db/schema";
@@ -33,11 +33,26 @@ export async function creeazaPlataAbonament(
   // Reducerea de recomandare se aplică DOAR la prima plată reușită a
   // organizației, o singură dată — recalculată aici, server-side, niciodată
   // acceptată de la client.
-  const [{ platite }] = await ctx.db
-    .select({ platite: sql<number>`count(*)`.mapWith(Number) })
+  //
+  // Lock consultativ pe organizație, ținut până la sfârșitul tranzacției:
+  // altfel două cereri simultane (dublu-click, două tab-uri) citeau amândouă
+  // "nicio plată reușită" și creau ambele comenzi cu reducere, iar clientul le
+  // plătea pe amândouă la jumătate de preț. A doua cerere așteaptă aici și vede
+  // comanda primei (comisă), deci nu mai primește reducerea. Advisory lock, nu
+  // FOR UPDATE pe organizations — nu depinde de politicile RLS de UPDATE.
+  await ctx.db.execute(sql`select pg_advisory_xact_lock(hashtext(${`plata_abonament:${ctx.orgId}`}))`);
+
+  // Reducerea e revendicată și de o comandă încă în curs (creată recent, poate
+  // fi plătită oricând pe pagina Netopia) — nu doar de una deja reușită. Comenzile
+  // abandonate deblochează reducerea după fereastra de mai jos.
+  const [{ platite, inCurs }] = await ctx.db
+    .select({
+      platite: sql<number>`count(*) filter (where ${platformPayments.status} = 'reusita')`.mapWith(Number),
+      inCurs: sql<number>`count(*) filter (where ${platformPayments.status} = 'in_asteptare' and ${platformPayments.createdAt} > now() - interval '30 minutes')`.mapWith(Number),
+    })
     .from(platformPayments)
-    .where(and(eq(platformPayments.orgId, ctx.orgId), eq(platformPayments.status, "reusita")));
-  const areDreptulLaReducere = Boolean(ctx.orgReferredByOrgId) && platite === 0;
+    .where(eq(platformPayments.orgId, ctx.orgId));
+  const areDreptulLaReducere = Boolean(ctx.orgReferredByOrgId) && platite === 0 && inCurs === 0;
   const sumaLei = areDreptulLaReducere
     ? Math.round((params.pretLunar * (100 - REFERRAL_DISCOUNT_PERCENT)) / 100)
     : params.pretLunar;
