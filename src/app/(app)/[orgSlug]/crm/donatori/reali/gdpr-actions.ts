@@ -2,6 +2,7 @@
 
 import { and, eq, sql } from "drizzle-orm";
 
+import { inregistreazaAudit } from "@/lib/audit";
 import { withOrgAdmin } from "@/lib/auth/guard";
 import { donatorNotite, donatoriReali, formular230Submissions, fundraisingDonations } from "@/lib/db/schema";
 import { decripteazaSauLegacy } from "@/lib/secret-box";
@@ -44,6 +45,15 @@ export const exportaDateDonator = withOrgAdmin(async (ctx, donatorId: string): P
       .from(formular230Submissions)
       .where(and(eq(formular230Submissions.orgId, ctx.orgId), sql`lower(${formular230Submissions.email}) = ${emailLower}`)),
   ]);
+
+  await inregistreazaAudit(ctx.db, {
+    orgId: ctx.orgId,
+    actorAppUserId: ctx.userId,
+    actiune: "donator_export_gdpr",
+    entitate: "donator",
+    entitateId: donator.id,
+    detalii: { donatii: donatii.length, formulare230: formulare.length },
+  });
 
   return {
     generatLa: new Date().toISOString(),
@@ -117,6 +127,15 @@ export const stergeDateDonator = withOrgAdmin(
     }
 
     await ctx.db.delete(donatoriReali).where(and(eq(donatoriReali.id, donator.id), eq(donatoriReali.orgId, ctx.orgId)));
+
+    await inregistreazaAudit(ctx.db, {
+      orgId: ctx.orgId,
+      actorAppUserId: ctx.userId,
+      actiune: "donator_sters_gdpr",
+      entitate: "donator",
+      entitateId: donator.id,
+      detalii: { donatiiAnonimizate: anonimizate.length, formulare230Sterse: formulareSterse, inclusiv230 },
+    });
 
     return { ok: true, error: null, donatiiAnonimizate: anonimizate.length, formulare230Sterse: formulareSterse };
   },

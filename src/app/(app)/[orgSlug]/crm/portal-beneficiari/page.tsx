@@ -12,6 +12,11 @@ const ACTIUNE_LABEL: Record<string, string> = {
   agent_atribuit: "Agent atribuit",
   beneficiar_dezactivat: "Beneficiar dezactivat",
   comunicat_aprobat: "Comunicat aprobat",
+  f230_pdf_generat: "Formular 230: PDF generat (acces CNP)",
+  f230_export_cnp: "Formular 230: export cu CNP",
+  f230_sters: "Formular 230: răspuns șters",
+  donator_export_gdpr: "Donator: export date (GDPR)",
+  donator_sters_gdpr: "Donator: date șterse (GDPR)",
 };
 
 export default async function PortalBeneficiariPage({ params }: { params: Promise<{ orgSlug: string }> }) {
