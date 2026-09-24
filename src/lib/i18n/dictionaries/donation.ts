@@ -190,6 +190,7 @@ export const DONATE_ACTION_ERRORS = {
     stripeIndisponibil: "Plata nu poate fi pornită momentan — te rugăm să încerci mai târziu sau să contactezi organizația.",
     stripeNeconectat: "Această organizație nu și-a activat încă donațiile online — te rugăm să o contactezi direct.",
     plataEsuata: "Nu am putut porni plata — încearcă din nou.",
+    preaMulteIncercari: "Prea multe încercări — te rugăm să aștepți câteva minute și să încerci din nou.",
   },
   en: {
     sumaMinima: "The minimum donation amount is 5 lei.",
@@ -201,5 +202,6 @@ export const DONATE_ACTION_ERRORS = {
     stripeIndisponibil: "Payment can't be started right now — please try again later or contact the organization.",
     stripeNeconectat: "This organization hasn't activated online donations yet — please contact them directly.",
     plataEsuata: "We couldn't start the payment — please try again.",
+    preaMulteIncercari: "Too many attempts — please wait a few minutes and try again.",
   },
 } as const satisfies Record<Locale, unknown>;

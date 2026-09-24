@@ -98,7 +98,9 @@ export function Formular230Client({
               ? "Completează toate câmpurile obligatorii."
               : body.error === "semnatura_lipsa"
                 ? "Semnătura lipsește — desenează-o mai jos înainte de a trimite."
-                : "Nu am putut trimite formularul — încearcă din nou.",
+                : body.error === "prea_multe_cereri"
+                  ? "Prea multe trimiteri de pe această conexiune — încearcă din nou peste o oră."
+                  : "Nu am putut trimite formularul — încearcă din nou.",
         );
         return;
       }

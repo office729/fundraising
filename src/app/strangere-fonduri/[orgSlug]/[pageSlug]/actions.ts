@@ -6,6 +6,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { obtineIpClient, verificaLimitaRata } from "@/lib/auth/rate-limit";
 import { db } from "@/lib/db";
 import { fundraisingDonations, fundraisingPages, organizations } from "@/lib/db/schema";
 import { DONATE_ACTION_ERRORS } from "@/lib/i18n/dictionaries/donation";
@@ -46,6 +47,12 @@ export async function pregatesteDonatie(
   formData: FormData,
   errors: (typeof DONATE_ACTION_ERRORS)[keyof typeof DONATE_ACTION_ERRORS],
 ): Promise<{ ok: false; error: string } | { ok: true; date: DateComuneDonatie }> {
+  // Limită per IP, comună fluxului clasic și celui express (ambele trec pe aici):
+  // fiecare încercare validă creează o sesiune/PaymentIntent în contul Stripe al
+  // ONG-ului și un rând de donație — fără limită, un bot le umple.
+  if (!(await verificaLimitaRata("donatie", await obtineIpClient(), 15, 10))) {
+    return { ok: false, error: errors.preaMulteIncercari };
+  }
   const suma = Math.round(Number(formData.get("suma")));
   if (!Number.isFinite(suma) || suma < 5) {
     return { ok: false, error: errors.sumaMinima };

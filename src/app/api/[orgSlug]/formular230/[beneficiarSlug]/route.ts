@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { and, eq, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
+import { obtineIpClient, verificaLimitaRata } from "@/lib/auth/rate-limit";
 import { db } from "@/lib/db";
 import { formular230Beneficiari, formular230Submissions, organizations } from "@/lib/db/schema";
 import { cripteaza } from "@/lib/secret-box";
@@ -19,7 +20,7 @@ import { EMAIL_RE } from "@/lib/validation";
 
 const CNP_RE = /^\d{13}$/;
 const MAX_FIELD_LEN = 200; // orice câmp de adresă/nume rezonabil e mult sub asta
-const MAX_SEMNATURA_LEN = 2_000_000; // ~1.5 MB de imagine PNG codificată base64 — o semnătură reală e mult mai mică
+const MAX_SEMNATURA_LEN = 500_000; // ~370 KB de PNG în base64 — o semnătură reală are câteva zeci de KB
 
 type Ctx = { params: Promise<{ orgSlug: string; beneficiarSlug: string }> };
 
@@ -31,6 +32,13 @@ export async function POST(req: Request, { params }: Ctx) {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "bad_request" }, { status: 400 });
+  }
+
+  // Fiecare cerere validă scrie un rând cu date personale + o semnătură; fără
+  // limită, un bot umple baza (plan gratuit) și inboxul organizației. 20/oră/IP
+  // permite unei familii sau unui birou să completeze mai multe formulare.
+  if (!(await verificaLimitaRata("formular230", await obtineIpClient(), 20, 60))) {
+    return NextResponse.json({ error: "prea_multe_cereri" }, { status: 429 });
   }
 
   // Honeypot — câmp invizibil pentru oameni; dacă e completat, e un bot.
@@ -66,7 +74,7 @@ export async function POST(req: Request, { params }: Ctx) {
     return NextResponse.json({ error: "acord_necesar" }, { status: 400 });
   }
   const semnatura = typeof body.semnatura === "string" ? body.semnatura : "";
-  if (!semnatura.startsWith("data:image/")) {
+  if (!semnatura.startsWith("data:image/png;base64,")) {
     return NextResponse.json({ error: "semnatura_lipsa" }, { status: 400 });
   }
   if (semnatura.length > MAX_SEMNATURA_LEN) {

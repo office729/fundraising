@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 
 import type { CustomPlanConfigSaved } from "@/lib/billing/custom-plan";
 import { getTemplatesDisponibile, type CampaignPageTemplate } from "@/lib/campaign-templates";
+import { obtineIpClient, verificaLimitaRata } from "@/lib/auth/rate-limit";
 import { db } from "@/lib/db";
 import { fundraisingPages, organizations } from "@/lib/db/schema";
 import { slugify } from "@/lib/slugify";
@@ -31,6 +32,12 @@ export async function creeazaPaginaAction(
   // Honeypot.
   if (String(formData.get("website") ?? "").trim()) {
     return { error: null };
+  }
+
+  // Pagina se activează imediat, fără moderare — fără limită, un bot poate crea
+  // mii de pagini publice (spam, umplerea bazei). 5 pagini/oră/IP.
+  if (!(await verificaLimitaRata("creeaza-pagina", await obtineIpClient(), 5, 60))) {
+    return { error: "Prea multe încercări — te rugăm să aștepți puțin și să încerci din nou." };
   }
 
   const str = (k: string) => String(formData.get(k) ?? "").trim();
