@@ -69,6 +69,19 @@ export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, s
     const session = event.data.object as Stripe.Checkout.Session;
     let emailParams: Parameters<typeof trimiteEmailMultumireDacaSePoate>[0] | null = null;
     try {
+      // La mode="subscription" sesiunea NU are payment_intent — al primei
+      // facturi se află din invoicePayments, altfel stripePaymentIntentId rămâne
+      // null și nicio rambursare/contestație a primei plăți nu mai găsește
+      // donația. Apelul Stripe se face ÎNAINTE de tranzacție (nu ține conexiunea
+      // DB ocupată); dacă eșuează, tot handler-ul cade → 500 → Stripe reîncearcă.
+      let paymentIntentId = idDin(session.payment_intent);
+      const invoiceId = idDin(session.invoice);
+      if (!paymentIntentId && invoiceId) {
+        const plati = await stripe.invoicePayments.list({ invoice: invoiceId, limit: 1 });
+        const plata = plati.data[0]?.payment;
+        paymentIntentId = idDin(plata?.payment_intent) ?? idDin(plata?.charge);
+      }
+
       await db.transaction(async (tx) => {
         await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
 
@@ -100,7 +113,7 @@ export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, s
             // Necesar pentru a corela o eventuală rambursare/contestație
             // (charge.refunded/charge.dispute.created) înapoi la această
             // donație — acele evenimente nu poartă sesiunea Checkout.
-            stripePaymentIntentId: idDin(session.payment_intent),
+            stripePaymentIntentId: paymentIntentId,
           })
           .where(
             and(
