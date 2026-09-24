@@ -73,6 +73,22 @@
 --   where table_name = '<tabel_nou>' and grantee = 'app_user';
 -- (așteptat: SELECT, INSERT, UPDATE, DELETE, toate 4).
 --
+-- ⚠️⚠️ CAPCANA #6 (confirmată live cu cheia publică anon): același tabel creat
+-- prin dashboard primește AUTOMAT toate drepturile (inclusiv TRUNCATE) pentru
+-- `anon` și `authenticated` — default privileges ale rolului `postgres` din
+-- Supabase — deci Data API (PostgREST) îl expune oricui are cheia publică:
+-- `GET /rest/v1/<tabel>` cu apikey-ul NEXT_PUBLIC întorcea 200. Tabelele create
+-- de `migrator` nu au problema (dădeau 401). Aplicația NU folosește Data API
+-- pentru `public` (supabase-js doar pentru auth/storage), deci revocarea e
+-- sigură. Aplicat o dată, în producție:
+--   revoke all on table auth_rate_limits from anon, authenticated;
+--   alter default privileges for role postgres in schema public
+--     revoke all on tables from anon, authenticated;   (+ sequences, functions)
+-- Verificare (așteptat: 0 rânduri):
+--   select table_name, grantee from information_schema.role_table_grants
+--     where table_schema = 'public' and grantee in ('anon','authenticated');
+-- Și de pe exterior: curl -I -H "apikey: $KEY" "$URL/rest/v1/<tabel>?limit=1" → 401.
+--
 -- Model: DOUĂ roluri Postgres.
 --   migrator  — owner-ul schemei, folosit DOAR de CI/CD la `drizzle-kit push`/
 --               `migrate`. Parola lui NU ajunge niciodată în variabilele de
@@ -167,6 +183,7 @@ alter table auth_rate_limits force row level security;
 create policy auth_rate_limits_all ON auth_rate_limits
   for all using (true) with check (true);
 grant select, insert, update, delete on auth_rate_limits to app_user;
+revoke all on table auth_rate_limits from anon, authenticated; -- vezi CAPCANA #6
 
 -- memberships: doar propriile membership-uri.
 create policy memberships_self ON memberships
