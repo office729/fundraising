@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Button } from "../../components/ui/button";
-import { completeazaFormular230Pdf, downloadPdfBytes, type DateBeneficiarPdf, type DateFormular230Pdf } from "@/lib/formular230-pdf";
+import { completeazaFormular230Pdf, downloadPdfBytes, type DateBeneficiarPdf } from "@/lib/formular230-pdf";
 import { useLocale } from "../../lib/locale-context";
 import { FORMULAR230_DICT } from "@/lib/i18n/dictionaries/formular230";
-import { seteazaProcesatAnaf, stergeFormular230 } from "./actions";
+import { obtineDatePdf, seteazaProcesatAnaf, stergeFormular230 } from "./actions";
 
 export function CopyLinkButton({ orgSlug, shortCode }: { orgSlug: string; shortCode: string | null }) {
   const locale = useLocale();
@@ -36,7 +36,17 @@ export function CopyLinkButton({ orgSlug, shortCode }: { orgSlug: string; shortC
   );
 }
 
-export function PdfButton({ submisie, beneficiar }: { submisie: DateFormular230Pdf; beneficiar?: DateBeneficiarPdf }) {
+// Datele sensibile (CNP, adresă, semnătură) nu vin în props — se cer la click,
+// pentru acest singur rând, printr-o acțiune rezervată owner/admin.
+export function PdfButton({
+  orgSlug,
+  id,
+  beneficiar,
+}: {
+  orgSlug: string;
+  id: string;
+  beneficiar?: DateBeneficiarPdf;
+}) {
   const locale = useLocale();
   const dict = FORMULAR230_DICT[locale].client;
   const [seGenereaza, setSeGenereaza] = useState(false);
@@ -44,6 +54,8 @@ export function PdfButton({ submisie, beneficiar }: { submisie: DateFormular230P
   async function genereaza() {
     setSeGenereaza(true);
     try {
+      const submisie = await obtineDatePdf(orgSlug, id);
+      if (!submisie) return;
       const bytes = await completeazaFormular230Pdf(submisie, beneficiar);
       downloadPdfBytes(bytes, `Formular 230 - ${submisie.nume} ${submisie.prenume}.pdf`);
     } finally {

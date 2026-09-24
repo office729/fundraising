@@ -6,11 +6,12 @@ import * as XLSX from "xlsx";
 import { Button } from "../../components/ui/button";
 import { useLocale } from "../../lib/locale-context";
 import { FORMULAR230_DICT } from "@/lib/i18n/dictionaries/formular230";
+import { obtineCnpPentruExport } from "./actions";
 
 type SubmisieExport = {
+  id: string;
   nume: string;
   prenume: string;
-  cnp: string;
   email: string;
   telefon: string | null;
   judet: string | null;
@@ -33,20 +34,29 @@ function descarcaWorkbook(rows: Record<string, string | number>[], sheetName: st
 }
 
 export function ExportButtons({
+  orgSlug,
   submisii,
   beneficiari,
 }: {
+  orgSlug: string;
   submisii: SubmisieExport[];
   beneficiari: { id: string; nume: string }[];
 }) {
   const locale = useLocale();
   const dict = FORMULAR230_DICT[locale].export;
 
-  function exportaExcel() {
+  // CNP-ul nu vine în lista din pagină — se aduce la click, doar pentru
+  // rândurile exportate, printr-o acțiune rezervată owner/admin.
+  async function cnpuri(): Promise<Record<string, string>> {
+    return obtineCnpPentruExport(orgSlug, submisii.map((s) => s.id));
+  }
+
+  async function exportaExcel() {
+    const cnp = await cnpuri();
     const rows = submisii.map((s) => ({
       Nume: s.nume,
       Prenume: s.prenume,
-      CNP: s.cnp,
+      CNP: cnp[s.id] ?? "",
       Email: s.email,
       Telefon: s.telefon ?? "",
       Județ: s.judet ?? "",
@@ -59,12 +69,13 @@ export function ExportButtons({
     descarcaWorkbook(rows, "Formulare 230", `formulare-230-${new Date().toISOString().slice(0, 10)}.xlsx`);
   }
 
-  function exportaBorderou() {
+  async function exportaBorderou() {
+    const cnp = await cnpuri();
     const rows = submisii.map((s, i) => ({
       "Nr. crt.": i + 1,
       Nume: s.nume,
       Prenume: s.prenume,
-      CNP: s.cnp,
+      CNP: cnp[s.id] ?? "",
       "Cont beneficiar": numeCont(beneficiari, s.beneficiarId),
       "Sumă/Procent": "3,5%",
       An: s.an ?? s.createdAt.getFullYear(),

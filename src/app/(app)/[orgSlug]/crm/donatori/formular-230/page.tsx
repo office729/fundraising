@@ -123,12 +123,31 @@ const getDate = withOrgSession(async (ctx, filtru: { an: string; judet: string; 
     if (cod) dupaJudet[cod] = (dupaJudet[cod] ?? 0) + 1;
   }
 
+  // Către componentele client pleacă DOAR câmpurile de afișare — CNP-ul,
+  // adresa completă și semnătura rămân pe server (se cer la click, pe un singur
+  // rând, de owner/admin — vezi obtineDatePdf/obtineCnpPentruExport).
+  const submisiiPublice = submisii.map((s) => ({
+    id: s.id,
+    nume: s.nume,
+    prenume: s.prenume,
+    email: s.email,
+    telefon: s.telefon,
+    judet: s.judet,
+    localitate: s.localitate,
+    beneficiarId: s.beneficiarId,
+    an: s.an,
+    distributie2Ani: s.distributie2Ani,
+    procesatAnaf: s.procesatAnaf,
+    createdAt: s.createdAt,
+  }));
+
   return {
     total,
     lunaAceasta,
     beneficiari,
     ani: ani.map((a) => a.an),
-    submisii,
+    submisii: submisiiPublice,
+    poateVedeaDateSensibile: ctx.role === "owner" || ctx.role === "admin",
     dupaJudet,
     cnpDuplicat,
     tainuit: toate.length >= LIMITA_RANDURI,
@@ -155,7 +174,7 @@ export default async function Formular230StatsPage({
     localitate: sp.localitate ?? "",
     beneficiar: sp.beneficiar ?? "toate",
   };
-  const { total, lunaAceasta, beneficiari, ani, submisii, dupaJudet, cnpDuplicat, tainuit } = await getDate(orgSlug, filtru);
+  const { total, lunaAceasta, beneficiari, ani, submisii, poateVedeaDateSensibile, dupaJudet, cnpDuplicat, tainuit } = await getDate(orgSlug, filtru);
   const ultimaCampanie = await getUltimaCampanieEmail(orgSlug);
   const locale = await getLocale();
   const dict = FORMULAR230_DICT[locale];
@@ -204,7 +223,7 @@ export default async function Formular230StatsPage({
         <CardHeader
           title={dict.raspunsuri.title}
           subtitle={`${submisii.length}${tainuit ? "+" : ""} ${filtru.an === "toate" && filtru.judet === "toate" && filtru.varsta === "toate" && !filtru.localitate && filtru.beneficiar === "toate" ? dict.raspunsuri.recente : dict.raspunsuri.filtrate}`}
-          action={<ExportButtons submisii={submisii} beneficiari={beneficiari} />}
+          action={poateVedeaDateSensibile ? <ExportButtons orgSlug={orgSlug} submisii={submisii} beneficiari={beneficiari} /> : undefined}
         />
         <div className="mb-3">
           <FilterBar ani={ani} beneficiari={beneficiari} />
@@ -236,29 +255,12 @@ export default async function Formular230StatsPage({
                   <span title={dict.raspunsuri.procesatAnaf} className="flex items-center">
                     <ProcesatAnafCheckbox orgSlug={orgSlug} id={s.id} initial={s.procesatAnaf} />
                   </span>
-                  {(() => {
+                  {poateVedeaDateSensibile && (() => {
                     const beneficiarSubmisie = beneficiari.find((b) => b.id === s.beneficiarId);
                     return (
                       <PdfButton
-                        submisie={{
-                          nume: s.nume,
-                          prenume: s.prenume,
-                          initialaTatalui: s.initialaTatalui ?? "",
-                          cnp: s.cnp,
-                          email: s.email,
-                          telefon: s.telefon ?? "",
-                          strada: s.strada ?? "",
-                          numar: s.numar ?? "",
-                          judet: s.judet ?? "",
-                          localitate: s.localitate ?? "",
-                          codPostal: s.codPostal ?? "",
-                          bloc: s.bloc ?? "",
-                          scara: s.scara ?? "",
-                          etaj: s.etaj ?? "",
-                          apartament: s.apartament ?? "",
-                          semnatura: s.semnatura,
-                          an: s.an ?? s.createdAt.getFullYear(),
-                        }}
+                        orgSlug={orgSlug}
+                        id={s.id}
                         beneficiar={
                           beneficiarSubmisie
                             ? { nume: beneficiarSubmisie.nume, cif: beneficiarSubmisie.cif ?? "", iban: beneficiarSubmisie.iban ?? "" }
