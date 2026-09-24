@@ -18,12 +18,6 @@ import { clasificaStatus, verificaIpn } from "@/lib/netopia";
 
 const ACK = { errorType: 0, errorCode: 0, errorMessage: "" };
 
-function plusLuni(data: Date, luni: number): Date {
-  const r = new Date(data);
-  r.setMonth(r.getMonth() + luni);
-  return r;
-}
-
 type IpnBody = {
   payment?: { status?: number; ntpID?: string; amount?: number | string; currency?: string };
   order?: { orderID?: string };
@@ -58,7 +52,15 @@ export async function POST(req: Request) {
     await db.transaction(async (tx) => {
       await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
 
-      const rows = await tx.select().from(platformPayments).where(eq(platformPayments.orderId, orderId)).limit(1);
+      // FOR UPDATE: IPN-urile aceleiași comenzi (succes + rambursare, sau
+      // retrimiteri) se serializează aici — fără el, o rambursare sosită în timp
+      // ce succesul e încă necomis vede statusul vechi "in_asteptare" și se pierde.
+      const rows = await tx
+        .select()
+        .from(platformPayments)
+        .where(eq(platformPayments.orderId, orderId))
+        .limit(1)
+        .for("update");
       const plata = rows[0];
       if (!plata) return; // comandă necunoscută — confirmăm, nu are ce reîncerca
 
@@ -116,21 +118,32 @@ export async function POST(req: Request) {
       }
 
       if (decizie === "rambursata") {
-        const actualizat = await tx
+        if (plata.status === "rambursata") return;
+
+        // Marcăm rambursată orice comandă neînchisă, nu doar "reusita": o
+        // rambursare sosită ÎNAINTEA confirmării de plată (IPN-uri în altă
+        // ordine) altfel se pierdea, iar succesul întârziat acorda acces pentru
+        // bani deja returnați (ramura de succes exclude "rambursata").
+        await tx
           .update(platformPayments)
           .set({ status: "rambursata", netopiaStatus: status })
-          .where(and(eq(platformPayments.id, plata.id), eq(platformPayments.status, "reusita")))
-          .returning({ id: platformPayments.id });
-        if (!actualizat[0]) return;
+          .where(eq(platformPayments.id, plata.id));
 
-        // Luna rambursată nu mai e plătită: scădem perioada acordată de ea.
-        const org = (await tx.select().from(organizations).where(eq(organizations.id, plata.orgId)).limit(1))[0];
-        if (!org?.currentPeriodEnd) return;
-        const nouSfarsit = plusLuni(org.currentPeriodEnd, -plata.luni);
-        await tx
+        // Perioada se scade doar dacă plata acordase-o deja (era "reusita").
+        if (plata.status !== "reusita") return;
+
+        // Luna rambursată nu mai e plătită. Scăderea e ATOMICĂ în UPDATE, nu
+        // citit-apoi-scris în JS: două IPN-uri concurente pe aceeași organizație
+        // (ex. rambursare + o plată nouă) se pierdeau reciproc modificarea.
+        const dupa = await tx
           .update(organizations)
-          .set({ currentPeriodEnd: nouSfarsit, ...(nouSfarsit <= new Date() ? { subscriptionStatus: "canceled" as const } : {}) })
-          .where(eq(organizations.id, plata.orgId));
+          .set({ currentPeriodEnd: sql`${organizations.currentPeriodEnd} - (${plata.luni} || ' months')::interval` })
+          .where(eq(organizations.id, plata.orgId))
+          .returning({ sfarsit: organizations.currentPeriodEnd });
+        const sfarsit = dupa[0]?.sfarsit;
+        if (sfarsit && sfarsit <= new Date()) {
+          await tx.update(organizations).set({ subscriptionStatus: "canceled" }).where(eq(organizations.id, plata.orgId));
+        }
         return;
       }
 
