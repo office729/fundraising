@@ -10,6 +10,7 @@ import { withOrgAdmin, withOrgSession } from "@/lib/auth/guard";
 import { fundraisingBeneficiaries, fundraisingPages, fundraisingTaskAttachments, fundraisingTasks } from "@/lib/db/schema";
 import { notifica } from "@/lib/notifications";
 import { createClient } from "@/lib/supabase/server";
+import { extensieImagine } from "@/lib/upload-imagini";
 
 export type CreeazaTaskState = { error: string | null; ok: boolean };
 
@@ -140,8 +141,10 @@ export const adaugaAttachmentAction = withOrgAdmin(
     const fisier = formData.get("fisier");
     if (!(fisier instanceof File) || fisier.size === 0) return { error: "Alege un fișier.", ok: false };
     if (fisier.size > 10 * 1024 * 1024) return { error: "Fișierul e prea mare (max 10MB).", ok: false };
-    // Bucket-ul de storage actual (org-branding) acceptă doar imagini.
-    if (!fisier.type.startsWith("image/")) {
+    // Bucket-ul de storage actual (org-branding) acceptă doar imagini, din
+    // allowlist (fără SVG) — extensia vine din tip, nu din numele fișierului.
+    const ext = extensieImagine(fisier.type);
+    if (!ext) {
       return { error: "Doar imagini (jpg, png, webp) pot fi atașate momentan.", ok: false };
     }
 
@@ -149,10 +152,9 @@ export const adaugaAttachmentAction = withOrgAdmin(
     if (!task[0]) return { error: "Sarcina nu a fost găsită.", ok: false };
 
     const supabase = await createClient();
-    const ext = fisier.name.split(".").pop() || "bin";
     const path = `${ctx.orgSlug}/taskuri/${taskId}-${randomUUID()}.${ext}`;
     const { error: uploadError } = await supabase.storage.from("org-branding").upload(path, fisier, {
-      contentType: fisier.type || "application/octet-stream",
+      contentType: fisier.type,
       upsert: false,
     });
     if (uploadError) return { error: "Încărcarea fișierului a eșuat: " + uploadError.message, ok: false };

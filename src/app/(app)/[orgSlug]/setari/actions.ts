@@ -12,6 +12,7 @@ import { cifValidFormat } from "@/lib/iban";
 import { domeniuRezervatPlatformei } from "@/lib/platform-domains";
 import { esteSlugRezervat } from "@/lib/reserved-slugs";
 import { createClient } from "@/lib/supabase/server";
+import { extensieImagine } from "@/lib/upload-imagini";
 
 export type BrandingState = { error: string | null; ok: boolean };
 
@@ -19,11 +20,6 @@ export type BrandingState = { error: string | null; ok: boolean };
 // <script>/handlere de evenimente, iar fișierul e servit public, necontrolat,
 // din bucket-ul org-branding (risc de XSS stocat dacă e deschis direct, nu
 // doar randat prin <img>). Vezi audit de securitate.
-const LOGO_MIME_EXT: Record<string, string> = {
-  "image/png": "png",
-  "image/jpeg": "jpg",
-  "image/webp": "webp",
-};
 
 const updateBrandingRow = withOrgAdmin(
   async (
@@ -72,7 +68,7 @@ export async function updateBrandingAction(
     if (logo.size > 2 * 1024 * 1024) {
       return { error: "Logo-ul e prea mare (max 2MB).", ok: false };
     }
-    const ext = LOGO_MIME_EXT[logo.type];
+    const ext = extensieImagine(logo.type);
     if (!ext) {
       return { error: "Format neacceptat — folosește PNG, JPG sau WebP.", ok: false };
     }

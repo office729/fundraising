@@ -15,6 +15,7 @@ import { crediteazaPaginaSiDonator } from "@/lib/fundraising-credit";
 import { slugify } from "@/lib/slugify";
 import { createClient } from "@/lib/supabase/server";
 import { genereazaSlugUnic } from "@/lib/unique-slug";
+import { extensieImagine } from "@/lib/upload-imagini";
 import { EMAIL_RE, normalizeazaEmail } from "@/lib/validation";
 
 export type StergePaginaState = { error: string | null };
@@ -273,8 +274,11 @@ export const actualizeazaImaginePaginaAction = withOrgAdmin(
       .limit(1);
     if (!pagina[0]) return { error: "Pagina nu a fost găsită.", ok: false };
 
+    // Allowlist (fără SVG): extensia vine din tipul acceptat, nu din cel trimis de client.
+    const ext = extensieImagine(imagine.type);
+    if (!ext) return { error: "Format neacceptat — folosește PNG, JPG sau WebP.", ok: false };
+
     const supabase = await createClient();
-    const ext = (imagine.type.split("/")[1] || "jpg").replace("svg+xml", "svg");
     const path = `${ctx.orgSlug}/campanie-${pageId}-${randomUUID()}.${ext}`;
     const { error: uploadError } = await supabase.storage.from("org-branding").upload(path, imagine, {
       contentType: imagine.type,
