@@ -11,7 +11,10 @@ const getPresa = withBeneficiarSession(async (ctx) => {
     .limit(1);
 
   const contacte = ctx.campaignJudet
-    ? await ctx.db.select().from(fundraisingMediaContacts).where(eq(fundraisingMediaContacts.judet, ctx.campaignJudet))
+    ? await ctx.db
+        .select()
+        .from(fundraisingMediaContacts)
+        .where(and(eq(fundraisingMediaContacts.orgId, ctx.orgId), eq(fundraisingMediaContacts.judet, ctx.campaignJudet)))
     : [];
 
   return { comunicat: comunicatRows[0] ?? null, contacte };

@@ -474,13 +474,15 @@ const POLICIES = [
 
   // fundraising_media_contacts / fundraising_local_groups: globale per
   // organizație (nu per campanie) — beneficiarul le vede filtrate pe județul
-  // PROPRIEI campanii, printr-un mic subselect pe fundraising_pages.
+  // PROPRIEI campanii, printr-un mic subselect pe fundraising_pages. Comparația
+  // include ȘI org_id al campaniei — fără el, un beneficiar vedea contactele/
+  // grupurile TUTUROR organizațiilor din același județ (leak cross-tenant).
   `create policy fundraising_media_contacts_tenant_isolation on fundraising_media_contacts
     using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
     with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
   `create policy fundraising_media_contacts_beneficiar_select on fundraising_media_contacts for select using (
-    judet = (
-      select judet from fundraising_pages
+    (judet, org_id) = (
+      select judet, org_id from fundraising_pages
       where id = nullif(current_setting('app.current_beneficiary_campaign_id', true), '')::uuid
     )
   )`,
@@ -500,8 +502,8 @@ const POLICIES = [
     using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
     with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
   `create policy fundraising_local_groups_beneficiar_select on fundraising_local_groups for select using (
-    judet = (
-      select judet from fundraising_pages
+    (judet, org_id) = (
+      select judet, org_id from fundraising_pages
       where id = nullif(current_setting('app.current_beneficiary_campaign_id', true), '')::uuid
     )
   )`,

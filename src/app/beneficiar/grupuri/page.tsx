@@ -10,7 +10,13 @@ const getGrupuri = withBeneficiarSession(async (ctx) => {
     ? await ctx.db
         .select()
         .from(fundraisingLocalGroups)
-        .where(and(eq(fundraisingLocalGroups.judet, ctx.campaignJudet), eq(fundraisingLocalGroups.status, "activ")))
+        .where(
+          and(
+            eq(fundraisingLocalGroups.orgId, ctx.orgId),
+            eq(fundraisingLocalGroups.judet, ctx.campaignJudet),
+            eq(fundraisingLocalGroups.status, "activ"),
+          ),
+        )
     : [];
 
   const publicate = await ctx.db
