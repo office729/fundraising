@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { ensureAppUser, getAuthUser } from "@/lib/auth/dal";
 import { db } from "@/lib/db";
 import { fundraisingBeneficiaries, fundraisingBeneficiaryInvites } from "@/lib/db/schema";
+import { EroareUtilizator, mesajSigur } from "@/lib/erori";
 
 export type BeneficiaryInviteLookup = {
   email: string;
@@ -66,11 +67,11 @@ export async function acceptBeneficiaryInviteAction(token: string): Promise<{ er
         .where(sql`${fundraisingBeneficiaryInvites.token} = ${token}`)
         .limit(1);
       const invite = rows[0];
-      if (!invite) throw new Error("Invitație inexistentă sau expirată.");
-      if (invite.acceptedAt) throw new Error("Invitația a fost deja folosită.");
-      if (invite.expiresAt.getTime() < Date.now()) throw new Error("Invitația a expirat.");
+      if (!invite) throw new EroareUtilizator("Invitație inexistentă sau expirată.");
+      if (invite.acceptedAt) throw new EroareUtilizator("Invitația a fost deja folosită.");
+      if (invite.expiresAt.getTime() < Date.now()) throw new EroareUtilizator("Invitația a expirat.");
       if (invite.email.toLowerCase() !== authUser.email!.toLowerCase()) {
-        throw new Error(
+        throw new EroareUtilizator(
           `Invitația e pentru ${invite.email} — ești logat cu alt email. Deconectează-te și intră cu adresa corectă.`,
         );
       }
@@ -97,7 +98,7 @@ export async function acceptBeneficiaryInviteAction(token: string): Promise<{ er
       await tx.execute(sql`update app_users set account_type = 'beneficiar' where id = ${appUser.id}`);
     });
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "Acceptarea a eșuat." };
+    return { error: mesajSigur(e, "Acceptarea a eșuat.", "invitatie-acceptare") };
   }
 
   // redirect() trebuie apelat DUPĂ ce tranzacția s-a încheiat — aruncă o

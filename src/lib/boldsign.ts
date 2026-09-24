@@ -1,5 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
+import { EroareUtilizator } from "@/lib/erori";
+
 // Client minimal pentru API-ul BoldSign (semnătură electronică). Cheia se ia din
 // variabila de mediu BOLDSIGN_API_KEY (adăugată de administrator în Vercel);
 // dacă lipsește, integrarea apare ca „neconfigurată" și nu se trimite nimic.
@@ -49,7 +51,7 @@ export async function trimiteLaSemnat(opts: {
   semnatari: Semnatar[];
 }): Promise<{ documentId: string }> {
   const apiKey = process.env.BOLDSIGN_API_KEY;
-  if (!apiKey) throw new Error("Semnătura digitală nu e configurată (lipsește BOLDSIGN_API_KEY).");
+  if (!apiKey) throw new EroareUtilizator("Semnătura digitală nu e configurată (lipsește BOLDSIGN_API_KEY).");
 
   const form = new FormData();
   form.append("Files", opts.fisier, opts.fisier.name);
@@ -76,20 +78,20 @@ export async function trimiteLaSemnat(opts: {
   });
 
   const r = await fetch(`${API_URL}/v1/document/send`, { method: "POST", headers: { "X-API-KEY": apiKey }, body: form });
-  if (!r.ok) throw new Error(await mesajEroare(r));
+  if (!r.ok) throw new EroareUtilizator(await mesajEroare(r));
   const j = (await r.json()) as { documentId?: string };
-  if (!j.documentId) throw new Error("BoldSign nu a întors un identificator de document.");
+  if (!j.documentId) throw new EroareUtilizator("BoldSign nu a întors un identificator de document.");
   return { documentId: j.documentId };
 }
 
 export async function statusDocument(documentId: string): Promise<StatusDocument> {
   const apiKey = process.env.BOLDSIGN_API_KEY;
-  if (!apiKey) throw new Error("Semnătura digitală nu e configurată (lipsește BOLDSIGN_API_KEY).");
+  if (!apiKey) throw new EroareUtilizator("Semnătura digitală nu e configurată (lipsește BOLDSIGN_API_KEY).");
   const r = await fetch(`${API_URL}/v1/document/properties?documentId=${encodeURIComponent(documentId)}`, {
     headers: { "X-API-KEY": apiKey },
     cache: "no-store",
   });
-  if (!r.ok) throw new Error(await mesajEroare(r));
+  if (!r.ok) throw new EroareUtilizator(await mesajEroare(r));
   const j = (await r.json()) as {
     documentId?: string;
     messageTitle?: string;

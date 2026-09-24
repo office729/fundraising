@@ -1,6 +1,7 @@
 "use server";
 
 import { withOrgAdmin, withOrgSession } from "@/lib/auth/guard";
+import { mesajSigur } from "@/lib/erori";
 import { statusDocument, tokenDocument, tokenValid, trimiteLaSemnat, type StatusDocument } from "@/lib/boldsign";
 
 export type TrimitereState = { ok: boolean; error: string | null; documentId?: string; titlu?: string; token?: string };
@@ -36,7 +37,7 @@ export const trimiteDocumentLaSemnat = withOrgAdmin(async (ctx, formData: FormDa
     const { documentId } = await trimiteLaSemnat({ fisier, titlu, mesaj, semnatari });
     return { ok: true, error: null, documentId, titlu, token: tokenDocument(ctx.orgSlug, documentId) };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : "Trimiterea a eșuat." };
+    return { ok: false, error: mesajSigur(e, "Trimiterea a eșuat.", "boldsign-trimitere") };
   }
 });
 
@@ -48,7 +49,7 @@ export const verificaStatusDocument = withOrgSession(
     try {
       return { ok: true, doc: await statusDocument(documentId) };
     } catch (e) {
-      return { ok: false, error: e instanceof Error ? e.message : "Nu am putut citi statusul." };
+      return { ok: false, error: mesajSigur(e, "Nu am putut citi statusul.", "boldsign-status") };
     }
   },
 );

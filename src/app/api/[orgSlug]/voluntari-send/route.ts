@@ -5,6 +5,7 @@ import { withOrgSession } from "@/lib/auth/guard";
 import { verificaLimitaRata } from "@/lib/auth/rate-limit";
 import { crmKv } from "@/lib/db/schema";
 import { emailConfigurat, trimiteEmail, trimiteEmailuriInLot } from "@/lib/email";
+import { escHtml } from "@/lib/html-escape";
 
 // Trimitere reală (email, prin Resend) pentru CRM Voluntari — înlocuiește
 // ruta veche /api/voluntari-send (inexistentă aici, moștenită neschimbată din
@@ -41,12 +42,9 @@ function resolveAudience(volunteers: Volunteer[], audience: unknown): Volunteer[
   });
 }
 
-function escapeHtml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
 function buildHtml(continut: string, semnatura: string): string {
-  const corp = escapeHtml(continut).replace(/\n/g, "<br>");
-  const sig = semnatura.trim() ? `<p>${escapeHtml(semnatura).replace(/\n/g, "<br>")}</p>` : "";
+  const corp = escHtml(continut).replace(/\n/g, "<br>");
+  const sig = semnatura.trim() ? `<p>${escHtml(semnatura).replace(/\n/g, "<br>")}</p>` : "";
   return `<div>${corp}</div>${sig}`;
 }
 

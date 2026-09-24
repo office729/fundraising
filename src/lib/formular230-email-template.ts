@@ -1,13 +1,11 @@
+import { escHtml } from "@/lib/html-escape";
+
 // Șablonul emailului de reamintire pentru Formularul 230 — separat de
 // campanie-email-actions.ts ("use server") pentru că acel fișier poate
 // exporta DOAR server actions (funcții async) — funcțiile simple ca acestea
 // ar bloca build-ul. Folosit atât de trimiterea manuală, cât și de cron.
 export function subiectEmailF230(orgName: string): string {
   return `Redirecționează 3,5% din impozit către ${orgName} — nu te costă nimic`;
-}
-
-function esc(v: string): string {
-  return v.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 
 // Antetele de dezabonare (RFC 8058) — clientul de email arată butonul propriu
@@ -20,8 +18,8 @@ export function anteteDezabonare(linkDezabonare: string): Record<string, string>
 }
 
 export function htmlEmailF230(orgName: string, numeDonator: string, link: string, linkDezabonare: string): string {
-  orgName = esc(orgName);
-  numeDonator = esc(numeDonator);
+  orgName = escHtml(orgName);
+  numeDonator = escHtml(numeDonator);
   return `
     <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; color: #14213d;">
       <p>Bună, ${numeDonator}!</p>

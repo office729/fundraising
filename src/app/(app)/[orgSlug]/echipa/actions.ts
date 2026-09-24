@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { and, eq, gt, isNull, sql } from "drizzle-orm";
 
 import { withOrgAdmin } from "@/lib/auth/guard";
+import { EroareUtilizator, mesajSigur } from "@/lib/erori";
 import { getLimiteleEfective, subCota } from "@/lib/billing/quota";
 import { appUsers, invites, memberships } from "@/lib/db/schema";
 
@@ -71,7 +72,7 @@ export const createInvite = withOrgAdmin(
         .from(invites)
         .where(and(eq(invites.orgId, ctx.orgId), isNull(invites.acceptedAt), gt(invites.expiresAt, new Date())));
       if (!subCota(membriCount + invitatiiCount, limite.utilizatori)) {
-        throw new Error(
+        throw new EroareUtilizator(
           `Ai atins limita de ${limite.utilizatori} utilizatori a pachetului tău — anulează o invitație în așteptare sau treci la un pachet mai mare.`,
         );
       }
@@ -106,6 +107,6 @@ export async function createInviteAction(
     const { token } = await createInvite(orgSlug, email, role);
     return { error: null, token };
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "Invitația a eșuat.", token: null };
+    return { error: mesajSigur(e, "Invitația a eșuat.", "echipa-invitatie"), token: null };
   }
 }

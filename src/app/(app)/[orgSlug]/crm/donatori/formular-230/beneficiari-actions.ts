@@ -6,6 +6,7 @@ import { and, eq } from "drizzle-orm";
 
 import { withOrgAdmin } from "@/lib/auth/guard";
 import { formular230Beneficiari } from "@/lib/db/schema";
+import { mesajSigur } from "@/lib/erori";
 import { SLUG_PRINCIPAL } from "@/lib/formular230-constants";
 import { cifValidFormat, ibanValid } from "@/lib/iban";
 import { genereazaCodScurtUnic } from "@/lib/short-code";
@@ -70,7 +71,7 @@ export async function adaugaBeneficiarAction(
     const slug = await inserteazaBeneficiar(orgSlug, { nume, iban, cif, emailBeneficiar });
     return { error: null, ok: true, slug };
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "Salvarea a eșuat.", ok: false };
+    return { error: mesajSigur(e, "Salvarea a eșuat.", "f230-beneficiar"), ok: false };
   }
 }
 
@@ -105,7 +106,7 @@ export async function editeazaBeneficiarAction(
   try {
     await actualizeazaBeneficiar(orgSlug, id, { nume, iban, cif, emailBeneficiar });
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "Salvarea a eșuat.", ok: false };
+    return { error: mesajSigur(e, "Salvarea a eșuat.", "f230-beneficiar"), ok: false };
   }
   return { error: null, ok: true };
 }

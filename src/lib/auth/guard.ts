@@ -1,10 +1,10 @@
 import "server-only";
-
 import { sql } from "drizzle-orm";
 import { notFound, redirect } from "next/navigation";
 
 import type { CustomPlanConfigSaved } from "@/lib/billing/custom-plan";
 import { db } from "@/lib/db";
+import { EroareUtilizator } from "@/lib/erori";
 import type { DomeniuActivitate } from "@/lib/campaign-templates";
 
 import { findBeneficiaryProfile } from "./beneficiar";
@@ -136,7 +136,7 @@ export function withOrgAdmin<A extends unknown[], R>(
 ): (orgSlug: string, ...args: A) => Promise<R> {
   return withOrgSession(async (ctx, ...args: A) => {
     if (ctx.role !== "owner" && ctx.role !== "admin") {
-      throw new Error("Necesită rol de admin sau owner în organizație.");
+      throw new EroareUtilizator("Necesită rol de admin sau owner în organizație.");
     }
     return action(ctx, ...args);
   });

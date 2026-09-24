@@ -6,6 +6,7 @@ import { and, eq, ne } from "drizzle-orm";
 
 import { withOrgAdmin } from "@/lib/auth/guard";
 import { TOATE_DOMENIILE, type DomeniuActivitate } from "@/lib/campaign-templates";
+import { EroareUtilizator, mesajSigur } from "@/lib/erori";
 import { organizations } from "@/lib/db/schema";
 import { cifValidFormat } from "@/lib/iban";
 import { domeniuRezervatPlatformei } from "@/lib/platform-domains";
@@ -90,7 +91,7 @@ export async function updateBrandingAction(
   try {
     await updateBrandingRow(orgSlug, { slogan, brandColor, logoUrl, cif: cifRaw, domeniuActivitate });
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "Salvarea a eșuat.", ok: false };
+    return { error: mesajSigur(e, "Salvarea a eșuat.", "setari-branding"), ok: false };
   }
   return { error: null, ok: true };
 }
@@ -108,7 +109,7 @@ const updateSlugRow = withOrgAdmin(async (ctx, slug: string) => {
     .where(and(eq(organizations.slug, slug), ne(organizations.id, ctx.orgId)))
     .limit(1);
   if (conflict) {
-    throw new Error("Această adresă e deja folosită de altă organizație.");
+    throw new EroareUtilizator("Această adresă e deja folosită de altă organizație.");
   }
   await ctx.db.update(organizations).set({ slug }).where(eq(organizations.id, ctx.orgId));
 });
@@ -130,7 +131,7 @@ export async function updateSlugAction(
   try {
     await updateSlugRow(orgSlug, slug);
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "Salvarea a eșuat.", slug: null };
+    return { error: mesajSigur(e, "Salvarea a eșuat.", "setari-slug"), slug: null };
   }
   return { error: null, slug };
 }
@@ -148,7 +149,7 @@ const updateCustomDomainRow = withOrgAdmin(async (ctx, domain: string | null) =>
       .where(and(eq(organizations.customDomain, domain), ne(organizations.id, ctx.orgId)))
       .limit(1);
     if (conflict) {
-      throw new Error("Acest domeniu e deja folosit de altă organizație.");
+      throw new EroareUtilizator("Acest domeniu e deja folosit de altă organizație.");
     }
   }
   await ctx.db.update(organizations).set({ customDomain: domain }).where(eq(organizations.id, ctx.orgId));
@@ -174,7 +175,7 @@ export async function updateCustomDomainAction(
   try {
     await updateCustomDomainRow(orgSlug, domain);
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "Salvarea a eșuat.", ok: false };
+    return { error: mesajSigur(e, "Salvarea a eșuat.", "setari-domeniu"), ok: false };
   }
   return { error: null, ok: true };
 }

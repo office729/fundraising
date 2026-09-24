@@ -3,8 +3,11 @@
 // fundraising-credit.ts pentru același motiv ca formular230-email-template.ts:
 // funcții simple, fără "use server", folosite atât de webhook cât și de
 // acțiunea de donație offline.
+import { escHtml } from "@/lib/html-escape";
+
 export function subiectEmailMultumireDonatie(orgName: string): string {
-  return `Mulțumim pentru donația ta către ${orgName}`;
+  // Subiect = antet de email, nu HTML: doar fără CR/LF.
+  return `Mulțumim pentru donația ta către ${orgName.replace(/[\r\n]+/g, " ")}`;
 }
 
 export function htmlEmailMultumireDonatie(params: {
@@ -14,7 +17,10 @@ export function htmlEmailMultumireDonatie(params: {
   orgName: string;
   recurenta: boolean;
 }): string {
-  const { numeDonator, suma, pageTitlu, orgName, recurenta } = params;
+  const { suma, recurenta } = params;
+  const numeDonator = escHtml(params.numeDonator);
+  const pageTitlu = escHtml(params.pageTitlu);
+  const orgName = escHtml(params.orgName);
   const sumaText = `${suma.toLocaleString("ro-RO")} lei${recurenta ? " / lună" : ""}`;
   return `
     <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; color: #14213d;">

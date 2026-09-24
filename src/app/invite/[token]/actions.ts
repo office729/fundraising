@@ -8,6 +8,7 @@ import type { CustomPlanConfigSaved } from "@/lib/billing/custom-plan";
 import { getLimiteleEfective, subCota } from "@/lib/billing/quota";
 import { db } from "@/lib/db";
 import { invites, memberships, organizations } from "@/lib/db/schema";
+import { EroareUtilizator, mesajSigur } from "@/lib/erori";
 
 export type InviteLookup = {
   email: string;
@@ -70,11 +71,11 @@ export async function acceptInviteAction(token: string): Promise<{ error: string
         .where(sql`${invites.token} = ${token}`)
         .limit(1);
       const invite = rows[0];
-      if (!invite) throw new Error("Invitație inexistentă sau expirată.");
-      if (invite.acceptedAt) throw new Error("Invitația a fost deja folosită.");
-      if (invite.expiresAt.getTime() < Date.now()) throw new Error("Invitația a expirat.");
+      if (!invite) throw new EroareUtilizator("Invitație inexistentă sau expirată.");
+      if (invite.acceptedAt) throw new EroareUtilizator("Invitația a fost deja folosită.");
+      if (invite.expiresAt.getTime() < Date.now()) throw new EroareUtilizator("Invitația a expirat.");
       if (invite.email.toLowerCase() !== authUser.email!.toLowerCase()) {
-        throw new Error(
+        throw new EroareUtilizator(
           `Invitația e pentru ${invite.email} — ești logat cu alt email. Deconectează-te și intră cu adresa corectă.`,
         );
       }
@@ -101,7 +102,7 @@ export async function acceptInviteAction(token: string): Promise<{ error: string
           .from(memberships)
           .where(eq(memberships.orgId, invite.orgId));
         if (!subCota(membriCount, limite.utilizatori)) {
-          throw new Error(
+          throw new EroareUtilizator(
             `Organizația a atins limita de ${limite.utilizatori} utilizatori a pachetului ei — nu mai poate primi membri noi momentan.`,
           );
         }
@@ -121,7 +122,7 @@ export async function acceptInviteAction(token: string): Promise<{ error: string
       return (orgRows as unknown as { slug: string }[])[0]?.slug ?? null;
     });
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "Acceptarea a eșuat." };
+    return { error: mesajSigur(e, "Acceptarea a eșuat.", "invitatie-acceptare") };
   }
 
   if (orgSlug) redirect(`/${orgSlug}`);

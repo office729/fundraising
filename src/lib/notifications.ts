@@ -3,6 +3,7 @@ import "server-only";
 import type { db as dbType } from "@/lib/db";
 import { fundraisingNotifications } from "@/lib/db/schema";
 import { emailConfigurat, trimiteEmail } from "@/lib/email";
+import { escHtml, hrefSigur } from "@/lib/html-escape";
 
 // Creează o notificare in-app și, dacă emailul e configurat, trimite și un
 // email best-effort (nu blochează/nu strică acțiunea principală dacă eșuează
@@ -23,8 +24,8 @@ export async function notifica(
     try {
       await trimiteEmail({
         to: params.email,
-        subiect: params.titlu,
-        html: `<p>${params.continut ?? params.titlu}</p>${params.link ? `<p><a href="${params.link}">Vezi detalii</a></p>` : ""}`,
+        subiect: params.titlu.replace(/[\r\n]+/g, " "),
+        html: `<p>${escHtml(params.continut ?? params.titlu)}</p>${params.link ? `<p><a href="${hrefSigur(params.link)}">Vezi detalii</a></p>` : ""}`,
       });
     } catch {
       // best-effort — un email eșuat nu trebuie să strice acțiunea principală
