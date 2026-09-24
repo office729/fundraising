@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 
 import { obtineIpClient, verificaLimitaRata } from "@/lib/auth/rate-limit";
 import { db } from "@/lib/db";
+import { raporteazaEroare } from "@/lib/monitoring";
 import { formular230Beneficiari, formular230Submissions, organizations } from "@/lib/db/schema";
 import { cripteaza } from "@/lib/secret-box";
 import { EMAIL_RE } from "@/lib/validation";
@@ -140,7 +141,7 @@ export async function POST(req: Request, { params }: Ctx) {
     if (e instanceof Error && e.message === "beneficiar_not_found") {
       return NextResponse.json({ error: "beneficiar_not_found" }, { status: 404 });
     }
-    console.error("formular230 insert failed:", e);
+    raporteazaEroare("formular230-insert", e, { orgSlug });
     return NextResponse.json({ error: "server_error" }, { status: 500 });
   }
 

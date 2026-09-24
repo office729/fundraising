@@ -9,6 +9,7 @@ import { db } from "@/lib/db";
 import { fundraisingDonations, fundraisingPages } from "@/lib/db/schema";
 import { htmlEmailMultumireDonatie, subiectEmailMultumireDonatie } from "@/lib/donation-email-template";
 import { emailConfigurat, trimiteEmail } from "@/lib/email";
+import { raporteazaAvertisment, raporteazaEroare } from "@/lib/monitoring";
 import { crediteazaPaginaSiDonator, decrediteazaPaginaSiDonator, recrediteazaPaginaSiDonator } from "@/lib/fundraising-credit";
 
 // Evenimentele Stripe ale DONAȚIILOR unui ONG, primite pe webhook-ul lui propriu
@@ -47,7 +48,7 @@ async function trimiteEmailMultumireDacaSePoate(params: {
       }),
     });
   } catch (e) {
-    console.error("Eroare la trimiterea emailului de mulțumire:", e);
+    raporteazaEroare("stripe-email-multumire", e);
   }
 }
 
@@ -85,7 +86,7 @@ export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, s
         return Boolean(rand[0]);
       });
     } catch (e) {
-      console.error("Verificare donație necreditată eșuată:", e);
+      raporteazaEroare("stripe-verificare-necreditata", e, { orgId });
       return false;
     }
   }
@@ -183,7 +184,7 @@ export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, s
         };
       });
     } catch (e) {
-      console.error("Eroare la procesarea checkout.session.completed:", e);
+      raporteazaEroare("stripe-checkout-completed", e, { orgId, eveniment: event.id });
       return false;
     }
     if (emailParams) await trimiteEmailMultumireDacaSePoate(emailParams);
@@ -208,7 +209,7 @@ export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, s
           );
       });
     } catch (e) {
-      console.error("Eroare la procesarea expirării/eșecului sesiunii Checkout:", e);
+      raporteazaEroare("stripe-checkout-expirat", e, { orgId, eveniment: event.id });
       return false;
     }
   }
@@ -249,7 +250,7 @@ export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, s
               .where(and(eq(fundraisingPages.id, md.pageId), eq(fundraisingPages.orgId, orgId)))
               .limit(1);
             if (!pagina[0]) {
-              console.error("invoice.paid: pageId din metadata nu aparține organizației", { orgId, pageId: md.pageId });
+              raporteazaAvertisment("stripe-invoice-paid", "pageId din metadata nu aparține organizației", { orgId, pageId: md.pageId, eveniment: event.id });
               return;
             }
 
@@ -303,7 +304,7 @@ export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, s
           });
         }
       } catch (e) {
-        console.error("Eroare la procesarea invoice.paid (reînnoire abonament):", e);
+        raporteazaEroare("stripe-invoice-paid", e, { orgId, eveniment: event.id });
         // Răspuns de eroare — NU 200 — ca Stripe să reîncerce livrarea. Un 200
         // aici ar însemna că o reînnoire încasată real nu mai ajunge NICIODATĂ
         // în sumaStransa/donatoriReali, fără nicio alertă vizibilă.
@@ -367,7 +368,7 @@ export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, s
         };
       });
     } catch (e) {
-      console.error("Eroare la procesarea payment_intent.succeeded:", e);
+      raporteazaEroare("stripe-pi-succeeded", e, { orgId, eveniment: event.id });
       return false;
     }
     if (emailParams) await trimiteEmailMultumireDacaSePoate(emailParams);
@@ -390,7 +391,7 @@ export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, s
           );
       });
     } catch (e) {
-      console.error("Eroare la procesarea payment_intent.payment_failed:", e);
+      raporteazaEroare("stripe-pi-failed", e, { orgId, eveniment: event.id });
     }
   }
 
@@ -491,7 +492,7 @@ export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, s
         });
       });
     } catch (e) {
-      console.error("Eroare la procesarea charge.refunded/charge.dispute.created:", e);
+      raporteazaEroare("stripe-refund-dispute", e, { orgId, eveniment: event.id });
       return false;
     }
 
@@ -501,7 +502,7 @@ export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, s
     // caz un 200 ar pierde rambursarea, iar creditarea ulterioară ar număra bani
     // deja returnați — răspundem 500 ca Stripe să reîncerce după ce donația e creditată.
     if (nemapat && paymentIntentId && (await donatieNecreditataCuPaymentIntent(paymentIntentId))) {
-      console.warn("Rambursare/contestație sosită înaintea creditării — Stripe reîncearcă", { orgId, paymentIntentId });
+      raporteazaAvertisment("stripe-refund-inainte-de-credit", "Rambursare/contestație sosită înaintea creditării — Stripe reîncearcă", { orgId, paymentIntentId, eveniment: event.id });
       return false;
     }
   }
@@ -556,7 +557,7 @@ export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, s
           });
         });
       } catch (e) {
-        console.error("Eroare la procesarea charge.dispute.closed:", e);
+        raporteazaEroare("stripe-dispute-closed", e, { orgId, eveniment: event.id });
         return false;
       }
     }
@@ -577,7 +578,7 @@ export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, s
           .where(and(eq(fundraisingDonations.stripeSubscriptionId, subscription.id), eq(fundraisingDonations.orgId, orgId)));
       });
     } catch (e) {
-      console.error("Eroare la procesarea customer.subscription.deleted:", e);
+      raporteazaEroare("stripe-subscription-deleted", e, { orgId, eveniment: event.id });
       return false;
     }
   }

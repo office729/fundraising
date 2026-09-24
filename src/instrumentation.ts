@@ -1,5 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
 
+import { curataMesajEroare } from "@/lib/monitoring";
+
 // Monitorizare erori (Sentry). Activă DOAR dacă SENTRY_DSN e setat în mediu (Vercel);
 // fără el nu se trimite nimic și aplicația se comportă exact ca înainte.
 // Nu trimitem date personale: sendDefaultPii e oprit. Pentru date în UE, creează
@@ -13,6 +15,15 @@ export async function register() {
     environment: process.env.VERCEL_ENV ?? process.env.NODE_ENV,
     sendDefaultPii: false,
     tracesSampleRate: 0,
+    // sendDefaultPii:false NU curăță mesajele de eroare — cele Drizzle conțin
+    // parametrii interogării (nume, emailuri, date din formulare). Le tăiem aici.
+    beforeSend(event) {
+      event.exception?.values?.forEach((v) => {
+        if (v.value) v.value = curataMesajEroare(v.value);
+      });
+      if (event.message) event.message = curataMesajEroare(event.message);
+      return event;
+    },
   });
 }
 

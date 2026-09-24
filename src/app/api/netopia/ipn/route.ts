@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { organizations, platformPayments } from "@/lib/db/schema";
 import { clasificaStatus, verificaIpn } from "@/lib/netopia";
+import { raporteazaAvertisment, raporteazaEroare } from "@/lib/monitoring";
 
 // IPN Netopia — singurul loc care confirmă o plată de abonament. Niciun acces
 // nu se acordă din redirectul clientului, doar de aici, după ce:
@@ -66,7 +67,7 @@ export async function POST(req: Request) {
 
       if (decizie === "reusita") {
         if (!Number.isFinite(suma) || Math.abs(suma - plata.sumaLei) > 0.01 || (body.payment?.currency && body.payment.currency !== "RON")) {
-          console.error("IPN Netopia: sumă/monedă diferită de comandă", { orderId, primit: suma, asteptat: plata.sumaLei });
+          raporteazaAvertisment("netopia-ipn", "sumă/monedă diferită de comandă — plata NU a fost acordată, verificare manuală", { orderId, primit: suma, asteptat: plata.sumaLei });
           return; // nu acordăm acces pentru o sumă care nu corespunde
         }
 
@@ -104,7 +105,7 @@ export async function POST(req: Request) {
           .where(eq(organizations.id, plata.orgId))
           .returning({ id: organizations.id });
         if (!actualizatOrg[0]) {
-          console.error("IPN Netopia: organizația comenzii nu mai există", { orderId, orgId: plata.orgId });
+          raporteazaAvertisment("netopia-ipn", "organizația comenzii plătite nu mai există", { orderId, orgId: plata.orgId });
         }
         return;
       }
@@ -152,7 +153,7 @@ export async function POST(req: Request) {
       await tx.update(platformPayments).set({ netopiaStatus: status, ntpId }).where(eq(platformPayments.id, plata.id));
     });
   } catch (e) {
-    console.error("Eroare la procesarea IPN Netopia:", e);
+    raporteazaEroare("netopia-ipn", e, { orderId });
     return NextResponse.json({ errorType: 1, errorCode: 3, errorMessage: "eroare temporara" }, { status: 500 });
   }
 

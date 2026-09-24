@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import StripeSDK from "stripe";
 import type Stripe from "stripe";
 
+import { raporteazaEroare } from "@/lib/monitoring";
 import { stripeOrgDupaSlug } from "@/lib/org-stripe";
 import { proceseazaEvenimentDonatie } from "@/lib/stripe-donation-events";
 
@@ -21,7 +22,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ orgSlug
   try {
     stripeOrg = await stripeOrgDupaSlug(orgSlug);
   } catch (e) {
-    console.error("cheia Stripe a organizației nu a putut fi citită (webhook):", e);
+    raporteazaEroare("stripe-webhook-cheie", e, { orgSlug });
     return NextResponse.json({ error: "webhook_not_configured" }, { status: 500 });
   }
   if (!stripeOrg?.webhookSecret) {

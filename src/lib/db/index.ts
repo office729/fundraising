@@ -25,7 +25,20 @@ function getDb(): DB {
   if (!connectionString) {
     throw new Error("DATABASE_URL lipsește din mediu (.env.local / Vercel).");
   }
-  const client = postgres(connectionString, { prepare: false });
+  // Pe Vercel fiecare instanță de funcție își deschide propriul pool; fără `max`
+  // explicit postgres.js ia 10 conexiuni × N instanțe și epuizează Supavisor la
+  // un vârf de trafic sau când câteva tranzacții stau blocate pe apeluri lente.
+  // 5 lasă loc webhook-urilor chiar dacă câteva tranzacții așteaptă apeluri externe; se ajustează din
+  // DB_POOL_MAX fără redeploy de cod. Timeout-urile eliberează conexiunile
+  // inactive/blocate în loc să le țină până la închiderea instanței.
+  const max = Number(process.env.DB_POOL_MAX) || 5;
+  const client = postgres(connectionString, {
+    prepare: false,
+    max,
+    idle_timeout: 20,
+    connect_timeout: 10,
+    max_lifetime: 60 * 30,
+  });
   cached = drizzle(client, { schema });
   return cached;
 }

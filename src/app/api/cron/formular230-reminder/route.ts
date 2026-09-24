@@ -6,6 +6,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { donatoriReali, formular230Beneficiari, formular230CampaniiEmail, organizations } from "@/lib/db/schema";
 import { emailConfigurat, trimiteEmailuriInLot } from "@/lib/email";
+import { raporteazaAvertisment, raporteazaEroare } from "@/lib/monitoring";
 import { linkDezabonare } from "@/lib/dezabonare";
 import { anteteDezabonare, htmlEmailF230, subiectEmailF230 } from "@/lib/formular230-email-template";
 import { SLUG_PRINCIPAL } from "@/lib/formular230-constants";
@@ -68,6 +69,7 @@ export async function GET(req: Request) {
 
   const rezultate: { orgSlug: string; trimise: number }[] = [];
 
+  try {
   await db.transaction(async (tx) => {
     await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
 
@@ -96,17 +98,24 @@ export async function GET(req: Request) {
       if (!donatori.length) continue;
 
       const link = `${baseUrl}/s/${beneficiar.shortCode}`;
-      const { trimise } = await trimiteEmailuriInLot({
+      const { trimise, esuate } = await trimiteEmailuriInLot({
         destinatari: donatori,
         subiect: () => subiectEmailF230(org.name),
         html: (d) => htmlEmailF230(org.name, d.nume, link, linkDezabonare(baseUrl, org.id, d.email)),
         headers: (d) => anteteDezabonare(linkDezabonare(baseUrl, org.id, d.email)),
       });
 
+      if (esuate > 0) {
+        raporteazaAvertisment("cron-formular230", "unele emailuri de reamintire au eșuat", { orgSlug: org.slug, trimise, esuate });
+      }
       await tx.insert(formular230CampaniiEmail).values({ orgId: org.id, an, nrDestinatari: trimise, trimisDe: null });
       rezultate.push({ orgSlug: org.slug, trimise });
     }
   });
+  } catch (e) {
+    raporteazaEroare("cron-formular230", e);
+    return NextResponse.json({ ok: false, error: "eroare_cron", partial: rezultate }, { status: 500 });
+  }
 
   return NextResponse.json({ ok: true, organizatii: rezultate.length, rezultate });
 }
