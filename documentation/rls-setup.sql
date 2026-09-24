@@ -315,6 +315,10 @@ create policy apeluri_webhook_insert on apeluri
   for insert with check (nullif(current_setting('app.public_lookup', true), '') = 'true');
 create policy apeluri_webhook_update on apeluri
   for update using (nullif(current_setting('app.public_lookup', true), '') = 'true');
+-- SELECT sub public_lookup: callback-ul Twilio face UPDATE ... WHERE id = ..., care are
+-- nevoie să vadă rândul — fără el rula pe 0 rânduri (apeluri blocate pe "sunând").
+create policy apeluri_public_lookup_select on apeluri
+  for select using (nullif(current_setting('app.public_lookup', true), '') = 'true');
 
 -- Formularul 230 (Faza 3) — SELECT doar membri (statistica din CRM); INSERT
 -- public, cine completează link-ul distribuit nu e autentificat, deci separat,
@@ -539,10 +543,10 @@ create policy fundraising_updates_admin_update on fundraising_updates
 --    pierdut politici — re-rulează secțiunile 3 și 4 complet.
 -- ============================================================================
 -- select tablename, policyname, cmd from pg_policies where schemaname = 'public' order by tablename;
--- Așteptat: apeluri(3), app_users(3), auth_rate_limits(1), companies(1),
+-- Așteptat: apeluri(4), app_users(3), auth_rate_limits(1), companies(1),
 --           company_notite(1), company_sponsorizari(1), contacts(1), crm_kv(1),
 --           donatori_reali(4), formular230_beneficiari(5),
 --           formular230_campanii_email(4), formular230_submissions(4),
 --           fundraising_donations(7), fundraising_pages(5),
 --           fundraising_updates(4), invites(4), memberships(2),
---           organizations(5) = 55 politici.
+--           organizations(5) = 56 politici.

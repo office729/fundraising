@@ -273,6 +273,14 @@ export function withBeneficiarSession<A extends unknown[], R>(
         sql`select set_config('app.current_beneficiary_campaign_id', ${found.page.id}, true)`,
       );
 
+      // findBeneficiaryProfile a pornit app.public_lookup ca să citească
+      // organizations/fundraising_pages (beneficiarul nu e membru). Îl oprim aici:
+      // lăsat activ, politicile *_webhook_* (organizations, donații, plăți...) ar
+      // rămâne deschise pentru ORICE interogare din pagina/acțiunea beneficiarului.
+      // Tabelele modulului (sarcini, facturi, mesaje, notificări...) au politici
+      // proprii, pe campanie/app_user, care nu depind de acest GUC.
+      await tx.execute(sql`select set_config('app.public_lookup', '', true)`);
+
       const ctx: BeneficiarContext = {
         beneficiarId: found.beneficiary.id,
         campaignPageId: found.page.id,

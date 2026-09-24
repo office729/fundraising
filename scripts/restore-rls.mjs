@@ -140,6 +140,12 @@ const POLICIES = [
   `create policy apeluri_webhook_update on apeluri for update using (
     nullif(current_setting('app.public_lookup', true), '') = 'true'
   )`,
+  // Callback-ul Twilio de final de apel (api/twilio/voice-status) face UPDATE ...
+  // WHERE id = ... sub public_lookup. Un UPDATE cu WHERE citește rândurile, deci are
+  // nevoie și de SELECT — fără el rula pe 0 rânduri și apelurile rămâneau "sunând".
+  `create policy apeluri_public_lookup_select on apeluri for select using (
+    nullif(current_setting('app.public_lookup', true), '') = 'true'
+  )`,
   // invites: vizibile fie de admin/owner-ul organizației (listă), fie de
   // cine deține token-ul din link (acceptare) — vezi app.invite_lookup_token
   // în src/app/invite/[token]/actions.ts.
@@ -361,6 +367,22 @@ const POLICIES = [
     )
   )`,
   `create policy fundraising_updates_admin_delete on fundraising_updates for delete using (
+    org_id in (
+      select org_id from memberships
+      where user_id = nullif(current_setting('app.current_user_id', true), '')::uuid
+        and role in ('owner', 'admin')
+    )
+  )`,
+  // Exista în producție și în rls-setup.sql, dar lipsea de aici: un `db:push`
+  // (care șterge toate politicile) nu o recrea, iar editarea unei actualizări
+  // rula silențios pe 0 rânduri.
+  `create policy fundraising_updates_admin_update on fundraising_updates for update using (
+    org_id in (
+      select org_id from memberships
+      where user_id = nullif(current_setting('app.current_user_id', true), '')::uuid
+        and role in ('owner', 'admin')
+    )
+  ) with check (
     org_id in (
       select org_id from memberships
       where user_id = nullif(current_setting('app.current_user_id', true), '')::uuid
