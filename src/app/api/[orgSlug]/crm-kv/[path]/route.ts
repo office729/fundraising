@@ -42,6 +42,10 @@ const ALLOWED_KEYS = new Set([
 ]);
 const ALLOWED_GET = ALLOWED_KEYS;
 const ALLOWED_PUT = ALLOWED_KEYS;
+// Documente de configurare a organizației (date ONG, setări comune ale tool-urilor):
+// citite de toți membrii, scrise doar de owner/admin — la fel ca salveazaDateOng,
+// care modifică același document. Fără asta, orice membru le rescria prin API.
+const ADMIN_ONLY_PUT = new Set(["config"]);
 
 // Un document de stare al unui tool nu are ce căuta la sute de MB.
 const MAX_BYTES = 2 * 1024 * 1024;
@@ -60,6 +64,9 @@ const getKv = withOrgSession(async (ctx, path: string) => {
 
 const putKv = withOrgSession(async (ctx, path: string, req: Request) => {
   if (!ALLOWED_PUT.has(path)) return NextResponse.json({ error: "bad_path" }, { status: 400 });
+  if (ADMIN_ONLY_PUT.has(path) && ctx.role !== "owner" && ctx.role !== "admin") {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
   if (Number(req.headers.get("content-length") ?? 0) > MAX_BYTES) return NextResponse.json({ error: "too_large" }, { status: 413 });
   let body: unknown;
   try {

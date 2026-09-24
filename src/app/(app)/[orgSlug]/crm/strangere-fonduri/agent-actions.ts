@@ -103,6 +103,16 @@ export const trimiteMesajStaffAction = withOrgAdmin(
     const continut = String(formData.get("continut") ?? "").trim();
     if (!continut) return { error: "Scrie un mesaj.", ok: false };
 
+    // pageId vine de la client: RLS verifică doar org_id-ul RÂNDULUI, nu al
+    // paginii — fără verificare, un admin ar putea insera un mesaj (cu numele și
+    // emailul lui) în firul de mesaje al unei campanii din ALTĂ organizație.
+    const pagina = await ctx.db
+      .select({ id: fundraisingPages.id })
+      .from(fundraisingPages)
+      .where(and(eq(fundraisingPages.id, pageId), eq(fundraisingPages.orgId, ctx.orgId)))
+      .limit(1);
+    if (!pagina[0]) return { error: "Campania nu a fost găsită.", ok: false };
+
     await ctx.db.insert(fundraisingMessages).values({
       campaignPageId: pageId,
       orgId: ctx.orgId,

@@ -3,6 +3,7 @@ import { sql } from "drizzle-orm";
 import { notFound, redirect } from "next/navigation";
 
 import type { CustomPlanConfigSaved } from "@/lib/billing/custom-plan";
+import { isAccessBlocked } from "@/lib/billing/trial";
 import { db } from "@/lib/db";
 import { EroareUtilizator } from "@/lib/erori";
 import type { DomeniuActivitate } from "@/lib/campaign-templates";
@@ -67,8 +68,14 @@ export type OrgContext = {
  *   });
  *   // apelat din UI: await listaFirme(orgSlug)
  */
+// Opțiuni: `permiteAccesBlocat` doar pentru ce trebuie să meargă și când proba
+// s-a terminat și nu există abonament valabil — pornirea plății și pagina de
+// rezultat a plății. Orice altceva e refuzat AICI, nu doar ascuns de layout.
+export type OrgSessionOptions = { permiteAccesBlocat?: boolean };
+
 export function withOrgSession<A extends unknown[], R>(
   action: (ctx: OrgContext, ...args: A) => Promise<R>,
+  opts?: OrgSessionOptions,
 ): (orgSlug: string, ...args: A) => Promise<R> {
   return async (orgSlug: string, ...args: A) => {
     const authUser = await getAuthUser();
@@ -126,6 +133,24 @@ export function withOrgSession<A extends unknown[], R>(
         role: found.role,
         db: tx as unknown as typeof db,
       };
+
+      // Paywall-ul era aplicat doar în layout: un cont cu proba expirată nu
+      // vedea paginile, dar putea apela în continuare server actions și rutele
+      // /api/[orgSlug]/* (email, apeluri Twilio, salvări) — fără să plătească.
+      if (
+        !opts?.permiteAccesBlocat &&
+        isAccessBlocked(
+          {
+            createdAt: ctx.orgCreatedAt,
+            subscriptionStatus: ctx.orgSubscriptionStatus,
+            package: ctx.orgPackage,
+            currentPeriodEnd: ctx.orgCurrentPeriodEnd,
+          },
+          ctx.userEmail,
+        )
+      ) {
+        throw new EroareUtilizator("Perioada de probă s-a încheiat — alege un pachet ca să continui.");
+      }
       return action(ctx, ...args);
     });
   };
@@ -133,13 +158,14 @@ export function withOrgSession<A extends unknown[], R>(
 
 export function withOrgAdmin<A extends unknown[], R>(
   action: (ctx: OrgContext, ...args: A) => Promise<R>,
+  opts?: OrgSessionOptions,
 ): (orgSlug: string, ...args: A) => Promise<R> {
   return withOrgSession(async (ctx, ...args: A) => {
     if (ctx.role !== "owner" && ctx.role !== "admin") {
       throw new EroareUtilizator("Necesită rol de admin sau owner în organizație.");
     }
     return action(ctx, ...args);
-  });
+  }, opts);
 }
 
 export type OrgAccess = Omit<OrgContext, "db">;
@@ -177,7 +203,10 @@ export function requireOrgAccess(orgSlug: string): Promise<OrgAccess> {
     userEmail: ctx.userEmail,
     userName: ctx.userName,
     role: ctx.role,
-  }))(orgSlug);
+    // Verificarea de acces citește starea abonamentului ca să decidă paywall-ul
+    // (layout-ul) — dacă ar fi ea însăși blocată de paywall, layout-ul ar crăpa
+    // în loc să-l afișeze. Nu întoarce date de tenant, doar contextul organizației.
+  }), { permiteAccesBlocat: true })(orgSlug);
 }
 
 // ---------------------------------------------------------------------------

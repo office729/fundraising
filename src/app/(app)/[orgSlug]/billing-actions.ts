@@ -30,16 +30,19 @@ async function origin(): Promise<string> {
 // clientul redirecționează la URL-ul întors. Pachetul și starea organizației se
 // schimbă abia când IPN-ul verificat confirmă plata (api/netopia/ipn/route.ts),
 // niciodată optimist, înainte de confirmare.
-export const startCheckoutAction = withOrgAdmin(async (ctx, pkg: Exclude<OrgPackage, "trial" | "custom">) => {
-  const url = await creeazaPlataAbonament(ctx, {
-    pachet: pkg,
-    pretLunar: PACKAGE_LIMITS[pkg].pretLunar!,
-    packageLabel: NUME_PACHET[pkg],
-    planConfig: null,
-    origin: await origin(),
-  });
-  return { url };
-});
+export const startCheckoutAction = withOrgAdmin(
+  async (ctx, pkg: Exclude<OrgPackage, "trial" | "custom">) => {
+    const url = await creeazaPlataAbonament(ctx, {
+      pachet: pkg,
+      pretLunar: PACKAGE_LIMITS[pkg].pretLunar!,
+      packageLabel: NUME_PACHET[pkg],
+      planConfig: null,
+      origin: await origin(),
+    });
+    return { url };
+  },
+  { permiteAccesBlocat: true },
+);
 
 // Ca și startCheckoutAction — doar că prețul e recalculat AICI, server-side,
 // din configurația primită (nu se are încredere niciodată în `pretLunar`
@@ -69,4 +72,5 @@ export const startCustomCheckoutAction = withOrgAdmin(
     });
     return { url };
   },
+  { permiteAccesBlocat: true },
 );
