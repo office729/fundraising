@@ -68,7 +68,9 @@ export async function pregatesteDonatie(
   const telefonDonator = String(formData.get("telefonDonator") ?? "").trim().slice(0, MAX_LEN);
   const mesaj = String(formData.get("mesaj") ?? "").trim().slice(0, MAX_MESAJ_LEN);
   const anonim = formData.get("anonim") != null;
-  const recurenta = formData.get("recurenta") != null;
+  // Câmpul ascuns există mereu în formular (valoare "" = o singură dată, "1" =
+  // lunar); verificarea `!= null` ar face din ORICE donație un abonament lunar.
+  const recurenta = formData.get("recurenta") === "1";
   const consimtamantGdpr = formData.get("consimtamantGdpr") != null;
   const consimtamantTermeni = formData.get("consimtamantTermeni") != null;
   const consimtamantWhatsapp = formData.get("consimtamantWhatsapp") != null;
