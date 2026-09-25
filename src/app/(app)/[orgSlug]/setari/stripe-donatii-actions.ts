@@ -14,10 +14,22 @@ export type StripeDonatiiStatus = {
   hint: string | null;
   conectatLa: string | null;
   areWebhook: boolean;
+  // Doar pentru afișare (whsec_…ultimele 4), ca la cheia secretă.
+  webhookHint: string | null;
   criptareActiva: boolean;
   publishableKey: string | null;
   domeniuVerificatLa: string | null;
 };
+
+function hintWebhook(enc: string | null | undefined): string | null {
+  if (!enc) return null;
+  try {
+    const v = decripteaza(enc);
+    return `whsec_…${v.slice(-4)}`;
+  } catch {
+    return null;
+  }
+}
 
 export const obtineStatusStripeDonatii = withOrgAdmin(async (ctx): Promise<StripeDonatiiStatus> => {
   const rows = await ctx.db
@@ -38,6 +50,7 @@ export const obtineStatusStripeDonatii = withOrgAdmin(async (ctx): Promise<Strip
     hint: r?.hint ?? null,
     conectatLa: r?.la ? r.la.toISOString() : null,
     areWebhook: Boolean(r?.webhook),
+    webhookHint: hintWebhook(r?.webhook),
     criptareActiva: criptareConfigurata(),
     publishableKey: r?.publishableKey ?? null,
     domeniuVerificatLa: r?.domeniuLa ? r.domeniuLa.toISOString() : null,

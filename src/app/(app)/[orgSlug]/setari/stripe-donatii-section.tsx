@@ -269,6 +269,7 @@ export function StripeDonatiiSection({
           titlu={dict.card.webhook.titlu}
           descriere={dict.card.webhook.desc}
           salvat={status.areWebhook}
+          detaliuSalvat={status.webhookHint}
           camp="secretWebhook"
           placeholderNou={dict.card.webhook.placeholderNou}
           placeholderInlocuire={dict.card.webhook.placeholderInlocuire}
