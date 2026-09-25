@@ -5,5 +5,8 @@
       "path": "/api/cron/formular230-reminder",
       "schedule": "0 7 * * *"
     }
+  ],
+  "regions": [
+    "dub1"
   ]
 }
