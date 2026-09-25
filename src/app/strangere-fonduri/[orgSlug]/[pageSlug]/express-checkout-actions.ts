@@ -7,6 +7,7 @@ import type Stripe from "stripe";
 
 import { db } from "@/lib/db";
 import { fundraisingDonations } from "@/lib/db/schema";
+import { obtineIpClient } from "@/lib/auth/rate-limit";
 import { cursEurRon } from "@/lib/curs-valutar";
 import { DONATE_ACTION_ERRORS } from "@/lib/i18n/dictionaries/donation";
 import { getLocale } from "@/lib/i18n/get-locale";
@@ -51,7 +52,7 @@ export async function creeazaIntentDonatieAction(
   }
 }
 
-// Revolut Pay: donație UNICĂ (în RON, acceptat de Revolut Pay). Formularul cere
+// Revolut Pay: donație unică sau lunară (în RON, acceptat de Revolut Pay). Formularul cere
 // numele și emailul; acordul pentru Termeni/GDPR e dat prin plată, ca la
 // portofele. Confirmarea reală rămâne a webhook-ului (payment_intent.succeeded).
 export async function creeazaIntentRevolutAction(
@@ -64,15 +65,17 @@ export async function creeazaIntentRevolutAction(
 
   const pregatit = await pregatesteDonatie(orgSlug, pageSlug, formData, errors, { acordImplicit: true });
   if (!pregatit.ok) return { ok: false, error: pregatit.error };
-  if (pregatit.date.recurenta) return { ok: false, error: errors.plataEsuata };
 
   try {
     const hdrs = await headers();
     const origin = hdrs.get("origin") ?? `${hdrs.get("x-forwarded-proto") ?? "https"}://${hdrs.get("host")}`;
-    const rezultat = await creeazaPlataUnicaExpress(pregatit.date, errors.plataEsuata, {
-      metoda: "revolut_pay",
+    const redirect = {
+      metoda: "revolut_pay" as const,
       returnUrl: `${origin}/strangere-fonduri/${orgSlug}/${pageSlug}/multumim`,
-    });
+    };
+    const rezultat = pregatit.date.recurenta
+      ? await creeazaAbonamentRedirect(pregatit.date, errors.plataEsuata, redirect)
+      : await creeazaPlataUnicaExpress(pregatit.date, errors.plataEsuata, redirect);
     // Fără adresă de redirect nu putem duce clientul la Revolut.
     if (rezultat.ok && !rezultat.redirectUrl) return { ok: false, error: errors.plataEsuata };
     return rezultat;
@@ -111,7 +114,8 @@ export async function revolutPayDisponibilAction(orgSlug: string): Promise<boole
 // PayPal (prin Stripe): NU acceptă RON — donația se face în EUR (ca pe
 // fundatianektarios.ro). În platformă se reține echivalentul în lei la cursul
 // momentului, iar suma reală în EUR rămâne în sumaBani/moneda pentru rambursări.
-// Donație unică; confirmarea reală rămâne a webhook-ului (payment_intent.succeeded).
+// Donație unică sau lunară; confirmarea reală rămâne a webhook-ului
+// (payment_intent.succeeded la prima plată, invoice.paid la reînnoiri).
 export async function creeazaIntentPaypalAction(
   orgSlug: string,
   pageSlug: string,
@@ -138,16 +142,19 @@ export async function creeazaIntentPaypalAction(
   date.set("suma", String(sumaLei));
   const pregatit = await pregatesteDonatie(orgSlug, pageSlug, date, errors, { acordImplicit: true });
   if (!pregatit.ok) return { ok: false, error: pregatit.error };
-  if (pregatit.date.recurenta) return { ok: false, error: errors.plataEsuata };
 
   try {
     const hdrs = await headers();
     const origin = hdrs.get("origin") ?? `${hdrs.get("x-forwarded-proto") ?? "https"}://${hdrs.get("host")}`;
-    const rezultat = await creeazaPlataUnicaExpress(pregatit.date, errors.plataEsuata, {
-      metoda: "paypal",
+    const redirect = {
+      metoda: "paypal" as const,
       returnUrl: `${origin}/strangere-fonduri/${orgSlug}/${pageSlug}/multumim`,
       eurCenti,
-    });
+      cursEur: curs,
+    };
+    const rezultat = pregatit.date.recurenta
+      ? await creeazaAbonamentRedirect(pregatit.date, errors.plataEsuata, redirect)
+      : await creeazaPlataUnicaExpress(pregatit.date, errors.plataEsuata, redirect);
     if (rezultat.ok && !rezultat.redirectUrl) return { ok: false, error: errors.plataEsuata };
     return rezultat;
   } catch (e) {
@@ -181,6 +188,114 @@ export async function paypalDisponibilAction(orgSlug: string): Promise<{ ok: boo
   return { ok, curs };
 }
 
+// Donație LUNARĂ prin metode cu redirect (Revolut Pay în RON, PayPal în EUR). Ca la
+// abonamentul cu portofel, creăm Clientul/Produsul/Abonamentul explicit, dar prima
+// factură se confirmă pe SERVER cu metoda aleasă și clientul e dus la autentificare.
+// Reînnoirile lunare se încasează apoi automat (acord online = mandat).
+async function creeazaAbonamentRedirect(
+  date: DateComuneDonatie,
+  eroareGenerica: string,
+  redirect: { metoda: "revolut_pay" | "paypal"; returnUrl: string; eurCenti?: number; cursEur?: number },
+): Promise<CreeazaIntentState> {
+  const donationId = randomUUID();
+  const stripe = date.stripeOrg.stripe;
+  const eurCenti = redirect.eurCenti;
+
+  const customer = await stripe.customers.create({
+    email: date.emailDonator,
+    name: date.numeDonator,
+    phone: date.telefonDonator || undefined,
+  });
+  const produs = await stripe.products.create({ name: date.titlu });
+
+  const subscription = await stripe.subscriptions.create({
+    customer: customer.id,
+    items: [
+      {
+        price_data: {
+          currency: eurCenti ? "eur" : "ron",
+          product: produs.id,
+          unit_amount: eurCenti ?? date.suma * 100,
+          recurring: { interval: "month" },
+        },
+      },
+    ],
+    payment_behavior: "default_incomplete",
+    payment_settings: { payment_method_types: [redirect.metoda], save_default_payment_method: "on_subscription" },
+    expand: ["latest_invoice"],
+    // Aceleași chei ca la abonamentul cu portofel (webhook-ul invoice.paid le citește
+    // de aici la reînnoiri) + moneda: în EUR, reînnoirile se convertesc în lei la cursul
+    // lunii respective (cursEur = curs de rezervă, dacă sursa de curs nu răspunde atunci).
+    metadata: {
+      donationId,
+      pageId: date.pageId,
+      orgId: date.orgId,
+      numeDonator: date.numeDonator,
+      emailDonator: date.emailDonator,
+      telefonDonator: date.telefonDonator,
+      anonim: String(date.anonim),
+      consimtamantGdpr: String(date.consimtamantGdpr),
+      consimtamantTermeni: String(date.consimtamantTermeni),
+      consimtamantWhatsapp: String(date.consimtamantWhatsapp),
+      ...(eurCenti ? { moneda: "eur", cursEur: String(redirect.cursEur ?? "") } : {}),
+    },
+  });
+
+  const invoice = subscription.latest_invoice as Stripe.Invoice | null;
+  if (!invoice) {
+    console.error("Abonament redirect fără factură");
+    return { ok: false, error: eroareGenerica };
+  }
+  const plati = await stripe.invoicePayments.list({ invoice: invoice.id, limit: 1 });
+  const paymentIntentId = idDin(plati.data[0]?.payment?.payment_intent) ?? idDin(plati.data[0]?.payment?.charge);
+  if (!paymentIntentId) {
+    console.error("Abonament redirect: nu am putut afla payment_intent-ul primei facturi");
+    return { ok: false, error: eroareGenerica };
+  }
+
+  // Confirmare pe server, cu acordul online al donatorului (mandat pentru reînnoiri).
+  const hdrs = await headers();
+  const ip = await obtineIpClient();
+  const paymentIntent = await stripe.paymentIntents.confirm(paymentIntentId, {
+    payment_method_data: {
+      type: redirect.metoda,
+      billing_details: { name: date.numeDonator, email: date.emailDonator },
+    },
+    return_url: redirect.returnUrl,
+    mandate_data: {
+      customer_acceptance: {
+        type: "online",
+        online: { ip_address: /^[0-9a-f:.]+$/i.test(ip) ? ip : "0.0.0.0", user_agent: hdrs.get("user-agent") ?? "necunoscut" },
+      },
+    },
+  });
+
+  await db.insert(fundraisingDonations).values({
+    id: donationId,
+    pageId: date.pageId,
+    orgId: date.orgId,
+    numeDonator: date.numeDonator,
+    emailDonator: date.emailDonator,
+    telefonDonator: date.telefonDonator || null,
+    suma: date.suma,
+    ...(eurCenti ? { sumaBani: eurCenti, moneda: "eur" } : {}),
+    mesaj: date.mesaj || null,
+    anonim: date.anonim,
+    consimtamantGdpr: date.consimtamantGdpr,
+    consimtamantTermeni: date.consimtamantTermeni,
+    consimtamantWhatsapp: date.consimtamantWhatsapp,
+    stripeSessionId: paymentIntentId,
+    stripeSubscriptionId: subscription.id,
+    recurenta: true,
+  });
+
+  return {
+    ok: true,
+    clientSecret: paymentIntent.client_secret ?? "",
+    redirectUrl: paymentIntent.next_action?.redirect_to_url?.url ?? undefined,
+  };
+}
+
 async function creeazaPlataUnicaExpress(
   date: DateComuneDonatie,
   eroareGenerica: string,
@@ -189,7 +304,7 @@ async function creeazaPlataUnicaExpress(
   // metodă și se confirmă chiar pe server (întoarce adresa de autentificare).
   // `eurCenti`: PayPal nu acceptă RON — se încasează în EUR, iar `date.suma` (lei)
   // reține echivalentul la cursul momentului.
-  redirect?: { metoda: "revolut_pay" | "paypal"; returnUrl: string; eurCenti?: number },
+  redirect?: { metoda: "revolut_pay" | "paypal"; returnUrl: string; eurCenti?: number; cursEur?: number },
 ): Promise<CreeazaIntentState> {
   const donationId = randomUUID();
   const eurCenti = redirect?.eurCenti;

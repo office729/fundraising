@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { and, eq, inArray, ne, sql } from "drizzle-orm";
 import type Stripe from "stripe";
 
+import { cursEurRon } from "@/lib/curs-valutar";
 import { db } from "@/lib/db";
 import { fundraisingDonations, fundraisingPages } from "@/lib/db/schema";
 import { htmlEmailMultumireDonatie, subiectEmailMultumireDonatie } from "@/lib/donation-email-template";
@@ -231,6 +232,14 @@ export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, s
         // Metadata vine din contul Stripe al ONG-ului — nu are voie să indice
         // altă organizație decât cea care a semnat evenimentul.
         if (md.pageId && md.orgId === orgId) {
+          // Abonament în EUR (PayPal): reînnoirea se convertește în lei la cursul zilei;
+          // dacă sursa de curs nu răspunde, cursul de la crearea abonamentului. Fără niciun
+          // curs, aruncăm — Stripe reîncearcă livrarea, în loc să înregistrăm o sumă greșită.
+          let cursEur: number | null = null;
+          if (md.moneda === "eur") {
+            cursEur = (await cursEurRon()) ?? (Number(md.cursEur) > 0 ? Number(md.cursEur) : null);
+            if (!cursEur) throw new Error("curs EUR→RON indisponibil pentru reînnoirea unui abonament în EUR");
+          }
           await db.transaction(async (tx) => {
             await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
 
@@ -254,7 +263,7 @@ export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, s
               return;
             }
 
-            const suma = Math.round(invoice.amount_paid / 100);
+            const suma = cursEur ? Math.round((invoice.amount_paid / 100) * cursEur) : Math.round(invoice.amount_paid / 100);
 
             // La fel ca la checkout.session.completed — necesar pentru
             // corelarea unei eventuale rambursări a ACESTEI reînnoiri.
@@ -272,6 +281,7 @@ export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, s
               emailDonator: md.emailDonator || null,
               telefonDonator: md.telefonDonator || null,
               suma,
+              ...(cursEur ? { sumaBani: invoice.amount_paid, moneda: "eur" } : {}),
               anonim: md.anonim === "true",
               consimtamantGdpr: md.consimtamantGdpr === "true",
               consimtamantTermeni: md.consimtamantTermeni === "true",

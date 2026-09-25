@@ -86,7 +86,6 @@ export function DoneazaForm({
       {/* Honeypot — invizibil pentru oameni. */}
       <input type="text" name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />
 
-      {!redirect && (
       <div
         role="group"
         aria-label={t.frecventaLabel}
@@ -109,8 +108,7 @@ export function DoneazaForm({
           {t.lunar}
         </button>
       </div>
-      )}
-      <input type="hidden" name="recurenta" value={recurenta && !redirect ? "1" : ""} />
+      <input type="hidden" name="recurenta" value={recurenta ? "1" : ""} />
 
       {paypal ? (
         <>
@@ -144,7 +142,7 @@ export function DoneazaForm({
           </label>
           <p className="text-[12px] text-muted-2">
             {t.paypalInfo}
-            {cursEur && Number.isFinite(sumaEur) && sumaEur > 0 ? ` ${t.echivalentLei(Math.round(sumaEur * cursEur))}` : ""}
+            {cursEur && Number.isFinite(sumaEur) && sumaEur > 0 ? ` ${t.echivalentLei(Math.round(sumaEur * cursEur))}${recurenta ? t.pePeLuna : ""}` : ""}
           </p>
         </>
       ) : (
@@ -252,9 +250,9 @@ export function DoneazaForm({
         {(redirect ? revolutPending : pending)
           ? t.sePregateste
           : paypal
-            ? `${t.donezaVerb} ${sumaEur} ${t.donezaSufixPaypal}`
+            ? `${t.donezaVerb} ${sumaEur} ${recurenta ? t.donezaSufixPaypalLuna : t.donezaSufixPaypal}`
             : revolut
-              ? `${t.donezaVerb} ${suma} ${t.donezaSufixRevolut}`
+              ? `${t.donezaVerb} ${suma} ${recurenta ? t.donezaSufixRevolutLuna : t.donezaSufixRevolut}`
               : recurenta
                 ? `${t.donezaVerb} ${suma} ${t.donezaLunaSufix}`
                 : `${t.donezaVerb} ${suma} ${t.donezaSufix}`}
