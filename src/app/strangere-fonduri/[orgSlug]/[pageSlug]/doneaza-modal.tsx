@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { preconnect } from "react-dom";
 
 import type { Locale } from "@/lib/i18n/config";
 import { DONATION_DICT } from "@/lib/i18n/dictionaries/donation";
@@ -25,7 +26,18 @@ export function DoneazaModal({
   locale: Locale;
   publishableKey: string | null;
 }) {
+  // Conexiunile către Stripe se deschid din timp (DNS + TLS economisesc sute de ms
+  // la prima inițializare a butoanelor Apple Pay / Google Pay).
+  if (publishableKey) {
+    preconnect("https://js.stripe.com", { crossOrigin: "anonymous" });
+    preconnect("https://api.stripe.com", { crossOrigin: "anonymous" });
+    preconnect("https://m.stripe.network", { crossOrigin: "anonymous" });
+  }
   const [open, setOpen] = useState(false);
+  // Modalul e montat în fundal (invizibil) după încărcarea paginii, ca iframe-urile
+  // Stripe ale butoanelor Apple/Google Pay să fie gata înainte de primul click —
+  // altfel se creează abia la „Donează acum" și butoanele apar după câteva secunde.
+  const [pregatit, setPregatit] = useState(false);
   const t = DONATION_DICT[locale].donateModal;
   const dialogRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -36,6 +48,32 @@ export function DoneazaModal({
   // intră în dialog (pe primul element focusabil) și rămâne prins înăuntru
   // (Tab/Shift+Tab ciclează doar prin dialog); la închidere: focusul revine
   // exact pe butonul "Donează acum" care l-a deschis.
+  useEffect(() => {
+    // Fără cheie publicabilă nu există butoane rapide de pregătit.
+    if (!publishableKey) return;
+    let anuleaza = () => {};
+    const porneste = () => {
+      // Așteptăm să treacă hidratarea și primele interacțiuni: iframe-urile Stripe
+      // (inclusiv hCaptcha invisible) sunt grele și, pornite prea devreme sau chiar
+      // la click, întârzie răspunsul paginii. NU pornim la hover/atingere din același motiv.
+      const timer = window.setTimeout(() => {
+        if (typeof window.requestIdleCallback === "function") {
+          const id = window.requestIdleCallback(() => setPregatit(true), { timeout: 5000 });
+          anuleaza = () => window.cancelIdleCallback(id);
+        } else {
+          setPregatit(true);
+        }
+      }, 2000);
+      anuleaza = () => window.clearTimeout(timer);
+    };
+    if (document.readyState === "complete") porneste();
+    else window.addEventListener("load", porneste, { once: true });
+    return () => {
+      window.removeEventListener("load", porneste);
+      anuleaza();
+    };
+  }, [publishableKey]);
+
   useEffect(() => {
     if (!open) return;
     const dialogEl = dialogRef.current;
@@ -86,8 +124,19 @@ export function DoneazaModal({
         {t.donezaAcum}
       </button>
 
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 px-4 py-8" onClick={() => setOpen(false)}>
+      {(open || pregatit) && (
+        <div
+          className={
+            open
+              ? "fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 px-4 py-8"
+              : // Închis dar montat: în afara ecranului, dar cu dimensiuni reale (Stripe
+                // își măsoară containerul), fără interacțiune și ascuns cititoarelor de ecran.
+                "pointer-events-none fixed inset-x-0 top-0 -z-10 flex -translate-y-[200vh] items-start justify-center px-4 py-8 opacity-0"
+          }
+          inert={!open}
+          aria-hidden={!open}
+          onClick={() => setOpen(false)}
+        >
           <div
             ref={dialogRef}
             role="dialog"
