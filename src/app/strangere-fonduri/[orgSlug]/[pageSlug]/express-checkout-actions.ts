@@ -35,7 +35,7 @@ export async function creeazaIntentDonatieAction(
     return { ok: false, error: errors.plataEsuata };
   }
 
-  const pregatit = await pregatesteDonatie(orgSlug, pageSlug, formData, errors);
+  const pregatit = await pregatesteDonatie(orgSlug, pageSlug, formData, errors, { acordImplicit: true });
   if (!pregatit.ok) return { ok: false, error: pregatit.error };
   const { date } = pregatit;
 

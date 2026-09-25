@@ -59,6 +59,8 @@ export const DONATION_DICT = {
       sauPlatesteRapid: "sau plătește rapid cu",
       plataExpressEsuata: "Plata a eșuat — încearcă din nou sau folosește formularul de mai jos.",
       sauCompleteazaFormular: "sau completează formularul",
+      plataRapidaAcordPre: "Plătind rapid, ești de acord cu",
+      plataRapidaAcordSi: "și cu",
     },
     thankYou: {
       titlu: "Mulțumim pentru donație!",
@@ -143,6 +145,8 @@ export const DONATION_DICT = {
       sauPlatesteRapid: "or pay quickly with",
       plataExpressEsuata: "Payment failed — try again or use the form below.",
       sauCompleteazaFormular: "or fill in the form",
+      plataRapidaAcordPre: "By paying quickly, you agree to the",
+      plataRapidaAcordSi: "and the",
     },
     thankYou: {
       titlu: "Thank you for your donation!",

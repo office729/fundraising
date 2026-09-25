@@ -2,6 +2,7 @@
 
 import { Elements, ExpressCheckoutElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { loadStripe, type Stripe } from "@stripe/stripe-js";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
@@ -64,17 +65,23 @@ function ExpressCheckoutInner({
         // propriul flux de autentificare, iar formularul obișnuit e deja alternativa.
         options={{
           paymentMethods: { applePay: "always", googlePay: "always", link: "never" },
+          // Portofelul colectează singur email-ul și datele de facturare — donatorul
+          // nu mai completează formularul ca să poată plăti.
+          emailRequired: true,
+          phoneNumberRequired: false,
+          billingAddressRequired: true,
         }}
         onReady={({ availablePaymentMethods }) => onVisibilityChange(Boolean(availablePaymentMethods))}
         onClick={(event) => {
-          // Reutilizează validarea HTML5 nativă deja prezentă pe formular
-          // (name/email/GDPR/Termeni sunt `required`) — dacă lipsește ceva,
-          // browserul arată bula standard de validare pe câmpul respectiv, în
-          // loc să deschidem portofelul pe un formular incomplet.
-          if (formRef.current && !formRef.current.reportValidity()) {
+          // Portofelul se deschide direct: numele și email-ul vin din el (vezi
+          // onConfirm), iar acordul pentru Termeni/GDPR e dat prin plată (text sub
+          // buton). Singura verificare rămasă e suma, care e deja în formular.
+          if (!Number.isFinite(suma) || suma < 5) {
+            setEroare(t.plataExpressEsuata);
             event.reject();
             return;
           }
+          setEroare(null);
           event.resolve();
         }}
         onConfirm={async (event) => {
@@ -90,6 +97,15 @@ function ExpressCheckoutInner({
             }
 
             const formData = new FormData(formRef.current);
+            // Ce a completat donatorul în formular are prioritate; ce lipsește se
+            // ia din portofel (nume, email, telefon).
+            const din = event.billingDetails;
+            const emailPortofel = (din?.email ?? "").trim();
+            if (!String(formData.get("numeDonator") ?? "").trim()) {
+              formData.set("numeDonator", (din?.name ?? "").trim() || emailPortofel.split("@")[0] || "Donator");
+            }
+            if (!String(formData.get("emailDonator") ?? "").trim()) formData.set("emailDonator", emailPortofel);
+            if (!String(formData.get("telefonDonator") ?? "").trim() && din?.phone) formData.set("telefonDonator", din.phone);
             const rezultat = await creeazaIntentDonatieAction(orgSlug, pageSlug, formData);
             if (!rezultat.ok) {
               setEroare(rezultat.error);
@@ -129,7 +145,18 @@ function ExpressCheckoutInner({
       />
       {eroare && <p className="mt-2 text-sm text-red-600">{eroare}</p>}
       {sePlateste && <p className="mt-2 text-center text-xs text-muted-2">{t.sePregateste}</p>}
-      <p className="mt-2 text-center text-[11px] text-muted-2">{t.sauCompleteazaFormular}</p>
+      <p className="mt-2 text-center text-[11px] text-muted-2">
+        {t.plataRapidaAcordPre}{" "}
+        <Link href="/termeni" target="_blank" className="underline">
+          {t.acordTermeniLink}
+        </Link>{" "}
+        {t.plataRapidaAcordSi}{" "}
+        <Link href="/gdpr" target="_blank" className="underline">
+          {t.acordGdprLink}
+        </Link>
+        .
+      </p>
+      <p className="mt-1 text-center text-[11px] text-muted-2">{t.sauCompleteazaFormular}</p>
     </div>
   );
 }

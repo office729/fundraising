@@ -46,6 +46,10 @@ export async function pregatesteDonatie(
   pageSlug: string,
   formData: FormData,
   errors: (typeof DONATE_ACTION_ERRORS)[keyof typeof DONATE_ACTION_ERRORS],
+  // Plata rapidă (Apple Pay/Google Pay) se pornește fără să mai completezi
+  // formularul: acordul pentru Termeni/GDPR e dat prin plata însăși (text afișat
+  // sub buton), deci nu mai cerem bifele. Fluxul clasic nu setează asta niciodată.
+  optiuni: { acordImplicit?: boolean } = {},
 ): Promise<{ ok: false; error: string } | { ok: true; date: DateComuneDonatie }> {
   // Limită per IP, comună fluxului clasic și celui express (ambele trec pe aici):
   // fiecare încercare validă creează o sesiune/PaymentIntent în contul Stripe al
@@ -71,8 +75,8 @@ export async function pregatesteDonatie(
   // Câmpul ascuns există mereu în formular (valoare "" = o singură dată, "1" =
   // lunar); verificarea `!= null` ar face din ORICE donație un abonament lunar.
   const recurenta = formData.get("recurenta") === "1";
-  const consimtamantGdpr = formData.get("consimtamantGdpr") != null;
-  const consimtamantTermeni = formData.get("consimtamantTermeni") != null;
+  const consimtamantGdpr = optiuni.acordImplicit === true || formData.get("consimtamantGdpr") != null;
+  const consimtamantTermeni = optiuni.acordImplicit === true || formData.get("consimtamantTermeni") != null;
   const consimtamantWhatsapp = formData.get("consimtamantWhatsapp") != null;
 
   if (!numeDonator || !emailDonator) {
