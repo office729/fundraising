@@ -171,10 +171,37 @@ async function inregistreazaDomeniiStripe(cheieSecreta: string, customDomain: st
         await stripe.paymentMethodDomains.create({ domain_name: domeniu });
       }
     }
-    return true;
   } catch (e) {
     console.error("înregistrare payment method domain Stripe:", e);
     return false;
+  }
+  await activeazaPortofelele(cheieSecreta);
+  return true;
+}
+
+// Butoanele Apple Pay / Google Pay din ExpressCheckoutElement apar doar dacă
+// metoda e PORNITĂ în configurația de metode de plată a contului Stripe (pe un
+// cont nou, sau în sandbox, Google Pay poate fi oprit — și atunci butonul nu se
+// randează deloc, oricât l-am forța din cod). Pornim doar ce e oprit, niciodată
+// invers, și doar în configurațiile active. E "best effort": o cheie
+// restricționată fără drept de scriere pe această resursă nu strică nimic — ONG-ul
+// le poate porni singur din Dashboard → Settings → Payment methods.
+async function activeazaPortofelele(cheieSecreta: string): Promise<void> {
+  try {
+    const stripe = stripePentruCheie(cheieSecreta);
+    const configuratii = await stripe.paymentMethodConfigurations.list({ limit: 20 });
+    for (const c of configuratii.data) {
+      if (!c.active) continue;
+      const gpayOprit = c.google_pay?.display_preference?.value === "off";
+      const apayOprit = c.apple_pay?.display_preference?.value === "off";
+      if (!gpayOprit && !apayOprit) continue;
+      await stripe.paymentMethodConfigurations.update(c.id, {
+        ...(gpayOprit ? { google_pay: { display_preference: { preference: "on" as const } } } : {}),
+        ...(apayOprit ? { apple_pay: { display_preference: { preference: "on" as const } } } : {}),
+      });
+    }
+  } catch (e) {
+    console.error("activare Apple Pay/Google Pay în configurația Stripe (ignorat):", e);
   }
 }
 

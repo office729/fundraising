@@ -67,6 +67,7 @@ function ExpressCheckoutInner({
           paymentMethods: { applePay: "always", googlePay: "always", link: "never" },
           // Portofelul colectează singur email-ul și datele de facturare — donatorul
           // nu mai completează formularul ca să poată plăti.
+          buttonType: { applePay: "donate", googlePay: "donate" },
           emailRequired: true,
           phoneNumberRequired: false,
           billingAddressRequired: true,
