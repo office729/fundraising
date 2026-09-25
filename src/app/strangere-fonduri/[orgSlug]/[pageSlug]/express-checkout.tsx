@@ -226,22 +226,54 @@ function ExpressCheckoutForMode({
   formRef: React.RefObject<HTMLFormElement | null>;
   locale: Locale;
 }) {
-  const [vizibil, setVizibil] = useState(false);
+  // "incarcare": schelet vizibil (rezervă locul, fără salt de aspect); "vizibil":
+  // butoanele sunt gata; "indisponibil": Stripe nu a putut randa nicio metodă.
+  const [stare, setStare] = useState<"incarcare" | "vizibil" | "indisponibil">("incarcare");
+  const [montat, setMontat] = useState(false);
   const t = DONATION_DICT[locale].donateForm;
 
+  // Modalul se desenează PRIMUL; Elements (iframe-uri Stripe, care încarcă serios
+  // browserul) pornește abia după prima pictare. Pornit odată cu modalul sau, mai
+  // rău, în fundal la încărcarea paginii, întârzia deschiderea/click-ul cu secunde.
+  useEffect(() => {
+    let timer: number | undefined;
+    const frame = requestAnimationFrame(() => {
+      timer = window.setTimeout(() => setMontat(true), 0);
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+      if (timer !== undefined) window.clearTimeout(timer);
+    };
+  }, []);
+
+  // Dacă Stripe nu răspunde deloc (blocat de o extensie, rețea), nu lăsăm scheletul
+  // pe loc pentru totdeauna.
+  useEffect(() => {
+    if (stare !== "incarcare") return;
+    const timer = window.setTimeout(() => setStare((s) => (s === "incarcare" ? "indisponibil" : s)), 25_000);
+    return () => window.clearTimeout(timer);
+  }, [stare]);
+
+  if (stare === "indisponibil") return null;
+
   return (
-    <div className={vizibil ? "flex flex-col gap-2" : "hidden"}>
+    <div className="flex flex-col gap-2">
       <p className="text-center text-xs font-medium text-muted-2">{t.sauPlatesteRapid}</p>
-      <Elements stripe={stripePromise} options={{ mode, amount: Math.round(Math.max(suma, 5) * 100), currency: "ron" }}>
-        <ExpressCheckoutInner
-          orgSlug={orgSlug}
-          pageSlug={pageSlug}
-          suma={suma}
-          formRef={formRef}
-          onVisibilityChange={setVizibil}
-          t={t}
-        />
-      </Elements>
+      {stare === "incarcare" && <div aria-hidden className="h-12 animate-pulse rounded-lg bg-panel-2" />}
+      <div className={stare === "vizibil" ? "" : "hidden"}>
+        {montat && (
+          <Elements stripe={stripePromise} options={{ mode, amount: Math.round(Math.max(suma, 5) * 100), currency: "ron" }}>
+            <ExpressCheckoutInner
+              orgSlug={orgSlug}
+              pageSlug={pageSlug}
+              suma={suma}
+              formRef={formRef}
+              onVisibilityChange={(vizibil) => setStare(vizibil ? "vizibil" : "indisponibil")}
+              t={t}
+            />
+          </Elements>
+        )}
+      </div>
     </div>
   );
 }
