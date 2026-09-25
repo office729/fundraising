@@ -7,7 +7,7 @@ import type { Locale } from "@/lib/i18n/config";
 import { DONATION_DICT } from "@/lib/i18n/dictionaries/donation";
 
 import { DoneazaForm } from "./doneaza-form";
-import { paypalDisponibilAction, revolutPayDisponibilAction } from "./express-checkout-actions";
+import type { MetodeRedirect } from "@/lib/metode-plata-donatii";
 
 const SELECTOR_FOCUSABIL =
   'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -34,12 +34,15 @@ export function DoneazaModal({
   titlu,
   locale,
   publishableKey,
+  metode,
 }: {
   orgSlug: string;
   pageSlug: string;
   titlu: string;
   locale: Locale;
   publishableKey: string | null;
+  // Calculat pe server la randarea paginii (vezi metode-plata-donatii.ts).
+  metode: MetodeRedirect;
 }) {
   // Conexiunile către Stripe se deschid din timp (DNS + TLS economisesc sute de ms
   // la prima inițializare a butoanelor Apple Pay / Google Pay).
@@ -52,27 +55,9 @@ export function DoneazaModal({
   // Metoda aleasă: Revolut / Google Pay / Apple Pay deschid un modal dedicat (ca pe
   // Nektarios); fără metodă, formularul obișnuit (card, pagina găzduită de Stripe).
   const [metoda, setMetoda] = useState<"revolut" | "gpay" | "apay" | "paypal" | undefined>(undefined);
-  // Rândul „Revolut" apare doar dacă metoda e pornită în contul Stripe al ONG-ului.
-  const [revolutDisponibil, setRevolutDisponibil] = useState(false);
-  // PayPal (doar EUR): apare dacă e pornit în contul Stripe și avem un curs valutar.
-  const [paypal, setPaypal] = useState<{ ok: boolean; curs: number | null }>({ ok: false, curs: null });
-  useEffect(() => {
-    if (!publishableKey) return;
-    let anulat = false;
-    revolutPayDisponibilAction(orgSlug)
-      .then((ok) => {
-        if (!anulat) setRevolutDisponibil(ok);
-      })
-      .catch(() => {});
-    paypalDisponibilAction(orgSlug)
-      .then((r) => {
-        if (!anulat) setPaypal(r);
-      })
-      .catch(() => {});
-    return () => {
-      anulat = true;
-    };
-  }, [orgSlug, publishableKey]);
+  // Rândurile Revolut / PayPal apar doar dacă metodele sunt pornite în contul Stripe al ONG-ului.
+  const revolutDisponibil = metode.revolut;
+  const paypal = { ok: metode.paypal, curs: metode.cursEur };
   const t = DONATION_DICT[locale].donateModal;
   const dialogRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);

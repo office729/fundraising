@@ -11,6 +11,7 @@ import { db } from "@/lib/db";
 import { fundraisingDonations, fundraisingPages, fundraisingUpdates, organizations } from "@/lib/db/schema";
 import { DONATION_DICT } from "@/lib/i18n/dictionaries/donation";
 import { getLocale } from "@/lib/i18n/get-locale";
+import { FARA_METODE_REDIRECT, metodeRedirect } from "@/lib/metode-plata-donatii";
 
 import { CampaignFooter } from "../campaign-footer";
 import { DoneazaModal } from "./doneaza-modal";
@@ -125,7 +126,8 @@ export default async function PaginaStrangereFonduriPage({
   params: Promise<{ orgSlug: string; pageSlug: string }>;
 }) {
   const { orgSlug, pageSlug } = await params;
-  const [data, locale] = await Promise.all([getPaginaPublica(orgSlug, pageSlug), getLocale()]);
+  // Metodele cu redirect (Revolut/PayPal) se verifică în paralel cu încărcarea paginii.
+  const [data, locale, metode] = await Promise.all([getPaginaPublica(orgSlug, pageSlug), getLocale(), metodeRedirect(orgSlug)]);
   if (!data) notFound();
   const t = DONATION_DICT[locale];
 
@@ -282,6 +284,7 @@ export default async function PaginaStrangereFonduriPage({
                       titlu={pagina.titlu}
                       locale={locale}
                       publishableKey={org.donationStripePublishableKey}
+                      metode={org.donationStripePublishableKey ? metode : FARA_METODE_REDIRECT}
                     />
                   ) : (
                     <p className="text-[13px] leading-relaxed text-muted-2">{t.campaignPage.campanieInchisa}</p>

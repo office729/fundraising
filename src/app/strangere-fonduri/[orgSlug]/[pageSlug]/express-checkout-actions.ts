@@ -85,32 +85,6 @@ export async function creeazaIntentRevolutAction(
   }
 }
 
-// Butonul Revolut Pay apare doar dacă metoda e pornită și disponibilă în contul
-// Stripe al ONG-ului (configurația de metode de plată). Răspunsul e reținut 10
-// minute pe organizație: acțiunea e publică, iar fără cache fiecare deschidere de
-// modal ar apela Stripe.
-const CACHE_REVOLUT = new Map<string, { la: number; ok: boolean }>();
-export async function revolutPayDisponibilAction(orgSlug: string): Promise<boolean> {
-  const cached = CACHE_REVOLUT.get(orgSlug);
-  if (cached && Date.now() - cached.la < 10 * 60_000) return cached.ok;
-
-  let ok = false;
-  try {
-    const stripeOrg = await stripeOrgDupaSlug(orgSlug);
-    if (stripeOrg) {
-      const configuratii = await stripeOrg.stripe.paymentMethodConfigurations.list({ limit: 20 });
-      ok = configuratii.data.some(
-        (c) => c.active && c.revolut_pay?.available === true && c.revolut_pay.display_preference?.value === "on",
-      );
-    }
-  } catch (e) {
-    console.error("verificare disponibilitate Revolut Pay:", e);
-  }
-  if (CACHE_REVOLUT.size > 500) CACHE_REVOLUT.clear();
-  CACHE_REVOLUT.set(orgSlug, { la: Date.now(), ok });
-  return ok;
-}
-
 // PayPal (prin Stripe): NU acceptă RON — donația se face în EUR (ca pe
 // fundatianektarios.ro). În platformă se reține echivalentul în lei la cursul
 // momentului, iar suma reală în EUR rămâne în sumaBani/moneda pentru rambursări.
@@ -161,31 +135,6 @@ export async function creeazaIntentPaypalAction(
     console.error("creare intenție de plată PayPal:", e);
     return { ok: false, error: errors.plataEsuata };
   }
-}
-
-// PayPal apare doar dacă e pornit și disponibil în contul Stripe al ONG-ului ȘI
-// avem un curs valutar de încredere. `curs` e doar pentru afișarea echivalentului în lei.
-const CACHE_PAYPAL = new Map<string, { la: number; ok: boolean }>();
-export async function paypalDisponibilAction(orgSlug: string): Promise<{ ok: boolean; curs: number | null }> {
-  const curs = await cursEurRon();
-  if (!curs) return { ok: false, curs: null };
-
-  const cached = CACHE_PAYPAL.get(orgSlug);
-  if (cached && Date.now() - cached.la < 10 * 60_000) return { ok: cached.ok, curs };
-
-  let ok = false;
-  try {
-    const stripeOrg = await stripeOrgDupaSlug(orgSlug);
-    if (stripeOrg) {
-      const configuratii = await stripeOrg.stripe.paymentMethodConfigurations.list({ limit: 20 });
-      ok = configuratii.data.some((c) => c.active && c.paypal?.available === true && c.paypal.display_preference?.value === "on");
-    }
-  } catch (e) {
-    console.error("verificare disponibilitate PayPal:", e);
-  }
-  if (CACHE_PAYPAL.size > 500) CACHE_PAYPAL.clear();
-  CACHE_PAYPAL.set(orgSlug, { la: Date.now(), ok });
-  return { ok, curs };
 }
 
 // Donație LUNARĂ prin metode cu redirect (Revolut Pay în RON, PayPal în EUR). Ca la
