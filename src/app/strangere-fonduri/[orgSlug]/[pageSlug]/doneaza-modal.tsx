@@ -51,27 +51,17 @@ export function DoneazaModal({
   useEffect(() => {
     // Fără cheie publicabilă nu există butoane rapide de pregătit.
     if (!publishableKey) return;
-    let anuleaza = () => {};
-    const porneste = () => {
-      // Așteptăm să treacă hidratarea și primele interacțiuni: iframe-urile Stripe
-      // (inclusiv hCaptcha invisible) sunt grele și, pornite prea devreme sau chiar
-      // la click, întârzie răspunsul paginii. NU pornim la hover/atingere din același motiv.
-      const timer = window.setTimeout(() => {
-        if (typeof window.requestIdleCallback === "function") {
-          const id = window.requestIdleCallback(() => setPregatit(true), { timeout: 5000 });
-          anuleaza = () => window.cancelIdleCallback(id);
-        } else {
-          setPregatit(true);
-        }
-      }, 2000);
-      anuleaza = () => window.clearTimeout(timer);
-    };
-    if (document.readyState === "complete") porneste();
-    else window.addEventListener("load", porneste, { once: true });
-    return () => {
-      window.removeEventListener("load", porneste);
-      anuleaza();
-    };
+    // Pornim cât mai devreme: efectul rulează abia după hidratare, deci pagina e deja
+    // interactivă; requestIdleCallback doar așteaptă o clipă liberă a browserului.
+    // Cu cât începe mai repede, cu atât mai scurtă e fereastra în care un click
+    // grăbit vede scheletul în loc de butoane. NU pornim la hover/atingere (grele
+    // fix în momentul click-ului).
+    if (typeof window.requestIdleCallback === "function") {
+      const id = window.requestIdleCallback(() => setPregatit(true), { timeout: 800 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const id = window.setTimeout(() => setPregatit(true), 100);
+    return () => window.clearTimeout(id);
   }, [publishableKey]);
 
   useEffect(() => {
