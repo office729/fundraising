@@ -2,17 +2,20 @@
 
 import { randomUUID } from "node:crypto";
 
+import { headers } from "next/headers";
 import type Stripe from "stripe";
 
 import { db } from "@/lib/db";
 import { fundraisingDonations } from "@/lib/db/schema";
 import { DONATE_ACTION_ERRORS } from "@/lib/i18n/dictionaries/donation";
 import { getLocale } from "@/lib/i18n/get-locale";
+import { stripeOrgDupaSlug } from "@/lib/org-stripe";
 import { idDin } from "@/lib/stripe-donation-events";
 
 import { pregatesteDonatie, type DateComuneDonatie } from "./actions";
 
-export type CreeazaIntentState = { ok: true; clientSecret: string } | { ok: false; error: string };
+// redirectUrl: la metodele cu redirect (Revolut Pay), adresa la care trimitem clientul.
+export type CreeazaIntentState = { ok: true; clientSecret: string; redirectUrl?: string } | { ok: false; error: string };
 
 // Fluxul Apple Pay/Google Pay/PayPal (ExpressCheckoutElement, vezi
 // express-checkout.tsx) — spre deosebire de doneazaAction (Checkout Session,
@@ -47,14 +50,87 @@ export async function creeazaIntentDonatieAction(
   }
 }
 
-async function creeazaPlataUnicaExpress(date: DateComuneDonatie, eroareGenerica: string): Promise<CreeazaIntentState> {
+// Revolut Pay: donație UNICĂ (în RON, acceptat de Revolut Pay). Formularul cere
+// numele și emailul; acordul pentru Termeni/GDPR e dat prin plată, ca la
+// portofele. Confirmarea reală rămâne a webhook-ului (payment_intent.succeeded).
+export async function creeazaIntentRevolutAction(
+  orgSlug: string,
+  pageSlug: string,
+  formData: FormData,
+): Promise<CreeazaIntentState> {
+  const errors = DONATE_ACTION_ERRORS[await getLocale()];
+  if (String(formData.get("website") ?? "").trim()) return { ok: false, error: errors.plataEsuata };
+
+  const pregatit = await pregatesteDonatie(orgSlug, pageSlug, formData, errors, { acordImplicit: true });
+  if (!pregatit.ok) return { ok: false, error: pregatit.error };
+  if (pregatit.date.recurenta) return { ok: false, error: errors.plataEsuata };
+
+  try {
+    const hdrs = await headers();
+    const origin = hdrs.get("origin") ?? `${hdrs.get("x-forwarded-proto") ?? "https"}://${hdrs.get("host")}`;
+    const rezultat = await creeazaPlataUnicaExpress(pregatit.date, errors.plataEsuata, {
+      returnUrl: `${origin}/strangere-fonduri/${orgSlug}/${pageSlug}/multumim`,
+    });
+    // Fără adresă de redirect nu putem duce clientul la Revolut.
+    if (rezultat.ok && !rezultat.redirectUrl) return { ok: false, error: errors.plataEsuata };
+    return rezultat;
+  } catch (e) {
+    console.error("creare intenție de plată Revolut Pay:", e);
+    return { ok: false, error: errors.plataEsuata };
+  }
+}
+
+// Butonul Revolut Pay apare doar dacă metoda e pornită și disponibilă în contul
+// Stripe al ONG-ului (configurația de metode de plată). Răspunsul e reținut 10
+// minute pe organizație: acțiunea e publică, iar fără cache fiecare deschidere de
+// modal ar apela Stripe.
+const CACHE_REVOLUT = new Map<string, { la: number; ok: boolean }>();
+export async function revolutPayDisponibilAction(orgSlug: string): Promise<boolean> {
+  const cached = CACHE_REVOLUT.get(orgSlug);
+  if (cached && Date.now() - cached.la < 10 * 60_000) return cached.ok;
+
+  let ok = false;
+  try {
+    const stripeOrg = await stripeOrgDupaSlug(orgSlug);
+    if (stripeOrg) {
+      const configuratii = await stripeOrg.stripe.paymentMethodConfigurations.list({ limit: 20 });
+      ok = configuratii.data.some(
+        (c) => c.active && c.revolut_pay?.available === true && c.revolut_pay.display_preference?.value === "on",
+      );
+    }
+  } catch (e) {
+    console.error("verificare disponibilitate Revolut Pay:", e);
+  }
+  if (CACHE_REVOLUT.size > 500) CACHE_REVOLUT.clear();
+  CACHE_REVOLUT.set(orgSlug, { la: Date.now(), ok });
+  return ok;
+}
+
+async function creeazaPlataUnicaExpress(
+  date: DateComuneDonatie,
+  eroareGenerica: string,
+  // Revolut Pay nu e un portofel de tip ExpressCheckoutElement: se plătește prin
+  // redirect către Revolut, deci intenția se creează doar cu această metodă și se
+  // confirmă chiar pe server (întoarce adresa de autentificare Revolut).
+  revolut?: { returnUrl: string },
+): Promise<CreeazaIntentState> {
   const donationId = randomUUID();
   const paymentIntent = await date.stripeOrg.stripe.paymentIntents.create({
     amount: date.suma * 100,
     currency: "ron",
     // La fel ca la Checkout Session — NU fixăm ce metode apar, Stripe arată
     // automat ce e activat în Dashboard-ul contului ONG-ului.
-    automatic_payment_methods: { enabled: true },
+    ...(revolut
+      ? {
+          payment_method_types: ["revolut_pay"],
+          confirm: true,
+          return_url: revolut.returnUrl,
+          payment_method_data: {
+            type: "revolut_pay" as const,
+            billing_details: { name: date.numeDonator, email: date.emailDonator },
+          },
+        }
+      : { automatic_payment_methods: { enabled: true } }),
     receipt_email: date.emailDonator || undefined,
     metadata: { donationId, pageId: date.pageId, orgId: date.orgId },
   });
@@ -85,7 +161,11 @@ async function creeazaPlataUnicaExpress(date: DateComuneDonatie, eroareGenerica:
     recurenta: false,
   });
 
-  return { ok: true, clientSecret: paymentIntent.client_secret };
+  return {
+    ok: true,
+    clientSecret: paymentIntent.client_secret,
+    redirectUrl: paymentIntent.next_action?.redirect_to_url?.url ?? undefined,
+  };
 }
 
 // Donație LUNARĂ prin fluxul express — Checkout Session (mode: "subscription")

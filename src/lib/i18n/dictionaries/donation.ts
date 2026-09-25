@@ -61,6 +61,8 @@ export const DONATION_DICT = {
       sauCompleteazaFormular: "sau completează formularul",
       plataRapidaAcordPre: "Plătind rapid, ești de acord cu",
       plataRapidaAcordSi: "și cu",
+      revolutPay: "Donează cu Revolut Pay",
+      revolutPayInvalid: "Completează numele și emailul, apoi apasă din nou.",
     },
     thankYou: {
       titlu: "Mulțumim pentru donație!",
@@ -71,6 +73,7 @@ export const DONATION_DICT = {
       pentru: "pentru",
       finalCuEmail: ". Dacă ai lăsat un email, primești și confirmarea acolo.",
       faraDetaliu: "Plata a fost trimisă cu succes. Dacă ai lăsat un email, primești confirmarea acolo.",
+      nefinalizata: "Plata nu a fost finalizată. Nu s-a luat nicio sumă din contul tău.",
       inapoiLaPagina: "Înapoi la pagină",
     },
     recentList: {
@@ -147,6 +150,8 @@ export const DONATION_DICT = {
       sauCompleteazaFormular: "or fill in the form",
       plataRapidaAcordPre: "By paying quickly, you agree to the",
       plataRapidaAcordSi: "and the",
+      revolutPay: "Donate with Revolut Pay",
+      revolutPayInvalid: "Fill in your name and email, then press again.",
     },
     thankYou: {
       titlu: "Thank you for your donation!",
@@ -157,6 +162,7 @@ export const DONATION_DICT = {
       pentru: "for",
       finalCuEmail: ". If you left an email, you'll also receive confirmation there.",
       faraDetaliu: "Payment was sent successfully. If you left an email, you'll receive confirmation there.",
+      nefinalizata: "The payment was not completed. Nothing was charged to your account.",
       inapoiLaPagina: "Back to page",
     },
     recentList: {

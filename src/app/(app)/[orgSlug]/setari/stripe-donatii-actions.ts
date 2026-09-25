@@ -179,7 +179,7 @@ async function inregistreazaDomeniiStripe(cheieSecreta: string, customDomain: st
   return true;
 }
 
-// Butoanele Apple Pay / Google Pay din ExpressCheckoutElement apar doar dacă
+// Butoanele Apple Pay / Google Pay (ExpressCheckoutElement) și Revolut Pay apar doar dacă
 // metoda e PORNITĂ în configurația de metode de plată a contului Stripe (pe un
 // cont nou, sau în sandbox, Google Pay poate fi oprit — și atunci butonul nu se
 // randează deloc, oricât l-am forța din cod). Pornim doar ce e oprit, niciodată
@@ -194,10 +194,12 @@ async function activeazaPortofelele(cheieSecreta: string): Promise<void> {
       if (!c.active) continue;
       const gpayOprit = c.google_pay?.display_preference?.value === "off";
       const apayOprit = c.apple_pay?.display_preference?.value === "off";
-      if (!gpayOprit && !apayOprit) continue;
+      const revolutOprit = c.revolut_pay?.display_preference?.value === "off";
+      if (!gpayOprit && !apayOprit && !revolutOprit) continue;
       await stripe.paymentMethodConfigurations.update(c.id, {
         ...(gpayOprit ? { google_pay: { display_preference: { preference: "on" as const } } } : {}),
         ...(apayOprit ? { apple_pay: { display_preference: { preference: "on" as const } } } : {}),
+        ...(revolutOprit ? { revolut_pay: { display_preference: { preference: "on" as const } } } : {}),
       });
     }
   } catch (e) {
