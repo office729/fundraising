@@ -71,7 +71,12 @@ const salveaza = withOrgAdmin(async (ctx, cheie: string, webhook: string, cheieP
 
   const existent = (
     await ctx.db
-      .select({ secret: organizations.donationStripeSecretEnc, hint: organizations.donationStripeKeyHint })
+      .select({
+        secret: organizations.donationStripeSecretEnc,
+        hint: organizations.donationStripeKeyHint,
+        publishableKey: organizations.donationStripePublishableKey,
+        customDomain: organizations.customDomain,
+      })
       .from(organizations)
       .where(eq(organizations.id, ctx.orgId))
       .limit(1)
@@ -118,6 +123,19 @@ const salveaza = withOrgAdmin(async (ctx, cheie: string, webhook: string, cheieP
   // ca orice altă cheie "publishable" Stripe (asta e rostul ei).
   if (cheiePublicabila) set.donationStripePublishableKey = cheiePublicabila;
 
+  // Cu cheia publicabilă setată, plata rapidă (Apple Pay / Google Pay) cere
+  // domeniul înregistrat la Stripe: îl facem aici, automat, ca ONG-ul să nu mai
+  // depindă de un buton manual pe care îl poate uita. E "best effort" — dacă
+  // Stripe nu răspunde, cheile se salvează oricum, iar butonul din Setări rămâne
+  // disponibil pentru reîncercare.
+  const cheiePublicabilaFinala = cheiePublicabila || existent?.publishableKey;
+  const secretFinal = cheie || (existent?.secret ? decripteaza(existent.secret) : "");
+  if ((cheie || cheiePublicabila) && cheiePublicabilaFinala && secretFinal) {
+    if (await inregistreazaDomeniiStripe(secretFinal, existent?.customDomain ?? null)) {
+      set.donationStripeDomainVerifiedAt = new Date();
+    }
+  }
+
   await ctx.db.update(organizations).set(set).where(eq(organizations.id, ctx.orgId));
   return { ok: true, error: null };
 });
@@ -142,6 +160,24 @@ const DOMENIU_PLATFORMA = "alexandrit.ro";
 // CONTUL Stripe al ONG-ului (necesar pentru Apple Pay/Google Pay direct pe
 // pagină — vezi express-checkout.tsx) — un singur apel acoperă toate
 // metodele deodată (Stripe verifică automat, fără fișier de găzduit).
+async function inregistreazaDomeniiStripe(cheieSecreta: string, customDomain: string | null): Promise<boolean> {
+  const domenii = [DOMENIU_PLATFORMA, ...(customDomain ? [customDomain] : [])];
+  try {
+    const stripe = stripePentruCheie(cheieSecreta);
+    const existente = await stripe.paymentMethodDomains.list({ limit: 100 });
+    const dejaInregistrate = new Set(existente.data.map((d) => d.domain_name));
+    for (const domeniu of domenii) {
+      if (!dejaInregistrate.has(domeniu)) {
+        await stripe.paymentMethodDomains.create({ domain_name: domeniu });
+      }
+    }
+    return true;
+  } catch (e) {
+    console.error("înregistrare payment method domain Stripe:", e);
+    return false;
+  }
+}
+
 export const activeazaDomeniuPlataAction = withOrgAdmin(async (ctx): Promise<StripeDonatiiState> => {
   const rows = await ctx.db
     .select({ secret: organizations.donationStripeSecretEnc, customDomain: organizations.customDomain })
@@ -151,18 +187,7 @@ export const activeazaDomeniuPlataAction = withOrgAdmin(async (ctx): Promise<Str
   const r = rows[0];
   if (!r?.secret) return { ok: false, error: "Conectează întâi cheia secretă Stripe." };
 
-  const domenii = [DOMENIU_PLATFORMA, ...(r.customDomain ? [r.customDomain] : [])];
-  try {
-    const stripe = stripePentruCheie(decripteaza(r.secret));
-    const existente = await stripe.paymentMethodDomains.list({ limit: 100 });
-    const dejaInregistrate = new Set(existente.data.map((d) => d.domain_name));
-    for (const domeniu of domenii) {
-      if (!dejaInregistrate.has(domeniu)) {
-        await stripe.paymentMethodDomains.create({ domain_name: domeniu });
-      }
-    }
-  } catch (e) {
-    console.error("înregistrare payment method domain Stripe:", e);
+  if (!(await inregistreazaDomeniiStripe(decripteaza(r.secret), r.customDomain))) {
     return { ok: false, error: "Nu am putut înregistra domeniul la Stripe acum. Încearcă din nou în câteva momente." };
   }
 

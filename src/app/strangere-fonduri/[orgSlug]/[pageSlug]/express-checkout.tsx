@@ -57,6 +57,14 @@ function ExpressCheckoutInner({
   return (
     <div className="mt-1">
       <ExpressCheckoutElement
+        // Implicit ('auto') Apple Pay / Google Pay apar doar dacă dispozitivul are
+        // deja un card activ în portofel; cu 'always' apar oricui e pe o platformă
+        // compatibilă (fără card, portofelul îl cere la click) — la fel ca pe
+        // salveazaoinima.ro și fundatianektarios.ro. Link rămâne oprit: cere
+        // propriul flux de autentificare, iar formularul obișnuit e deja alternativa.
+        options={{
+          paymentMethods: { applePay: "always", googlePay: "always", link: "never" },
+        }}
         onReady={({ availablePaymentMethods }) => onVisibilityChange(Boolean(availablePaymentMethods))}
         onClick={(event) => {
           // Reutilizează validarea HTML5 nativă deja prezentă pe formular
