@@ -8,7 +8,7 @@ import { DONATION_DICT } from "@/lib/i18n/dictionaries/donation";
 
 import { doneazaAction, type DoneazaState } from "./actions";
 import { ExpressCheckoutPanel } from "./express-checkout";
-import { creeazaIntentRevolutAction } from "./express-checkout-actions";
+import { creeazaIntentPaypalAction, creeazaIntentRevolutAction } from "./express-checkout-actions";
 
 const INITIAL: DoneazaState = { error: null };
 const SUME_RAPIDE = [25, 50, 100, 250];
@@ -19,6 +19,7 @@ export function DoneazaForm({
   locale,
   publishableKey,
   metoda,
+  cursEur,
 }: {
   orgSlug: string;
   pageSlug: string;
@@ -30,7 +31,9 @@ export function DoneazaForm({
   // "gpay" / "apay": modal dedicat portofelului — doar suma și butonul Stripe al
   // portofelului (numele/emailul vin din portofel). Fără metodă: formularul obișnuit
   // (plata cu cardul, pe pagina găzduită de Stripe).
-  metoda?: "revolut" | "gpay" | "apay";
+  metoda?: "revolut" | "gpay" | "apay" | "paypal";
+  // Curs EUR→RON, doar pentru afișarea echivalentului în modalul PayPal.
+  cursEur?: number | null;
 }) {
   const action = doneazaAction.bind(null, orgSlug, pageSlug);
   const [state, formAction, pending] = useActionState(action, INITIAL);
@@ -39,6 +42,10 @@ export function DoneazaForm({
   const t = DONATION_DICT[locale].donateForm;
   const formRef = useRef<HTMLFormElement>(null);
   const revolut = metoda === "revolut";
+  const paypal = metoda === "paypal";
+  // Metode cu redirect (formular dedicat, donație unică): Revolut Pay și PayPal.
+  const redirect = revolut || paypal;
+  const [sumaEur, setSumaEur] = useState(10);
   const portofel = metoda === "gpay" || metoda === "apay";
   const [revolutPending, setRevolutPending] = useState(false);
   const [revolutEroare, setRevolutEroare] = useState<string | null>(null);
@@ -49,7 +56,8 @@ export function DoneazaForm({
     setRevolutPending(true);
     setRevolutEroare(null);
     try {
-      const rezultat = await creeazaIntentRevolutAction(orgSlug, pageSlug, new FormData(ev.currentTarget));
+      const actiune = paypal ? creeazaIntentPaypalAction : creeazaIntentRevolutAction;
+      const rezultat = await actiune(orgSlug, pageSlug, new FormData(ev.currentTarget));
       if (!rezultat.ok) {
         setRevolutEroare(rezultat.error);
         return;
@@ -58,7 +66,7 @@ export function DoneazaForm({
         setRevolutEroare(t.plataExpressEsuata);
         return;
       }
-      // Autentificarea la Revolut; la întoarcere Stripe adaugă payment_intent și
+      // Autentificarea la Revolut / PayPal; la întoarcere Stripe adaugă payment_intent și
       // redirect_status (vezi multumim/page.tsx), iar webhook-ul marchează donația.
       window.location.href = rezultat.redirectUrl;
     } catch {
@@ -71,14 +79,14 @@ export function DoneazaForm({
   return (
     <form
       ref={formRef}
-      action={revolut ? undefined : formAction}
-      onSubmit={revolut ? trimiteRevolut : undefined}
+      action={redirect ? undefined : formAction}
+      onSubmit={redirect ? trimiteRevolut : undefined}
       className="mt-4 flex flex-col gap-3"
     >
       {/* Honeypot — invizibil pentru oameni. */}
       <input type="text" name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />
 
-      {!revolut && (
+      {!redirect && (
       <div
         role="group"
         aria-label={t.frecventaLabel}
@@ -102,8 +110,45 @@ export function DoneazaForm({
         </button>
       </div>
       )}
-      <input type="hidden" name="recurenta" value={recurenta && !revolut ? "1" : ""} />
+      <input type="hidden" name="recurenta" value={recurenta && !redirect ? "1" : ""} />
 
+      {paypal ? (
+        <>
+          <div role="group" aria-label={t.sumeRapideLabel} className="flex flex-wrap gap-2">
+            {[2, 5, 10, 50].map((e) => (
+              <button
+                key={e}
+                type="button"
+                aria-pressed={sumaEur === e}
+                onClick={() => setSumaEur(e)}
+                className={`rounded-full border px-4 py-1.5 text-sm font-bold transition ${
+                  sumaEur === e ? "border-brand-green bg-brand-green-soft text-brand-green" : "border-line text-ink hover:border-brand-blue"
+                }`}
+              >
+                {e} EUR
+              </button>
+            ))}
+          </div>
+          <label className="text-sm font-medium text-ink">
+            {t.sumaEur}
+            <input
+              type="number"
+              name="sumaEur"
+              min={1}
+              max={10000}
+              step="any"
+              value={sumaEur}
+              onChange={(e) => setSumaEur(Number(e.target.value))}
+              className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink"
+            />
+          </label>
+          <p className="text-[12px] text-muted-2">
+            {t.paypalInfo}
+            {cursEur && Number.isFinite(sumaEur) && sumaEur > 0 ? ` ${t.echivalentLei(Math.round(sumaEur * cursEur))}` : ""}
+          </p>
+        </>
+      ) : (
+        <>
       <div role="group" aria-label={t.sumeRapideLabel} className="flex flex-wrap gap-2">
         {SUME_RAPIDE.map((s) => (
           <button
@@ -131,6 +176,8 @@ export function DoneazaForm({
           className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink"
         />
       </label>
+        </>
+      )}
 
       {portofel && (
         <ExpressCheckoutPanel
@@ -193,22 +240,24 @@ export function DoneazaForm({
         </label>
       </div>
 
-      {(revolut ? revolutEroare : state.error) && (
-        <p className="text-sm text-red-600">{revolut ? revolutEroare : state.error}</p>
+      {(redirect ? revolutEroare : state.error) && (
+        <p className="text-sm text-red-600">{redirect ? revolutEroare : state.error}</p>
       )}
 
       <button
         type="submit"
-        disabled={revolut ? revolutPending : pending}
+        disabled={redirect ? revolutPending : pending}
         className="mt-1 rounded-md bg-brand-green px-4 py-3 text-center font-bold text-white transition hover:bg-brand-green-hover disabled:opacity-60"
       >
-        {(revolut ? revolutPending : pending)
+        {(redirect ? revolutPending : pending)
           ? t.sePregateste
-          : revolut
-            ? `${t.donezaVerb} ${suma} ${t.donezaSufixRevolut}`
-            : recurenta
-              ? `${t.donezaVerb} ${suma} ${t.donezaLunaSufix}`
-              : `${t.donezaVerb} ${suma} ${t.donezaSufix}`}
+          : paypal
+            ? `${t.donezaVerb} ${sumaEur} ${t.donezaSufixPaypal}`
+            : revolut
+              ? `${t.donezaVerb} ${suma} ${t.donezaSufixRevolut}`
+              : recurenta
+                ? `${t.donezaVerb} ${suma} ${t.donezaLunaSufix}`
+                : `${t.donezaVerb} ${suma} ${t.donezaSufix}`}
       </button>
       <p className="text-center text-[11px] text-muted-2">{t.notaPlataSecurizata}</p>
         </>

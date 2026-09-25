@@ -195,11 +195,13 @@ async function activeazaPortofelele(cheieSecreta: string): Promise<void> {
       const gpayOprit = c.google_pay?.display_preference?.value === "off";
       const apayOprit = c.apple_pay?.display_preference?.value === "off";
       const revolutOprit = c.revolut_pay?.display_preference?.value === "off";
-      if (!gpayOprit && !apayOprit && !revolutOprit) continue;
+      const paypalOprit = c.paypal?.display_preference?.value === "off";
+      if (!gpayOprit && !apayOprit && !revolutOprit && !paypalOprit) continue;
       await stripe.paymentMethodConfigurations.update(c.id, {
         ...(gpayOprit ? { google_pay: { display_preference: { preference: "on" as const } } } : {}),
         ...(apayOprit ? { apple_pay: { display_preference: { preference: "on" as const } } } : {}),
         ...(revolutOprit ? { revolut_pay: { display_preference: { preference: "on" as const } } } : {}),
+        ...(paypalOprit ? { paypal: { display_preference: { preference: "on" as const } } } : {}),
       });
     }
   } catch (e) {

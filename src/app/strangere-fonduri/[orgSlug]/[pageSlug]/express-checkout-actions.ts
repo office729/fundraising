@@ -7,6 +7,7 @@ import type Stripe from "stripe";
 
 import { db } from "@/lib/db";
 import { fundraisingDonations } from "@/lib/db/schema";
+import { cursEurRon } from "@/lib/curs-valutar";
 import { DONATE_ACTION_ERRORS } from "@/lib/i18n/dictionaries/donation";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { stripeOrgDupaSlug } from "@/lib/org-stripe";
@@ -69,6 +70,7 @@ export async function creeazaIntentRevolutAction(
     const hdrs = await headers();
     const origin = hdrs.get("origin") ?? `${hdrs.get("x-forwarded-proto") ?? "https"}://${hdrs.get("host")}`;
     const rezultat = await creeazaPlataUnicaExpress(pregatit.date, errors.plataEsuata, {
+      metoda: "revolut_pay",
       returnUrl: `${origin}/strangere-fonduri/${orgSlug}/${pageSlug}/multumim`,
     });
     // Fără adresă de redirect nu putem duce clientul la Revolut.
@@ -106,27 +108,103 @@ export async function revolutPayDisponibilAction(orgSlug: string): Promise<boole
   return ok;
 }
 
+// PayPal (prin Stripe): NU acceptă RON — donația se face în EUR (ca pe
+// fundatianektarios.ro). În platformă se reține echivalentul în lei la cursul
+// momentului, iar suma reală în EUR rămâne în sumaBani/moneda pentru rambursări.
+// Donație unică; confirmarea reală rămâne a webhook-ului (payment_intent.succeeded).
+export async function creeazaIntentPaypalAction(
+  orgSlug: string,
+  pageSlug: string,
+  formData: FormData,
+): Promise<CreeazaIntentState> {
+  const errors = DONATE_ACTION_ERRORS[await getLocale()];
+  if (String(formData.get("website") ?? "").trim()) return { ok: false, error: errors.plataEsuata };
+
+  const sumaEur = Number(String(formData.get("sumaEur") ?? "").replace(",", "."));
+  if (!Number.isFinite(sumaEur) || sumaEur < 1) return { ok: false, error: errors.sumaMinima };
+  if (sumaEur > 10_000) return { ok: false, error: errors.sumaMaxima };
+  const eurCenti = Math.round(sumaEur * 100);
+
+  const curs = await cursEurRon();
+  if (!curs) return { ok: false, error: errors.plataEsuata };
+  const sumaLei = Math.round((eurCenti / 100) * curs);
+
+  // Regulile comune (nume, email, limită de rată, pagina, contul Stripe) rulează pe
+  // aceeași cale ca celelalte metode, cu suma în lei calculată de noi.
+  const date = new FormData();
+  formData.forEach((valoare, cheie) => {
+    if (cheie !== "suma") date.append(cheie, valoare);
+  });
+  date.set("suma", String(sumaLei));
+  const pregatit = await pregatesteDonatie(orgSlug, pageSlug, date, errors, { acordImplicit: true });
+  if (!pregatit.ok) return { ok: false, error: pregatit.error };
+  if (pregatit.date.recurenta) return { ok: false, error: errors.plataEsuata };
+
+  try {
+    const hdrs = await headers();
+    const origin = hdrs.get("origin") ?? `${hdrs.get("x-forwarded-proto") ?? "https"}://${hdrs.get("host")}`;
+    const rezultat = await creeazaPlataUnicaExpress(pregatit.date, errors.plataEsuata, {
+      metoda: "paypal",
+      returnUrl: `${origin}/strangere-fonduri/${orgSlug}/${pageSlug}/multumim`,
+      eurCenti,
+    });
+    if (rezultat.ok && !rezultat.redirectUrl) return { ok: false, error: errors.plataEsuata };
+    return rezultat;
+  } catch (e) {
+    console.error("creare intenție de plată PayPal:", e);
+    return { ok: false, error: errors.plataEsuata };
+  }
+}
+
+// PayPal apare doar dacă e pornit și disponibil în contul Stripe al ONG-ului ȘI
+// avem un curs valutar de încredere. `curs` e doar pentru afișarea echivalentului în lei.
+const CACHE_PAYPAL = new Map<string, { la: number; ok: boolean }>();
+export async function paypalDisponibilAction(orgSlug: string): Promise<{ ok: boolean; curs: number | null }> {
+  const curs = await cursEurRon();
+  if (!curs) return { ok: false, curs: null };
+
+  const cached = CACHE_PAYPAL.get(orgSlug);
+  if (cached && Date.now() - cached.la < 10 * 60_000) return { ok: cached.ok, curs };
+
+  let ok = false;
+  try {
+    const stripeOrg = await stripeOrgDupaSlug(orgSlug);
+    if (stripeOrg) {
+      const configuratii = await stripeOrg.stripe.paymentMethodConfigurations.list({ limit: 20 });
+      ok = configuratii.data.some((c) => c.active && c.paypal?.available === true && c.paypal.display_preference?.value === "on");
+    }
+  } catch (e) {
+    console.error("verificare disponibilitate PayPal:", e);
+  }
+  if (CACHE_PAYPAL.size > 500) CACHE_PAYPAL.clear();
+  CACHE_PAYPAL.set(orgSlug, { la: Date.now(), ok });
+  return { ok, curs };
+}
+
 async function creeazaPlataUnicaExpress(
   date: DateComuneDonatie,
   eroareGenerica: string,
-  // Revolut Pay nu e un portofel de tip ExpressCheckoutElement: se plătește prin
-  // redirect către Revolut, deci intenția se creează doar cu această metodă și se
-  // confirmă chiar pe server (întoarce adresa de autentificare Revolut).
-  revolut?: { returnUrl: string },
+  // Revolut Pay și PayPal nu sunt portofele de tip ExpressCheckoutElement: se plătesc
+  // prin redirect (către Revolut / PayPal), deci intenția se creează doar cu acea
+  // metodă și se confirmă chiar pe server (întoarce adresa de autentificare).
+  // `eurCenti`: PayPal nu acceptă RON — se încasează în EUR, iar `date.suma` (lei)
+  // reține echivalentul la cursul momentului.
+  redirect?: { metoda: "revolut_pay" | "paypal"; returnUrl: string; eurCenti?: number },
 ): Promise<CreeazaIntentState> {
   const donationId = randomUUID();
+  const eurCenti = redirect?.eurCenti;
   const paymentIntent = await date.stripeOrg.stripe.paymentIntents.create({
-    amount: date.suma * 100,
-    currency: "ron",
+    amount: eurCenti ?? date.suma * 100,
+    currency: eurCenti ? "eur" : "ron",
     // La fel ca la Checkout Session — NU fixăm ce metode apar, Stripe arată
     // automat ce e activat în Dashboard-ul contului ONG-ului.
-    ...(revolut
+    ...(redirect
       ? {
-          payment_method_types: ["revolut_pay"],
+          payment_method_types: [redirect.metoda],
           confirm: true,
-          return_url: revolut.returnUrl,
+          return_url: redirect.returnUrl,
           payment_method_data: {
-            type: "revolut_pay" as const,
+            type: redirect.metoda,
             billing_details: { name: date.numeDonator, email: date.emailDonator },
           },
         }
@@ -149,6 +227,9 @@ async function creeazaPlataUnicaExpress(
     emailDonator: date.emailDonator,
     telefonDonator: date.telefonDonator || null,
     suma: date.suma,
+    // Doar pentru încasările în altă monedă decât RON (PayPal, EUR): suma reală la
+    // Stripe, în unități minore, folosită la rambursări/contestații.
+    ...(eurCenti ? { sumaBani: eurCenti, moneda: "eur" } : {}),
     mesaj: date.mesaj || null,
     anonim: date.anonim,
     consimtamantGdpr: date.consimtamantGdpr,

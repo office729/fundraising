@@ -70,6 +70,13 @@ export const fundraisingDonations = pgTable(
     emailDonator: text("email_donator"),
     telefonDonator: text("telefon_donator"),
     suma: integer("suma").notNull(), // lei
+    // Suma EFECTIV încasată la Stripe, în unități minore (bani/cenți), și moneda ei.
+    // Null = donație clasică în RON (suma * 100). Setate la metodele care nu acceptă
+    // RON (PayPal, doar EUR): `suma` reține atunci echivalentul în lei (curs BNR la
+    // momentul donației), iar rambursările/contestațiile se calculează proporțional
+    // cu sumaBani — vezi stripe-donation-events.ts.
+    sumaBani: integer("suma_bani"),
+    moneda: text("moneda"),
     mesaj: text("mesaj"),
     // "anonim" ascunde doar AFIȘAREA publică a numelui (leaderboard/donații
     // recente) — numele/emailul/telefonul rămân în rând, pentru CRM-ul

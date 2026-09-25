@@ -447,10 +447,15 @@ export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, s
         const sumaRambursataAnterior = donatie[0].sumaRambursata;
         // Contestație deja dedusă (eveniment retrimis) — altfel s-ar aduna a doua oară.
         if (dispute && donatie[0].disputeDeduse[dispute.id] !== undefined) return;
+        // În RON, banii Stripe sunt lei*100. La încasările în altă monedă (PayPal, EUR)
+        // `suma` e echivalentul în lei, deci convertim proporțional cu suma reală
+        // încasată (sumaBani), nu împărțind la 100.
+        const baniInLei = (bani: number) =>
+          donatie[0].sumaBani ? Math.round((donatie[0].suma * bani) / donatie[0].sumaBani) : Math.round(bani / 100);
         const sumaCumulativa =
           event.type === "charge.dispute.created"
-            ? sumaRambursataAnterior + Math.round(sumaEvenimentBani / 100)
-            : Math.round(sumaEvenimentBani / 100);
+            ? sumaRambursataAnterior + baniInLei(sumaEvenimentBani)
+            : baniInLei(sumaEvenimentBani);
         const sumaRambursataNoua = Math.min(donatie[0].suma, Math.max(sumaRambursataAnterior, sumaCumulativa));
         if (sumaRambursataNoua <= sumaRambursataAnterior) return; // eveniment vechi/retrimis — nimic nou de decrementat
 

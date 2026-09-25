@@ -57,6 +57,13 @@
       "when": 1790249382851,
       "tag": "0007_cool_juggernaut",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790334990727,
+      "tag": "0008_donatii_suma_bani_moneda",
+      "breakpoints": true
     }
   ]
 }

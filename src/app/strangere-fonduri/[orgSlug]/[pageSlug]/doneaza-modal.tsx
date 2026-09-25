@@ -7,7 +7,7 @@ import type { Locale } from "@/lib/i18n/config";
 import { DONATION_DICT } from "@/lib/i18n/dictionaries/donation";
 
 import { DoneazaForm } from "./doneaza-form";
-import { revolutPayDisponibilAction } from "./express-checkout-actions";
+import { paypalDisponibilAction, revolutPayDisponibilAction } from "./express-checkout-actions";
 
 const SELECTOR_FOCUSABIL =
   'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -51,15 +51,22 @@ export function DoneazaModal({
   const [open, setOpen] = useState(false);
   // Metoda aleasă: Revolut / Google Pay / Apple Pay deschid un modal dedicat (ca pe
   // Nektarios); fără metodă, formularul obișnuit (card, pagina găzduită de Stripe).
-  const [metoda, setMetoda] = useState<"revolut" | "gpay" | "apay" | undefined>(undefined);
+  const [metoda, setMetoda] = useState<"revolut" | "gpay" | "apay" | "paypal" | undefined>(undefined);
   // Rândul „Revolut" apare doar dacă metoda e pornită în contul Stripe al ONG-ului.
   const [revolutDisponibil, setRevolutDisponibil] = useState(false);
+  // PayPal (doar EUR): apare dacă e pornit în contul Stripe și avem un curs valutar.
+  const [paypal, setPaypal] = useState<{ ok: boolean; curs: number | null }>({ ok: false, curs: null });
   useEffect(() => {
     if (!publishableKey) return;
     let anulat = false;
     revolutPayDisponibilAction(orgSlug)
       .then((ok) => {
         if (!anulat) setRevolutDisponibil(ok);
+      })
+      .catch(() => {});
+    paypalDisponibilAction(orgSlug)
+      .then((r) => {
+        if (!anulat) setPaypal(r);
       })
       .catch(() => {});
     return () => {
@@ -158,6 +165,20 @@ export function DoneazaModal({
             }
             text="Apple Pay"
           />
+          {paypal.ok && (
+            <RandMetoda
+              onClick={() => {
+                setMetoda("paypal");
+                setOpen(true);
+              }}
+              icon={
+                <span aria-hidden className="flex h-7 w-7 items-center justify-center rounded-md bg-[#003087] text-sm font-bold italic text-[#009CDE]">
+                  P
+                </span>
+              }
+              text="PayPal"
+            />
+          )}
           {revolutDisponibil && (
             <RandMetoda
               onClick={() => {
@@ -194,7 +215,9 @@ export function DoneazaModal({
                     ? t.donezaCuGoogle
                     : metoda === "apay"
                       ? t.donezaCuApple
-                      : t.donezaPentru(titlu)}
+                      : metoda === "paypal"
+                        ? t.donezaCuPaypal
+                        : t.donezaPentru(titlu)}
               </h2>
               <button
                 type="button"
@@ -205,7 +228,7 @@ export function DoneazaModal({
                 ✕
               </button>
             </div>
-            <DoneazaForm orgSlug={orgSlug} pageSlug={pageSlug} titlu={titlu} locale={locale} publishableKey={publishableKey} metoda={metoda} key={metoda ?? "card"} />
+            <DoneazaForm orgSlug={orgSlug} pageSlug={pageSlug} titlu={titlu} locale={locale} publishableKey={publishableKey} metoda={metoda} cursEur={paypal.curs} key={metoda ?? "card"} />
           </div>
         </div>
       )}
