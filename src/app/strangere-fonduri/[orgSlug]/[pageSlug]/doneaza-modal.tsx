@@ -26,6 +26,10 @@ export function DoneazaModal({
   publishableKey: string | null;
 }) {
   const [open, setOpen] = useState(false);
+  // Modalul e montat în fundal (invizibil) după încărcarea paginii, ca iframe-urile
+  // Stripe ale butoanelor Apple/Google Pay să fie gata înainte de primul click —
+  // altfel se creează abia la „Donează acum" și butoanele apar după câteva secunde.
+  const [pregatit, setPregatit] = useState(false);
   const t = DONATION_DICT[locale].donateModal;
   const dialogRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -36,6 +40,17 @@ export function DoneazaModal({
   // intră în dialog (pe primul element focusabil) și rămâne prins înăuntru
   // (Tab/Shift+Tab ciclează doar prin dialog); la închidere: focusul revine
   // exact pe butonul "Donează acum" care l-a deschis.
+  useEffect(() => {
+    // Fără cheie publicabilă nu există butoane rapide de pregătit.
+    if (!publishableKey) return;
+    if (typeof window.requestIdleCallback === "function") {
+      const id = window.requestIdleCallback(() => setPregatit(true), { timeout: 3000 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const id = window.setTimeout(() => setPregatit(true), 1500);
+    return () => window.clearTimeout(id);
+  }, [publishableKey]);
+
   useEffect(() => {
     if (!open) return;
     const dialogEl = dialogRef.current;
@@ -81,13 +96,28 @@ export function DoneazaModal({
         ref={triggerRef}
         type="button"
         onClick={() => setOpen(true)}
+        // Intenția de a dona (mouse/atingere/tastatură) pornește pregătirea imediat.
+        onPointerEnter={() => setPregatit(true)}
+        onTouchStart={() => setPregatit(true)}
+        onFocus={() => setPregatit(true)}
         className="w-full rounded-lg bg-brand-green px-5 py-2.5 text-center text-[13.5px] font-bold text-white shadow-sm transition hover:bg-brand-green-hover hover:shadow-md"
       >
         {t.donezaAcum}
       </button>
 
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 px-4 py-8" onClick={() => setOpen(false)}>
+      {(open || pregatit) && (
+        <div
+          className={
+            open
+              ? "fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 px-4 py-8"
+              : // Închis dar montat: în afara ecranului, dar cu dimensiuni reale (Stripe
+                // își măsoară containerul), fără interacțiune și ascuns cititoarelor de ecran.
+                "pointer-events-none fixed inset-x-0 top-0 -z-10 flex -translate-y-[200vh] items-start justify-center px-4 py-8 opacity-0"
+          }
+          inert={!open}
+          aria-hidden={!open}
+          onClick={() => setOpen(false)}
+        >
           <div
             ref={dialogRef}
             role="dialog"
