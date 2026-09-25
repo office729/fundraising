@@ -82,6 +82,7 @@ function CardPas({
 }) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
+  const [editare, setEditare] = useState(false);
   const [state, formAction, pending] = useActionState<StripeDonatiiState, FormData>(
     salveazaStripeDonatiiAction.bind(null, orgSlug),
     { error: null, ok: false },
@@ -90,31 +91,51 @@ function CardPas({
   useEffect(() => {
     if (state.ok) {
       formRef.current?.reset();
+      setEditare(false);
       router.refresh();
     }
   }, [state, router]);
 
+  const arataCamp = !salvat || editare;
   return (
-    <div className={`rounded-xl border p-4 ${salvat ? "border-brand-green/40" : "border-line"} bg-panel`}>
+    <div className={`rounded-xl border-2 p-4 ${salvat ? "border-brand-green/60" : "border-line"} bg-panel`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold uppercase tracking-wide text-muted">{dict.card.pas(numar)}</span>
           {optional && <span className="text-xs text-muted">({dict.card.optional})</span>}
         </div>
-        <Pastila ok={salvat} text={salvat ? dict.card.salvat : dict.card.lipseste} />
+        <Pastila ok={salvat} text={salvat ? dict.card.conectat : dict.card.lipseste} />
       </div>
       <h3 className="mt-1 text-base font-bold text-ink">{titlu}</h3>
       <p className="mt-1 text-sm text-muted">{descriere}</p>
-      {salvat && detaliuSalvat && (
-        <p className="mt-2 font-mono text-xs text-body">
-          <span aria-hidden>🔑 </span>
-          {detaliuSalvat}
-        </p>
+
+      {salvat && !editare && (
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-brand-green-soft px-4 py-3">
+          <div className="flex items-center gap-3">
+            <span
+              aria-hidden
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-green text-lg font-bold text-white"
+            >
+              ✓
+            </span>
+            <div>
+              <p className="text-sm font-bold text-brand-green">{dict.card.conectatMare}</p>
+              {detaliuSalvat && <p className="font-mono text-xs text-body">{detaliuSalvat}</p>}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setEditare(true)}
+            className="rounded-lg border border-line bg-panel px-3 py-1.5 text-xs font-medium text-ink transition hover:bg-panel-2"
+          >
+            {dict.card.schimba}
+          </button>
+        </div>
       )}
 
       {inainte}
 
-      {blocat ? (
+      {!arataCamp ? null : blocat ? (
         <p className="mt-3 rounded-lg bg-panel-2 px-3 py-2 text-sm text-muted">{dict.card.blocat}</p>
       ) : (
         <form ref={formRef} action={formAction} className="mt-3 space-y-2">
@@ -134,10 +155,10 @@ function CardPas({
             >
               {pending ? dict.seSalveaza : salvat ? dict.card.inlocuieste : dict.card.salveaza}
             </button>
-            {state.ok && !state.error && !pending && (
-              <span className="text-sm font-medium text-brand-green" role="status">
-                {dict.card.salvatOk}
-              </span>
+            {salvat && (
+              <button type="button" onClick={() => setEditare(false)} className="text-sm text-muted underline">
+                {dict.card.anuleaza}
+              </button>
             )}
           </div>
           {state.error && (
