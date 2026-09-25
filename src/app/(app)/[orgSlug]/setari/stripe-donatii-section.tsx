@@ -62,6 +62,7 @@ function CardPas({
   tip,
   blocat,
   inainte,
+  inainteDeCamp,
   dupa,
 }: {
   orgSlug: string;
@@ -78,6 +79,7 @@ function CardPas({
   tip: "password" | "text";
   blocat?: boolean;
   inainte?: ReactNode;
+  inainteDeCamp?: ReactNode;
   dupa?: ReactNode;
 }) {
   const router = useRouter();
@@ -137,6 +139,8 @@ function CardPas({
       )}
 
       {inainte}
+
+      {arataCamp && !blocat && inainteDeCamp}
 
       {!arataCamp ? null : blocat ? (
         <p className="mt-3 rounded-lg bg-panel-2 px-3 py-2 text-sm text-muted">{dict.card.blocat}</p>
@@ -318,9 +322,9 @@ export function StripeDonatiiSection({
                 <summary className="cursor-pointer text-xs text-muted">{dict.card.evenimente(EVENIMENTE.length)}</summary>
                 <p className="mt-1 break-words font-mono text-xs text-body">{EVENIMENTE.join(", ")}</p>
               </details>
-              <p className="mt-3 text-xs font-semibold text-ink">{dict.card.webhook.secretPas}</p>
             </div>
           }
+          inainteDeCamp={<p className="mt-3 text-xs font-semibold text-ink">{dict.card.webhook.secretPas}</p>}
         />
 
         <CardPas
