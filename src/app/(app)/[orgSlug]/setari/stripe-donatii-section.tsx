@@ -82,16 +82,19 @@ function CardPas({
 }) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
-  const [editare, setEditare] = useState(false);
   const [state, formAction, pending] = useActionState<StripeDonatiiState, FormData>(
     salveazaStripeDonatiiAction.bind(null, orgSlug),
     { error: null, ok: false },
   );
 
+  // Editorul se deschide cu „Schimbă” și se închide singur după o salvare reușită
+  // (state devine alt obiect, cu ok) — fără setState în efect.
+  const [editDeLa, setEditDeLa] = useState<StripeDonatiiState | null>(null);
+  const editare = editDeLa !== null && !(state !== editDeLa && state.ok);
+
   useEffect(() => {
     if (state.ok) {
       formRef.current?.reset();
-      setEditare(false);
       router.refresh();
     }
   }, [state, router]);
@@ -125,7 +128,7 @@ function CardPas({
           </div>
           <button
             type="button"
-            onClick={() => setEditare(true)}
+            onClick={() => setEditDeLa(state)}
             className="rounded-lg border border-line bg-panel px-3 py-1.5 text-xs font-medium text-ink transition hover:bg-panel-2"
           >
             {dict.card.schimba}
@@ -156,7 +159,7 @@ function CardPas({
               {pending ? dict.seSalveaza : salvat ? dict.card.inlocuieste : dict.card.salveaza}
             </button>
             {salvat && (
-              <button type="button" onClick={() => setEditare(false)} className="text-sm text-muted underline">
+              <button type="button" onClick={() => setEditDeLa(null)} className="text-sm text-muted underline">
                 {dict.card.anuleaza}
               </button>
             )}
