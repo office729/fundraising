@@ -31,6 +31,7 @@ function ExpressCheckoutInner({
   suma,
   formRef,
   onVisibilityChange,
+  portofel,
   t,
 }: {
   orgSlug: string;
@@ -38,6 +39,7 @@ function ExpressCheckoutInner({
   suma: number;
   formRef: React.RefObject<HTMLFormElement | null>;
   onVisibilityChange: (visibil: boolean) => void;
+  portofel?: "google" | "apple";
   t: (typeof DONATION_DICT)[Locale]["donateForm"];
 }) {
   const stripe = useStripe();
@@ -64,7 +66,15 @@ function ExpressCheckoutInner({
         // salveazaoinima.ro și fundatianektarios.ro. Link rămâne oprit: cere
         // propriul flux de autentificare, iar formularul obișnuit e deja alternativa.
         options={{
-          paymentMethods: { applePay: "always", googlePay: "always", link: "never" },
+          // Modal dedicat unui portofel: doar butonul lui (celelalte metode oprite, fără
+          // „Afișați mai multe"). Fără `portofel`, ambele portofele.
+          paymentMethods: {
+            applePay: portofel === "google" ? "never" : "always",
+            googlePay: portofel === "apple" ? "never" : "always",
+            link: "never",
+            ...(portofel ? { paypal: "never" as const, klarna: "never" as const, amazonPay: "never" as const } : {}),
+          },
+          ...(portofel ? { layout: { overflow: "never" as const } } : {}),
           // Portofelul colectează singur email-ul și datele de facturare — donatorul
           // nu mai completează formularul ca să poată plăti.
           buttonType: { applePay: "donate", googlePay: "donate" },
@@ -165,6 +175,7 @@ export function ExpressCheckoutPanel({
   recurenta,
   formRef,
   locale,
+  portofel,
 }: {
   orgSlug: string;
   pageSlug: string;
@@ -173,6 +184,7 @@ export function ExpressCheckoutPanel({
   recurenta: boolean;
   formRef: React.RefObject<HTMLFormElement | null>;
   locale: Locale;
+  portofel?: "google" | "apple";
 }) {
   const stripePromise = useMemo(() => (publishableKey ? getStripePromise(publishableKey) : null), [publishableKey]);
   if (!publishableKey || !stripePromise) return null;
@@ -185,8 +197,9 @@ export function ExpressCheckoutPanel({
       // montată — key={mode} face ca React să remonteze tot subarborele curat
       // la comutarea O singură dată ↔ Lunar, inclusiv starea de vizibilitate
       // (pornește mereu de la `false`, nu rămâne cu valoarea mode-ului anterior).
-      key={mode}
+      key={`${mode}-${portofel ?? "toate"}`}
       mode={mode}
+      portofel={portofel}
       stripePromise={stripePromise}
       orgSlug={orgSlug}
       pageSlug={pageSlug}
@@ -205,7 +218,9 @@ function ExpressCheckoutForMode({
   suma,
   formRef,
   locale,
+  portofel,
 }: {
+  portofel?: "google" | "apple";
   mode: "payment" | "subscription";
   stripePromise: Promise<Stripe | null>;
   orgSlug: string;
@@ -247,7 +262,7 @@ function ExpressCheckoutForMode({
 
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-center text-xs font-medium text-muted-2">{t.sauPlatesteRapid}</p>
+      {!portofel && <p className="text-center text-xs font-medium text-muted-2">{t.sauPlatesteRapid}</p>}
       {stare === "incarcare" && <div aria-hidden className="h-12 animate-pulse rounded-lg bg-panel-2" />}
       <div className={stare === "vizibil" ? "" : "hidden"}>
         {montat && (
@@ -258,6 +273,7 @@ function ExpressCheckoutForMode({
               suma={suma}
               formRef={formRef}
               onVisibilityChange={(vizibil) => setStare(vizibil ? "vizibil" : "indisponibil")}
+              portofel={portofel}
               t={t}
             />
           </Elements>
@@ -275,7 +291,7 @@ function ExpressCheckoutForMode({
             </Link>
             .
           </p>
-          <p className="text-center text-[11px] text-muted-2">{t.sauCompleteazaFormular}</p>
+          {!portofel && <p className="text-center text-[11px] text-muted-2">{t.sauCompleteazaFormular}</p>}
         </>
       )}
     </div>

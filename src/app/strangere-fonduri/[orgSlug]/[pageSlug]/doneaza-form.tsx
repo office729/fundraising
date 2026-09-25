@@ -27,7 +27,10 @@ export function DoneazaForm({
   publishableKey: string | null;
   // "revolut": formular dedicat (ca pe fundatianektarios.ro) — donație unică, fără
   // portofele; la trimitere clientul e dus la autentificarea Revolut.
-  metoda?: "revolut";
+  // "gpay" / "apay": modal dedicat portofelului — doar suma și butonul Stripe al
+  // portofelului (numele/emailul vin din portofel). Fără metodă: formularul obișnuit
+  // (plata cu cardul, pe pagina găzduită de Stripe).
+  metoda?: "revolut" | "gpay" | "apay";
 }) {
   const action = doneazaAction.bind(null, orgSlug, pageSlug);
   const [state, formAction, pending] = useActionState(action, INITIAL);
@@ -36,6 +39,7 @@ export function DoneazaForm({
   const t = DONATION_DICT[locale].donateForm;
   const formRef = useRef<HTMLFormElement>(null);
   const revolut = metoda === "revolut";
+  const portofel = metoda === "gpay" || metoda === "apay";
   const [revolutPending, setRevolutPending] = useState(false);
   const [revolutEroare, setRevolutEroare] = useState<string | null>(null);
 
@@ -128,7 +132,7 @@ export function DoneazaForm({
         />
       </label>
 
-      {!revolut && (
+      {portofel && (
         <ExpressCheckoutPanel
           orgSlug={orgSlug}
           pageSlug={pageSlug}
@@ -137,9 +141,12 @@ export function DoneazaForm({
           recurenta={recurenta}
           formRef={formRef}
           locale={locale}
+          portofel={metoda === "gpay" ? "google" : "apple"}
         />
       )}
 
+      {!portofel && (
+        <>
       <label className="text-sm font-medium text-ink">
         {t.numeleTau}
         <input name="numeDonator" required className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink" />
@@ -204,6 +211,8 @@ export function DoneazaForm({
               : `${t.donezaVerb} ${suma} ${t.donezaSufix}`}
       </button>
       <p className="text-center text-[11px] text-muted-2">{t.notaPlataSecurizata}</p>
+        </>
+      )}
     </form>
   );
 }
