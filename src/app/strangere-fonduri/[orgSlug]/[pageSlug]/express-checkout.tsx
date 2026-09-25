@@ -9,7 +9,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { Locale } from "@/lib/i18n/config";
 import { DONATION_DICT } from "@/lib/i18n/dictionaries/donation";
 
-import { creeazaIntentDonatieAction, creeazaIntentRevolutAction, revolutPayDisponibilAction } from "./express-checkout-actions";
+import { creeazaIntentDonatieAction } from "./express-checkout-actions";
 
 // Cache modul-nivel, cheiat pe cheia publicabilă — evită re-crearea instanței
 // Stripe la fiecare randare, dar rămâne corect dacă utilizatorul navighează
@@ -197,73 +197,6 @@ export function ExpressCheckoutPanel({
   );
 }
 
-// Revolut Pay: nu e portofel de tip Express Checkout — se plătește prin redirect
-// către Revolut. Butonul apare doar dacă metoda e pornită în contul Stripe al
-// ONG-ului. Numele/emailul se iau din formular (redirectul nu le oferă).
-function RevolutPayButton({
-  orgSlug,
-  pageSlug,
-  suma,
-  formRef,
-  t,
-}: {
-  orgSlug: string;
-  pageSlug: string;
-  suma: number;
-  formRef: React.RefObject<HTMLFormElement | null>;
-  t: (typeof DONATION_DICT)[Locale]["donateForm"];
-}) {
-  const [eroare, setEroare] = useState<string | null>(null);
-  const [seLucreaza, setSeLucreaza] = useState(false);
-
-  async function porneste() {
-    const form = formRef.current;
-    if (!form || seLucreaza) return;
-    setEroare(null);
-    // Doar numele și emailul sunt necesare (bifele Termeni/GDPR nu, acordul e dat prin plată).
-    for (const nume of ["numeDonator", "emailDonator"]) {
-      const camp = form.elements.namedItem(nume);
-      if (camp instanceof HTMLInputElement && !camp.reportValidity()) {
-        setEroare(t.revolutPayInvalid);
-        return;
-      }
-    }
-    setSeLucreaza(true);
-    try {
-      const date = new FormData(form);
-      const rezultat = await creeazaIntentRevolutAction(orgSlug, pageSlug, date);
-      if (!rezultat.ok) {
-        setEroare(rezultat.error);
-        return;
-      }
-      // Plata e confirmată pe server; ducem clientul la autentificarea Revolut. La
-      // întoarcere Stripe adaugă payment_intent și redirect_status în URL (vezi
-      // multumim/page.tsx), iar webhook-ul marchează donația.
-      if (!rezultat.redirectUrl) {
-        setEroare(t.plataExpressEsuata);
-        return;
-      }
-      window.location.href = rezultat.redirectUrl;
-    } finally {
-      setSeLucreaza(false);
-    }
-  }
-
-  return (
-    <div>
-      <button
-        type="button"
-        onClick={porneste}
-        disabled={seLucreaza || !Number.isFinite(suma) || suma < 5}
-        className="flex h-12 w-full items-center justify-center rounded-lg bg-[#0666EB] text-[15px] font-semibold text-white transition hover:bg-[#0552BD] disabled:opacity-60"
-      >
-        {seLucreaza ? t.sePregateste : t.revolutPay}
-      </button>
-      {eroare && <p className="mt-2 text-center text-sm text-red-600">{eroare}</p>}
-    </div>
-  );
-}
-
 function ExpressCheckoutForMode({
   mode,
   stripePromise,
@@ -285,9 +218,6 @@ function ExpressCheckoutForMode({
   // butoanele sunt gata; "indisponibil": Stripe nu a putut randa nicio metodă.
   const [stare, setStare] = useState<"incarcare" | "vizibil" | "indisponibil">("incarcare");
   const [montat, setMontat] = useState(false);
-  // null = încă necunoscut; Revolut Pay doar la plată unică (abonamentele lunare
-  // prin Revolut nu sunt acoperite aici).
-  const [revolut, setRevolut] = useState<boolean | null>(null);
   const t = DONATION_DICT[locale].donateForm;
 
   // Modalul se desenează PRIMUL; Elements (iframe-uri Stripe, care încarcă serios
@@ -304,21 +234,6 @@ function ExpressCheckoutForMode({
     };
   }, []);
 
-  useEffect(() => {
-    if (mode !== "payment") return;
-    let anulat = false;
-    revolutPayDisponibilAction(orgSlug)
-      .then((ok) => {
-        if (!anulat) setRevolut(ok);
-      })
-      .catch(() => {
-        if (!anulat) setRevolut(false);
-      });
-    return () => {
-      anulat = true;
-    };
-  }, [mode, orgSlug]);
-
   // Dacă Stripe nu răspunde deloc (blocat de o extensie, rețea), nu lăsăm scheletul
   // pe loc pentru totdeauna.
   useEffect(() => {
@@ -327,11 +242,8 @@ function ExpressCheckoutForMode({
     return () => window.clearTimeout(timer);
   }, [stare]);
 
-  const cuRevolut = mode === "payment" && revolut === true;
-  const cuPortofele = stare !== "indisponibil";
-  // Nimic de arătat: nici portofele, nici Revolut Pay.
-  if (!cuPortofele && !cuRevolut) return null;
-  const arataAcord = stare === "vizibil" || cuRevolut;
+  if (stare === "indisponibil") return null;
+  const arataAcord = stare === "vizibil";
 
   return (
     <div className="flex flex-col gap-2">
@@ -351,9 +263,6 @@ function ExpressCheckoutForMode({
           </Elements>
         )}
       </div>
-      {cuRevolut && (
-        <RevolutPayButton orgSlug={orgSlug} pageSlug={pageSlug} suma={suma} formRef={formRef} t={t} />
-      )}
       {arataAcord && (
         <>
           <p className="text-center text-[11px] text-muted-2">

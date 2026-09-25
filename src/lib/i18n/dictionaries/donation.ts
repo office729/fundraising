@@ -32,6 +32,8 @@ export const DONATION_DICT = {
     },
     donateModal: {
       donezaAcum: "Donează acum",
+      sauDonezaCu: "sau donează cu",
+      donezaCuRevolut: "Donează cu Revolut",
       donezaPentru: (titlu: string) => `Donează pentru ${titlu}`,
       inchide: "Închide",
     },
@@ -55,6 +57,7 @@ export const DONATION_DICT = {
       donezaVerb: "Donează",
       donezaLunaSufix: "lei/lună",
       donezaSufix: "lei",
+      donezaSufixRevolut: "lei cu Revolut",
       notaPlataSecurizata: "Plata se face securizat, pe pagina Stripe — metodele afișate acolo depind de dispozitiv.",
       sauPlatesteRapid: "sau plătește rapid cu",
       plataExpressEsuata: "Plata a eșuat — încearcă din nou sau folosește formularul de mai jos.",
@@ -121,6 +124,8 @@ export const DONATION_DICT = {
     },
     donateModal: {
       donezaAcum: "Donate now",
+      sauDonezaCu: "or donate with",
+      donezaCuRevolut: "Donate with Revolut",
       donezaPentru: (titlu: string) => `Donate for ${titlu}`,
       inchide: "Close",
     },
@@ -144,6 +149,7 @@ export const DONATION_DICT = {
       donezaVerb: "Donate",
       donezaLunaSufix: "lei/month",
       donezaSufix: "lei",
+      donezaSufixRevolut: "lei with Revolut",
       notaPlataSecurizata: "Payment is processed securely on Stripe's page — the methods shown there depend on your device.",
       sauPlatesteRapid: "or pay quickly with",
       plataExpressEsuata: "Payment failed — try again or use the form below.",

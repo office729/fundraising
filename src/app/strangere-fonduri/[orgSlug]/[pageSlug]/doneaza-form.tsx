@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useRef, useState, type FormEvent } from "react";
 
 import type { Locale } from "@/lib/i18n/config";
 import { DONATION_DICT } from "@/lib/i18n/dictionaries/donation";
 
 import { doneazaAction, type DoneazaState } from "./actions";
 import { ExpressCheckoutPanel } from "./express-checkout";
+import { creeazaIntentRevolutAction } from "./express-checkout-actions";
 
 const INITIAL: DoneazaState = { error: null };
 const SUME_RAPIDE = [25, 50, 100, 250];
@@ -17,12 +18,16 @@ export function DoneazaForm({
   pageSlug,
   locale,
   publishableKey,
+  metoda,
 }: {
   orgSlug: string;
   pageSlug: string;
   titlu: string;
   locale: Locale;
   publishableKey: string | null;
+  // "revolut": formular dedicat (ca pe fundatianektarios.ro) — donație unică, fără
+  // portofele; la trimitere clientul e dus la autentificarea Revolut.
+  metoda?: "revolut";
 }) {
   const action = doneazaAction.bind(null, orgSlug, pageSlug);
   const [state, formAction, pending] = useActionState(action, INITIAL);
@@ -30,12 +35,46 @@ export function DoneazaForm({
   const [recurenta, setRecurenta] = useState(false);
   const t = DONATION_DICT[locale].donateForm;
   const formRef = useRef<HTMLFormElement>(null);
+  const revolut = metoda === "revolut";
+  const [revolutPending, setRevolutPending] = useState(false);
+  const [revolutEroare, setRevolutEroare] = useState<string | null>(null);
+
+  async function trimiteRevolut(ev: FormEvent<HTMLFormElement>) {
+    ev.preventDefault();
+    if (revolutPending) return;
+    setRevolutPending(true);
+    setRevolutEroare(null);
+    try {
+      const rezultat = await creeazaIntentRevolutAction(orgSlug, pageSlug, new FormData(ev.currentTarget));
+      if (!rezultat.ok) {
+        setRevolutEroare(rezultat.error);
+        return;
+      }
+      if (!rezultat.redirectUrl) {
+        setRevolutEroare(t.plataExpressEsuata);
+        return;
+      }
+      // Autentificarea la Revolut; la întoarcere Stripe adaugă payment_intent și
+      // redirect_status (vezi multumim/page.tsx), iar webhook-ul marchează donația.
+      window.location.href = rezultat.redirectUrl;
+    } catch {
+      setRevolutEroare(t.plataExpressEsuata);
+    } finally {
+      setRevolutPending(false);
+    }
+  }
 
   return (
-    <form ref={formRef} action={formAction} className="mt-4 flex flex-col gap-3">
+    <form
+      ref={formRef}
+      action={revolut ? undefined : formAction}
+      onSubmit={revolut ? trimiteRevolut : undefined}
+      className="mt-4 flex flex-col gap-3"
+    >
       {/* Honeypot — invizibil pentru oameni. */}
       <input type="text" name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />
 
+      {!revolut && (
       <div
         role="group"
         aria-label={t.frecventaLabel}
@@ -58,7 +97,8 @@ export function DoneazaForm({
           {t.lunar}
         </button>
       </div>
-      <input type="hidden" name="recurenta" value={recurenta ? "1" : ""} />
+      )}
+      <input type="hidden" name="recurenta" value={recurenta && !revolut ? "1" : ""} />
 
       <div role="group" aria-label={t.sumeRapideLabel} className="flex flex-wrap gap-2">
         {SUME_RAPIDE.map((s) => (
@@ -88,15 +128,17 @@ export function DoneazaForm({
         />
       </label>
 
-      <ExpressCheckoutPanel
-        orgSlug={orgSlug}
-        pageSlug={pageSlug}
-        publishableKey={publishableKey}
-        suma={suma}
-        recurenta={recurenta}
-        formRef={formRef}
-        locale={locale}
-      />
+      {!revolut && (
+        <ExpressCheckoutPanel
+          orgSlug={orgSlug}
+          pageSlug={pageSlug}
+          publishableKey={publishableKey}
+          suma={suma}
+          recurenta={recurenta}
+          formRef={formRef}
+          locale={locale}
+        />
+      )}
 
       <label className="text-sm font-medium text-ink">
         {t.numeleTau}
@@ -144,14 +186,22 @@ export function DoneazaForm({
         </label>
       </div>
 
-      {state.error && <p className="text-sm text-red-600">{state.error}</p>}
+      {(revolut ? revolutEroare : state.error) && (
+        <p className="text-sm text-red-600">{revolut ? revolutEroare : state.error}</p>
+      )}
 
       <button
         type="submit"
-        disabled={pending}
+        disabled={revolut ? revolutPending : pending}
         className="mt-1 rounded-md bg-brand-green px-4 py-3 text-center font-bold text-white transition hover:bg-brand-green-hover disabled:opacity-60"
       >
-        {pending ? t.sePregateste : recurenta ? `${t.donezaVerb} ${suma} ${t.donezaLunaSufix}` : `${t.donezaVerb} ${suma} ${t.donezaSufix}`}
+        {(revolut ? revolutPending : pending)
+          ? t.sePregateste
+          : revolut
+            ? `${t.donezaVerb} ${suma} ${t.donezaSufixRevolut}`
+            : recurenta
+              ? `${t.donezaVerb} ${suma} ${t.donezaLunaSufix}`
+              : `${t.donezaVerb} ${suma} ${t.donezaSufix}`}
       </button>
       <p className="text-center text-[11px] text-muted-2">{t.notaPlataSecurizata}</p>
     </form>

@@ -7,6 +7,7 @@ import type { Locale } from "@/lib/i18n/config";
 import { DONATION_DICT } from "@/lib/i18n/dictionaries/donation";
 
 import { DoneazaForm } from "./doneaza-form";
+import { revolutPayDisponibilAction } from "./express-checkout-actions";
 
 const SELECTOR_FOCUSABIL =
   'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -34,6 +35,23 @@ export function DoneazaModal({
     preconnect("https://m.stripe.network", { crossOrigin: "anonymous" });
   }
   const [open, setOpen] = useState(false);
+  // Metoda aleasă: "revolut" deschide un formular dedicat (ca pe Nektarios), altfel
+  // modalul obișnuit cu Apple/Google Pay.
+  const [metoda, setMetoda] = useState<"revolut" | undefined>(undefined);
+  // Rândul „Revolut" apare doar dacă metoda e pornită în contul Stripe al ONG-ului.
+  const [revolutDisponibil, setRevolutDisponibil] = useState(false);
+  useEffect(() => {
+    if (!publishableKey) return;
+    let anulat = false;
+    revolutPayDisponibilAction(orgSlug)
+      .then((ok) => {
+        if (!anulat) setRevolutDisponibil(ok);
+      })
+      .catch(() => {});
+    return () => {
+      anulat = true;
+    };
+  }, [orgSlug, publishableKey]);
   // Modalul e montat în fundal (invizibil) după încărcarea paginii, ca iframe-urile
   // Stripe ale butoanelor Apple/Google Pay să fie gata înainte de primul click —
   // altfel se creează abia la „Donează acum" și butoanele apar după câteva secunde.
@@ -108,11 +126,33 @@ export function DoneazaModal({
       <button
         ref={triggerRef}
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          setMetoda(undefined);
+          setOpen(true);
+        }}
         className="w-full rounded-lg bg-brand-green px-5 py-2.5 text-center text-[13.5px] font-bold text-white shadow-sm transition hover:bg-brand-green-hover hover:shadow-md"
       >
         {t.donezaAcum}
       </button>
+
+      {revolutDisponibil && (
+        <div className="mt-3">
+          <p className="mb-1.5 text-center text-[11.5px] font-medium text-muted-2">{t.sauDonezaCu}</p>
+          <button
+            type="button"
+            onClick={() => {
+              setMetoda("revolut");
+              setOpen(true);
+            }}
+            className="flex w-full items-center gap-3 rounded-lg border border-line bg-panel px-3 py-2.5 text-left text-[13.5px] font-semibold text-ink transition hover:border-brand-blue hover:bg-panel-2"
+          >
+            <span aria-hidden className="flex h-7 w-7 items-center justify-center rounded-md bg-black text-sm font-bold text-white">
+              R
+            </span>
+            Revolut
+          </button>
+        </div>
+      )}
 
       {(open || pregatit) && (
         <div
@@ -138,7 +178,7 @@ export function DoneazaModal({
           >
             <div className="flex items-center justify-between">
               <h2 id="doneaza-modal-titlu" className="font-display text-base font-bold text-ink">
-                {t.donezaPentru(titlu)}
+                {metoda === "revolut" ? t.donezaCuRevolut : t.donezaPentru(titlu)}
               </h2>
               <button
                 type="button"
@@ -149,7 +189,7 @@ export function DoneazaModal({
                 ✕
               </button>
             </div>
-            <DoneazaForm orgSlug={orgSlug} pageSlug={pageSlug} titlu={titlu} locale={locale} publishableKey={publishableKey} />
+            <DoneazaForm orgSlug={orgSlug} pageSlug={pageSlug} titlu={titlu} locale={locale} publishableKey={publishableKey} metoda={metoda} />
           </div>
         </div>
       )}
