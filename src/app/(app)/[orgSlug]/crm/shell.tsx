@@ -2,6 +2,7 @@
 
 import {
   Banknote,
+  BarChart3,
   Bell,
   Building2,
   CalendarClock,
@@ -107,6 +108,7 @@ function buildNav(dict: DashboardDict, orgSlug: string): { section: string; item
         { href: "taskuri", label: dict.nav.taskuri, icon: ClipboardList },
         { href: "comunicare", label: dict.nav.comunicare, icon: MessageSquare },
         { href: "/program-lucru", label: dict.nav.programLucru, icon: CalendarClock },
+        { href: "kpi-echipa", label: dict.nav.kpiEchipa, icon: BarChart3 },
       ],
     },
     {
