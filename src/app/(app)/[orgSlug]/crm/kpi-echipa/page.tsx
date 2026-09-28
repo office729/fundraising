@@ -3,7 +3,10 @@ import { requireOrgAccess } from "@/lib/auth/guard";
 import { getKpiEchipa, getKpiPersonal } from "./actions";
 import { KpiPersonalView } from "./kpi-personal";
 import { KpiTabel } from "./kpi-tabel";
+import { getObiective, getTendinta } from "./obiective-actions";
+import { ObiectiveBoard } from "./obiective-board";
 import { PerioadaPicker } from "./perioada-picker";
+import { Tendinta } from "./tendinta";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +24,12 @@ export default async function KpiEchipaPage({
   const access = await requireOrgAccess(orgSlug);
   const esteAdmin = access.role === "owner" || access.role === "admin";
 
-  const [personal, echipa] = await Promise.all([getKpiPersonal(orgSlug), esteAdmin ? getKpiEchipa(orgSlug, { de, la }) : Promise.resolve(null)]);
+  const [personal, echipa, obiective, tendinta] = await Promise.all([
+    getKpiPersonal(orgSlug),
+    esteAdmin ? getKpiEchipa(orgSlug, { de, la }) : Promise.resolve(null),
+    esteAdmin ? getObiective(orgSlug, { de }) : Promise.resolve(null),
+    esteAdmin ? getTendinta(orgSlug) : Promise.resolve(null),
+  ]);
 
   return (
     <div className="mx-auto max-w-[1100px] space-y-6">
@@ -46,11 +54,13 @@ export default async function KpiEchipaPage({
         </div>
       </section>
 
-      {echipa && (
-        <section className="space-y-3">
+      {echipa && obiective && tendinta && (
+        <>
           <PerioadaPicker de={de ?? ""} la={la ?? ""} />
+          <ObiectiveBoard obi={obiective} />
+          <Tendinta date={tendinta} />
           <KpiTabel kpi={echipa} />
-        </section>
+        </>
       )}
     </div>
   );
