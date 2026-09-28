@@ -12,21 +12,44 @@ const CHEIE = "avatar_donator";
 export const getAvatar = withOrgSession(async (ctx): Promise<{ data: AvatarData; stat: StatisticiPlatforma | null }> => {
   const [row] = await ctx.db.select({ data: crmKv.data }).from(crmKv).where(and(eq(crmKv.orgId, ctx.orgId), eq(crmKv.path, CHEIE))).limit(1);
 
-  // Reper real din platformă: donațiile online reușite ale organizației.
+  // Reper real din platformă: donațiile online reușite ale organizației. Sumele sunt NETE de rambursări, iar donațiile
+  // unice sunt separate de încasările lunare (fiecare reînnoire de abonament e un rând), ca media/mediana să aibă sens.
   const [s] = (await ctx.db.execute(sql`
+    with d as (
+      select greatest(suma - suma_rambursata, 0) net, recurenta, stripe_subscription_id, abonament_activ, email_donator, created_at
+      from fundraising_donations where org_id = ${ctx.orgId} and status = 'reusita'
+    )
     select
-      count(*)::int donatii,
-      count(distinct lower(email_donator)) filter (where email_donator is not null)::int unici,
-      coalesce(sum(suma), 0)::bigint suma,
-      coalesce(avg(suma), 0)::float medie,
-      coalesce(percentile_cont(0.5) within group (order by suma), 0)::float mediana,
-      count(*) filter (where created_at >= now() - interval '12 months')::int d12
-    from fundraising_donations where org_id = ${ctx.orgId} and status = 'reusita'
-  `)) as unknown as Array<{ donatii: number; unici: number; suma: number; medie: number; mediana: number; d12: number }>;
+      count(*) filter (where not recurenta)::int unice,
+      count(distinct lower(email_donator)) filter (where email_donator is not null)::int donatori,
+      coalesce(sum(net), 0)::bigint suma,
+      coalesce(avg(net) filter (where not recurenta), 0)::float medie_unica,
+      coalesce(percentile_cont(0.5) within group (order by net) filter (where not recurenta), 0)::float mediana_unica,
+      count(*) filter (where not recurenta and created_at >= now() - interval '12 months')::int unice12,
+      count(*) filter (where recurenta)::int incasari_rec,
+      coalesce(percentile_cont(0.5) within group (order by net) filter (where recurenta), 0)::float mediana_lunara,
+      count(distinct stripe_subscription_id) filter (where recurenta and abonament_activ)::int abonamente,
+      coalesce(sum(net) filter (where recurenta), 0)::bigint suma_rec
+    from d
+  `)) as unknown as Array<{
+    unice: number; donatori: number; suma: number; medie_unica: number; mediana_unica: number; unice12: number;
+    incasari_rec: number; mediana_lunara: number; abonamente: number; suma_rec: number;
+  }>;
 
   const stat: StatisticiPlatforma | null =
-    s && s.donatii > 0
-      ? { donatii: s.donatii, donatoriUnici: s.unici, suma: Number(s.suma), medie: Math.round(s.medie), mediana: Math.round(s.mediana), donatii12Luni: s.d12 }
+    s && (s.unice > 0 || s.incasari_rec > 0)
+      ? {
+          donatii: s.unice,
+          donatoriUnici: s.donatori,
+          suma: Number(s.suma),
+          medieUnica: Math.round(s.medie_unica),
+          medianaUnica: Math.round(s.mediana_unica),
+          donatii12Luni: s.unice12,
+          incasariRecurente: s.incasari_rec,
+          medianaLunara: Math.round(s.mediana_lunara),
+          abonamenteActive: s.abonamente,
+          procentRecurent: Number(s.suma) > 0 ? Math.round((Number(s.suma_rec) / Number(s.suma)) * 100) : 0,
+        }
       : null;
   return { data: normalizeaza(row?.data), stat };
 });

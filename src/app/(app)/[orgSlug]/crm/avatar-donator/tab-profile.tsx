@@ -7,6 +7,7 @@ import { Card } from "../components/ui/card";
 import { Input, Textarea } from "../components/ui/input";
 
 import type { Actualizeaza } from "./avatar-donator-client";
+import { Camp } from "./camp";
 
 function culoare(pct: number): string {
   if (pct >= 70) return "var(--ci-green)";
@@ -75,6 +76,7 @@ export function TabProfile({ data, actualizeaza }: { data: AvatarData; actualize
                           value={data.profile[profil.id][i].criterii[c.key] ?? ""}
                           onChange={(e) => setCriteriu(profil.id, i, c.key, e.target.value)}
                           placeholder="%"
+                          aria-label={`${c.label} — ${data.profile[profil.id][i].nume} (procent 0–100)`}
                           className="ci-tabular h-8 text-center text-[12.5px]"
                         />
                       </td>
@@ -131,14 +133,13 @@ export function TabProfile({ data, actualizeaza }: { data: AvatarData; actualize
         <p className="mt-0.5 text-[12.5px] text-[var(--ci-text-muted)]">Completează după ce ai validat segmentul câștigător prin interviuri și un test pilot (întrebarea 100).</p>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           {REZUMAT_CAMPURI.map((c) => (
-            <div key={c.key} className={c.key === "nume" ? "sm:col-span-2" : ""}>
-              <label className="mb-1.5 block text-[13px] font-medium text-[var(--ci-text)]">{c.label}</label>
+            <Camp key={c.key} label={c.label} className={c.key === "nume" ? "sm:col-span-2" : ""}>
               {c.key === "nume" ? (
                 <Input value={data.rezumat[c.key] ?? ""} onChange={(e) => actualizeaza((d) => ({ ...d, rezumat: { ...d.rezumat, [c.key]: e.target.value } }))} />
               ) : (
                 <Textarea rows={3} value={data.rezumat[c.key] ?? ""} onChange={(e) => actualizeaza((d) => ({ ...d, rezumat: { ...d.rezumat, [c.key]: e.target.value } }))} />
               )}
-            </div>
+            </Camp>
           ))}
         </div>
       </Card>

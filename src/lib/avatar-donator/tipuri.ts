@@ -57,6 +57,8 @@ export type Buget = {
   donatieUnica: string; // donația medie unică, lei (Q16)
   donatieLunara: string; // donația lunară medie a unui donator recurent, lei
   luniRecuperare: string; // în câte luni vrei să recuperezi costul de achiziție al unui donator recurent
+  repetare: string; // din 100 de donatori unici, câți mai donează ulterior (%) — intră în valoarea pe 12 luni
+  esantion: string; // câți donatori noi ai măsurat pe canale în ultimele ~90 de zile (mărimea eșantionului din „% din donatorii noi”)
 };
 
 export type Mix = { individual: string; recurent: string; companii: string; altele: string }; // % din obiectivul de venit (Q12)
@@ -125,8 +127,20 @@ export const REZUMAT_CAMPURI: { key: string; label: string }[] = [
   { key: "kpi", label: "KPI și limite" },
 ];
 
+// Verificări obligatorii înainte de orice promovare plătită (cazuri medicale / minori). Afișate mereu, nu doar
+// când misiunea conține anumite cuvinte; până sunt bifate toate, recomandările sunt orientative.
+export const CHECKLIST_CONFORMITATE: { key: string; text: string }[] = [
+  { key: "consimtamant", text: "Există consimțământ scris și datat de la beneficiar sau de la ambii reprezentanți legali (dacă e minor), separat pentru poveste, imagine și reclame plătite." },
+  { key: "minimizare", text: "Diagnosticul publicat este strict cel necesar: fără CNP, adresă, școală, localitate exactă sau documente medicale integrale." },
+  { key: "audiente", text: "Nicio listă cu beneficiari, părinți sau pacienți nu este încărcată ca audiență. Lista de donatori se încarcă doar cu consimțământ specific pentru publicitate personalizată sau altă bază legală confirmată de DPO." },
+  { key: "politici", text: "Politicile fiecărei platforme pentru strângeri de fonduri și conținut medical au fost verificate și aprobate de un responsabil numit." },
+  { key: "retragere", text: "Există o procedură de retragere: campania se oprește și reclamele se șterg rapid (recomandat: cel mult 48 de ore) la cererea beneficiarului." },
+  { key: "surplus", text: "Donatorii află din ce bani se plătește promovarea și ce se întâmplă cu surplusul sau dacă beneficiarul nu mai poate folosi fondurile." },
+];
+
 export type AvatarData = {
   raspunsuri: Record<number, Raspuns>;
+  conformitate: Record<string, boolean>;
   buget: Buget;
   mix: Mix;
   varste: Varste;
@@ -145,7 +159,8 @@ export function avatarGol(): AvatarData {
   ) as Record<ProfilId, Segment[]>;
   return {
     raspunsuri: {},
-    buget: { lunar: "", testPct: "20", donatieUnica: "", donatieLunara: "", luniRecuperare: "3" },
+    conformitate: {},
+    buget: { lunar: "", testPct: "20", donatieUnica: "", donatieLunara: "", luniRecuperare: "3", repetare: "", esantion: "" },
     mix: { individual: "", recurent: "", companii: "", altele: "" },
     varste: { v18_24: "", v25_34: "", v35_44: "", v45_54: "", v55: "" },
     digital: "",
@@ -164,6 +179,7 @@ export function normalizeaza(x: unknown): AvatarData {
   const s = x as Partial<AvatarData>;
   return {
     raspunsuri: { ...(s.raspunsuri ?? {}) },
+    conformitate: { ...(s.conformitate ?? {}) },
     buget: { ...g.buget, ...(s.buget ?? {}) },
     mix: { ...g.mix, ...(s.mix ?? {}) },
     varste: { ...g.varste, ...(s.varste ?? {}) },
@@ -185,11 +201,17 @@ export function normalizeaza(x: unknown): AvatarData {
 }
 
 // Statistici reale din platformă (donații online reușite) — folosite ca reper, nu ca înlocuitor al datelor din canale.
+// Donațiile UNICE sunt separate de cele RECURENTE (fiecare reînnoire lunară e un rând în baza de date) și toate
+// sumele sunt nete de rambursări — altfel media și mediana ar amesteca rate lunare cu donații unice.
 export type StatisticiPlatforma = {
-  donatii: number;
-  donatoriUnici: number;
-  suma: number;
-  medie: number;
-  mediana: number;
-  donatii12Luni: number;
+  donatii: number; // donații unice reușite
+  donatoriUnici: number; // adrese de email distincte (toate donațiile)
+  suma: number; // total net (unice + recurente), lei
+  medieUnica: number;
+  medianaUnica: number;
+  donatii12Luni: number; // donații unice în ultimele 12 luni
+  incasariRecurente: number; // număr de încasări lunare reușite
+  medianaLunara: number; // suma tipică a unei încasări lunare
+  abonamenteActive: number;
+  procentRecurent: number; // % din venitul net venit din donații recurente
 };

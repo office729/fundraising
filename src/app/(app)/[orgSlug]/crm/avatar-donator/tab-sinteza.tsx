@@ -1,9 +1,11 @@
 "use client";
 
 import { PLAYBOOK, type Alocare, type Sfat } from "@/lib/avatar-donator/motor";
-import { CANAL_LABEL, type AvatarData } from "@/lib/avatar-donator/tipuri";
+import { CANAL_LABEL, CHECKLIST_CONFORMITATE, type AvatarData } from "@/lib/avatar-donator/tipuri";
 
 import { Card } from "../components/ui/card";
+
+import type { Actualizeaza } from "./avatar-donator-client";
 
 const ROL_ETICHETA = { principal: "Principal", test: "Test", organic: "Doar organic" } as const;
 const ROL_CLASA = {
@@ -22,21 +24,56 @@ const lei = (n: number) => `${Math.round(n).toLocaleString("ro-RO")} lei`;
 
 export function TabSinteza({
   data,
+  actualizeaza,
   alocare,
   sfaturi,
   mergiLa,
 }: {
   data: AvatarData;
+  actualizeaza: Actualizeaza;
   alocare: Alocare;
   sfaturi: Sfat[];
   mergiLa: (t: "buget" | "chestionar" | "profile") => void;
 }) {
   const top = alocare.insista;
   const cuBuget = alocare.canale.filter((c) => c.lei > 0);
-  const playbookCanale = alocare.canale.filter((c) => c.rol !== "organic");
+  const playbookCanale = alocare.canale.filter((c) => c.rol !== "organic" || c.lei > 0);
+  const bifate = CHECKLIST_CONFORMITATE.filter((c) => data.conformitate[c.key]).length;
+  const toateBifate = bifate === CHECKLIST_CONFORMITATE.length;
+  const totalLei = alocare.canale.reduce((a, c) => a + c.lei, 0);
 
   return (
     <div className="space-y-5">
+      {/* Verificări obligatorii înainte de promovare plătită — mereu vizibile, înaintea alocării */}
+      <Card>
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="ci-display text-[15px] font-bold text-[var(--ci-text)]">Înainte de promovare plătită (cazuri medicale, minori, persoane vulnerabile)</h2>
+          <span className={`rounded-full px-2 py-0.5 text-[12px] font-semibold ${toateBifate ? "bg-[var(--ci-green-soft)] text-[var(--ci-green)]" : "bg-[var(--ci-amber-soft)] text-[var(--ci-text)]"}`}>
+            {bifate}/{CHECKLIST_CONFORMITATE.length} bifate
+          </span>
+        </div>
+        <ul className="mt-3 space-y-2">
+          {CHECKLIST_CONFORMITATE.map((c) => (
+            <li key={c.key}>
+              <label className="flex cursor-pointer items-start gap-2.5 text-[13px] text-[var(--ci-text)]">
+                <input
+                  type="checkbox"
+                  checked={!!data.conformitate[c.key]}
+                  onChange={(e) => actualizeaza((d) => ({ ...d, conformitate: { ...d.conformitate, [c.key]: e.target.checked } }))}
+                  className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--ci-primary)]"
+                />
+                <span>{c.text}</span>
+              </label>
+            </li>
+          ))}
+        </ul>
+        <p className={`mt-3 rounded-lg px-3 py-2 text-[12.5px] ${toateBifate ? "bg-[var(--ci-green-soft)] text-[var(--ci-text)]" : "bg-[var(--ci-amber-soft)] text-[var(--ci-text)]"}`}>
+          {toateBifate
+            ? "Verificările sunt bifate. Păstrează dovezile (consimțăminte cu dată și expirare, aprobările) în dosarul fiecărui beneficiar."
+            : "Recomandările de mai jos sunt doar orientative până când verificările sunt bifate. Dacă nu ai beneficiari vulnerabili, bifează-le pe cele care nu se aplică."}
+        </p>
+      </Card>
+
       {/* Platforma pe care să insiști */}
       <Card>
         {top ? (
@@ -98,13 +135,14 @@ export function TabSinteza({
         ) : (
           <div className="mt-3 overflow-x-auto">
             <table className="w-full min-w-[560px] text-[13px]">
+              <caption className="sr-only">Alocarea bugetului lunar de promovare pe platforme</caption>
               <thead>
                 <tr className="border-b border-[var(--ci-border)] text-left text-[12px] text-[var(--ci-text-muted)]">
-                  <th className="py-1.5 pr-3">Platformă</th>
-                  <th className="px-3 py-1.5">Rol</th>
-                  <th className="px-3 py-1.5 text-right">Lei / lună</th>
-                  <th className="px-3 py-1.5 text-right">Din buget</th>
-                  <th className="py-1.5 pl-3 text-right">Scor</th>
+                  <th scope="col" className="py-1.5 pr-3">Platformă</th>
+                  <th scope="col" className="px-3 py-1.5">Rol</th>
+                  <th scope="col" className="px-3 py-1.5 text-right">Lei / lună</th>
+                  <th scope="col" className="px-3 py-1.5 text-right">Din buget</th>
+                  <th scope="col" className="py-1.5 pl-3 text-right">Scor</th>
                 </tr>
               </thead>
               <tbody>
@@ -119,6 +157,13 @@ export function TabSinteza({
                     <td className="ci-tabular py-2 pl-3 text-right text-[var(--ci-text-muted)]">{c.scor}</td>
                   </tr>
                 ))}
+                <tr className="font-bold text-[var(--ci-text)]">
+                  <th scope="row" className="py-2 pr-3 text-left">Total</th>
+                  <td className="px-3 py-2" />
+                  <td className="ci-tabular px-3 py-2 text-right">{lei(totalLei)}</td>
+                  <td className="ci-tabular px-3 py-2 text-right">{alocare.buget ? `${Math.round((totalLei / alocare.buget) * 100)}%` : ""}</td>
+                  <td className="py-2 pl-3" />
+                </tr>
               </tbody>
             </table>
             {cuBuget.length > 0 && (
