@@ -89,6 +89,12 @@ export const SETARI_ECHIPA_DICT = {
         status: { trialing: "perioadă de probă", active: "activ", incomplete: "plată neconfirmată", past_due: "plată restantă", canceled: "anulat" },
         schimbaPlanul: "Schimbă planul",
         ascundeOptiunile: "Ascunde opțiunile",
+        facturi: {
+          title: "Facturi",
+          gol: "Nicio factură încă.",
+          descarca: "Descarcă",
+          inAsteptare: "se emite…",
+        },
       },
       referral: {
         title: "Recomandă alte ONG-uri",
@@ -318,6 +324,12 @@ export const SETARI_ECHIPA_DICT = {
         status: { trialing: "trial period", active: "active", incomplete: "payment unconfirmed", past_due: "payment overdue", canceled: "canceled" },
         schimbaPlanul: "Change plan",
         ascundeOptiunile: "Hide options",
+        facturi: {
+          title: "Invoices",
+          gol: "No invoices yet.",
+          descarca: "Download",
+          inAsteptare: "issuing…",
+        },
       },
       referral: {
         title: "Refer other NGOs",

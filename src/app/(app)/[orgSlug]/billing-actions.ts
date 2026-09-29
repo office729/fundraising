@@ -1,11 +1,13 @@
 "use server";
 
+import { desc, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 
 import { withOrgAdmin } from "@/lib/auth/guard";
 import { calculateCustomPlanPrice, normalizeCustomPlanConfig, type CustomPlanConfigSaved } from "@/lib/billing/custom-plan";
 import { creeazaPlataAbonament } from "@/lib/billing/netopia-checkout";
 import { PACKAGE_LIMITS, type OrgPackage } from "@/lib/billing/packages";
+import { platformPayments } from "@/lib/db/schema";
 
 const NUME_PACHET: Record<Exclude<OrgPackage, "trial" | "custom">, string> = {
   start: "Pachet START",
@@ -74,3 +76,22 @@ export const startCustomCheckoutAction = withOrgAdmin(
   },
   { permiteAccesBlocat: true },
 );
+
+// Istoricul de plăți al organizației, cu linkul facturii Oblio (dacă a fost deja
+// emisă) — afișat în Setări, sub Abonament. Doar owner/admin (withOrgAdmin).
+export const listeazaFacturiAction = withOrgAdmin(async (ctx) => {
+  return ctx.db
+    .select({
+      id: platformPayments.id,
+      createdAt: platformPayments.createdAt,
+      pachet: platformPayments.package,
+      sumaLei: platformPayments.sumaLei,
+      status: platformPayments.status,
+      facturaLink: platformPayments.oblioLink,
+      facturaNumar: platformPayments.oblioNumber,
+    })
+    .from(platformPayments)
+    .where(eq(platformPayments.status, "reusita"))
+    .orderBy(desc(platformPayments.createdAt))
+    .limit(24);
+});

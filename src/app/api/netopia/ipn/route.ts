@@ -5,6 +5,65 @@ import { db } from "@/lib/db";
 import { organizations, platformPayments } from "@/lib/db/schema";
 import { clasificaStatus, verificaIpn } from "@/lib/netopia";
 import { raporteazaAvertisment, raporteazaEroare } from "@/lib/monitoring";
+import { emiteFacturaAbonament, oblioConfigurata } from "@/lib/oblio";
+
+const NUME_PACHET: Record<string, string> = {
+  start: "Pachet START",
+  crestere: "Pachet CREȘTERE",
+  impact: "Pachet IMPACT",
+  custom: "Plan personalizat",
+};
+
+// Factura NU se emite din interiorul tranzacției de mai jos (ar ține blocat rândul
+// organizației pe durata apelului către Oblio, un serviciu extern) — se cheamă
+// DUPĂ ce accesul e deja acordat, ca o eroare de facturare să nu-l blocheze
+// niciodată. `idempotencyKey` (orderId) face reîncercarea sigură.
+async function factureazaPlata(orgId: string): Promise<void> {
+  if (!oblioConfigurata()) return;
+
+  // Citirile/scrierile de mai jos trec prin RLS ca oricare altele — fără
+  // `app.public_lookup` (contextul de încredere al acestui webhook, ca restul
+  // rutei), fiecare select ar întoarce 0 rânduri și funcția n-ar face nimic,
+  // silențios, indiferent dacă plata există.
+  const { plata, org } = await db.transaction(async (tx) => {
+    await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
+    const rows = await tx
+      .select({ id: platformPayments.id, orderId: platformPayments.orderId, sumaLei: platformPayments.sumaLei, pachet: platformPayments.package, oblioNumber: platformPayments.oblioNumber })
+      .from(platformPayments)
+      .where(and(eq(platformPayments.orgId, orgId), eq(platformPayments.status, "reusita")))
+      .orderBy(sql`${platformPayments.paidAt} desc`)
+      .limit(1);
+    const plata = rows[0] ?? null;
+    if (!plata || plata.oblioNumber) return { plata: null, org: null }; // deja facturată sau plata nu s-a găsit
+
+    const [org] = await tx.select({ name: organizations.name, cif: organizations.cif }).from(organizations).where(eq(organizations.id, orgId)).limit(1);
+    return { plata, org: org ?? null };
+  });
+  if (!plata || !org) return;
+
+  try {
+    const factura = await emiteFacturaAbonament({
+      orderId: plata.orderId,
+      client: { nume: org.name, cif: org.cif, email: null },
+      descriere: `Alexandrit — ${NUME_PACHET[plata.pachet] ?? plata.pachet} (o lună)`,
+      sumaLei: plata.sumaLei,
+    });
+    await db.transaction(async (tx) => {
+      await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
+      await tx
+        .update(platformPayments)
+        .set({ oblioSeriesName: factura.seriesName, oblioNumber: factura.number, oblioLink: factura.link, oblioInvoicedAt: new Date(), oblioEroare: null })
+        .where(eq(platformPayments.id, plata.id));
+    });
+  } catch (e) {
+    const mesaj = e instanceof Error ? e.message : "eroare necunoscută";
+    await db.transaction(async (tx) => {
+      await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
+      await tx.update(platformPayments).set({ oblioEroare: mesaj.slice(0, 300) }).where(eq(platformPayments.id, plata.id));
+    });
+    raporteazaEroare("oblio-factura", e, { orgId, orderId: plata.orderId });
+  }
+}
 
 // IPN Netopia — singurul loc care confirmă o plată de abonament. Niciun acces
 // nu se acordă din redirectul clientului, doar de aici, după ce:
@@ -48,6 +107,10 @@ export async function POST(req: Request) {
   const ntpId = body.payment?.ntpID ?? null;
   const suma = Number(body.payment?.amount);
   const decizie = clasificaStatus(status);
+  // Setat DOAR când accesul chiar a fost acordat în tranzacția de mai jos — factura
+  // se emite după commit, niciodată dintr-o ramură care s-a oprit mai devreme
+  // (comandă necunoscută, sumă nepotrivită, IPN retrimis, plată deja procesată).
+  let orgIdFacturat: string | null = null;
 
   try {
     await db.transaction(async (tx) => {
@@ -106,6 +169,8 @@ export async function POST(req: Request) {
           .returning({ id: organizations.id });
         if (!actualizatOrg[0]) {
           raporteazaAvertisment("netopia-ipn", "organizația comenzii plătite nu mai există", { orderId, orgId: plata.orgId });
+        } else {
+          orgIdFacturat = plata.orgId;
         }
         return;
       }
@@ -156,6 +221,10 @@ export async function POST(req: Request) {
     raporteazaEroare("netopia-ipn", e, { orderId });
     return NextResponse.json({ errorType: 1, errorCode: 3, errorMessage: "eroare temporara" }, { status: 500 });
   }
+
+  // Accesul e deja acordat (tranzacția de mai sus s-a încheiat cu succes) — o
+  // eroare de facturare de aici nu mai poate anula asta, doar rămâne de regenerat.
+  if (orgIdFacturat) await factureazaPlata(orgIdFacturat);
 
   return NextResponse.json(ACK);
 }

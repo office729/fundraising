@@ -64,6 +64,13 @@ export default async function RezultatPlataPage({
           <p className="mt-2 text-[14.5px] leading-relaxed text-body">
             {NUME_PACHET[plata.pachet] ?? plata.pachet} — {plata.sumaLei.toLocaleString("ro-RO")} lei. Accesul e activ pentru o lună.
           </p>
+          {plata.facturaLink ? (
+            <a href={plata.facturaLink} target="_blank" rel="noopener noreferrer" className="mt-2 text-[13.5px] font-medium text-brand-blue hover:underline">
+              Descarcă factura {plata.facturaNumar ? `(nr. ${plata.facturaNumar})` : ""} ↓
+            </a>
+          ) : (
+            <p className="mt-2 text-[12.5px] text-muted">Factura se emite automat în câteva secunde — o găsești și în Setări, la Abonament.</p>
+          )}
         </>
       )}
 

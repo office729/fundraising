@@ -18,6 +18,8 @@ export const citestePlata = withOrgSession(
         status: platformPayments.status,
         sumaLei: platformPayments.sumaLei,
         pachet: platformPayments.package,
+        facturaLink: platformPayments.oblioLink,
+        facturaNumar: platformPayments.oblioNumber,
       })
       .from(platformPayments)
       .where(eq(platformPayments.orderId, orderId))

@@ -6,6 +6,7 @@ import { getLocale } from "@/lib/i18n/get-locale";
 import { SETARI_ECHIPA_DICT } from "@/lib/i18n/dictionaries/setari-echipa";
 
 import { AbonamentSection } from "./abonament-section";
+import { listeazaFacturiAction } from "../billing-actions";
 import { BrandingForm } from "./branding-form";
 import { DomainForm } from "./domain-form";
 import { obtineDateReferral } from "./referral-actions";
@@ -29,6 +30,7 @@ export default async function SetariPage({
   }
 
   const { cod, numarRecomandari } = await obtineDateReferral(orgSlug);
+  const facturi = await listeazaFacturiAction(orgSlug);
   const stripeStatus = await obtineStatusStripeDonatii(orgSlug);
   const hdrs = await headers();
   const webhookOrigin = `${hdrs.get("x-forwarded-proto") ?? "https"}://${hdrs.get("x-forwarded-host") ?? hdrs.get("host")}`;
@@ -58,7 +60,7 @@ export default async function SetariPage({
           (36rem) coloana de sliders + cardul de preț de 320px se înghesuiau
           una peste alta, ilizibil. */}
       <div className="mx-auto max-w-5xl">
-        <AbonamentSection orgSlug={orgSlug} pachetCurent={access.orgPackage} statusCurent={access.orgSubscriptionStatus} locale={locale} />
+        <AbonamentSection orgSlug={orgSlug} pachetCurent={access.orgPackage} statusCurent={access.orgSubscriptionStatus} locale={locale} facturi={facturi} />
       </div>
 
       <div className="mx-auto max-w-xl">

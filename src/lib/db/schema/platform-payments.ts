@@ -34,6 +34,14 @@ export const platformPayments = pgTable(
     netopiaStatus: integer("netopia_status"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     paidAt: timestamp("paid_at", { withTimezone: true }),
+    // Factura Oblio, emisă automat după ce IPN-ul confirmă plata (vezi lib/oblio.ts).
+    // `oblioEroare` reține motivul dacă emiterea a eșuat — accesul tot se acordă
+    // (nu blocăm organizația de o eroare de facturare), dar rămâne de regenerat manual.
+    oblioSeriesName: text("oblio_series_name"),
+    oblioNumber: text("oblio_number"),
+    oblioLink: text("oblio_link"),
+    oblioInvoicedAt: timestamp("oblio_invoiced_at", { withTimezone: true }),
+    oblioEroare: text("oblio_eroare"),
   },
   (t) => [index("platform_payments_org_idx").on(t.orgId)],
 ).enableRLS();
