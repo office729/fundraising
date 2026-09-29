@@ -4,8 +4,9 @@ import { and, eq, sql } from "drizzle-orm";
 
 import { genereazaRaportActivitateAI, type DateFinanciareExtrase, type SectiuniRaportActivitate } from "@/lib/ai";
 import { withOrgAdmin } from "@/lib/auth/guard";
-import { companies, companyActivityReports, companySponsorizari, financialDocuments } from "@/lib/db/schema";
-import { EroareUtilizator } from "@/lib/erori";
+import { autofillDesign } from "@/lib/canva";
+import { canvaConnections, companies, companyActivityReports, companySponsorizari, financialDocuments } from "@/lib/db/schema";
+import { EroareUtilizator, mesajSigur } from "@/lib/erori";
 
 export type CompanieRaportRand = {
   companyId: string;
@@ -69,6 +70,10 @@ export type DetaliuRaport = {
   continut: SectiuniRaportActivitate | null;
   status: "generat" | "trimis_canva" | "eroare_canva" | null;
   sursaFinanciaraConfirmata: boolean;
+  canvaEditUrl: string | null;
+  canvaViewUrl: string | null;
+  canvaEroare: string | null;
+  canvaAreSablon: boolean;
 };
 
 // Datele necesare paginii de detaliu — compania, suma/proiectele sponsorizării
@@ -90,7 +95,13 @@ export const obtineDetaliuRaportAction = withOrgAdmin(async (ctx, companyId: str
     .where(and(eq(companySponsorizari.companyId, companyId), eq(companySponsorizari.orgId, ctx.orgId), sql`extract(year from ${companySponsorizari.data}) = ${an}`));
 
   const [raport] = await ctx.db
-    .select({ continut: companyActivityReports.continut, status: companyActivityReports.status })
+    .select({
+      continut: companyActivityReports.continut,
+      status: companyActivityReports.status,
+      canvaEditUrl: companyActivityReports.canvaEditUrl,
+      canvaViewUrl: companyActivityReports.canvaViewUrl,
+      canvaEroare: companyActivityReports.canvaEroare,
+    })
     .from(companyActivityReports)
     .where(and(eq(companyActivityReports.companyId, companyId), eq(companyActivityReports.an, an)))
     .limit(1);
@@ -101,6 +112,12 @@ export const obtineDetaliuRaportAction = withOrgAdmin(async (ctx, companyId: str
     .where(and(eq(financialDocuments.orgId, ctx.orgId), eq(financialDocuments.an, an), sql`${financialDocuments.confirmatLa} is not null`))
     .limit(1);
 
+  const [conexiuneCanva] = await ctx.db
+    .select({ brandTemplateId: canvaConnections.brandTemplateId })
+    .from(canvaConnections)
+    .where(eq(canvaConnections.orgId, ctx.orgId))
+    .limit(1);
+
   return {
     companyNume: companie.nume,
     an,
@@ -109,6 +126,10 @@ export const obtineDetaliuRaportAction = withOrgAdmin(async (ctx, companyId: str
     continut: (raport?.continut as SectiuniRaportActivitate | null) ?? null,
     status: raport?.status ?? null,
     sursaFinanciaraConfirmata: Boolean(docConfirmat),
+    canvaEditUrl: raport?.canvaEditUrl ?? null,
+    canvaViewUrl: raport?.canvaViewUrl ?? null,
+    canvaEroare: raport?.canvaEroare ?? null,
+    canvaAreSablon: Boolean(conexiuneCanva?.brandTemplateId),
   };
 });
 
@@ -173,4 +194,60 @@ export const salveazaRaportAction = withOrgAdmin(async (ctx, companyId: string, 
       target: [companyActivityReports.companyId, companyActivityReports.an],
       set: { continut, generatDe: ctx.userId, generatLa: new Date() },
     });
+});
+
+// Trimite conținutul SALVAT (nu regenerează) pe Brand Template-ul ales de
+// organizație — creează un design Canva NOU (Autofill), editabil direct de
+// ONG în Canva. Cere: raportul deja generat/salvat + Canva conectat cu un
+// șablon ales. Câmpurile din șablon trebuie să existe cu EXACT aceste nume.
+export const trimiteInCanvaAction = withOrgAdmin(async (ctx, companyId: string, an: number) => {
+  const [raport] = await ctx.db
+    .select({ id: companyActivityReports.id, continut: companyActivityReports.continut })
+    .from(companyActivityReports)
+    .where(and(eq(companyActivityReports.companyId, companyId), eq(companyActivityReports.an, an)))
+    .limit(1);
+  if (!raport?.continut) throw new EroareUtilizator("Generează și salvează mai întâi raportul, înainte de a-l trimite în Canva.");
+
+  const [conexiune] = await ctx.db
+    .select({ brandTemplateId: canvaConnections.brandTemplateId })
+    .from(canvaConnections)
+    .where(eq(canvaConnections.orgId, ctx.orgId))
+    .limit(1);
+  if (!conexiune?.brandTemplateId) throw new EroareUtilizator("Conectează Canva și alege un șablon în Setări înainte de a trimite un raport.");
+
+  const [companie] = await ctx.db.select({ nume: companies.nume }).from(companies).where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId))).limit(1);
+  if (!companie) throw new EroareUtilizator("Firma nu a fost găsită.");
+
+  const [agregat] = await ctx.db
+    .select({ suma: sql<number>`coalesce(sum(${companySponsorizari.suma}), 0)::int` })
+    .from(companySponsorizari)
+    .where(and(eq(companySponsorizari.companyId, companyId), eq(companySponsorizari.orgId, ctx.orgId), sql`extract(year from ${companySponsorizari.data}) = ${an}`));
+
+  const continut = raport.continut as SectiuniRaportActivitate;
+  const camp = (text: string) => ({ type: "text" as const, text });
+  const data = {
+    titlu: camp(continut.titlu),
+    introducere: camp(continut.introducere),
+    rezumat_financiar: camp(continut.rezumatFinanciar),
+    folosire_fonduri: camp(continut.folosireFonduri),
+    impact: camp(continut.impact),
+    multumire: camp(continut.multumire),
+    nume_companie: camp(companie.nume),
+    an: camp(String(an)),
+    suma_sponsorizata: camp(`${(agregat?.suma ?? 0).toLocaleString("ro-RO")} lei`),
+    nume_organizatie: camp(ctx.orgName),
+  };
+
+  try {
+    const rezultat = await autofillDesign(ctx.db, ctx.orgId, conexiune.brandTemplateId, `${companie.nume} — ${an}`, data);
+    await ctx.db
+      .update(companyActivityReports)
+      .set({ status: "trimis_canva", canvaDesignId: rezultat.designId, canvaEditUrl: rezultat.editUrl, canvaViewUrl: rezultat.viewUrl, canvaEroare: null, trimisCanvaLa: new Date() })
+      .where(eq(companyActivityReports.id, raport.id));
+    return rezultat;
+  } catch (e) {
+    const mesaj = mesajSigur(e, "Trimiterea către Canva a eșuat.", "canva-autofill");
+    await ctx.db.update(companyActivityReports).set({ status: "eroare_canva", canvaEroare: mesaj }).where(eq(companyActivityReports.id, raport.id));
+    throw new EroareUtilizator(mesaj);
+  }
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, CheckCircle2, Save, Sparkles } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ExternalLink, Save, Send, Sparkles } from "lucide-react";
 import { useState, useTransition } from "react";
 
 import { Breadcrumb } from "../../components/ui/breadcrumb";
@@ -10,7 +10,7 @@ import { Label, Textarea } from "../../components/ui/input";
 import { formatSuma } from "../../lib/format";
 import { useLocale } from "../../lib/locale-context";
 import type { SectiuniRaportActivitate } from "@/lib/ai";
-import { genereazaRaportAction, salveazaRaportAction, type DetaliuRaport } from "./raport-actions";
+import { genereazaRaportAction, salveazaRaportAction, trimiteInCanvaAction, type DetaliuRaport } from "./raport-actions";
 
 const SECTIUNI: { cheie: keyof SectiuniRaportActivitate; eticheta_ro: string; eticheta_en: string }[] = [
   { cheie: "titlu", eticheta_ro: "Titlu", eticheta_en: "Title" },
@@ -39,6 +39,8 @@ export function RaportDetaliuClient({
   const [continut, setContinut] = useState<SectiuniRaportActivitate>(detaliu.continut ?? GOL);
   const [eroare, setEroare] = useState<string | null>(null);
   const [salvatOk, setSalvatOk] = useState(false);
+  const [canvaEditUrl, setCanvaEditUrl] = useState(detaliu.canvaEditUrl);
+  const [canvaViewUrl, setCanvaViewUrl] = useState(detaliu.canvaViewUrl);
   const [pending, start] = useTransition();
 
   const onGenereaza = () => {
@@ -60,6 +62,20 @@ export function RaportDetaliuClient({
       try {
         await salveazaRaportAction(orgSlug, companyId, an, continut);
         setSalvatOk(true);
+      } catch (e) {
+        setEroare(e instanceof Error ? e.message : "Eroare.");
+      }
+    });
+  };
+
+  const onTrimiteCanva = () => {
+    setEroare(null);
+    start(async () => {
+      try {
+        await salveazaRaportAction(orgSlug, companyId, an, continut);
+        const rezultat = await trimiteInCanvaAction(orgSlug, companyId, an);
+        setCanvaEditUrl(rezultat.editUrl);
+        setCanvaViewUrl(rezultat.viewUrl);
       } catch (e) {
         setEroare(e instanceof Error ? e.message : "Eroare.");
       }
@@ -128,6 +144,38 @@ export function RaportDetaliuClient({
             </div>
           ))}
         </div>
+      </Card>
+
+      <Card>
+        <CardHeader title={ro ? "Trimite în Canva" : "Send to Canva"} subtitle={ro ? "Creează un design Canva editabil, pe șablonul ales în Setări." : "Creates an editable Canva design from the template chosen in Settings."} />
+        {!detaliu.canvaAreSablon ? (
+          <p className="text-[13px] text-[var(--ci-text-muted)]">
+            {ro ? "Conectează Canva și alege un șablon în Setări înainte de a trimite un raport." : "Connect Canva and choose a template in Settings before sending a report."}
+          </p>
+        ) : (
+          <>
+            <Button onClick={onTrimiteCanva} disabled={pending}>
+              <Send className="h-3.5 w-3.5" /> {canvaEditUrl ? (ro ? "Retrimite în Canva" : "Resend to Canva") : ro ? "Trimite în Canva" : "Send to Canva"}
+            </Button>
+            {canvaEditUrl && (
+              <div className="mt-3 flex flex-wrap items-center gap-3 text-[13px]">
+                <a href={canvaEditUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 font-medium text-[var(--ci-blue)] hover:underline">
+                  {ro ? "Deschide în Canva (editabil)" : "Open in Canva (editable)"} <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+                {canvaViewUrl && canvaViewUrl !== canvaEditUrl && (
+                  <a href={canvaViewUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[var(--ci-text-muted)] hover:underline">
+                    {ro ? "Vizualizează" : "View"} <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
+                )}
+              </div>
+            )}
+            {detaliu.canvaEroare && !canvaEditUrl && (
+              <p className="mt-3 flex items-center gap-1.5 text-[13px] text-[var(--ci-red)]">
+                <AlertTriangle className="h-3.5 w-3.5" /> {detaliu.canvaEroare}
+              </p>
+            )}
+          </>
+        )}
       </Card>
     </div>
   );

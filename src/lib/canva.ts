@@ -175,3 +175,52 @@ export async function obtineDatasetSablon(dbCtx: OrgContext["db"], orgId: string
 export async function tokenValidPentruAutofill(dbCtx: OrgContext["db"], orgId: string): Promise<string> {
   return obtineTokenValid(dbCtx, orgId);
 }
+
+// --- Autofill (Pasul 5) ----------------------------------------------------
+// Umple un Brand Template cu datele raportului → un design Canva NOU, editabil
+// direct de ONG în Canva. Job asincron — pornit cu POST, verificat cu poll
+// (Autofill e de obicei rapid, sub 10s, dar nu instant).
+
+export type CampAutofill = { type: "text"; text: string };
+
+type AutofillJob = {
+  job: {
+    id: string;
+    status: "in_progress" | "success" | "failed";
+    result?: { design?: { id: string; urls?: { edit_url?: string; view_url?: string } } };
+    error?: { message?: string };
+  };
+};
+
+export async function autofillDesign(
+  dbCtx: OrgContext["db"],
+  orgId: string,
+  templateId: string,
+  titluDesign: string,
+  data: Record<string, CampAutofill>,
+): Promise<{ designId: string; editUrl: string; viewUrl: string }> {
+  const token = await obtineTokenValid(dbCtx, orgId);
+
+  const start = await fetch(`${API_BASE}/autofills`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+    body: JSON.stringify({ brand_template_id: templateId, title: titluDesign, data }),
+  });
+  if (!start.ok) throw new Error(`Canva autofill (start) a eșuat: ${start.status} ${(await start.text().catch(() => "")).slice(0, 200)}`);
+  let job = (await start.json() as AutofillJob).job;
+
+  for (let i = 0; i < 15 && job.status === "in_progress"; i++) {
+    await new Promise((r) => setTimeout(r, 2000));
+    const poll = await fetch(`${API_BASE}/autofills/${job.id}`, { headers: { authorization: `Bearer ${token}` } });
+    if (!poll.ok) throw new Error(`Canva autofill (verificare) a eșuat: ${poll.status}`);
+    job = (await poll.json() as AutofillJob).job;
+  }
+
+  if (job.status === "success") {
+    const design = job.result?.design;
+    if (!design?.id || !design.urls?.edit_url) throw new Error("Canva autofill a reușit, dar nu a întors design-ul.");
+    return { designId: design.id, editUrl: design.urls.edit_url, viewUrl: design.urls.view_url ?? design.urls.edit_url };
+  }
+  if (job.status === "failed") throw new Error(`Canva autofill a eșuat: ${job.error?.message ?? "eroare necunoscută"}`);
+  throw new Error("Canva autofill nu s-a finalizat la timp (timeout).");
+}
