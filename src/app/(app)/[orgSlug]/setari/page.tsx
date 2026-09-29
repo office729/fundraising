@@ -8,6 +8,8 @@ import { SETARI_ECHIPA_DICT } from "@/lib/i18n/dictionaries/setari-echipa";
 import { AbonamentSection } from "./abonament-section";
 import { listeazaFacturiAction } from "../billing-actions";
 import { BrandingForm } from "./branding-form";
+import { obtineStatusCanvaAction } from "./canva-actions";
+import { CanvaSection } from "./canva-section";
 import { DomainForm } from "./domain-form";
 import { obtineDateReferral } from "./referral-actions";
 import { ReferralSection } from "./referral-section";
@@ -17,10 +19,13 @@ import { titluPagina } from "@/lib/page-titles";
 
 export default async function SetariPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ orgSlug: string }>;
+  searchParams: Promise<{ canva?: string }>;
 }) {
   const { orgSlug } = await params;
+  const { canva } = await searchParams;
   const access = await requireOrgAccess(orgSlug);
   const locale = await getLocale();
   const dict = SETARI_ECHIPA_DICT[locale].orgSetari;
@@ -32,6 +37,7 @@ export default async function SetariPage({
   const { cod, numarRecomandari } = await obtineDateReferral(orgSlug);
   const facturi = await listeazaFacturiAction(orgSlug);
   const stripeStatus = await obtineStatusStripeDonatii(orgSlug);
+  const canvaStatus = await obtineStatusCanvaAction(orgSlug);
   const hdrs = await headers();
   const webhookOrigin = `${hdrs.get("x-forwarded-proto") ?? "https"}://${hdrs.get("x-forwarded-host") ?? hdrs.get("host")}`;
 
@@ -71,6 +77,7 @@ export default async function SetariPage({
           locale={locale}
         />
         <ReferralSection cod={cod} numarRecomandari={numarRecomandari} locale={locale} />
+        <CanvaSection orgSlug={orgSlug} locale={locale} status={canvaStatus} feedback={canva} />
       </div>
     </>
   );
