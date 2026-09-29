@@ -18,6 +18,11 @@ type InstrumentDef = { key: string; href: string };
 // (fără echivalent HTML real portat încă).
 const CATEGORII: { key: CategorieKey; culoare: string; instrumente: InstrumentDef[] }[] = [
   {
+    key: "rapoarte",
+    culoare: "var(--ci-green)",
+    instrumente: [{ key: "raportCompanii", href: "raport-companii" }],
+  },
+  {
     key: "campanii",
     culoare: "var(--ci-purple)",
     instrumente: [

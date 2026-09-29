@@ -1,7 +1,7 @@
 "use client";
 
-import { Printer } from "lucide-react";
-import { useParams } from "next/navigation";
+import { FileText, Printer } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import { Breadcrumb } from "../../components/ui/breadcrumb";
@@ -18,6 +18,7 @@ const RESPONSABILI = ["Toți", "Andreea Vasilescu", "Vlad Placintă", "Ioana Mur
 
 export default function RaportCompaniiPage() {
   const { orgSlug } = useParams<{ orgSlug: string }>();
+  const router = useRouter();
   const COMPANII = useCompanii();
   const [responsabil, setResponsabil] = useState("Toți");
   const [luna, setLuna] = useState(() => new Date().toISOString().slice(0, 7));
@@ -53,6 +54,9 @@ export default function RaportCompaniiPage() {
             {RESPONSABILI.map((r) => <option key={r} value={r}>{r}</option>)}
           </Select>
           <input type="month" value={luna} onChange={(e) => setLuna(e.target.value)} className="h-9 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 text-sm text-[var(--ci-text)]" />
+          <Button variant="secondary" onClick={() => router.push(`/${orgSlug}/crm/instrumente/raport-companii/documente-financiare`)}>
+            <FileText className="h-3.5 w-3.5" /> {locale === "en" ? "Financial documents" : "Documente financiare"}
+          </Button>
           <Button variant="secondary" onClick={() => window.print()}>
             <Printer className="h-3.5 w-3.5" /> {dict.printeaza}
           </Button>

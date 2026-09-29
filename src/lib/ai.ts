@@ -29,14 +29,40 @@ const ETICHETA_CANAL: Record<CanalContinut, string> = {
   comunicat: "comunicat de presă",
 };
 
+// Un document atașat (PDF) — trimis ca bloc "document" alături de textul
+// promptului, în aceeași cerere. Anthropic citește nativ tabelele din PDF,
+// nu trece prin OCR/parsare separată.
+export type DocumentAtasat = { mediaType: "application/pdf"; base64: string };
+
 // Apel low-level la Anthropic. Întoarce textul răspunsului sau aruncă.
-async function apeleazaAI(params: { system: string; prompt: string; maxTokens?: number }): Promise<string> {
+// `documente` (opțional) transformă `content`-ul mesajului dintr-un string
+// simplu într-un array de blocuri (document + text) — superset al formei
+// existente, cei trei apelanți vechi (text simplu) rămân neschimbați.
+// `timeoutMs` (implicit 30s, ca înainte) — extragerea din document are nevoie
+// de mai mult (prompt + fișier mai mari), de-aici parametrul separat.
+async function apeleazaAI(params: {
+  system: string;
+  prompt: string;
+  maxTokens?: number;
+  documente?: DocumentAtasat[];
+  timeoutMs?: number;
+}): Promise<string> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY lipsește din mediu — AI-ul nu e configurat.");
   const model = process.env.ANTHROPIC_MODEL || DEFAULT_MODEL;
 
+  const content = params.documente?.length
+    ? [
+        ...params.documente.map((d) => ({
+          type: "document" as const,
+          source: { type: "base64" as const, media_type: d.mediaType, data: d.base64 },
+        })),
+        { type: "text" as const, text: params.prompt },
+      ]
+    : params.prompt;
+
   const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), 30000);
+  const t = setTimeout(() => ctrl.abort(), params.timeoutMs ?? 30000);
   let res: Response;
   try {
     res = await fetch(ANTHROPIC_URL, {
@@ -50,7 +76,7 @@ async function apeleazaAI(params: { system: string; prompt: string; maxTokens?: 
         model,
         max_tokens: params.maxTokens ?? 1024,
         system: params.system,
-        messages: [{ role: "user", content: params.prompt }],
+        messages: [{ role: "user", content }],
       }),
       signal: ctrl.signal,
     });
@@ -220,6 +246,167 @@ export async function genereazaCalendarZilnicAI(date: DateCampanie, zile = 7): P
       if (text) out.push({ obiectiv, text });
     }
     return out.length ? out.slice(0, zile) : null;
+  } catch {
+    return null;
+  }
+}
+
+// --- Modulul „Raport de activitate companii" --------------------------------
+// Gardă identică în spirit cu systemPrompt() de mai sus, dar pentru extragere
+// de cifre financiare, nu copywriting: interdicție explicită de a inventa sau
+// estima orice cifră care nu apare clar în documentul primit.
+
+const CAMPURI_FINANCIARE = [
+  "venituri",
+  "cheltuieli",
+  "activeTotale",
+  "datoriiTotale",
+  "capitalPropriu",
+  "rezultatNet",
+] as const;
+
+export type DateFinanciareExtrase = Partial<Record<(typeof CAMPURI_FINANCIARE)[number], number>> & {
+  anGasit?: number | null;
+};
+
+function systemPromptExtragere(): string {
+  return [
+    "Ești un contabil care extrage cifre dintr-un document financiar oficial (Balanță de verificare sau Bilanț contabil) al unui ONG din România.",
+    "REGULI STRICTE, fără excepție:",
+    "- Extrage DOAR cifre care apar EXPLICIT, clar, în documentul primit.",
+    "- Dacă o cifră nu apare clar sau nu ești sigur ce reprezintă, pune null pentru ea — NU estima, NU calcula, NU presupune.",
+    "- Nu confunda rânduri asemănătoare (ex. active imobilizate vs. active circulante vs. active totale) — dacă nu poți distinge cu certitudine, pune null.",
+    "- Răspunde DOAR cu JSON valid, fără text în plus, fără ```.",
+  ].join("\n");
+}
+
+// Extrage cifrele-cheie dintr-un document financiar — fie un PDF (trimis ca
+// atașament, Claude îl citește nativ), fie text tabelar deja parsat dintr-un
+// XLSX (vezi parse-balanta-xlsx.ts). Întoarce null (fără cheie / eroare /
+// JSON invalid) — apelantul marchează extractieStatus = 'eroare' și cere
+// completare manuală, niciodată nu inventează cifre.
+export async function extrageDateFinanciareAI(params: {
+  an: number;
+  tip: "balanta" | "bilant";
+  documentPdf?: DocumentAtasat;
+  textTabelar?: string;
+}): Promise<DateFinanciareExtrase | null> {
+  if (!aiConfigurat()) return null;
+  if (!params.documentPdf && !params.textTabelar) return null;
+
+  const prompt = [
+    `Document: ${params.tip === "balanta" ? "Balanță de verificare" : "Bilanț contabil"}, an fiscal declarat: ${params.an}.`,
+    params.textTabelar ? "Conținutul tabelar al documentului (extras dintr-un Excel):\n" + params.textTabelar.slice(0, 20000) : "Documentul e atașat ca PDF.",
+    "",
+    "Extrage următoarele cifre (în lei, numere întregi, fără text/simbol monetar) dacă apar clar:",
+    "- venituri (total venituri anul curent)",
+    "- cheltuieli (total cheltuieli anul curent)",
+    "- activeTotale (total active)",
+    "- datoriiTotale (total datorii)",
+    "- capitalPropriu (capitaluri proprii)",
+    "- rezultatNet (rezultatul exercițiului — profit sau pierdere; pierdere = număr negativ)",
+    "- anGasit (anul fiscal la care se referă documentul, dacă e menționat explicit — altfel null)",
+    "",
+    "Format de răspuns (JSON valid, fără text în plus, fără ```):",
+    '{ "venituri": number|null, "cheltuieli": number|null, "activeTotale": number|null, "datoriiTotale": number|null, "capitalPropriu": number|null, "rezultatNet": number|null, "anGasit": number|null }',
+  ].join("\n");
+
+  try {
+    const raw = curata(
+      await apeleazaAI({
+        system: systemPromptExtragere(),
+        prompt,
+        maxTokens: 800,
+        documente: params.documentPdf ? [params.documentPdf] : undefined,
+        timeoutMs: 90000,
+      }),
+    );
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const out: DateFinanciareExtrase = {};
+    for (const camp of CAMPURI_FINANCIARE) {
+      const v = parsed[camp];
+      if (typeof v === "number" && Number.isFinite(v)) out[camp] = v;
+    }
+    out.anGasit = typeof parsed.anGasit === "number" ? parsed.anGasit : null;
+    return out;
+  } catch {
+    return null;
+  }
+}
+
+export type SectiuniRaportActivitate = {
+  titlu: string;
+  introducere: string;
+  rezumatFinanciar: string;
+  folosireFonduri: string;
+  impact: string;
+  multumire: string;
+};
+
+function systemPromptRaport(): string {
+  return [
+    "Ești redactor de rapoarte anuale de activitate pentru un ONG din România, care raportează unui sponsor corporate cum au fost folosite fondurile.",
+    "Ton: profesional, transparent, recunoscător — niciodată exagerat sau promoțional.",
+    "REGULI STRICTE, fără excepție:",
+    "- Folosește DOAR cifrele și faptele primite explicit. NU inventa sume, procente, proiecte, cifre de impact sau declarații.",
+    "- Dacă o informație nu-ți e dată, nu o menționa — nu completa cu presupuneri sau formulări vagi care sugerează cifre inexistente.",
+    "- Păstrează sumele exact cum îți sunt date (nu rotunji, nu converti monedă).",
+    "- Scrie în limba română.",
+  ].join("\n");
+}
+
+// Generează cele 6 secțiuni ale raportului de activitate pentru O companie/an,
+// din cifrele financiare CONFIRMATE (nu direct din extractia AI brută — vezi
+// financialDocuments.confirmatLa) și din sponsorizarea reală a companiei.
+// Întoarce null (fără cheie / eroare) — apelantul cere completare manuală.
+export async function genereazaRaportActivitateAI(params: {
+  orgName: string;
+  an: number;
+  companie: { nume: string; sumaSponsorizata: number | null; proiecte: string[] };
+  dateFinanciare: DateFinanciareExtrase | null;
+}): Promise<SectiuniRaportActivitate | null> {
+  if (!aiConfigurat()) return null;
+
+  const financiar = params.dateFinanciare
+    ? Object.entries(params.dateFinanciare)
+        .filter(([k, v]) => k !== "anGasit" && typeof v === "number")
+        .map(([k, v]) => `${k}: ${(v as number).toLocaleString("ro-RO")} lei`)
+        .join(", ") || "necunoscute"
+    : "necunoscute";
+
+  const prompt = [
+    `Organizație: ${params.orgName}`,
+    `An de raportare: ${params.an}`,
+    `Companie sponsor: ${params.companie.nume}`,
+    params.companie.sumaSponsorizata != null
+      ? `Sumă sponsorizată de această companie în ${params.an}: ${params.companie.sumaSponsorizata.toLocaleString("ro-RO")} lei`
+      : "Sumă sponsorizată: necunoscută",
+    params.companie.proiecte.length ? `Proiecte legate de această sponsorizare: ${params.companie.proiecte.join(", ")}` : "",
+    `Cifre financiare confirmate ale organizației pentru ${params.an}: ${financiar}`,
+    "",
+    "Scrie raportul de activitate cu exact 6 secțiuni, adresat acestei companii sponsor.",
+    "Format de răspuns (JSON valid, fără text în plus, fără ```):",
+    '{ "titlu": string, "introducere": string, "rezumatFinanciar": string, "folosireFonduri": string, "impact": string, "multumire": string }',
+    "- titlu: titlul raportului (ex. include numele organizației și anul).",
+    "- introducere: 1 paragraf, prezentarea organizației și scopul raportului.",
+    "- rezumatFinanciar: 1 paragraf, folosind DOAR cifrele financiare date mai sus (dacă sunt 'necunoscute', scrie un paragraf general fără cifre inventate).",
+    "- folosireFonduri: 1 paragraf despre cum au fost folosite fondurile (dacă proiectele nu sunt date, rămâi general, fără a inventa proiecte).",
+    "- impact: 1 paragraf — DOAR dacă ai date concrete de impact; altfel un paragraf scurt, general, fără cifre inventate.",
+    "- multumire: 1-2 fraze de mulțumire către companie, menționând-o explicit pe nume.",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  try {
+    const raw = curata(await apeleazaAI({ system: systemPromptRaport(), prompt, maxTokens: 1800 }));
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const sectiuni: Partial<SectiuniRaportActivitate> = {};
+    for (const cheie of ["titlu", "introducere", "rezumatFinanciar", "folosireFonduri", "impact", "multumire"] as const) {
+      const v = parsed[cheie];
+      sectiuni[cheie] = typeof v === "string" ? v.trim() : "";
+    }
+    if (!sectiuni.titlu || !sectiuni.introducere) return null;
+    return sectiuni as SectiuniRaportActivitate;
   } catch {
     return null;
   }

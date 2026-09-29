@@ -577,6 +577,19 @@ const POLICIES = [
   `create policy fundraising_audit_log_member_insert on fundraising_audit_log for insert with check (
     org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
   )`,
+
+  // Modulul „Raport de activitate companii" — izolare simplă pe org_id, ca la
+  // restul tabelelor CRM; restricția la owner/admin (documente financiare,
+  // token-uri Canva) se aplică la nivel de server action (withOrgAdmin), nu RLS.
+  `create policy financial_documents_tenant_isolation on financial_documents
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy company_activity_reports_tenant_isolation on company_activity_reports
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy canva_connections_tenant_isolation on canva_connections
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
 ];
 
 const FORCE_TABLES = [
@@ -616,6 +629,9 @@ const FORCE_TABLES = [
   "fundraising_group_posting_history",
   "fundraising_notifications",
   "fundraising_audit_log",
+  "financial_documents",
+  "company_activity_reports",
+  "canva_connections",
 ];
 
 try {

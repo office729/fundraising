@@ -132,3 +132,8 @@ export const mediaContactTip = pgEnum("media_contact_tip", ["publicatie", "tv", 
 export const pressReleaseStatus = pgEnum("press_release_status", ["draft", "aprobat"]);
 export const localGroupPlatforma = pgEnum("local_group_platforma", ["facebook", "whatsapp", "altul"]);
 export const localGroupStatus = pgEnum("local_group_status", ["activ", "inactiv"]);
+
+// Modulul „Raport de activitate companii" — vezi src/lib/db/schema/rapoarte-companii.ts.
+export const financialDocTip = pgEnum("financial_doc_tip", ["balanta", "bilant"]);
+export const financialDocExtractieStatus = pgEnum("financial_doc_extractie_status", ["in_asteptare", "ok", "eroare"]);
+export const companyReportStatus = pgEnum("company_report_status", ["generat", "trimis_canva", "eroare_canva"]);
