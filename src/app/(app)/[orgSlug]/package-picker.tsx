@@ -58,6 +58,14 @@ export function PackagePicker({ orgSlug }: { orgSlug: string }) {
 
   return (
     <div>
+      {/* Disclosure ÎNAINTE de plată, nu doar în Setări după — reînnoirea
+          automată pornește implicit dacă banca permite salvarea cardului (vezi
+          netopia-confirm.ts), deci clientul trebuie să știe asta dinainte, nu
+          să afle abia la a doua taxare. */}
+      <p className="mx-auto mb-4 max-w-xl text-center text-[12.5px] leading-relaxed text-muted-2">
+        Plata e recurentă: dacă banca permite, cardul e reținut și taxat automat în fiecare lună, până anulezi din
+        Setări → Abonament. Poți opri reînnoirea automată oricând, fără să pierzi accesul deja plătit.
+      </p>
       {eroare && <p className="mx-auto mb-4 max-w-xl text-center text-sm text-red-600">{eroare}</p>}
       <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
         {PACHETE.map((p) => {

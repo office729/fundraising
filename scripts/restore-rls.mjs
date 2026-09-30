@@ -100,6 +100,12 @@ const POLICIES = [
   `create policy platform_payments_member_insert on platform_payments for insert with check (
     org_id = nullif(current_setting('app.current_org_id', true), '')::uuid and status = 'in_asteptare'
   )`,
+  // INSERT din cron-ul de reînnoire automată (api/cron/netopia-reinnoire) —
+  // rulează FĂRĂ o sesiune de organizație (fără app.current_org_id), doar cu
+  // app.public_lookup, la fel ca celelalte webhook-uri/cron-uri.
+  `create policy platform_payments_webhook_insert on platform_payments for insert with check (
+    nullif(current_setting('app.public_lookup', true), '') = 'true'
+  )`,
   `create policy platform_payments_webhook_select on platform_payments for select using (
     nullif(current_setting('app.public_lookup', true), '') = 'true'
   )`,

@@ -1,4 +1,4 @@
-import { index, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, index, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 import { orgPackage } from "./enums";
 import { organizations } from "./organizations";
@@ -30,6 +30,9 @@ export const platformPayments = pgTable(
     // ca o plată abandonată să nu-i schimbe pachetul în timp ce accesul curent
     // rămâne plătit.
     planConfig: jsonb("plan_config"),
+    // true = taxată automat de cron (cardul salvat), nu pornită interactiv de un
+    // membru — doar informativ (rapoarte/depanare); logica de confirmare e identică.
+    renewal: boolean("renewal").notNull().default(false),
     status: platformPaymentStatus("status").notNull().default("in_asteptare"),
     netopiaStatus: integer("netopia_status"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),

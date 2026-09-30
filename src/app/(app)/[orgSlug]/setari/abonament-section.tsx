@@ -7,6 +7,9 @@ import type { OrgPackage } from "@/lib/billing/packages";
 import type { Locale } from "@/lib/i18n/config";
 import { SETARI_ECHIPA_DICT } from "@/lib/i18n/dictionaries/setari-echipa";
 
+import { NetopiaCardSection } from "./netopia-card-section";
+import type { StatusReinnoireAutomata } from "./netopia-card-actions";
+
 const NUME_PACHET: Record<OrgPackage, string> = {
   trial: "Probă",
   start: "START",
@@ -30,12 +33,14 @@ export function AbonamentSection({
   orgSlug,
   pachetCurent,
   statusCurent,
+  reinnoireAutomata,
   locale,
   facturi,
 }: {
   orgSlug: string;
   pachetCurent: OrgPackage;
   statusCurent: string;
+  reinnoireAutomata: StatusReinnoireAutomata;
   locale: Locale;
   facturi: FacturaRand[];
 }) {
@@ -49,6 +54,8 @@ export function AbonamentSection({
       <p className="mt-1 text-sm text-muted">
         {dict.pachetCurent(NUME_PACHET[pachetCurent])} · {statusLabel}
       </p>
+
+      <NetopiaCardSection orgSlug={orgSlug} status={reinnoireAutomata} locale={locale} />
 
       {!arataOptiuni && (
         <button

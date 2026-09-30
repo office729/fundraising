@@ -127,6 +127,14 @@ export const PACKAGE_PRICE_ANUAL: Record<Exclude<OrgPackage, "trial" | "custom">
   impact: 2990,
 };
 
+// Numele afișat al fiecărui pachet fix — folosit în descrierea comenzii Netopia
+// (billing-actions.ts) și în emailurile de reînnoire automată (cron).
+export const NUME_PACHET_FIX: Record<Exclude<OrgPackage, "trial" | "custom">, string> = {
+  start: "Pachet START",
+  crestere: "Pachet CREȘTERE",
+  impact: "Pachet IMPACT",
+};
+
 // Abonamentul platformei se încasează prin Netopia (nu Stripe), lună de lună:
 // fiecare plată are prețul din `pretLunar` de mai sus, calculat server-side
 // (vezi lib/billing/netopia-checkout.ts). Nu există produse sau prețuri de

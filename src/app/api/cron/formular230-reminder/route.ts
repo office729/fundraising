@@ -1,8 +1,7 @@
-import { timingSafeEqual } from "node:crypto";
-
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
+import { cronAutorizat } from "@/lib/cron-auth";
 import { db } from "@/lib/db";
 import { donatoriReali, formular230Beneficiari, formular230CampaniiEmail, organizations } from "@/lib/db/schema";
 import { emailConfigurat, trimiteEmailuriInLot } from "@/lib/email";
@@ -26,18 +25,6 @@ const ZILE_INAINTE_TERMEN = 10;
 const TERMEN_LUNA = 5; // mai
 const TERMEN_ZI = 25;
 
-// Comparație în timp constant — `!==` pe string-uri scurtcircuitează la
-// primul octet diferit, o scurgere de timing ce ar permite ghicirea
-// CRON_SECRET caracter cu caracter. Lungimile diferă aproape mereu (secretul
-// e fix, headerul e controlat de client), iar timingSafeEqual aruncă în
-// acest caz — de-aia comparăm mai întâi lungimea.
-function secretValid(primit: string | null, asteptat: string): boolean {
-  if (!primit) return false;
-  const a = Buffer.from(primit);
-  const b = Buffer.from(`Bearer ${asteptat}`);
-  return a.length === b.length && timingSafeEqual(a, b);
-}
-
 function inFereastraTermen(acum: Date): boolean {
   const an = acum.getUTCFullYear();
   const termen = new Date(Date.UTC(an, TERMEN_LUNA - 1, TERMEN_ZI));
@@ -47,12 +34,10 @@ function inFereastraTermen(acum: Date): boolean {
 }
 
 export async function GET(req: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) {
+  if (!process.env.CRON_SECRET) {
     return NextResponse.json({ error: "cron_neconfigurat" }, { status: 501 });
   }
-  const auth = req.headers.get("authorization");
-  if (!secretValid(auth, secret)) {
+  if (!cronAutorizat(req)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 

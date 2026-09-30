@@ -239,6 +239,30 @@ create policy organizations_update_admin ON organizations
 create policy organizations_webhook_update ON organizations
   for update using (nullif(current_setting('app.public_lookup', true), '') = 'true');
 
+-- platform_payments — plățile abonamentului platformei (Netopia). Membrii
+-- organizației își pot CREA comenzi (INSERT) și le pot CITI (pagina de
+-- rezultat), dar NU le pot modifica: statusul ("reusita" etc.) îl fixează doar
+-- confirmarea verificată a Netopia (IPN sau taxarea sincronă cu tokenul
+-- salvat — vezi lib/billing/netopia-confirm.ts), în contextul de încredere
+-- app.public_lookup — altfel un membru și-ar putea marca singur plata reușită.
+-- LIPSEA din acest fișier (exista doar în scripts/restore-rls.mjs) — backfill.
+alter table platform_payments force row level security;
+create policy platform_payments_tenant_isolation ON platform_payments
+  for select using (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid);
+create policy platform_payments_member_insert ON platform_payments
+  for insert with check (
+    org_id = nullif(current_setting('app.current_org_id', true), '')::uuid and status = 'in_asteptare'
+  );
+-- INSERT din cron-ul de reînnoire automată (api/cron/netopia-reinnoire) — rulează
+-- FĂRĂ o sesiune de organizație (deci fără app.current_org_id), doar cu
+-- app.public_lookup, la fel ca celelalte webhook-uri/cron-uri.
+create policy platform_payments_webhook_insert ON platform_payments
+  for insert with check (nullif(current_setting('app.public_lookup', true), '') = 'true');
+create policy platform_payments_webhook_select ON platform_payments
+  for select using (nullif(current_setting('app.public_lookup', true), '') = 'true');
+create policy platform_payments_webhook_update ON platform_payments
+  for update using (nullif(current_setting('app.public_lookup', true), '') = 'true');
+
 -- invites: două căi de acces separate, pe același tabel —
 --  (a) admin/owner vede/creează invitațiile PROPRIEI organizații (listă);
 --  (b) cine deține token-ul din link vede/actualizează DOAR acel rând —

@@ -11,6 +11,7 @@ import { BrandingForm } from "./branding-form";
 import { obtineStatusCanvaAction } from "./canva-actions";
 import { CanvaSection } from "./canva-section";
 import { DomainForm } from "./domain-form";
+import { obtineStatusReinnoireAutomata } from "./netopia-card-actions";
 import { obtineDateReferral } from "./referral-actions";
 import { ReferralSection } from "./referral-section";
 import { obtineStatusStripeDonatii } from "./stripe-donatii-actions";
@@ -38,6 +39,7 @@ export default async function SetariPage({
   const facturi = await listeazaFacturiAction(orgSlug);
   const stripeStatus = await obtineStatusStripeDonatii(orgSlug);
   const canvaStatus = await obtineStatusCanvaAction(orgSlug);
+  const reinnoireAutomata = await obtineStatusReinnoireAutomata(orgSlug);
   const hdrs = await headers();
   const webhookOrigin = `${hdrs.get("x-forwarded-proto") ?? "https"}://${hdrs.get("x-forwarded-host") ?? hdrs.get("host")}`;
 
@@ -66,7 +68,14 @@ export default async function SetariPage({
           (36rem) coloana de sliders + cardul de preț de 320px se înghesuiau
           una peste alta, ilizibil. */}
       <div className="mx-auto max-w-5xl">
-        <AbonamentSection orgSlug={orgSlug} pachetCurent={access.orgPackage} statusCurent={access.orgSubscriptionStatus} locale={locale} facturi={facturi} />
+        <AbonamentSection
+          orgSlug={orgSlug}
+          pachetCurent={access.orgPackage}
+          statusCurent={access.orgSubscriptionStatus}
+          reinnoireAutomata={reinnoireAutomata}
+          facturi={facturi}
+          locale={locale}
+        />
       </div>
 
       <div className="mx-auto max-w-xl">

@@ -1,5 +1,5 @@
 import type { AnyPgColumn } from "drizzle-orm/pg-core";
-import { jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, integer, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 import { orgDomeniuActivitate, orgPackage, subscriptionStatus } from "./enums";
 
@@ -41,6 +41,28 @@ export const organizations = pgTable("organizations", {
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
   currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
+  // Reînnoire automată a abonamentului PLATFORMEI prin Netopia — după prima plată
+  // reușită cu cardul, dacă banca emitentă permite "binding" (tokenizare), Netopia
+  // întoarce un token reutilizabil (vezi lib/netopia.ts, IPN și cron/netopia-reinnoire).
+  // Cu el, taxăm lunar server-to-server, fără să vedem sau să stocăm vreodată datele
+  // cardului. Token-ul e criptat (AES-256-GCM, ORG_SECRETS_KEY) — la fel ca cheia
+  // Stripe a ONG-ului mai jos.
+  netopiaCardTokenEnc: text("netopia_card_token_enc"),
+  // Doar pentru afișare în Setări (ex. "•••• 4242, expiră 12/2028") — nu e un secret.
+  netopiaCardMasked: text("netopia_card_masked"),
+  netopiaCardExpireMonth: integer("netopia_card_expire_month"),
+  netopiaCardExpireYear: integer("netopia_card_expire_year"),
+  // Comutatorul efectiv al reînnoirii automate — organizația îl poate opri oricând
+  // din Setări, fără să șteargă cardul salvat (poate reactiva ulterior). Cron-ul de
+  // reînnoire taxează DOAR organizațiile cu acest flag true și un token salvat.
+  netopiaAutoRenew: boolean("netopia_auto_renew").notNull().default(false),
+  // Încercări CONSECUTIVE de reînnoire eșuate (card expirat/refuzat) — reset la 0 la
+  // orice reînnoire reușită. După NETOPIA_RENEWAL_MAX_INCERCARI (netopia-checkout.ts),
+  // cron-ul dezactivează reînnoirea automată și șterge token-ul, ca să nu mai
+  // reîncerce la nesfârșit un card mort — accesul rămâne valabil până la
+  // currentPeriodEnd deja plătit, neschimbat de un eșec de reînnoire.
+  netopiaRenewalAttempts: integer("netopia_renewal_attempts").notNull().default(0),
+  netopiaRenewalFailedAt: timestamp("netopia_renewal_failed_at", { withTimezone: true }),
   // Contul Stripe PROPRIU al ONG-ului, pentru donațiile primite pe paginile lui
   // de campanie — platforma nu are cont Stripe. Cheia secretă și secretul
   // webhook-ului sunt criptate (AES-256-GCM, cheia ORG_SECRETS_KEY din mediu) și

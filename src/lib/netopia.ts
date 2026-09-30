@@ -42,7 +42,7 @@ export type DateFacturare = {
   telefon: string;
 };
 
-export type PornestePlataParams = {
+type OrderPentruStart = {
   orderId: string;
   sumaLei: number;
   descriere: string;
@@ -52,14 +52,12 @@ export type PornestePlataParams = {
   cancelUrl?: string;
 };
 
-// Începe o plată și întoarce URL-ul paginii găzduite de Netopia.
-export async function pornestePlata(p: PornestePlataParams): Promise<{ paymentUrl: string; ntpId: string | null }> {
-  const apiKey = process.env.NETOPIA_API_KEY;
+// Corpul cererii e identic pentru toate tipurile de plată — diferă doar
+// `payment.instrument` (card nou pe pagina găzduită vs. token salvat, fără
+// pagină, fără redirect). Construit o singură dată, ca cele două fluxuri să nu
+// diveargă silențios pe restul câmpurilor (facturare, produs, monedă).
+function corpCerere(p: OrderPentruStart, instrument: { type: "card" } | { token: string }): unknown {
   const posSignature = process.env.NETOPIA_POS_SIGNATURE;
-  if (!apiKey || !posSignature) throw new Error("netopia_neconfigurat");
-
-  // Netopia cere câmpuri de facturare/adresă obligatorii; nu colectăm încă adresa
-  // ONG-ului la abonare, deci trimitem valori neutre pentru cele lipsă.
   const facturare = {
     email: p.facturare.email,
     phone: p.facturare.telefon,
@@ -72,8 +70,7 @@ export async function pornestePlata(p: PornestePlataParams): Promise<{ paymentUr
     postalCode: "010000",
     details: "-",
   };
-
-  const body = {
+  return {
     config: {
       emailTemplate: "",
       notifyUrl: p.notifyUrl,
@@ -83,8 +80,7 @@ export async function pornestePlata(p: PornestePlataParams): Promise<{ paymentUr
     },
     payment: {
       options: { installments: 1, bonus: 0 },
-      // Fără account/expMonth/expYear/secretCode = pagină de plată găzduită.
-      instrument: { type: "card" },
+      instrument,
       data: {},
     },
     order: {
@@ -102,6 +98,71 @@ export async function pornestePlata(p: PornestePlataParams): Promise<{ paymentUr
       data: {},
     },
   };
+}
+
+// Forma comună a rezultatului unei plăți — folosită atât pentru IPN
+// (payment.* din corpul webhook-ului), cât și pentru răspunsul SINCRON al unei
+// taxări cu token (fără redirect, deci fără IPN garantat) — ambele confirmate
+// prin ACEEAȘI funcție (proceseazaRezultatPlataNetopia), ca logica banilor să
+// nu existe în două locuri care ar putea diverge.
+export type RezultatPlataNetopia = {
+  status: number;
+  suma: number | null;
+  moneda: string | null;
+  ntpId: string | null;
+  // Token reutilizabil pentru taxări viitoare — preferăm binding.token (explicit
+  // gândit pentru reutilizare, cu data expirării cardului), cu fallback pe
+  // payment.token simplu dacă binding lipsește.
+  cardToken: string | null;
+  cardExpireMonth: number | null;
+  cardExpireYear: number | null;
+  cardMasked: string | null;
+};
+
+type PaymentJson = {
+  status?: number;
+  amount?: number | string;
+  currency?: string;
+  ntpID?: string;
+  token?: string;
+  binding?: { token?: string; expireMonth?: number; expireYear?: number };
+  instrument?: { panMasked?: string };
+};
+
+function extrageRezultat(payment: PaymentJson | undefined): RezultatPlataNetopia {
+  const suma = payment?.amount !== undefined ? Number(payment.amount) : null;
+  return {
+    status: Number(payment?.status),
+    suma: Number.isFinite(suma) ? suma : null,
+    moneda: payment?.currency ?? null,
+    ntpId: payment?.ntpID ?? null,
+    cardToken: payment?.binding?.token ?? payment?.token ?? null,
+    cardExpireMonth: payment?.binding?.expireMonth ?? null,
+    cardExpireYear: payment?.binding?.expireYear ?? null,
+    cardMasked: payment?.instrument?.panMasked ?? null,
+  };
+}
+
+// Parsează corpul brut al IPN-ului Netopia — folosit DOAR după ce
+// verificaIpn() a confirmat semnătura (vezi api/netopia/ipn/route.ts).
+export function extrageRezultatDinIpn(corpBrut: string): { orderId: string | null; rezultat: RezultatPlataNetopia } | null {
+  let body: { payment?: PaymentJson; order?: { orderID?: string } };
+  try {
+    body = JSON.parse(corpBrut) as typeof body;
+  } catch {
+    return null;
+  }
+  return { orderId: body.order?.orderID ?? null, rezultat: extrageRezultat(body.payment) };
+}
+
+async function netopiaStart(body: unknown): Promise<{
+  payment?: PaymentJson & { paymentURL?: string };
+  error?: { code?: string; message?: string };
+  ok: boolean;
+  httpStatus: number;
+}> {
+  const apiKey = process.env.NETOPIA_API_KEY;
+  if (!apiKey) throw new Error("netopia_neconfigurat");
 
   const res = await fetch(`${BAZA[mediu()]}/payment/card/start`, {
     method: "POST",
@@ -109,18 +170,36 @@ export async function pornestePlata(p: PornestePlataParams): Promise<{ paymentUr
     body: JSON.stringify(body),
     cache: "no-store",
   });
+  const json = (await res.json().catch(() => null)) as { payment?: PaymentJson & { paymentURL?: string }; error?: { code?: string; message?: string } } | null;
+  return { payment: json?.payment, error: json?.error, ok: res.ok, httpStatus: res.status };
+}
 
-  const json = (await res.json().catch(() => null)) as {
-    payment?: { paymentURL?: string; ntpID?: string };
-    error?: { code?: string; message?: string };
-  } | null;
-
-  const paymentUrl = json?.payment?.paymentURL;
-  if (!res.ok || !paymentUrl) {
-    console.error("Netopia: pornirea plății a eșuat", res.status, json?.error);
+// Începe o plată NOUĂ (card încă necunoscut nouă) și întoarce URL-ul paginii
+// găzduite de Netopia — clientul introduce cardul ACOLO, niciodată la noi.
+export async function pornestePlata(p: OrderPentruStart): Promise<{ paymentUrl: string; ntpId: string | null }> {
+  if (!process.env.NETOPIA_POS_SIGNATURE) throw new Error("netopia_neconfigurat");
+  const { payment, error, ok } = await netopiaStart(corpCerere(p, { type: "card" }));
+  if (!ok || !payment?.paymentURL) {
+    console.error("Netopia: pornirea plății a eșuat", error);
     throw new Error("netopia_start_esuat");
   }
-  return { paymentUrl, ntpId: json?.payment?.ntpID ?? null };
+  return { paymentUrl: payment.paymentURL, ntpId: payment.ntpID ?? null };
+}
+
+// Taxează un card SALVAT dintr-o plată anterioară (reînnoire lunară automată,
+// vezi api/cron/netopia-reinnoire) — server-to-server, fără pagină găzduită și
+// fără să redirecționăm pe nimeni (donatorul/organizația nu e prezentă). Cardul
+// nu trece niciodată prin noi: doar token-ul, primit de la Netopia la o plată
+// anterioară reușită. Rezultatul vine SINCRON, în răspunsul acestui apel — un
+// card recurent refuzat NU declanșează neapărat un IPN separat.
+export async function taxeazaCuTokenSalvat(p: OrderPentruStart & { token: string }): Promise<RezultatPlataNetopia> {
+  if (!process.env.NETOPIA_POS_SIGNATURE) throw new Error("netopia_neconfigurat");
+  const { payment, error, ok, httpStatus } = await netopiaStart(corpCerere(p, { token: p.token }));
+  if (!ok && !payment) {
+    console.error("Netopia: taxarea cu token a eșuat la nivel de transport", httpStatus, error);
+    throw new Error("netopia_token_esuat");
+  }
+  return extrageRezultat(payment);
 }
 
 // --- Verificarea IPN ---------------------------------------------------------

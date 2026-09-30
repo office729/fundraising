@@ -250,6 +250,11 @@ export function CustomPlanBuilder({ orgSlug }: { orgSlug: string }) {
               ))}
             </div>
 
+            <p className="mt-4 text-[11.5px] leading-relaxed text-muted-2">
+              Plata e recurentă: dacă banca permite, cardul e reținut și taxat automat în fiecare lună, până anulezi
+              din Setări → Abonament.
+            </p>
+
             {eroare && <p className="mt-3 text-[13px] text-red-600">{eroare}</p>}
 
             <button

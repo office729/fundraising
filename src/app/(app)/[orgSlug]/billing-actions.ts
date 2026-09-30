@@ -6,14 +6,8 @@ import { headers } from "next/headers";
 import { withOrgAdmin } from "@/lib/auth/guard";
 import { calculateCustomPlanPrice, normalizeCustomPlanConfig, type CustomPlanConfigSaved } from "@/lib/billing/custom-plan";
 import { creeazaPlataAbonament } from "@/lib/billing/netopia-checkout";
-import { PACKAGE_LIMITS, type OrgPackage } from "@/lib/billing/packages";
+import { NUME_PACHET_FIX, PACKAGE_LIMITS, type OrgPackage } from "@/lib/billing/packages";
 import { platformPayments } from "@/lib/db/schema";
-
-const NUME_PACHET: Record<Exclude<OrgPackage, "trial" | "custom">, string> = {
-  start: "Pachet START",
-  crestere: "Pachet CREȘTERE",
-  impact: "Pachet IMPACT",
-};
 
 // Adresa platformei, pentru notifyUrl/redirectUrl/cancelUrl trimise la Netopia.
 // Sursa e NEXT_PUBLIC_SITE_URL (fixă, din mediu), NU headerele cererii
@@ -37,7 +31,7 @@ export const startCheckoutAction = withOrgAdmin(
     const url = await creeazaPlataAbonament(ctx, {
       pachet: pkg,
       pretLunar: PACKAGE_LIMITS[pkg].pretLunar!,
-      packageLabel: NUME_PACHET[pkg],
+      packageLabel: NUME_PACHET_FIX[pkg],
       planConfig: null,
       origin: await origin(),
     });
