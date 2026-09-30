@@ -186,6 +186,30 @@ export async function pornestePlata(p: OrderPentruStart): Promise<{ paymentUrl: 
   return { paymentUrl: payment.paymentURL, ntpId: payment.ntpID ?? null };
 }
 
+// Interoghează statusul unei comenzi direct de la Netopia — cerere PORNITĂ DE
+// NOI, autentificată cu API key-ul nostru (nu un webhook primit de la ei), deci
+// nu necesită deloc verificarea semnăturii JWT a IPN-ului. Folosită ca fallback
+// pe pagina de rezultat, dacă IPN-ul întârzie sau nu ajunge — vezi
+// api/abonament/[orgSlug]/rezultat/data.ts. Necesită ntpID (întors sincron de
+// pornestePlata la crearea comenzii, salvat separat — vezi netopia-checkout.ts).
+export async function interogheazaStatus(p: { orderId: string; ntpId: string }): Promise<RezultatPlataNetopia | null> {
+  const apiKey = process.env.NETOPIA_API_KEY;
+  const posSignature = process.env.NETOPIA_POS_SIGNATURE;
+  if (!apiKey || !posSignature) throw new Error("netopia_neconfigurat");
+
+  const res = await fetch(`${BAZA[mediu()]}/operation/status`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: apiKey },
+    body: JSON.stringify({ posID: posSignature, ntpID: p.ntpId, orderID: p.orderId }),
+    cache: "no-store",
+  });
+  const json = (await res.json().catch(() => null)) as { payment?: PaymentJson; error?: { code?: string; message?: string } } | null;
+  // code "00" = găsită și returnată cu succes; orice alt cod (ex. "103" — comandă
+  // negăsită) înseamnă că nu avem încă un rezultat de încredere.
+  if (!res.ok || json?.error?.code !== "00" || !json.payment) return null;
+  return extrageRezultat(json.payment);
+}
+
 // Taxează un card SALVAT dintr-o plată anterioară (reînnoire lunară automată,
 // vezi api/cron/netopia-reinnoire) — server-to-server, fără pagină găzduită și
 // fără să redirecționăm pe nimeni (donatorul/organizația nu e prezentă). Cardul

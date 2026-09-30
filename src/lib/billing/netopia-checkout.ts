@@ -2,7 +2,7 @@ import "server-only";
 
 import { randomUUID } from "node:crypto";
 
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 
 import type { OrgContext } from "@/lib/auth/guard";
 import { db, type Tx } from "@/lib/db";
@@ -54,6 +54,23 @@ async function insereazaComandaAbonament(tx: Tx, p: ParametriComanda): Promise<{
   return { orderId, sumaLei };
 }
 
+// Salvează ntpID-ul întors de Netopia la pornirea plății — necesar pentru
+// interogheazaStatus() (fallback dacă IPN-ul întârzie/nu ajunge, vezi
+// rezultat/data.ts). Rulează cu context de încredere (app.public_lookup), NU
+// prin ctx.db al membrului: membrii au drept doar de INSERT/SELECT pe
+// platform_payments, niciodată UPDATE — statusul plății rămâne exclusiv sub
+// controlul funcțiilor de încredere (proceseazaRezultatPlataNetopia și,
+// acum, această scriere strict a ntpID-ului, o valoare de corelare, nu de bani).
+async function salveazaNtpId(orderId: string, ntpId: string): Promise<void> {
+  await db.transaction(async (tx) => {
+    await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
+    await tx
+      .update(platformPayments)
+      .set({ ntpId })
+      .where(and(eq(platformPayments.orderId, orderId), sql`${platformPayments.ntpId} is null`));
+  });
+}
+
 // Pornește plata (o lună de acces) prin Netopia și întoarce URL-ul paginii lor
 // de plată — clientul redirecționează la URL-ul întors. Dacă Netopia refuză
 // pornirea, eroarea se propagă și tranzacția organizației (inclusiv comanda de
@@ -81,9 +98,7 @@ export async function creeazaPlataAbonament(
 
   const [prenume, ...restNume] = (ctx.userName ?? "").trim().split(/\s+/).filter(Boolean);
 
-  // ID-ul Netopia (ntpID) ajunge în rând din IPN; membrii nu au drept de UPDATE
-  // pe platform_payments, doar INSERT/SELECT — statusul îl fixează exclusiv IPN-ul.
-  const { paymentUrl } = await pornestePlata({
+  const { paymentUrl, ntpId } = await pornestePlata({
     orderId,
     sumaLei,
     descriere: `Alexandrit — ${params.packageLabel} (o lună)`,
@@ -98,6 +113,10 @@ export async function creeazaPlataAbonament(
     redirectUrl: `${params.origin}/abonament/${ctx.orgSlug}/rezultat?comanda=${orderId}`,
     cancelUrl: `${params.origin}/${ctx.orgSlug}/setari`,
   });
+  // Best-effort — o eroare aici nu trebuie să blocheze redirectul spre plată;
+  // fără ntpID salvat, fallback-ul de status de pe pagina de rezultat pur și
+  // simplu nu se poate folosi pentru această comandă (rămâne doar IPN-ul).
+  if (ntpId) await salveazaNtpId(orderId, ntpId).catch((e) => console.error("Netopia: salvare ntpID eșuată", e));
   return paymentUrl;
 }
 
