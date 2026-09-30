@@ -49,6 +49,16 @@ export const SETARI_ECHIPA_DICT = {
       culoareOrgDesc: "Se completează automat din logo la încărcare — poți s-o ajustezi manual oricând.",
       cif: "CIF",
       cifPlaceholder: "ex. RO12345678",
+      dateFacturare: {
+        title: "Date de facturare",
+        descriere: "Apar pe factura emisă automat pentru abonamentul platformei.",
+        adresaSediu: "Adresa sediu social",
+        adresaSediuPlaceholder: "ex. Str. Exemplu nr. 1, București",
+        judet: "Județ",
+        judetAlege: "Alege județul",
+        iban: "Cont bancar IBAN",
+        ibanPlaceholder: "ex. RO49AAAA1B31007593840000",
+      },
       domeniuActivitate: {
         label: "Domeniu de activitate",
         descriere: "Schimbă tema completă a platformei (culori, forme) și ce design-uri de campanie vezi la crearea unei pagini.",
@@ -297,6 +307,16 @@ export const SETARI_ECHIPA_DICT = {
       culoareOrgDesc: "Filled in automatically from the logo on upload — you can adjust it manually anytime.",
       cif: "Fiscal code (CIF)",
       cifPlaceholder: "e.g. RO12345678",
+      dateFacturare: {
+        title: "Billing details",
+        descriere: "Appear on the invoice issued automatically for the platform subscription.",
+        adresaSediu: "Registered address",
+        adresaSediuPlaceholder: "e.g. 1 Example St., Bucharest",
+        judet: "County",
+        judetAlege: "Choose the county",
+        iban: "Bank account IBAN",
+        ibanPlaceholder: "e.g. RO49AAAA1B31007593840000",
+      },
       domeniuActivitate: {
         label: "Field of activity",
         descriere: "Changes the platform's complete theme (colors, shapes) and which campaign designs you see when creating a page.",

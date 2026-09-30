@@ -3,10 +3,12 @@ import "server-only";
 import { and, eq, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
-import { organizations, platformPayments } from "@/lib/db/schema";
+import { appUsers, memberships, organizations, platformPayments } from "@/lib/db/schema";
+import { emailConfigurat, trimiteEmail } from "@/lib/email";
 import { clasificaStatus, type RezultatPlataNetopia } from "@/lib/netopia";
 import { raporteazaAvertisment, raporteazaEroare } from "@/lib/monitoring";
 import { emiteFacturaAbonament, oblioConfigurata } from "@/lib/oblio";
+import { htmlFacturaEmisa, subiectFacturaEmisa } from "@/lib/oblio-invoice-email-template";
 import { criptareConfigurata, cripteaza } from "@/lib/secret-box";
 
 import { NUME_PACHET_FIX } from "./packages";
@@ -46,7 +48,7 @@ async function factureazaPlata(orgId: string): Promise<void> {
   // `app.public_lookup` (contextul de încredere, ca restul confirmării de mai
   // sus), fiecare select ar întoarce 0 rânduri și funcția n-ar face nimic,
   // silențios, indiferent dacă plata există.
-  const { plata, org } = await db.transaction(async (tx) => {
+  const { plata, org, emailProprietar } = await db.transaction(async (tx) => {
     await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
     const rows = await tx
       .select({ id: platformPayments.id, orderId: platformPayments.orderId, sumaLei: platformPayments.sumaLei, pachet: platformPayments.package, oblioNumber: platformPayments.oblioNumber })
@@ -55,18 +57,33 @@ async function factureazaPlata(orgId: string): Promise<void> {
       .orderBy(sql`${platformPayments.paidAt} desc`)
       .limit(1);
     const plata = rows[0] ?? null;
-    if (!plata || plata.oblioNumber) return { plata: null, org: null }; // deja facturată sau plata nu s-a găsit
+    if (!plata || plata.oblioNumber) return { plata: null, org: null, emailProprietar: null }; // deja facturată sau plata nu s-a găsit
 
-    const [org] = await tx.select({ name: organizations.name, cif: organizations.cif }).from(organizations).where(eq(organizations.id, orgId)).limit(1);
-    return { plata, org: org ?? null };
+    const [org] = await tx
+      .select({ name: organizations.name, cif: organizations.cif, adresaSediu: organizations.adresaSediu, judet: organizations.judet, iban: organizations.iban })
+      .from(organizations)
+      .where(eq(organizations.id, orgId))
+      .limit(1);
+    // Emailul owner-ului — destinatarul facturii, atât pentru trimiterea
+    // proprie (mai jos) cât și pentru cea din contul Oblio (sendEmail:1, dacă
+    // e activată acolo) — vezi lib/oblio.ts.
+    const [proprietar] = await tx
+      .select({ email: appUsers.email })
+      .from(memberships)
+      .innerJoin(appUsers, eq(appUsers.id, memberships.userId))
+      .where(and(eq(memberships.orgId, orgId), eq(memberships.role, "owner")))
+      .limit(1);
+    return { plata, org: org ?? null, emailProprietar: proprietar?.email ?? null };
   });
   if (!plata || !org) return;
+
+  const packageLabel = (NUME_PACHET_FIX as Record<string, string>)[plata.pachet] ?? plata.pachet;
 
   try {
     const factura = await emiteFacturaAbonament({
       orderId: plata.orderId,
-      client: { nume: org.name, cif: org.cif, email: null },
-      descriere: `Alexandrit — ${(NUME_PACHET_FIX as Record<string, string>)[plata.pachet] ?? plata.pachet} (o lună)`,
+      client: { nume: org.name, cif: org.cif, adresa: org.adresaSediu, judet: org.judet, iban: org.iban, email: emailProprietar },
+      descriere: `Alexandrit — ${packageLabel} (o lună)`,
       sumaLei: plata.sumaLei,
     });
     await db.transaction(async (tx) => {
@@ -76,6 +93,17 @@ async function factureazaPlata(orgId: string): Promise<void> {
         .set({ oblioSeriesName: factura.seriesName, oblioNumber: factura.number, oblioLink: factura.link, oblioInvoicedAt: new Date(), oblioEroare: null })
         .where(eq(platformPayments.id, plata.id));
     });
+
+    // Trimitere PROPRIE a facturii, indiferent dacă emailul automat din contul
+    // Oblio (sendEmail:1) e configurat sau nu — best-effort, o eroare aici nu
+    // anulează factura deja emisă și salvată mai sus.
+    if (emailProprietar && emailConfigurat()) {
+      await trimiteEmail({
+        to: emailProprietar,
+        subiect: subiectFacturaEmisa(factura.number),
+        html: htmlFacturaEmisa({ orgName: org.name, packageLabel, sumaLei: plata.sumaLei, numarFactura: factura.number, linkFactura: factura.link }),
+      }).catch((e) => raporteazaEroare("oblio-factura-email", e, { orgId, orderId: plata.orderId }));
+    }
   } catch (e) {
     const mesaj = e instanceof Error ? e.message : "eroare necunoscută";
     await db.transaction(async (tx) => {

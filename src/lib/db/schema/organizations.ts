@@ -27,6 +27,13 @@ export const organizations = pgTable("organizations", {
   // src/lib/campaign-templates.ts); CIF-ul e validat doar ca FORMAT (nu
   // checksum complet), cu cifValidFormat() din lib/iban.ts.
   cif: text("cif"),
+  // Date de facturare — completate din Setări, folosite la emiterea automată a
+  // facturii Oblio pentru abonamentul platformei (vezi lib/oblio.ts,
+  // lib/billing/netopia-confirm.ts). Opționale (nu blochează nimic la lipsă,
+  // la fel ca CIF-ul) — dacă lipsesc, Oblio primește doar nume+CIF, ca înainte.
+  adresaSediu: text("adresa_sediu"),
+  judet: text("judet"), // unul din lib/judete.ts JUDETE, validat la salvare
+  iban: text("iban"),
   domeniuActivitate: orgDomeniuActivitate("domeniu_activitate"),
   package: orgPackage("package").notNull().default("trial"),
   // Configurația planului à la carte, salvată doar când package = "custom"

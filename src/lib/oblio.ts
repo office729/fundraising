@@ -92,6 +92,13 @@ async function cotaTvaImplicita(cif: string): Promise<{ name: string; percent: n
 export type ClientFactura = {
   nume: string; // denumirea organizației (sau numele persoanei, dacă nu are CIF)
   cif: string | null; // CIF-ul organizației, dacă l-a completat în Setări
+  adresa: string | null; // adresa sediului social, completată din Setări
+  judet: string | null;
+  iban: string | null;
+  // Emailul owner-ului organizației — și destinatarul facturii, dacă
+  // "Document prin email" e activat în contul Oblio (Setări → E-mailuri
+  // alarmă); indiferent de asta, e trimis oricum separat, prin
+  // lib/oblio-invoice-email-template.ts (vezi netopia-confirm.ts).
   email: string | null;
 };
 
@@ -120,9 +127,17 @@ export async function emiteFacturaAbonament(p: {
       client: {
         name: p.client.nume,
         cif: p.client.cif ?? undefined,
+        address: p.client.adresa ?? undefined,
+        state: p.client.judet ?? undefined,
+        iban: p.client.iban ?? undefined,
         email: p.client.email ?? undefined,
-        autocomplete: p.client.cif ? 1 : 0, // dacă are CIF valid, Oblio îi completează singur adresa/RC din firme.ro
+        // Autocomplete (preluare din firme.ro pe baza CIF-ului) DOAR când
+        // organizația nu și-a completat singură adresa în Setări — altfel
+        // nu riscăm ca datele scrise explicit de ea să fie suprascrise de
+        // ce găsește Oblio automat.
+        autocomplete: p.client.cif && !p.client.adresa ? 1 : 0,
       },
+      sendEmail: p.client.email ? 1 : 0,
       issueDate: azi,
       collectDate: azi, // se emite DUPĂ ce IPN-ul a confirmat plata — încasarea e deja un fapt
       seriesName: serie,

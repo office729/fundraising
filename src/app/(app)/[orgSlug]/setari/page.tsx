@@ -58,6 +58,9 @@ export default async function SetariPage({
           initialSlogan={access.orgSlogan}
           initialBrandColor={access.orgBrandColor}
           initialCif={access.orgCif}
+          initialAdresaSediu={access.orgAdresaSediu}
+          initialJudet={access.orgJudet}
+          initialIban={access.orgIban}
           initialDomeniuActivitate={access.orgDomeniuActivitate}
         />
         <DomainForm orgSlug={orgSlug} locale={locale} initialCustomDomain={access.orgCustomDomain} />

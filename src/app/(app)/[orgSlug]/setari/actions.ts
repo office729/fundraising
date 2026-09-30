@@ -8,7 +8,8 @@ import { withOrgAdmin } from "@/lib/auth/guard";
 import { TOATE_DOMENIILE, type DomeniuActivitate } from "@/lib/campaign-templates";
 import { EroareUtilizator, mesajSigur } from "@/lib/erori";
 import { organizations } from "@/lib/db/schema";
-import { cifValidFormat } from "@/lib/iban";
+import { cifValidFormat, ibanValid } from "@/lib/iban";
+import { gasesteJudet } from "@/lib/judete";
 import { domeniuRezervatPlatformei } from "@/lib/platform-domains";
 import { esteSlugRezervat } from "@/lib/reserved-slugs";
 import { createClient } from "@/lib/supabase/server";
@@ -29,6 +30,12 @@ const updateBrandingRow = withOrgAdmin(
       brandColor: string;
       logoUrl?: string;
       cif: string;
+      // undefined = câmpurile n-au fost trimise deloc (formularul de
+      // onboarding nu le randează — showDateFacturare=false) — NU se ating,
+      // ca să nu golească date de facturare deja completate din Setări.
+      adresaSediu?: string;
+      judet?: string;
+      iban?: string;
       domeniuActivitate: string;
     },
   ) => {
@@ -38,6 +45,9 @@ const updateBrandingRow = withOrgAdmin(
       cif: values.cif || null,
       domeniuActivitate: values.domeniuActivitate || null,
     };
+    if (values.adresaSediu !== undefined) set.adresaSediu = values.adresaSediu || null;
+    if (values.judet !== undefined) set.judet = values.judet || null;
+    if (values.iban !== undefined) set.iban = values.iban || null;
     if (values.logoUrl) set.logoUrl = values.logoUrl;
     await ctx.db.update(organizations).set(set).where(eq(organizations.id, ctx.orgId));
   },
@@ -52,11 +62,30 @@ export async function updateBrandingAction(
   const brandColor = String(formData.get("brandColor") ?? "").trim();
   const logo = formData.get("logo");
 
-  // CIF și domeniul de activitate sunt opționale — necompletate nu blochează
-  // salvarea (la fel ca sloganul/logo-ul). Validate doar dacă sunt scrise.
+  // CIF, datele de facturare și domeniul de activitate sunt opționale —
+  // necompletate nu blochează salvarea (la fel ca sloganul/logo-ul). Validate
+  // doar dacă sunt scrise — folosite la emiterea automată a facturii Oblio.
   const cifRaw = String(formData.get("cif") ?? "").trim();
   if (cifRaw && !cifValidFormat(cifRaw)) {
     return { error: "CIF invalid — scrie-l cu sau fără prefixul RO (ex. RO12345678).", ok: false };
+  }
+  // .has(): dialogul de onboarding nu randează deloc aceste câmpuri
+  // (showDateFacturare=false) — absența lor din formData NU trebuie tratată
+  // ca „șterge datele de facturare", doar ca „nu le atinge".
+  const areCampuriFacturare = formData.has("adresaSediu");
+  const adresaSediu = areCampuriFacturare ? String(formData.get("adresaSediu") ?? "").trim() : undefined;
+  const judetRaw = areCampuriFacturare ? String(formData.get("judet") ?? "").trim() : "";
+  const judet = judetRaw ? gasesteJudet(judetRaw) : null;
+  if (judetRaw && !judet) {
+    return { error: "Județ invalid.", ok: false };
+  }
+  const ibanRaw = areCampuriFacturare
+    ? String(formData.get("iban") ?? "")
+        .replace(/\s+/g, "")
+        .toUpperCase()
+    : undefined;
+  if (ibanRaw && !ibanValid(ibanRaw)) {
+    return { error: "IBAN invalid — verifică numărul contului.", ok: false };
   }
   const domeniuActivitate = String(formData.get("domeniuActivitate") ?? "").trim();
   if (domeniuActivitate && !TOATE_DOMENIILE.includes(domeniuActivitate as DomeniuActivitate)) {
@@ -85,7 +114,16 @@ export async function updateBrandingAction(
   }
 
   try {
-    await updateBrandingRow(orgSlug, { slogan, brandColor, logoUrl, cif: cifRaw, domeniuActivitate });
+    await updateBrandingRow(orgSlug, {
+      slogan,
+      brandColor,
+      logoUrl,
+      cif: cifRaw,
+      adresaSediu,
+      judet: areCampuriFacturare ? (judet ?? "") : undefined,
+      iban: ibanRaw,
+      domeniuActivitate,
+    });
   } catch (e) {
     return { error: mesajSigur(e, "Salvarea a eșuat.", "setari-branding"), ok: false };
   }

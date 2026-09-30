@@ -23,6 +23,9 @@ export type OrgContext = {
   orgBrandColor: string | null;
   orgCustomDomain: string | null;
   orgCif: string | null;
+  orgAdresaSediu: string | null;
+  orgJudet: string | null;
+  orgIban: string | null;
   orgDomeniuActivitate: DomeniuActivitate | null;
   orgPackage: "trial" | "start" | "crestere" | "impact" | "custom";
   // Doar pentru pachetul "custom" — cotele reale (utilizatori/contactePf/
@@ -117,6 +120,9 @@ export function withOrgSession<A extends unknown[], R>(
         orgBrandColor: found.org.brandColor,
         orgCustomDomain: found.org.customDomain,
         orgCif: found.org.cif,
+        orgAdresaSediu: found.org.adresaSediu,
+        orgJudet: found.org.judet,
+        orgIban: found.org.iban,
         orgDomeniuActivitate: found.org.domeniuActivitate,
         orgPackage: found.org.package,
         orgCustomPlanConfig: found.org.customPlanConfig as CustomPlanConfigSaved | null,
@@ -189,6 +195,9 @@ export function requireOrgAccess(orgSlug: string): Promise<OrgAccess> {
     orgBrandColor: ctx.orgBrandColor,
     orgCustomDomain: ctx.orgCustomDomain,
     orgCif: ctx.orgCif,
+    orgAdresaSediu: ctx.orgAdresaSediu,
+    orgJudet: ctx.orgJudet,
+    orgIban: ctx.orgIban,
     orgDomeniuActivitate: ctx.orgDomeniuActivitate,
     orgPackage: ctx.orgPackage,
     orgCustomPlanConfig: ctx.orgCustomPlanConfig,

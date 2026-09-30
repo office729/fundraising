@@ -52,6 +52,7 @@ export function OnboardingBrandingGate({
           initialBrandColor={initialBrandColor}
           initialCif={initialCif}
           initialDomeniuActivitate={initialDomeniuActivitate}
+          showDateFacturare={false}
           onSaved={dismiss}
         />
         <button
