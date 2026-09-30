@@ -230,14 +230,6 @@ export function verificaIpn(corpBrut: string, tokenAntet: string | null): { ok: 
     const algoritm = antet.alg ? ALGORITMI[antet.alg] : undefined;
     if (!algoritm) return { ok: false, motiv: "algoritm_nepermis" };
 
-    // DIAGNOSTIC TEMPORAR — de eliminat după depanare.
-    try {
-      const claimsDebug = JSON.parse(b64urlLaBuffer(payloadB64).toString("utf8")) as Record<string, unknown>;
-      console.error("[netopia-ipn-debug] header:", JSON.stringify(antet), "claims:", JSON.stringify({ iss: claimsDebug.iss, aud: claimsDebug.aud, exp: claimsDebug.exp, nbf: claimsDebug.nbf }));
-    } catch {
-      console.error("[netopia-ipn-debug] nu s-a putut decoda payload-ul pentru diagnostic");
-    }
-
     const verificator = createVerify(algoritm);
     verificator.update(`${hdrB64}.${payloadB64}`);
     if (!verificator.verify(createPublicKey(pem), b64urlLaBuffer(semnaturaB64))) {
