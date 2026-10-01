@@ -50,11 +50,11 @@ export function netopiaConfigurata(): boolean {
   return Boolean(process.env.NETOPIA_API_KEY && process.env.NETOPIA_POS_SIGNATURE);
 }
 
-// NETOPIA_PUBLIC_KEY rămâne ca supra-scriere opțională (ex. dacă Netopia
-// rotește vreodată cheia de semnare) — implicit, folosim constanta de mai sus.
+// NU citește din variabilă de mediu — ar fi un pericol real: o valoare veche
+// rămasă în Vercel (din perioada când credeam greșit că cheia e per-comerciant)
+// ar avea mereu prioritate silențioasă față de constanta corectă de mai sus.
 function cheiePublicaPem(): string {
-  const dinMediu = (process.env.NETOPIA_PUBLIC_KEY ?? "").replace(/\\n/g, "\n").trim();
-  return dinMediu || NETOPIA_IPN_PUBLIC_KEY;
+  return NETOPIA_IPN_PUBLIC_KEY;
 }
 
 export type DateFacturare = {
