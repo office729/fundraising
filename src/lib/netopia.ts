@@ -12,10 +12,30 @@ import { createHash, createPublicKey, createVerify } from "node:crypto";
 // Mediu (toate obligatorii pentru a încasa):
 //   NETOPIA_API_KEY        — cheia API din contul Netopia (Profil → Securitate)
 //   NETOPIA_POS_SIGNATURE  — semnătura punctului de vânzare (POS)
-//   NETOPIA_PUBLIC_KEY     — cheia publică PEM a POS-ului, pentru verificarea IPN
 //   NETOPIA_ENV            — "live" sau "sandbox" (implicit "sandbox", ca o
 //                            configurare incompletă să nu încaseze bani reali)
 // Documentație: https://doc.netopia-payments.com/docs/payment-api/v2.x/intro
+//
+// NU există o cheie publică per-comerciant pentru verificarea IPN-ului v2 —
+// contrar a ce sugerează "Setări tehnice" din Puncte de Vânzare (acolo e
+// perechea de chei pentru API-ul VECHI v1, criptare XML tip plic, nu JWT;
+// confirmat din documentația lor v1: "certificate is available upon seller
+// account creation in Points of sale - Technical settings"). Pentru v2,
+// Netopia semnează header-ul `Verification-token` cu O SINGURĂ cheie fixă,
+// identică pentru toți comercianții și pentru sandbox/live deopotrivă —
+// confirmat din codul sursă oficial al pluginului lor WooCommerce v2
+// (github.com/netopiapayments/WooCommerce, v2/wc-netopiapayments-gateway.php,
+// `$ntpIpn->publicKeyStr`). Nu e un secret (e publică, deja în codul lor
+// open-source), deci o ținem hardcodată aici, nu într-o variabilă de mediu.
+const NETOPIA_IPN_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAy6pUDAFLVul4y499gz1P
+gGSvTSc82U3/ih3e5FDUs/F0Jvfzc4cew8TrBDrw7Y+AYZS37D2i+Xi5nYpzQpu7
+ryS4W+qvgAA1SEjiU1Sk2a4+A1HeH+vfZo0gDrIYTh2NSAQnDSDxk5T475ukSSwX
+L9tYwO6CpdAv3BtpMT5YhyS3ipgPEnGIQKXjh8GMgLSmRFbgoCTRWlCvu7XOg94N
+fS8l4it2qrEldU8VEdfPDfFLlxl3lUoLEmCncCjmF1wRVtk4cNu+WtWQ4mBgxpt0
+tX2aJkqp4PV3o5kI4bqHq/MS7HVJ7yxtj/p8kawlVYipGsQj3ypgltQ3bnYV/LRq
+8QIDAQAB
+-----END PUBLIC KEY-----`;
 
 const BAZA = {
   sandbox: "https://secure.sandbox.netopia-payments.com",
@@ -27,12 +47,14 @@ function mediu(): keyof typeof BAZA {
 }
 
 export function netopiaConfigurata(): boolean {
-  return Boolean(process.env.NETOPIA_API_KEY && process.env.NETOPIA_POS_SIGNATURE && process.env.NETOPIA_PUBLIC_KEY);
+  return Boolean(process.env.NETOPIA_API_KEY && process.env.NETOPIA_POS_SIGNATURE);
 }
 
-// Cheia publică poate fi lipită în Vercel cu \n literal în loc de linii noi.
+// NETOPIA_PUBLIC_KEY rămâne ca supra-scriere opțională (ex. dacă Netopia
+// rotește vreodată cheia de semnare) — implicit, folosim constanta de mai sus.
 function cheiePublicaPem(): string {
-  return (process.env.NETOPIA_PUBLIC_KEY ?? "").replace(/\\n/g, "\n").trim();
+  const dinMediu = (process.env.NETOPIA_PUBLIC_KEY ?? "").replace(/\\n/g, "\n").trim();
+  return dinMediu || NETOPIA_IPN_PUBLIC_KEY;
 }
 
 export type DateFacturare = {
