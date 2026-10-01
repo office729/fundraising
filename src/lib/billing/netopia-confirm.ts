@@ -51,7 +51,14 @@ async function factureazaPlata(orgId: string): Promise<void> {
   const { plata, org, emailProprietar } = await db.transaction(async (tx) => {
     await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
     const rows = await tx
-      .select({ id: platformPayments.id, orderId: platformPayments.orderId, sumaLei: platformPayments.sumaLei, pachet: platformPayments.package, oblioNumber: platformPayments.oblioNumber })
+      .select({
+        id: platformPayments.id,
+        orderId: platformPayments.orderId,
+        sumaLei: platformPayments.sumaLei,
+        pachet: platformPayments.package,
+        oblioNumber: platformPayments.oblioNumber,
+        ntpId: platformPayments.ntpId,
+      })
       .from(platformPayments)
       .where(and(eq(platformPayments.orgId, orgId), eq(platformPayments.status, "reusita")))
       .orderBy(sql`${platformPayments.paidAt} desc`)
@@ -85,6 +92,7 @@ async function factureazaPlata(orgId: string): Promise<void> {
       client: { nume: org.name, cif: org.cif, adresa: org.adresaSediu, judet: org.judet, iban: org.iban, email: emailProprietar },
       descriere: `Alexandrit — ${packageLabel} (o lună)`,
       sumaLei: plata.sumaLei,
+      referintaIncasare: plata.ntpId ?? plata.orderId,
     });
     await db.transaction(async (tx) => {
       await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);

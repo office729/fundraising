@@ -112,6 +112,12 @@ export async function emiteFacturaAbonament(p: {
   client: ClientFactura;
   descriere: string; // ex. "Alexandrit — Pachet START (o lună)"
   sumaLei: number;
+  // Referința încasării, cerută de Oblio pentru `collect.documentNumber` —
+  // obligatorie când încasarea NU e prin chitanță (cazul nostru, mereu card).
+  // Preferăm ntpID-ul Netopia (identificatorul real al tranzacției la
+  // procesator); orderId e doar un fallback, pentru cazul rar în care
+  // ntpID lipsește.
+  referintaIncasare: string;
 }): Promise<FacturaEmisa> {
   if (!oblioConfigurata()) throw new Error("oblio_neconfigurat");
 
@@ -144,7 +150,10 @@ export async function emiteFacturaAbonament(p: {
       language: "RO",
       currency: "RON",
       products: [{ name: p.descriere, price: p.sumaLei, measuringUnit: "buc", quantity: 1, vatName: tva.name, vatPercentage: tva.percent, vatIncluded: 1, productType: "Serviciu" }],
-      collect: { type: "Card" },
+      // `documentNumber` e obligatoriu la Oblio când încasarea nu e prin
+      // chitanță ("Parametrul documentNumber lipsește" altfel) — vezi
+      // comentariul de la `referintaIncasare` de mai sus.
+      collect: { type: "Card", documentNumber: p.referintaIncasare },
       mentions: "Plată online prin Netopia Payments.",
       internalNote: `Comandă ${p.orderId}`,
       idempotencyKey: p.orderId,
