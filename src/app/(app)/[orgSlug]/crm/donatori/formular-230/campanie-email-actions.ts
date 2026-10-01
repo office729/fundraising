@@ -18,7 +18,7 @@ export type CampanieState = { error: string | null; ok: boolean; nrDestinatari?:
 // respectă aceeași regulă, ca donatorii să nu primească două remindere.
 export const trimiteCampanieEmailF230 = withOrgAdmin(async (ctx): Promise<CampanieState> => {
   if (!emailConfigurat()) {
-    return { error: "Trimiterea de email nu e configurată încă (lipsește cheia RESEND_API_KEY).", ok: false };
+    return { error: "Trimiterea de email nu e configurată încă (lipsesc variabilele SMTP din mediu).", ok: false };
   }
 
   const an = new Date().getFullYear();

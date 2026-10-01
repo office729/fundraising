@@ -1,25 +1,50 @@
 import "server-only";
 
-import { Resend } from "resend";
+import nodemailer, { type Transporter } from "nodemailer";
 
-// Inițializare LAZY (ca la Twilio/db) — conexiunea/clientul se creează la
-// prima folosire, nu la evaluarea modulului, altfel `next build` ar pica
-// fără RESEND_API_KEY disponibil. Complet inert până organizația/platforma
-// primește o cheie reală — vezi EMAIL_FROM pentru domeniul de trimitere.
-let cached: Resend | null = null;
+// Trimitere prin SMTP direct (cutie poștală reală pe domeniul organizației,
+// ex. cPanel) — nu printr-un furnizor tranzacțional (Resend etc). Alegere
+// deliberată: organizația are deja o cutie de email pe domeniul propriu.
+//
+// Mediu (toate obligatorii):
+//   SMTP_HOST  — ex. mail.alexandrit.ro
+//   SMTP_PORT  — 465 (SSL/TLS) sau 587 (STARTTLS)
+//   SMTP_USER  — adresa completă a cutiei (ex. vlad.placinta@alexandrit.ro)
+//   SMTP_PASS  — parola cutiei
+//   EMAIL_FROM — adresa afișată ca expeditor (de regulă aceeași cu SMTP_USER)
+//
+// Inițializare LAZY (ca la Twilio/db) — conexiunea se creează la prima
+// folosire, nu la evaluarea modulului, altfel `next build` ar pica fără
+// variabilele de mediu disponibile. Complet inert până sunt completate.
+let cached: Transporter | null = null;
 
-function getResend(): Resend {
+function getTransporter(): Transporter {
   if (cached) return cached;
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    throw new Error("RESEND_API_KEY lipsește din mediu — email-ul nu e configurat.");
+  const host = process.env.SMTP_HOST;
+  const port = Number(process.env.SMTP_PORT);
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  if (!host || !port || !user || !pass) {
+    throw new Error("SMTP_HOST/SMTP_PORT/SMTP_USER/SMTP_PASS lipsesc din mediu — email-ul nu e configurat.");
   }
-  cached = new Resend(apiKey);
+  cached = nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465, // 465 = SSL/TLS direct; 587 = STARTTLS (secure: false, upgradează singur)
+    auth: { user, pass },
+    // Pool mic, intenționat — e o cutie poștală obișnuită de hosting
+    // (cPanel), nu un furnizor tranzacțional cu infrastructură dedicată;
+    // nu trimitem conexiuni/mesaje în paralel agresiv, ca să nu lovim
+    // limitele de rată ale hostingului.
+    pool: true,
+    maxConnections: 2,
+    maxMessages: 50,
+  });
   return cached;
 }
 
 export function emailConfigurat(): boolean {
-  return Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM);
+  return Boolean(process.env.SMTP_HOST && process.env.SMTP_PORT && process.env.SMTP_USER && process.env.SMTP_PASS && process.env.EMAIL_FROM);
 }
 
 export type DestinatarEmail = { email: string; nume: string };
@@ -29,17 +54,17 @@ export type DestinatarEmail = { email: string; nume: string };
 // Best-effort: erorile se propagă către apelant, care alege dacă le prinde
 // (de regulă da — un email eșuat nu trebuie să strice confirmarea plății).
 export async function trimiteEmail(params: { to: string; subiect: string; html: string }): Promise<void> {
-  const resend = getResend();
+  const transporter = getTransporter();
   const from = process.env.EMAIL_FROM;
   if (!from) throw new Error("EMAIL_FROM lipsește din mediu.");
-  const { error } = await resend.emails.send({ from, to: params.to, subject: params.subiect, html: params.html });
-  if (error) throw new Error(error.message);
+  await transporter.sendMail({ from, to: params.to, subject: params.subiect, html: params.html });
 }
 
 // Trimite câte un email individual fiecărui destinatar (nu un singur email cu
-// toți în CC/BCC — fiecare donator își vede doar propriul nume). Resend
-// acceptă trimiteri în lot (batch.send, până la 100/apel) — folosim asta
-// pentru eficiență, dar în bucăți, ca liste mari să nu depășească limita.
+// toți în CC/BCC — fiecare donator își vede doar propriul nume). Secvențial,
+// nu în paralel — o cutie de hosting obișnuită nu are limitele generoase ale
+// unui furnizor tranzacțional; o eroare la un destinatar (adresă invalidă
+// etc.) nu oprește trimiterea către restul.
 export async function trimiteEmailuriInLot(params: {
   destinatari: DestinatarEmail[];
   subiect: (d: DestinatarEmail) => string;
@@ -48,31 +73,26 @@ export async function trimiteEmailuriInLot(params: {
   // (RFC 8058), obligatorii pentru emailuri de campanie.
   headers?: (d: DestinatarEmail) => Record<string, string>;
 }): Promise<{ trimise: number; esuate: number }> {
-  const resend = getResend();
+  const transporter = getTransporter();
   const from = process.env.EMAIL_FROM;
   if (!from) throw new Error("EMAIL_FROM lipsește din mediu.");
 
-  const LOT = 100;
   let trimise = 0;
   let esuate = 0;
 
-  for (let i = 0; i < params.destinatari.length; i += LOT) {
-    const bucata = params.destinatari.slice(i, i + LOT);
-    const { data, error } = await resend.batch.send(
-      bucata.map((d) => ({
+  for (const d of params.destinatari) {
+    try {
+      await transporter.sendMail({
         from,
         to: d.email,
         subject: params.subiect(d),
         html: params.html(d),
         ...(params.headers ? { headers: params.headers(d) } : {}),
-      })),
-    );
-    if (error) {
-      esuate += bucata.length;
-      continue;
+      });
+      trimise++;
+    } catch {
+      esuate++;
     }
-    trimise += data?.data?.length ?? bucata.length;
-    esuate += bucata.length - (data?.data?.length ?? bucata.length);
   }
 
   return { trimise, esuate };
