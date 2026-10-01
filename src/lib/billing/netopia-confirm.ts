@@ -41,7 +41,13 @@ export type ConfirmareNetopia =
 // reînnoirii automate (cron) — o reînnoire e o plată reală, care merită factură
 // la fel ca prima. `idempotencyKey` (orderId, în emiteFacturaAbonament) face
 // reîncercarea sigură dacă rulează de două ori pentru aceeași plată.
-async function factureazaPlata(orgId: string): Promise<void> {
+//
+// Facturează STRICT plata cu acest orderId — NU "cea mai recentă plată
+// reușită a organizației". Dacă am lua mereu cea mai recentă, o factură
+// eșuată (ex. Oblio indisponibil temporar) ar rămâne orfană definitiv de
+// îndată ce apare o plată ULTERIOARĂ: apelul următor ar factura doar plata
+// nouă, iar cea veche, nefacturată, n-ar mai fi reconsiderată niciodată.
+async function factureazaPlata(orderId: string): Promise<void> {
   if (!oblioConfigurata()) return;
 
   // Citirile/scrierile de mai jos trec prin RLS ca oricare altele — fără
@@ -53,6 +59,7 @@ async function factureazaPlata(orgId: string): Promise<void> {
     const rows = await tx
       .select({
         id: platformPayments.id,
+        orgId: platformPayments.orgId,
         orderId: platformPayments.orderId,
         sumaLei: platformPayments.sumaLei,
         pachet: platformPayments.package,
@@ -60,8 +67,7 @@ async function factureazaPlata(orgId: string): Promise<void> {
         ntpId: platformPayments.ntpId,
       })
       .from(platformPayments)
-      .where(and(eq(platformPayments.orgId, orgId), eq(platformPayments.status, "reusita")))
-      .orderBy(sql`${platformPayments.paidAt} desc`)
+      .where(and(eq(platformPayments.orderId, orderId), eq(platformPayments.status, "reusita")))
       .limit(1);
     const plata = rows[0] ?? null;
     if (!plata || plata.oblioNumber) return { plata: null, org: null, emailProprietar: null }; // deja facturată sau plata nu s-a găsit
@@ -69,7 +75,7 @@ async function factureazaPlata(orgId: string): Promise<void> {
     const [org] = await tx
       .select({ name: organizations.name, cif: organizations.cif, adresaSediu: organizations.adresaSediu, judet: organizations.judet, iban: organizations.iban })
       .from(organizations)
-      .where(eq(organizations.id, orgId))
+      .where(eq(organizations.id, plata.orgId))
       .limit(1);
     // Emailul owner-ului — destinatarul facturii, atât pentru trimiterea
     // proprie (mai jos) cât și pentru cea din contul Oblio (sendEmail:1, dacă
@@ -78,7 +84,7 @@ async function factureazaPlata(orgId: string): Promise<void> {
       .select({ email: appUsers.email })
       .from(memberships)
       .innerJoin(appUsers, eq(appUsers.id, memberships.userId))
-      .where(and(eq(memberships.orgId, orgId), eq(memberships.role, "owner")))
+      .where(and(eq(memberships.orgId, plata.orgId), eq(memberships.role, "owner")))
       .limit(1);
     return { plata, org: org ?? null, emailProprietar: proprietar?.email ?? null };
   });
@@ -110,7 +116,7 @@ async function factureazaPlata(orgId: string): Promise<void> {
         to: emailProprietar,
         subiect: subiectFacturaEmisa(factura.number),
         html: htmlFacturaEmisa({ orgName: org.name, packageLabel, sumaLei: plata.sumaLei, numarFactura: factura.number, linkFactura: factura.link }),
-      }).catch((e) => raporteazaEroare("oblio-factura-email", e, { orgId, orderId: plata.orderId }));
+      }).catch((e) => raporteazaEroare("oblio-factura-email", e, { orgId: plata.orgId, orderId: plata.orderId }));
     }
   } catch (e) {
     const mesaj = e instanceof Error ? e.message : "eroare necunoscută";
@@ -118,7 +124,7 @@ async function factureazaPlata(orgId: string): Promise<void> {
       await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
       await tx.update(platformPayments).set({ oblioEroare: mesaj.slice(0, 300) }).where(eq(platformPayments.id, plata.id));
     });
-    raporteazaEroare("oblio-factura", e, { orgId, orderId: plata.orderId });
+    raporteazaEroare("oblio-factura", e, { orgId: plata.orgId, orderId: plata.orderId });
   }
 }
 
@@ -254,7 +260,7 @@ export async function proceseazaRezultatPlataNetopia(orderId: string, rezultat: 
   // nu are voie să se propage la apelant ca eșec al PLĂȚII (accesul e deja
   // acordat, e strict corect); rămâne raportată și de regenerat manual.
   if (confirmare.actiune === "reusita") {
-    await factureazaPlata(confirmare.orgId).catch((e) => raporteazaEroare("oblio-factura", e, { orgId: confirmare.orgId, orderId }));
+    await factureazaPlata(orderId).catch((e) => raporteazaEroare("oblio-factura", e, { orgId: confirmare.orgId, orderId }));
   }
   return confirmare;
 }
