@@ -5,6 +5,8 @@ import { useRef, useState } from "react";
 import { completeazaFormular230Pdf, downloadPdfBytes, type DateBeneficiarPdf } from "@/lib/formular230-pdf";
 import { JUDETE } from "@/lib/judete";
 
+import { NotaInformare230 } from "./nota-informare";
+
 type Camp =
   | "nume" | "prenume" | "initialaTatalui" | "cnp" | "email" | "telefon"
   | "strada" | "numar" | "judet" | "localitate" | "codPostal" | "bloc" | "scara" | "etaj" | "apartament";
@@ -188,17 +190,19 @@ export function Formular230Client({
           </div>
         </fieldset>
 
+        <NotaInformare230 orgName={orgName} beneficiarNume={beneficiar.nume} beneficiarCif={beneficiar.cif} />
+
         <label className="flex items-start gap-2.5 text-sm text-ink">
           <input type="checkbox" checked={distributie2Ani} onChange={(e) => setDistributie2Ani(e.target.checked)} className="mt-0.5 h-4 w-4 rounded border-line" />
           Sunt de acord ca susținerea să fie valabilă pentru o perioadă de 2 ani (altfel, doar anul curent).
         </label>
         <label className="flex items-start gap-2.5 text-sm text-ink">
           <input type="checkbox" checked={consimtamant} onChange={(e) => setConsimtamant(e.target.checked)} className="mt-0.5 h-4 w-4 rounded border-line" />
-          Sunt de acord ca datele mele să fie folosite EXCLUSIV pentru completarea Formularului 230. *
+          Am citit Nota de informare de mai sus și sunt de acord ca datele mele să fie folosite EXCLUSIV pentru completarea și depunerea Formularului 230. *
         </label>
         <label className="flex items-start gap-2.5 text-sm text-ink">
           <input type="checkbox" checked={termeni} onChange={(e) => setTermeni(e.target.checked)} className="mt-0.5 h-4 w-4 rounded border-line" />
-          Declar pe propria răspundere că datele completate sunt corecte și sunt de acord cu termenii de completare online. *
+          Declar pe propria răspundere că datele completate sunt corecte. *
         </label>
 
         <div>
