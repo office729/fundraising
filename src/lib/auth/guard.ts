@@ -44,6 +44,9 @@ export type OrgContext = {
   userId: string;
   userEmail: string;
   userName: string | null;
+  // Versiunea Termenilor acceptată de user (null = nu a acceptat niciodată) —
+  // layout-ul cere reacceptarea când diferă de TERMENI_VERSIUNE.
+  userTermsVersion: string | null;
   role: OrgRole;
   // Instanța Drizzle LEGATĂ de tranzacția curentă (cea pe care s-a făcut
   // set_config). NU e `db`-ul global — vezi avertismentul de mai jos.
@@ -136,6 +139,7 @@ export function withOrgSession<A extends unknown[], R>(
         userId: appUser.id,
         userEmail: appUser.email,
         userName: appUser.name,
+        userTermsVersion: appUser.termsAcceptedAt ? appUser.termsVersion : null,
         role: found.role,
         db: tx as unknown as typeof db,
       };
@@ -211,6 +215,7 @@ export function requireOrgAccess(orgSlug: string): Promise<OrgAccess> {
     userId: ctx.userId,
     userEmail: ctx.userEmail,
     userName: ctx.userName,
+    userTermsVersion: ctx.userTermsVersion,
     role: ctx.role,
     // Verificarea de acces citește starea abonamentului ca să decidă paywall-ul
     // (layout-ul) — dacă ar fi ea însăși blocată de paywall, layout-ul ar crăpa

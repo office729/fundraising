@@ -4,6 +4,7 @@ import type { CSSProperties } from "react";
 
 import { requireOrgAccess } from "@/lib/auth/guard";
 import { isAccessBlocked, isPlatformAdmin, trialDaysRemaining } from "@/lib/billing/trial";
+import { TERMENI_VERSIUNE } from "@/lib/legal-version";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { DASHBOARD_DICT } from "@/lib/i18n/dictionaries/dashboard";
 import { getLocale } from "@/lib/i18n/get-locale";
@@ -11,6 +12,7 @@ import { getLocale } from "@/lib/i18n/get-locale";
 import { LogoutForm } from "./logout-form";
 import { OnboardingBrandingGate } from "./onboarding-branding-gate";
 import { OnboardingCallPrompt } from "./onboarding-call-prompt";
+import { TermeniGate } from "./termeni-gate";
 import { Paywall } from "./paywall";
 
 export default async function OrgLayout({
@@ -27,6 +29,12 @@ export default async function OrgLayout({
   const accent = access.orgBrandColor || undefined;
   const locale = await getLocale();
   const dict = DASHBOARD_DICT[locale];
+
+  // Conturi create înainte de bifa de acceptare (sau după o nouă versiune a
+  // textelor legale): poartă de reacceptare, înaintea oricărui conținut.
+  if (access.userTermsVersion !== TERMENI_VERSIUNE) {
+    return <TermeniGate orgSlug={orgSlug} dict={dict.termeniGate} />;
+  }
 
   if (
     isAccessBlocked(

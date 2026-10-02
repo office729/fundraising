@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq, isNull, ne, or, sql } from "drizzle-orm";
 import { cache } from "react";
 
 import { db } from "@/lib/db";
@@ -48,6 +48,16 @@ export async function inregistreazaAcceptareTermeni(tx: Pick<typeof db, "update"
     .update(appUsers)
     .set({ termsAcceptedAt: new Date(), termsVersion: TERMENI_VERSIUNE })
     .where(and(eq(appUsers.id, appUserId), isNull(appUsers.termsAcceptedAt)));
+}
+
+// Reacceptarea (conturi create înainte de bifa de la înscriere, sau după o
+// nouă versiune a textelor): suprascrie data/versiunea doar dacă versiunea
+// acceptată diferă de cea curentă.
+export async function reinnoiesteAcceptareTermeni(tx: Pick<typeof db, "update">, appUserId: string) {
+  await tx
+    .update(appUsers)
+    .set({ termsAcceptedAt: new Date(), termsVersion: TERMENI_VERSIUNE })
+    .where(and(eq(appUsers.id, appUserId), or(isNull(appUsers.termsVersion), ne(appUsers.termsVersion, TERMENI_VERSIUNE))));
 }
 
 // Pentru pagina de start (marketing): dacă userul e deja logat, la ce
