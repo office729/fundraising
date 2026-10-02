@@ -202,7 +202,7 @@ export function AtribuiriClient({
               {definitiiDisponibile.map((d) => <option key={d.id} value={d.id}>{d.nume}</option>)}
             </Select>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label>Pondere (%, opțional)</Label>
               <Input type="number" min={0} max={100} value={form.pondere ?? ""} onChange={(e) => setForm({ ...form, pondere: e.target.value === "" ? null : Number(e.target.value) })} />
@@ -214,7 +214,7 @@ export function AtribuiriClient({
               </label>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div>
               <Label>Target minim</Label>
               <Input type="number" value={form.targetMinim ?? ""} onChange={(e) => setForm({ ...form, targetMinim: e.target.value === "" ? null : Number(e.target.value) })} />

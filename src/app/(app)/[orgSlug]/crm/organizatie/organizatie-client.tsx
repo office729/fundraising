@@ -494,7 +494,7 @@ function AngajatiTab({
       )}
 
       <Dialog open={editId !== null} onClose={() => setEditId(null)} title={editId === "nou" ? (ro ? "Membru nou" : "New member") : ro ? "Editează membru" : "Edit member"} width="max-w-xl">
-        <div className="grid grid-cols-2 gap-3.5">
+        <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
           <div>
             <Label>{ro ? "Nume" : "Last name"}</Label>
             <Input value={form.nume} onChange={(e) => setForm({ ...form, nume: e.target.value })} />

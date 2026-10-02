@@ -4,11 +4,17 @@ import { Badge } from "../components/ui/badge";
 import { Card } from "../components/ui/card";
 import type { KpiDashboardRand } from "./dashboard-actions";
 
+// Ton deliberat ne-punitiv — acesta e dashboard-ul PROPRIU al angajatului
+// ("fără sistem rigid de control al angajaților"), nu un tabel de disciplină.
+// Niciun roșu aici: "Sub țintă" (nu "Restant", conotație de datorie/întârziere)
+// rămâne amber, ca "Necesită atenție" — diferența se vede în text, nu în alarmă
+// vizuală. Roșul rămâne rezervat agregatelor de echipă/departament (Faza E),
+// unde contextul e diferit (semnal pentru manager, nu auto-evaluare).
 const STATUS_CONFIG: Record<KpiDashboardRand["status"], { eticheta: string; tone: "neutral" | "green" | "amber" | "red" | "blue" }> = {
   neinceput: { eticheta: "Neînceput", tone: "neutral" },
   in_grafic: { eticheta: "În grafic", tone: "blue" },
   necesita_atentie: { eticheta: "Necesită atenție", tone: "amber" },
-  restant: { eticheta: "Restant", tone: "red" },
+  restant: { eticheta: "Sub țintă", tone: "amber" },
   finalizat: { eticheta: "Finalizat", tone: "green" },
 };
 
@@ -49,7 +55,7 @@ export function KpiDashboardCard({ kpi }: { kpi: KpiDashboardRand }) {
       {kpi.targetNormal != null && (
         <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[var(--ci-surface-2)]">
           <div
-            className={`h-full rounded-full ${kpi.status === "restant" ? "bg-[var(--ci-red)]" : kpi.status === "necesita_atentie" ? "bg-[var(--ci-amber)]" : "bg-[var(--ci-primary)]"}`}
+            className={`h-full rounded-full ${kpi.status === "restant" || kpi.status === "necesita_atentie" ? "bg-[var(--ci-amber)]" : "bg-[var(--ci-primary)]"}`}
             style={{ width: `${Math.min(100, kpi.progres ?? 0)}%` }}
           />
         </div>

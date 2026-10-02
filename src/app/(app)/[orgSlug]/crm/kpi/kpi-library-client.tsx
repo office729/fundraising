@@ -149,12 +149,11 @@ export function KpiLibraryClient({
 
       {categorii.length === 0 ? (
         esteAdmin && (
-          <Card>
-            <p className="text-[13px] text-[var(--ci-text-muted)]">Pornește cu 14 categorii sugerate (editabile/ștergeabile oricând) sau creează-le pe ale tale direct la pasul 2 din KPI Builder.</p>
-            <Button variant="secondary" size="sm" className="mt-2" onClick={onSeedeazaCategorii} disabled={pending}>
-              Adaugă categoriile sugerate
-            </Button>
-          </Card>
+          <EmptyState
+            title="Nicio categorie încă"
+            description="Pornește cu 14 categorii sugerate (editabile/ștergeabile oricând) sau creează-le pe ale tale direct la pasul 2 din KPI Builder."
+            action={<Button variant="secondary" size="sm" onClick={onSeedeazaCategorii} disabled={pending}>Adaugă categoriile sugerate</Button>}
+          />
         )
       ) : (
         <div className="ci-scrollbar flex gap-1.5 overflow-x-auto pb-1">
@@ -181,7 +180,7 @@ export function KpiLibraryClient({
         {definitiiFiltrate.length === 0 ? (
           <EmptyState
             icon={Sparkles}
-            title="Nu ai încă KPI atribuiți"
+            title="Nu ai încă niciun KPI în bibliotecă"
             description="Creează primul KPI — nume, categorie, tip, sursă de date, frecvență."
             action={esteAdmin && <Button size="sm" onClick={() => setWizardDeschis(true)}>Configurează KPI</Button>}
           />
@@ -221,6 +220,7 @@ export function KpiLibraryClient({
       </Card>
 
       <KpiBuilderWizard
+        key={editDefinitie?.id ?? "nou"}
         open={wizardDeschis}
         onClose={() => setWizardDeschis(false)}
         orgSlug={orgSlug}
