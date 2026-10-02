@@ -285,6 +285,8 @@ export default async function PaginaStrangereFonduriPage({
                       locale={locale}
                       publishableKey={org.donationStripePublishableKey}
                       metode={org.donationStripePublishableKey ? metode : FARA_METODE_REDIRECT}
+                      orgName={org.name}
+                      orgCif={org.cif}
                     />
                   ) : (
                     <p className="text-[13px] leading-relaxed text-muted-2">{t.campaignPage.campanieInchisa}</p>

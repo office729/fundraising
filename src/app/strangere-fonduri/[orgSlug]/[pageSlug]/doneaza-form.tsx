@@ -9,6 +9,7 @@ import { DONATION_DICT } from "@/lib/i18n/dictionaries/donation";
 import { doneazaAction, type DoneazaState } from "./actions";
 import { ExpressCheckoutPanel } from "./express-checkout";
 import { creeazaIntentPaypalAction, creeazaIntentRevolutAction } from "./express-checkout-actions";
+import { NotaInformareDonatie } from "./nota-informare-donatie";
 
 const INITIAL: DoneazaState = { error: null };
 const SUME_RAPIDE = [25, 50, 100, 250];
@@ -20,11 +21,15 @@ export function DoneazaForm({
   publishableKey,
   metoda,
   cursEur,
+  orgName,
+  orgCif,
 }: {
   orgSlug: string;
   pageSlug: string;
   titlu: string;
   locale: Locale;
+  orgName: string;
+  orgCif: string | null;
   publishableKey: string | null;
   // "revolut": formular dedicat (ca pe fundatianektarios.ro) — donație unică, fără
   // portofele; la trimitere clientul e dus la autentificarea Revolut.
@@ -189,6 +194,7 @@ export function DoneazaForm({
           portofel={metoda === "gpay" ? "google" : "apple"}
         />
       )}
+      {portofel && <NotaInformareDonatie locale={locale} orgName={orgName} orgCif={orgCif} />}
 
       {!portofel && (
         <>
@@ -214,14 +220,13 @@ export function DoneazaForm({
       </label>
 
       <div className="mt-1 flex flex-col gap-2 border-t border-line pt-3">
+        <NotaInformareDonatie locale={locale} orgName={orgName} orgCif={orgCif} />
+        {/* `consimtamantGdpr` = confirmarea că donatorul a luat cunoștință de
+            nota de informare de mai sus (nu temei de prelucrare — acela e
+            executarea donației / obligația legală, vezi notă). */}
         <label className="flex items-start gap-2 text-[13px] text-body">
           <input type="checkbox" name="consimtamantGdpr" required className="mt-0.5 h-4 w-4 rounded border-line" />
-          <span>
-            {t.acordGdprPre}{" "}
-            <Link href="/gdpr" target="_blank" className="font-medium text-brand-green hover:underline">
-              {t.acordGdprLink}
-            </Link>
-          </span>
+          <span>{t.acordNotaInformare}</span>
         </label>
         <label className="flex items-start gap-2 text-[13px] text-body">
           <input type="checkbox" name="consimtamantTermeni" required className="mt-0.5 h-4 w-4 rounded border-line" />

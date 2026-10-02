@@ -35,11 +35,15 @@ export function DoneazaModal({
   locale,
   publishableKey,
   metode,
+  orgName,
+  orgCif,
 }: {
   orgSlug: string;
   pageSlug: string;
   titlu: string;
   locale: Locale;
+  orgName: string;
+  orgCif: string | null;
   publishableKey: string | null;
   // Calculat pe server la randarea paginii (vezi metode-plata-donatii.ts).
   metode: MetodeRedirect;
@@ -213,7 +217,7 @@ export function DoneazaModal({
                 ✕
               </button>
             </div>
-            <DoneazaForm orgSlug={orgSlug} pageSlug={pageSlug} titlu={titlu} locale={locale} publishableKey={publishableKey} metoda={metoda} cursEur={paypal.curs} key={metoda ?? "card"} />
+            <DoneazaForm orgSlug={orgSlug} pageSlug={pageSlug} titlu={titlu} locale={locale} publishableKey={publishableKey} metoda={metoda} cursEur={paypal.curs} orgName={orgName} orgCif={orgCif} key={metoda ?? "card"} />
           </div>
         </div>
       )}

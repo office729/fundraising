@@ -286,10 +286,7 @@ function ExpressCheckoutForMode({
             <Link href="/termeni" target="_blank" className="underline">
               {t.acordTermeniLink}
             </Link>{" "}
-            <Link href="/gdpr" target="_blank" className="underline">
-              {t.acordGdprLink}
-            </Link>
-            .
+            {t.plataRapidaNota}
           </p>
           {!portofel && <p className="text-center text-[11px] text-muted-2">{t.sauCompleteazaFormular}</p>}
         </>
