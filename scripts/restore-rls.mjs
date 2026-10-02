@@ -59,8 +59,22 @@ const POLICIES = [
   `create policy app_users_self_update on app_users for update using (
     id = nullif(current_setting('app.current_user_id', true), '')::uuid
   )`,
+  // LIPSEA — niciun context de încredere (cron-ul de reînnoire Netopia,
+  // factureazaPlata) nu putea citi emailul owner-ului unei organizații —
+  // app_users nu avea NICIO politică gated pe app.public_lookup (doar
+  // organizations_public_lookup mai jos), deci JOIN-ul memberships+app_users
+  // rula silențios pe 0 rânduri. Găsit abia când reînnoirea automată chiar
+  // a avut un token de testat (cron-ul întorcea mereu 0 organizații
+  // procesate, deși toate condițiile SQL erau îndeplinite).
+  `create policy app_users_public_lookup on app_users for select using (
+    nullif(current_setting('app.public_lookup', true), '') = 'true'
+  )`,
   `create policy memberships_self on memberships for select using (user_id = nullif(current_setting('app.current_user_id', true), '')::uuid)`,
   `create policy memberships_insert_self on memberships for insert with check (user_id = nullif(current_setting('app.current_user_id', true), '')::uuid)`,
+  // LIPSEA — aceeași cauză ca app_users_public_lookup de mai sus.
+  `create policy memberships_public_lookup on memberships for select using (
+    nullif(current_setting('app.public_lookup', true), '') = 'true'
+  )`,
   `create policy organizations_member on organizations for select using (
     id in (select org_id from memberships where user_id = nullif(current_setting('app.current_user_id', true), '')::uuid)
   )`,

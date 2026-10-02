@@ -168,6 +168,17 @@ create policy app_users_insert_self ON app_users
 create policy app_users_self_update ON app_users
   for update using (id = nullif(current_setting('app.current_user_id', true), '')::uuid);
 
+-- LIPSEA — niciun context de încredere (cron-ul de reînnoire Netopia,
+-- factureazaPlata) nu putea citi emailul owner-ului unei organizații pentru
+-- facturare/notificare, pentru că app_users nu are NICIO politică gated pe
+-- app.public_lookup (doar organizations are organizations_public_lookup mai
+-- jos) — JOIN-ul memberships+app_users rula silențios pe 0 rânduri, la fel
+-- ca celelalte bug-uri "LIPSEA" documentate în acest fișier. Găsit abia când
+-- reînnoirea automată chiar a avut un token de testat (cron-ul întorcea
+-- mereu 0 organizații procesate, deși toate condițiile SQL erau îndeplinite).
+create policy app_users_public_lookup ON app_users
+  for select using (nullif(current_setting('app.public_lookup', true), '') = 'true');
+
 -- auth_rate_limits: contoare de limitare de rată pe /login, /signup,
 -- /forgot-password (src/lib/auth/rate-limit.ts) — scrise ÎNAINTE de orice
 -- autentificare, deci fără niciun context de user/org disponibil, la fel ca
@@ -195,6 +206,12 @@ create policy memberships_self ON memberships
 -- pe altcineva, validată suplimentar în server action, nu doar în SQL).
 create policy memberships_insert_self ON memberships
   for insert with check (user_id = nullif(current_setting('app.current_user_id', true), '')::uuid);
+
+-- LIPSEA — aceeași cauză ca app_users_public_lookup de mai sus: fără ea,
+-- JOIN-ul memberships+app_users dintr-un context de încredere (public_lookup)
+-- nu găsea nimic, indiferent de politica adăugată pe app_users.
+create policy memberships_public_lookup ON memberships
+  for select using (nullif(current_setting('app.public_lookup', true), '') = 'true');
 
 -- organizations: doar organizațiile din care faci parte.
 create policy organizations_member ON organizations
@@ -567,10 +584,11 @@ create policy fundraising_updates_admin_update on fundraising_updates
 --    pierdut politici — re-rulează secțiunile 3 și 4 complet.
 -- ============================================================================
 -- select tablename, policyname, cmd from pg_policies where schemaname = 'public' order by tablename;
--- Așteptat: apeluri(4), app_users(3), auth_rate_limits(1), companies(1),
+-- Așteptat: apeluri(4), app_users(4), auth_rate_limits(1), companies(1),
 --           company_notite(1), company_sponsorizari(1), contacts(1), crm_kv(1),
 --           donatori_reali(4), formular230_beneficiari(5),
 --           formular230_campanii_email(4), formular230_submissions(4),
 --           fundraising_donations(7), fundraising_pages(5),
---           fundraising_updates(4), invites(4), memberships(2),
---           organizations(5) = 56 politici.
+--           fundraising_updates(4), invites(4), memberships(3),
+--           organizations(5) = 58 politici (+ cele pentru platform_payments,
+--           adăugate ulterior acestei numărători — vezi secțiunea lor mai sus).
