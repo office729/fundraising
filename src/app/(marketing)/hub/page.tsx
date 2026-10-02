@@ -162,7 +162,11 @@ export default async function HubPage() {
               </figcaption>
             </figure>
           </div>
-          <CalendlyInlineWidget url={CALENDLY_CONSULTANTA_URL} loadingLabel={dict.consultantaLoading} />
+          <CalendlyInlineWidget
+            url={CALENDLY_CONSULTANTA_URL}
+            loadingLabel={dict.consultantaLoading}
+            laClick={{ descriere: dict.consultantaConsimtamant, link: dict.consultantaCookiesLink, buton: dict.consultantaButon }}
+          />
         </div>
       </section>
 

@@ -50,7 +50,7 @@ export const COOKIES_DICT = {
       titlu: "5. Cookie-uri terțe",
       textBefore: "Dacă activezi autentificarea cu Google, Google poate seta propriile cookie-uri în timpul procesului de autentificare, conform",
       linkText: "politicii de confidențialitate Google",
-      textAfter: ". Procesatorii de plăți — Stripe (donații, în contul propriu al organizației) și Netopia (abonamentul platformei) — pot seta, pe pagina lor securizată de plată, cookie-uri proprii, necesare procesării plății.",
+      textAfter: ". Procesatorii de plăți — Stripe (donații, în contul propriu al organizației) și Netopia (abonamentul platformei) — pot seta, pe pagina lor securizată de plată, cookie-uri proprii, necesare procesării plății. Programarea consultanțelor se face prin Calendly: pe pagina publică „Hub”, calendarul se încarcă abia după ce apeși „Deschide calendarul”; în aplicație se încarcă la deschiderea paginii de consultanță. Calendly poate seta propriile cookie-uri și primește adresa ta IP, conform politicii lui de confidențialitate.",
     },
     s5: {
       titlu: "6. Cum gestionezi cookie-urile",
@@ -106,7 +106,7 @@ export const COOKIES_DICT = {
       titlu: "5. Third-party cookies",
       textBefore: "If you enable sign-in with Google, Google may set its own cookies during the authentication process, per the",
       linkText: "Google privacy policy",
-      textAfter: ". Payment processors — Stripe (donations, into the organization's own account) and Netopia (the platform's subscription) — may set their own cookies on their secure payment page, needed to process the payment.",
+      textAfter: ". Payment processors — Stripe (donations, into the organization's own account) and Netopia (the platform's subscription) — may set their own cookies on their secure payment page, needed to process the payment. Consultations are booked through Calendly: on the public “Hub” page the calendar loads only after you press “Open the calendar”; inside the app it loads when you open the consultation page. Calendly may set its own cookies and receives your IP address, per its own privacy policy.",
     },
     s5: {
       titlu: "6. Managing cookies",

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 import { trackEvent } from "@/lib/analytics";
@@ -20,17 +21,25 @@ declare global {
 
 const CALENDLY_SCRIPT_SRC = "https://assets.calendly.com/assets/external/widget.js";
 
+// `laClick` — pe pagina PUBLICĂ: scriptul și iframe-ul Calendly (care setează
+// cookie-uri proprii și primește IP-ul vizitatorului) nu se încarcă decât după
+// ce vizitatorul apasă butonul, sub o frază care spune asta. Fără `laClick`
+// (în aplicație, utilizator autentificat) se încarcă imediat, ca înainte.
 export function CalendlyInlineWidget({
   url,
   loadingLabel,
   className = "",
+  laClick,
 }: {
   url: string;
   loadingLabel: string;
   className?: string;
+  laClick?: { descriere: string; link: string; buton: string };
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
+  const [activat, setActivat] = useState(false);
+  const activ = !laClick || activat;
 
   // Calendly anunță prin postMessage când o programare a fost finalizată —
   // singurul semnal pe care îl avem de la un embed cross-origin. Se trimite un
@@ -46,6 +55,7 @@ export function CalendlyInlineWidget({
   }, []);
 
   useEffect(() => {
+    if (!activ) return;
     let cancelled = false;
 
     function init() {
@@ -73,11 +83,29 @@ export function CalendlyInlineWidget({
       cancelled = true;
       script?.removeEventListener("load", init);
     };
-  }, [url]);
+  }, [url, activ]);
 
   return (
     <div className={`relative overflow-hidden rounded-2xl border border-line bg-white shadow-sm ${className}`}>
-      {!ready && (
+      {!ready && !activ && laClick && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-white px-6 text-center">
+          <p className="max-w-sm text-sm leading-relaxed text-neutral-600">
+            {laClick.descriere}{" "}
+            <Link href="/cookies" target="_blank" className="font-medium text-brand-green underline">
+              {laClick.link}
+            </Link>
+            .
+          </p>
+          <button
+            type="button"
+            onClick={() => setActivat(true)}
+            className="rounded-md bg-brand-green px-5 py-2.5 text-sm font-bold text-white transition hover:bg-brand-green-hover"
+          >
+            {laClick.buton}
+          </button>
+        </div>
+      )}
+      {!ready && activ && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-line border-t-brand-green" />
           <p className="text-sm text-neutral-500">{loadingLabel}</p>

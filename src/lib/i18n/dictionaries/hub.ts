@@ -148,6 +148,9 @@ export const HUB_DICT = {
     consultantaDesc:
       "45 de minute, online — audit al campaniilor actuale și un plan de acțiune concret, primit în scris. Alegi direct un interval liber, fără e-mailuri înainte și înapoi.",
     consultantaLoading: "Se încarcă programarea...",
+    consultantaConsimtamant: "Programarea se face prin Calendly. Când deschizi calendarul, se încarcă serviciul Calendly, care poate seta propriile cookie-uri și primește adresa ta IP.",
+    consultantaCookiesLink: "Politica de cookies",
+    consultantaButon: "Deschide calendarul",
     contactTitlu: "Nu știi de unde să începi?",
     contactDesc: "Scrie-ne și îți recomandăm instrumentele potrivite pentru etapa în care se află ONG-ul tău.",
   },
@@ -298,6 +301,9 @@ export const HUB_DICT = {
     consultantaDesc:
       "45 minutes, online — an audit of your current campaigns and a concrete action plan, delivered in writing. Pick an open slot directly, no back-and-forth emails.",
     consultantaLoading: "Loading the booking calendar...",
+    consultantaConsimtamant: "Booking is handled by Calendly. When you open the calendar, the Calendly service loads, may set its own cookies and receives your IP address.",
+    consultantaCookiesLink: "Cookie policy",
+    consultantaButon: "Open the calendar",
     contactTitlu: "Not sure where to start?",
     contactDesc: "Write to us and we'll recommend the right tools for the stage your NGO is at.",
   },
