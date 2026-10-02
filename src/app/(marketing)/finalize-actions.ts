@@ -5,7 +5,7 @@ import { randomUUID } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 
-import { ensureAppUser, getAuthUser } from "@/lib/auth/dal";
+import { ensureAppUser, getAuthUser, inregistreazaAcceptareTermeni } from "@/lib/auth/dal";
 import { citestePlanulAlesDinFormular } from "@/lib/billing/plan-from-form";
 import { db } from "@/lib/db";
 import { memberships, organizations } from "@/lib/db/schema";
@@ -24,6 +24,10 @@ export async function finalizeazaOrganizatiaAction(
   if (!orgName) {
     return { error: "Completează numele organizației." };
   }
+  // Validat pe server — bifa se poate ocoli din browser.
+  if (formData.get("acceptTermeni") !== "on") {
+    return { error: "Pentru a crea contul trebuie să accepți Termenii și condițiile și Politica de confidențialitate." };
+  }
 
   const authUser = await getAuthUser();
   if (!authUser?.email) {
@@ -38,6 +42,7 @@ export async function finalizeazaOrganizatiaAction(
     await tx.execute(sql`select set_config('app.current_user_email', ${email}, true)`);
     const appUser = await ensureAppUser(tx, email, name);
     await tx.execute(sql`select set_config('app.current_user_id', ${appUser.id}, true)`);
+    await inregistreazaAcceptareTermeni(tx, appUser.id);
     // Vezi explicația din signup/actions.ts — necesar ca SELECT-urile de mai
     // jos (unicitate slug, rezolvare cod de recomandare) să nu ruleze
     // silențios pe 0 rânduri sub FORCE ROW LEVEL SECURITY.

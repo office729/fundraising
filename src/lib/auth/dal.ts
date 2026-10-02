@@ -1,10 +1,11 @@
 import "server-only";
 
-import { eq, sql } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { cache } from "react";
 
 import { db } from "@/lib/db";
 import { appUsers, memberships, organizations } from "@/lib/db/schema";
+import { TERMENI_VERSIUNE } from "@/lib/legal-version";
 import { createClient } from "@/lib/supabase/server";
 
 import { findBeneficiaryProfile } from "./beneficiar";
@@ -36,6 +37,17 @@ export async function ensureAppUser(
     .values({ email: normalized, name: name ?? null })
     .returning();
   return inserted[0];
+}
+
+// Înregistrează acceptarea Termenilor/Politicii de confidențialitate pe rândul
+// app_users — doar prima dată (isNull), ca dovada originală să nu fie
+// suprascrisă la o a doua înscriere. Necesită app.current_user_id setat în
+// tranzacție (politica app_users_self_update).
+export async function inregistreazaAcceptareTermeni(tx: Pick<typeof db, "update">, appUserId: string) {
+  await tx
+    .update(appUsers)
+    .set({ termsAcceptedAt: new Date(), termsVersion: TERMENI_VERSIUNE })
+    .where(and(eq(appUsers.id, appUserId), isNull(appUsers.termsAcceptedAt)));
 }
 
 // Pentru pagina de start (marketing): dacă userul e deja logat, la ce

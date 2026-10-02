@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useActionState } from "react";
+import { Suspense, useActionState, useState } from "react";
 
 import { extractPlanQuery, PLAN_QUERY_KEYS } from "@/lib/billing/plan-query";
 import { useAlegerePlan } from "@/lib/billing/use-alegere-plan";
@@ -16,6 +16,7 @@ type Dict = (typeof AUTH_DICT)[Locale];
 
 function SignupFormInner({ dict }: { dict: Dict }) {
   const [state, formAction, pending] = useActionState(signupAction, { error: null });
+  const [accepta, setAccepta] = useState(false);
   const params = useSearchParams();
   const inviteToken = params.get("invite") || "";
   const beneficiarInviteToken = params.get("beneficiarInvite") || "";
@@ -37,8 +38,31 @@ function SignupFormInner({ dict }: { dict: Dict }) {
             : dict.signup.descNou}
       </p>
 
-      <div className="mt-6">
-        <GoogleButton dict={dict} />
+      <label className="mt-6 flex items-start gap-2.5 text-[13px] leading-relaxed text-body">
+        <input
+          type="checkbox"
+          name="acceptTermeni"
+          form="signup-form"
+          required
+          checked={accepta}
+          onChange={(e) => setAccepta(e.target.checked)}
+          className="mt-0.5 h-4 w-4 shrink-0 rounded border-line"
+        />
+        <span>
+          {dict.signup.acceptPre}{" "}
+          <Link href="/termeni" target="_blank" className="font-medium text-brand-green underline">
+            {dict.signup.acceptTermeni}
+          </Link>{" "}
+          {dict.signup.acceptSi}{" "}
+          <Link href="/gdpr" target="_blank" className="font-medium text-brand-green underline">
+            {dict.signup.acceptGdpr}
+          </Link>
+          .
+        </span>
+      </label>
+
+      <div className="mt-4">
+        <GoogleButton dict={dict} acceptat={accepta} />
       </div>
 
       <div className="my-4 flex items-center gap-3 text-xs font-medium text-muted-2">
@@ -62,7 +86,7 @@ function SignupFormInner({ dict }: { dict: Dict }) {
         </div>
       )}
 
-      <form action={formAction} className="flex flex-col gap-3">
+      <form id="signup-form" action={formAction} className="flex flex-col gap-3">
         <input type="hidden" name="inviteToken" value={inviteToken} />
         <input type="hidden" name="beneficiarInviteToken" value={beneficiarInviteToken} />
         {!areInvitatie && <input type="hidden" name="ref" value={referralCode} />}

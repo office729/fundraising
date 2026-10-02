@@ -22,4 +22,9 @@ export const appUsers = pgTable("app_users", {
   // de-aici nevoia unei coloane proprii. Null = niciodată autentificat (ex.
   // un angajat creat administrativ, fără cont propriu încă).
   lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
+  // Dovada acceptării Termenilor și a Politicii de confidențialitate (GDPR art.
+  // 7(1) / contract): momentul bifei și versiunea textelor legale acceptate
+  // (lib/legal-version.ts). Null = cont creat înainte de bifa de acceptare.
+  termsAcceptedAt: timestamp("terms_accepted_at", { withTimezone: true }),
+  termsVersion: text("terms_version"),
 }).enableRLS();

@@ -6,13 +6,21 @@ import { useState } from "react";
 import { extractPlanQuery, planQueryString } from "@/lib/billing/plan-query";
 import type { Locale } from "@/lib/i18n/config";
 import type { AUTH_DICT } from "@/lib/i18n/dictionaries/auth";
+import { COOKIE_ACCEPTARE_TERMENI, TERMENI_VERSIUNE } from "@/lib/legal-version";
 import { createClient } from "@/lib/supabase/client";
 
-export function GoogleButton({ dict }: { dict: (typeof AUTH_DICT)[Locale] }) {
+// `acceptat` — doar pe pagina de înscriere: false blochează butonul până la
+// bifa de acceptare a Termenilor, true o poartă peste redirectul OAuth printr-un
+// cookie scurt (vezi lib/legal-version.ts). Lipsă (login) = fără gardă.
+export function GoogleButton({ dict, acceptat }: { dict: (typeof AUTH_DICT)[Locale]; acceptat?: boolean }) {
   const [pending, setPending] = useState(false);
   const params = useSearchParams();
 
   async function onClick() {
+    if (acceptat === false) return;
+    if (acceptat === true) {
+      document.cookie = `${COOKIE_ACCEPTARE_TERMENI}=${TERMENI_VERSIUNE}; path=/; max-age=1800; SameSite=Lax${window.location.protocol === "https:" ? "; Secure" : ""}`;
+    }
     setPending(true);
     const supabase = createClient();
     // Planul ales pe /hub (dacă userul a ajuns aici din acel flux) circulă
@@ -34,7 +42,8 @@ export function GoogleButton({ dict }: { dict: (typeof AUTH_DICT)[Locale] }) {
     <button
       type="button"
       onClick={onClick}
-      disabled={pending}
+      disabled={pending || acceptat === false}
+      title={acceptat === false ? dict.signup.acceptGoogleIndiciu : undefined}
       className="flex w-full items-center justify-center gap-2.5 rounded-lg border border-line bg-panel px-4 py-2.5 text-sm font-medium text-ink transition hover:bg-panel-2 disabled:opacity-60"
     >
       <svg viewBox="0 0 48 48" className="h-4.5 w-4.5" aria-hidden="true">

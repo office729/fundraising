@@ -6,7 +6,7 @@ export const COOKIES_DICT = {
     eyebrow: "Legal",
     titlu: "Politica de cookies",
     actualizatLabel: "Ultima actualizare",
-    actualizat: "22 septembrie 2026",
+    actualizat: "2 octombrie 2026",
     banner: {
       titlu: "Cookie-uri și statistici",
       text: "Folosim cookie-uri strict necesare pentru autentificare. Cu acordul tău, folosim și Google Analytics pentru statistici anonime despre utilizarea site-ului. Poți schimba alegerea oricând.",
@@ -29,6 +29,7 @@ export const COOKIES_DICT = {
         { nume: "sb-*-auth-token", scop: "Menține sesiunea de autentificare (Supabase Auth) — te ține conectat între vizite.", durata: "Sesiune sau persistent, în funcție de „Rămâi conectat” bifat la autentificare" },
         { nume: "sb-*-auth-token-code-verifier", scop: "Verificare tehnică temporară pentru finalizarea autentificării (cod OAuth/email).", durata: "Câteva minute" },
         { nume: "fa_evt", scop: "Semnal tehnic scurt, fără date personale: anunță pagina următoare că ți-ai creat contul, ca statistica să poată fi raportată doar dacă ai acceptat cookie-urile de analiză. Se șterge imediat ce e citit.", durata: "Maximum 2 minute" },
+        { nume: "fa_terms", scop: "Reține, doar la înscrierea cu Google, că ai bifat acceptarea Termenilor și a Politicii de confidențialitate, ca să nu ți-o cerem a doua oară după întoarcerea de la Google. Conține doar versiunea textelor acceptate.", durata: "30 de minute" },
       ],
     },
     sAnalytics: {
@@ -61,7 +62,7 @@ export const COOKIES_DICT = {
     eyebrow: "Legal",
     titlu: "Cookie Policy",
     actualizatLabel: "Last updated",
-    actualizat: "September 22, 2026",
+    actualizat: "October 2, 2026",
     banner: {
       titlu: "Cookies and statistics",
       text: "We use strictly necessary cookies for sign-in. With your consent, we also use Google Analytics for anonymous statistics about how the site is used. You can change your choice at any time.",
@@ -84,6 +85,7 @@ export const COOKIES_DICT = {
         { nume: "sb-*-auth-token", scop: "Maintains the authentication session (Supabase Auth) — keeps you signed in between visits.", durata: "Session or persistent, depending on whether \"Stay signed in\" was checked at login" },
         { nume: "sb-*-auth-token-code-verifier", scop: "Temporary technical verification to complete authentication (OAuth/email code).", durata: "A few minutes" },
         { nume: "fa_evt", scop: "Short technical signal, no personal data: tells the next page you just created your account, so the statistic can be reported only if you accepted analytics cookies. Deleted as soon as it's read.", durata: "2 minutes at most" },
+        { nume: "fa_terms", scop: "Remembers, only when signing up with Google, that you ticked acceptance of the Terms and Privacy Policy, so we don't ask again after you return from Google. Contains only the version of the texts accepted.", durata: "30 minutes" },
       ],
     },
     sAnalytics: {

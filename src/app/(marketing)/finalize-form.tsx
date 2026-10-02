@@ -1,9 +1,11 @@
 "use client";
 
-import { useActionState } from "react";
+import Link from "next/link";
+import { useActionState, useState, useSyncExternalStore } from "react";
 
 import { PLAN_QUERY_KEYS, type PlanQueryValues } from "@/lib/billing/plan-query";
 import { useAlegerePlan } from "@/lib/billing/use-alegere-plan";
+import { COOKIE_ACCEPTARE_TERMENI } from "@/lib/legal-version";
 
 import { finalizeazaOrganizatiaAction } from "./finalize-actions";
 
@@ -18,6 +20,16 @@ export function FinalizeForm({
 }) {
   const [state, formAction, pending] = useActionState(finalizeazaOrganizatiaAction, { error: null });
   const alegerePlan = useAlegerePlan(planValues);
+  // Pre-bifat dacă acordul a fost deja dat pe pagina de înscriere (cookie
+  // scurt purtat peste redirectul Google) — altfel cere bifa aici.
+  const cookiePrezent = useSyncExternalStore(
+    () => () => {},
+    () => document.cookie.split(";").some((c) => c.trim().startsWith(`${COOKIE_ACCEPTARE_TERMENI}=`)),
+    () => false,
+  );
+  const [alegere, setAlegere] = useState<boolean | null>(null);
+  const accepta = alegere ?? cookiePrezent;
+  const setAccepta = setAlegere;
 
   return (
     <main className="mx-auto flex max-w-sm flex-col justify-center px-6 py-24">
@@ -53,6 +65,28 @@ export function FinalizeForm({
             placeholder="ex. Asociația Sprijin"
             className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink"
           />
+        </label>
+
+        <label className="flex items-start gap-2.5 text-[13px] leading-relaxed text-body">
+          <input
+            type="checkbox"
+            name="acceptTermeni"
+            required
+            checked={accepta}
+            onChange={(e) => setAccepta(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border-line"
+          />
+          <span>
+            Am citit și sunt de acord cu{" "}
+            <Link href="/termeni" target="_blank" className="font-medium text-brand-green underline">
+              Termenii și condițiile
+            </Link>{" "}
+            și cu{" "}
+            <Link href="/gdpr" target="_blank" className="font-medium text-brand-green underline">
+              Politica de confidențialitate
+            </Link>
+            .
+          </span>
         </label>
 
         {state.error && <p className="text-sm text-red-600">{state.error}</p>}

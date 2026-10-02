@@ -6,7 +6,7 @@ import { eq, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 
 import { semnalizeazaEveniment } from "@/lib/analytics-server";
-import { ensureAppUser } from "@/lib/auth/dal";
+import { ensureAppUser, inregistreazaAcceptareTermeni } from "@/lib/auth/dal";
 import { obtineIpClient, verificaLimitaRata } from "@/lib/auth/rate-limit";
 import { citestePlanulAlesDinFormular } from "@/lib/billing/plan-from-form";
 import { db } from "@/lib/db";
@@ -40,6 +40,12 @@ export async function signupAction(
   if (password.length < 8) {
     return { error: errors.parolaMinim };
   }
+  // Acceptarea Termenilor + Politicii de confidențialitate e obligatorie și
+  // validată pe server (bifa din formular poate fi ocolită) — vezi
+  // inregistreazaAcceptareTermeni mai jos, care păstrează dovada.
+  if (formData.get("acceptTermeni") !== "on") {
+    return { error: errors.termeniNeacceptati };
+  }
 
   // 5 conturi noi/oră per IP — creare de cont e rară pentru un utilizator
   // real, dar o țintă pentru crearea automată în masă a conturilor.
@@ -72,7 +78,9 @@ export async function signupAction(
   if (inviteToken || beneficiarInviteToken) {
     await db.transaction(async (tx) => {
       await tx.execute(sql`select set_config('app.current_user_email', ${email}, true)`);
-      await ensureAppUser(tx, email);
+      const appUser = await ensureAppUser(tx, email);
+      await tx.execute(sql`select set_config('app.current_user_id', ${appUser.id}, true)`);
+      await inregistreazaAcceptareTermeni(tx, appUser.id);
     });
     if (!data.session) {
       redirect(
@@ -92,6 +100,7 @@ export async function signupAction(
     await tx.execute(sql`select set_config('app.current_user_email', ${email}, true)`);
     const appUser = await ensureAppUser(tx, email);
     await tx.execute(sql`select set_config('app.current_user_id', ${appUser.id}, true)`);
+    await inregistreazaAcceptareTermeni(tx, appUser.id);
     // Necesar pentru verificarea de unicitate a slug-ului ȘI pentru
     // rezolvarea codului de recomandare de mai jos — la acest moment din
     // tranzacție nu există încă niciun membership, deci organizations_member
