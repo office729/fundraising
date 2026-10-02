@@ -38,7 +38,7 @@ export const MARKETING_DICT = {
       stats: [
         { n: "28M€+", l: "strânși pentru cauze umanitare" },
         { n: "9", l: "instrumente incluse în platformă" },
-        { n: "14 zile", l: "trial gratuit, fără card" },
+        { n: "30 zile", l: "trial gratuit, fără card" },
       ],
     },
     platforma: {
@@ -57,7 +57,7 @@ export const MARKETING_DICT = {
       items: [
         { t: "Construită pe o fundație solidă, care a strâns 28M€", d: "Fiecare instrument pornește din nevoi reale, testate în activitatea Asociației Salvează o Inimă, nu din presupuneri." },
         { t: "Toate instrumentele, într-un singur abonament", d: "CRM, pagini de donație, rapoarte și newslettere — nu plătești separat pentru fiecare unealtă, doar pentru capacitate." },
-        { t: "Trial complet, 14 zile, fără card", d: "Testezi platforma cu datele tale reale înainte să te decizi — fără angajament, fără card bancar." },
+        { t: "Trial complet, 30 de zile, fără card", d: "Testezi platforma cu datele tale reale înainte să te decizi — fără angajament, fără card bancar." },
       ],
     },
     testimoniale: {
@@ -85,6 +85,41 @@ export const MARKETING_DICT = {
             "Colaborarea cu Vlad Plăcintă a fost esențială pentru succesul nostru în fundraising. Expertiza sa ne-a ajutat să ne atingem obiectivele cu ușurință.",
           nume: "Diana Alexandroae",
           rol: "Președinte — Asociația ANAID",
+        },
+      ],
+    },
+    intrebariFrecvente: {
+      title: "Întrebări frecvente",
+      items: [
+        {
+          intrebare: "De ce să aleg un CRM dedicat ONG-urilor în locul unui CRM general?",
+          raspuns:
+            "În fundraising, relația cu un donator continuă mult după prima donație. Ai nevoie să urmărești istoricul sprijinului, campaniile susținute, comunicările și următorul contact. Alexandrit este conceput în jurul acestor nevoi, pentru ca echipa să poată transforma datele în relații durabile și sprijin pentru misiunea organizației.",
+        },
+        {
+          intrebare: "Un CRM internațional gratuit este suficient pentru un ONG din România?",
+          raspuns:
+            "Poate fi un punct de plecare pentru o echipă mică, cu nevoi simple. Pe măsură ce cresc baza de donatori și numărul campaniilor, contează cât de ușor poți urmări donațiile, sponsorizările și activitatea echipei. Evaluează atât costul abonamentului, cât și timpul necesar pentru configurare și administrare.",
+        },
+        {
+          intrebare: "Cum compar costul Alexandrit cu cel al unui CRM internațional?",
+          raspuns:
+            "Compară costul total pentru întreaga echipă: abonamentul, numărul de utilizatori, configurarea, migrarea datelor și funcțiile suplimentare. Pentru un ONG, valoarea unui CRM se vede și în timpul economisit, în contactele urmărite la timp și în claritatea rapoartelor de fundraising.",
+        },
+        {
+          intrebare: "De ce contează formularele 230, D177 și sponsorizările în alegerea unui CRM?",
+          raspuns:
+            "Pentru ONG-urile din România, acestea fac parte din activitatea de atragere a fondurilor. Un CRM potrivit trebuie evaluat și după felul în care ajută echipa să urmărească persoanele și companiile contactate, documentele, stadiul solicitărilor și termenele. Funcțiile și integrările disponibile trebuie verificate înainte de alegerea platformei.",
+        },
+        {
+          intrebare: "Este Alexandrit potrivit și pentru ONG-uri din alte domenii decât cel medical?",
+          raspuns:
+            "Alexandrit este gândit pentru fundraisingul ONG-urilor, indiferent de cauza susținută: educație, sănătate, mediu, cultură sau sprijin social. Nevoile comune sunt relațiile cu donatorii și sponsorii, organizarea campaniilor și coordonarea echipei. Modul de lucru trebuie adaptat misiunii fiecărei organizații.",
+        },
+        {
+          intrebare: "Cum poate un CRM să ajute un ONG să atragă mai multe fonduri?",
+          raspuns:
+            "Prin organizarea informațiilor și urmărirea consecventă a relațiilor. Când echipa știe cine a donat, cine trebuie contactat și ce discuții sunt în desfășurare, poate comunica mai relevant și poate reveni la momentul potrivit. Rezultatele depind de strategie și de oameni; CRM-ul le susține munca.",
         },
       ],
     },
@@ -162,7 +197,7 @@ export const MARKETING_DICT = {
       stats: [
         { n: "€28M+", l: "raised for humanitarian causes" },
         { n: "9", l: "tools included in the platform" },
-        { n: "14 days", l: "free trial, no card" },
+        { n: "30 days", l: "free trial, no card" },
       ],
     },
     platforma: {
@@ -181,7 +216,7 @@ export const MARKETING_DICT = {
       items: [
         { t: "Built on a solid foundation that raised €28M", d: "Every tool starts from a real need, tested in Asociația Salvează o Inimă's own work — not from guesswork." },
         { t: "Every tool, in one subscription", d: "CRM, donation pages, reports and newsletters — you don't pay separately per tool, only for capacity." },
-        { t: "Full 14-day trial, no card", d: "Test the platform with your real data before you decide — no commitment, no bank card." },
+        { t: "Full 30-day trial, no card", d: "Test the platform with your real data before you decide — no commitment, no bank card." },
       ],
     },
     testimoniale: {
@@ -209,6 +244,41 @@ export const MARKETING_DICT = {
             "Working with Vlad Plăcintă was essential to our fundraising success. His expertise helped us reach our goals with ease.",
           nume: "Diana Alexandroae",
           rol: "President — Asociația ANAID",
+        },
+      ],
+    },
+    intrebariFrecvente: {
+      title: "Frequently asked questions",
+      items: [
+        {
+          intrebare: "Why choose a CRM built for NGOs instead of a general-purpose CRM?",
+          raspuns:
+            "In fundraising, the relationship with a donor continues long after their first gift. You need to track their giving history, the campaigns they supported, your communications and the next touchpoint. Alexandrit is built around these needs, so your team can turn data into lasting relationships and support for your mission.",
+        },
+        {
+          intrebare: "Is a free international CRM enough for a Romanian NGO?",
+          raspuns:
+            "It can be a starting point for a small team with simple needs. As your donor base and number of campaigns grow, it matters how easily you can track donations, sponsorships and your team's activity. Weigh both the subscription cost and the time needed to set up and maintain it.",
+        },
+        {
+          intrebare: "How do I compare Alexandrit's cost to an international CRM?",
+          raspuns:
+            "Compare the total cost for your whole team: the subscription, number of users, setup, data migration and add-on features. For an NGO, a CRM's value also shows up in time saved, contacts followed up on time, and clear fundraising reports.",
+        },
+        {
+          intrebare: "Why do Form 230, D177 and sponsorships matter when choosing a CRM?",
+          raspuns:
+            "For Romanian NGOs, these are part of day-to-day fundraising. The right CRM should be judged on how well it helps your team track the people and companies contacted, documents, request status and deadlines. Check the available features and integrations before choosing a platform.",
+        },
+        {
+          intrebare: "Is Alexandrit a good fit for NGOs outside the medical field?",
+          raspuns:
+            "Alexandrit is built for NGO fundraising regardless of cause — education, health, environment, culture or social support. The common needs are donor and sponsor relationships, campaign organization and team coordination. How you work should be adapted to your organization's own mission.",
+        },
+        {
+          intrebare: "How can a CRM help an NGO raise more funds?",
+          raspuns:
+            "By organizing information and consistently following up on relationships. When your team knows who gave, who needs a follow-up and which conversations are in progress, it can communicate more relevantly and reach out at the right moment. Results depend on strategy and people — the CRM supports that work.",
         },
       ],
     },

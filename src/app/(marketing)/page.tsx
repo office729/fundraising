@@ -138,6 +138,38 @@ export default async function LandingPage({
           ))}
         </div>
       </section>
+
+      {/* Întrebări frecvente — <details>/<summary> nativ: accesibil din cutie
+          (tastatură, cititoare de ecran), fără stare React necesară. */}
+      <section className="bg-panel-2 px-[6%] py-16">
+        <h2 className="font-display mx-auto max-w-2xl text-center text-[32px] font-bold text-ink">{dict.intrebariFrecvente.title}</h2>
+        <div className="mx-auto mt-10 max-w-3xl divide-y divide-line rounded-2xl border border-line bg-panel">
+          {dict.intrebariFrecvente.items.map((q) => (
+            <details key={q.intrebare} className="group px-6 py-5 open:pb-5">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-display text-[16px] font-bold text-ink marker:content-none">
+                {q.intrebare}
+                <span className="shrink-0 text-xl leading-none text-brand-blue transition-transform duration-200 group-open:rotate-45">+</span>
+              </summary>
+              <p className="mt-3 text-[14.5px] leading-relaxed text-muted">{q.raspuns}</p>
+            </details>
+          ))}
+        </div>
+        <script
+          type="application/ld+json"
+          // JSON-LD generat din dicționarul propriu (text static, nu input extern) — necesar pentru rich results Google.
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              mainEntity: dict.intrebariFrecvente.items.map((q) => ({
+                "@type": "Question",
+                name: q.intrebare,
+                acceptedAnswer: { "@type": "Answer", text: q.raspuns },
+              })),
+            }),
+          }}
+        />
+      </section>
     </main>
   );
 }
