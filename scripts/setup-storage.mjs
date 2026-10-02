@@ -29,10 +29,14 @@ try {
     on conflict (id) do update set public = true, file_size_limit = 5242880, allowed_mime_types = array['image/jpeg','image/png','image/webp','image/gif']
   `;
 
+  // Politicile de scriere pentru `authenticated` (fără scopare pe organizație:
+  // orice cont putea scrie/șterge în bucket) au fost ELIMINATE la 2026-10-02 —
+  // codul nu scrie în `campanii`, ci în `org-branding` (vezi
+  // documentation/storage-policies.sql). Rămâne doar citirea publică.
+  await sql.unsafe(`drop policy if exists campanii_authenticated_upload on storage.objects`);
+  await sql.unsafe(`drop policy if exists campanii_authenticated_update on storage.objects`);
+  await sql.unsafe(`drop policy if exists campanii_authenticated_delete on storage.objects`);
   const policies = [
-    `create policy campanii_authenticated_upload on storage.objects for insert to authenticated with check (bucket_id = '${BUCKET_ID}')`,
-    `create policy campanii_authenticated_update on storage.objects for update to authenticated using (bucket_id = '${BUCKET_ID}')`,
-    `create policy campanii_authenticated_delete on storage.objects for delete to authenticated using (bucket_id = '${BUCKET_ID}')`,
     `create policy campanii_public_read on storage.objects for select using (bucket_id = '${BUCKET_ID}')`,
   ];
 
