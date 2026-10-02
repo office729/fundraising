@@ -59,8 +59,24 @@ const POLICIES = [
   `create policy app_users_self_update on app_users for update using (
     id = nullif(current_setting('app.current_user_id', true), '')::uuid
   )`,
+  // LIPSEA — niciun context de încredere (cron-ul de reînnoire Netopia,
+  // factureazaPlata, panoul platform-admin) nu putea citi emailul owner-ului
+  // unei organizații — app_users nu avea NICIO politică gated pe
+  // app.public_lookup (doar organizations_public_lookup mai jos), deci
+  // JOIN-ul memberships+app_users rula silențios pe 0 rânduri. Găsit abia
+  // când reînnoirea automată chiar a avut un token de testat (cron-ul
+  // întorcea mereu 0 organizații procesate, deși toate condițiile SQL erau
+  // îndeplinite).
+  `create policy app_users_public_lookup on app_users for select using (
+    nullif(current_setting('app.public_lookup', true), '') = 'true'
+  )`,
   `create policy memberships_self on memberships for select using (user_id = nullif(current_setting('app.current_user_id', true), '')::uuid)`,
   `create policy memberships_insert_self on memberships for insert with check (user_id = nullif(current_setting('app.current_user_id', true), '')::uuid)`,
+  // Vezi app_users_public_lookup mai sus — aceeași cauză (cron reînnoire +
+  // panoul platform-admin).
+  `create policy memberships_public_lookup on memberships for select using (
+    nullif(current_setting('app.public_lookup', true), '') = 'true'
+  )`,
   `create policy organizations_member on organizations for select using (
     id in (select org_id from memberships where user_id = nullif(current_setting('app.current_user_id', true), '')::uuid)
   )`,
@@ -99,6 +115,12 @@ const POLICIES = [
   )`,
   `create policy platform_payments_member_insert on platform_payments for insert with check (
     org_id = nullif(current_setting('app.current_org_id', true), '')::uuid and status = 'in_asteptare'
+  )`,
+  // INSERT din cron-ul de reînnoire automată (api/cron/netopia-reinnoire) —
+  // rulează FĂRĂ o sesiune de organizație (fără app.current_org_id), doar cu
+  // app.public_lookup, la fel ca celelalte webhook-uri/cron-uri.
+  `create policy platform_payments_webhook_insert on platform_payments for insert with check (
+    nullif(current_setting('app.public_lookup', true), '') = 'true'
   )`,
   `create policy platform_payments_webhook_select on platform_payments for select using (
     nullif(current_setting('app.public_lookup', true), '') = 'true'
@@ -577,6 +599,69 @@ const POLICIES = [
   `create policy fundraising_audit_log_member_insert on fundraising_audit_log for insert with check (
     org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
   )`,
+
+  // Modulul „Raport de activitate companii" — izolare simplă pe org_id, ca la
+  // restul tabelelor CRM; restricția la owner/admin (documente financiare,
+  // token-uri Canva) se aplică la nivel de server action (withOrgAdmin), nu RLS.
+  `create policy financial_documents_tenant_isolation on financial_documents
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy company_activity_reports_tenant_isolation on company_activity_reports
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy canva_connections_tenant_isolation on canva_connections
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+
+  // Modulul KPI generic — toate tabelele org-scoped direct, izolare simplă ca
+  // la restul schemei; scoparea Angajat/Manager/Admin Departament (cine vede
+  // pe cine ÎN interiorul org-ului) se face în server actions, nu aici (vezi
+  // plan: colegi din același org, deja de încredere la nivel RLS).
+  `create policy departments_tenant_isolation on departments
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy roluri_tenant_isolation on roluri
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy angajati_tenant_isolation on angajati
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy kpi_categorii_tenant_isolation on kpi_categorii
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy kpi_definitii_tenant_isolation on kpi_definitii
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  // kpi_sabloane_itemi / kpi_profiluri_sezoniere_itemi / kpi_funnel_etape nu
+  // au org_id propriu (denormalizat) — izolate prin join pe părinte, care e
+  // deja org-scoped; fără join direct pe org_id, politica verifică prin EXISTS.
+  `create policy kpi_sabloane_tenant_isolation on kpi_sabloane
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy kpi_sabloane_itemi_tenant_isolation on kpi_sabloane_itemi
+    using      (exists (select 1 from kpi_sabloane s where s.id = kpi_sabloane_itemi.sablon_id and s.org_id = nullif(current_setting('app.current_org_id', true), '')::uuid))
+    with check (exists (select 1 from kpi_sabloane s where s.id = kpi_sabloane_itemi.sablon_id and s.org_id = nullif(current_setting('app.current_org_id', true), '')::uuid))`,
+  `create policy kpi_profiluri_sezoniere_tenant_isolation on kpi_profiluri_sezoniere
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy kpi_profiluri_sezoniere_itemi_tenant_isolation on kpi_profiluri_sezoniere_itemi
+    using      (exists (select 1 from kpi_profiluri_sezoniere p where p.id = kpi_profiluri_sezoniere_itemi.profil_id and p.org_id = nullif(current_setting('app.current_org_id', true), '')::uuid))
+    with check (exists (select 1 from kpi_profiluri_sezoniere p where p.id = kpi_profiluri_sezoniere_itemi.profil_id and p.org_id = nullif(current_setting('app.current_org_id', true), '')::uuid))`,
+  `create policy kpi_atribuiri_tenant_isolation on kpi_atribuiri
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy kpi_valori_tenant_isolation on kpi_valori
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy kpi_funnels_tenant_isolation on kpi_funnels
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy kpi_funnel_etape_tenant_isolation on kpi_funnel_etape
+    using      (exists (select 1 from kpi_funnels f where f.id = kpi_funnel_etape.funnel_id and f.org_id = nullif(current_setting('app.current_org_id', true), '')::uuid))
+    with check (exists (select 1 from kpi_funnels f where f.id = kpi_funnel_etape.funnel_id and f.org_id = nullif(current_setting('app.current_org_id', true), '')::uuid))`,
+  `create policy kpi_audit_log_tenant_isolation on kpi_audit_log
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
 ];
 
 const FORCE_TABLES = [
@@ -616,6 +701,23 @@ const FORCE_TABLES = [
   "fundraising_group_posting_history",
   "fundraising_notifications",
   "fundraising_audit_log",
+  "financial_documents",
+  "company_activity_reports",
+  "canva_connections",
+  "departments",
+  "roluri",
+  "angajati",
+  "kpi_categorii",
+  "kpi_definitii",
+  "kpi_sabloane",
+  "kpi_sabloane_itemi",
+  "kpi_profiluri_sezoniere",
+  "kpi_profiluri_sezoniere_itemi",
+  "kpi_atribuiri",
+  "kpi_valori",
+  "kpi_funnels",
+  "kpi_funnel_etape",
+  "kpi_audit_log",
 ];
 
 try {

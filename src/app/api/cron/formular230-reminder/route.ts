@@ -1,8 +1,7 @@
-import { timingSafeEqual } from "node:crypto";
-
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
+import { cronAutorizat } from "@/lib/cron-auth";
 import { db } from "@/lib/db";
 import { donatoriReali, formular230Beneficiari, formular230CampaniiEmail, organizations } from "@/lib/db/schema";
 import { emailConfigurat, trimiteEmailuriInLot } from "@/lib/email";
@@ -26,18 +25,6 @@ const ZILE_INAINTE_TERMEN = 10;
 const TERMEN_LUNA = 5; // mai
 const TERMEN_ZI = 25;
 
-// Comparație în timp constant — `!==` pe string-uri scurtcircuitează la
-// primul octet diferit, o scurgere de timing ce ar permite ghicirea
-// CRON_SECRET caracter cu caracter. Lungimile diferă aproape mereu (secretul
-// e fix, headerul e controlat de client), iar timingSafeEqual aruncă în
-// acest caz — de-aia comparăm mai întâi lungimea.
-function secretValid(primit: string | null, asteptat: string): boolean {
-  if (!primit) return false;
-  const a = Buffer.from(primit);
-  const b = Buffer.from(`Bearer ${asteptat}`);
-  return a.length === b.length && timingSafeEqual(a, b);
-}
-
 function inFereastraTermen(acum: Date): boolean {
   const an = acum.getUTCFullYear();
   const termen = new Date(Date.UTC(an, TERMEN_LUNA - 1, TERMEN_ZI));
@@ -47,12 +34,10 @@ function inFereastraTermen(acum: Date): boolean {
 }
 
 export async function GET(req: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) {
+  if (!process.env.CRON_SECRET) {
     return NextResponse.json({ error: "cron_neconfigurat" }, { status: 501 });
   }
-  const auth = req.headers.get("authorization");
-  if (!secretValid(auth, secret)) {
+  if (!cronAutorizat(req)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
@@ -67,54 +52,64 @@ export async function GET(req: Request) {
   const an = acum.getUTCFullYear();
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://fundraising-academy-one.vercel.app";
 
+  const orgs = await db.transaction(async (tx) => {
+    await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
+    return tx.select({ id: organizations.id, slug: organizations.slug, name: organizations.name }).from(organizations);
+  });
+
   const rezultate: { orgSlug: string; trimise: number }[] = [];
 
-  try {
-  await db.transaction(async (tx) => {
-    await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
+  // O tranzacție SEPARATĂ per organizație — nu toate într-una singură. Dacă
+  // una aruncă o eroare neașteptată (SMTP tranzitoriu, eroare DB), rollback-ul
+  // atinge DOAR acea organizație, nu și înregistrarea "campanie trimisă" a
+  // celor procesate deja în aceeași rulare — altfel emailurile lor, deja
+  // trimise ireversibil, ar fi retrimise donatorilor la rularea următoare
+  // (rândul din formular230_campanii_email ar dispărea odată cu rollback-ul).
+  for (const org of orgs) {
+    try {
+      const trimise = await db.transaction(async (tx) => {
+        await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
 
-    const orgs = await tx.select({ id: organizations.id, slug: organizations.slug, name: organizations.name }).from(organizations);
+        const [campanieExistenta] = await tx
+          .select({ id: formular230CampaniiEmail.id })
+          .from(formular230CampaniiEmail)
+          .where(and(eq(formular230CampaniiEmail.orgId, org.id), eq(formular230CampaniiEmail.an, an)))
+          .limit(1);
+        if (campanieExistenta) return null;
 
-    for (const org of orgs) {
-      const [campanieExistenta] = await tx
-        .select({ id: formular230CampaniiEmail.id })
-        .from(formular230CampaniiEmail)
-        .where(and(eq(formular230CampaniiEmail.orgId, org.id), eq(formular230CampaniiEmail.an, an)))
-        .limit(1);
-      if (campanieExistenta) continue;
+        const [beneficiar] = await tx
+          .select({ shortCode: formular230Beneficiari.shortCode })
+          .from(formular230Beneficiari)
+          .where(and(eq(formular230Beneficiari.orgId, org.id), eq(formular230Beneficiari.slug, SLUG_PRINCIPAL)))
+          .limit(1);
+        if (!beneficiar?.shortCode) return null;
 
-      const [beneficiar] = await tx
-        .select({ shortCode: formular230Beneficiari.shortCode })
-        .from(formular230Beneficiari)
-        .where(and(eq(formular230Beneficiari.orgId, org.id), eq(formular230Beneficiari.slug, SLUG_PRINCIPAL)))
-        .limit(1);
-      if (!beneficiar?.shortCode) continue;
+        const donatori = await tx
+          .select({ email: donatoriReali.email, nume: donatoriReali.nume })
+          .from(donatoriReali)
+          // Doar cei care NU s-au dezabonat — fiecare email are link de dezabonare.
+          .where(and(eq(donatoriReali.orgId, org.id), isNull(donatoriReali.dezabonatEmailLa)));
+        if (!donatori.length) return null;
 
-      const donatori = await tx
-        .select({ email: donatoriReali.email, nume: donatoriReali.nume })
-        .from(donatoriReali)
-        // Doar cei care NU s-au dezabonat — fiecare email are link de dezabonare.
-        .where(and(eq(donatoriReali.orgId, org.id), isNull(donatoriReali.dezabonatEmailLa)));
-      if (!donatori.length) continue;
+        const link = `${baseUrl}/s/${beneficiar.shortCode}`;
+        const { trimise, esuate } = await trimiteEmailuriInLot({
+          destinatari: donatori,
+          subiect: () => subiectEmailF230(org.name),
+          html: (d) => htmlEmailF230(org.name, d.nume, link, linkDezabonare(baseUrl, org.id, d.email)),
+          headers: (d) => anteteDezabonare(linkDezabonare(baseUrl, org.id, d.email)),
+        });
 
-      const link = `${baseUrl}/s/${beneficiar.shortCode}`;
-      const { trimise, esuate } = await trimiteEmailuriInLot({
-        destinatari: donatori,
-        subiect: () => subiectEmailF230(org.name),
-        html: (d) => htmlEmailF230(org.name, d.nume, link, linkDezabonare(baseUrl, org.id, d.email)),
-        headers: (d) => anteteDezabonare(linkDezabonare(baseUrl, org.id, d.email)),
+        if (esuate > 0) {
+          raporteazaAvertisment("cron-formular230", "unele emailuri de reamintire au eșuat", { orgSlug: org.slug, trimise, esuate });
+        }
+        await tx.insert(formular230CampaniiEmail).values({ orgId: org.id, an, nrDestinatari: trimise, trimisDe: null });
+        return trimise;
       });
 
-      if (esuate > 0) {
-        raporteazaAvertisment("cron-formular230", "unele emailuri de reamintire au eșuat", { orgSlug: org.slug, trimise, esuate });
-      }
-      await tx.insert(formular230CampaniiEmail).values({ orgId: org.id, an, nrDestinatari: trimise, trimisDe: null });
-      rezultate.push({ orgSlug: org.slug, trimise });
+      if (trimise !== null) rezultate.push({ orgSlug: org.slug, trimise });
+    } catch (e) {
+      raporteazaEroare("cron-formular230", e, { orgSlug: org.slug });
     }
-  });
-  } catch (e) {
-    raporteazaEroare("cron-formular230", e);
-    return NextResponse.json({ ok: false, error: "eroare_cron", partial: rezultate }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true, organizatii: rezultate.length, rezultate });

@@ -134,9 +134,15 @@ export function SiteHeader({ dict }: { dict: MarketingDict }) {
           </Link>
           <Link
             href="/login"
-            className="hidden rounded-md border border-line px-3.5 py-2 text-sm font-bold whitespace-nowrap text-ink transition hover:border-brand-blue hover:text-brand-blue lg:inline-block"
+            className="hidden text-sm font-bold whitespace-nowrap text-ink transition hover:text-brand-blue lg:inline-block"
           >
             {dict.header.login}
+          </Link>
+          <Link
+            href="/signup"
+            className="hidden rounded-md bg-brand-blue px-4 py-2 text-sm font-bold whitespace-nowrap text-white transition hover:bg-brand-blue-hover lg:inline-block"
+          >
+            {dict.header.signup}
           </Link>
           <button
             type="button"
@@ -183,6 +189,13 @@ export function SiteHeader({ dict }: { dict: MarketingDict }) {
             className="mt-2 rounded-md bg-brand-green px-4 py-2.5 text-center text-sm font-bold text-white"
           >
             {dict.header.consulting}
+          </Link>
+          <Link
+            href="/signup"
+            onClick={() => setDeschis(false)}
+            className="mt-1 rounded-md bg-brand-blue px-4 py-2.5 text-center text-sm font-bold text-white"
+          >
+            {dict.header.signup}
           </Link>
           <Link
             href="/login"

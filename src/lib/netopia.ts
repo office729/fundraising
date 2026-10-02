@@ -12,10 +12,30 @@ import { createHash, createPublicKey, createVerify } from "node:crypto";
 // Mediu (toate obligatorii pentru a încasa):
 //   NETOPIA_API_KEY        — cheia API din contul Netopia (Profil → Securitate)
 //   NETOPIA_POS_SIGNATURE  — semnătura punctului de vânzare (POS)
-//   NETOPIA_PUBLIC_KEY     — cheia publică PEM a POS-ului, pentru verificarea IPN
 //   NETOPIA_ENV            — "live" sau "sandbox" (implicit "sandbox", ca o
 //                            configurare incompletă să nu încaseze bani reali)
 // Documentație: https://doc.netopia-payments.com/docs/payment-api/v2.x/intro
+//
+// NU există o cheie publică per-comerciant pentru verificarea IPN-ului v2 —
+// contrar a ce sugerează "Setări tehnice" din Puncte de Vânzare (acolo e
+// perechea de chei pentru API-ul VECHI v1, criptare XML tip plic, nu JWT;
+// confirmat din documentația lor v1: "certificate is available upon seller
+// account creation in Points of sale - Technical settings"). Pentru v2,
+// Netopia semnează header-ul `Verification-token` cu O SINGURĂ cheie fixă,
+// identică pentru toți comercianții și pentru sandbox/live deopotrivă —
+// confirmat din codul sursă oficial al pluginului lor WooCommerce v2
+// (github.com/netopiapayments/WooCommerce, v2/wc-netopiapayments-gateway.php,
+// `$ntpIpn->publicKeyStr`). Nu e un secret (e publică, deja în codul lor
+// open-source), deci o ținem hardcodată aici, nu într-o variabilă de mediu.
+const NETOPIA_IPN_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAy6pUDAFLVul4y499gz1P
+gGSvTSc82U3/ih3e5FDUs/F0Jvfzc4cew8TrBDrw7Y+AYZS37D2i+Xi5nYpzQpu7
+ryS4W+qvgAA1SEjiU1Sk2a4+A1HeH+vfZo0gDrIYTh2NSAQnDSDxk5T475ukSSwX
+L9tYwO6CpdAv3BtpMT5YhyS3ipgPEnGIQKXjh8GMgLSmRFbgoCTRWlCvu7XOg94N
+fS8l4it2qrEldU8VEdfPDfFLlxl3lUoLEmCncCjmF1wRVtk4cNu+WtWQ4mBgxpt0
+tX2aJkqp4PV3o5kI4bqHq/MS7HVJ7yxtj/p8kawlVYipGsQj3ypgltQ3bnYV/LRq
+8QIDAQAB
+-----END PUBLIC KEY-----`;
 
 const BAZA = {
   sandbox: "https://secure.sandbox.netopia-payments.com",
@@ -27,12 +47,14 @@ function mediu(): keyof typeof BAZA {
 }
 
 export function netopiaConfigurata(): boolean {
-  return Boolean(process.env.NETOPIA_API_KEY && process.env.NETOPIA_POS_SIGNATURE && process.env.NETOPIA_PUBLIC_KEY);
+  return Boolean(process.env.NETOPIA_API_KEY && process.env.NETOPIA_POS_SIGNATURE);
 }
 
-// Cheia publică poate fi lipită în Vercel cu \n literal în loc de linii noi.
+// NU citește din variabilă de mediu — ar fi un pericol real: o valoare veche
+// rămasă în Vercel (din perioada când credeam greșit că cheia e per-comerciant)
+// ar avea mereu prioritate silențioasă față de constanta corectă de mai sus.
 function cheiePublicaPem(): string {
-  return (process.env.NETOPIA_PUBLIC_KEY ?? "").replace(/\\n/g, "\n").trim();
+  return NETOPIA_IPN_PUBLIC_KEY;
 }
 
 export type DateFacturare = {
@@ -42,7 +64,7 @@ export type DateFacturare = {
   telefon: string;
 };
 
-export type PornestePlataParams = {
+type OrderPentruStart = {
   orderId: string;
   sumaLei: number;
   descriere: string;
@@ -52,14 +74,12 @@ export type PornestePlataParams = {
   cancelUrl?: string;
 };
 
-// Începe o plată și întoarce URL-ul paginii găzduite de Netopia.
-export async function pornestePlata(p: PornestePlataParams): Promise<{ paymentUrl: string; ntpId: string | null }> {
-  const apiKey = process.env.NETOPIA_API_KEY;
+// Corpul cererii e identic pentru toate tipurile de plată — diferă doar
+// `payment.instrument` (card nou pe pagina găzduită vs. token salvat, fără
+// pagină, fără redirect). Construit o singură dată, ca cele două fluxuri să nu
+// diveargă silențios pe restul câmpurilor (facturare, produs, monedă).
+function corpCerere(p: OrderPentruStart, instrument: { type: "card" } | { token: string }): unknown {
   const posSignature = process.env.NETOPIA_POS_SIGNATURE;
-  if (!apiKey || !posSignature) throw new Error("netopia_neconfigurat");
-
-  // Netopia cere câmpuri de facturare/adresă obligatorii; nu colectăm încă adresa
-  // ONG-ului la abonare, deci trimitem valori neutre pentru cele lipsă.
   const facturare = {
     email: p.facturare.email,
     phone: p.facturare.telefon,
@@ -72,8 +92,7 @@ export async function pornestePlata(p: PornestePlataParams): Promise<{ paymentUr
     postalCode: "010000",
     details: "-",
   };
-
-  const body = {
+  return {
     config: {
       emailTemplate: "",
       notifyUrl: p.notifyUrl,
@@ -83,8 +102,7 @@ export async function pornestePlata(p: PornestePlataParams): Promise<{ paymentUr
     },
     payment: {
       options: { installments: 1, bonus: 0 },
-      // Fără account/expMonth/expYear/secretCode = pagină de plată găzduită.
-      instrument: { type: "card" },
+      instrument,
       data: {},
     },
     order: {
@@ -100,8 +118,81 @@ export async function pornestePlata(p: PornestePlataParams): Promise<{ paymentUr
       products: [{ name: p.descriere, code: "abonament", category: "abonament", price: p.sumaLei, vat: 0 }],
       installments: { selected: 1, available: [0] },
       data: {},
+      // Obligatoriu la taxarea cu tokenul salvat (reînnoire automată, fără
+      // clientul prezent) — confirmat direct de Netopia (suport, 2026-10-01):
+      // "MIT" (Merchant Initiated Transaction) spune băncii emitente că plata
+      // a pornit-o comerciantul, nu titularul cardului, ca să nu ceară
+      // autentificare 3-D Secure suplimentară (clientul oricum nu e prezent
+      // s-o ofere). Absent la plata interactivă (card nou, pe pagina lor),
+      // unde clientul chiar e prezent — acolo e o tranzacție CIT normală.
+      ...("token" in instrument ? { scaExemptionInd: "MIT" } : {}),
     },
   };
+}
+
+// Forma comună a rezultatului unei plăți — folosită atât pentru IPN
+// (payment.* din corpul webhook-ului), cât și pentru răspunsul SINCRON al unei
+// taxări cu token (fără redirect, deci fără IPN garantat) — ambele confirmate
+// prin ACEEAȘI funcție (proceseazaRezultatPlataNetopia), ca logica banilor să
+// nu existe în două locuri care ar putea diverge.
+export type RezultatPlataNetopia = {
+  status: number;
+  suma: number | null;
+  moneda: string | null;
+  ntpId: string | null;
+  // Token reutilizabil pentru taxări viitoare — preferăm binding.token (explicit
+  // gândit pentru reutilizare, cu data expirării cardului), cu fallback pe
+  // payment.token simplu dacă binding lipsește.
+  cardToken: string | null;
+  cardExpireMonth: number | null;
+  cardExpireYear: number | null;
+  cardMasked: string | null;
+};
+
+type PaymentJson = {
+  status?: number;
+  amount?: number | string;
+  currency?: string;
+  ntpID?: string;
+  token?: string;
+  binding?: { token?: string; expireMonth?: number; expireYear?: number };
+  instrument?: { panMasked?: string };
+};
+
+function extrageRezultat(payment: PaymentJson | undefined): RezultatPlataNetopia {
+  const suma = payment?.amount !== undefined ? Number(payment.amount) : null;
+  return {
+    status: Number(payment?.status),
+    suma: Number.isFinite(suma) ? suma : null,
+    moneda: payment?.currency ?? null,
+    ntpId: payment?.ntpID ?? null,
+    cardToken: payment?.binding?.token ?? payment?.token ?? null,
+    cardExpireMonth: payment?.binding?.expireMonth ?? null,
+    cardExpireYear: payment?.binding?.expireYear ?? null,
+    cardMasked: payment?.instrument?.panMasked ?? null,
+  };
+}
+
+// Parsează corpul brut al IPN-ului Netopia — folosit DOAR după ce
+// verificaIpn() a confirmat semnătura (vezi api/netopia/ipn/route.ts).
+export function extrageRezultatDinIpn(corpBrut: string): { orderId: string | null; rezultat: RezultatPlataNetopia } | null {
+  let body: { payment?: PaymentJson; order?: { orderID?: string } };
+  try {
+    body = JSON.parse(corpBrut) as typeof body;
+  } catch {
+    return null;
+  }
+  return { orderId: body.order?.orderID ?? null, rezultat: extrageRezultat(body.payment) };
+}
+
+async function netopiaStart(body: unknown): Promise<{
+  payment?: PaymentJson & { paymentURL?: string };
+  error?: { code?: string; message?: string };
+  ok: boolean;
+  httpStatus: number;
+}> {
+  const apiKey = process.env.NETOPIA_API_KEY;
+  if (!apiKey) throw new Error("netopia_neconfigurat");
 
   const res = await fetch(`${BAZA[mediu()]}/payment/card/start`, {
     method: "POST",
@@ -109,18 +200,60 @@ export async function pornestePlata(p: PornestePlataParams): Promise<{ paymentUr
     body: JSON.stringify(body),
     cache: "no-store",
   });
+  const json = (await res.json().catch(() => null)) as { payment?: PaymentJson & { paymentURL?: string }; error?: { code?: string; message?: string } } | null;
+  return { payment: json?.payment, error: json?.error, ok: res.ok, httpStatus: res.status };
+}
 
-  const json = (await res.json().catch(() => null)) as {
-    payment?: { paymentURL?: string; ntpID?: string };
-    error?: { code?: string; message?: string };
-  } | null;
-
-  const paymentUrl = json?.payment?.paymentURL;
-  if (!res.ok || !paymentUrl) {
-    console.error("Netopia: pornirea plății a eșuat", res.status, json?.error);
+// Începe o plată NOUĂ (card încă necunoscut nouă) și întoarce URL-ul paginii
+// găzduite de Netopia — clientul introduce cardul ACOLO, niciodată la noi.
+export async function pornestePlata(p: OrderPentruStart): Promise<{ paymentUrl: string; ntpId: string | null }> {
+  if (!process.env.NETOPIA_POS_SIGNATURE) throw new Error("netopia_neconfigurat");
+  const { payment, error, ok } = await netopiaStart(corpCerere(p, { type: "card" }));
+  if (!ok || !payment?.paymentURL) {
+    console.error("Netopia: pornirea plății a eșuat", error);
     throw new Error("netopia_start_esuat");
   }
-  return { paymentUrl, ntpId: json?.payment?.ntpID ?? null };
+  return { paymentUrl: payment.paymentURL, ntpId: payment.ntpID ?? null };
+}
+
+// Interoghează statusul unei comenzi direct de la Netopia — cerere PORNITĂ DE
+// NOI, autentificată cu API key-ul nostru (nu un webhook primit de la ei), deci
+// nu necesită deloc verificarea semnăturii JWT a IPN-ului. Folosită ca fallback
+// pe pagina de rezultat, dacă IPN-ul întârzie sau nu ajunge — vezi
+// api/abonament/[orgSlug]/rezultat/data.ts. Necesită ntpID (întors sincron de
+// pornestePlata la crearea comenzii, salvat separat — vezi netopia-checkout.ts).
+export async function interogheazaStatus(p: { orderId: string; ntpId: string }): Promise<RezultatPlataNetopia | null> {
+  const apiKey = process.env.NETOPIA_API_KEY;
+  const posSignature = process.env.NETOPIA_POS_SIGNATURE;
+  if (!apiKey || !posSignature) throw new Error("netopia_neconfigurat");
+
+  const res = await fetch(`${BAZA[mediu()]}/operation/status`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: apiKey },
+    body: JSON.stringify({ posID: posSignature, ntpID: p.ntpId, orderID: p.orderId }),
+    cache: "no-store",
+  });
+  const json = (await res.json().catch(() => null)) as { payment?: PaymentJson; error?: { code?: string; message?: string } } | null;
+  // code "00" = găsită și returnată cu succes; orice alt cod (ex. "103" — comandă
+  // negăsită) înseamnă că nu avem încă un rezultat de încredere.
+  if (!res.ok || json?.error?.code !== "00" || !json.payment) return null;
+  return extrageRezultat(json.payment);
+}
+
+// Taxează un card SALVAT dintr-o plată anterioară (reînnoire lunară automată,
+// vezi api/cron/netopia-reinnoire) — server-to-server, fără pagină găzduită și
+// fără să redirecționăm pe nimeni (donatorul/organizația nu e prezentă). Cardul
+// nu trece niciodată prin noi: doar token-ul, primit de la Netopia la o plată
+// anterioară reușită. Rezultatul vine SINCRON, în răspunsul acestui apel — un
+// card recurent refuzat NU declanșează neapărat un IPN separat.
+export async function taxeazaCuTokenSalvat(p: OrderPentruStart & { token: string }): Promise<RezultatPlataNetopia> {
+  if (!process.env.NETOPIA_POS_SIGNATURE) throw new Error("netopia_neconfigurat");
+  const { payment, error, ok, httpStatus } = await netopiaStart(corpCerere(p, { token: p.token }));
+  if (!ok && !payment) {
+    console.error("Netopia: taxarea cu token a eșuat la nivel de transport", httpStatus, error);
+    throw new Error("netopia_token_esuat");
+  }
+  return extrageRezultat(payment);
 }
 
 // --- Verificarea IPN ---------------------------------------------------------

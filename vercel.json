@@ -4,6 +4,10 @@
     {
       "path": "/api/cron/formular230-reminder",
       "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/netopia-reinnoire",
+      "schedule": "0 5 * * *"
     }
   ],
   "regions": [

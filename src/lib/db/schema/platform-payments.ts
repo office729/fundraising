@@ -1,4 +1,4 @@
-import { index, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, index, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 import { orgPackage } from "./enums";
 import { organizations } from "./organizations";
@@ -30,10 +30,21 @@ export const platformPayments = pgTable(
     // ca o plată abandonată să nu-i schimbe pachetul în timp ce accesul curent
     // rămâne plătit.
     planConfig: jsonb("plan_config"),
+    // true = taxată automat de cron (cardul salvat), nu pornită interactiv de un
+    // membru — doar informativ (rapoarte/depanare); logica de confirmare e identică.
+    renewal: boolean("renewal").notNull().default(false),
     status: platformPaymentStatus("status").notNull().default("in_asteptare"),
     netopiaStatus: integer("netopia_status"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     paidAt: timestamp("paid_at", { withTimezone: true }),
+    // Factura Oblio, emisă automat după ce IPN-ul confirmă plata (vezi lib/oblio.ts).
+    // `oblioEroare` reține motivul dacă emiterea a eșuat — accesul tot se acordă
+    // (nu blocăm organizația de o eroare de facturare), dar rămâne de regenerat manual.
+    oblioSeriesName: text("oblio_series_name"),
+    oblioNumber: text("oblio_number"),
+    oblioLink: text("oblio_link"),
+    oblioInvoicedAt: timestamp("oblio_invoiced_at", { withTimezone: true }),
+    oblioEroare: text("oblio_eroare"),
   },
   (t) => [index("platform_payments_org_idx").on(t.orgId)],
 ).enableRLS();

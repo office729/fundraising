@@ -6,6 +6,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 
 import { TOATE_DOMENIILE, type DomeniuActivitate } from "@/lib/campaign-templates";
 import type { Locale } from "@/lib/i18n/config";
+import { JUDETE } from "@/lib/judete";
 import { SETARI_ECHIPA_DICT } from "@/lib/i18n/dictionaries/setari-echipa";
 import { updateBrandingAction, type BrandingState } from "./actions";
 
@@ -49,7 +50,11 @@ export function BrandingForm({
   initialSlogan,
   initialBrandColor,
   initialCif,
+  initialAdresaSediu = null,
+  initialJudet = null,
+  initialIban = null,
   initialDomeniuActivitate,
+  showDateFacturare = true,
   onSaved,
 }: {
   orgSlug: string;
@@ -58,7 +63,13 @@ export function BrandingForm({
   initialSlogan: string | null;
   initialBrandColor: string | null;
   initialCif: string | null;
+  initialAdresaSediu?: string | null;
+  initialJudet?: string | null;
+  initialIban?: string | null;
   initialDomeniuActivitate: DomeniuActivitate | null;
+  // Ascuns în dialogul de onboarding (identitate vizuală rapidă la primul
+  // login) — datele de facturare se completează ulterior, din Setări.
+  showDateFacturare?: boolean;
   onSaved?: () => void;
 }) {
   const dict = SETARI_ECHIPA_DICT[locale].orgSetari;
@@ -160,6 +171,48 @@ export function BrandingForm({
           className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink"
         />
       </label>
+
+      {showDateFacturare && (
+        <div>
+          <p className="text-sm font-medium text-ink">{dict.dateFacturare.title}</p>
+          <p className="mt-1 text-xs text-muted">{dict.dateFacturare.descriere}</p>
+          <div className="mt-2.5 flex flex-col gap-3">
+            <label className="text-sm font-medium text-ink">
+              {dict.dateFacturare.adresaSediu}
+              <input
+                name="adresaSediu"
+                defaultValue={initialAdresaSediu ?? ""}
+                placeholder={dict.dateFacturare.adresaSediuPlaceholder}
+                className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink"
+              />
+            </label>
+            <label className="text-sm font-medium text-ink">
+              {dict.dateFacturare.judet}
+              <select
+                name="judet"
+                defaultValue={initialJudet ?? ""}
+                className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink"
+              >
+                <option value="">{dict.dateFacturare.judetAlege}</option>
+                {JUDETE.map((j) => (
+                  <option key={j} value={j}>
+                    {j}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-sm font-medium text-ink">
+              {dict.dateFacturare.iban}
+              <input
+                name="iban"
+                defaultValue={initialIban ?? ""}
+                placeholder={dict.dateFacturare.ibanPlaceholder}
+                className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink"
+              />
+            </label>
+          </div>
+        </div>
+      )}
 
       <div>
         <label className="text-sm font-medium text-ink">{dict.domeniuActivitate.label}</label>
