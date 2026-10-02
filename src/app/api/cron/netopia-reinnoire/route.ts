@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 
 import { NETOPIA_RENEWAL_MAX_INCERCARI, reiaFacturileNeemise } from "@/lib/billing/netopia-confirm";
 import { taxeazaReinnoireAutomata } from "@/lib/billing/netopia-checkout";
+import { dateFacturareComplete } from "@/lib/billing/date-facturare";
 import { NUME_PACHET_FIX, PACKAGE_LIMITS, type OrgPackage } from "@/lib/billing/packages";
 import type { CustomPlanConfigSaved } from "@/lib/billing/custom-plan";
 import { cronAutorizat } from "@/lib/cron-auth";
@@ -10,7 +11,7 @@ import { db } from "@/lib/db";
 import { appUsers, memberships, organizations } from "@/lib/db/schema";
 import { emailConfigurat, trimiteEmail } from "@/lib/email";
 import { netopiaConfigurata } from "@/lib/netopia";
-import { htmlReinnoireEsuata, subiectReinnoireEsuata } from "@/lib/netopia-renewal-email-template";
+import { htmlDateFacturareLipsa, htmlReinnoireEsuata, subiectDateFacturareLipsa, subiectReinnoireEsuata } from "@/lib/netopia-renewal-email-template";
 import { raporteazaAvertisment, raporteazaEroare } from "@/lib/monitoring";
 
 // Rulat zilnic de Vercel Cron (vezi vercel.json) — taxează AUTOMAT organizațiile
@@ -68,6 +69,10 @@ export async function GET(req: Request) {
         customPlanConfig: organizations.customPlanConfig,
         netopiaCardTokenEnc: organizations.netopiaCardTokenEnc,
         netopiaRenewalAttempts: organizations.netopiaRenewalAttempts,
+        cif: organizations.cif,
+        adresaSediu: organizations.adresaSediu,
+        judet: organizations.judet,
+        currentPeriodEnd: organizations.currentPeriodEnd,
       })
       .from(organizations)
       .where(
@@ -106,6 +111,25 @@ export async function GET(req: Request) {
       const facturareEmail = emailProprietar.get(org.id);
       if (!facturareEmail) {
         raporteazaAvertisment("netopia-reinnoire", "organizația nu are niciun owner cu email — reînnoire omisă", { orgSlug: org.slug });
+        continue;
+      }
+
+      // Fără CIF/adresă/județ factura Oblio ar pleca pe „persoană fizică" — nu
+      // încasăm ce nu putem factura corect. Reînnoirea e amânată (organizația
+      // rămâne în fereastra cron-ului și e reluată automat după ce completează
+      // datele), iar ownerul e anunțat zilnic, dar doar până la 3 zile după
+      // expirare — ca un cont abandonat să nu primească emailuri la nesfârșit.
+      if (!dateFacturareComplete({ cif: org.cif, adresaSediu: org.adresaSediu, judet: org.judet })) {
+        raporteazaAvertisment("netopia-reinnoire", "date de facturare incomplete — reînnoire amânată", { orgSlug: org.slug });
+        rezultate.push({ orgSlug: org.slug, rezultat: "amanata:date_facturare_lipsa" });
+        const recent = !org.currentPeriodEnd || org.currentPeriodEnd.getTime() > Date.now() - 3 * 86_400_000;
+        if (recent && emailConfigurat()) {
+          await trimiteEmail({
+            to: facturareEmail,
+            subiect: subiectDateFacturareLipsa(),
+            html: htmlDateFacturareLipsa({ orgName: org.name, setariUrl: `${baseUrl}/${org.slug}/setari` }),
+          }).catch((e) => raporteazaEroare("netopia-reinnoire-email", e, { orgSlug: org.slug }));
+        }
         continue;
       }
 

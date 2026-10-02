@@ -48,3 +48,34 @@ export function htmlReinnoireEsuata(params: {
     </div>
   `;
 }
+
+export function subiectDateFacturareLipsa(): string {
+  return "Completează datele de facturare ca să-ți putem reînnoi abonamentul Alexandrit";
+}
+
+// Trimis când reînnoirea automată e AMÂNATĂ pentru că organizația nu are CIF /
+// adresă / județ — nu încasăm bani pe care nu-i putem factura corect.
+export function htmlDateFacturareLipsa(params: { orgName: string; setariUrl: string }): string {
+  const orgName = escHtml(params.orgName);
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; color: #14213d;">
+      <p>Bună!</p>
+      <p>
+        Abonamentul Alexandrit al organizației <strong>${orgName}</strong> urmează să se reînnoiască,
+        dar nu am putut face încasarea: lipsesc datele de facturare (CIF, adresa sediului sau județul),
+        iar factura fiscală nu poate fi emisă fără ele.
+      </p>
+      <p>
+        Completează-le acum și reînnoirea se face automat la următoarea rulare, fără să pierzi accesul.
+      </p>
+      <p style="text-align: center; margin: 24px 0;">
+        <a href="${escHtml(params.setariUrl)}" style="background:#154a85;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">
+          Completează datele de facturare
+        </a>
+      </p>
+      <p style="color:#94a3b8;font-size:12px;margin-top:24px;">
+        Primești acest email pentru că ești administrator/owner al organizației ${orgName} pe Alexandrit.
+      </p>
+    </div>
+  `;
+}
