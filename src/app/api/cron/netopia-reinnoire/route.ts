@@ -42,37 +42,48 @@ export async function GET(req: Request) {
 
   const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://fundraising-academy-one.vercel.app").replace(/\/$/, "");
 
-  const orgs = await db
-    .select({
-      id: organizations.id,
-      slug: organizations.slug,
-      name: organizations.name,
-      referredByOrgId: organizations.referredByOrgId,
-      package: organizations.package,
-      customPlanConfig: organizations.customPlanConfig,
-      netopiaCardTokenEnc: organizations.netopiaCardTokenEnc,
-      netopiaRenewalAttempts: organizations.netopiaRenewalAttempts,
-    })
-    .from(organizations)
-    .where(
-      and(
-        eq(organizations.netopiaAutoRenew, true),
-        sql`${organizations.netopiaCardTokenEnc} is not null`,
-        // "mâine" — reînnoim proactiv o zi înainte de expirare, ca accesul să nu
-        // aibă niciodată o fereastră de întrerupere între expirare și taxare.
-        lte(organizations.currentPeriodEnd, sql`now() + interval '1 day'`),
-      ),
-    );
+  // Fără `app.public_lookup`, RLS pe organizations/memberships/app_users
+  // respinge silențios — rulat fără sesiune de user, ca orice cron/webhook —
+  // interogarea de mai jos ar întoarce mereu 0 rânduri, indiferent dacă există
+  // organizații de reînnoit. (Comentariul vechi de deasupra promitea deja
+  // acest context de încredere — lipsea doar implementarea efectivă.)
+  const { orgs, proprietari } = await db.transaction(async (tx) => {
+    await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
+
+    const orgs = await tx
+      .select({
+        id: organizations.id,
+        slug: organizations.slug,
+        name: organizations.name,
+        referredByOrgId: organizations.referredByOrgId,
+        package: organizations.package,
+        customPlanConfig: organizations.customPlanConfig,
+        netopiaCardTokenEnc: organizations.netopiaCardTokenEnc,
+        netopiaRenewalAttempts: organizations.netopiaRenewalAttempts,
+      })
+      .from(organizations)
+      .where(
+        and(
+          eq(organizations.netopiaAutoRenew, true),
+          sql`${organizations.netopiaCardTokenEnc} is not null`,
+          // "mâine" — reînnoim proactiv o zi înainte de expirare, ca accesul să nu
+          // aibă niciodată o fereastră de întrerupere între expirare și taxare.
+          lte(organizations.currentPeriodEnd, sql`now() + interval '1 day'`),
+        ),
+      );
+    if (orgs.length === 0) return { orgs, proprietari: [] };
+
+    const proprietari = await tx
+      .select({ orgId: memberships.orgId, email: appUsers.email })
+      .from(memberships)
+      .innerJoin(appUsers, eq(appUsers.id, memberships.userId))
+      .where(and(inArray(memberships.orgId, orgs.map((o) => o.id)), eq(memberships.role, "owner")));
+    return { orgs, proprietari };
+  });
 
   if (orgs.length === 0) {
     return NextResponse.json({ ok: true, procesate: 0 });
   }
-
-  const proprietari = await db
-    .select({ orgId: memberships.orgId, email: appUsers.email })
-    .from(memberships)
-    .innerJoin(appUsers, eq(appUsers.id, memberships.userId))
-    .where(and(inArray(memberships.orgId, orgs.map((o) => o.id)), eq(memberships.role, "owner")));
   const emailProprietar = new Map<string, string>();
   for (const p of proprietari) if (!emailProprietar.has(p.orgId)) emailProprietar.set(p.orgId, p.email);
 
