@@ -60,7 +60,7 @@ export const TERMENI_DICT = {
       {
         titlu: "5. Comercializarea serviciilor: abonamente și prețuri",
         paragrafe: [
-          "Abonamentele (START, CREȘTERE, IMPACT) se plătesc lunar sau anual, la prețurile în lei afișate pe pagina Hub Fundraising în momentul comenzii; la plata anuală se aplică reducerea afișată („2 luni gratuite”). Prețul final aferent perioadei alese este afișat înainte de plată. Perioada de probă gratuită este de 14 zile, fără card bancar; după probă, accesul continuă doar după alegerea și plata unui pachet.",
+          "Abonamentele (START, CREȘTERE, IMPACT) se plătesc lunar sau anual, la prețurile în lei afișate pe pagina Hub Fundraising în momentul comenzii; la plata anuală se aplică reducerea afișată („2 luni gratuite”). Prețul final aferent perioadei alese este afișat înainte de plată. Perioada de probă gratuită este de 30 de zile, fără card bancar; după probă, accesul continuă doar după alegerea și plata unui pachet.",
           "Abonamentul se reînnoiește automat pentru aceeași perioadă, până la anulare. Îl poți anula oricând, din cont sau prin email; anularea produce efecte de la sfârșitul perioadei deja plătite. Sumele plătite pentru perioada în curs nu se rambursează, cu excepția cazurilor prevăzute de lege sau a unei erori imputabile nouă, având în vedere natura digitală a serviciului, care se furnizează imediat după plată.",
           "Ne rezervăm dreptul de a modifica prețurile pentru perioadele viitoare, cu anunț prealabil de cel puțin 30 de zile. Depășirea limitelor pachetului (utilizatori, contacte, companii) poate fi rezolvată prin trecerea la un pachet superior sau prin opțiunile suplimentare afișate.",
         ],
@@ -239,7 +239,7 @@ export const TERMENI_DICT = {
       {
         titlu: "5. Commercialization of services: subscriptions and prices",
         paragrafe: [
-          "Subscriptions (START, CREȘTERE, IMPACT) are paid monthly or annually at the prices in lei shown on the Fundraising Hub page when ordering; annual payment carries the displayed discount (“2 months free”). The final price for the chosen period is shown before payment. The free trial is 14 days, no bank card required; after the trial, access continues only after choosing and paying for a plan.",
+          "Subscriptions (START, CREȘTERE, IMPACT) are paid monthly or annually at the prices in lei shown on the Fundraising Hub page when ordering; annual payment carries the displayed discount (“2 months free”). The final price for the chosen period is shown before payment. The free trial is 30 days, no bank card required; after the trial, access continues only after choosing and paying for a plan.",
           "The subscription renews automatically for the same period until cancelled. You may cancel at any time, from the account or by email; cancellation takes effect at the end of the period already paid. Amounts paid for the current period are not refunded, except where required by law or in case of an error attributable to us, given the digital nature of the service, which is provided immediately after payment.",
           "We may change prices for future periods with at least 30 days' notice. Exceeding plan limits (users, contacts, companies) can be resolved by moving to a higher plan or through the additional options shown.",
         ],
