@@ -3,6 +3,7 @@
 import { and, eq, sql } from "drizzle-orm";
 
 import { genereazaRaportActivitateAI, type DateFinanciareExtrase, type SectiuniRaportActivitate } from "@/lib/ai";
+import { limitaAIDepasita, MESAJ_LIMITA_AI } from "@/lib/ai-limit";
 import { withOrgAdmin } from "@/lib/auth/guard";
 import { autofillDesign } from "@/lib/canva";
 import { canvaConnections, companies, companyActivityReports, companySponsorizari, financialDocuments } from "@/lib/db/schema";
@@ -83,6 +84,7 @@ export type DetaliuRaport = {
 export const obtineDetaliuRaportAction = withOrgAdmin(async (ctx, companyId: string, an: number): Promise<DetaliuRaport> => {
   const [companie] = await ctx.db.select({ nume: companies.nume }).from(companies).where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId))).limit(1);
   if (!companie) throw new EroareUtilizator("Firma nu a fost găsită.");
+  if (await limitaAIDepasita(ctx)) throw new EroareUtilizator(MESAJ_LIMITA_AI);
 
   const [agregat] = await ctx.db
     .select({

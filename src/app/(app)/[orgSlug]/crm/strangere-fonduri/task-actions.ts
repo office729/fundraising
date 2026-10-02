@@ -6,6 +6,7 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 import { headers } from "next/headers";
 
 import { aiConfigurat, genereazaTextMultumireAI } from "@/lib/ai";
+import { limitaAIDepasita, MESAJ_LIMITA_AI } from "@/lib/ai-limit";
 import { withOrgAdmin, withOrgSession } from "@/lib/auth/guard";
 import { fundraisingBeneficiaries, fundraisingPages, fundraisingTaskAttachments, fundraisingTasks } from "@/lib/db/schema";
 import { notifica } from "@/lib/notifications";
@@ -96,6 +97,7 @@ export const genereazaTextMultumireAIAction = withOrgAdmin(
   ): Promise<{ error: string | null; text: string | null }> => {
     if (!aiConfigurat()) return { error: "AI-ul nu e configurat (ANTHROPIC_API_KEY lipsește).", text: null };
     if (!companie.trim()) return { error: "Completează numele companiei mai întâi.", text: null };
+    if (await limitaAIDepasita(ctx)) return { error: MESAJ_LIMITA_AI, text: null };
 
     const rows = await ctx.db
       .select()

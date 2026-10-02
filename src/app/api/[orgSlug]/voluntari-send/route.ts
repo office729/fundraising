@@ -2,10 +2,12 @@ import { and, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 import { withOrgSession } from "@/lib/auth/guard";
+import { isPlatformAdmin } from "@/lib/billing/trial";
 import { verificaLimitaRata } from "@/lib/auth/rate-limit";
 import { crmKv } from "@/lib/db/schema";
 import { emailConfigurat, trimiteEmail, trimiteEmailuriInLot } from "@/lib/email";
 import { escHtml } from "@/lib/html-escape";
+import { raporteazaEroare } from "@/lib/monitoring";
 
 // Trimitere reală (email, prin Resend) pentru CRM Voluntari — înlocuiește
 // ruta veche /api/voluntari-send (inexistentă aici, moștenită neschimbată din
@@ -49,6 +51,7 @@ function buildHtml(continut: string, semnatura: string): string {
 }
 
 const MAX_DESTINATARI = 500;
+const MAX_EMAILURI_ZI = 1000;
 
 type Ctx = { params: Promise<{ orgSlug: string }> };
 
@@ -73,6 +76,18 @@ const postSend = withOrgSession(async (ctx, req: Request) => {
   }
   if (!emailConfigurat()) {
     return NextResponse.json({ ok: false, error: "Trimiterea de email nu e configurată pentru platformă." });
+  }
+  // Trimiterea în masă din numele platformei (expeditor comun) e rezervată
+  // owner/admin ai organizațiilor cu abonament: rosterul de voluntari e
+  // editabil de orice membru, deci un cont de probă ar putea folosi ruta ca
+  // releu de spam. Testul către propria adresă rămâne permis tuturor.
+  if (!body.test) {
+    if (ctx.role !== "owner" && ctx.role !== "admin") {
+      return NextResponse.json({ ok: false, error: "Doar administratorii organizației pot trimite emailuri în masă." }, { status: 403 });
+    }
+    if (ctx.orgPackage === "trial" && !isPlatformAdmin(ctx.userEmail)) {
+      return NextResponse.json({ ok: false, error: "Trimiterea de emailuri către voluntari e disponibilă după alegerea unui pachet." }, { status: 403 });
+    }
   }
 
   // Fără CR/LF în subiect (header injection) și limite de lungime.
@@ -123,6 +138,11 @@ const postSend = withOrgSession(async (ctx, req: Request) => {
   if (!body.test && !(await verificaLimitaRata("voluntari-send", ctx.orgId, 20, 60))) {
     return NextResponse.json({ ok: false, error: "Prea multe trimiteri într-o oră — încearcă mai târziu." }, { status: 429 });
   }
+  // Plafon zilnic pe cantitate (emailuri, nu cereri) — expeditorul e comun, deci
+  // volumul unei organizații afectează reputația tuturor.
+  if (!body.test && !(await verificaLimitaRata("voluntari-emailuri-zi", ctx.orgId, MAX_EMAILURI_ZI, 24 * 60, destinatari.length))) {
+    return NextResponse.json({ ok: false, error: `Ai atins limita zilnică de ${MAX_EMAILURI_ZI} emailuri către voluntari — încearcă mâine.` }, { status: 429 });
+  }
 
   const html = buildHtml(continut, semnatura);
   try {
@@ -137,7 +157,8 @@ const postSend = withOrgSession(async (ctx, req: Request) => {
     });
     if (!trimise) return NextResponse.json({ ok: false, error: "Trimiterea a eșuat." });
     return NextResponse.json({ ok: true, total: trimise });
-  } catch {
+  } catch (e) {
+    raporteazaEroare("voluntari-send", e, { orgId: ctx.orgId });
     return NextResponse.json({ ok: false, error: "Trimiterea a eșuat." });
   }
 });

@@ -26,15 +26,18 @@ export async function verificaLimitaRata(
   identificator: string,
   maxIncercari: number,
   fereastraMinute: number,
+  // Cât se adaugă la contor la acest apel (implicit 1) — pentru plafoane pe
+  // cantitate (ex. emailuri trimise), nu doar pe număr de cereri.
+  cost = 1,
 ): Promise<boolean> {
   const rezultat = await db.execute<{ incercari: number }>(sql`
     insert into auth_rate_limits (actiune, identificator, incercari, fereastra_start)
-    values (${actiune}, ${identificator}, 1, now())
+    values (${actiune}, ${identificator}, ${cost}::int, now())
     on conflict (actiune, identificator) do update set
       incercari = case
         when auth_rate_limits.fereastra_start < now() - (${fereastraMinute} * interval '1 minute')
-          then 1
-        else auth_rate_limits.incercari + 1
+          then ${cost}::int
+        else auth_rate_limits.incercari + ${cost}::int
       end,
       fereastra_start = case
         when auth_rate_limits.fereastra_start < now() - (${fereastraMinute} * interval '1 minute')

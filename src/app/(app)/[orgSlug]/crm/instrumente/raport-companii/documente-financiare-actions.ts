@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { and, desc, eq } from "drizzle-orm";
 
 import { extrageDateFinanciareAI, type DateFinanciareExtrase } from "@/lib/ai";
+import { limitaAIDepasita, MESAJ_LIMITA_AI } from "@/lib/ai-limit";
 import { withOrgAdmin } from "@/lib/auth/guard";
 import { financialDocuments } from "@/lib/db/schema";
 import { EroareUtilizator, mesajSigur } from "@/lib/erori";
@@ -96,6 +97,7 @@ export const extrageDateFinanciareAction = withOrgAdmin(async (ctx, params: { an
     .where(and(eq(financialDocuments.orgId, ctx.orgId), eq(financialDocuments.an, params.an), eq(financialDocuments.tip, params.tip)))
     .limit(1);
   if (!doc) throw new EroareUtilizator("Documentul nu a fost găsit.");
+  if (await limitaAIDepasita(ctx)) throw new EroareUtilizator(MESAJ_LIMITA_AI);
 
   const supabase = await createClient();
   const { data: fisier, error: downloadError } = await supabase.storage.from(BUCKET).download(doc.fisierPath);

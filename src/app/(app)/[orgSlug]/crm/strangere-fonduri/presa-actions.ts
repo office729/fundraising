@@ -4,6 +4,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 
 import { aiConfigurat, genereazaContinutCanalAI } from "@/lib/ai";
+import { limitaAIDepasita, MESAJ_LIMITA_AI } from "@/lib/ai-limit";
 import { withOrgAdmin, withOrgSession } from "@/lib/auth/guard";
 import { inregistreazaAudit } from "@/lib/audit";
 import {
@@ -64,6 +65,8 @@ export const genereazaComunicatAIAction = withOrgAdmin(async (ctx, pageId: strin
   if (!date) return { error: "Pagina nu a fost găsită.", ok: false };
   if (!aiConfigurat())
     return { error: "AI-ul nu e configurat (ANTHROPIC_API_KEY lipsește). Folosește «Generează (șablon)».", ok: false };
+
+  if (await limitaAIDepasita(ctx)) return { error: MESAJ_LIMITA_AI, ok: false };
 
   const ai = await genereazaContinutCanalAI(date, "comunicat");
   const continut = ai?.textComplet ?? genereazaComunicatPresa(date);

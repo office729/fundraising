@@ -4,6 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 
 import { aiConfigurat, genereazaCalendarZilnicAI, genereazaContinutCanalAI } from "@/lib/ai";
+import { limitaAIDepasita, MESAJ_LIMITA_AI } from "@/lib/ai-limit";
 import { withOrgAdmin, withOrgSession } from "@/lib/auth/guard";
 import { fundraisingCalendarItems, fundraisingGeneratedContent, fundraisingPages } from "@/lib/db/schema";
 import { genereazaCalendarZilnic, genereazaContinutPeCanal, type ContinutCanal, type DateCampanie } from "@/lib/promovare/generator";
@@ -81,6 +82,8 @@ export const genereazaCalendarAIAction = withOrgAdmin(
     if (!aiConfigurat())
       return { error: "AI-ul nu e configurat (ANTHROPIC_API_KEY lipsește). Folosește «Generează (șablon)».", ok: false };
 
+    if (await limitaAIDepasita(ctx)) return { error: MESAJ_LIMITA_AI, ok: false };
+
     const aiItems = await genereazaCalendarZilnicAI(date, 7);
     const items = aiItems ?? genereazaCalendarZilnic(date).map((it) => ({ obiectiv: it.unghi, text: it.text }));
 
@@ -147,6 +150,8 @@ export const genereazaContinutAIAction = withOrgAdmin(
     if (!aiConfigurat())
       return { error: "AI-ul nu e configurat (ANTHROPIC_API_KEY lipsește). Folosește «Generează (șablon)».", ok: false };
 
+    if (await limitaAIDepasita(ctx)) return { error: MESAJ_LIMITA_AI, ok: false };
+
     const sablon = genereazaContinutPeCanal(date);
     const sablonDupaCanal = new Map<ContinutCanal["canal"], ContinutCanal>(sablon.map((s) => [s.canal, s]));
 
@@ -198,6 +203,7 @@ export const regenereazaVariantaContinutAction = withOrgAdmin(
 
     const date = await dateCampanie(ctx.db, cur.campaignPageId, ctx.orgId, ctx.orgSlug, ctx.orgName);
     if (!date) return { error: "Pagina nu a fost găsită.", ok: false };
+    if (await limitaAIDepasita(ctx)) return { error: MESAJ_LIMITA_AI, ok: false };
 
     const ai = await genereazaContinutCanalAI(date, cur.canal, Math.floor(Math.random() * 1000));
     if (!ai) return { error: "AI-ul nu a putut genera o variantă. Încearcă din nou.", ok: false };
