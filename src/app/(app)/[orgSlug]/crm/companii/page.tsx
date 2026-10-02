@@ -10,7 +10,7 @@ import { segmentFirma } from "@/lib/id-scurt";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { COMPANII_DICT } from "@/lib/i18n/dictionaries/companii";
 import { D177Badge } from "./d177-badge";
-import { AddCompanyButton, CalendarLucruButton, ImportCsvButton, TopButton } from "./header-actions";
+import { AddCompanyButton, CalendarLucruButton, ImportCsvButton, LucrateRecentButton, TopButton } from "./header-actions";
 import { FilterBar } from "./filter-bar";
 import { parseFiltru } from "./lib/filters";
 import { PaginaNav } from "./pagina-nav";
@@ -61,6 +61,7 @@ async function CompaniiContent({
       <div className="flex flex-wrap gap-2">
         <AddCompanyButton />
         <CalendarLucruButton />
+        <LucrateRecentButton />
         <TopButton />
         <ImportCsvButton />
       </div>

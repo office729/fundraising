@@ -383,7 +383,30 @@ export const getCalendarLucru = withOrgSession(async (ctx) => {
     .limit(200);
 });
 
-export type ImportCsvState = ActionState & { importate?: number; ignorate?: number };
+// Ultimele 20 de firme pe care a lucrat utilizatorul AUTENTIFICAT — din activitatea lui
+// reală (editări, contacte, apeluri, sponsorizări, notițe, mutări de etapă), aceleași
+// surse ca la KPI echipă. Pentru fiecare firmă contează cel mai recent moment.
+export const getFirmeLucrateRecent = withOrgSession(async (ctx) => {
+  const rows = (await ctx.db.execute(sql`
+    select c.id, c.nume, c.judet, a.ultima from (
+      select company_id, max(ts) ultima from (
+        -- updated_at > created_at: o firmă doar inserată (ex. import CSV în masă) nu e „lucrată”.
+        select id company_id, updated_at ts from companies where org_id = ${ctx.orgId} and updated_by = ${ctx.userId} and updated_at > created_at
+        union all select company_id, created_at from contacts where org_id = ${ctx.orgId} and created_by = ${ctx.userId}
+        union all select company_id, created_at from apeluri where org_id = ${ctx.orgId} and initiator_id = ${ctx.userId} and company_id is not null
+        union all select company_id, created_at from company_sponsorizari where org_id = ${ctx.orgId} and created_by = ${ctx.userId}
+        union all select company_id, created_at from company_notite where org_id = ${ctx.orgId} and created_by = ${ctx.userId}
+        union all select company_id, created_at from company_stage_log where org_id = ${ctx.orgId} and by_user_id = ${ctx.userId}
+      ) s group by company_id
+    ) a
+    join companies c on c.id = a.company_id and c.deleted_at is null
+    order by a.ultima desc
+    limit 20
+  `)) as unknown as Array<{ id: string; nume: string; judet: string | null; ultima: string | Date }>;
+  return rows.map((r) => ({ id: r.id, nume: r.nume, judet: r.judet, ultima: new Date(r.ultima).toISOString() }));
+});
+
+export type ImportCsvState =ActionState & { importate?: number; ignorate?: number };
 
 const CSV_COLOANE = ["nume", "cui", "judet", "localitate", "caen", "industrie", "site", "administrator", "ca", "profit", "nrAngajati"] as const;
 
