@@ -1,8 +1,8 @@
 import type { OrgPackage } from "./packages";
 
-// 14 zile de probă, fără card, de la crearea organizației — după care
+// 30 de zile de probă, fără card, de la crearea organizației — după care
 // accesul se blochează dacă nu s-a ales (și confirmat manual) un pachet.
-export const TRIAL_DAYS = 14;
+export const TRIAL_DAYS = 30;
 
 // Contul(ele) administratorului platformei — niciodată blocate de perioada
 // de probă, indiferent de organizația în care lucrează. Nu afectează

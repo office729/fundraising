@@ -2,11 +2,12 @@
 
 import { useState, useTransition } from "react";
 
+import { TRIAL_DAYS } from "@/lib/billing/trial";
+
 import { ajusteazaOrgAction, type OrgRand } from "./actions";
 
 const PACHETE = ["trial", "start", "crestere", "impact", "custom"];
 const STATUSURI = ["trialing", "active", "past_due", "canceled", "incomplete"];
-const TRIAL_DAYS = 14;
 
 function zileRamaseProba(createdAt: Date): number {
   const sfarsit = new Date(createdAt.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000);

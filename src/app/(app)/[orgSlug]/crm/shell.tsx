@@ -209,7 +209,7 @@ export function CrmShell({
       >
         <div className="flex h-full flex-col py-3">
           <div className={cn("mb-3 flex items-center justify-between gap-2 px-3", collapsed && "md:justify-center md:px-0")}>
-            <div className="flex min-w-0 items-center gap-2">
+            <Link href={base} onClick={() => setMobileOpen(false)} className="flex min-w-0 items-center gap-2">
               {orgLogoUrl && (
                 <Image
                   src={orgLogoUrl}
@@ -223,7 +223,7 @@ export function CrmShell({
               <p className={cn("ci-display truncate text-[13px] font-semibold text-[var(--ci-text)]", collapsed && "md:hidden")}>
                 {orgName}
               </p>
-            </div>
+            </Link>
             <button
               aria-label="Închide meniul"
               onClick={() => setMobileOpen(false)}
