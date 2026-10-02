@@ -5,6 +5,9 @@ import { getAuthUser } from "@/lib/auth/dal";
 import { isPlatformAdmin } from "@/lib/billing/trial";
 import { db } from "@/lib/db";
 
+import { listeazaOrganizatiiAction } from "./actions";
+import { OrgAdminTable } from "./org-admin-table";
+
 // Limita reală a planului Free Supabase — nu un prag ales arbitrar. Peste ea,
 // scrierile în baza de date pot începe să eșueze.
 const LIMITA_BYTES = 500 * 1024 * 1024;
@@ -22,6 +25,8 @@ export default async function PlatformAdminPage() {
   const authUser = await getAuthUser();
   if (!authUser?.email) redirect("/login");
   if (!isPlatformAdmin(authUser.email)) notFound();
+
+  const organizatii = await listeazaOrganizatiiAction();
 
   const [{ size }] = await db.execute<{ size: string }>(sql`select pg_database_size(current_database()) as size`);
   const bytesFolositi = Number(size);
@@ -44,11 +49,22 @@ export default async function PlatformAdminPage() {
   `);
 
   return (
-    <main className="mx-auto max-w-xl px-6 py-10">
-      <h1 className="font-display text-2xl font-bold text-ink">Spațiu bază de date</h1>
+    <main className="mx-auto max-w-3xl px-6 py-10">
+      <h1 className="font-display text-2xl font-bold text-ink">Panou platformă</h1>
       <p className="mt-1 text-sm text-muted">Vizibil doar pentru contul platformei — nicio organizație client nu ajunge la această pagină.</p>
 
-      <div className="mt-6 rounded-xl border border-line bg-panel p-5">
+      <h2 className="mt-8 text-sm font-semibold text-ink">
+        Organizații <span className="font-normal text-muted">({organizatii.length})</span>
+      </h2>
+      <p className="mt-1 text-xs text-muted">
+        Cine s-a înscris, cine s-a autentificat ultima dată, și ajustare manuală de pachet/status/perioadă plătită, la cerere.
+      </p>
+      <div className="mt-2">
+        <OrgAdminTable initial={organizatii} />
+      </div>
+
+      <h2 className="mt-10 text-sm font-semibold text-ink">Spațiu bază de date</h2>
+      <div className="mt-2 rounded-xl border border-line bg-panel p-5">
         <div className="flex items-baseline justify-between">
           <p className="font-display text-2xl font-bold text-ink">
             {formatMb(bytesFolositi)} MB <span className="text-base font-normal text-muted">/ {formatMb(LIMITA_BYTES)} MB</span>

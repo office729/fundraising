@@ -16,4 +16,10 @@ export const appUsers = pgTable("app_users", {
   // invitații) încă nu are tip stabilit.
   accountType: accountType("account_type"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  // Setat la fiecare autentificare reușită (login/actions.ts) — singura sursă
+  // de "ultima autentificare" din platformă; `auth.users.last_sign_in_at` al
+  // Supabase nu e accesibil rolului `app_user` (schema `auth` e restricționată),
+  // de-aici nevoia unei coloane proprii. Null = niciodată autentificat (ex.
+  // un angajat creat administrativ, fără cont propriu încă).
+  lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
 }).enableRLS();

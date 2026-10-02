@@ -7,7 +7,7 @@ import { findBeneficiaryProfile } from "@/lib/auth/beneficiar";
 import { ensureAppUser } from "@/lib/auth/dal";
 import { obtineIpClient, verificaLimitaRata } from "@/lib/auth/rate-limit";
 import { db } from "@/lib/db";
-import { memberships, organizations } from "@/lib/db/schema";
+import { appUsers, memberships, organizations } from "@/lib/db/schema";
 import { AUTH_DICT } from "@/lib/i18n/dictionaries/auth";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { createClient } from "@/lib/supabase/server";
@@ -56,6 +56,7 @@ export async function loginAction(
     await tx.execute(sql`select set_config('app.current_user_email', ${email}, true)`);
     const appUser = await ensureAppUser(tx, email);
     await tx.execute(sql`select set_config('app.current_user_id', ${appUser.id}, true)`);
+    await tx.update(appUsers).set({ lastLoginAt: new Date() }).where(eq(appUsers.id, appUser.id));
 
     const beneficiar = await findBeneficiaryProfile(tx, appUser.id);
     if (beneficiar) return { isBeneficiar: true, orgSlug: null };

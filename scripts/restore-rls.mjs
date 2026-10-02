@@ -60,18 +60,20 @@ const POLICIES = [
     id = nullif(current_setting('app.current_user_id', true), '')::uuid
   )`,
   // LIPSEA — niciun context de încredere (cron-ul de reînnoire Netopia,
-  // factureazaPlata) nu putea citi emailul owner-ului unei organizații —
-  // app_users nu avea NICIO politică gated pe app.public_lookup (doar
-  // organizations_public_lookup mai jos), deci JOIN-ul memberships+app_users
-  // rula silențios pe 0 rânduri. Găsit abia când reînnoirea automată chiar
-  // a avut un token de testat (cron-ul întorcea mereu 0 organizații
-  // procesate, deși toate condițiile SQL erau îndeplinite).
+  // factureazaPlata, panoul platform-admin) nu putea citi emailul owner-ului
+  // unei organizații — app_users nu avea NICIO politică gated pe
+  // app.public_lookup (doar organizations_public_lookup mai jos), deci
+  // JOIN-ul memberships+app_users rula silențios pe 0 rânduri. Găsit abia
+  // când reînnoirea automată chiar a avut un token de testat (cron-ul
+  // întorcea mereu 0 organizații procesate, deși toate condițiile SQL erau
+  // îndeplinite).
   `create policy app_users_public_lookup on app_users for select using (
     nullif(current_setting('app.public_lookup', true), '') = 'true'
   )`,
   `create policy memberships_self on memberships for select using (user_id = nullif(current_setting('app.current_user_id', true), '')::uuid)`,
   `create policy memberships_insert_self on memberships for insert with check (user_id = nullif(current_setting('app.current_user_id', true), '')::uuid)`,
-  // LIPSEA — aceeași cauză ca app_users_public_lookup de mai sus.
+  // Vezi app_users_public_lookup mai sus — aceeași cauză (cron reînnoire +
+  // panoul platform-admin).
   `create policy memberships_public_lookup on memberships for select using (
     nullif(current_setting('app.public_lookup', true), '') = 'true'
   )`,
