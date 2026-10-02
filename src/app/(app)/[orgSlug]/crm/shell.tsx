@@ -30,6 +30,7 @@ import {
   Settings,
   Sparkles,
   Target,
+  TrendingUp,
   Upload,
   Users,
   Wrench,
@@ -115,6 +116,7 @@ function buildNav(dict: DashboardDict, orgSlug: string): { section: string; item
         { href: "kpi-echipa", label: dict.nav.kpiEchipa, icon: BarChart3 },
         { href: "organizatie", label: dict.nav.organizatie, icon: Network },
         { href: "kpi", label: dict.nav.kpiLibrary, icon: LibraryBig },
+        { href: "kpi/dashboard", label: dict.nav.kpiPerformantaMea, icon: TrendingUp },
       ],
     },
     {

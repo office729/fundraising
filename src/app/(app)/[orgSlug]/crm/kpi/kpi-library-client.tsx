@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, Pencil, Plus, Power, Sparkles, Trash2, Users } from "lucide-react";
+import { Copy, Pencil, Plus, Power, Sparkles, Trash2, TrendingUp, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 
@@ -126,6 +126,9 @@ export function KpiLibraryClient({
           <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">Biblioteca de indicatori de performanță a organizației tale — creează, editează, activează/dezactivează.</p>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="secondary" onClick={() => router.push(`/${orgSlug}/crm/kpi/dashboard`)}>
+            <TrendingUp className="h-3.5 w-3.5" /> Performanța mea
+          </Button>
           <Button variant="secondary" onClick={() => router.push(`/${orgSlug}/crm/kpi/atribuiri`)}>
             <Users className="h-3.5 w-3.5" /> Atribuiri
           </Button>

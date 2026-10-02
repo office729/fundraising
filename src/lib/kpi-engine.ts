@@ -1,8 +1,9 @@
 import "server-only";
 
-import { sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 
 import type { OrgContext } from "@/lib/auth/guard";
+import { kpiValori } from "@/lib/db/schema";
 
 // Motorul KPI (Faza C) — calculează valori AUTOMATE pentru KPI-urile legate
 // de o sursă de date reală (sursaDate.tip !== 'manual'), din activitatea deja
@@ -100,4 +101,82 @@ export function perioadaCurenta(frecventa: Frecventa, acum: Date = new Date()): 
   const start = new Date(acum.getFullYear(), acum.getMonth(), 1);
   const end = new Date(acum.getFullYear(), acum.getMonth() + 1, 1);
   return { start: ISO_LOCAL(start), endExclusiv: ISO_LOCAL(end) };
+}
+
+// --- Status & progres (Faza D — KPI Card) -----------------------------
+
+export type Directie = "mai_mare_mai_bine" | "mai_mic_mai_bine" | "egal_cu_target" | "interval_optim";
+export type StatusKpi = "neinceput" | "in_grafic" | "necesita_atentie" | "restant" | "finalizat";
+
+// Progresul e exprimat mereu ca "procent spre target" — pentru direcția
+// inversă (mai mic e mai bine), un progres bun înseamnă valoare SUB target,
+// nu o scădere liniară. 12 ore când targetul e "sub 24 ore" = depășit, nu
+// doar atins pe jumătate.
+export function progresProcent(valoare: number | null, targetNormal: number | null, directie: Directie): number | null {
+  if (valoare === null || targetNormal === null || targetNormal === 0) return null;
+  if (directie === "mai_mic_mai_bine") return Math.round(Math.min(2, targetNormal / Math.max(valoare, 0.0001)) * 100);
+  if (directie === "egal_cu_target") return Math.round((1 - Math.min(1, Math.abs(valoare - targetNormal) / targetNormal)) * 100);
+  return Math.round(Math.min(2, valoare / targetNormal) * 100);
+}
+
+export function calculeazaStatus(valoare: number | null, targetNormal: number | null, directie: Directie): StatusKpi {
+  if (valoare === null) return "neinceput";
+  const progres = progresProcent(valoare, targetNormal, directie);
+  if (progres === null) return "in_grafic"; // fără target — doar se afișează valoarea, fără evaluare
+  if (progres >= 100) return "finalizat";
+  if (progres >= 70) return "in_grafic";
+  if (progres >= 40) return "necesita_atentie";
+  return "restant";
+}
+
+// Valoarea perioadei CURENTE — calculează automat (dacă sursa e conectată) și
+// o persistă, altfel citește ultima valoare manuală salvată pentru perioadă.
+// Reutilizat atât de pagina de Atribuiri cât și de Dashboardul personal, ca
+// cele două să arate mereu aceeași cifră.
+export async function obtineSauCalculeazaValoareCurenta(
+  dbCtx: OrgContext["db"],
+  orgId: string,
+  angajatId: string,
+  kpiDefinitieId: string,
+  appUserId: string | null,
+  frecventa: Frecventa,
+  sursaDate: SursaDate | null,
+): Promise<{ valoare: number | null; sursa: "automat" | "manual" | null; perioadaStart: string }> {
+  const { start, endExclusiv } = perioadaCurenta(frecventa);
+
+  if (sursaDate && sursaDate.tip !== "manual") {
+    const valoareAutomata = await calculeazaValoareAutomata(dbCtx, orgId, sursaDate, appUserId, start, endExclusiv);
+    if (valoareAutomata !== null) {
+      await dbCtx
+        .insert(kpiValori)
+        .values({ orgId, angajatId, kpiDefinitieId, perioadaStart: start, perioadaTip: frecventa, valoare: valoareAutomata, sursa: "automat" })
+        .onConflictDoUpdate({
+          target: [kpiValori.angajatId, kpiValori.kpiDefinitieId, kpiValori.perioadaStart, kpiValori.perioadaTip],
+          set: { valoare: valoareAutomata, sursa: "automat", createdAt: new Date() },
+        });
+      return { valoare: valoareAutomata, sursa: "automat", perioadaStart: start };
+    }
+  }
+
+  const [existenta] = await dbCtx
+    .select({ valoare: kpiValori.valoare, sursa: kpiValori.sursa })
+    .from(kpiValori)
+    .where(and(eq(kpiValori.angajatId, angajatId), eq(kpiValori.kpiDefinitieId, kpiDefinitieId), eq(kpiValori.perioadaStart, start), eq(kpiValori.perioadaTip, frecventa)))
+    .limit(1);
+  return { valoare: existenta?.valoare ?? null, sursa: existenta?.sursa ?? null, perioadaStart: start };
+}
+
+export type PunctIstoric = { perioadaStart: string; valoare: number };
+
+// Ultimele N perioade înregistrate (automat sau manual) pentru un KPI — sursa
+// pentru sparkline-ul din KpiCard; întoarce [] dacă nu există încă istoric
+// (normal pentru un KPI nou, Trend arată un empty state, nu un grafic gol).
+export async function istoricValori(dbCtx: OrgContext["db"], angajatId: string, kpiDefinitieId: string, limita = 6): Promise<PunctIstoric[]> {
+  const rows = await dbCtx
+    .select({ perioadaStart: kpiValori.perioadaStart, valoare: kpiValori.valoare })
+    .from(kpiValori)
+    .where(and(eq(kpiValori.angajatId, angajatId), eq(kpiValori.kpiDefinitieId, kpiDefinitieId)))
+    .orderBy(desc(kpiValori.perioadaStart))
+    .limit(limita);
+  return rows.reverse();
 }
