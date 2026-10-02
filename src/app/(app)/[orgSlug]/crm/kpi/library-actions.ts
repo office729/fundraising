@@ -3,7 +3,7 @@
 import { and, asc, desc, eq } from "drizzle-orm";
 
 import { withOrgAdmin, withOrgSession } from "@/lib/auth/guard";
-import { kpiAuditLog, kpiCategorii, kpiDefinitii, kpiSabloane, kpiSabloaneItemi, roluri } from "@/lib/db/schema";
+import { kpiAtribuiri, kpiAuditLog, kpiCategorii, kpiDefinitii, kpiSabloane, kpiSabloaneItemi, roluri } from "@/lib/db/schema";
 import { EroareUtilizator } from "@/lib/erori";
 import type { SursaDate } from "@/lib/kpi-engine";
 
@@ -177,8 +177,21 @@ export const comutaActivDefinitieAction = withOrgAdmin(async (ctx, id: string, a
   await ctx.db.update(kpiDefinitii).set({ esteActiv: activ }).where(and(eq(kpiDefinitii.id, id), eq(kpiDefinitii.orgId, ctx.orgId)));
 });
 
+// Ștergerea unui KPI șterge în cascadă (FK) TOATE atribuirile și tot
+// istoricul de valori al tuturor angajaților pentru el — ireversibil, de-aici
+// numărul de atribuiri afectate în audit log, pentru trasabilitate ulterioară.
 export const stergeDefinitieAction = withOrgAdmin(async (ctx, id: string) => {
+  const [definitie] = await ctx.db.select({ nume: kpiDefinitii.nume }).from(kpiDefinitii).where(and(eq(kpiDefinitii.id, id), eq(kpiDefinitii.orgId, ctx.orgId))).limit(1);
+  const atribuiriAfectate = await ctx.db.select({ id: kpiAtribuiri.id }).from(kpiAtribuiri).where(and(eq(kpiAtribuiri.kpiDefinitieId, id), eq(kpiAtribuiri.orgId, ctx.orgId)));
   await ctx.db.delete(kpiDefinitii).where(and(eq(kpiDefinitii.id, id), eq(kpiDefinitii.orgId, ctx.orgId)));
+  await ctx.db.insert(kpiAuditLog).values({
+    orgId: ctx.orgId,
+    actorUserId: ctx.userId,
+    actiune: "sterge",
+    entitate: "kpi_definitie",
+    entitateId: id,
+    detalii: { nume: definitie?.nume ?? null, atribuiriSterse: atribuiriAfectate.length },
+  });
 });
 
 // --- Șabloane KPI per rol ----------------------------------------------

@@ -22,6 +22,7 @@ import {
   creeazaRolAction,
   listeazaAngajatiAction,
   listeazaDepartamenteAction,
+  listeazaMembriOrgAction,
   listeazaRoluriAction,
   stergeAngajatAction,
   stergeDepartamentAction,
@@ -29,6 +30,7 @@ import {
   type AngajatInput,
   type AngajatRand,
   type DepartamentRand,
+  type MembruDisponibil,
   type RolRand,
 } from "./actions";
 
@@ -379,6 +381,7 @@ function RoluriTab({
 // --- Angajați ----------------------------------------------------------------
 
 const GOL_ANGAJAT: AngajatInput = {
+  appUserId: null,
   nume: "",
   prenume: "",
   email: "",
@@ -422,14 +425,28 @@ function AngajatiTab({
 }) {
   const [editId, setEditId] = useState<string | "nou" | null>(null);
   const [form, setForm] = useState<AngajatInput>(GOL_ANGAJAT);
+  const [membri, setMembri] = useState<MembruDisponibil[] | null>(null);
+
+  const asigurareMembri = () => {
+    if (membri !== null) return;
+    start(async () => {
+      try {
+        setMembri(await listeazaMembriOrgAction(orgSlug));
+      } catch {
+        setMembri([]);
+      }
+    });
+  };
 
   const deschideNou = () => {
     setForm(GOL_ANGAJAT);
     setEditId("nou");
+    asigurareMembri();
   };
   const deschideEdit = (a: AngajatRand) => {
     setForm({ ...a });
     setEditId(a.id);
+    asigurareMembri();
   };
 
   const onSalveaza = () => {
@@ -495,6 +512,23 @@ function AngajatiTab({
 
       <Dialog open={editId !== null} onClose={() => setEditId(null)} title={editId === "nou" ? (ro ? "Membru nou" : "New member") : ro ? "Editează membru" : "Edit member"} width="max-w-xl">
         <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <Label>{ro ? "Cont platformă (opțional)" : "Platform account (optional)"}</Label>
+            <Select value={form.appUserId ?? ""} onChange={(e) => setForm({ ...form, appUserId: e.target.value || null })}>
+              <option value="">{ro ? "— fără cont, doar evidență —" : "— no account, record only —"}</option>
+              {(membri ?? []).map((m) => {
+                const legatDeAltul = angajati.some((a) => a.appUserId === m.userId && a.id !== editId);
+                return (
+                  <option key={m.userId} value={m.userId} disabled={legatDeAltul}>
+                    {m.nume ?? m.email} ({m.email}){legatDeAltul ? (ro ? " — deja legat de alt angajat" : " — already linked") : ""}
+                  </option>
+                );
+              })}
+            </Select>
+            <p className="mt-1 text-[12px] text-[var(--ci-text-muted)]">
+              {ro ? "Leagă acest profil de contul de login al colegului — fără asta nu-și poate vedea „Performanța mea”." : "Links this profile to the colleague's login account — without it they can't see “My performance”."}
+            </p>
+          </div>
           <div>
             <Label>{ro ? "Nume" : "Last name"}</Label>
             <Input value={form.nume} onChange={(e) => setForm({ ...form, nume: e.target.value })} />

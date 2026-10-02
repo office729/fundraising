@@ -100,6 +100,7 @@ export function KpiLibraryClient({
   };
 
   const onSterge = (id: string) => {
+    if (!window.confirm("Ștergi definitiv acest KPI? Toate atribuirile și tot istoricul lui, pentru toți angajații, se șterg odată cu el.")) return;
     start(async () => {
       try {
         await stergeDefinitieAction(orgSlug, id);

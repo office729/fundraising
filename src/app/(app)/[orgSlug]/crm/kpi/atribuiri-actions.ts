@@ -78,7 +78,15 @@ export type AtribuireInput = {
   proRata: boolean;
 };
 
+// Suma ponderilor active NU e validată la 100% aici (intenționat — vezi plan,
+// o organizație abia la început poate avea un singur KPI configurat), dar
+// o pondere individuală în afara [0,100] nu are sens sub nicio interpretare.
+function valideazaPondere(pondere: number | null): void {
+  if (pondere !== null && (pondere < 0 || pondere > 100)) throw new EroareUtilizator("Ponderea trebuie să fie între 0 și 100.");
+}
+
 export const creeazaAtribuireAction = withOrgAdmin(async (ctx, angajatId: string, input: AtribuireInput) => {
+  valideazaPondere(input.pondere);
   const [angajat] = await ctx.db.select({ id: angajati.id }).from(angajati).where(and(eq(angajati.id, angajatId), eq(angajati.orgId, ctx.orgId))).limit(1);
   if (!angajat) throw new EroareUtilizator("Angajatul nu a fost găsit.");
   await ctx.db
@@ -89,6 +97,7 @@ export const creeazaAtribuireAction = withOrgAdmin(async (ctx, angajatId: string
 });
 
 export const actualizeazaAtribuireAction = withOrgAdmin(async (ctx, id: string, input: AtribuireInput) => {
+  valideazaPondere(input.pondere);
   const [existenta] = await ctx.db.select({ pondere: kpiAtribuiri.pondere, targetNormal: kpiAtribuiri.targetNormal }).from(kpiAtribuiri).where(and(eq(kpiAtribuiri.id, id), eq(kpiAtribuiri.orgId, ctx.orgId))).limit(1);
   if (!existenta) throw new EroareUtilizator("Atribuirea nu a fost găsită.");
   await ctx.db.update(kpiAtribuiri).set(input).where(and(eq(kpiAtribuiri.id, id), eq(kpiAtribuiri.orgId, ctx.orgId)));
@@ -104,6 +113,7 @@ export const actualizeazaAtribuireAction = withOrgAdmin(async (ctx, id: string, 
 
 export const stergeAtribuireAction = withOrgAdmin(async (ctx, id: string) => {
   await ctx.db.delete(kpiAtribuiri).where(and(eq(kpiAtribuiri.id, id), eq(kpiAtribuiri.orgId, ctx.orgId)));
+  await ctx.db.insert(kpiAuditLog).values({ orgId: ctx.orgId, actorUserId: ctx.userId, actiune: "sterge_atribuire", entitate: "kpi_atribuire", entitateId: id, detalii: {} });
 });
 
 // --- Valori (automat + manual) ----------------------------------------

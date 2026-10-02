@@ -69,38 +69,63 @@ export async function calculeazaValoareAutomata(
 
 export type Frecventa = "zilnic" | "saptamanal" | "lunar" | "trimestrial" | "anual" | "custom";
 
-const ISO_LOCAL = (d: Date) => d.toLocaleDateString("en-CA");
+// "Azi"/"săptămâna asta"/"luna asta" trebuie să însemne ziua/săptămâna/luna
+// din România, NU ziua serverului — majoritatea platformelor de hosting
+// rulează cu TZ=UTC, deci fără fixare explicită, o activitate de după ora
+// 21:00/22:00 România ar putea cădea în ziua/perioada greșită (deja a doua
+// zi în UTC). Construim un Date ale cărui câmpuri UTC reprezintă exact ora
+// de perete din București — restul funcției folosește DOAR getUTC*/Date.UTC,
+// niciodată metodele locale (acelea ar depinde iar de TZ-ul procesului).
+function dataBucuresti(d: Date): Date {
+  const parti = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Europe/Bucharest",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).formatToParts(d);
+  const get = (tip: string) => Number(parti.find((p) => p.type === tip)?.value ?? 0);
+  return new Date(Date.UTC(get("year"), get("month") - 1, get("day"), get("hour") % 24, get("minute"), get("second")));
+}
+
+const ISO_UTC = (d: Date) => d.toISOString().slice(0, 10);
 
 // Perioada curentă pentru o frecvență dată — folosită atât pentru calculul
 // automat cât și pentru intrarea manuală implicită. "custom" cade pe lunar
 // (interval personalizat per-atribuire e în afara scopului acestei faze).
 export function perioadaCurenta(frecventa: Frecventa, acum: Date = new Date()): { start: string; endExclusiv: string } {
+  const b = dataBucuresti(acum);
+
   if (frecventa === "zilnic") {
-    const start = ISO_LOCAL(acum);
-    const end = ISO_LOCAL(new Date(acum.getTime() + 24 * 60 * 60 * 1000));
-    return { start, endExclusiv: end };
+    const start = ISO_UTC(b);
+    const end = new Date(b);
+    end.setUTCDate(b.getUTCDate() + 1);
+    return { start, endExclusiv: ISO_UTC(end) };
   }
   if (frecventa === "saptamanal") {
-    const zi = (acum.getDay() + 6) % 7; // luni = 0
-    const luni = new Date(acum);
-    luni.setDate(acum.getDate() - zi);
+    const zi = (b.getUTCDay() + 6) % 7; // luni = 0
+    const luni = new Date(b);
+    luni.setUTCDate(b.getUTCDate() - zi);
     const lunUrm = new Date(luni);
-    lunUrm.setDate(luni.getDate() + 7);
-    return { start: ISO_LOCAL(luni), endExclusiv: ISO_LOCAL(lunUrm) };
+    lunUrm.setUTCDate(luni.getUTCDate() + 7);
+    return { start: ISO_UTC(luni), endExclusiv: ISO_UTC(lunUrm) };
   }
   if (frecventa === "trimestrial") {
-    const trimestru = Math.floor(acum.getMonth() / 3);
-    const start = new Date(acum.getFullYear(), trimestru * 3, 1);
-    const end = new Date(acum.getFullYear(), trimestru * 3 + 3, 1);
-    return { start: ISO_LOCAL(start), endExclusiv: ISO_LOCAL(end) };
+    const trimestru = Math.floor(b.getUTCMonth() / 3);
+    const start = new Date(Date.UTC(b.getUTCFullYear(), trimestru * 3, 1));
+    const end = new Date(Date.UTC(b.getUTCFullYear(), trimestru * 3 + 3, 1));
+    return { start: ISO_UTC(start), endExclusiv: ISO_UTC(end) };
   }
   if (frecventa === "anual") {
-    return { start: `${acum.getFullYear()}-01-01`, endExclusiv: `${acum.getFullYear() + 1}-01-01` };
+    return { start: `${b.getUTCFullYear()}-01-01`, endExclusiv: `${b.getUTCFullYear() + 1}-01-01` };
   }
   // lunar + custom (fallback)
-  const start = new Date(acum.getFullYear(), acum.getMonth(), 1);
-  const end = new Date(acum.getFullYear(), acum.getMonth() + 1, 1);
-  return { start: ISO_LOCAL(start), endExclusiv: ISO_LOCAL(end) };
+  const start = new Date(Date.UTC(b.getUTCFullYear(), b.getUTCMonth(), 1));
+  const end = new Date(Date.UTC(b.getUTCFullYear(), b.getUTCMonth() + 1, 1));
+  return { start: ISO_UTC(start), endExclusiv: ISO_UTC(end) };
 }
 
 // --- Status & progres (Faza D — KPI Card) -----------------------------
@@ -115,7 +140,14 @@ export type StatusKpi = "neinceput" | "in_grafic" | "necesita_atentie" | "restan
 export function progresProcent(valoare: number | null, targetNormal: number | null, directie: Directie): number | null {
   if (valoare === null || targetNormal === null || targetNormal === 0) return null;
   if (directie === "mai_mic_mai_bine") return Math.round(Math.min(2, targetNormal / Math.max(valoare, 0.0001)) * 100);
-  if (directie === "egal_cu_target") return Math.round((1 - Math.min(1, Math.abs(valoare - targetNormal) / targetNormal)) * 100);
+  // "interval_optim" tratat ca egal_cu_target (distanță simetrică de la
+  // target) — prea mult sau prea puțin sunt ambele "rău", la fel ca la un
+  // target exact. Fără limite min/max separate de interval în schemă încă,
+  // e aproximarea corectă conceptual, nu doar "mai mare e mai bine" (greșit
+  // pentru un interval optim — ar ignora complet excesul).
+  if (directie === "egal_cu_target" || directie === "interval_optim") {
+    return Math.round((1 - Math.min(1, Math.abs(valoare - targetNormal) / targetNormal)) * 100);
+  }
   return Math.round(Math.min(2, valoare / targetNormal) * 100);
 }
 

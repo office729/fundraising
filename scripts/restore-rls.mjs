@@ -659,9 +659,23 @@ const POLICIES = [
   `create policy kpi_funnel_etape_tenant_isolation on kpi_funnel_etape
     using      (exists (select 1 from kpi_funnels f where f.id = kpi_funnel_etape.funnel_id and f.org_id = nullif(current_setting('app.current_org_id', true), '')::uuid))
     with check (exists (select 1 from kpi_funnels f where f.id = kpi_funnel_etape.funnel_id and f.org_id = nullif(current_setting('app.current_org_id', true), '')::uuid))`,
-  `create policy kpi_audit_log_tenant_isolation on kpi_audit_log
-    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
-    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  // Varianta inițială (o singură politică fără "for <comandă>") se aplica
+  // implicit la TOATE comenzile — inclusiv update/delete, deci orice membru
+  // al org-ului putea modifica/șterge din bază de date rândurile din jurnalul
+  // de audit (ex. ascunde o valoare KPI falsificată prin
+  // inregistreazaValoareManualaAction). Găsit la audit, înlocuit cu select +
+  // insert explicite, FĂRĂ nicio politică de update/delete (refuzate implicit
+  // sub FORCE RLS). SELECT rămâne pe tot org-ul (nu doar admin, spre
+  // deosebire de fundraising_audit_log) — acest jurnal e folosit și ca
+  // istoric propriu, vizibil angajatului ("Istoric" din Atribuiri),
+  // autorizarea pe rândul exact fiind deja făcută în server action
+  // (verificaAccesAngajat), nu doar prin RLS.
+  `create policy kpi_audit_log_tenant_select on kpi_audit_log for select using (
+    org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
+  )`,
+  `create policy kpi_audit_log_member_insert on kpi_audit_log for insert with check (
+    org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
+  )`,
 ];
 
 const FORCE_TABLES = [
@@ -722,6 +736,14 @@ const FORCE_TABLES = [
 
 try {
   for (const t of FORCE_TABLES) {
+    // ENABLE + FORCE, în această ordine — FORCE fără ENABLE e un no-op tăcut
+    // în Postgres (nicio eroare, pur și simplu politicile nu se aplică deloc).
+    // `db:push` (drizzle-kit) emite ENABLE automat din `.enableRLS()` în
+    // schemă, dar tabelele create prin scriptul one-off (sandbox-ul blochează
+    // db:push ca "Production Deploy") NU treceau niciodată prin el — găsit
+    // la audit: toate cele 17 tabele adăugate în această sesiune aveau FORCE
+    // dar RLS efectiv dezactivat. IF NOT ENABLED face comanda idempotentă.
+    await sql.unsafe(`alter table ${t} enable row level security`);
     await sql.unsafe(`alter table ${t} force row level security`);
   }
   let created = 0;

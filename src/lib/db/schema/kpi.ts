@@ -1,4 +1,5 @@
 import { boolean, date, integer, jsonb, numeric, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 import { appUsers } from "./app-users";
 import {
@@ -81,6 +82,13 @@ export const angajati = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().$onUpdate(() => new Date()),
   },
+  (t) => [
+    // Cel mult UN profil de angajat per cont de login, per organizație —
+    // fără asta, dashboard-ul personal (care face .limit(1) fără ORDER BY)
+    // ar alege nedeterminist între două profiluri dacă un admin leagă din
+    // greșeală același cont de doi angajați.
+    uniqueIndex("angajati_org_app_user_idx").on(t.orgId, t.appUserId).where(sql`${t.appUserId} is not null`),
+  ],
 ).enableRLS();
 
 // --- KPI Library (Faza B) ---------------------------------------------------

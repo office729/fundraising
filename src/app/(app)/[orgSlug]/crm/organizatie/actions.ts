@@ -3,8 +3,8 @@
 import { and, eq } from "drizzle-orm";
 
 import { withOrgAdmin, withOrgSession } from "@/lib/auth/guard";
-import { angajati, departments, kpiAuditLog, roluri } from "@/lib/db/schema";
-import { EroareUtilizator } from "@/lib/erori";
+import { angajati, appUsers, departments, kpiAuditLog, memberships, roluri } from "@/lib/db/schema";
+import { EroareUtilizator, mesajSigur } from "@/lib/erori";
 
 // Modulul „Organizație & Echipă" (Faza A a modulului KPI generic) — orice
 // membru al org-ului poate CITI structura (organigramă vizibilă echipei),
@@ -44,6 +44,7 @@ export const stergeDepartamentAction = withOrgAdmin(async (ctx, id: string) => {
   // deja în schemă) — ștergerea unui departament nu șterge echipa din el.
   await ctx.db.update(departments).set({ parentId: null }).where(and(eq(departments.parentId, id), eq(departments.orgId, ctx.orgId)));
   await ctx.db.delete(departments).where(and(eq(departments.id, id), eq(departments.orgId, ctx.orgId)));
+  await ctx.db.insert(kpiAuditLog).values({ orgId: ctx.orgId, actorUserId: ctx.userId, actiune: "sterge", entitate: "departament", entitateId: id, detalii: {} });
 });
 
 // --- Roluri --------------------------------------------------------------
@@ -79,12 +80,14 @@ export const actualizeazaRolAction = withOrgAdmin(
 export const stergeRolAction = withOrgAdmin(async (ctx, id: string) => {
   await ctx.db.update(angajati).set({ roleId: null }).where(and(eq(angajati.roleId, id), eq(angajati.orgId, ctx.orgId)));
   await ctx.db.delete(roluri).where(and(eq(roluri.id, id), eq(roluri.orgId, ctx.orgId)));
+  await ctx.db.insert(kpiAuditLog).values({ orgId: ctx.orgId, actorUserId: ctx.userId, actiune: "sterge", entitate: "rol", entitateId: id, detalii: {} });
 });
 
 // --- Angajați --------------------------------------------------------------
 
 export type AngajatRand = {
   id: string;
+  appUserId: string | null;
   nume: string;
   prenume: string | null;
   email: string | null;
@@ -105,6 +108,7 @@ export const listeazaAngajatiAction = withOrgSession(async (ctx): Promise<Angaja
   return ctx.db
     .select({
       id: angajati.id,
+      appUserId: angajati.appUserId,
       nume: angajati.nume,
       prenume: angajati.prenume,
       email: angajati.email,
@@ -125,7 +129,21 @@ export const listeazaAngajatiAction = withOrgSession(async (ctx): Promise<Angaja
     .orderBy(angajati.nume);
 });
 
+// Membrii org-ului (din `memberships`, au deja cont de login) care pot fi
+// legați de un profil de angajat — singura cale prin care cineva ajunge să-și
+// vadă „Performanța mea" (dashboard-ul citește angajati.app_user_id).
+export type MembruDisponibil = { userId: string; email: string; nume: string | null };
+export const listeazaMembriOrgAction = withOrgAdmin(async (ctx): Promise<MembruDisponibil[]> => {
+  const rows = await ctx.db
+    .select({ userId: appUsers.id, email: appUsers.email, nume: appUsers.name })
+    .from(memberships)
+    .innerJoin(appUsers, eq(appUsers.id, memberships.userId))
+    .where(eq(memberships.orgId, ctx.orgId));
+  return rows;
+});
+
 export type AngajatInput = {
+  appUserId: string | null;
   nume: string;
   prenume: string | null;
   email: string | null;
@@ -142,24 +160,44 @@ export type AngajatInput = {
   nivelAcces: "membru" | "manager" | "admin_departament";
 };
 
+// Eroarea de unicitate (angajati_org_app_user_idx — un cont legat de cel mult
+// UN profil de angajat) e tehnică (cod Postgres 23505); o traducem într-un
+// mesaj clar în loc s-o lăsăm să iasă brută către utilizator.
+function mesajConflictCont(e: unknown): string | null {
+  if (e && typeof e === "object" && "code" in e && (e as { code: unknown }).code === "23505") {
+    return "Acest cont de platformă e deja legat de alt angajat.";
+  }
+  return null;
+}
+
 export const creeazaAngajatAction = withOrgAdmin(async (ctx, input: AngajatInput) => {
   if (!input.nume.trim()) throw new EroareUtilizator("Numele angajatului e obligatoriu.");
-  const [rand] = await ctx.db.insert(angajati).values({ orgId: ctx.orgId, ...input, nume: input.nume.trim() }).returning({ id: angajati.id });
-  await ctx.db.insert(kpiAuditLog).values({ orgId: ctx.orgId, actorUserId: ctx.userId, actiune: "creeaza", entitate: "angajat", entitateId: rand.id, detalii: { nume: input.nume } });
+  try {
+    const [rand] = await ctx.db.insert(angajati).values({ orgId: ctx.orgId, ...input, nume: input.nume.trim() }).returning({ id: angajati.id });
+    await ctx.db.insert(kpiAuditLog).values({ orgId: ctx.orgId, actorUserId: ctx.userId, actiune: "creeaza", entitate: "angajat", entitateId: rand.id, detalii: { nume: input.nume } });
+  } catch (e) {
+    throw new EroareUtilizator(mesajConflictCont(e) ?? mesajSigur(e, "Crearea angajatului a eșuat.", "organizatie-creeaza-angajat"));
+  }
 });
 
 export const actualizeazaAngajatAction = withOrgAdmin(async (ctx, id: string, input: AngajatInput) => {
   if (!input.nume.trim()) throw new EroareUtilizator("Numele angajatului e obligatoriu.");
   if (input.managerId === id) throw new EroareUtilizator("Un angajat nu poate fi propriul său manager.");
-  const r = await ctx.db
-    .update(angajati)
-    .set({ ...input, nume: input.nume.trim() })
-    .where(and(eq(angajati.id, id), eq(angajati.orgId, ctx.orgId)))
-    .returning({ id: angajati.id });
-  if (!r[0]) throw new EroareUtilizator("Angajatul nu a fost găsit.");
+  try {
+    const r = await ctx.db
+      .update(angajati)
+      .set({ ...input, nume: input.nume.trim() })
+      .where(and(eq(angajati.id, id), eq(angajati.orgId, ctx.orgId)))
+      .returning({ id: angajati.id });
+    if (!r[0]) throw new EroareUtilizator("Angajatul nu a fost găsit.");
+  } catch (e) {
+    if (e instanceof EroareUtilizator) throw e;
+    throw new EroareUtilizator(mesajConflictCont(e) ?? mesajSigur(e, "Actualizarea angajatului a eșuat.", "organizatie-actualizeaza-angajat"));
+  }
 });
 
 export const stergeAngajatAction = withOrgAdmin(async (ctx, id: string) => {
   await ctx.db.update(angajati).set({ managerId: null }).where(and(eq(angajati.managerId, id), eq(angajati.orgId, ctx.orgId)));
   await ctx.db.delete(angajati).where(and(eq(angajati.id, id), eq(angajati.orgId, ctx.orgId)));
+  await ctx.db.insert(kpiAuditLog).values({ orgId: ctx.orgId, actorUserId: ctx.userId, actiune: "sterge", entitate: "angajat", entitateId: id, detalii: {} });
 });
