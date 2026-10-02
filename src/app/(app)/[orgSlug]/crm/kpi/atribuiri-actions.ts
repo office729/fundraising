@@ -2,7 +2,7 @@
 
 import { and, desc, eq } from "drizzle-orm";
 
-import { withOrgAdmin, withOrgSession } from "@/lib/auth/guard";
+import { type OrgContext, withOrgAdmin, withOrgSession } from "@/lib/auth/guard";
 import { angajati, kpiAtribuiri, kpiAuditLog, kpiDefinitii, kpiValori } from "@/lib/db/schema";
 import { EroareUtilizator } from "@/lib/erori";
 import { calculeazaValoareAutomata, perioadaCurenta, type Frecventa, type SursaDate } from "@/lib/kpi-engine";
@@ -10,6 +10,19 @@ import { calculeazaValoareAutomata, perioadaCurenta, type Frecventa, type SursaD
 // Atribuiri & Targeturi + motorul KPI (Faza C) — leagă un KPI din bibliotecă
 // de UN angajat, cu target/pondere proprii; valorile (kpi_valori) se scriu
 // fie automat (sursă conectată), fie manual, cu istoric în kpi_audit_log.
+
+// Citirea/scrierea datelor KPI ale UNUI angajat e permisă doar lui însuși
+// (dacă are cont legat) sau unui owner/admin — altfel orice membru al org-ului
+// ar putea citi SAU falsifica targetul/valorile unui coleg, doar trecând alt
+// angajatId ca parametru (server action = rută de rețea reală, nu doar un
+// buton din UI care "nu arată" acel ID). Modelul Manager/Admin Departament
+// din plan rămâne pentru Faza E — pragul de mai jos e minimul corect acum:
+// Angajat vede/scrie DOAR al lui, Org Admin vede/scrie tot.
+async function verificaAccesAngajat(ctx: OrgContext, angajatId: string): Promise<void> {
+  if (ctx.role === "owner" || ctx.role === "admin") return;
+  const [angajat] = await ctx.db.select({ appUserId: angajati.appUserId }).from(angajati).where(and(eq(angajati.id, angajatId), eq(angajati.orgId, ctx.orgId))).limit(1);
+  if (!angajat || angajat.appUserId !== ctx.userId) throw new EroareUtilizator("Nu ai acces la datele acestui angajat.");
+}
 
 export type AtribuireRand = {
   id: string;
@@ -30,6 +43,7 @@ export type AtribuireRand = {
 };
 
 export const listeazaAtribuiriAction = withOrgSession(async (ctx, angajatId: string): Promise<AtribuireRand[]> => {
+  await verificaAccesAngajat(ctx, angajatId);
   const rows = await ctx.db
     .select({
       id: kpiAtribuiri.id,
@@ -100,6 +114,7 @@ export type ValoarePerioada = { valoare: number | null; sursa: "automat" | "manu
 // automată, (re)calculează live din activitatea reală și o persistă; dacă
 // sursa nu e conectată, întoarce ce a fost introdus manual ultima dată.
 export const obtineValoareCurentaAction = withOrgSession(async (ctx, angajatId: string, kpiDefinitieId: string): Promise<ValoarePerioada> => {
+  await verificaAccesAngajat(ctx, angajatId);
   const [definitie] = await ctx.db.select({ frecventa: kpiDefinitii.frecventa, sursaDate: kpiDefinitii.sursaDate }).from(kpiDefinitii).where(and(eq(kpiDefinitii.id, kpiDefinitieId), eq(kpiDefinitii.orgId, ctx.orgId))).limit(1);
   if (!definitie) throw new EroareUtilizator("KPI-ul nu a fost găsit.");
   const [angajat] = await ctx.db.select({ appUserId: angajati.appUserId }).from(angajati).where(and(eq(angajati.id, angajatId), eq(angajati.orgId, ctx.orgId))).limit(1);
@@ -130,6 +145,7 @@ export const obtineValoareCurentaAction = withOrgSession(async (ctx, angajatId: 
 // veche → nouă) în kpi_audit_log, nu printr-un rând kpi_valori duplicat.
 export const inregistreazaValoareManualaAction = withOrgSession(
   async (ctx, angajatId: string, kpiDefinitieId: string, valoare: number, comentariu: string | null, dovadaUrl: string | null) => {
+    await verificaAccesAngajat(ctx, angajatId);
     const [definitie] = await ctx.db.select({ frecventa: kpiDefinitii.frecventa }).from(kpiDefinitii).where(and(eq(kpiDefinitii.id, kpiDefinitieId), eq(kpiDefinitii.orgId, ctx.orgId))).limit(1);
     if (!definitie) throw new EroareUtilizator("KPI-ul nu a fost găsit.");
     const { start } = perioadaCurenta(definitie.frecventa);
@@ -163,6 +179,7 @@ export const inregistreazaValoareManualaAction = withOrgSession(
 export type IstoricValoare = { valoareVeche: number | null; valoareNoua: number; comentariu: string | null; la: Date };
 
 export const listeazaIstoricValoareAction = withOrgSession(async (ctx, angajatId: string, kpiDefinitieId: string): Promise<IstoricValoare[]> => {
+  await verificaAccesAngajat(ctx, angajatId);
   const rows = await ctx.db
     .select({ detalii: kpiAuditLog.detalii, createdAt: kpiAuditLog.createdAt })
     .from(kpiAuditLog)

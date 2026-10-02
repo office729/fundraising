@@ -142,7 +142,12 @@ export function AtribuiriClient({
             <div className="space-y-2">
               {atribuiri.map((a) => {
                 const v = valori[a.kpiDefinitieId];
-                const sursaAutomata = a.kpiSursaDate && a.kpiSursaDate.tip !== "manual";
+                // "Conectată" = are un adaptor REAL (azi doar tip 'crm' cu metric
+                // setat — vezi lib/kpi-engine.ts). Un KPI cu tip automat dar fără
+                // adaptor scris încă (ex. 'donatori') se comportă ca manual — nu
+                // arătăm un verde fals-pozitiv doar pentru că tipul nu e "manual".
+                const sursaConectata = a.kpiSursaDate?.tip === "crm" && Boolean(a.kpiSursaDate.metric);
+                const esteAutomatNeconectat = Boolean(a.kpiSursaDate && a.kpiSursaDate.tip !== "manual" && !sursaConectata);
                 return (
                   <div key={a.id} className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] p-3.5">
                     <div className="flex flex-wrap items-center justify-between gap-2">
@@ -152,7 +157,9 @@ export function AtribuiriClient({
                           {a.pondere != null && <Badge tone="blue">{a.pondere}% pondere</Badge>}
                           {a.targetNormal != null && <Badge tone="neutral">target {a.targetNormal}{a.kpiUnitate ? ` ${a.kpiUnitate}` : ""}</Badge>}
                           {a.proRata && <Badge tone="neutral">pro-rata</Badge>}
-                          <Badge tone={sursaAutomata ? "green" : "amber"}>{sursaAutomata ? "sursă automată" : "manual"}</Badge>
+                          <Badge tone={sursaConectata ? "green" : esteAutomatNeconectat ? "neutral" : "amber"}>
+                            {sursaConectata ? "sursă automată" : esteAutomatNeconectat ? "automat — neconectat încă" : "manual"}
+                          </Badge>
                         </div>
                       </div>
                       <div className="flex items-center gap-1">
@@ -164,13 +171,13 @@ export function AtribuiriClient({
                     <div className="mt-3 rounded-lg bg-[var(--ci-surface-2)] p-2.5">
                       {!v ? (
                         <Button variant="secondary" size="sm" onClick={() => incarcaValoare(a.kpiDefinitieId)} disabled={pending}>
-                          <RefreshCw className="h-3.5 w-3.5" /> {sursaAutomata ? "Calculează valoarea perioadei curente" : "Vezi valoarea perioadei curente"}
+                          <RefreshCw className="h-3.5 w-3.5" /> {sursaConectata ? "Calculează valoarea perioadei curente" : "Vezi valoarea perioadei curente"}
                         </Button>
-                      ) : sursaAutomata ? (
+                      ) : sursaConectata ? (
                         <div className="flex items-center justify-between">
                           <p className="text-[13px] text-[var(--ci-text)]">
                             Perioada curentă: <span className="ci-tabular font-semibold">{v.valoare ?? "—"}</span>{a.kpiUnitate ? ` ${a.kpiUnitate}` : ""}
-                            {v.valoare === null && <span className="text-[var(--ci-text-muted)]"> — sursă încă neconectată, introdu manual</span>}
+                            {v.valoare === null && <span className="text-[var(--ci-text-muted)]"> — acest angajat nu are cont de login legat, nu poate fi calculat automat</span>}
                           </p>
                           <Button variant="ghost" size="icon" title="Recalculează" onClick={() => incarcaValoare(a.kpiDefinitieId)} disabled={pending}><RefreshCw className="h-3.5 w-3.5" /></Button>
                         </div>

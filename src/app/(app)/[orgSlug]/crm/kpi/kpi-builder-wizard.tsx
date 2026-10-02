@@ -7,6 +7,18 @@ import { Dialog } from "../components/ui/dialog";
 import { Input, Label, Select, Textarea } from "../components/ui/input";
 import { creeazaDefinitieAction, actualizeazaDefinitieAction, type CategorieRand, type DefinitieInput, type DefinitieRand, type SursaDate } from "./library-actions";
 
+// Singurele metrici CRM efectiv conectate la motor (vezi METRICI_CRM_DISPONIBILE
+// din lib/kpi-engine.ts) — fără alegerea uneia dintre ele, sursaDate.tip="crm"
+// nu calculează NICIODATĂ nimic automat (motorul întoarce null fără `metric`).
+const METRICI_CRM: { v: string; eticheta: string }[] = [
+  { v: "companii", eticheta: "Companii lucrate (actualizate)" },
+  { v: "contacte", eticheta: "Contacte adăugate" },
+  { v: "apeluri", eticheta: "Apeluri efectuate" },
+  { v: "sponsorizari", eticheta: "Sponsorizări înregistrate" },
+  { v: "notite", eticheta: "Notițe adăugate" },
+  { v: "etape", eticheta: "Mutări în pipeline" },
+];
+
 const TIPURI: { v: DefinitieRand["tip"]; eticheta: string; exemplu: string }[] = [
   { v: "numeric", eticheta: "Numeric", exemplu: "ex. 100 contacte" },
   { v: "percentage", eticheta: "Procent", exemplu: "ex. 95% follow-up la termen" },
@@ -35,19 +47,24 @@ const FRECVENTE: { v: DefinitieRand["frecventa"]; eticheta: string }[] = [
   { v: "custom", eticheta: "Interval personalizat" },
 ];
 
-const SURSE: { v: NonNullable<SursaDate>["tip"]; eticheta: string }[] = [
-  { v: "crm", eticheta: "CRM (contacte/companii/apeluri)" },
-  { v: "task", eticheta: "Taskuri" },
-  { v: "proiect", eticheta: "Proiecte" },
-  { v: "donatori", eticheta: "Donatori" },
-  { v: "companii", eticheta: "Companii / sponsorizări" },
-  { v: "voluntari", eticheta: "Voluntari" },
-  { v: "beneficiari", eticheta: "Beneficiari" },
-  { v: "formular", eticheta: "Formulare" },
-  { v: "financiar", eticheta: "Financiar" },
-  { v: "eveniment", eticheta: "Evenimente" },
-  { v: "manual", eticheta: "Introducere manuală" },
-  { v: "api_extern", eticheta: "API extern" },
+// Doar "crm" e conectat la motorul de calcul azi — restul au doar schema
+// pregătită (vezi lib/kpi-engine.ts). Etichetele spun asta explicit, ca un
+// admin să nu creadă că 10 din 12 surse "vor funcționa automat" — niciuna
+// din ele n-are adaptor scris încă, afișarea trebuie să fie onestă, nu doar
+// textul tehnic din spatele unui buton "Calculează".
+const SURSE: { v: NonNullable<SursaDate>["tip"]; eticheta: string; conectata: boolean }[] = [
+  { v: "crm", eticheta: "CRM (contacte/companii/apeluri)", conectata: true },
+  { v: "manual", eticheta: "Introducere manuală", conectata: true },
+  { v: "task", eticheta: "Taskuri (neconectat încă — manual)", conectata: false },
+  { v: "proiect", eticheta: "Proiecte (neconectat încă — manual)", conectata: false },
+  { v: "donatori", eticheta: "Donatori (neconectat încă — manual)", conectata: false },
+  { v: "companii", eticheta: "Companii / sponsorizări — generic (neconectat încă — manual)", conectata: false },
+  { v: "voluntari", eticheta: "Voluntari (neconectat încă — manual)", conectata: false },
+  { v: "beneficiari", eticheta: "Beneficiari (neconectat încă — manual)", conectata: false },
+  { v: "formular", eticheta: "Formulare (neconectat încă — manual)", conectata: false },
+  { v: "financiar", eticheta: "Financiar (neconectat încă — manual)", conectata: false },
+  { v: "eveniment", eticheta: "Evenimente (neconectat încă — manual)", conectata: false },
+  { v: "api_extern", eticheta: "API extern (neconectat încă — manual)", conectata: false },
 ];
 
 const PASI = ["Nume", "Categorie", "Ce măsurăm?", "Sursă", "Frecvență", "Preview"];
@@ -187,21 +204,35 @@ export function KpiBuilderWizard({
               value={form.sursaDate?.tip ?? "manual"}
               onChange={(e) => {
                 const tip = e.target.value as NonNullable<SursaDate>["tip"];
-                setForm({ ...form, sursaDate: { ...form.sursaDate, tip }, esteManual: tip === "manual" });
+                setForm({ ...form, sursaDate: tip === "crm" ? { tip, metric: METRICI_CRM[0].v } : { tip }, esteManual: tip === "manual" });
               }}
             >
               {SURSE.map((s) => <option key={s.v} value={s.v}>{s.eticheta}</option>)}
             </Select>
           </div>
-          {form.sursaDate?.tip !== "manual" && (
+
+          {form.sursaDate?.tip === "crm" && (
+            <div>
+              <Label>Ce anume din CRM se numără?</Label>
+              <Select value={form.sursaDate.metric ?? METRICI_CRM[0].v} onChange={(e) => setForm({ ...form, sursaDate: { tip: "crm", metric: e.target.value } })}>
+                {METRICI_CRM.map((m) => <option key={m.v} value={m.v}>{m.eticheta}</option>)}
+              </Select>
+              <p className="mt-1 text-[12px] text-[var(--ci-text-muted)]">Numără activitatea reală din CRM a fiecărui angajat (după contul lui de login), pe perioada KPI-ului — fără introducere dublă.</p>
+            </div>
+          )}
+
+          {form.sursaDate?.tip && form.sursaDate.tip !== "manual" && form.sursaDate.tip !== "crm" && (
+            <p className="text-[12px] text-[var(--ci-amber)]">
+              Această sursă nu are încă un conector real — KPI-ul se va comporta ca manual (cere introducere de la angajat/admin) până se conectează.
+            </p>
+          )}
+
+          {form.sursaDate?.tip && form.sursaDate.tip !== "manual" && (
             <label className="flex items-center gap-2 text-[13px] text-[var(--ci-text)]">
               <input type="checkbox" checked={form.esteManual} onChange={(e) => setForm({ ...form, esteManual: e.target.checked })} />
               Permite și completare manuală (pe lângă automatizare)
             </label>
           )}
-          <p className="text-[12px] text-[var(--ci-text-muted)]">
-            Conectarea efectivă la sursa reală de date (filtru/agregare) se configurează separat, pe măsură ce motorul de automatizare e disponibil.
-          </p>
         </div>
       )}
 
