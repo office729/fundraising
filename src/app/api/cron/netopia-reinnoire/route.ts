@@ -1,7 +1,7 @@
 import { and, eq, inArray, lte, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
-import { NETOPIA_RENEWAL_MAX_INCERCARI } from "@/lib/billing/netopia-confirm";
+import { NETOPIA_RENEWAL_MAX_INCERCARI, reiaFacturileNeemise } from "@/lib/billing/netopia-confirm";
 import { taxeazaReinnoireAutomata } from "@/lib/billing/netopia-checkout";
 import { NUME_PACHET_FIX, PACKAGE_LIMITS, type OrgPackage } from "@/lib/billing/packages";
 import type { CustomPlanConfigSaved } from "@/lib/billing/custom-plan";
@@ -36,8 +36,16 @@ export async function GET(req: Request) {
   if (!cronAutorizat(req)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+
+  // Reluarea facturilor rămase neemise — independentă de reînnoiri (rulează și
+  // când nu e nimic de taxat sau Netopia nu e configurat).
+  const facturi = await reiaFacturileNeemise().catch((e) => {
+    raporteazaEroare("oblio-factura-reluare", e);
+    return { incercate: 0, emise: 0 };
+  });
+
   if (!netopiaConfigurata()) {
-    return NextResponse.json({ ok: true, procesate: 0, motiv: "netopia_neconfigurat" });
+    return NextResponse.json({ ok: true, procesate: 0, motiv: "netopia_neconfigurat", facturi });
   }
 
   const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://fundraising-academy-one.vercel.app").replace(/\/$/, "");
@@ -82,7 +90,7 @@ export async function GET(req: Request) {
   });
 
   if (orgs.length === 0) {
-    return NextResponse.json({ ok: true, procesate: 0 });
+    return NextResponse.json({ ok: true, procesate: 0, facturi });
   }
   const emailProprietar = new Map<string, string>();
   for (const p of proprietari) if (!emailProprietar.has(p.orgId)) emailProprietar.set(p.orgId, p.email);
@@ -153,5 +161,5 @@ export async function GET(req: Request) {
     }
   }
 
-  return NextResponse.json({ ok: true, procesate: orgs.length, rezultate });
+  return NextResponse.json({ ok: true, procesate: orgs.length, rezultate, facturi });
 }

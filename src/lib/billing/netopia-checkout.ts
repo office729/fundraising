@@ -6,8 +6,9 @@ import { and, eq, sql } from "drizzle-orm";
 
 import type { OrgContext } from "@/lib/auth/guard";
 import { db, type Tx } from "@/lib/db";
+import { raporteazaEroare } from "@/lib/monitoring";
 import { platformPayments } from "@/lib/db/schema";
-import { netopiaConfigurata, pornestePlata, taxeazaCuTokenSalvat, type DateFacturare } from "@/lib/netopia";
+import { clasificaStatus, interogheazaStatus, netopiaConfigurata, pornestePlata, taxeazaCuTokenSalvat, type DateFacturare } from "@/lib/netopia";
 import { decripteaza } from "@/lib/secret-box";
 
 import { REFERRAL_DISCOUNT_PERCENT } from "../referral";
@@ -120,7 +121,42 @@ export async function creeazaPlataAbonament(
   return paymentUrl;
 }
 
-export type RezultatReinnoire = { ok: true; confirmare: ConfirmareNetopia } | { ok: false; motiv: "fara_card" | "criptare_indisponibila" | "eroare" };
+export type RezultatReinnoire =
+  | { ok: true; confirmare: ConfirmareNetopia }
+  | { ok: false; motiv: "fara_card" | "criptare_indisponibila" | "eroare" | "comanda_in_curs" };
+
+// O taxare cu token căzută după ce Netopia a încasat (timeout, răspuns pierdut)
+// lasă comanda `in_asteptare`; fără verificare, rularea de a doua zi ar taxa a
+// doua oară același card. Interogăm statusul comenzilor de reînnoire nelămurite
+// (ultimele 72h) și, dacă una s-a decis, o confirmăm pe ea în loc să mai taxăm.
+async function verificaComenziInCurs(orgId: string): Promise<ConfirmareNetopia | null> {
+  const pending = await db.transaction(async (tx) => {
+    await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
+    return tx
+      .select({ orderId: platformPayments.orderId, ntpId: platformPayments.ntpId })
+      .from(platformPayments)
+      .where(
+        and(
+          eq(platformPayments.orgId, orgId),
+          eq(platformPayments.renewal, true),
+          eq(platformPayments.status, "in_asteptare"),
+          sql`${platformPayments.createdAt} > now() - interval '72 hours'`,
+        ),
+      );
+  });
+  for (const p of pending) {
+    if (!p.ntpId) continue;
+    try {
+      const rezultat = await interogheazaStatus({ orderId: p.orderId, ntpId: p.ntpId });
+      if (rezultat && clasificaStatus(rezultat.status) !== "in_asteptare") {
+        return await proceseazaRezultatPlataNetopia(p.orderId, rezultat);
+      }
+    } catch (e) {
+      raporteazaEroare("netopia-reinnoire-verificare", e, { orgId, orderId: p.orderId });
+    }
+  }
+  return null;
+}
 
 // Reînnoire AUTOMATĂ (cron zilnic, vezi api/cron/netopia-reinnoire) — taxează
 // direct cardul salvat al organizației, fără pagină găzduită și fără
@@ -158,8 +194,29 @@ export async function taxeazaReinnoireAutomata(
   // fluxul interactiv, unde apelul rămâne azi în tranzacția lui withOrgAdmin
   // doar pentru că acolo pornește dintr-o acțiune de server existentă — aici,
   // pornind de la zero într-un cron, îl facem corect de la început).
-  const { orderId, sumaLei } = await db.transaction(async (tx: Tx) => {
+  const deciza = await verificaComenziInCurs(org.id);
+  if (deciza) return { ok: true, confirmare: deciza };
+
+  const comanda = await db.transaction(async (tx: Tx) => {
     await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
+    // Același lock ca în insereazaComandaAbonament (reentrant în aceeași
+    // tranzacție): două rulări suprapuse ale cron-ului se serializează aici, iar
+    // a doua vede comanda abia creată de prima și nu mai taxează. O comandă
+    // nelămurită mai tânără de 36h (fără ntpID de verificat, sau încă în curs)
+    // blochează o nouă taxare — IPN-ul are timp să sosească.
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`plata_abonament:${org.id}`}))`);
+    const [{ nelamurite }] = await tx
+      .select({ nelamurite: sql<number>`count(*)`.mapWith(Number) })
+      .from(platformPayments)
+      .where(
+        and(
+          eq(platformPayments.orgId, org.id),
+          eq(platformPayments.renewal, true),
+          eq(platformPayments.status, "in_asteptare"),
+          sql`${platformPayments.createdAt} > now() - interval '36 hours'`,
+        ),
+      );
+    if (nelamurite > 0) return null;
     return insereazaComandaAbonament(tx, {
       orgId: org.id,
       orgReferredByOrgId: org.referredByOrgId,
@@ -169,6 +226,8 @@ export async function taxeazaReinnoireAutomata(
       renewal: true,
     });
   });
+  if (!comanda) return { ok: false, motiv: "comanda_in_curs" };
+  const { orderId, sumaLei } = comanda;
 
   const facturare: DateFacturare = {
     email: org.facturareEmail,

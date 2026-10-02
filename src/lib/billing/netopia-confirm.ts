@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, isNull, lt, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { appUsers, memberships, organizations, platformPayments } from "@/lib/db/schema";
@@ -47,7 +47,7 @@ export type ConfirmareNetopia =
 // eșuată (ex. Oblio indisponibil temporar) ar rămâne orfană definitiv de
 // îndată ce apare o plată ULTERIOARĂ: apelul următor ar factura doar plata
 // nouă, iar cea veche, nefacturată, n-ar mai fi reconsiderată niciodată.
-async function factureazaPlata(orderId: string): Promise<void> {
+export async function factureazaPlata(orderId: string): Promise<void> {
   if (!oblioConfigurata()) return;
 
   // Citirile/scrierile de mai jos trec prin RLS ca oricare altele — fără
@@ -157,7 +157,29 @@ export async function proceseazaRezultatPlataNetopia(orderId: string, rezultat: 
         .set({ status: "reusita", paidAt: new Date(), ntpId: rezultat.ntpId, netopiaStatus: rezultat.status })
         .where(and(eq(platformPayments.id, plata.id), sql`${platformPayments.status} not in ('reusita', 'rambursata')`))
         .returning({ id: platformPayments.id });
-      if (!actualizat[0]) return { actiune: "ignorat" }; // deja procesată sau deja rambursată
+      if (!actualizat[0]) {
+        // Deja procesată (ex. de verificarea de status din pagina de rezultat, al
+        // cărei răspuns poate lipsi tokenul) sau deja rambursată. Tokenul vine UNA
+        // SINGURĂ DATĂ, în IPN — dacă acesta sosește după ce plata a fost deja
+        // confirmată, îl salvăm acum, altfel cardul se pierde și reînnoirea
+        // automată nu pornește niciodată. Doar pentru o plată reușită recent și
+        // doar dacă organizația nu are deja un card salvat (nu suprascriem un card
+        // eliminat sau schimbat între timp).
+        const recenta = plata.paidAt !== null && Date.now() - plata.paidAt.getTime() < 6 * 3600_000;
+        if (plata.status === "reusita" && recenta && rezultat.cardToken && criptareConfigurata()) {
+          await tx
+            .update(organizations)
+            .set({
+              netopiaCardTokenEnc: cripteaza(rezultat.cardToken),
+              netopiaCardMasked: rezultat.cardMasked,
+              netopiaCardExpireMonth: rezultat.cardExpireMonth,
+              netopiaCardExpireYear: rezultat.cardExpireYear,
+              netopiaAutoRenew: true,
+            })
+            .where(and(eq(organizations.id, plata.orgId), isNull(organizations.netopiaCardTokenEnc)));
+        }
+        return { actiune: "ignorat" };
+      }
 
       // Cardul se salvează DOAR dacă Netopia a întors un token reutilizabil ȘI
       // criptarea e configurată — fără ORG_SECRETS_KEY nu salvăm nimic în clar.
@@ -243,6 +265,21 @@ export async function proceseazaRezultatPlataNetopia(orderId: string, rezultat: 
         .set({ currentPeriodEnd: sql`${organizations.currentPeriodEnd} - (${plata.luni} || ' months')::interval` })
         .where(eq(organizations.id, plata.orgId))
         .returning({ sfarsit: organizations.currentPeriodEnd });
+      // Rambursarea oprește și reînnoirea automată: altfel perioada scăzută mai
+      // sus ar readuce organizația în fereastra cron-ului, care ar taxa din nou
+      // cardul clientului rambursat în ziua următoare.
+      await tx
+        .update(organizations)
+        .set({
+          netopiaAutoRenew: false,
+          netopiaCardTokenEnc: null,
+          netopiaCardMasked: null,
+          netopiaCardExpireMonth: null,
+          netopiaCardExpireYear: null,
+          netopiaRenewalAttempts: 0,
+          netopiaRenewalFailedAt: null,
+        })
+        .where(eq(organizations.id, plata.orgId));
       const sfarsit = dupa[0]?.sfarsit;
       if (sfarsit && sfarsit <= new Date()) {
         await tx.update(organizations).set({ subscriptionStatus: "canceled" }).where(eq(organizations.id, plata.orgId));
@@ -263,4 +300,41 @@ export async function proceseazaRezultatPlataNetopia(orderId: string, rezultat: 
     await factureazaPlata(orderId).catch((e) => raporteazaEroare("oblio-factura", e, { orgId: confirmare.orgId, orderId }));
   }
   return confirmare;
+}
+
+// Reia facturile rămase neemise (Oblio indisponibil, limita planului gratuit,
+// proces întrerupt între confirmare și emitere) — rulat zilnic din
+// api/cron/netopia-reinnoire. Doar plăți mai vechi de 10 minute, ca să nu
+// concureze cu emiterea încă în curs din IPN; `idempotencyKey` (orderId) din
+// emiteFacturaAbonament face reluarea sigură chiar dacă ambele ajung să emită.
+// Cel mult 20 pe rulare, ca un cont Oblio blocat să nu consume toată durata.
+export async function reiaFacturileNeemise(): Promise<{ incercate: number; emise: number }> {
+  if (!oblioConfigurata()) return { incercate: 0, emise: 0 };
+
+  const comenzi = await db.transaction(async (tx) => {
+    await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
+    return tx
+      .select({ orderId: platformPayments.orderId })
+      .from(platformPayments)
+      .where(
+        and(
+          eq(platformPayments.status, "reusita"),
+          isNull(platformPayments.oblioNumber),
+          lt(platformPayments.paidAt, sql`now() - interval '10 minutes'`),
+        ),
+      )
+      .orderBy(platformPayments.paidAt)
+      .limit(20);
+  });
+
+  let emise = 0;
+  for (const c of comenzi) {
+    await factureazaPlata(c.orderId).catch((e) => raporteazaEroare("oblio-factura-reluare", e, { orderId: c.orderId }));
+    const dupa = await db.transaction(async (tx) => {
+      await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
+      return tx.select({ nr: platformPayments.oblioNumber }).from(platformPayments).where(eq(platformPayments.orderId, c.orderId)).limit(1);
+    });
+    if (dupa[0]?.nr) emise++;
+  }
+  return { incercate: comenzi.length, emise };
 }
