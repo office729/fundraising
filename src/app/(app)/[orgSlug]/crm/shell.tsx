@@ -19,6 +19,7 @@ import {
   HelpCircle,
   Landmark,
   LayoutGrid,
+  LibraryBig,
   LogOut,
   Menu,
   MessageSquare,
@@ -113,6 +114,7 @@ function buildNav(dict: DashboardDict, orgSlug: string): { section: string; item
         { href: "/program-lucru", label: dict.nav.programLucru, icon: CalendarClock },
         { href: "kpi-echipa", label: dict.nav.kpiEchipa, icon: BarChart3 },
         { href: "organizatie", label: dict.nav.organizatie, icon: Network },
+        { href: "kpi", label: dict.nav.kpiLibrary, icon: LibraryBig },
       ],
     },
     {
@@ -165,11 +167,12 @@ export function CrmShell({
   const pathname = usePathname();
   const base = `/${orgSlug}/crm`;
   // Căutarea pe persoane fizice nu are sens în Companii, Instrumente, Consultanță,
-  // Organizație & Echipă și în instrumentele HTML (care stau în afara /crm) — acolo n-o afișăm.
+  // Organizație & Echipă, KPI Library și în instrumentele HTML (care stau în
+  // afara /crm) — acolo n-o afișăm.
   const cautarePersoaneFizice =
     (pathname ?? "").startsWith(base) &&
     (pathname ?? "").replace(/\/$/, "") !== base &&
-    !["/companii", "/instrumente", "/consultanta", "/organizatie"].some((x) => (pathname ?? "").startsWith(base + x));
+    !["/companii", "/instrumente", "/consultanta", "/organizatie", "/kpi"].some((x) => (pathname ?? "").startsWith(base + x));
   const dict = DASHBOARD_DICT[locale];
 
   useEffect(() => {
