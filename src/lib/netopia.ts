@@ -118,6 +118,14 @@ function corpCerere(p: OrderPentruStart, instrument: { type: "card" } | { token:
       products: [{ name: p.descriere, code: "abonament", category: "abonament", price: p.sumaLei, vat: 0 }],
       installments: { selected: 1, available: [0] },
       data: {},
+      // Obligatoriu la taxarea cu tokenul salvat (reînnoire automată, fără
+      // clientul prezent) — confirmat direct de Netopia (suport, 2026-10-01):
+      // "MIT" (Merchant Initiated Transaction) spune băncii emitente că plata
+      // a pornit-o comerciantul, nu titularul cardului, ca să nu ceară
+      // autentificare 3-D Secure suplimentară (clientul oricum nu e prezent
+      // s-o ofere). Absent la plata interactivă (card nou, pe pagina lor),
+      // unde clientul chiar e prezent — acolo e o tranzacție CIT normală.
+      ...("token" in instrument ? { scaExemptionInd: "MIT" } : {}),
     },
   };
 }
