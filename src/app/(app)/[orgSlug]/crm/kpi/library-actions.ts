@@ -5,6 +5,7 @@ import { and, asc, desc, eq } from "drizzle-orm";
 import { withOrgAdmin, withOrgSession } from "@/lib/auth/guard";
 import { kpiAuditLog, kpiCategorii, kpiDefinitii, kpiSabloane, kpiSabloaneItemi, roluri } from "@/lib/db/schema";
 import { EroareUtilizator } from "@/lib/erori";
+import type { SursaDate } from "@/lib/kpi-engine";
 
 // KPI Library (Faza B) — orice membru CITEȘTE (ca să vadă ce KPI există),
 // doar owner/admin pot crea/edita/șterge. Fără nimic hardcodat: cele 14
@@ -79,12 +80,7 @@ export const stergeCategorieAction = withOrgAdmin(async (ctx, id: string) => {
 
 // --- Definiții KPI (KPI Library) --------------------------------------------
 
-export type SursaDate = {
-  tip: "crm" | "task" | "proiect" | "donatori" | "companii" | "voluntari" | "beneficiari" | "formular" | "financiar" | "eveniment" | "manual" | "api_extern";
-  metric?: string;
-  filtru?: string;
-  agregare?: string;
-};
+export type { SursaDate };
 
 export type DefinitieRand = {
   id: string;

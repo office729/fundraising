@@ -1,6 +1,7 @@
 "use client";
 
-import { Copy, Pencil, Plus, Power, Sparkles, Trash2 } from "lucide-react";
+import { Copy, Pencil, Plus, Power, Sparkles, Trash2, Users } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 
 import { Badge } from "../components/ui/badge";
@@ -51,6 +52,7 @@ export function KpiLibraryClient({
   initialDefinitii: DefinitieRand[];
   esteAdmin: boolean;
 }) {
+  const router = useRouter();
   const [categorii, setCategorii] = useState(initialCategorii);
   const [definitii, setDefinitii] = useState(initialDefinitii);
   const [filtruCategorie, setFiltruCategorie] = useState<string | "toate">("toate");
@@ -123,16 +125,21 @@ export function KpiLibraryClient({
           <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">KPI Library</h1>
           <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">Biblioteca de indicatori de performanță a organizației tale — creează, editează, activează/dezactivează.</p>
         </div>
-        {esteAdmin && (
-          <Button
-            onClick={() => {
-              setEditDefinitie(null);
-              setWizardDeschis(true);
-            }}
-          >
-            <Plus className="h-3.5 w-3.5" /> KPI nou
+        <div className="flex items-center gap-2">
+          <Button variant="secondary" onClick={() => router.push(`/${orgSlug}/crm/kpi/atribuiri`)}>
+            <Users className="h-3.5 w-3.5" /> Atribuiri
           </Button>
-        )}
+          {esteAdmin && (
+            <Button
+              onClick={() => {
+                setEditDefinitie(null);
+                setWizardDeschis(true);
+              }}
+            >
+              <Plus className="h-3.5 w-3.5" /> KPI nou
+            </Button>
+          )}
+        </div>
       </div>
 
       {eroare && <p className="text-[13px] text-[var(--ci-red)]">{eroare}</p>}
