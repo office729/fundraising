@@ -1,9 +1,9 @@
 import "server-only";
 
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 
 import type { OrgContext } from "@/lib/auth/guard";
-import { kpiValori } from "@/lib/db/schema";
+import { angajati, kpiAtribuiri, kpiDefinitii, kpiValori, roluri } from "@/lib/db/schema";
 
 // Motorul KPI (Faza C) — calculează valori AUTOMATE pentru KPI-urile legate
 // de o sursă de date reală (sursaDate.tip !== 'manual'), din activitatea deja
@@ -211,4 +211,89 @@ export async function istoricValori(dbCtx: OrgContext["db"], angajatId: string, 
     .orderBy(desc(kpiValori.perioadaStart))
     .limit(limita);
   return rows.reverse();
+}
+
+// --- Rezumate pe echipă (Faza E — dashboard Manager/Departament/Organizație) ---
+// SPRE DEOSEBIRE de dashboard-ul personal (Faza D), care recalculează live
+// KPI-urile automate la fiecare vizită, aici citim DOAR ultima valoare deja
+// salvată în kpi_valori (din ultima vizită personală a fiecărui angajat sau
+// din Atribuiri) — niciodată nu (re)calculăm pentru M angajați × N KPI pe o
+// singură cerere. Motiv găsit la audit: bucla per-angajat × per-KPI, cu
+// scriere la fiecare citire, nu scalează dincolo de câțiva angajați (vezi
+// plan) — aici totul e DOAR 3 interogări în bloc, indiferent de mărimea
+// echipei.
+
+export type StareKpiAngajat = { nume: string; valoare: number | null; targetNormal: number | null; unitate: string | null; status: StatusKpi; progres: number | null };
+export type RezumatAngajat = {
+  angajatId: string;
+  nume: string;
+  prenume: string | null;
+  roleNume: string | null;
+  kpiuri: StareKpiAngajat[];
+  scorMediu: number | null; // media progreselor KPI-urilor care au target — null dacă niciunul nu are
+  restante: number;
+  finalizate: number;
+};
+
+export async function obtineRezumateAngajati(dbCtx: OrgContext["db"], orgId: string, angajatIds: string[]): Promise<RezumatAngajat[]> {
+  if (angajatIds.length === 0) return [];
+
+  const angajatiRows = await dbCtx
+    .select({ id: angajati.id, nume: angajati.nume, prenume: angajati.prenume, roleId: angajati.roleId })
+    .from(angajati)
+    .where(and(eq(angajati.orgId, orgId), inArray(angajati.id, angajatIds)));
+
+  const roleIds = [...new Set(angajatiRows.map((a) => a.roleId).filter((id): id is string => id !== null))];
+  const roluriRows = roleIds.length ? await dbCtx.select({ id: roluri.id, nume: roluri.nume }).from(roluri).where(inArray(roluri.id, roleIds)) : [];
+  const roluriMap = new Map(roluriRows.map((r) => [r.id, r.nume]));
+
+  const atribuiriRows = await dbCtx
+    .select({
+      angajatId: kpiAtribuiri.angajatId,
+      kpiDefinitieId: kpiAtribuiri.kpiDefinitieId,
+      targetNormal: kpiAtribuiri.targetNormal,
+      kpiNume: kpiDefinitii.nume,
+      unitate: kpiDefinitii.unitate,
+      directie: kpiDefinitii.directie,
+    })
+    .from(kpiAtribuiri)
+    .innerJoin(kpiDefinitii, eq(kpiDefinitii.id, kpiAtribuiri.kpiDefinitieId))
+    .where(and(eq(kpiAtribuiri.orgId, orgId), inArray(kpiAtribuiri.angajatId, angajatIds), eq(kpiAtribuiri.status, "activ")));
+
+  // Cea mai recentă valoare per (angajat, kpi) — un singur DISTINCT ON, nu o
+  // interogare pe fiecare pereche.
+  const valoriRows = (await dbCtx.execute(sql`
+    select distinct on (angajat_id, kpi_definitie_id) angajat_id, kpi_definitie_id, valoare
+    from kpi_valori
+    where org_id = ${orgId} and angajat_id = any(${angajatIds})
+    order by angajat_id, kpi_definitie_id, perioada_start desc
+  `)) as unknown as { angajat_id: string; kpi_definitie_id: string; valoare: number }[];
+  const valoareMap = new Map(valoriRows.map((r) => [`${r.angajat_id}:${r.kpi_definitie_id}`, r.valoare]));
+
+  return angajatiRows.map((a) => {
+    const atribuiri = atribuiriRows.filter((x) => x.angajatId === a.id);
+    const kpiuri: StareKpiAngajat[] = atribuiri.map((x) => {
+      const valoare = valoareMap.get(`${a.id}:${x.kpiDefinitieId}`) ?? null;
+      return {
+        nume: x.kpiNume,
+        valoare,
+        targetNormal: x.targetNormal,
+        unitate: x.unitate,
+        status: calculeazaStatus(valoare, x.targetNormal, x.directie),
+        progres: progresProcent(valoare, x.targetNormal, x.directie),
+      };
+    });
+    const cuTarget = kpiuri.filter((k) => k.progres !== null);
+    const scorMediu = cuTarget.length ? Math.round(cuTarget.reduce((s, k) => s + Math.min(100, k.progres as number), 0) / cuTarget.length) : null;
+    return {
+      angajatId: a.id,
+      nume: a.nume,
+      prenume: a.prenume,
+      roleNume: a.roleId ? (roluriMap.get(a.roleId) ?? null) : null,
+      kpiuri,
+      scorMediu,
+      restante: kpiuri.filter((k) => k.status === "restant").length,
+      finalizate: kpiuri.filter((k) => k.status === "finalizat").length,
+    };
+  });
 }

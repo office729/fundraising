@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, Pencil, Plus, Power, Sparkles, Trash2, TrendingUp, Users } from "lucide-react";
+import { Building2, ChevronDown, Copy, LayoutGrid, Pencil, Plus, Power, Sparkles, Trash2, TrendingUp, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 
@@ -8,6 +8,7 @@ import { Badge } from "../components/ui/badge";
 import { Breadcrumb } from "../components/ui/breadcrumb";
 import { Button } from "../components/ui/button";
 import { Card, CardHeader } from "../components/ui/card";
+import { DropdownMenu, DropdownItem } from "../components/ui/dropdown-menu";
 import { EmptyState } from "../components/ui/states";
 import { KpiBuilderWizard } from "./kpi-builder-wizard";
 import {
@@ -127,12 +128,29 @@ export function KpiLibraryClient({
           <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">Biblioteca de indicatori de performanță a organizației tale — creează, editează, activează/dezactivează.</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="secondary" onClick={() => router.push(`/${orgSlug}/crm/kpi/dashboard`)}>
-            <TrendingUp className="h-3.5 w-3.5" /> Performanța mea
-          </Button>
-          <Button variant="secondary" onClick={() => router.push(`/${orgSlug}/crm/kpi/atribuiri`)}>
-            <Users className="h-3.5 w-3.5" /> Atribuiri
-          </Button>
+          <DropdownMenu trigger={<Button variant="secondary">Dashboard-uri <ChevronDown className="h-3.5 w-3.5" /></Button>}>
+            {(close) => (
+              <>
+                <DropdownItem onClick={() => { close(); router.push(`/${orgSlug}/crm/kpi/dashboard`); }}>
+                  <TrendingUp className="h-3.5 w-3.5" /> Performanța mea
+                </DropdownItem>
+                <DropdownItem onClick={() => { close(); router.push(`/${orgSlug}/crm/kpi/atribuiri`); }}>
+                  <Users className="h-3.5 w-3.5" /> Atribuiri
+                </DropdownItem>
+                <DropdownItem onClick={() => { close(); router.push(`/${orgSlug}/crm/kpi/echipa`); }}>
+                  <Users className="h-3.5 w-3.5" /> Echipa mea
+                </DropdownItem>
+                <DropdownItem onClick={() => { close(); router.push(`/${orgSlug}/crm/kpi/departament`); }}>
+                  <Building2 className="h-3.5 w-3.5" /> Departament
+                </DropdownItem>
+                {esteAdmin && (
+                  <DropdownItem onClick={() => { close(); router.push(`/${orgSlug}/crm/kpi/organizatie-dashboard`); }}>
+                    <LayoutGrid className="h-3.5 w-3.5" /> Organizație
+                  </DropdownItem>
+                )}
+              </>
+            )}
+          </DropdownMenu>
           {esteAdmin && (
             <Button
               onClick={() => {
