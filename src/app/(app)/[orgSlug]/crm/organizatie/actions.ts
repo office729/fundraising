@@ -20,16 +20,22 @@ export const listeazaDepartamenteAction = withOrgSession(async (ctx): Promise<De
   return ctx.db.select({ id: departments.id, nume: departments.nume, descriere: departments.descriere, parentId: departments.parentId }).from(departments).where(eq(departments.orgId, ctx.orgId)).orderBy(departments.nume);
 });
 
-export const creeazaDepartamentAction = withOrgAdmin(async (ctx, nume: string, descriere: string | null, parentId: string | null) => {
+// `functiePrincipala` (opțional) — dacă e completată, se creează și un rol
+// cu acel nume, legat direct de departamentul nou, ca să nu fie nevoie să
+// treci separat prin tab-ul Roluri pentru cea mai simplă structură (un
+// departament, o funcție).
+export const creeazaDepartamentAction = withOrgAdmin(async (ctx, nume: string, descriere: string | null, functiePrincipala: string | null) => {
   if (!nume.trim()) throw new EroareUtilizator("Numele departamentului e obligatoriu.");
-  const [rand] = await ctx.db.insert(departments).values({ orgId: ctx.orgId, nume: nume.trim(), descriere, parentId }).returning({ id: departments.id });
+  const [rand] = await ctx.db.insert(departments).values({ orgId: ctx.orgId, nume: nume.trim(), descriere }).returning({ id: departments.id });
   await ctx.db.insert(kpiAuditLog).values({ orgId: ctx.orgId, actorUserId: ctx.userId, actiune: "creeaza", entitate: "departament", entitateId: rand.id, detalii: { nume } });
+  if (functiePrincipala?.trim()) {
+    await ctx.db.insert(roluri).values({ orgId: ctx.orgId, nume: functiePrincipala.trim(), departmentId: rand.id });
+  }
 });
 
-export const actualizeazaDepartamentAction = withOrgAdmin(async (ctx, id: string, nume: string, descriere: string | null, parentId: string | null) => {
+export const actualizeazaDepartamentAction = withOrgAdmin(async (ctx, id: string, nume: string, descriere: string | null) => {
   if (!nume.trim()) throw new EroareUtilizator("Numele departamentului e obligatoriu.");
-  if (parentId === id) throw new EroareUtilizator("Un departament nu poate fi propriul său părinte.");
-  const r = await ctx.db.update(departments).set({ nume: nume.trim(), descriere, parentId }).where(and(eq(departments.id, id), eq(departments.orgId, ctx.orgId))).returning({ id: departments.id });
+  const r = await ctx.db.update(departments).set({ nume: nume.trim(), descriere }).where(and(eq(departments.id, id), eq(departments.orgId, ctx.orgId))).returning({ id: departments.id });
   if (!r[0]) throw new EroareUtilizator("Departamentul nu a fost găsit.");
 });
 

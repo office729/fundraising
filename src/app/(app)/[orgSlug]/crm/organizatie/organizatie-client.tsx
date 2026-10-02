@@ -151,18 +151,17 @@ function DepartamenteTab({
   const [editDeschis, setEditDeschis] = useState<DepartamentRand | null | "nou">(null);
   const [nume, setNume] = useState("");
   const [descriere, setDescriere] = useState("");
-  const [parentId, setParentId] = useState("");
+  const [functiePrincipala, setFunctiePrincipala] = useState("");
 
   const deschideNou = () => {
     setNume("");
     setDescriere("");
-    setParentId("");
+    setFunctiePrincipala("");
     setEditDeschis("nou");
   };
   const deschideEdit = (d: DepartamentRand) => {
     setNume(d.nume);
     setDescriere(d.descriere ?? "");
-    setParentId(d.parentId ?? "");
     setEditDeschis(d);
   };
 
@@ -170,8 +169,8 @@ function DepartamenteTab({
     setEroare(null);
     start(async () => {
       try {
-        if (editDeschis === "nou") await creeazaDepartamentAction(orgSlug, nume, descriere || null, parentId || null);
-        else if (editDeschis) await actualizeazaDepartamentAction(orgSlug, editDeschis.id, nume, descriere || null, parentId || null);
+        if (editDeschis === "nou") await creeazaDepartamentAction(orgSlug, nume, descriere || null, functiePrincipala || null);
+        else if (editDeschis) await actualizeazaDepartamentAction(orgSlug, editDeschis.id, nume, descriere || null);
         setEditDeschis(null);
         await reincarca();
       } catch (e) {
@@ -230,15 +229,15 @@ function DepartamenteTab({
             <Label>{ro ? "Descriere (opțional)" : "Description (optional)"}</Label>
             <Textarea value={descriere} onChange={(e) => setDescriere(e.target.value)} rows={2} />
           </div>
-          <div>
-            <Label>{ro ? "Departament părinte (opțional)" : "Parent department (optional)"}</Label>
-            <Select value={parentId} onChange={(e) => setParentId(e.target.value)}>
-              <option value="">{ro ? "— niciunul —" : "— none —"}</option>
-              {departamente.filter((d) => editDeschis === "nou" || d.id !== editDeschis?.id).map((d) => (
-                <option key={d.id} value={d.id}>{d.nume}</option>
-              ))}
-            </Select>
-          </div>
+          {editDeschis === "nou" && (
+            <div>
+              <Label>{ro ? "Funcție principală (opțional)" : "Main function (optional)"}</Label>
+              <Input value={functiePrincipala} onChange={(e) => setFunctiePrincipala(e.target.value)} placeholder={ro ? "ex. Corporate Fundraiser" : "e.g. Corporate Fundraiser"} />
+              <p className="mt-1 text-[12px] text-[var(--ci-text-muted)]">
+                {ro ? "Adaugă direct funcția/rolul colegului din acest departament — îl poți completa oricând mai târziu, din tab-ul Roluri." : "Add the colleague's role in this department directly — you can also do this later from the Roles tab."}
+              </p>
+            </div>
+          )}
           <Button onClick={onSalveaza} disabled={pending || !nume.trim()}>{ro ? "Salvează" : "Save"}</Button>
         </div>
       </Dialog>
