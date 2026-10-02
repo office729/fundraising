@@ -596,6 +596,56 @@ const POLICIES = [
   `create policy canva_connections_tenant_isolation on canva_connections
     using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
     with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+
+  // Modulul KPI generic — toate tabelele org-scoped direct, izolare simplă ca
+  // la restul schemei; scoparea Angajat/Manager/Admin Departament (cine vede
+  // pe cine ÎN interiorul org-ului) se face în server actions, nu aici (vezi
+  // plan: colegi din același org, deja de încredere la nivel RLS).
+  `create policy departments_tenant_isolation on departments
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy roluri_tenant_isolation on roluri
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy angajati_tenant_isolation on angajati
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy kpi_categorii_tenant_isolation on kpi_categorii
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy kpi_definitii_tenant_isolation on kpi_definitii
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  // kpi_sabloane_itemi / kpi_profiluri_sezoniere_itemi / kpi_funnel_etape nu
+  // au org_id propriu (denormalizat) — izolate prin join pe părinte, care e
+  // deja org-scoped; fără join direct pe org_id, politica verifică prin EXISTS.
+  `create policy kpi_sabloane_tenant_isolation on kpi_sabloane
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy kpi_sabloane_itemi_tenant_isolation on kpi_sabloane_itemi
+    using      (exists (select 1 from kpi_sabloane s where s.id = kpi_sabloane_itemi.sablon_id and s.org_id = nullif(current_setting('app.current_org_id', true), '')::uuid))
+    with check (exists (select 1 from kpi_sabloane s where s.id = kpi_sabloane_itemi.sablon_id and s.org_id = nullif(current_setting('app.current_org_id', true), '')::uuid))`,
+  `create policy kpi_profiluri_sezoniere_tenant_isolation on kpi_profiluri_sezoniere
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy kpi_profiluri_sezoniere_itemi_tenant_isolation on kpi_profiluri_sezoniere_itemi
+    using      (exists (select 1 from kpi_profiluri_sezoniere p where p.id = kpi_profiluri_sezoniere_itemi.profil_id and p.org_id = nullif(current_setting('app.current_org_id', true), '')::uuid))
+    with check (exists (select 1 from kpi_profiluri_sezoniere p where p.id = kpi_profiluri_sezoniere_itemi.profil_id and p.org_id = nullif(current_setting('app.current_org_id', true), '')::uuid))`,
+  `create policy kpi_atribuiri_tenant_isolation on kpi_atribuiri
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy kpi_valori_tenant_isolation on kpi_valori
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy kpi_funnels_tenant_isolation on kpi_funnels
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy kpi_funnel_etape_tenant_isolation on kpi_funnel_etape
+    using      (exists (select 1 from kpi_funnels f where f.id = kpi_funnel_etape.funnel_id and f.org_id = nullif(current_setting('app.current_org_id', true), '')::uuid))
+    with check (exists (select 1 from kpi_funnels f where f.id = kpi_funnel_etape.funnel_id and f.org_id = nullif(current_setting('app.current_org_id', true), '')::uuid))`,
+  `create policy kpi_audit_log_tenant_isolation on kpi_audit_log
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
 ];
 
 const FORCE_TABLES = [
@@ -638,6 +688,20 @@ const FORCE_TABLES = [
   "financial_documents",
   "company_activity_reports",
   "canva_connections",
+  "departments",
+  "roluri",
+  "angajati",
+  "kpi_categorii",
+  "kpi_definitii",
+  "kpi_sabloane",
+  "kpi_sabloane_itemi",
+  "kpi_profiluri_sezoniere",
+  "kpi_profiluri_sezoniere_itemi",
+  "kpi_atribuiri",
+  "kpi_valori",
+  "kpi_funnels",
+  "kpi_funnel_etape",
+  "kpi_audit_log",
 ];
 
 try {

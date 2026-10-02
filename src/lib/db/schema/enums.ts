@@ -137,3 +137,33 @@ export const localGroupStatus = pgEnum("local_group_status", ["activ", "inactiv"
 export const financialDocTip = pgEnum("financial_doc_tip", ["balanta", "bilant"]);
 export const financialDocExtractieStatus = pgEnum("financial_doc_extractie_status", ["in_asteptare", "ok", "eroare"]);
 export const companyReportStatus = pgEnum("company_report_status", ["generat", "trimis_canva", "eroare_canva"]);
+
+// Modulul KPI generic (reconstrucție completă) — vezi src/lib/db/schema/kpi.ts.
+// Angajatul e un profil DISTINCT de app_users/memberships (poate exista fără
+// cont de login propriu — ex. un voluntar urmărit dar netrecut în platformă).
+export const angajatStatus = pgEnum("angajat_status", ["activ", "concediu", "suspendat", "inactiv"]);
+export const angajatProgramLucru = pgEnum("angajat_program_lucru", ["norma_intreaga", "part_time"]);
+// Organization Admin NU e aici — vine din membershipRole (owner/admin),
+// reutilizat direct. Acestea sunt doar nivelurile SUB organization admin.
+export const angajatNivelAcces = pgEnum("angajat_nivel_acces", ["membru", "manager", "admin_departament"]);
+export const kpiTip = pgEnum("kpi_tip", [
+  "numeric",
+  "percentage",
+  "currency",
+  "boolean",
+  "rating",
+  "duration",
+  "ratio",
+  "milestone",
+  "custom",
+]);
+export const kpiDirectie = pgEnum("kpi_directie", [
+  "mai_mare_mai_bine",
+  "mai_mic_mai_bine",
+  "egal_cu_target",
+  "interval_optim",
+]);
+export const kpiFrecventa = pgEnum("kpi_frecventa", ["zilnic", "saptamanal", "lunar", "trimestrial", "anual", "custom"]);
+export const kpiAtribuireStatus = pgEnum("kpi_atribuire_status", ["activ", "inactiv"]);
+export const kpiValoareSursa = pgEnum("kpi_valoare_sursa", ["automat", "manual"]);
+export const kpiPerioadaTip = kpiFrecventa; // aceleași valori, reutilizate ca tip de perioadă pentru kpi_valori

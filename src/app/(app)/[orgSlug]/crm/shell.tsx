@@ -22,6 +22,7 @@ import {
   LogOut,
   Menu,
   MessageSquare,
+  Network,
   Plus,
   ScanFace,
   Search,
@@ -111,6 +112,7 @@ function buildNav(dict: DashboardDict, orgSlug: string): { section: string; item
         { href: "comunicare", label: dict.nav.comunicare, icon: MessageSquare },
         { href: "/program-lucru", label: dict.nav.programLucru, icon: CalendarClock },
         { href: "kpi-echipa", label: dict.nav.kpiEchipa, icon: BarChart3 },
+        { href: "organizatie", label: dict.nav.organizatie, icon: Network },
       ],
     },
     {
