@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
-import { acceptaTermeniAction, logoutAction } from "./actions";
+import { logoutAction } from "@/app/(app)/[orgSlug]/actions";
 
 type Dict = {
   titlu: string;
@@ -18,7 +18,9 @@ type Dict = {
   eroare: string;
 };
 
-export function TermeniGate({ orgSlug, dict }: { orgSlug: string; dict: Dict }) {
+// `actiune` = Server Action care înregistrează acceptarea (diferă între portalul
+// organizației și cel al beneficiarului — contexte de acces diferite).
+export function TermeniGate({ actiune, dict }: { actiune: () => Promise<void>; dict: Dict }) {
   const router = useRouter();
   const [accepta, setAccepta] = useState(false);
   const [eroare, setEroare] = useState(false);
@@ -30,7 +32,7 @@ export function TermeniGate({ orgSlug, dict }: { orgSlug: string; dict: Dict }) 
     setEroare(false);
     startTransition(async () => {
       try {
-        await acceptaTermeniAction(orgSlug);
+        await actiune();
         router.refresh();
       } catch {
         setEroare(true);

@@ -247,6 +247,7 @@ export type BeneficiarContext = {
   userId: string;
   userEmail: string;
   userName: string | null;
+  userTermsVersion: string | null;
   db: typeof db;
 };
 
@@ -312,6 +313,7 @@ export function withBeneficiarSession<A extends unknown[], R>(
         userId: appUser.id,
         userEmail: appUser.email,
         userName: appUser.name,
+        userTermsVersion: appUser.termsAcceptedAt ? appUser.termsVersion : null,
         db: tx as unknown as typeof db,
       };
       return action(ctx, ...args);
@@ -339,5 +341,6 @@ export function requireBeneficiarAccess(): Promise<BeneficiarAccess> {
     userId: ctx.userId,
     userEmail: ctx.userEmail,
     userName: ctx.userName,
+    userTermsVersion: ctx.userTermsVersion,
   }))();
 }

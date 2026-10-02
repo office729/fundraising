@@ -4,6 +4,7 @@ import { and, eq } from "drizzle-orm";
 
 import { headers } from "next/headers";
 
+import { reinnoiesteAcceptareTermeni } from "@/lib/auth/dal";
 import { withBeneficiarSession } from "@/lib/auth/guard";
 import { fundraisingCampaignAgents, fundraisingGroupPostingHistory, fundraisingMessages, fundraisingNotifications, fundraisingTasks } from "@/lib/db/schema";
 import { notifica } from "@/lib/notifications";
@@ -106,3 +107,8 @@ export async function schimbaParolaBeneficiarAction(
 
   return { error: null, ok: true };
 }
+
+// Reacceptarea Termenilor/Politicii (poarta din layout-ul beneficiarului).
+export const acceptaTermeniBeneficiarAction = withBeneficiarSession(async (ctx) => {
+  await reinnoiesteAcceptareTermeni(ctx.db, ctx.userId);
+});

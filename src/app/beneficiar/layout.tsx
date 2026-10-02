@@ -2,8 +2,13 @@ import { and, eq } from "drizzle-orm";
 import Link from "next/link";
 
 import { logoutAction } from "@/app/(app)/[orgSlug]/actions";
+import { TermeniGate } from "@/components/termeni-gate";
 import { requireBeneficiarAccess, withBeneficiarSession } from "@/lib/auth/guard";
 import { fundraisingNotifications } from "@/lib/db/schema";
+import { DASHBOARD_DICT } from "@/lib/i18n/dictionaries/dashboard";
+import { TERMENI_VERSIUNE } from "@/lib/legal-version";
+
+import { acceptaTermeniBeneficiarAction } from "./actions";
 
 const NAV = [
   { href: "/beneficiar", label: "Acasă" },
@@ -29,6 +34,11 @@ const getUnreadCount = withBeneficiarSession(async (ctx) => {
 
 export default async function BeneficiarLayout({ children }: { children: React.ReactNode }) {
   const [access, necitite] = await Promise.all([requireBeneficiarAccess(), getUnreadCount()]);
+
+  // Poartă de reacceptare a Termenilor/Politicii (portalul e doar în română).
+  if (access.userTermsVersion !== TERMENI_VERSIUNE) {
+    return <TermeniGate actiune={acceptaTermeniBeneficiarAction} dict={DASHBOARD_DICT.ro.termeniGate} />;
+  }
 
   return (
     <div className="min-h-screen bg-panel-2">
