@@ -12,7 +12,7 @@ import { useLocale } from "../../lib/locale-context";
 import { FORMULAR230_DICT } from "@/lib/i18n/dictionaries/formular230";
 import { trimiteCampanieEmailF230 } from "./campanie-email-actions";
 
-type UltimaCampanie = { an: number; nrDestinatari: number; createdAt: Date } | null;
+type UltimaCampanie = { an: number; nrDestinatari: number; createdAt: Date; status: string } | null;
 
 export function CampanieEmailCard({
   orgSlug,
@@ -29,7 +29,8 @@ export function CampanieEmailCard({
   const [seTrimite, setSeTrimite] = useState(false);
   const [eroare, setEroare] = useState<string | null>(null);
   const anCurent = new Date().getFullYear();
-  const trimisAnulAcesta = ultimaCampanie?.an === anCurent;
+  const trimisAnulAcesta = ultimaCampanie?.an === anCurent && ultimaCampanie.status === "trimisa";
+  const inCurs = ultimaCampanie?.an === anCurent && ultimaCampanie.status !== "trimisa";
 
   async function trimite() {
     if (!window.confirm(dict.confirmaTrimitere)) return;
@@ -54,6 +55,8 @@ export function CampanieEmailCard({
         <div className="min-w-0 text-[13px] text-[var(--ci-text-muted)]">
           {!emailConfigurat ? (
             <p>{dict.neconfigurat}</p>
+          ) : inCurs ? (
+            <p>{dict.incompleta(anCurent)}</p>
           ) : ultimaCampanie ? (
             <p>
               {dict.ultimaCampanie(ultimaCampanie.an, formatDataOra(ultimaCampanie.createdAt.toISOString()))}{" "}

@@ -1,79 +1,58 @@
 "use server";
 
-import { and, eq, isNull, or, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 import { withOrgAdmin, withOrgSession } from "@/lib/auth/guard";
-import { donatoriReali, formular230Beneficiari, formular230CampaniiEmail } from "@/lib/db/schema";
-import { emailConfigurat, trimiteEmailuriInLot } from "@/lib/email";
-import { SLUG_PRINCIPAL } from "@/lib/formular230-constants";
-import { linkDezabonare } from "@/lib/dezabonare";
-import { anteteDezabonare, htmlEmailF230, subiectEmailF230 } from "@/lib/formular230-email-template";
+import { formular230CampaniiEmail } from "@/lib/db/schema";
+import { emailConfigurat } from "@/lib/email";
+import { trimiteCampanieF230 } from "@/lib/formular230-campanie";
 
 export type CampanieState = { error: string | null; ok: boolean; nrDestinatari?: number };
 
-// Trimite campania de reamintire (link de Formular 230) tuturor donatorilor
-// reali ai organizației cu email valid — folosește contul „principal”.
-// Blocată dacă s-a mai trimis deja pentru anul curent (unique(org_id, an) pe
-// formular230_campanii_email) — atât pornirea manuală, cât și cron-ul zilnic
-// respectă aceeași regulă, ca donatorii să nu primească două remindere.
+// Cât poate rula o trimitere pornită din buton (acțiune de server, durată
+// limitată) — ce nu apucă se continuă la următorul click sau de cron.
+const DEADLINE_MANUAL_MS = 40_000;
+
+// Trimite campania de reamintire (link de Formular 230) donatorilor reali ai
+// organizației cu email valid — folosește contul „principal”. O singură dată pe
+// an (unique(org_id, an)), rezumabilă: o trimitere întreruptă continuă doar cu
+// cei rămași, iar un dublu-click nu trimite de două ori (vezi
+// lib/formular230-campanie.ts — aceeași logică ca cron-ul zilnic).
 export const trimiteCampanieEmailF230 = withOrgAdmin(async (ctx): Promise<CampanieState> => {
   if (!emailConfigurat()) {
     return { error: "Trimiterea de email nu e configurată încă (lipsesc variabilele SMTP din mediu).", ok: false };
   }
 
   const an = new Date().getFullYear();
-  const [campanieExistenta] = await ctx.db
-    .select({ id: formular230CampaniiEmail.id })
-    .from(formular230CampaniiEmail)
-    .where(and(eq(formular230CampaniiEmail.orgId, ctx.orgId), eq(formular230CampaniiEmail.an, an)))
-    .limit(1);
-  if (campanieExistenta) {
-    return { error: `Campania pentru ${an} a fost deja trimisă — o singură dată pe an.`, ok: false };
-  }
-
-  const [beneficiar] = await ctx.db
-    .select({ shortCode: formular230Beneficiari.shortCode })
-    .from(formular230Beneficiari)
-    .where(and(eq(formular230Beneficiari.orgId, ctx.orgId), eq(formular230Beneficiari.slug, SLUG_PRINCIPAL)))
-    .limit(1);
-  if (!beneficiar?.shortCode) {
-    return { error: "Contul principal de Formular 230 nu are un link generat.", ok: false };
-  }
-
-  const donatori = await ctx.db
-    .select({ email: donatoriReali.email, nume: donatoriReali.nume })
-    .from(donatoriReali)
-    // Doar cei care NU s-au dezabonat de la emailurile de campanie și NU au
-    // refuzat explicit emailurile la donație (NULL = dinainte de bifa de email).
-    .where(
-      and(
-        eq(donatoriReali.orgId, ctx.orgId),
-        isNull(donatoriReali.dezabonatEmailLa),
-        or(isNull(donatoriReali.consimtamantEmail), eq(donatoriReali.consimtamantEmail, true)),
-      ),
-    );
-  if (!donatori.length) {
-    return { error: "Nu există încă donatori reali către care să trimitem.", ok: false };
-  }
-
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://fundraising-academy-one.vercel.app";
-  const link = `${baseUrl}/s/${beneficiar.shortCode}`;
-
-  const { trimise } = await trimiteEmailuriInLot({
-    destinatari: donatori,
-    subiect: () => subiectEmailF230(ctx.orgName),
-    html: (d) => htmlEmailF230(ctx.orgName, d.nume, link, linkDezabonare(baseUrl, ctx.orgId, d.email)),
-    headers: (d) => anteteDezabonare(linkDezabonare(baseUrl, ctx.orgId, d.email)),
-  });
-
-  await ctx.db.insert(formular230CampaniiEmail).values({
-    orgId: ctx.orgId,
+  const r = await trimiteCampanieF230({
+    org: { id: ctx.orgId, name: ctx.orgName, slug: ctx.orgSlug },
     an,
-    nrDestinatari: trimise,
+    baseUrl,
     trimisDe: ctx.userId,
+    deadline: Date.now() + DEADLINE_MANUAL_MS,
   });
 
-  return { error: null, ok: true, nrDestinatari: trimise };
+  switch (r.stare) {
+    case "deja_trimisa":
+      return { error: `Campania pentru ${an} a fost deja trimisă — o singură dată pe an.`, ok: false };
+    case "fara_link":
+      return { error: "Contul principal de Formular 230 nu are un link generat.", ok: false };
+    case "fara_destinatari":
+      return { error: "Nu există încă donatori reali către care să trimitem.", ok: false };
+    case "in_curs_altundeva":
+      return { error: "O trimitere este deja în curs pentru această organizație — așteaptă câteva minute.", ok: false };
+    case "esuata":
+      return { error: "Serverul de email nu a răspuns — nu s-a trimis nimic. Încearcă din nou mai târziu.", ok: false };
+    case "partiala":
+      return {
+        error: `Trimiterea e în desfășurare: ${r.trimise} emailuri trimise acum, au mai rămas ${r.ramase}. Apasă din nou ca să continui.`,
+        ok: false,
+        nrDestinatari: r.trimise,
+      };
+    case "trimisa":
+      return { error: null, ok: true, nrDestinatari: r.total };
+  }
 });
 
 // Citire, nu trimitere — orice membru al organizației poate vedea când s-a
@@ -84,6 +63,7 @@ export const getUltimaCampanieEmail = withOrgSession(async (ctx) => {
       an: formular230CampaniiEmail.an,
       nrDestinatari: formular230CampaniiEmail.nrDestinatari,
       createdAt: formular230CampaniiEmail.createdAt,
+      status: formular230CampaniiEmail.status,
     })
     .from(formular230CampaniiEmail)
     .where(eq(formular230CampaniiEmail.orgId, ctx.orgId))

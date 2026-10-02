@@ -265,6 +265,23 @@ const POLICIES = [
   `create policy formular230_campanii_email_public_lookup_select on formular230_campanii_email for select using (
     nullif(current_setting('app.public_lookup', true), '') = 'true'
   )`,
+  // Campanie rezumabilă: revendicare/actualizare/retragere în contextul de
+  // încredere + jurnalul per destinatar (lib/formular230-campanie.ts).
+  `create policy formular230_campanii_email_public_lookup_update on formular230_campanii_email for update using (
+    nullif(current_setting('app.public_lookup', true), '') = 'true'
+  )`,
+  `create policy formular230_campanii_email_public_lookup_delete on formular230_campanii_email for delete using (
+    nullif(current_setting('app.public_lookup', true), '') = 'true'
+  )`,
+  `create policy formular230_destinatari_tenant_isolation on formular230_destinatari for select using (
+    org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
+  )`,
+  `create policy formular230_destinatari_public_lookup_select on formular230_destinatari for select using (
+    nullif(current_setting('app.public_lookup', true), '') = 'true'
+  )`,
+  `create policy formular230_destinatari_public_lookup_insert on formular230_destinatari for insert with check (
+    nullif(current_setting('app.public_lookup', true), '') = 'true'
+  )`,
 
   // fundraising_pages: conținutul paginii (titlu/poveste/țintă/suma strânsă)
   // e vizibil public INDIFERENT de status — nu e date sensibile, iar o
@@ -694,6 +711,7 @@ const FORCE_TABLES = [
   "formular230_submissions",
   "formular230_beneficiari",
   "formular230_campanii_email",
+  "formular230_destinatari",
   "fundraising_pages",
   "fundraising_donations",
   "donatori_reali",

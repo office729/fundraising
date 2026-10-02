@@ -120,7 +120,34 @@ export const formular230CampaniiEmail = pgTable(
     an: integer("an").notNull(),
     nrDestinatari: integer("nr_destinatari").notNull(),
     trimisDe: uuid("trimis_de").references(() => appUsers.id), // null dacă a trimis cron-ul automat
+    // "in_curs" = revendicată, trimiterea nu s-a terminat (reluată de cron/buton
+    // până nu mai rămâne nimeni); "trimisa" = terminată. Rândurile vechi = "trimisa".
+    status: text("status").notNull().default("trimisa"),
+    // Semn de viață al rulării care trimite (reînnoit la fiecare email) — o altă
+    // rulare poate prelua campania doar după ce a trecut o fereastră fără activitate.
+    ultimaActivitate: timestamp("ultima_activitate", { withTimezone: true }).defaultNow().notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [unique("formular230_campanii_email_org_an_unique").on(t.orgId, t.an)],
+).enableRLS();
+
+// Jurnalul emailurilor DEJA trimise dintr-o campanie — o rulare întreruptă
+// continuă doar cu destinatarii care lipsesc de aici, fără dubluri.
+export const formular230Destinatari = pgTable(
+  "formular230_destinatari",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    campanieId: uuid("campanie_id")
+      .notNull()
+      .references(() => formular230CampaniiEmail.id, { onDelete: "cascade" }),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    email: text("email").notNull(),
+    trimisLa: timestamp("trimis_la", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    unique("formular230_destinatari_campanie_email_unique").on(t.campanieId, t.email),
+    index("formular230_destinatari_org_idx").on(t.orgId),
+  ],
 ).enableRLS();

@@ -1,14 +1,13 @@
-import { and, eq, isNull, or, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
+import { sql } from "drizzle-orm";
 
+import { isAccessBlocked } from "@/lib/billing/trial";
 import { cronAutorizat } from "@/lib/cron-auth";
 import { db } from "@/lib/db";
-import { donatoriReali, formular230Beneficiari, formular230CampaniiEmail, organizations } from "@/lib/db/schema";
-import { emailConfigurat, trimiteEmailuriInLot } from "@/lib/email";
+import { organizations } from "@/lib/db/schema";
+import { emailConfigurat } from "@/lib/email";
+import { trimiteCampanieF230 } from "@/lib/formular230-campanie";
 import { raporteazaAvertisment, raporteazaEroare } from "@/lib/monitoring";
-import { linkDezabonare } from "@/lib/dezabonare";
-import { anteteDezabonare, htmlEmailF230, subiectEmailF230 } from "@/lib/formular230-email-template";
-import { SLUG_PRINCIPAL } from "@/lib/formular230-constants";
 
 // Rulat zilnic de Vercel Cron (vezi vercel.json) — trimite O SINGURĂ dată pe
 // an, per organizație, reamintirea de Formular 230 către donatorii reali,
@@ -17,9 +16,14 @@ import { SLUG_PRINCIPAL } from "@/lib/formular230-constants";
 // variabila e setată în proiect) — fără el, orice cerere publică ar putea
 // declanșa trimiteri, deci ruta refuză să ruleze.
 //
-// NU trece prin withOrgAdmin (nu există o sesiune de user aici) — folosește
-// contextul de încredere app.public_lookup, la fel ca webhook-urile Stripe/
-// Twilio, pentru fiecare organizație în parte.
+// Logica de trimitere (revendicare, jurnal per destinatar, reluare după
+// întrerupere) e în lib/formular230-campanie.ts, comună cu butonul manual.
+// Rulează în contextul de încredere app.public_lookup, fără sesiune de user.
+
+// Durata maximă a funcției; trimiterea se oprește singură la DEADLINE_MS și
+// continuă la rularea următoare (campania e rezumabilă).
+export const maxDuration = 300;
+const DEADLINE_MS = 240_000;
 
 const ZILE_INAINTE_TERMEN = 10;
 const TERMEN_LUNA = 5; // mai
@@ -46,75 +50,41 @@ export async function GET(req: Request) {
     return NextResponse.json({ ok: true, trimise: 0, motiv: "in_afara_ferestrei" });
   }
   if (!emailConfigurat()) {
+    // În fereastra de 10 zile, lipsa SMTP trece altfel neobservată — alertă.
+    raporteazaAvertisment("cron-formular230", "email neconfigurat în fereastra campaniei F230 — nu se trimite nimic");
     return NextResponse.json({ ok: true, trimise: 0, motiv: "email_neconfigurat" });
   }
 
   const an = acum.getUTCFullYear();
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://fundraising-academy-one.vercel.app";
+  const deadline = Date.now() + DEADLINE_MS;
 
   const orgs = await db.transaction(async (tx) => {
     await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
-    return tx.select({ id: organizations.id, slug: organizations.slug, name: organizations.name }).from(organizations);
+    return tx
+      .select({
+        id: organizations.id,
+        slug: organizations.slug,
+        name: organizations.name,
+        createdAt: organizations.createdAt,
+        subscriptionStatus: organizations.subscriptionStatus,
+        package: organizations.package,
+        currentPeriodEnd: organizations.currentPeriodEnd,
+      })
+      .from(organizations);
   });
 
-  const rezultate: { orgSlug: string; trimise: number }[] = [];
+  const rezultate: { orgSlug: string; stare: string; trimise: number; ramase: number }[] = [];
 
-  // O tranzacție SEPARATĂ per organizație — nu toate într-una singură. Dacă
-  // una aruncă o eroare neașteptată (SMTP tranzitoriu, eroare DB), rollback-ul
-  // atinge DOAR acea organizație, nu și înregistrarea "campanie trimisă" a
-  // celor procesate deja în aceeași rulare — altfel emailurile lor, deja
-  // trimise ireversibil, ar fi retrimise donatorilor la rularea următoare
-  // (rândul din formular230_campanii_email ar dispărea odată cu rollback-ul).
   for (const org of orgs) {
+    if (Date.now() > deadline) break; // restul continuă la rularea următoare
+    // Organizațiile cu acces blocat (probă expirată, neplătite) nu mai trimit
+    // emailuri donatorilor lor în numele platformei.
+    if (isAccessBlocked(org)) continue;
     try {
-      const trimise = await db.transaction(async (tx) => {
-        await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
-
-        const [campanieExistenta] = await tx
-          .select({ id: formular230CampaniiEmail.id })
-          .from(formular230CampaniiEmail)
-          .where(and(eq(formular230CampaniiEmail.orgId, org.id), eq(formular230CampaniiEmail.an, an)))
-          .limit(1);
-        if (campanieExistenta) return null;
-
-        const [beneficiar] = await tx
-          .select({ shortCode: formular230Beneficiari.shortCode })
-          .from(formular230Beneficiari)
-          .where(and(eq(formular230Beneficiari.orgId, org.id), eq(formular230Beneficiari.slug, SLUG_PRINCIPAL)))
-          .limit(1);
-        if (!beneficiar?.shortCode) return null;
-
-        const donatori = await tx
-          .select({ email: donatoriReali.email, nume: donatoriReali.nume })
-          .from(donatoriReali)
-          // Doar cei care NU s-au dezabonat — fiecare email are link de dezabonare —
-          // și care NU au refuzat explicit emailurile la donație (consimtamant_email
-          // false). NULL = donator dinainte de bifa de email: primește ca până acum.
-          .where(
-            and(
-              eq(donatoriReali.orgId, org.id),
-              isNull(donatoriReali.dezabonatEmailLa),
-              or(isNull(donatoriReali.consimtamantEmail), eq(donatoriReali.consimtamantEmail, true)),
-            ),
-          );
-        if (!donatori.length) return null;
-
-        const link = `${baseUrl}/s/${beneficiar.shortCode}`;
-        const { trimise, esuate } = await trimiteEmailuriInLot({
-          destinatari: donatori,
-          subiect: () => subiectEmailF230(org.name),
-          html: (d) => htmlEmailF230(org.name, d.nume, link, linkDezabonare(baseUrl, org.id, d.email)),
-          headers: (d) => anteteDezabonare(linkDezabonare(baseUrl, org.id, d.email)),
-        });
-
-        if (esuate > 0) {
-          raporteazaAvertisment("cron-formular230", "unele emailuri de reamintire au eșuat", { orgSlug: org.slug, trimise, esuate });
-        }
-        await tx.insert(formular230CampaniiEmail).values({ orgId: org.id, an, nrDestinatari: trimise, trimisDe: null });
-        return trimise;
-      });
-
-      if (trimise !== null) rezultate.push({ orgSlug: org.slug, trimise });
+      const r = await trimiteCampanieF230({ org, an, baseUrl, trimisDe: null, deadline });
+      if (r.stare === "deja_trimisa" || r.stare === "fara_link" || r.stare === "fara_destinatari") continue;
+      rezultate.push({ orgSlug: org.slug, stare: r.stare, trimise: r.trimise, ramase: r.ramase });
     } catch (e) {
       raporteazaEroare("cron-formular230", e, { orgSlug: org.slug });
     }

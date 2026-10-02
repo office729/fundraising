@@ -39,6 +39,11 @@ function getTransporter(): Transporter {
     pool: true,
     maxConnections: 2,
     maxMessages: 50,
+    // Fără timeouts, un server SMTP agățat ține cererea (webhook Stripe, cron)
+    // până la valorile implicite din nodemailer (2 min conectare / 10 min socket).
+    connectionTimeout: 15_000,
+    greetingTimeout: 15_000,
+    socketTimeout: 45_000,
   });
   return cached;
 }
@@ -72,15 +77,27 @@ export async function trimiteEmailuriInLot(params: {
   // Antete per destinatar — ex. List-Unsubscribe / List-Unsubscribe-Post
   // (RFC 8058), obligatorii pentru emailuri de campanie.
   headers?: (d: DestinatarEmail) => Record<string, string>;
-}): Promise<{ trimise: number; esuate: number }> {
+  // Verificat înainte de fiecare email — true oprește trimiterea (deadline-ul
+  // funcției serverless); rezultatul are `intrerupt: true`.
+  opreste?: () => boolean;
+  // Apelat după fiecare email trimis cu succes (ex. jurnal per destinatar). O
+  // eroare AICI se propagă (nu e o eroare de trimitere) — apelantul decide.
+  laTrimis?: (d: DestinatarEmail) => Promise<void>;
+}): Promise<{ trimise: number; esuate: number; intrerupt: boolean }> {
   const transporter = getTransporter();
   const from = process.env.EMAIL_FROM;
   if (!from) throw new Error("EMAIL_FROM lipsește din mediu.");
 
   let trimise = 0;
   let esuate = 0;
+  let intrerupt = false;
 
   for (const d of params.destinatari) {
+    if (params.opreste?.()) {
+      intrerupt = true;
+      break;
+    }
+    let ok = false;
     try {
       await transporter.sendMail({
         from,
@@ -89,11 +106,15 @@ export async function trimiteEmailuriInLot(params: {
         html: params.html(d),
         ...(params.headers ? { headers: params.headers(d) } : {}),
       });
-      trimise++;
+      ok = true;
     } catch {
       esuate++;
     }
+    if (ok) {
+      trimise++;
+      await params.laTrimis?.(d);
+    }
   }
 
-  return { trimise, esuate };
+  return { trimise, esuate, intrerupt };
 }
