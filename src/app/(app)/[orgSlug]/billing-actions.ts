@@ -7,7 +7,9 @@ import { withOrgAdmin } from "@/lib/auth/guard";
 import { calculateCustomPlanPrice, normalizeCustomPlanConfig, type CustomPlanConfigSaved } from "@/lib/billing/custom-plan";
 import { creeazaPlataAbonament } from "@/lib/billing/netopia-checkout";
 import { NUME_PACHET_FIX, PACKAGE_LIMITS, type OrgPackage } from "@/lib/billing/packages";
-import { platformPayments } from "@/lib/db/schema";
+import { organizations, platformPayments } from "@/lib/db/schema";
+import { cifValidFormat } from "@/lib/iban";
+import { gasesteJudet } from "@/lib/judete";
 
 // Adresa platformei, pentru notifyUrl/redirectUrl/cancelUrl trimise la Netopia.
 // Sursa e NEXT_PUBLIC_SITE_URL (fixă, din mediu), NU headerele cererii
@@ -89,3 +91,25 @@ export const listeazaFacturiAction = withOrgAdmin(async (ctx) => {
     .orderBy(desc(platformPayments.createdAt))
     .limit(24);
 });
+
+// Datele de facturare cerute înainte de prima plată (vezi
+// lib/billing/date-facturare.ts). Disponibile și când accesul e blocat de
+// paywall — tocmai atunci se completează, iar Setările nu sunt accesibile.
+export const citesteDateFacturareAction = withOrgAdmin(
+  async (ctx) => ({ cif: ctx.orgCif, adresaSediu: ctx.orgAdresaSediu, judet: ctx.orgJudet }),
+  { permiteAccesBlocat: true },
+);
+
+export const salveazaDateFacturareAction = withOrgAdmin(
+  async (ctx, v: { cif: string; adresaSediu: string; judet: string }): Promise<{ error: string | null }> => {
+    const cif = v.cif.trim();
+    const adresa = v.adresaSediu.trim();
+    const judet = gasesteJudet(v.judet.trim());
+    if (!cif || !cifValidFormat(cif)) return { error: "CIF invalid — scrie-l cu sau fără prefixul RO (ex. RO12345678)." };
+    if (adresa.length < 5 || adresa.length > 300) return { error: "Scrie adresa sediului social (strada, număr, localitate)." };
+    if (!judet) return { error: "Alege județul." };
+    await ctx.db.update(organizations).set({ cif, adresaSediu: adresa, judet }).where(eq(organizations.id, ctx.orgId));
+    return { error: null };
+  },
+  { permiteAccesBlocat: true },
+);

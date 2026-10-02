@@ -6,12 +6,14 @@ import { and, eq, sql } from "drizzle-orm";
 
 import type { OrgContext } from "@/lib/auth/guard";
 import { db, type Tx } from "@/lib/db";
+import { EroareUtilizator } from "@/lib/erori";
 import { raporteazaEroare } from "@/lib/monitoring";
 import { platformPayments } from "@/lib/db/schema";
 import { clasificaStatus, interogheazaStatus, netopiaConfigurata, pornestePlata, taxeazaCuTokenSalvat, type DateFacturare } from "@/lib/netopia";
 import { decripteaza } from "@/lib/secret-box";
 
 import { REFERRAL_DISCOUNT_PERCENT } from "../referral";
+import { dateFacturareComplete, MESAJ_DATE_FACTURARE_LIPSA } from "./date-facturare";
 import type { CustomPlanConfigSaved } from "./custom-plan";
 import { proceseazaRezultatPlataNetopia, type ConfirmareNetopia } from "./netopia-confirm";
 import type { OrgPackage } from "./packages";
@@ -87,6 +89,11 @@ export async function creeazaPlataAbonament(
   },
 ): Promise<string> {
   if (!netopiaConfigurata()) throw new Error("netopia_neconfigurat");
+  // Aplicat AICI (nu doar în interfață): fără CIF/adresă, factura Oblio ar pleca
+  // pe „persoană fizică". Reînnoirile automate nu trec pe aici — au deja prima plată.
+  if (!dateFacturareComplete({ cif: ctx.orgCif, adresaSediu: ctx.orgAdresaSediu, judet: ctx.orgJudet })) {
+    throw new EroareUtilizator(MESAJ_DATE_FACTURARE_LIPSA);
+  }
 
   const { orderId, sumaLei } = await insereazaComandaAbonament(ctx.db as unknown as Tx, {
     orgId: ctx.orgId,

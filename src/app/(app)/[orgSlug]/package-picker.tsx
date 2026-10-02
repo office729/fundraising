@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 
 import { trackEvent } from "@/lib/analytics";
+import { dateFacturareComplete } from "@/lib/billing/date-facturare";
 import { PACKAGE_LIMITS, PACKAGE_PRICE_ANUAL, type OrgPackage } from "@/lib/billing/packages";
+import { JUDETE } from "@/lib/judete";
 
-import { startCheckoutAction } from "./billing-actions";
+import { citesteDateFacturareAction, salveazaDateFacturareAction, startCheckoutAction } from "./billing-actions";
 import { CustomPlanBuilder } from "./custom-plan-builder";
 
 const PACHETE: { key: Exclude<OrgPackage, "trial" | "custom">; nume: string; popular?: boolean }[] = [
@@ -31,7 +33,89 @@ function limiteText(pkg: Exclude<OrgPackage, "trial" | "custom">): string[] {
 // disponibilă oricând, ca un ONG recomandat să-și poată revendica reducerea de
 // 50% imediat, nu abia peste 14 zile). La alegere, pornește o sesiune Stripe
 // Checkout reală și redirecționează — nu doar înregistrează intenția.
+type DateFacturare = { cif: string | null; adresaSediu: string | null; judet: string | null };
+
+// Date de facturare cerute ÎNAINTE de prima plată (factura Oblio nu poate pleca
+// fără CIF și adresă). Formularul e aici, nu doar în Setări: un cont cu proba
+// expirată vede doar paywall-ul și nu poate ajunge în Setări.
+function DateFacturareForm({ orgSlug, initial, onSaved }: { orgSlug: string; initial: DateFacturare; onSaved: (d: DateFacturare) => void }) {
+  const [cif, setCif] = useState(initial.cif ?? "");
+  const [adresa, setAdresa] = useState(initial.adresaSediu ?? "");
+  const [judet, setJudet] = useState(initial.judet ?? "");
+  const [eroare, setEroare] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  function salveaza(e: React.FormEvent) {
+    e.preventDefault();
+    setEroare(null);
+    startTransition(async () => {
+      try {
+        const r = await salveazaDateFacturareAction(orgSlug, { cif, adresaSediu: adresa, judet });
+        if (r.error) setEroare(r.error);
+        else onSaved({ cif: cif.trim(), adresaSediu: adresa.trim(), judet });
+      } catch {
+        setEroare("Nu am putut salva datele. Încearcă din nou.");
+      }
+    });
+  }
+
+  const camp = "mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink";
+  return (
+    <form onSubmit={salveaza} className="mx-auto mb-6 max-w-xl rounded-xl border border-line bg-panel p-5">
+      <p className="text-sm font-bold text-ink">Datele de facturare ale organizației</p>
+      <p className="mt-1 text-xs leading-relaxed text-muted">
+        Le cerem înainte de prima plată: apar pe factura fiscală emisă automat. Le poți modifica ulterior din Setări.
+      </p>
+      <div className="mt-3 flex flex-col gap-3">
+        <label className="text-sm font-medium text-ink">
+          CIF
+          <input value={cif} onChange={(e) => setCif(e.target.value)} placeholder="ex. RO12345678" className={camp} />
+        </label>
+        <label className="text-sm font-medium text-ink">
+          Adresa sediului social
+          <input value={adresa} onChange={(e) => setAdresa(e.target.value)} placeholder="ex. Str. Exemplu nr. 1, București" className={camp} />
+        </label>
+        <label className="text-sm font-medium text-ink">
+          Județ
+          <select value={judet} onChange={(e) => setJudet(e.target.value)} className={camp}>
+            <option value="">Alege județul</option>
+            {JUDETE.map((j) => (
+              <option key={j} value={j}>
+                {j}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      {eroare && <p className="mt-3 text-sm text-red-600">{eroare}</p>}
+      <button
+        type="submit"
+        disabled={pending}
+        className="mt-4 rounded-md bg-brand-green px-5 py-2.5 text-sm font-bold text-white transition hover:bg-brand-green-hover disabled:opacity-60"
+      >
+        Salvează și continuă
+      </button>
+    </form>
+  );
+}
+
 export function PackagePicker({ orgSlug }: { orgSlug: string }) {
+  const [date, setDate] = useState<DateFacturare | null>(null);
+  useEffect(() => {
+    let anulat = false;
+    citesteDateFacturareAction(orgSlug)
+      .then((d) => {
+        if (!anulat) setDate(d);
+      })
+      .catch(() => {
+        // Fără citire reușită rămân butoanele blocate; reîncărcarea paginii reia.
+      });
+    return () => {
+      anulat = true;
+    };
+  }, [orgSlug]);
+  const dateOk = date !== null && dateFacturareComplete(date);
+
   const [pending, startTransition] = useTransition();
   const [seLncarca, setSeIncarca] = useState<Exclude<OrgPackage, "trial"> | null>(null);
   const [eroare, setEroare] = useState<string | null>(null);
@@ -67,6 +151,8 @@ export function PackagePicker({ orgSlug }: { orgSlug: string }) {
         Setări → Abonament. Poți opri reînnoirea automată oricând, fără să pierzi accesul deja plătit.
       </p>
       {eroare && <p className="mx-auto mb-4 max-w-xl text-center text-sm text-red-600">{eroare}</p>}
+      {date && !dateOk && <DateFacturareForm orgSlug={orgSlug} initial={date} onSaved={setDate} />}
+      <fieldset disabled={!dateOk} className={dateOk ? "" : "opacity-50"}>
       <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
         {PACHETE.map((p) => {
           const l = PACKAGE_LIMITS[p.key];
@@ -114,6 +200,7 @@ export function PackagePicker({ orgSlug }: { orgSlug: string }) {
       <div className="mt-5">
         <CustomPlanBuilder orgSlug={orgSlug} />
       </div>
+      </fieldset>
     </div>
   );
 }

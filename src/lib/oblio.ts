@@ -9,7 +9,9 @@ import "server-only";
 //   OBLIO_EMAIL   — emailul de autentificare în Oblio
 //   OBLIO_SECRET  — token-ul din Oblio → Setări → Date Cont (secretul se
 //                   regenerează la fiecare resetare de parolă a contului)
-// Restul (CIF-ul firmei emitente, seria de facturi, cota de TVA) se află
+//   OBLIO_CIF     — (recomandat) CIF-ul firmei emitente; obligatoriu dacă
+//                   contul Oblio are mai multe firme, altfel emiterea se oprește
+// Restul (seria de facturi, cota de TVA) se află
 // SINGUR, din contul Oblio — nu mai trebuie configurate separat, ca să nu
 // rămână nesincronizate dacă se schimbă din Oblio direct.
 // Documentație: https://www.oblio.eu/api
@@ -69,8 +71,21 @@ let cifCache: { valoare: string; expiraLa: number } | null = null;
 async function cifFirma(): Promise<string> {
   if (cifCache && cifCache.expiraLa > Date.now()) return cifCache.valoare;
   const companii = await apelOblio<{ cif: string; company: string }[]>("/nomenclature/companies");
-  const firma = companii[0];
-  if (!firma) throw new Error("oblio_fara_firma");
+  if (companii.length === 0) throw new Error("oblio_fara_firma");
+
+  // Dacă OBLIO_CIF e setat, emitem DOAR pe acea firmă (verificată în contul
+  // Oblio). Fără el, acceptăm firma doar când contul are una singură — la mai
+  // multe, a o alege pe prima ar putea emite facturi pe firma greșită.
+  const dorit = process.env.OBLIO_CIF?.trim();
+  const normalizeaza = (c: string) => c.replace(/\s+/g, "").replace(/^RO/i, "");
+  let firma: { cif: string; company: string } | undefined;
+  if (dorit) {
+    firma = companii.find((c) => normalizeaza(c.cif) === normalizeaza(dorit));
+    if (!firma) throw new Error("oblio_cif_necunoscut");
+  } else {
+    if (companii.length > 1) throw new Error("oblio_firma_ambigua");
+    firma = companii[0];
+  }
   cifCache = { valoare: firma.cif, expiraLa: Date.now() + 3_600_000 };
   return firma.cif;
 }
