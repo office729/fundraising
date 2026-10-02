@@ -1,4 +1,4 @@
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq, isNull, or, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 import { cronAutorizat } from "@/lib/cron-auth";
@@ -87,8 +87,16 @@ export async function GET(req: Request) {
         const donatori = await tx
           .select({ email: donatoriReali.email, nume: donatoriReali.nume })
           .from(donatoriReali)
-          // Doar cei care NU s-au dezabonat — fiecare email are link de dezabonare.
-          .where(and(eq(donatoriReali.orgId, org.id), isNull(donatoriReali.dezabonatEmailLa)));
+          // Doar cei care NU s-au dezabonat — fiecare email are link de dezabonare —
+          // și care NU au refuzat explicit emailurile la donație (consimtamant_email
+          // false). NULL = donator dinainte de bifa de email: primește ca până acum.
+          .where(
+            and(
+              eq(donatoriReali.orgId, org.id),
+              isNull(donatoriReali.dezabonatEmailLa),
+              or(isNull(donatoriReali.consimtamantEmail), eq(donatoriReali.consimtamantEmail, true)),
+            ),
+          );
         if (!donatori.length) return null;
 
         const link = `${baseUrl}/s/${beneficiar.shortCode}`;

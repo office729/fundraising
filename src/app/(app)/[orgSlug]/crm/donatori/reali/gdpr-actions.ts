@@ -73,6 +73,7 @@ export const exportaDateDonator = withOrgAdmin(async (ctx, donatorId: string): P
       consimtamantGdpr: d.consimtamantGdpr,
       consimtamantTermeni: d.consimtamantTermeni,
       consimtamantWhatsapp: d.consimtamantWhatsapp,
+      consimtamantEmail: d.consimtamantEmail,
     })),
     notite,
     // Semnătura (imagine) se marchează doar ca prezentă — nu se inlină în JSON.

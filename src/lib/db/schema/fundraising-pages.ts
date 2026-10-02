@@ -89,6 +89,9 @@ export const fundraisingDonations = pgTable(
     // obligatorie: forțarea unui consimțământ de marketing ca să poți dona
     // ar încălca principiul „acord liber exprimat" din GDPR.
     consimtamantWhatsapp: boolean("consimtamant_whatsapp").notNull().default(false),
+    // Opțional, la fel ca WhatsApp: acordul separat pentru emailuri de la
+    // organizație (actualizări de campanie, reamintirea Formularului 230).
+    consimtamantEmail: boolean("consimtamant_email").notNull().default(false),
     // Pentru prima plată a unui abonament (checkout mode="subscription"),
     // stripeSessionId e id-ul sesiunii Checkout — la fel ca o donație unică.
     // Pentru reînnoirile lunare ulterioare (webhook invoice.paid), nu mai
@@ -187,6 +190,12 @@ export const donatoriReali = pgTable(
     // face upgrade (false→true), niciodată downgrade, ca o donație ulterioară
     // nebifată să nu-i șteargă acordul deja dat.
     consimtamantWhatsapp: boolean("consimtamant_whatsapp").notNull().default(false),
+    // Acordul pentru emailuri de campanie/reamintiri. NULL = donator dinainte
+    // de bifa de email (nu a fost întrebat): primește ca până acum, cu
+    // dezabonare. true = a bifat. false = a refuzat explicit → campaniile îl
+    // sar. `true` e "lipicios" (o donație ulterioară nebifată nu-l retrage;
+    // retragerea se face prin linkul de dezabonare).
+    consimtamantEmail: boolean("consimtamant_email"),
     // Setat când donatorul s-a dezabonat de la emailurile de campanie (link
     // semnat din email — lib/dezabonare.ts). Campaniile îi sar peste, pentru
     // totdeauna; o donație nouă NU îl resetează (webhook-ul nu atinge coloana).

@@ -30,6 +30,7 @@ export type DateComuneDonatie = {
   consimtamantGdpr: boolean;
   consimtamantTermeni: boolean;
   consimtamantWhatsapp: boolean;
+  consimtamantEmail: boolean;
   orgId: string;
   pageId: string;
   titlu: string;
@@ -78,6 +79,9 @@ export async function pregatesteDonatie(
   const consimtamantGdpr = optiuni.acordImplicit === true || formData.get("consimtamantGdpr") != null;
   const consimtamantTermeni = optiuni.acordImplicit === true || formData.get("consimtamantTermeni") != null;
   const consimtamantWhatsapp = formData.get("consimtamantWhatsapp") != null;
+  // Opțional: acordul separat pentru emailuri de la organizație (actualizări,
+  // reamintirea Formularului 230) — nu e implicit nici la plata rapidă.
+  const consimtamantEmail = formData.get("consimtamantEmail") != null;
 
   if (!numeDonator || !emailDonator) {
     return { ok: false, error: errors.campuriObligatorii };
@@ -134,6 +138,7 @@ export async function pregatesteDonatie(
       consimtamantGdpr,
       consimtamantTermeni,
       consimtamantWhatsapp,
+      consimtamantEmail,
       orgId: rezolvat.orgId,
       pageId: rezolvat.pageId,
       titlu: rezolvat.titlu,
@@ -168,6 +173,7 @@ export async function doneazaAction(
     consimtamantGdpr,
     consimtamantTermeni,
     consimtamantWhatsapp,
+    consimtamantEmail,
     orgId,
     pageId,
     titlu,
@@ -197,6 +203,7 @@ export async function doneazaAction(
       consimtamantGdpr: String(consimtamantGdpr),
       consimtamantTermeni: String(consimtamantTermeni),
       consimtamantWhatsapp: String(consimtamantWhatsapp),
+      consimtamantEmail: String(consimtamantEmail),
     };
 
     const session = await stripeOrg.stripe.checkout.sessions.create({
@@ -244,6 +251,7 @@ export async function doneazaAction(
       consimtamantGdpr,
       consimtamantTermeni,
       consimtamantWhatsapp,
+      consimtamantEmail,
       stripeSessionId: session.id,
       recurenta,
     });

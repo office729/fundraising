@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq, isNull, or, sql } from "drizzle-orm";
 
 import { withOrgAdmin, withOrgSession } from "@/lib/auth/guard";
 import { donatoriReali, formular230Beneficiari, formular230CampaniiEmail } from "@/lib/db/schema";
@@ -43,8 +43,15 @@ export const trimiteCampanieEmailF230 = withOrgAdmin(async (ctx): Promise<Campan
   const donatori = await ctx.db
     .select({ email: donatoriReali.email, nume: donatoriReali.nume })
     .from(donatoriReali)
-    // Doar cei care NU s-au dezabonat de la emailurile de campanie.
-    .where(and(eq(donatoriReali.orgId, ctx.orgId), isNull(donatoriReali.dezabonatEmailLa)));
+    // Doar cei care NU s-au dezabonat de la emailurile de campanie și NU au
+    // refuzat explicit emailurile la donație (NULL = dinainte de bifa de email).
+    .where(
+      and(
+        eq(donatoriReali.orgId, ctx.orgId),
+        isNull(donatoriReali.dezabonatEmailLa),
+        or(isNull(donatoriReali.consimtamantEmail), eq(donatoriReali.consimtamantEmail, true)),
+      ),
+    );
   if (!donatori.length) {
     return { error: "Nu există încă donatori reali către care să trimitem.", ok: false };
   }

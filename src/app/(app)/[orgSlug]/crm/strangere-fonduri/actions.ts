@@ -310,6 +310,7 @@ export const adaugaDonatieOfflineAction = withOrgAdmin(
     const mesaj = String(formData.get("mesaj") ?? "").trim().slice(0, 1000);
     const suma = Math.round(Number(formData.get("suma")));
     const consimtamantWhatsapp = formData.get("consimtamantWhatsapp") != null;
+    const consimtamantEmail = formData.get("consimtamantEmail") != null;
 
     if (!numeDonator) return { error: "Numele donatorului e obligatoriu.", ok: false };
     if (!Number.isFinite(suma) || suma < 1) return { error: "Introdu o sumă validă.", ok: false };
@@ -372,6 +373,7 @@ export const adaugaDonatieOfflineAction = withOrgAdmin(
       consimtamantGdpr: false,
       consimtamantTermeni: false,
       consimtamantWhatsapp,
+      consimtamantEmail,
       stripeSessionId: `manual_${donationId}`,
       recurenta: false,
       status: "reusita",
@@ -385,6 +387,9 @@ export const adaugaDonatieOfflineAction = withOrgAdmin(
       emailDonator: emailDonator || null,
       telefonDonator: telefonDonator || null,
       consimtamantWhatsapp,
+      // Bifă nebifată = nimic înregistrat (null), nu refuz: organizația răspunde
+      // pentru datele de contact pe care le introduce singură.
+      consimtamantEmail: consimtamantEmail ? true : null,
     });
 
     if (emailDonator && info && emailConfigurat()) {

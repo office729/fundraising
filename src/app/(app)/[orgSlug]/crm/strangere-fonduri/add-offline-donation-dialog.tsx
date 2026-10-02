@@ -70,6 +70,10 @@ export function AddOfflineDonationDialog({
             <input type="checkbox" name="consimtamantWhatsapp" className="h-4 w-4 rounded border-[var(--ci-border)]" />
             {dict.consimtamantWhatsapp}
           </label>
+          <label className="flex items-center gap-2 text-[13px] text-[var(--ci-text)]">
+            <input type="checkbox" name="consimtamantEmail" className="h-4 w-4 rounded border-[var(--ci-border)]" />
+            {dict.consimtamantEmail}
+          </label>
 
           {eroare && <p className="text-[13px] text-[var(--ci-red)]">{eroare}</p>}
 

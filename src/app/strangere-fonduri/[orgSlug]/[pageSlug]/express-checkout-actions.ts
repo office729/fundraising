@@ -185,6 +185,7 @@ async function creeazaAbonamentRedirect(
       consimtamantGdpr: String(date.consimtamantGdpr),
       consimtamantTermeni: String(date.consimtamantTermeni),
       consimtamantWhatsapp: String(date.consimtamantWhatsapp),
+      consimtamantEmail: String(date.consimtamantEmail),
       ...(eurCenti ? { moneda: "eur", cursEur: String(redirect.cursEur ?? "") } : {}),
     },
   });
@@ -232,6 +233,7 @@ async function creeazaAbonamentRedirect(
     consimtamantGdpr: date.consimtamantGdpr,
     consimtamantTermeni: date.consimtamantTermeni,
     consimtamantWhatsapp: date.consimtamantWhatsapp,
+    consimtamantEmail: date.consimtamantEmail,
     stripeSessionId: paymentIntentId,
     stripeSubscriptionId: subscription.id,
     recurenta: true,
@@ -298,6 +300,7 @@ async function creeazaPlataUnicaExpress(
     consimtamantGdpr: date.consimtamantGdpr,
     consimtamantTermeni: date.consimtamantTermeni,
     consimtamantWhatsapp: date.consimtamantWhatsapp,
+    consimtamantEmail: date.consimtamantEmail,
     // Aceeași coloană generică ca la Checkout Session (id de sesiune) și ca
     // la reînnoirile de abonament ("invoice_..."): "orice identificator
     // Stripe unic al acestei încercări de plată".
@@ -358,6 +361,7 @@ async function creeazaAbonamentExpress(date: DateComuneDonatie, eroareGenerica: 
       consimtamantGdpr: String(date.consimtamantGdpr),
       consimtamantTermeni: String(date.consimtamantTermeni),
       consimtamantWhatsapp: String(date.consimtamantWhatsapp),
+      consimtamantEmail: String(date.consimtamantEmail),
     },
   });
 
@@ -393,6 +397,7 @@ async function creeazaAbonamentExpress(date: DateComuneDonatie, eroareGenerica: 
     consimtamantGdpr: date.consimtamantGdpr,
     consimtamantTermeni: date.consimtamantTermeni,
     consimtamantWhatsapp: date.consimtamantWhatsapp,
+    consimtamantEmail: date.consimtamantEmail,
     // stripeSessionId = id-ul PaymentIntent-ului primei facturi, la fel ca la
     // donația unică express — payment_intent.succeeded (stripe-donation-events.ts)
     // caută după exact această coloană, indiferent unic/recurent.

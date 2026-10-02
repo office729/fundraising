@@ -30,6 +30,11 @@ export async function crediteazaPaginaSiDonator(
     emailDonator: string | null;
     telefonDonator: string | null;
     consimtamantWhatsapp: boolean;
+    // true/false = răspunsul explicit al donatorului din formularul public;
+    // null = donație introdusă manual de organizație, fără răspuns înregistrat
+    // (nu schimbă starea donatorului: un donator nou rămâne NULL, un existent
+    // își păstrează valoarea).
+    consimtamantEmail: boolean | null;
   },
 ): Promise<{ pageTitlu: string; orgName: string } | null> {
   const rezultat = await tx
@@ -59,6 +64,7 @@ export async function crediteazaPaginaSiDonator(
         totalDonat: params.suma,
         numarDonatii: 1,
         consimtamantWhatsapp: params.consimtamantWhatsapp,
+        consimtamantEmail: params.consimtamantEmail,
       })
       .onConflictDoUpdate({
         target: [donatoriReali.orgId, donatoriReali.email],
@@ -72,6 +78,10 @@ export async function crediteazaPaginaSiDonator(
           // Upgrade (false→true) niciodată downgrade — o donație ulterioară
           // fără bifă nu trebuie să anuleze un acord deja dat anterior.
           consimtamantWhatsapp: sql`${donatoriReali.consimtamantWhatsapp} or ${params.consimtamantWhatsapp}`,
+          // Răspunsul de acum înlocuiește NULL/false, dar un `true` deja dat
+          // rămâne (retragerea se face prin linkul de dezabonare din email).
+          // Fără răspuns (null) valoarea existentă rămâne neschimbată.
+          consimtamantEmail: sql`case when ${donatoriReali.consimtamantEmail} is true then true else coalesce(${params.consimtamantEmail}::boolean, ${donatoriReali.consimtamantEmail}) end`,
         },
       });
   }

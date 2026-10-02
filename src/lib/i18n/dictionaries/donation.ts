@@ -55,6 +55,7 @@ export const DONATION_DICT = {
       acordTermeniPre: "Sunt de acord cu",
       acordTermeniLink: "Termenii și Condițiile de utilizare",
       acordWhatsapp: "Sunt de acord să fiu adăugat în grupul de WhatsApp al organizației (opțional)",
+      acordEmail: "Vreau să primesc pe email actualizări de la organizație, inclusiv reamintirea Formularului 230 (opțional)",
       sePregateste: "Se pregătește plata...",
       donezaVerb: "Donează",
       donezaLunaSufix: "lei/lună",
@@ -80,7 +81,7 @@ export const DONATION_DICT = {
           `Operator: ${orgName}${cif ? ` (CIF ${cif})` : ""}. Platforma Alexandrit (MEDIGROUPPLUS SRL) o găzduiește tehnic, ca persoană împuternicită, iar plata e procesată de Stripe, în contul propriu al organizației; datele cardului nu trec prin platformă.`,
         date: "Ce date: numele, emailul, telefonul (opțional), mesajul (opțional), suma și data donației.",
         scop: "Pentru ce: procesarea donației, confirmarea plății și emailul de mulțumire (executarea donației, art. 6 alin. (1) lit. b GDPR) și evidențele contabile și fiscale (obligație legală, lit. c). Numele apare public pe pagina campaniei, dacă nu bifezi „Nu-mi afișa numele public”.",
-        optional: "Grupul de WhatsApp: doar dacă bifezi opțiunea, pe baza consimțământului tău, pe care îl poți retrage oricând.",
+        optional: "Grupul de WhatsApp și emailurile cu actualizări (inclusiv reamintirea Formularului 230): doar dacă bifezi opțiunile, pe baza consimțământului tău, pe care îl poți retrage oricând (emailurile au link de dezabonare).",
         destinatari: "Cine le primește: organizația, Stripe (plata), furnizorii tehnici ai platformei (găzduire în Uniunea Europeană) și, unde legea cere, autoritățile. Nu le vindem.",
         pastrare: "Cât le păstrăm: cât cer evidențele contabile și, pentru restul, cât durează relația cu organizația sau până soliciți ștergerea. O donație deja încasată nu se șterge din evidența contabilă, ci se anonimizează.",
         drepturiPre: (orgName: string) =>
@@ -171,6 +172,7 @@ export const DONATION_DICT = {
       acordTermeniPre: "I agree to the",
       acordTermeniLink: "Terms and Conditions of use",
       acordWhatsapp: "I agree to be added to the organization's WhatsApp group (optional)",
+      acordEmail: "I'd like to receive email updates from the organization, including the Form 230 reminder (optional)",
       sePregateste: "Preparing payment...",
       donezaVerb: "Donate",
       donezaLunaSufix: "lei/month",
@@ -196,7 +198,7 @@ export const DONATION_DICT = {
           `Controller: ${orgName}${cif ? ` (Tax ID ${cif})` : ""}. The Alexandrit platform (MEDIGROUPPLUS SRL) hosts it technically, as a processor, and the payment is processed by Stripe in the organization's own account; card data does not pass through the platform.`,
         date: "What data: your name, email, phone (optional), message (optional), the amount and date of the donation.",
         scop: "Why: processing the donation, confirming the payment and the thank-you email (performance of the donation, Art. 6(1)(b) GDPR) and accounting and tax records (legal obligation, (c)). Your name appears publicly on the campaign page unless you tick “Don't show my name publicly”.",
-        optional: "The WhatsApp group: only if you tick the option, based on your consent, which you can withdraw at any time.",
+        optional: "The WhatsApp group and update emails (including the Form 230 reminder): only if you tick the options, based on your consent, which you can withdraw at any time (emails include an unsubscribe link).",
         destinatari: "Who receives it: the organization, Stripe (payment), the platform's technical providers (hosting in the European Union) and, where the law requires, the authorities. We do not sell it.",
         pastrare: "How long we keep it: as long as accounting records require and, for the rest, for as long as the relationship with the organization lasts or until you ask for deletion. A donation already received is not deleted from the accounting record but anonymized.",
         drepturiPre: (orgName: string) =>

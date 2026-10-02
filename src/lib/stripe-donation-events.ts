@@ -175,6 +175,7 @@ export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, s
           emailDonator: donatie[0].emailDonator,
           telefonDonator: donatie[0].telefonDonator,
           consimtamantWhatsapp: donatie[0].consimtamantWhatsapp,
+          consimtamantEmail: donatie[0].consimtamantEmail,
         });
         emailParams = {
           emailDonator: donatie[0].emailDonator,
@@ -286,6 +287,7 @@ export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, s
               consimtamantGdpr: md.consimtamantGdpr === "true",
               consimtamantTermeni: md.consimtamantTermeni === "true",
               consimtamantWhatsapp: md.consimtamantWhatsapp === "true",
+              consimtamantEmail: md.consimtamantEmail === "true",
               // Prefixat cu orgId: id-urile de factură sunt unice doar în contul
               // Stripe al fiecărui ONG, dar coloana e unică global.
               stripeSessionId: `invoice_${orgId}_${invoice.id}`,
@@ -303,6 +305,11 @@ export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, s
               emailDonator: md.emailDonator || null,
               telefonDonator: md.telefonDonator || null,
               consimtamantWhatsapp: md.consimtamantWhatsapp === "true",
+              // Abonamentele create înainte de bifa de email nu au cheia în
+              // metadata: null = fără răspuns, ca o reînnoire să NU schimbe
+              // starea donatorului (altfel l-ar muta din "primește ca înainte"
+              // în "exclus", fără ca el să fi refuzat ceva).
+              consimtamantEmail: md.consimtamantEmail === undefined ? null : md.consimtamantEmail === "true",
             });
             emailParams = {
               emailDonator: md.emailDonator || null,
@@ -368,6 +375,7 @@ export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, s
           emailDonator: donatie[0].emailDonator,
           telefonDonator: donatie[0].telefonDonator,
           consimtamantWhatsapp: donatie[0].consimtamantWhatsapp,
+          consimtamantEmail: donatie[0].consimtamantEmail,
         });
         emailParams = {
           emailDonator: donatie[0].emailDonator,

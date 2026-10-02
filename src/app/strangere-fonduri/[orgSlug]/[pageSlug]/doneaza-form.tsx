@@ -81,6 +81,16 @@ export function DoneazaForm({
     }
   }
 
+  // Opțional și nebifat implicit (consimțământ liber exprimat); apare în ambele
+  // moduri — în modalul portofelului formularul nu are alte bife, iar fără
+  // aceasta donatorul care plătește rapid n-ar putea alege.
+  const bifaEmail = (
+    <label className="flex items-start gap-2 text-[13px] text-body">
+      <input type="checkbox" name="consimtamantEmail" className="mt-0.5 h-4 w-4 rounded border-line" />
+      <span>{t.acordEmail}</span>
+    </label>
+  );
+
   return (
     <form
       ref={formRef}
@@ -194,7 +204,12 @@ export function DoneazaForm({
           portofel={metoda === "gpay" ? "google" : "apple"}
         />
       )}
-      {portofel && <NotaInformareDonatie locale={locale} orgName={orgName} orgCif={orgCif} />}
+      {portofel && (
+        <div className="flex flex-col gap-2">
+          <NotaInformareDonatie locale={locale} orgName={orgName} orgCif={orgCif} />
+          {bifaEmail}
+        </div>
+      )}
 
       {!portofel && (
         <>
@@ -241,6 +256,7 @@ export function DoneazaForm({
           <input type="checkbox" name="consimtamantWhatsapp" className="mt-0.5 h-4 w-4 rounded border-line" />
           <span>{t.acordWhatsapp}</span>
         </label>
+        {bifaEmail}
       </div>
 
       {(redirect ? revolutEroare : state.error) && (
