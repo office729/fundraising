@@ -1,5 +1,6 @@
 import type { AnyPgColumn } from "drizzle-orm/pg-core";
-import { boolean, integer, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { boolean, integer, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 import { orgDomeniuActivitate, orgPackage, subscriptionStatus } from "./enums";
 
@@ -102,4 +103,14 @@ export const organizations = pgTable("organizations", {
   referralCode: text("referral_code").unique(),
   referredByOrgId: uuid("referred_by_org_id").references((): AnyPgColumn => organizations.id),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-}).enableRLS();
+},
+(t) => [
+  // CIF unic între organizații (normalizat: fără spații/„RO"), doar când e completat —
+  // împiedică trial-uri repetate ale aceleiași entități. Aplicat manual în baza de
+  // date (migrarea organizations_cif_unique_normalized); declarat aici ca să nu-l
+  // șteargă un `drizzle-kit push`.
+  uniqueIndex("organizations_cif_norm_unique")
+    .on(sql`upper(regexp_replace(regexp_replace(${t.cif}, '\\s', '', 'g'), '^RO', '', 'i'))`)
+    .where(sql`${t.cif} is not null and ${t.cif} <> ''`),
+],
+).enableRLS();

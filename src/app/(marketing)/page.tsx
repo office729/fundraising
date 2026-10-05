@@ -32,13 +32,21 @@ export default async function LandingPage({
   // există aici, mai lipsește doar numele organizației.
   if (authUser?.email) {
     const sp = await searchParams;
-    const planValues = extractPlanQuery((key) => {
+    // Valorile alese la înscrierea cu email (păstrate în metadatele contului cât
+    // timp emailul aștepta confirmarea) servesc drept implicit; query-ul are prioritate.
+    const meta = (authUser.user_metadata ?? {}) as { org_name?: unknown; ref?: unknown; plan_query?: unknown };
+    const metaPlan = meta.plan_query && typeof meta.plan_query === "object" ? (meta.plan_query as Record<string, unknown>) : {};
+    const dinQuery = extractPlanQuery((key) => {
       const value = sp[key];
       return Array.isArray(value) ? value[0] : value;
     });
+    const planValues = Object.keys(dinQuery).length
+      ? dinQuery
+      : extractPlanQuery((key) => (typeof metaPlan[key] === "string" ? (metaPlan[key] as string) : undefined));
     const refValue = sp.ref;
-    const referralCode = Array.isArray(refValue) ? refValue[0] : refValue;
-    return <FinalizeForm email={authUser.email} planValues={planValues} referralCode={referralCode ?? ""} />;
+    const referralCode = (Array.isArray(refValue) ? refValue[0] : refValue) ?? (typeof meta.ref === "string" ? meta.ref : "");
+    const orgNameInitial = typeof meta.org_name === "string" ? meta.org_name : "";
+    return <FinalizeForm email={authUser.email} planValues={planValues} referralCode={referralCode} orgNameInitial={orgNameInitial} />;
   }
 
   const locale = await getLocale();

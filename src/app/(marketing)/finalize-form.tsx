@@ -13,10 +13,12 @@ export function FinalizeForm({
   email,
   planValues = {},
   referralCode = "",
+  orgNameInitial = "",
 }: {
   email: string;
   planValues?: PlanQueryValues;
   referralCode?: string;
+  orgNameInitial?: string;
 }) {
   const [state, formAction, pending] = useActionState(finalizeazaOrganizatiaAction, { error: null });
   const alegerePlan = useAlegerePlan(planValues);
@@ -60,6 +62,8 @@ export function FinalizeForm({
           Numele organizației
           <input
             name="orgName"
+            defaultValue={orgNameInitial}
+            maxLength={120}
             required
             autoFocus
             placeholder="ex. Asociația Sprijin"

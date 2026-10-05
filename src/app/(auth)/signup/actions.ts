@@ -1,23 +1,18 @@
 "use server";
 
-import { randomUUID } from "node:crypto";
-
-import { eq, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 
 import { semnalizeazaEveniment } from "@/lib/analytics-server";
 import { ensureAppUser, inregistreazaAcceptareTermeni } from "@/lib/auth/dal";
+import { creeazaOrganizatieNoua, MAX_LUNGIME_NUME_ORGANIZATIE } from "@/lib/auth/provizionare";
 import { obtineIpClient, verificaLimitaRata } from "@/lib/auth/rate-limit";
 import { citestePlanulAlesDinFormular } from "@/lib/billing/plan-from-form";
+import { PLAN_QUERY_KEYS } from "@/lib/billing/plan-query";
 import { db } from "@/lib/db";
-import { memberships, organizations } from "@/lib/db/schema";
-import { formular230Beneficiari } from "@/lib/db/schema/formular230";
-import { SLUG_PRINCIPAL } from "@/lib/formular230-constants";
+import { esteEmailTemporar } from "@/lib/email-temporar";
 import { AUTH_DICT } from "@/lib/i18n/dictionaries/auth";
 import { getLocale } from "@/lib/i18n/get-locale";
-import { esteSlugRezervat } from "@/lib/reserved-slugs";
-import { genereazaCodScurt } from "@/lib/short-code";
-import { slugify } from "@/lib/slugify";
 import { createClient } from "@/lib/supabase/server";
 
 export async function signupAction(
@@ -40,26 +35,44 @@ export async function signupAction(
   if (password.length < 8) {
     return { error: errors.parolaMinim };
   }
+  if (orgName.length > MAX_LUNGIME_NUME_ORGANIZATIE) {
+    return { error: errors.numeOrganizatiePreaLung };
+  }
+  // Adrese de unică folosință: trial-uri repetate ale aceleiași persoane.
+  if (esteEmailTemporar(email)) {
+    return { error: errors.emailTemporar };
+  }
   // Acceptarea Termenilor + Politicii de confidențialitate e obligatorie și
   // validată pe server (bifa din formular poate fi ocolită) — vezi
-  // inregistreazaAcceptareTermeni mai jos, care păstrează dovada.
+  // inregistreazaAcceptareTermeni, care păstrează dovada.
   if (formData.get("acceptTermeni") !== "on") {
     return { error: errors.termeniNeacceptati };
   }
 
-  // 5 conturi noi/oră per IP — creare de cont e rară pentru un utilizator
-  // real, dar o țintă pentru crearea automată în masă a conturilor.
+  // Conturi noi per IP: 5/oră (rafală) și 15/zi — creare de cont e rară pentru un
+  // utilizator real, dar o țintă pentru crearea automată în masă a conturilor.
   const ip = await obtineIpClient();
-  if (!(await verificaLimitaRata("signup", ip, 5, 60))) {
+  if (!(await verificaLimitaRata("signup", ip, 5, 60)) || !(await verificaLimitaRata("signup-zi", ip, 15, 24 * 60))) {
     return { error: errors.preaMulteIncercari };
   }
+
+  // Ce a ales userul la înscriere (numele organizației, planul, codul de
+  // recomandare) se păstrează în metadatele contului: dacă emailul trebuie
+  // confirmat, organizația se creează abia după confirmare (pasul de finalizare
+  // din pagina principală îl preia de aici ca valori inițiale).
+  const planQuery: Record<string, string> = {};
+  for (const key of PLAN_QUERY_KEYS) {
+    const v = formData.get(key);
+    if (typeof v === "string" && v) planQuery[key] = v.slice(0, 200);
+  }
+  const metadate = inviteToken || beneficiarInviteToken ? undefined : { org_name: orgName, ref: referralCode.slice(0, 100), plan_query: planQuery };
 
   const supabase = await createClient();
   // Mesajul Supabase (error.message) vine mereu în engleză, indiferent de
   // limba UI — nu există un cod de eroare stabil pe care să-l mapăm 1:1 fără
   // riscul de a ascunde detalii utile (email deja folosit, parolă slabă etc.);
   // rămâne netradus intenționat, ca excepție de la restul acestui flux.
-  const { data, error } = await supabase.auth.signUp({ email, password });
+  const { data, error } = await supabase.auth.signUp({ email, password, options: metadate ? { data: metadate } : undefined });
   if (error) {
     return { error: error.message };
   }
@@ -71,11 +84,13 @@ export async function signupAction(
   // components/analytics-events.tsx; se trimite doar cu acordul pentru analiză).
   await semnalizeazaEveniment("sign_up");
 
-  // Cont creat printr-un link de invitație: NU se creează o organizație nouă —
-  // doar rândul app_users; membership-ul (sau profilul de beneficiar) se
-  // creează la pagina de acceptare, care verifică din nou emailul +
-  // validitatea invitației.
-  if (inviteToken || beneficiarInviteToken) {
+  // Cont creat printr-un link de invitație sau cu confirmare de email încă
+  // necesară: NU se creează o organizație acum — doar rândul app_users (cu dovada
+  // acceptării). Membership-ul/profilul de beneficiar se creează la pagina de
+  // acceptare a invitației; organizația se creează după confirmarea emailului, la
+  // prima autentificare (pasul de finalizare). Altfel cineva s-ar putea înscrie cu
+  // emailul altcuiva și i-ar umple contul cu organizații înainte de confirmare.
+  if (inviteToken || beneficiarInviteToken || !data.session) {
     await db.transaction(async (tx) => {
       await tx.execute(sql`select set_config('app.current_user_email', ${email}, true)`);
       const appUser = await ensureAppUser(tx, email);
@@ -83,89 +98,29 @@ export async function signupAction(
       await inregistreazaAcceptareTermeni(tx, appUser.id);
     });
     if (!data.session) {
+      // Confirmarea de email e activă în proiectul Supabase — userul nu are încă sesiune.
       redirect(
-        `/login?confirmare=necesara&${inviteToken ? `invite=${inviteToken}` : `beneficiarInvite=${beneficiarInviteToken}`}`,
+        inviteToken || beneficiarInviteToken
+          ? `/login?confirmare=necesara&${inviteToken ? `invite=${inviteToken}` : `beneficiarInvite=${beneficiarInviteToken}`}`
+          : "/login?confirmare=necesara",
       );
     }
     redirect(inviteToken ? `/invite/${inviteToken}` : `/invite-beneficiar/${beneficiarInviteToken}`);
   }
 
-  // Provizionare: creează app_users (dacă nu există) + organizația nouă +
-  // membership de owner, toate într-o singură tranzacție. Politicile RLS
-  // permisive de INSERT pentru acest flux sunt documentate în
-  // documentation/rls-setup.sql (secțiunea „bootstrapping”).
-  const planAles = citestePlanulAlesDinFormular(formData);
-  const baseSlug = slugify(orgName);
-  const orgSlug = await db.transaction(async (tx) => {
-    await tx.execute(sql`select set_config('app.current_user_email', ${email}, true)`);
-    const appUser = await ensureAppUser(tx, email);
-    await tx.execute(sql`select set_config('app.current_user_id', ${appUser.id}, true)`);
-    await inregistreazaAcceptareTermeni(tx, appUser.id);
-    // Necesar pentru verificarea de unicitate a slug-ului ȘI pentru
-    // rezolvarea codului de recomandare de mai jos — la acest moment din
-    // tranzacție nu există încă niciun membership, deci organizations_member
-    // nu se aplică; fără app.public_lookup, ambele SELECT-uri rulau
-    // silențios pe 0 rânduri sub FORCE ROW LEVEL SECURITY (organizația
-    // "nouă" ar fi părut mereu disponibilă, iar codul de recomandare nu s-ar
-    // fi găsit niciodată — exact bug-ul descoperit testând live referralul).
-    await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
-
-    let slug = baseSlug;
-    for (let attempt = 1; attempt <= 20; attempt++) {
-      const existing = esteSlugRezervat(slug)
-        ? true
-        : (
-            await tx
-              .select({ id: organizations.id })
-              .from(organizations)
-              .where(eq(organizations.slug, slug))
-              .limit(1)
-          )[0];
-      if (!existing) break;
-      slug = `${baseSlug}-${attempt}`;
-    }
-
-    // Cod de recomandare opțional (?ref=...) — dacă e valid, organizația nouă
-    // are dreptul la 50% reducere la primul abonament plătit (vezi
-    // lib/billing/stripe-checkout.ts). Cod invalid/lipsă → ignorat silențios,
-    // nu blochează înscrierea. Același SELECT-bootstrap ca verificarea de
-    // unicitate a slug-ului de mai sus (RLS permisiv înainte de membership).
-    let referredByOrgId: string | null = null;
-    if (referralCode) {
-      const referrer = await tx.select({ id: organizations.id }).from(organizations).where(eq(organizations.referralCode, referralCode)).limit(1);
-      referredByOrgId = referrer[0]?.id ?? null;
-    }
-
-    // Fără .returning() aici: INSERT...RETURNING pe organizations ar re-verifica
-    // politica RLS de SELECT pentru rândul nou — care cere un membership deja
-    // existent. La acest moment membership-ul încă nu există (îl creăm mai jos),
-    // deci am genera un fals "row-level security violation". Id-ul e generat în
-    // cod ca să putem insera membership-ul fără să mai citim înapoi organizația.
-    const orgId = randomUUID();
-    await tx.insert(organizations).values({
-      id: orgId,
-      name: orgName,
-      slug,
-      referredByOrgId,
-      ...(planAles ?? {}),
-    });
-    await tx.insert(memberships).values({ orgId, userId: appUser.id, role: "owner" });
-    // Contul implicit de Formular 230 — orice organizație nouă are din start
-    // unul, cu slug fix "principal", ca link-ul /f230/<orgSlug> să funcționeze
-    // imediat (redirect către /f230/<orgSlug>/principal — vezi f230/[orgSlug]/page.tsx).
-    await tx
-      .insert(formular230Beneficiari)
-      .values({ orgId, nume: orgName, slug: SLUG_PRINCIPAL, shortCode: genereazaCodScurt() });
-    return slug;
+  // Sesiune activă (emailul e deja confirmat sau confirmarea e dezactivată):
+  // provizionare imediată — utilizator + organizație + membership de owner.
+  const rezultat = await creeazaOrganizatieNoua({
+    email,
+    orgName,
+    referralCode,
+    planAles: citestePlanulAlesDinFormular(formData),
   });
+  if (!rezultat.ok) {
+    return { error: errors.limitaOrganizatii };
+  }
 
   // redirect() trebuie apelat DUPĂ ce tranzacția s-a încheiat — aruncă o
   // excepție specială Next.js care nu trebuie prinsă de db.transaction().
-  if (!data.session) {
-    // Confirmarea de email e activă în proiectul Supabase — userul nu are
-    // încă sesiune activă. Vezi README.md pentru cum se dezactivează la
-    // testare sau cum se construiește pagina de „verifică-ți emailul”.
-    redirect("/login?confirmare=necesara");
-  }
-  redirect(`/${orgSlug}`);
+  redirect(`/${rezultat.slug}`);
 }

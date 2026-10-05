@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { and, eq, ne } from "drizzle-orm";
 
 import { withOrgAdmin } from "@/lib/auth/guard";
+import { cifFolositDeAltaOrganizatie, MESAJ_CIF_FOLOSIT } from "@/lib/cif";
 import { TOATE_DOMENIILE, type DomeniuActivitate } from "@/lib/campaign-templates";
 import { EroareUtilizator, mesajSigur } from "@/lib/erori";
 import { organizations } from "@/lib/db/schema";
@@ -49,7 +50,21 @@ const updateBrandingRow = withOrgAdmin(
     if (values.judet !== undefined) set.judet = values.judet || null;
     if (values.iban !== undefined) set.iban = values.iban || null;
     if (values.logoUrl) set.logoUrl = values.logoUrl;
-    await ctx.db.update(organizations).set(set).where(eq(organizations.id, ctx.orgId));
+    // CIF unic între organizații — împiedică trial-uri repetate ale aceleiași
+    // entități. Verificat aici (mesaj clar) și garantat de indexul unic
+    // organizations_cif_norm_unique (curse între cereri simultane).
+    if (values.cif && (await cifFolositDeAltaOrganizatie(values.cif, ctx.orgId))) {
+      throw new EroareUtilizator(MESAJ_CIF_FOLOSIT);
+    }
+    try {
+      await ctx.db.update(organizations).set(set).where(eq(organizations.id, ctx.orgId));
+    } catch (e) {
+      if (String((e as { message?: string; cause?: { message?: string } })?.message ?? "").includes("organizations_cif_norm_unique") ||
+        String((e as { cause?: { message?: string } })?.cause?.message ?? "").includes("organizations_cif_norm_unique")) {
+        throw new EroareUtilizator(MESAJ_CIF_FOLOSIT);
+      }
+      throw e;
+    }
   },
 );
 
