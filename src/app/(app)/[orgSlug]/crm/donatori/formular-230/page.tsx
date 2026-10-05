@@ -39,40 +39,40 @@ const getDate = withOrgSession(async (ctx, filtru: { an: string; judet: string; 
   startLuna.setDate(1);
   startLuna.setHours(0, 0, 0, 0);
 
-  const [{ total }] = await ctx.db
-    .select({ total: sql<number>`count(*)::int` })
-    .from(formular230Submissions)
-    .where(eq(formular230Submissions.orgId, ctx.orgId));
-
-  const [{ lunaAceasta }] = await ctx.db
-    .select({ lunaAceasta: sql<number>`count(*)::int` })
-    .from(formular230Submissions)
-    .where(and(eq(formular230Submissions.orgId, ctx.orgId), gte(formular230Submissions.createdAt, startLuna)));
-
-  const beneficiari = await ctx.db
-    .select({
-      id: formular230Beneficiari.id,
-      nume: formular230Beneficiari.nume,
-      slug: formular230Beneficiari.slug,
-      shortCode: formular230Beneficiari.shortCode,
-      iban: formular230Beneficiari.iban,
-      cif: formular230Beneficiari.cif,
-      emailBeneficiar: formular230Beneficiari.emailBeneficiar,
-      createdAt: formular230Beneficiari.createdAt,
-      nrFormulare: sql<number>`count(${formular230Submissions.id})::int`,
-    })
-    .from(formular230Beneficiari)
-    .leftJoin(formular230Submissions, eq(formular230Submissions.beneficiarId, formular230Beneficiari.id))
-    .where(eq(formular230Beneficiari.orgId, ctx.orgId))
-    .groupBy(formular230Beneficiari.id)
-    .orderBy(formular230Beneficiari.createdAt);
-
-  const ani = await ctx.db
-    .select({ an: sql<number>`extract(year from ${formular230Submissions.createdAt})::int` })
-    .from(formular230Submissions)
-    .where(eq(formular230Submissions.orgId, ctx.orgId))
-    .groupBy(sql`1`)
-    .orderBy(sql`1 desc`);
+  // Patru citiri independente: rulează împreună, nu secvențial.
+  const [[{ total }], [{ lunaAceasta }], beneficiari, ani] = await Promise.all([
+    ctx.db
+      .select({ total: sql<number>`count(*)::int` })
+      .from(formular230Submissions)
+      .where(eq(formular230Submissions.orgId, ctx.orgId)),
+    ctx.db
+      .select({ lunaAceasta: sql<number>`count(*)::int` })
+      .from(formular230Submissions)
+      .where(and(eq(formular230Submissions.orgId, ctx.orgId), gte(formular230Submissions.createdAt, startLuna))),
+    ctx.db
+      .select({
+        id: formular230Beneficiari.id,
+        nume: formular230Beneficiari.nume,
+        slug: formular230Beneficiari.slug,
+        shortCode: formular230Beneficiari.shortCode,
+        iban: formular230Beneficiari.iban,
+        cif: formular230Beneficiari.cif,
+        emailBeneficiar: formular230Beneficiari.emailBeneficiar,
+        createdAt: formular230Beneficiari.createdAt,
+        nrFormulare: sql<number>`count(${formular230Submissions.id})::int`,
+      })
+      .from(formular230Beneficiari)
+      .leftJoin(formular230Submissions, eq(formular230Submissions.beneficiarId, formular230Beneficiari.id))
+      .where(eq(formular230Beneficiari.orgId, ctx.orgId))
+      .groupBy(formular230Beneficiari.id)
+      .orderBy(formular230Beneficiari.createdAt),
+    ctx.db
+      .select({ an: sql<number>`extract(year from ${formular230Submissions.createdAt})::int` })
+      .from(formular230Submissions)
+      .where(eq(formular230Submissions.orgId, ctx.orgId))
+      .groupBy(sql`1`)
+      .orderBy(sql`1 desc`),
+  ]);
 
   const conditii = [eq(formular230Submissions.orgId, ctx.orgId)];
   if (filtru.beneficiar !== "toate") {
@@ -85,8 +85,25 @@ const getDate = withOrgSession(async (ctx, filtru: { an: string; judet: string; 
     conditii.push(lt(formular230Submissions.createdAt, new Date(Date.UTC(an + 1, 0, 1))));
   }
 
+  // Doar coloanele folosite (fără semnătura base64 și adresa completă): până la 1000 de rânduri × zeci de KB
+  // de semnătură se citeau la fiecare vizită. Acelea se cer la click, pe un singur rând.
+  const F = formular230Submissions;
   const randuri = await ctx.db
-    .select()
+    .select({
+      id: F.id,
+      nume: F.nume,
+      prenume: F.prenume,
+      email: F.email,
+      telefon: F.telefon,
+      judet: F.judet,
+      localitate: F.localitate,
+      beneficiarId: F.beneficiarId,
+      an: F.an,
+      distributie2Ani: F.distributie2Ani,
+      procesatAnaf: F.procesatAnaf,
+      createdAt: F.createdAt,
+      cnp: F.cnp,
+    })
     .from(formular230Submissions)
     .where(and(...conditii))
     .orderBy(desc(formular230Submissions.createdAt))

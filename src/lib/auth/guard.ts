@@ -1,6 +1,7 @@
 import "server-only";
 import { sql } from "drizzle-orm";
 import { notFound, redirect } from "next/navigation";
+import { cache } from "react";
 
 import type { CustomPlanConfigSaved } from "@/lib/billing/custom-plan";
 import { isAccessBlocked } from "@/lib/billing/trial";
@@ -218,6 +219,11 @@ export function withOrgFaze<A extends unknown[], P, X, R>(cfg: {
 
 export type OrgAccess = Omit<OrgContext, "db">;
 
+// requireOrgAccess e memoizat PER CERERE (React cache): layout-ul organizației, layout-ul CRM și pagina cer
+// aceeași identitate — fără memoizare fiecare însemna o tranzacție separată (~8 round-trip-uri). Sigur
+// pentru că nicio acțiune de server nu îl apelează (doar pagini/layout-uri/rute de citire), deci după o
+// mutație + revalidare, re-randarea îl citește proaspăt.
+
 /**
  * Verificare de acces pentru layout-uri/pagini (Server Components), NU pentru
  * mutații. Spre deosebire de `withOrgSession`, întoarce DOAR date simple —
@@ -227,7 +233,7 @@ export type OrgAccess = Omit<OrgContext, "db">;
  * Fiecare bucată de date de tenant se citește separat, prin propriul apel
  * `withOrgSession(...)`.
  */
-export function requireOrgAccess(orgSlug: string): Promise<OrgAccess> {
+export const requireOrgAccess = cache(function requireOrgAccess(orgSlug: string): Promise<OrgAccess> {
   return withOrgSession(async (ctx) => ({
     orgId: ctx.orgId,
     orgSlug: ctx.orgSlug,
@@ -261,7 +267,7 @@ export function requireOrgAccess(orgSlug: string): Promise<OrgAccess> {
     // (layout-ul) — dacă ar fi ea însăși blocată de paywall, layout-ul ar crăpa
     // în loc să-l afișeze. Nu întoarce date de tenant, doar contextul organizației.
   }), { permiteAccesBlocat: true })(orgSlug);
-}
+});
 
 // ---------------------------------------------------------------------------
 // Modul „Persoană fizică / Beneficiar" — oglindă a withOrgSession/

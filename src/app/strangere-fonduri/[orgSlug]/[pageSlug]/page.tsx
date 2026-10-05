@@ -56,45 +56,40 @@ const getPaginaPublica = cache(async (orgSlug: string, pageSlug: string) => {
       .limit(1);
     if (!pagina[0]) return null;
 
-    const recente = await tx
-      .select(COLOANE_DONATIE_PUBLICA)
-      .from(fundraisingDonations)
-      .where(and(eq(fundraisingDonations.pageId, pagina[0].id), eq(fundraisingDonations.status, "reusita")))
-      .orderBy(desc(fundraisingDonations.createdAt))
-      .limit(20);
-
-    const topDonatori = await tx
-      .select(COLOANE_DONATIE_PUBLICA)
-      .from(fundraisingDonations)
-      .where(and(eq(fundraisingDonations.pageId, pagina[0].id), eq(fundraisingDonations.status, "reusita")))
-      .orderBy(desc(fundraisingDonations.suma))
-      .limit(5);
-
-    const actualizari = await tx
-      .select()
-      .from(fundraisingUpdates)
-      .where(eq(fundraisingUpdates.pageId, pagina[0].id))
-      .orderBy(desc(fundraisingUpdates.data));
-
-    const [{ totalDonatii }] = await tx
-      .select({ totalDonatii: sql<number>`count(*)::int` })
-      .from(fundraisingDonations)
-      .where(and(eq(fundraisingDonations.pageId, pagina[0].id), eq(fundraisingDonations.status, "reusita")));
-
-    // Alte campanii active ale aceleiași organizații — link către
-    // /strangere-fonduri/[orgSlug] (hub-ul organizației) pentru restul.
-    const alteCampanii = await tx
-      .select()
-      .from(fundraisingPages)
-      .where(
-        and(
-          eq(fundraisingPages.orgId, org[0].id),
-          eq(fundraisingPages.status, "activa"),
-          sql`${fundraisingPages.id} <> ${pagina[0].id}`,
-        ),
-      )
-      .orderBy(desc(fundraisingPages.sumaStransa))
-      .limit(3);
+    // Cele cinci citiri sunt independente: rulează împreună pe aceeași conexiune (pipelining), nu una după alta.
+    const [recente, topDonatori, actualizari, [{ totalDonatii }], alteCampanii] = await Promise.all([
+      tx
+        .select(COLOANE_DONATIE_PUBLICA)
+        .from(fundraisingDonations)
+        .where(and(eq(fundraisingDonations.pageId, pagina[0].id), eq(fundraisingDonations.status, "reusita")))
+        .orderBy(desc(fundraisingDonations.createdAt))
+        .limit(20),
+      tx
+        .select(COLOANE_DONATIE_PUBLICA)
+        .from(fundraisingDonations)
+        .where(and(eq(fundraisingDonations.pageId, pagina[0].id), eq(fundraisingDonations.status, "reusita")))
+        .orderBy(desc(fundraisingDonations.suma))
+        .limit(5),
+      tx.select().from(fundraisingUpdates).where(eq(fundraisingUpdates.pageId, pagina[0].id)).orderBy(desc(fundraisingUpdates.data)),
+      tx
+        .select({ totalDonatii: sql<number>`count(*)::int` })
+        .from(fundraisingDonations)
+        .where(and(eq(fundraisingDonations.pageId, pagina[0].id), eq(fundraisingDonations.status, "reusita"))),
+      // Alte campanii active ale aceleiași organizații — link către
+      // /strangere-fonduri/[orgSlug] (hub-ul organizației) pentru restul.
+      tx
+        .select()
+        .from(fundraisingPages)
+        .where(
+          and(
+            eq(fundraisingPages.orgId, org[0].id),
+            eq(fundraisingPages.status, "activa"),
+            sql`${fundraisingPages.id} <> ${pagina[0].id}`,
+          ),
+        )
+        .orderBy(desc(fundraisingPages.sumaStransa))
+        .limit(3),
+    ]);
 
     return { org: org[0], pagina: pagina[0], recente, topDonatori, actualizari, totalDonatii, alteCampanii };
   });

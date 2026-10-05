@@ -14,7 +14,7 @@ import { AddCompanyButton, CalendarLucruButton, ImportCsvButton, TopButton } fro
 import { FilterBar } from "./filter-bar";
 import { parseFiltru } from "./lib/filters";
 import { PaginaNav } from "./pagina-nav";
-import { getCompaniiLista, getResponsabiliOrg, getStatisticiCompanii, getTotalFirme } from "./queries";
+import { getPaginaCompanii } from "./queries";
 import { titluAbsolut } from "@/lib/page-titles";
 
 export default function CompaniiPage({ params, searchParams }: { params: Promise<{ orgSlug: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
@@ -44,12 +44,7 @@ async function CompaniiContent({
   const locale = await getLocale();
   const dict = COMPANII_DICT[locale].page;
 
-  const [totalFirme, stats, lista, responsabili] = await Promise.all([
-    getTotalFirme(orgSlug),
-    getStatisticiCompanii(orgSlug, filtru),
-    getCompaniiLista(orgSlug, filtru),
-    getResponsabiliOrg(orgSlug),
-  ]);
+  const { totalFirme, stats, lista, responsabili } = await getPaginaCompanii(orgSlug, filtru);
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-5">

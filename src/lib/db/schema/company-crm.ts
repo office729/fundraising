@@ -31,6 +31,7 @@ export const companySponsorizari = pgTable(
     index("company_sponsorizari_org_idx").on(t.orgId),
     index("company_sponsorizari_company_idx").on(t.companyId),
     index("company_sponsorizari_data_idx").on(t.data),
+    index("company_sponsorizari_company_data_idx").on(t.companyId, t.data.desc()),
   ],
 ).enableRLS();
 

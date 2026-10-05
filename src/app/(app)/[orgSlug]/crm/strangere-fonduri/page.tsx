@@ -18,42 +18,32 @@ import { AddPageButton, CopyCreateLinkButton, CopyPageLinkButton, DeletePageButt
 import { titluAbsolut } from "@/lib/page-titles";
 
 const getPagini = withOrgSession(async (ctx) => {
-  const [{ totalStrans }] = await ctx.db
-    .select({ totalStrans: sql<number>`coalesce(sum(${fundraisingPages.sumaStransa}), 0)::int` })
-    .from(fundraisingPages)
-    .where(eq(fundraisingPages.orgId, ctx.orgId));
-
-  const [{ totalDonatii }] = await ctx.db
-    .select({ totalDonatii: sql<number>`count(*)::int` })
-    .from(fundraisingDonations)
-    .where(sql`${fundraisingDonations.orgId} = ${ctx.orgId} and ${fundraisingDonations.status} = 'reusita'`);
-
-  const pagini = await ctx.db
-    .select()
-    .from(fundraisingPages)
-    .where(eq(fundraisingPages.orgId, ctx.orgId))
-    .orderBy(desc(fundraisingPages.createdAt))
-    .limit(200);
-
-  const topDonatori = await ctx.db
-    .select({
-      id: fundraisingDonations.id,
-      numeDonator: fundraisingDonations.numeDonator,
-      anonim: fundraisingDonations.anonim,
-      suma: fundraisingDonations.suma,
-      pageTitlu: fundraisingPages.titlu,
-    })
-    .from(fundraisingDonations)
-    .innerJoin(fundraisingPages, eq(fundraisingPages.id, fundraisingDonations.pageId))
-    .where(and(eq(fundraisingDonations.orgId, ctx.orgId), eq(fundraisingDonations.status, "reusita")))
-    .orderBy(desc(fundraisingDonations.suma))
-    .limit(10);
-
-  const [org] = await ctx.db
-    .select({ customPlanConfig: organizations.customPlanConfig })
-    .from(organizations)
-    .where(eq(organizations.id, ctx.orgId))
-    .limit(1);
+  // Citiri independente — rulează împreună pe aceeași conexiune, nu secvențial.
+  const [[{ totalStrans }], [{ totalDonatii }], pagini, topDonatori, [org]] = await Promise.all([
+    ctx.db
+      .select({ totalStrans: sql<number>`coalesce(sum(${fundraisingPages.sumaStransa}), 0)::int` })
+      .from(fundraisingPages)
+      .where(eq(fundraisingPages.orgId, ctx.orgId)),
+    ctx.db
+      .select({ totalDonatii: sql<number>`count(*)::int` })
+      .from(fundraisingDonations)
+      .where(sql`${fundraisingDonations.orgId} = ${ctx.orgId} and ${fundraisingDonations.status} = 'reusita'`),
+    ctx.db.select().from(fundraisingPages).where(eq(fundraisingPages.orgId, ctx.orgId)).orderBy(desc(fundraisingPages.createdAt)).limit(200),
+    ctx.db
+      .select({
+        id: fundraisingDonations.id,
+        numeDonator: fundraisingDonations.numeDonator,
+        anonim: fundraisingDonations.anonim,
+        suma: fundraisingDonations.suma,
+        pageTitlu: fundraisingPages.titlu,
+      })
+      .from(fundraisingDonations)
+      .innerJoin(fundraisingPages, eq(fundraisingPages.id, fundraisingDonations.pageId))
+      .where(and(eq(fundraisingDonations.orgId, ctx.orgId), eq(fundraisingDonations.status, "reusita")))
+      .orderBy(desc(fundraisingDonations.suma))
+      .limit(10),
+    ctx.db.select({ customPlanConfig: organizations.customPlanConfig }).from(organizations).where(eq(organizations.id, ctx.orgId)).limit(1),
+  ]);
   const customPlanConfig = org?.customPlanConfig as CustomPlanConfigSaved | null;
   const templateuriDisponibile = getTemplatesDisponibile(ctx.orgDomeniuActivitate, Boolean(customPlanConfig?.accesDesignToate));
 

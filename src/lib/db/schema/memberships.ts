@@ -1,4 +1,4 @@
-import { pgTable, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { index, pgTable, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 import { membershipRole } from "./enums";
 import { appUsers } from "./app-users";
@@ -20,5 +20,9 @@ export const memberships = pgTable(
     role: membershipRole("role").notNull().default("member"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
-  (t) => [uniqueIndex("memberships_org_user_unique").on(t.orgId, t.userId)],
+  (t) => [
+    uniqueIndex("memberships_org_user_unique").on(t.orgId, t.userId),
+    // Căutat la FIECARE cerere (organizații/utilizatori vizibili prin memberships.user_id).
+    index("memberships_user_idx").on(t.userId),
+  ],
 ).enableRLS();

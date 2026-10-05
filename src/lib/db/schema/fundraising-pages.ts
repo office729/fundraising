@@ -130,6 +130,8 @@ export const fundraisingDonations = pgTable(
     index("fundraising_donations_org_idx").on(t.orgId),
     uniqueIndex("fundraising_donations_stripe_session_idx").on(t.stripeSessionId),
     index("fundraising_donations_payment_intent_idx").on(t.stripePaymentIntentId),
+    index("fundraising_donations_page_status_created_idx").on(t.pageId, t.status, t.createdAt.desc()),
+    index("fundraising_donations_org_email_idx").on(t.orgId, t.emailDonator),
   ],
 ).enableRLS();
 
@@ -203,6 +205,7 @@ export const donatoriReali = pgTable(
   },
   (t) => [
     uniqueIndex("donatori_reali_org_email_idx").on(t.orgId, t.email),
+    index("donatori_reali_org_ultima_idx").on(t.orgId, t.ultimaDonatieLa.desc()),
     index("donatori_reali_org_idx").on(t.orgId),
   ],
 ).enableRLS();

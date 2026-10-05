@@ -1,6 +1,6 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 
-import { withOrgSession } from "@/lib/auth/guard";
+import { withOrgSession, type OrgContext } from "@/lib/auth/guard";
 import { appUsers, companies, companyNotite, companySponsorizari, companyStageLog, contacts, memberships } from "@/lib/db/schema";
 
 import { citesteSegment, hexFaraCratime, LUNGIME_SUFIX, segmentFirma, slugFirma } from "@/lib/id-scurt";
@@ -61,7 +61,7 @@ export type RandCompanie = {
   lastViewedAt: Date | null;
 };
 
-export const getCompaniiLista = withOrgSession(async (ctx, filtru: FiltruCompanii) => {
+const getCompaniiListaImpl = async (ctx: OrgContext, filtru: FiltruCompanii) => {
   const where = and(eq(companies.orgId, ctx.orgId), sql`${companies.deletedAt} is null`, conditiiComune(filtru));
 
   const [{ total: totalReal }] = await ctx.db.select({ total: sql<number>`count(*)::int` }).from(companies).where(where);
@@ -103,7 +103,8 @@ export const getCompaniiLista = withOrgSession(async (ctx, filtru: FiltruCompani
     .offset((filtru.pagina - 1) * PAGE_SIZE);
 
   return { rows: rows as RandCompanie[], total, pageSize: PAGE_SIZE, pageCount: Math.max(1, Math.ceil(total / PAGE_SIZE)) };
-});
+};
+export const getCompaniiLista = withOrgSession(getCompaniiListaImpl);
 
 export type StatisticiCompanii = {
   companii: number;
@@ -121,7 +122,7 @@ export type StatisticiCompanii = {
 // aceleași condiții comune (JOIN pe companies), plus intervalul de dată direct
 // pe sponsorizări (nu prin EXISTS, ca la listă — aici avem nevoie de SUM/COUNT
 // pe rândurile de sponsorizare, nu doar de firmele care au cel puțin una).
-export const getStatisticiCompanii = withOrgSession(async (ctx, filtru: FiltruCompanii): Promise<StatisticiCompanii> => {
+const getStatisticiCompaniiImpl = async (ctx: OrgContext, filtru: FiltruCompanii): Promise<StatisticiCompanii> => {
   const { start, end } = calculeazaInterval(filtru);
   const dataCond = start && end ? sql`and ${companySponsorizari.data} >= ${start} and ${companySponsorizari.data} < ${end}` : sql``;
 
@@ -153,24 +154,27 @@ export const getStatisticiCompanii = withOrgSession(async (ctx, filtru: FiltruCo
     medieSponsorizare: sponsorizari ? Math.round(totalSponsorizat / sponsorizari) : 0,
     medieCompanie: companii ? Math.round(totalSponsorizat / companii) : 0,
   };
-});
+};
+export const getStatisticiCompanii = withOrgSession(getStatisticiCompaniiImpl);
 
-export const getTotalFirme = withOrgSession(async (ctx) => {
+const getTotalFirmeImpl = async (ctx: OrgContext) => {
   const [{ total }] = await ctx.db
     .select({ total: sql<number>`count(*)::int` })
     .from(companies)
     .where(and(eq(companies.orgId, ctx.orgId), sql`${companies.deletedAt} is null`));
   return total;
-});
+};
+export const getTotalFirme = withOrgSession(getTotalFirmeImpl);
 
-export const getResponsabiliOrg = withOrgSession(async (ctx) => {
+const getResponsabiliOrgImpl = async (ctx: OrgContext) => {
   return ctx.db
     .select({ id: appUsers.id, name: appUsers.name, email: appUsers.email })
     .from(memberships)
     .innerJoin(appUsers, eq(appUsers.id, memberships.userId))
     .where(eq(memberships.orgId, ctx.orgId))
     .orderBy(appUsers.name);
-});
+};
+export const getResponsabiliOrg = withOrgSession(getResponsabiliOrgImpl);
 
 export const getCompanieDetaliu = withOrgSession(async (ctx, segment: string) => {
   // `segment`: UUID complet, „denumire-c2607e5a” sau doar hex (adrese vechi). Vezi lib/id-scurt.ts.
@@ -200,7 +204,11 @@ export const getCompanieDetaliu = withOrgSession(async (ctx, segment: string) =>
 
   // Bifează vizita — trebuie așteptat, nu fire-and-forget: rulează în aceeași
   // tranzacție (withOrgSession) care se închide imediat ce funcția revine.
-  await ctx.db.update(companies).set({ lastViewedAt: new Date() }).where(eq(companies.id, id));
+  // Cel mult o dată la 5 minute: altfel fiecare deschidere a paginii producea o scriere (și WAL) inutilă.
+  await ctx.db
+    .update(companies)
+    .set({ lastViewedAt: new Date() })
+    .where(and(eq(companies.id, id), sql`(${companies.lastViewedAt} is null or ${companies.lastViewedAt} < now() - interval '5 minutes')`));
 
   const [sponsorizari, notite, contacteFirma, responsabili, jurnalEtape] = await Promise.all([
     ctx.db.select().from(companySponsorizari).where(eq(companySponsorizari.companyId, id)).orderBy(desc(companySponsorizari.data)),
@@ -234,4 +242,17 @@ export const getCompanieDetaliu = withOrgSession(async (ctx, segment: string) =>
   ]);
 
   return { companie, sponsorizari, notite, contacte: contacteFirma, responsabili, jurnalEtape, segmentCanonic };
+});
+
+
+// Pagina cere toate patru într-o SINGURĂ tranzacție (o conexiune din pool, un singur set de verificări de acces),
+// nu patru tranzacții paralele — pool-ul are doar 5 conexiuni și layout-urile mai folosesc și ele.
+export const getPaginaCompanii = withOrgSession(async (ctx, filtru: FiltruCompanii) => {
+  const [totalFirme, stats, lista, responsabili] = await Promise.all([
+    getTotalFirmeImpl(ctx),
+    getStatisticiCompaniiImpl(ctx, filtru),
+    getCompaniiListaImpl(ctx, filtru),
+    getResponsabiliOrgImpl(ctx),
+  ]);
+  return { totalFirme, stats, lista, responsabili };
 });
