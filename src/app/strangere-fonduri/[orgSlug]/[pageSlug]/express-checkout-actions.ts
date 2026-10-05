@@ -14,6 +14,7 @@ import { getLocale } from "@/lib/i18n/get-locale";
 import { idDin } from "@/lib/stripe-donation-events";
 
 import { pregatesteDonatie, type DateComuneDonatie } from "./actions";
+import { raporteazaAvertisment, raporteazaEroare } from "@/lib/monitoring";
 
 // redirectUrl: la metodele cu redirect (Revolut Pay), adresa la care trimitem clientul.
 export type CreeazaIntentState = { ok: true; clientSecret: string; redirectUrl?: string } | { ok: false; error: string };
@@ -46,7 +47,7 @@ export async function creeazaIntentDonatieAction(
   try {
     return date.recurenta ? await creeazaAbonamentExpress(date, errors.plataEsuata) : await creeazaPlataUnicaExpress(date, errors.plataEsuata);
   } catch (e) {
-    console.error("creare intenție de plată express checkout:", e);
+    raporteazaEroare("donatie-express", e);
     return { ok: false, error: errors.plataEsuata };
   }
 }
@@ -79,7 +80,7 @@ export async function creeazaIntentRevolutAction(
     if (rezultat.ok && !rezultat.redirectUrl) return { ok: false, error: errors.plataEsuata };
     return rezultat;
   } catch (e) {
-    console.error("creare intenție de plată Revolut Pay:", e);
+    raporteazaEroare("donatie-revolut", e);
     return { ok: false, error: errors.plataEsuata };
   }
 }
@@ -131,7 +132,7 @@ export async function creeazaIntentPaypalAction(
     if (rezultat.ok && !rezultat.redirectUrl) return { ok: false, error: errors.plataEsuata };
     return rezultat;
   } catch (e) {
-    console.error("creare intenție de plată PayPal:", e);
+    raporteazaEroare("donatie-paypal", e);
     return { ok: false, error: errors.plataEsuata };
   }
 }
@@ -192,13 +193,13 @@ async function creeazaAbonamentRedirect(
 
   const invoice = subscription.latest_invoice as Stripe.Invoice | null;
   if (!invoice) {
-    console.error("Abonament redirect fără factură");
+    raporteazaAvertisment("donatie-express", "Abonament redirect fără factură");
     return { ok: false, error: eroareGenerica };
   }
   const plati = await stripe.invoicePayments.list({ invoice: invoice.id, limit: 1 });
   const paymentIntentId = idDin(plati.data[0]?.payment?.payment_intent) ?? idDin(plati.data[0]?.payment?.charge);
   if (!paymentIntentId) {
-    console.error("Abonament redirect: nu am putut afla payment_intent-ul primei facturi");
+    raporteazaAvertisment("donatie-express", "Abonament redirect: nu am putut afla payment_intent-ul primei facturi");
     return { ok: false, error: eroareGenerica };
   }
 
@@ -278,7 +279,7 @@ async function creeazaPlataUnicaExpress(
     metadata: { donationId, pageId: date.pageId, orgId: date.orgId },
   });
   if (!paymentIntent.client_secret) {
-    console.error("PaymentIntent express fără client_secret");
+    raporteazaAvertisment("donatie-express", "PaymentIntent express fără client_secret");
     return { ok: false, error: eroareGenerica };
   }
 
@@ -368,7 +369,7 @@ async function creeazaAbonamentExpress(date: DateComuneDonatie, eroareGenerica: 
   const invoice = subscription.latest_invoice as Stripe.Invoice | null;
   const clientSecret = invoice?.confirmation_secret?.client_secret;
   if (!invoice || !clientSecret) {
-    console.error("Abonament express fără factură/client_secret");
+    raporteazaAvertisment("donatie-express", "Abonament express fără factură/client_secret");
     return { ok: false, error: eroareGenerica };
   }
 
@@ -380,7 +381,7 @@ async function creeazaAbonamentExpress(date: DateComuneDonatie, eroareGenerica: 
     // Fără el, payment_intent.succeeded (stripe-donation-events.ts) n-ar avea
     // după ce să caute rândul — mai bine eșuăm curat aici decât să inserăm o
     // donație care rămâne blocată "în așteptare" pentru totdeauna.
-    console.error("Abonament express: nu am putut afla payment_intent-ul primei facturi");
+    raporteazaAvertisment("donatie-express", "Abonament express: nu am putut afla payment_intent-ul primei facturi");
     return { ok: false, error: eroareGenerica };
   }
 

@@ -11,6 +11,7 @@ import { db } from "@/lib/db";
 import { fundraisingDonations, fundraisingPages, organizations } from "@/lib/db/schema";
 import { DONATE_ACTION_ERRORS } from "@/lib/i18n/dictionaries/donation";
 import { getLocale } from "@/lib/i18n/get-locale";
+import { raporteazaEroare } from "@/lib/monitoring";
 import { stripeOrgDupaSlug } from "@/lib/org-stripe";
 import { EMAIL_RE, normalizeazaEmail } from "@/lib/validation";
 
@@ -56,6 +57,11 @@ export async function pregatesteDonatie(
   // fiecare încercare validă creează o sesiune/PaymentIntent în contul Stripe al
   // ONG-ului și un rând de donație — fără limită, un bot le umple.
   if (!(await verificaLimitaRata("donatie", await obtineIpClient(), 15, 10))) {
+    return { ok: false, error: errors.preaMulteIncercari };
+  }
+  // Plafon și per pagină de campanie (toți vizitatorii la un loc): un atacator cu IP-uri rotite
+  // poate testa carduri furate pe contul Stripe al ONG-ului chiar dacă fiecare IP rămâne sub limită.
+  if (!(await verificaLimitaRata("donatie-pagina", `${orgSlug}/${pageSlug}`, 150, 10))) {
     return { ok: false, error: errors.preaMulteIncercari };
   }
   const suma = Math.round(Number(formData.get("suma")));
@@ -118,7 +124,7 @@ export async function pregatesteDonatie(
   try {
     stripeOrg = await stripeOrgDupaSlug(orgSlug);
   } catch (e) {
-    console.error("cheia Stripe a organizației nu a putut fi citită:", e);
+    raporteazaEroare("donatie-cheie-stripe", e, { orgSlug });
     return { ok: false, error: errors.stripeIndisponibil };
   }
   if (!stripeOrg) {
@@ -256,7 +262,7 @@ export async function doneazaAction(
       recurenta,
     });
   } catch (e) {
-    console.error("creare sesiune Stripe / donatie esuata:", e);
+    raporteazaEroare("donatie-sesiune-stripe", e, { orgSlug, pageSlug });
     return { error: errors.plataEsuata };
   }
 

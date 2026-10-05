@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { TRIAL_DAYS } from "@/lib/billing/trial";
 import { CATEGORY_LABELS, TOOLS, type ToolCategory, type ToolDefinition } from "@/lib/registry";
 
 const CATEGORY_ORDER: ToolCategory[] = ["crm", "documente", "rapoarte", "comunicare", "organizare"];
@@ -59,7 +60,7 @@ export default async function ControlTowerPage({
           <p className="mt-1 text-muted">Acces complet pe durata perioadei de probă.</p>
         </div>
         <span className="rounded-full bg-brand-green-soft px-3 py-1.5 text-sm font-medium text-brand-green-hover">
-          Perioadă de probă · 14 zile
+          Perioadă de probă · {TRIAL_DAYS} de zile
         </span>
       </div>
 

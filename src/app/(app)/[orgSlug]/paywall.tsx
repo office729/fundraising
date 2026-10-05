@@ -1,6 +1,8 @@
 "use client";
 
 import { logoutAction } from "./actions";
+import { TRIAL_DAYS } from "@/lib/billing/trial";
+
 import { PackagePicker } from "./package-picker";
 
 export function Paywall({ orgSlug, orgName }: { orgSlug: string; orgName: string }) {
@@ -28,7 +30,7 @@ export function Paywall({ orgSlug, orgName }: { orgSlug: string; orgName: string
           </span>
           <h1 className="font-display mt-4 text-3xl font-bold text-ink">Alege pachetul organizației tale</h1>
           <p className="mt-3 text-base leading-relaxed text-muted">
-            Cele 14 zile gratuite pentru <strong>{orgName}</strong> s-au terminat. Alege un pachet ca să continui să
+            Cele {TRIAL_DAYS} de zile gratuite pentru <strong>{orgName}</strong> s-au terminat. Alege un pachet ca să continui să
             folosești Alexandrit — te redirecționăm la plată, accesul se reactivează imediat după confirmare.
           </p>
           <p className="mt-2 text-sm text-muted">

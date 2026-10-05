@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { dezaboneazaDonator, verificaLinkDezabonare } from "@/lib/dezabonare";
+import { raporteazaEroare } from "@/lib/monitoring";
 
 // One-click unsubscribe (RFC 8058) — clientul de email (Gmail/Apple Mail) face
 // POST direct pe URL-ul din antetul List-Unsubscribe, după apăsarea butonului
@@ -12,7 +13,7 @@ export async function POST(req: Request) {
   try {
     await dezaboneazaDonator(searchParams.get("o")!, email);
   } catch (e) {
-    console.error("Eroare la dezabonare (one-click):", e);
+    raporteazaEroare("dezabonare-one-click", e);
     return NextResponse.json({ error: "eroare_temporara" }, { status: 500 });
   }
   return NextResponse.json({ ok: true });

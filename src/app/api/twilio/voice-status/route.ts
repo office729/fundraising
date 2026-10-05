@@ -4,6 +4,7 @@ import twilio from "twilio";
 
 import { db } from "@/lib/db";
 import { apeluri } from "@/lib/db/schema";
+import { raporteazaEroare } from "@/lib/monitoring";
 
 const STATUS_MAP: Record<string, "finalizat" | "esuat" | "fara_raspuns" | "ocupat"> = {
   completed: "finalizat",
@@ -45,7 +46,7 @@ export async function POST(req: Request) {
         .where(eq(apeluri.id, apelId));
     });
   } catch (e) {
-    console.error("Eroare la actualizarea apelului:", e);
+    raporteazaEroare("twilio-voice-status", e);
   }
 
   return new NextResponse("<Response></Response>", { headers: { "Content-Type": "text/xml" } });

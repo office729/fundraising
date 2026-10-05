@@ -1,6 +1,7 @@
 "use server";
 
 import { dezaboneazaDonator, verificaLinkDezabonare } from "@/lib/dezabonare";
+import { raporteazaEroare } from "@/lib/monitoring";
 
 export type DezabonareState = { ok: boolean; error: string | null };
 
@@ -14,7 +15,7 @@ export async function dezaboneazaAction(_prev: DezabonareState, formData: FormDa
   try {
     await dezaboneazaDonator(String(formData.get("o")), email);
   } catch (e) {
-    console.error("Eroare la dezabonare:", e);
+    raporteazaEroare("dezabonare", e);
     return { ok: false, error: "Nu am putut procesa cererea — încearcă din nou." };
   }
   return { ok: true, error: null };

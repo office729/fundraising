@@ -35,6 +35,11 @@ export async function loginAction(
   if (!(await verificaLimitaRata("login", ip, 10, 15))) {
     return { error: errors.preaMulteIncercari };
   }
+  // Și per cont: un atac distribuit (IP-uri multe) asupra unui singur cont țintă nu mai trece de
+  // limita pe IP. Compromis asumat: cineva poate bloca temporar (15 min) un cont străin.
+  if (!(await verificaLimitaRata("login-cont", email, 10, 15))) {
+    return { error: errors.preaMulteIncercari };
+  }
 
   const supabase = await createClient({ persist: ramaiConectat });
   const { error } = await supabase.auth.signInWithPassword({ email, password });

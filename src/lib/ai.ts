@@ -1,5 +1,6 @@
 import "server-only";
 
+import { raporteazaEroare } from "@/lib/monitoring";
 import type { ContinutCanal, DateCampanie } from "@/lib/promovare/generator";
 
 // Integrare AI (Anthropic) pentru generarea de conținut de promovare — inițializare
@@ -183,8 +184,10 @@ export async function genereazaContinutCanalAI(
       textScurt: typeof parsed.textScurt === "string" && parsed.textScurt.trim() ? parsed.textScurt.trim() : null,
       indemn: typeof parsed.indemn === "string" && parsed.indemn.trim() ? parsed.indemn.trim() : null,
     };
-  } catch {
-    // Orice eroare (cheie invalidă, timeout, JSON stricat) → null, apelantul cade pe șablon.
+  } catch (e) {
+    // Orice eroare (cheie invalidă, timeout, JSON stricat) → null, apelantul cade pe șablon —
+    // dar o raportăm, altfel un AI căzut (cheie expirată, credit epuizat) trece neobservat.
+    raporteazaEroare("ai", e);
     return null;
   }
 }
@@ -211,7 +214,8 @@ export async function genereazaTextMultumireAI(
   try {
     const text = curata(await apeleazaAI({ system: systemPrompt(), prompt, maxTokens: 500 }));
     return text || null;
-  } catch {
+  } catch (e) {
+    raporteazaEroare("ai", e);
     return null;
   }
 }
@@ -246,7 +250,8 @@ export async function genereazaCalendarZilnicAI(date: DateCampanie, zile = 7): P
       if (text) out.push({ obiectiv, text });
     }
     return out.length ? out.slice(0, zile) : null;
-  } catch {
+  } catch (e) {
+    raporteazaEroare("ai", e);
     return null;
   }
 }
@@ -329,7 +334,8 @@ export async function extrageDateFinanciareAI(params: {
     }
     out.anGasit = typeof parsed.anGasit === "number" ? parsed.anGasit : null;
     return out;
-  } catch {
+  } catch (e) {
+    raporteazaEroare("ai", e);
     return null;
   }
 }
@@ -407,7 +413,8 @@ export async function genereazaRaportActivitateAI(params: {
     }
     if (!sectiuni.titlu || !sectiuni.introducere) return null;
     return sectiuni as SectiuniRaportActivitate;
-  } catch {
+  } catch (e) {
+    raporteazaEroare("ai", e);
     return null;
   }
 }

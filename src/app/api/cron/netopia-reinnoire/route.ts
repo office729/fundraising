@@ -45,6 +45,12 @@ export async function GET(req: Request) {
     return { incercate: 0, emise: 0 };
   });
 
+  // Curățenie: contoarele de rată cu fereastra veche de peste 3 zile nu mai au rost (tabelul ar crește
+  // nelimitat — fiecare IP/email/cheie nouă adaugă un rând). Best-effort.
+  await db.execute(sql`delete from auth_rate_limits where fereastra_start < now() - interval '3 days'`).catch((e) =>
+    raporteazaEroare("rate-limit-curatenie", e),
+  );
+
   if (!netopiaConfigurata()) {
     return NextResponse.json({ ok: true, procesate: 0, motiv: "netopia_neconfigurat", facturi });
   }

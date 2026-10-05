@@ -5,6 +5,7 @@ import twilio from "twilio";
 import { verificaLimitaRata } from "@/lib/auth/rate-limit";
 import { db } from "@/lib/db";
 import { apeluri } from "@/lib/db/schema";
+import { raporteazaEroare } from "@/lib/monitoring";
 
 // TwiML webhook apelat de Twilio când un agent inițiază un apel din browser
 // (Twilio Voice SDK → device.connect({params: {...}})). Rută PUBLICĂ (Twilio
@@ -79,7 +80,7 @@ export async function POST(req: Request) {
       });
     });
   } catch (e) {
-    console.error("Eroare la înregistrarea apelului:", e);
+    raporteazaEroare("twilio-voice", e);
     // Continuăm oricum — mai bine sună apelul fără jurnal, decât să pice.
   }
 
