@@ -11,6 +11,7 @@ export const ABONAMENT_DICT = {
       titlu: "Alege pachetul organizației tale",
       desc: (zile: number) => `Cele ${zile} de zile gratuite s-au terminat. Alege un pachet ca să continui să folosești Alexandrit — te redirecționăm la plată, accesul se reactivează imediat după confirmare.`,
       probleme: "Probleme la plată? Scrie-ne direct la",
+      exporta: "Descarcă datele organizației (JSON)",
     },
     picker: {
       recurent:
@@ -106,6 +107,7 @@ export const ABONAMENT_DICT = {
       titlu: "Choose your organization's plan",
       desc: (zile: number) => `Your ${zile} free days are over. Choose a plan to keep using Alexandrit — we'll redirect you to payment, and access is restored right after confirmation.`,
       probleme: "Trouble paying? Write to us at",
+      exporta: "Download the organization's data (JSON)",
     },
     picker: {
       recurent:

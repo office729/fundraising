@@ -14,6 +14,8 @@ const COLOANE_EXCLUSE = /(_enc$|token|secret|password|parola|api_key|signature|s
 const LIMITA_BYTES = 4_000_000;
 const LIMITA_RANDURI_TABEL = 50_000;
 
+// permiteAccesBlocat: un cont cu accesul expirat își poate descărca datele (portabilitate, art. 20 GDPR) — exact de
+// asta trimite avertizarea de retenție un link către această rută.
 const exporta = withOrgSession(async (ctx) => {
   if (ctx.role !== "owner") {
     return NextResponse.json({ error: "Doar owner-ul poate exporta datele organizației." }, { status: 403 });
@@ -87,7 +89,7 @@ const exporta = withOrgSession(async (ctx) => {
       "Cache-Control": "no-store",
     },
   });
-});
+}, { permiteAccesBlocat: true });
 
 type Ctx = { params: Promise<{ orgSlug: string }> };
 

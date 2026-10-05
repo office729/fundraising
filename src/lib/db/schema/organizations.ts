@@ -1,6 +1,6 @@
 import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
-import { boolean, integer, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { boolean, integer, jsonb, pgTable, smallint, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 import { orgDomeniuActivitate, orgPackage, subscriptionStatus } from "./enums";
 
@@ -71,6 +71,10 @@ export const organizations = pgTable("organizations", {
   // currentPeriodEnd deja plătit, neschimbat de un eșec de reînnoire.
   netopiaRenewalAttempts: integer("netopia_renewal_attempts").notNull().default(0),
   netopiaRenewalFailedAt: timestamp("netopia_renewal_failed_at", { withTimezone: true }),
+  // Retenție: câte avertizări de ștergere (0/1/2) a primit organizația cu acces expirat și când a fost ultima.
+  // Resetate la 0 când își reactivează accesul (vezi lib/billing/netopia-confirm.ts).
+  retentieAvertizari: smallint("retentie_avertizari").notNull().default(0),
+  retentieUltimaAvertizare: timestamp("retentie_ultima_avertizare", { withTimezone: true }),
   // Contul Stripe PROPRIU al ONG-ului, pentru donațiile primite pe paginile lui
   // de campanie — platforma nu are cont Stripe. Cheia secretă și secretul
   // webhook-ului sunt criptate (AES-256-GCM, cheia ORG_SECRETS_KEY din mediu) și

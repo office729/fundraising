@@ -149,3 +149,34 @@ export function htmlCardExpirat(params: { orgName: string; card: string; setariU
     </div>
   `;
 }
+
+// Avertizare de retenție: organizația are accesul expirat de mult și datele ei vor fi șterse. Trimisă de 2 ori
+// (la ~60 și la ~83 de zile de la expirare), către owner.
+export function subiectRetentie(zileRamase: number): string {
+  return zileRamase > 14
+    ? "Datele organizației tale din Alexandrit vor fi șterse în curând"
+    : `Datele organizației tale din Alexandrit vor fi șterse în ${zileRamase} zile`;
+}
+
+export function htmlRetentie(params: { orgName: string; zileRamase: number; exportUrl: string; pachetUrl: string }): string {
+  const orgName = escHtml(params.orgName);
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; color: #14213d;">
+      <p>Bună!</p>
+      <p>
+        Accesul organizației <strong>${orgName}</strong> la Alexandrit a expirat, iar contul nu a mai fost reactivat. Conform politicii
+        noastre de retenție, datele organizației (contacte, donatori, campanii, documente) vor fi <strong>șterse definitiv în aproximativ
+        ${params.zileRamase} de zile</strong>.
+      </p>
+      <p>Ai două variante:</p>
+      <ul>
+        <li><a href="${escHtml(params.exportUrl)}">Descarcă toate datele (JSON)</a> — disponibil și cu accesul expirat, dacă ești owner;</li>
+        <li><a href="${escHtml(params.pachetUrl)}">Alege un pachet</a> și accesul se reactivează imediat, cu datele neschimbate.</li>
+      </ul>
+      <p style="color:#94a3b8;font-size:12px;margin-top:24px;">
+        Primești acest email pentru că ești owner al organizației ${orgName} pe Alexandrit. Dacă ai nevoie de mai mult timp, scrie-ne la
+        vlad.placinta@alexandrit.ro.
+      </p>
+    </div>
+  `;
+}

@@ -42,6 +42,11 @@ export function Paywall({ orgSlug, orgName, locale }: { orgSlug: string; orgName
             </a>
             .
           </p>
+          <p className="mt-2 text-sm">
+            <a href={`/api/${orgSlug}/export`} className="font-medium text-brand-green underline">
+              {t.exporta}
+            </a>
+          </p>
         </div>
 
         <div className="mt-10">

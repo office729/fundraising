@@ -221,6 +221,8 @@ export async function proceseazaRezultatPlataNetopia(orderId: string, rezultat: 
           currentPeriodEnd: sql`greatest(${organizations.currentPeriodEnd}, now()) + (${plata.luni} || ' months')::interval`,
           netopiaRenewalAttempts: 0,
           netopiaRenewalFailedAt: null,
+          retentieAvertizari: 0,
+          retentieUltimaAvertizare: null,
           ...setCard,
         })
         .where(eq(organizations.id, plata.orgId))

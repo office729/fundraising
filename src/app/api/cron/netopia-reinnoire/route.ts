@@ -6,6 +6,7 @@ import { taxeazaReinnoireAutomata } from "@/lib/billing/netopia-checkout";
 import { dateFacturareComplete } from "@/lib/billing/date-facturare";
 import { NUME_PACHET_FIX, PACKAGE_LIMITS, type OrgPackage } from "@/lib/billing/packages";
 import type { CustomPlanConfigSaved } from "@/lib/billing/custom-plan";
+import { isAccessBlocked, isPlatformAdmin, trialEndsAt } from "@/lib/billing/trial";
 import { cronAutorizat } from "@/lib/cron-auth";
 import { db } from "@/lib/db";
 import { appUsers, memberships, organizations } from "@/lib/db/schema";
@@ -17,10 +18,12 @@ import {
   htmlCardExpirat,
   htmlDateFacturareLipsa,
   htmlReinnoireEsuata,
+  htmlRetentie,
   subiectAvizReinnoire,
   subiectCardExpirat,
   subiectDateFacturareLipsa,
   subiectReinnoireEsuata,
+  subiectRetentie,
 } from "@/lib/netopia-renewal-email-template";
 import { raporteazaAvertisment, raporteazaEroare } from "@/lib/monitoring";
 
@@ -55,6 +58,77 @@ function pretSiEticheta(org: { package: string; customPlanConfig: unknown }): { 
   return { pret, eticheta };
 }
 
+// Politica de retenție (valori implicite — de confirmat): ștergere la 90 de zile după expirarea accesului, cu două
+// avertizări (la 60 și la 83 de zile). Cron-ul NU șterge nimic: ce depășește termenul se raportează în Sentry și se
+// șterge manual (platform-admin / owner), după confirmare.
+const RETENTIE_ZILE = 90;
+const RETENTIE_PRIMA_AVERTIZARE = 60;
+const RETENTIE_A_DOUA_AVERTIZARE = 83;
+
+async function avertizariRetentie(): Promise<{ avertizate: number; peste_termen: string[] }> {
+  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://fundraising-academy-one.vercel.app").replace(/\/$/, "");
+  const { orgs, proprietari } = await db.transaction(async (tx) => {
+    await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
+    const orgs = await tx
+      .select({
+        id: organizations.id,
+        slug: organizations.slug,
+        name: organizations.name,
+        package: organizations.package,
+        subscriptionStatus: organizations.subscriptionStatus,
+        currentPeriodEnd: organizations.currentPeriodEnd,
+        createdAt: organizations.createdAt,
+        retentieAvertizari: organizations.retentieAvertizari,
+      })
+      .from(organizations);
+    const proprietari = await tx
+      .select({ orgId: memberships.orgId, email: appUsers.email })
+      .from(memberships)
+      .innerJoin(appUsers, eq(appUsers.id, memberships.userId))
+      .where(eq(memberships.role, "owner"));
+    return { orgs, proprietari };
+  });
+
+  const emailuri = new Map<string, string[]>();
+  for (const p of proprietari) emailuri.set(p.orgId, [...(emailuri.get(p.orgId) ?? []), p.email]);
+
+  let avertizate = 0;
+  const pesteTermen: string[] = [];
+  for (const org of orgs) {
+    const owneri = emailuri.get(org.id) ?? [];
+    // Organizațiile conturilor de platformă nu sunt niciodată blocate/șterse.
+    if (owneri.some((e) => isPlatformAdmin(e))) continue;
+    if (!isAccessBlocked({ createdAt: org.createdAt, subscriptionStatus: org.subscriptionStatus, package: org.package, currentPeriodEnd: org.currentPeriodEnd })) continue;
+
+    // Expirarea accesului = cea mai târzie dintre sfârșitul probei și sfârșitul ultimei perioade plătite.
+    const expirare = Math.max(trialEndsAt(org.createdAt).getTime(), org.currentPeriodEnd?.getTime() ?? 0);
+    const zile = Math.floor((Date.now() - expirare) / 86_400_000);
+    if (zile >= RETENTIE_ZILE) pesteTermen.push(`${org.slug} (${zile} zile)`);
+
+    const treapta = zile >= RETENTIE_A_DOUA_AVERTIZARE ? 2 : zile >= RETENTIE_PRIMA_AVERTIZARE ? 1 : 0;
+    if (treapta === 0 || org.retentieAvertizari >= treapta || owneri.length === 0 || !emailConfigurat()) continue;
+
+    const zileRamase = Math.max(1, RETENTIE_ZILE - zile);
+    for (const to of owneri) {
+      await trimiteEmail({
+        to,
+        subiect: subiectRetentie(zileRamase),
+        html: htmlRetentie({ orgName: org.name, zileRamase, exportUrl: `${baseUrl}/api/${org.slug}/export`, pachetUrl: `${baseUrl}/${org.slug}` }),
+      }).catch((e) => raporteazaEroare("retentie-email", e, { orgSlug: org.slug }));
+    }
+    await db.transaction(async (tx) => {
+      await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
+      await tx.update(organizations).set({ retentieAvertizari: treapta, retentieUltimaAvertizare: new Date() }).where(eq(organizations.id, org.id));
+    });
+    avertizate++;
+  }
+
+  if (pesteTermen.length > 0) {
+    raporteazaAvertisment("retentie", "organizații peste termenul de retenție — de șters manual după confirmare", { organizatii: pesteTermen.join(", ") });
+  }
+  return { avertizate, peste_termen: pesteTermen };
+}
+
 function formatData(d: Date): string {
   return d.toLocaleDateString("ro-RO", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Bucharest" });
 }
@@ -84,8 +158,14 @@ export async function GET(req: Request) {
     raporteazaEroare("rate-limit-curatenie", e),
   );
 
+  // Retenție: avertizări (NU ștergere) pentru organizațiile cu accesul expirat de mult timp.
+  const retentie = await avertizariRetentie().catch((e) => {
+    raporteazaEroare("retentie", e);
+    return { avertizate: 0, peste_termen: [] as string[] };
+  });
+
   if (!netopiaConfigurata()) {
-    return NextResponse.json({ ok: true, procesate: 0, motiv: "netopia_neconfigurat", facturi });
+    return NextResponse.json({ ok: true, procesate: 0, motiv: "netopia_neconfigurat", facturi, retentie });
   }
 
   const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://fundraising-academy-one.vercel.app").replace(/\/$/, "");

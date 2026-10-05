@@ -65,3 +65,13 @@ Fiecare test: **pași → rezultat așteptat**. Folosește o organizație de pro
 
 ## După fiecare test
 Șterge organizațiile și utilizatorii de probă (Setări → „Șterge organizația”) și verifică în Sentry că nu au apărut erori noi.
+
+## 12. Retenția: avertizări pentru conturile expirate (valori implicite de confirmat)
+Politica implicită: ștergere la **90 de zile** de la expirarea accesului, cu avertizări la **60** și la **83** de zile. Cron-ul zilnic
+(`/api/cron/netopia-reinnoire`) trimite emailurile și raportează în Sentry organizațiile peste termen, dar **nu șterge nimic** — ștergerea
+rămâne manuală (owner din Setări sau SQL), după confirmare.
+1. Pe o organizație de probă cu un owner al tău: în SQL mută `created_at` la ~100 de zile în urmă și lasă `subscription_status` ≠ `active`.
+2. Rulează cron-ul cu `CRON_SECRET`. Așteptat: ownerul primește „Datele organizației tale… vor fi șterse în curând”, iar `retentie_avertizari` devine 1
+   (a doua rulare nu retrimite). Mută `created_at` la ~125 de zile → a doua avertizare („în 7 zile”), `retentie_avertizari = 2`.
+3. Cu accesul expirat, pagina de blocare arată linkul „Descarcă datele organizației (JSON)”, iar descărcarea funcționează pentru owner.
+4. Plătește un pachet. Așteptat: accesul revine, iar `retentie_avertizari` se resetează la 0.
