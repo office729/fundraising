@@ -13,7 +13,7 @@ const T = {
     exportDesc: "Exportă datele organizației (contacte, donatori, campanii, plăți, membri). Fără chei secrete sau tokenuri.",
     zona: "Zonă periculoasă",
     stergeDesc: (slug: string) =>
-      `Șterge definitiv organizația și toate datele ei: contacte, donatori, campanii, plăți, invitații și membri. Nu se poate anula. Pentru confirmare, scrie „${slug}”.`,
+      `Șterge definitiv organizația și toate datele ei: contacte, donatori, campanii, plăți, invitații, membri și fișierele încărcate (logo, poze, facturi). Nu se poate anula. Pentru confirmare, scrie „${slug}”.`,
     placeholder: "slug-ul organizației",
     sterge: "Șterge organizația",
     seSterge: "Se șterge...",
@@ -24,7 +24,7 @@ const T = {
     exportDesc: "Exports the organization's data (contacts, donors, campaigns, payments, members). No secret keys or tokens.",
     zona: "Danger zone",
     stergeDesc: (slug: string) =>
-      `Permanently deletes the organization and all of its data: contacts, donors, campaigns, payments, invitations and members. This cannot be undone. To confirm, type “${slug}”.`,
+      `Permanently deletes the organization and all of its data: contacts, donors, campaigns, payments, invitations, members and uploaded files (logo, photos, invoices). This cannot be undone. To confirm, type “${slug}”.`,
     placeholder: "organization slug",
     sterge: "Delete organization",
     seSterge: "Deleting...",

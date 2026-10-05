@@ -6,7 +6,8 @@ import { withOrgSession } from "@/lib/auth/guard";
 import { db } from "@/lib/db";
 import { organizations } from "@/lib/db/schema";
 import { EroareUtilizator, mesajSigur } from "@/lib/erori";
-import { raporteazaAvertisment } from "@/lib/monitoring";
+import { raporteazaAvertisment, raporteazaEroare } from "@/lib/monitoring";
+import { createClient } from "@/lib/supabase/server";
 
 export type RezultatStergere = { error: string | null };
 
@@ -19,7 +20,41 @@ export type RezultatStergere = { error: string | null };
 //
 // Cascada ocolește RLS (verificările de integritate referențială nu o aplică), deci
 // singura poartă de acces e politica organizations_owner_delete + verificarea de rol
-// de aici. Fișierele încărcate în Storage (logo, poze) NU se șterg automat.
+// de aici. Fișierele din Storage (logo, poze, facturi) se șterg explicit, înaintea organizației.
+
+// Șterge fișierele organizației din Storage (logo, poze de campanie, facturi, newsletter) — folderele
+// `<slug>/` și `newsletter/<orgId>/` din bucket-ul org-branding. Rulează cu sesiunea owner-ului (politica
+// org_branding_admin_delete); o eroare aici NU oprește ștergerea organizației, doar se raportează.
+async function stergeFisiereOrganizatie(slug: string, orgId: string): Promise<number> {
+  const supabase = await createClient();
+  const bucket = supabase.storage.from("org-branding");
+  const cai: string[] = [];
+
+  async function colecteaza(prefix: string, adancime: number): Promise<void> {
+    if (adancime > 4) return;
+    const { data, error } = await bucket.list(prefix, { limit: 1000 });
+    if (error || !data) throw error ?? new Error("list a eșuat");
+    for (const intrare of data) {
+      // Folderele vin fără `id`; fișierele au id.
+      if (intrare.id) cai.push(`${prefix}/${intrare.name}`);
+      else await colecteaza(`${prefix}/${intrare.name}`, adancime + 1);
+    }
+  }
+
+  try {
+    await colecteaza(slug, 0);
+    await colecteaza(`newsletter/${orgId}`, 0);
+    for (let i = 0; i < cai.length; i += 100) {
+      const { error } = await bucket.remove(cai.slice(i, i + 100));
+      if (error) throw error;
+    }
+    return cai.length;
+  } catch (e) {
+    raporteazaEroare("organizatie-stergere-storage", e, { orgId, orgSlug: slug });
+    return 0;
+  }
+}
+
 const stergeOrganizatia = withOrgSession(
   async (ctx, confirmare: string): Promise<void> => {
     if (ctx.role !== "owner") throw new EroareUtilizator("Doar owner-ul poate șterge organizația.");
@@ -32,11 +67,15 @@ const stergeOrganizatia = withOrgSession(
       await tx.update(organizations).set({ referredByOrgId: null }).where(eq(organizations.referredByOrgId, ctx.orgId));
     });
 
+    // Fișierele din Storage se șterg ÎNAINTE de rândul organizației (politica verifică încă apartenența
+    // owner-ului la organizație).
+    const fisiereSterse = await stergeFisiereOrganizatie(ctx.orgSlug, ctx.orgId);
+
     const sters = await ctx.db.delete(organizations).where(eq(organizations.id, ctx.orgId)).returning({ id: organizations.id });
     if (!sters.length) throw new EroareUtilizator("Nu s-a putut șterge organizația.");
 
     // Urmă pentru audit — după ștergere nu mai rămâne nimic în baza de date.
-    raporteazaAvertisment("organizatie-stearsa", "organizație ștearsă de owner", { orgId: ctx.orgId, orgSlug: ctx.orgSlug, userId: ctx.userId });
+    raporteazaAvertisment("organizatie-stearsa", "organizație ștearsă de owner", { orgId: ctx.orgId, orgSlug: ctx.orgSlug, userId: ctx.userId, fisiereSterse });
   },
   { permiteAccesBlocat: true },
 );
