@@ -4,12 +4,12 @@ import { Avatar } from "../../../components/ui/avatar";
 import { Badge, type StatusTone } from "../../../components/ui/badge";
 import { Breadcrumb } from "../../../components/ui/breadcrumb";
 import { Card } from "../../../components/ui/card";
-import { Tabs } from "../../../components/ui/tabs";
 import { formatData, formatDataOra, formatDataRelativa } from "../../../lib/format";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { DONATORI_REALI_DICT } from "@/lib/i18n/dictionaries/donatori-reali";
 
 import { getDonatorRealDetaliu } from "../../queries";
+import { DonatorTabs } from "./donator-tabs";
 import { GdprPanelDonator } from "./gdpr-panel";
 import { NotitePanelDonatorReal } from "./notite-panel";
 
@@ -70,15 +70,16 @@ export default async function DonatorRealProfilPage({ params }: { params: Promis
 
       {poateAdministra && <GdprPanelDonator donatorId={donator.id} nume={donator.nume} />}
 
-      <Tabs
+      {/* Panourile se randează pe server și se trimit ca noduri gata făcute — Tabs (client) nu poate
+          primi o funcție ca `children` dintr-o componentă server (eroare 500 în Next). */}
+      <DonatorTabs
         tabs={[
           { key: "donatii", label: dict.tabs.donatii(donatii.length) },
           { key: "notite", label: dict.tabs.notite(notite.length) },
         ]}
-      >
-        {(active) => {
-          if (active === "donatii")
-            return donatii.length ? (
+        panels={{
+          donatii: (
+            donatii.length ? (
               <Card padded={false}>
                 <table className="w-full border-collapse text-sm">
                   <thead>
@@ -107,10 +108,11 @@ export default async function DonatorRealProfilPage({ params }: { params: Promis
               </Card>
             ) : (
               <p className="text-[13px] text-[var(--ci-text-muted)]">{dict.donatii.empty}</p>
-            );
-          return <NotitePanelDonatorReal donatorId={donator.id} notite={notite} />;
+            )
+          ),
+          notite: <NotitePanelDonatorReal donatorId={donator.id} notite={notite} />,
         }}
-      </Tabs>
+      />
     </div>
   );
 }
