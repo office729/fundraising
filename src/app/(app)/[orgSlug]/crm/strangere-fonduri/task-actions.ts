@@ -2,12 +2,13 @@
 
 import { randomUUID } from "node:crypto";
 
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 
 import { aiConfigurat, genereazaTextMultumireAI } from "@/lib/ai";
 import { limitaAIDepasita, MESAJ_LIMITA_AI } from "@/lib/ai-limit";
 import { withOrgAdmin, withOrgFaze, withOrgSession } from "@/lib/auth/guard";
+import { listAttachmentsCampanieImpl, listTaskuriCampanieImpl } from "./detaliu-queries";
 import { fundraisingBeneficiaries, fundraisingPages, fundraisingTaskAttachments, fundraisingTasks } from "@/lib/db/schema";
 import { notifica } from "@/lib/notifications";
 import { createClient } from "@/lib/supabase/server";
@@ -133,9 +134,7 @@ export const genereazaTextMultumireAIAction = withOrgFaze<
   },
 });
 
-export const listTaskuriCampanie = withOrgSession(async (ctx, pageId: string) => {
-  return ctx.db.select().from(fundraisingTasks).where(eq(fundraisingTasks.campaignPageId, pageId)).orderBy(asc(fundraisingTasks.dataLimita));
-});
+export const listTaskuriCampanie = withOrgSession(listTaskuriCampanieImpl);
 
 export const stergeTaskAction = withOrgAdmin(async (ctx, taskId: string) => {
   await ctx.db.delete(fundraisingTasks).where(and(eq(fundraisingTasks.id, taskId), eq(fundraisingTasks.orgId, ctx.orgId)));
@@ -183,9 +182,4 @@ export const listAttachmentsTask = withOrgSession(async (ctx, taskId: string) =>
   return ctx.db.select().from(fundraisingTaskAttachments).where(eq(fundraisingTaskAttachments.taskId, taskId));
 });
 
-export const listAttachmentsCampanie = withOrgSession(async (ctx, pageId: string) => {
-  const taskuri = await ctx.db.select({ id: fundraisingTasks.id }).from(fundraisingTasks).where(eq(fundraisingTasks.campaignPageId, pageId));
-  const taskIds = taskuri.map((t) => t.id);
-  if (!taskIds.length) return [];
-  return ctx.db.select().from(fundraisingTaskAttachments).where(inArray(fundraisingTaskAttachments.taskId, taskIds));
-});
+export const listAttachmentsCampanie = withOrgSession(listAttachmentsCampanieImpl);

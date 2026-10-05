@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 import { aiConfigurat, genereazaCalendarZilnicAI, genereazaContinutCanalAI, type PostCalendarAI } from "@/lib/ai";
 import { limitaAIDepasita, MESAJ_LIMITA_AI } from "@/lib/ai-limit";
 import { withOrgAdmin, withOrgFaze, withOrgSession } from "@/lib/auth/guard";
+import { listCalendarCampanieImpl, listContinutCampanieImpl } from "./detaliu-queries";
 import { fundraisingCalendarItems, fundraisingGeneratedContent, fundraisingPages } from "@/lib/db/schema";
 import { genereazaCalendarZilnic, genereazaContinutPeCanal, type ContinutCanal, type DateCampanie } from "@/lib/promovare/generator";
 
@@ -237,13 +238,9 @@ export const regenereazaVariantaContinutAction = withOrgFaze<
   },
 });
 
-export const listCalendarCampanie = withOrgSession(async (ctx, pageId: string) => {
-  return ctx.db.select().from(fundraisingCalendarItems).where(eq(fundraisingCalendarItems.campaignPageId, pageId)).orderBy(fundraisingCalendarItems.ziua);
-});
+export const listCalendarCampanie = withOrgSession(listCalendarCampanieImpl);
 
-export const listContinutCampanie = withOrgSession(async (ctx, pageId: string) => {
-  return ctx.db.select().from(fundraisingGeneratedContent).where(eq(fundraisingGeneratedContent.campaignPageId, pageId));
-});
+export const listContinutCampanie = withOrgSession(listContinutCampanieImpl);
 
 // Aprobă un material generat — vizibil doar după aprobare (status trece din
 // 'draft' în 'aprobat'); beneficiarul vede doar materialele aprobate.

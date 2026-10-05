@@ -6,9 +6,10 @@ import { and, eq, gt, isNull, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 import { withOrgAdmin, withOrgSession } from "@/lib/auth/guard";
+import { listMembersImpl } from "../crm/strangere-fonduri/detaliu-queries";
 import { EroareUtilizator, mesajSigur } from "@/lib/erori";
 import { getLimiteleEfective, subCota } from "@/lib/billing/quota";
-import { appUsers, invites, memberships } from "@/lib/db/schema";
+import { invites, memberships } from "@/lib/db/schema";
 import { verificaLimitaRata } from "@/lib/auth/rate-limit";
 import { emailConfigurat, trimiteEmail } from "@/lib/email";
 import { htmlInvitatie, subiectInvitatie } from "@/lib/invitatie-email-template";
@@ -24,19 +25,7 @@ export type InviteRow = {
   expiresAt: string;
 };
 
-export const listMembers = withOrgAdmin(async (ctx): Promise<MemberRow[]> => {
-  const rows = await ctx.db
-    .select({
-      userId: appUsers.id,
-      email: appUsers.email,
-      name: appUsers.name,
-      role: memberships.role,
-    })
-    .from(memberships)
-    .innerJoin(appUsers, eq(appUsers.id, memberships.userId))
-    .where(eq(memberships.orgId, ctx.orgId));
-  return rows;
-});
+export const listMembers = withOrgAdmin(listMembersImpl);
 
 export const listPendingInvites = withOrgAdmin(async (ctx): Promise<InviteRow[]> => {
   const rows = await ctx.db

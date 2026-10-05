@@ -1,16 +1,14 @@
 "use server";
 
-import { and, desc, eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 
 import { aiConfigurat, genereazaContinutCanalAI } from "@/lib/ai";
 import { limitaAIDepasita, MESAJ_LIMITA_AI } from "@/lib/ai-limit";
 import { withOrgAdmin, withOrgFaze, withOrgSession } from "@/lib/auth/guard";
+import { listComunicatCampanieImpl, listGrupuriPublicateCampanieImpl, listLocalGroupsCampanieImpl, listMediaContacteCampanieImpl, listOutreachIstoricImpl } from "./detaliu-queries";
 import { inregistreazaAudit } from "@/lib/audit";
 import {
-  fundraisingGroupPostingHistory,
-  fundraisingLocalGroups,
-  fundraisingMediaContacts,
   fundraisingPages,
   fundraisingPressOutreachHistory,
   fundraisingPressReleases,
@@ -86,15 +84,7 @@ export const genereazaComunicatAIAction = withOrgFaze<
   },
 });
 
-export const listComunicatCampanie = withOrgSession(async (ctx, pageId: string) => {
-  const rows = await ctx.db
-    .select()
-    .from(fundraisingPressReleases)
-    .where(eq(fundraisingPressReleases.campaignPageId, pageId))
-    .orderBy(desc(fundraisingPressReleases.createdAt))
-    .limit(1);
-  return rows[0] ?? null;
-});
+export const listComunicatCampanie = withOrgSession(listComunicatCampanieImpl);
 
 export const aprobaComunicatAction = withOrgAdmin(async (ctx, releaseId: string) => {
   await ctx.db
@@ -113,14 +103,7 @@ export const aprobaComunicatAction = withOrgAdmin(async (ctx, releaseId: string)
 
 // Contacte de presă recomandate pentru campanie — filtrate pe județul
 // paginii, aceeași sursă globală ca panoul de administrare.
-export const listMediaContacteCampanie = withOrgSession(async (ctx, pageId: string) => {
-  const pagina = await ctx.db.select({ judet: fundraisingPages.judet }).from(fundraisingPages).where(eq(fundraisingPages.id, pageId)).limit(1);
-  if (!pagina[0]?.judet) return [];
-  return ctx.db
-    .select()
-    .from(fundraisingMediaContacts)
-    .where(and(eq(fundraisingMediaContacts.orgId, ctx.orgId), eq(fundraisingMediaContacts.judet, pagina[0].judet)));
-});
+export const listMediaContacteCampanie = withOrgSession(listMediaContacteCampanieImpl);
 
 export const marcheazaOutreachAction = withOrgAdmin(async (ctx, releaseId: string, mediaContactId: string) => {
   await ctx.db.insert(fundraisingPressOutreachHistory).values({
@@ -130,24 +113,9 @@ export const marcheazaOutreachAction = withOrgAdmin(async (ctx, releaseId: strin
   });
 });
 
-export const listOutreachIstoric = withOrgSession(async (ctx, releaseId: string) => {
-  return ctx.db.select().from(fundraisingPressOutreachHistory).where(eq(fundraisingPressOutreachHistory.pressReleaseId, releaseId));
-});
+export const listOutreachIstoric = withOrgSession(listOutreachIstoricImpl);
 
 // Grupuri locale recomandate pentru campanie — filtrate pe județul paginii.
-export const listLocalGroupsCampanie = withOrgSession(async (ctx, pageId: string) => {
-  const pagina = await ctx.db.select({ judet: fundraisingPages.judet }).from(fundraisingPages).where(eq(fundraisingPages.id, pageId)).limit(1);
-  if (!pagina[0]?.judet) return [];
-  return ctx.db
-    .select()
-    .from(fundraisingLocalGroups)
-    .where(and(eq(fundraisingLocalGroups.orgId, ctx.orgId), eq(fundraisingLocalGroups.judet, pagina[0].judet), eq(fundraisingLocalGroups.status, "activ")));
-});
+export const listLocalGroupsCampanie = withOrgSession(listLocalGroupsCampanieImpl);
 
-export const listGrupuriPublicateCampanie = withOrgSession(async (ctx, pageId: string) => {
-  const rows = await ctx.db
-    .select({ groupId: fundraisingGroupPostingHistory.groupId })
-    .from(fundraisingGroupPostingHistory)
-    .where(eq(fundraisingGroupPostingHistory.campaignPageId, pageId));
-  return rows.map((r) => r.groupId);
-});
+export const listGrupuriPublicateCampanie = withOrgSession(listGrupuriPublicateCampanieImpl);

@@ -2,9 +2,10 @@
 
 import { randomUUID } from "node:crypto";
 
-import { and, desc, eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import { withOrgAdmin, withOrgSession } from "@/lib/auth/guard";
+import { listFacturiCampanieImpl } from "./detaliu-queries";
 import { inregistreazaAudit } from "@/lib/audit";
 import { fundraisingInvoices, fundraisingPages } from "@/lib/db/schema";
 import { createClient } from "@/lib/supabase/server";
@@ -92,9 +93,7 @@ export const incarcaFacturaAction = withOrgAdmin(
   },
 );
 
-export const listFacturiCampanie = withOrgSession(async (ctx, pageId: string) => {
-  return ctx.db.select().from(fundraisingInvoices).where(eq(fundraisingInvoices.campaignPageId, pageId)).orderBy(desc(fundraisingInvoices.createdAt));
-});
+export const listFacturiCampanie = withOrgSession(listFacturiCampanieImpl);
 
 export const actualizeazaStatusFacturaAction = withOrgAdmin(async (ctx, invoiceId: string, status: (typeof STATUSURI)[number]) => {
   if (!STATUSURI.includes(status)) return;

@@ -1,9 +1,10 @@
 "use server";
 
-import { and, desc, eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 
 import { withOrgAdmin, withOrgSession } from "@/lib/auth/guard";
+import { listMesajeCampanieImpl } from "./detaliu-queries";
 import { inregistreazaAudit } from "@/lib/audit";
 import { appUsers, fundraisingBeneficiaries, fundraisingCampaignAgents, fundraisingMessages, fundraisingPages } from "@/lib/db/schema";
 import { notifica } from "@/lib/notifications";
@@ -149,6 +150,4 @@ export const trimiteMesajStaffAction = withOrgAdmin(
 // permită să vadă rândul app_users al beneficiarului, deci un INNER JOIN ar
 // ascunde tăcut mesajele trimise de el — vezi comentariul din schema
 // (fundraisingMessages.senderNume/senderEmail, denormalizate la trimitere).
-export const listMesajeCampanie = withOrgSession(async (ctx, pageId: string) => {
-  return ctx.db.select().from(fundraisingMessages).where(eq(fundraisingMessages.campaignPageId, pageId)).orderBy(desc(fundraisingMessages.createdAt));
-});
+export const listMesajeCampanie = withOrgSession(listMesajeCampanieImpl);

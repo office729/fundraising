@@ -1,7 +1,8 @@
 import { and, desc, eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 
-import { withOrgSession } from "@/lib/auth/guard";
+import { withOrgSession, type OrgContext } from "@/lib/auth/guard";
+import { EroareUtilizator } from "@/lib/erori";
 import { fundraisingBeneficiaries, fundraisingBeneficiaryInvites, fundraisingCampaignAgents, fundraisingDonations, fundraisingPages, fundraisingUpdates } from "@/lib/db/schema";
 
 import { Badge } from "../../components/ui/badge";
@@ -14,29 +15,31 @@ import { STRANGERE_FONDURI_DICT } from "@/lib/i18n/dictionaries/strangere-fondur
 import { AddOfflineDonationButton, AddUpdateButton, CopyPageLinkButton, DeleteUpdateButton, EditUpdateButton, ImageUploadCard, ToggleStatusButton } from "../client";
 import { BeneficiarCard } from "../beneficiar-card";
 import { AgentCard } from "../agent-card";
-import { listMesajeCampanie } from "../agent-actions";
 import { MesajeCard } from "../mesaje-card";
-import { listCalendarCampanie, listContinutCampanie } from "../continut-actions";
 import { CalendarCard } from "../calendar-card";
 import { ContinutCard } from "../continut-card";
-import {
-  listComunicatCampanie,
-  listGrupuriPublicateCampanie,
-  listLocalGroupsCampanie,
-  listMediaContacteCampanie,
-  listOutreachIstoric,
-} from "../presa-actions";
 import { PresaCard } from "../presa-card";
 import { GrupuriLocaleCard } from "../grupuri-locale-card";
-import { listFacturiCampanie } from "../invoice-actions";
 import { FacturiCard } from "../facturi-card";
-import { listAttachmentsCampanie, listTaskuriCampanie } from "../task-actions";
 import { TaskCard } from "../task-card";
-import { listMembers } from "../../../echipa/actions";
+import {
+  listAttachmentsCampanieImpl,
+  listCalendarCampanieImpl,
+  listComunicatCampanieImpl,
+  listContinutCampanieImpl,
+  listFacturiCampanieImpl,
+  listGrupuriPublicateCampanieImpl,
+  listLocalGroupsCampanieImpl,
+  listMediaContacteCampanieImpl,
+  listMembersImpl,
+  listMesajeCampanieImpl,
+  listOutreachIstoricImpl,
+  listTaskuriCampanieImpl,
+} from "../detaliu-queries";
 
 const STATUS_TONE = { in_asteptare: "amber", reusita: "green", esuata: "red", rambursata: "orange" } as const;
 
-const getPaginaSiDonatii = withOrgSession(async (ctx, id: string) => {
+async function citestePaginaSiDonatii(ctx: OrgContext, id: string) {
   const pagina = await ctx.db
     .select()
     .from(fundraisingPages)
@@ -44,27 +47,36 @@ const getPaginaSiDonatii = withOrgSession(async (ctx, id: string) => {
     .limit(1);
   if (!pagina[0]) return null;
 
-  const donatii = await ctx.db
-    .select()
-    .from(fundraisingDonations)
-    .where(eq(fundraisingDonations.pageId, id))
-    .orderBy(desc(fundraisingDonations.createdAt))
-    .limit(300);
-
-  const actualizari = await ctx.db
-    .select()
-    .from(fundraisingUpdates)
-    .where(eq(fundraisingUpdates.pageId, id))
-    .orderBy(desc(fundraisingUpdates.data));
-
   // Fără JOIN pe app_users — staff-ul nu are politică RLS care să-i permită
   // să vadă rândul app_users al beneficiarului; email e denormalizat pe
   // fundraising_beneficiaries la acceptarea invitației (vezi schema).
-  const beneficiarRows = await ctx.db
-    .select({ id: fundraisingBeneficiaries.id, createdAt: fundraisingBeneficiaries.createdAt, email: fundraisingBeneficiaries.email })
-    .from(fundraisingBeneficiaries)
-    .where(and(eq(fundraisingBeneficiaries.campaignPageId, id), eq(fundraisingBeneficiaries.status, "activ")))
-    .limit(1);
+  const [donatii, actualizari, beneficiarRows, agentRows] = await Promise.all([
+    ctx.db
+      .select()
+      .from(fundraisingDonations)
+      .where(eq(fundraisingDonations.pageId, id))
+      .orderBy(desc(fundraisingDonations.createdAt))
+      .limit(300),
+    ctx.db.select().from(fundraisingUpdates).where(eq(fundraisingUpdates.pageId, id)).orderBy(desc(fundraisingUpdates.data)),
+    ctx.db
+      .select({ id: fundraisingBeneficiaries.id, createdAt: fundraisingBeneficiaries.createdAt, email: fundraisingBeneficiaries.email })
+      .from(fundraisingBeneficiaries)
+      .where(and(eq(fundraisingBeneficiaries.campaignPageId, id), eq(fundraisingBeneficiaries.status, "activ")))
+      .limit(1),
+    ctx.db
+      .select({
+        id: fundraisingCampaignAgents.id,
+        agentUserId: fundraisingCampaignAgents.agentUserId,
+        bio: fundraisingCampaignAgents.bio,
+        programDisponibilitate: fundraisingCampaignAgents.programDisponibilitate,
+        contactAprobat: fundraisingCampaignAgents.contactAprobat,
+        nume: fundraisingCampaignAgents.agentNume,
+        email: fundraisingCampaignAgents.agentEmail,
+      })
+      .from(fundraisingCampaignAgents)
+      .where(and(eq(fundraisingCampaignAgents.campaignPageId, id), eq(fundraisingCampaignAgents.active, true)))
+      .limit(1),
+  ]);
 
   let inviteActiv = null;
   if (!beneficiarRows[0]) {
@@ -79,43 +91,40 @@ const getPaginaSiDonatii = withOrgSession(async (ctx, id: string) => {
     }
   }
 
-  const agentRows = await ctx.db
-    .select({
-      id: fundraisingCampaignAgents.id,
-      agentUserId: fundraisingCampaignAgents.agentUserId,
-      bio: fundraisingCampaignAgents.bio,
-      programDisponibilitate: fundraisingCampaignAgents.programDisponibilitate,
-      contactAprobat: fundraisingCampaignAgents.contactAprobat,
-      nume: fundraisingCampaignAgents.agentNume,
-      email: fundraisingCampaignAgents.agentEmail,
-    })
-    .from(fundraisingCampaignAgents)
-    .where(and(eq(fundraisingCampaignAgents.campaignPageId, id), eq(fundraisingCampaignAgents.active, true)))
-    .limit(1);
-
   return { pagina: pagina[0], donatii, actualizari, beneficiar: beneficiarRows[0] ?? null, inviteActiv, agent: agentRows[0] ?? null };
+}
+
+// Toate citirile paginii, într-o SINGURĂ tranzacție (o conexiune, un singur set de verificări de acces), nu ~13
+// tranzacții paralele pe un pool de 5 conexiuni. Interogările independente rulează împreună pe aceeași conexiune.
+const getDetaliuCampanie = withOrgSession(async (ctx, id: string) => {
+  // Aceeași regulă ca `listMembers` (withOrgAdmin): lista echipei e doar pentru owner/admin.
+  if (ctx.role !== "owner" && ctx.role !== "admin") {
+    throw new EroareUtilizator("Necesită rol de admin sau owner în organizație.");
+  }
+  const [data, membri, mesaje, calendarItems, continutItems, comunicat, mediaContacte, grupuriLocale, grupuriPublicate, facturi, taskuri, taskAttachments] =
+    await Promise.all([
+      citestePaginaSiDonatii(ctx, id),
+      listMembersImpl(ctx),
+      listMesajeCampanieImpl(ctx, id),
+      listCalendarCampanieImpl(ctx, id),
+      listContinutCampanieImpl(ctx, id),
+      listComunicatCampanieImpl(ctx, id),
+      listMediaContacteCampanieImpl(ctx, id),
+      listLocalGroupsCampanieImpl(ctx, id),
+      listGrupuriPublicateCampanieImpl(ctx, id),
+      listFacturiCampanieImpl(ctx, id),
+      listTaskuriCampanieImpl(ctx, id),
+      listAttachmentsCampanieImpl(ctx, id),
+    ]);
+  const outreachTrimis = data && comunicat ? await listOutreachIstoricImpl(ctx, comunicat.id) : [];
+  return { data, membri, mesaje, calendarItems, continutItems, comunicat, mediaContacte, grupuriLocale, grupuriPublicate, facturi, taskuri, taskAttachments, outreachTrimis };
 });
 
 export default async function PaginaDetaliuPage({ params }: { params: Promise<{ orgSlug: string; id: string }> }) {
   const { orgSlug, id } = await params;
-  const [data, membri, mesaje, calendarItems, continutItems, comunicat, mediaContacte, grupuriLocale, grupuriPublicate, facturi, taskuri, taskAttachments] =
-    await Promise.all([
-      getPaginaSiDonatii(orgSlug, id),
-      listMembers(orgSlug),
-      listMesajeCampanie(orgSlug, id),
-      listCalendarCampanie(orgSlug, id),
-      listContinutCampanie(orgSlug, id),
-      listComunicatCampanie(orgSlug, id),
-      listMediaContacteCampanie(orgSlug, id),
-      listLocalGroupsCampanie(orgSlug, id),
-      listGrupuriPublicateCampanie(orgSlug, id),
-      listFacturiCampanie(orgSlug, id),
-      listTaskuriCampanie(orgSlug, id),
-      listAttachmentsCampanie(orgSlug, id),
-    ]);
+  const { data, membri, mesaje, calendarItems, continutItems, comunicat, mediaContacte, grupuriLocale, grupuriPublicate, facturi, taskuri, taskAttachments, outreachTrimis } =
+    await getDetaliuCampanie(orgSlug, id);
   if (!data) notFound();
-
-  const outreachTrimis = comunicat ? await listOutreachIstoric(orgSlug, comunicat.id) : [];
 
   const { pagina, donatii, actualizari, beneficiar, inviteActiv, agent } = data;
   const locale = await getLocale();
