@@ -53,7 +53,7 @@ Fiecare test: **pași → rezultat așteptat**. Folosește o organizație de pro
 3. Pune `netopia_card_expire_month/year` în trecut și mută perioada la „mâine” → rulează cron-ul. Așteptat: nu se încearcă taxarea, ownerul primește „cardul a expirat”, iar `netopia_renewal_attempts` rămâne 0.
 
 ## 10. Campania de reamintire Formular 230 (cu emailuri reale)
-1. Într-o organizație de probă, adaugă 2–3 donatori cu adrese **ale tale**, apoi Formularul 230 → „Trimite reamintire”.
+1. Într-o organizație de probă, adaugă 2–3 donatori cu adrese **ale tale** și cu bifa „a acceptat emailuri” (cei fără bifă nu primesc campania), apoi Formularul 230 → „Trimite reamintire”.
 2. Așteptat: emailurile ajung (cu link de dezabonare), campania devine „Trimisă pentru <an>”, butonul se dezactivează. Un al doilea click nu trimite din nou.
 3. Dezabonează unul dintre donatori din link, șterge-l din profil (GDPR) și recreează-l; așteptat: nu mai primește campania.
 
