@@ -21,6 +21,8 @@ export const AUTH_DICT = {
       seAutentifica: "Se autentifică...",
       nuAiCont: "Nu ai cont?",
       creeazaUnul: "Creează unul",
+      retrimiteConfirmare: "Retrimite emailul de confirmare",
+      confirmareRetrimisa: "Dacă adresa există, am trimis un email nou de confirmare.",
     },
     signup: {
       titluInvitatie: "Creează cont",
@@ -67,6 +69,7 @@ export const AUTH_DICT = {
       signupCampuri: "Completează toate câmpurile.",
       parolaMinim: "Parola trebuie să aibă cel puțin 8 caractere.",
       signupEsuat: "Înregistrarea a eșuat — încearcă din nou.",
+      emailNeconfirmat: "Adresa de email nu e confirmată încă. Verifică-ți căsuța (și Spam) sau cere un email nou.",
       emailTemporar: "Adresele de email de unică folosință nu sunt acceptate — folosește adresa organizației.",
       numeOrganizatiePreaLung: "Numele organizației e prea lung (maxim 120 de caractere).",
       limitaOrganizatii: "Ai atins numărul maxim de organizații pentru un cont. Scrie-ne la vlad.placinta@alexandrit.ro dacă ai nevoie de mai multe.",
@@ -93,6 +96,8 @@ export const AUTH_DICT = {
       seAutentifica: "Signing in...",
       nuAiCont: "Don't have an account?",
       creeazaUnul: "Create one",
+      retrimiteConfirmare: "Resend the confirmation email",
+      confirmareRetrimisa: "If the address exists, we sent a new confirmation email.",
     },
     signup: {
       titluInvitatie: "Create account",
@@ -139,6 +144,7 @@ export const AUTH_DICT = {
       signupCampuri: "Fill in all fields.",
       parolaMinim: "Password must be at least 8 characters.",
       signupEsuat: "Sign-up failed — please try again.",
+      emailNeconfirmat: "Your email address isn't confirmed yet. Check your inbox (and Spam) or request a new email.",
       emailTemporar: "Disposable email addresses are not accepted — please use your organization's address.",
       numeOrganizatiePreaLung: "The organization name is too long (maximum 120 characters).",
       limitaOrganizatii: "You have reached the maximum number of organizations for one account. Write to vlad.placinta@alexandrit.ro if you need more.",

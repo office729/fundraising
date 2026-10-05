@@ -47,7 +47,7 @@ export function InviteForm({ orgSlug, locale }: { orgSlug: string; locale: Local
       {state.error && <p className="mt-3 text-sm text-red-600">{state.error}</p>}
       {inviteLink && (
         <div className="mt-3 rounded-lg bg-brand-green-soft p-3 text-sm">
-          <p className="font-medium text-ink">{dict.linkInvitatie}</p>
+          <p className="font-medium text-ink">{state.emailTrimis ? dict.linkInvitatieEmailTrimis : dict.linkInvitatie}</p>
           <p className="mt-1 font-mono text-xs break-all text-ink">{inviteLink}</p>
         </div>
       )}

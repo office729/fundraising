@@ -9,6 +9,10 @@ import { withOrgAdmin, withOrgSession } from "@/lib/auth/guard";
 import { EroareUtilizator, mesajSigur } from "@/lib/erori";
 import { getLimiteleEfective, subCota } from "@/lib/billing/quota";
 import { appUsers, invites, memberships } from "@/lib/db/schema";
+import { verificaLimitaRata } from "@/lib/auth/rate-limit";
+import { emailConfigurat, trimiteEmail } from "@/lib/email";
+import { htmlInvitatie, subiectInvitatie } from "@/lib/invitatie-email-template";
+import { raporteazaEroare } from "@/lib/monitoring";
 
 export type MemberRow = { userId: string; email: string; name: string | null; role: string };
 export type InviteRow = {
@@ -56,10 +60,10 @@ export const listPendingInvites = withOrgAdmin(async (ctx): Promise<InviteRow[]>
     }));
 });
 
-export type InviteState = { error: string | null; token: string | null };
+export type InviteState = { error: string | null; token: string | null; emailTrimis?: boolean };
 
 export const createInvite = withOrgAdmin(
-  async (ctx, email: string, role: "admin" | "member"): Promise<{ token: string }> => {
+  async (ctx, email: string, role: "admin" | "member"): Promise<{ token: string; orgName: string; invitatDe: string | null; orgId: string }> => {
     // Cota de utilizatori (membri + invitații încă în așteptare, care ar
     // deveni membri dacă sunt acceptate) — vezi lib/billing/quota.ts.
     const limite = getLimiteleEfective(ctx.orgPackage, ctx.orgCustomPlanConfig);
@@ -90,7 +94,7 @@ export const createInvite = withOrgAdmin(
       invitedBy: ctx.userId,
       expiresAt,
     });
-    return { token };
+    return { token, orgName: ctx.orgName, invitatDe: ctx.userName || ctx.userEmail, orgId: ctx.orgId };
   },
 );
 
@@ -105,8 +109,25 @@ export async function createInviteAction(
     return { error: "Email invalid.", token: null };
   }
   try {
-    const { token } = await createInvite(orgSlug, email, role);
-    return { error: null, token };
+    const { token, orgName, invitatDe, orgId } = await createInvite(orgSlug, email, role);
+
+    // Email automat către cel invitat (dacă SMTP e configurat) — linkul rămâne afișat și manual.
+    // Plafon pe organizație (20/zi) ca invitațiile să nu devină un releu de email către adrese arbitrare.
+    let emailTrimis = false;
+    if (emailConfigurat() && (await verificaLimitaRata("invitatie-email", orgId, 20, 24 * 60))) {
+      try {
+        const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://alexandrit.ro").replace(/\/$/, "");
+        await trimiteEmail({
+          to: email.toLowerCase().trim(),
+          subiect: subiectInvitatie(orgName),
+          html: htmlInvitatie({ orgName, invitatDe, rol: role, link: `${baseUrl}/invite/${token}` }),
+        });
+        emailTrimis = true;
+      } catch (e) {
+        raporteazaEroare("echipa-invitatie-email", e, { orgId });
+      }
+    }
+    return { error: null, token, emailTrimis };
   } catch (e) {
     return { error: mesajSigur(e, "Invitația a eșuat.", "echipa-invitatie"), token: null };
   }

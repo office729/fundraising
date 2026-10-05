@@ -2,18 +2,21 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useActionState } from "react";
+import { Suspense, useActionState, useRef, useState, useTransition } from "react";
 
 import type { AUTH_DICT } from "@/lib/i18n/dictionaries/auth";
 import type { Locale } from "@/lib/i18n/config";
 
 import { GoogleButton } from "../google-button";
-import { loginAction } from "./actions";
+import { loginAction, retrimiteConfirmareAction } from "./actions";
 
 type Dict = (typeof AUTH_DICT)[Locale];
 
 function LoginFormInner({ dict }: { dict: Dict }) {
   const [state, formAction, pending] = useActionState(loginAction, { error: null });
+  const emailRef = useRef<HTMLInputElement>(null);
+  const [retrimis, setRetrimis] = useState<string | null>(null);
+  const [retrimitePending, startRetrimite] = useTransition();
   const params = useSearchParams();
   const inviteToken = params.get("invite") || "";
   const beneficiarInviteToken = params.get("beneficiarInvite") || "";
@@ -58,6 +61,7 @@ function LoginFormInner({ dict }: { dict: Dict }) {
         <label className="text-sm font-medium text-ink">
           {dict.emailLabel}
           <input
+            ref={emailRef}
             type="email"
             name="email"
             autoComplete="username"
@@ -86,6 +90,24 @@ function LoginFormInner({ dict }: { dict: Dict }) {
         </label>
 
         {state.error && <p className="text-sm text-red-600">{state.error}</p>}
+        {state.reTrimite && (
+          <div className="-mt-1">
+            <button
+              type="button"
+              disabled={retrimitePending}
+              onClick={() =>
+                startRetrimite(async () => {
+                  const r = await retrimiteConfirmareAction(emailRef.current?.value ?? "");
+                  setRetrimis(r.ok ? dict.login.confirmareRetrimisa : (r.error ?? null));
+                })
+              }
+              className="text-sm font-medium text-brand-green underline disabled:opacity-60"
+            >
+              {dict.login.retrimiteConfirmare}
+            </button>
+            {retrimis && <p className="mt-1 text-sm text-body">{retrimis}</p>}
+          </div>
+        )}
 
         <button
           type="submit"

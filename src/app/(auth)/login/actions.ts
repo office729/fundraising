@@ -12,10 +12,27 @@ import { AUTH_DICT } from "@/lib/i18n/dictionaries/auth";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { createClient } from "@/lib/supabase/server";
 
+export type LoginState = { error: string | null; reTrimite?: boolean };
+
+// Retrimite emailul de confirmare (cont creat, dar adresa neconfirmată). Răspunsul e mereu același,
+// indiferent dacă adresa există — nu confirmăm existența conturilor. Limitat per email și per IP.
+export async function retrimiteConfirmareAction(email: string): Promise<{ ok: boolean; error: string | null }> {
+  const errors = AUTH_DICT[await getLocale()].errors;
+  const adresa = email.trim().toLowerCase();
+  if (!adresa || !adresa.includes("@")) return { ok: false, error: errors.loginCampuri };
+  const ip = await obtineIpClient();
+  if (!(await verificaLimitaRata("retrimite-confirmare-ip", ip, 5, 60)) || !(await verificaLimitaRata("retrimite-confirmare", adresa, 3, 60))) {
+    return { ok: false, error: errors.preaMulteIncercari };
+  }
+  const supabase = await createClient();
+  await supabase.auth.resend({ type: "signup", email: adresa });
+  return { ok: true, error: null };
+}
+
 export async function loginAction(
-  _prevState: { error: string | null },
+  _prevState: LoginState,
   formData: FormData,
-): Promise<{ error: string | null }> {
+): Promise<LoginState> {
   const errors = AUTH_DICT[await getLocale()].errors;
   const email = String(formData.get("email") ?? "")
     .trim()
@@ -44,6 +61,10 @@ export async function loginAction(
   const supabase = await createClient({ persist: ramaiConectat });
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) {
+    // Cont creat, dar emailul încă neconfirmat: mesaj clar + buton de retrimitere (nu „date invalide").
+    if (error.code === "email_not_confirmed") {
+      return { error: errors.emailNeconfirmat, reTrimite: true };
+    }
     return { error: errors.loginInvalid };
   }
 
