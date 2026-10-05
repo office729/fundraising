@@ -62,5 +62,10 @@ const DOMENII_TEMPORARE = new Set([
 
 export function esteEmailTemporar(email: string): boolean {
   const domeniu = email.trim().toLowerCase().split("@").pop() ?? "";
-  return DOMENII_TEMPORARE.has(domeniu);
+  // Și subdomeniile (ex. user@x.mailinator.com) — se verifică fiecare sufix al domeniului.
+  const parti = domeniu.split(".");
+  for (let i = 0; i < parti.length - 1; i++) {
+    if (DOMENII_TEMPORARE.has(parti.slice(i).join("."))) return true;
+  }
+  return false;
 }
