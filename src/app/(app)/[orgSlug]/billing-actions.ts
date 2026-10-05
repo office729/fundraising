@@ -8,6 +8,7 @@ import { calculateCustomPlanPrice, normalizeCustomPlanConfig, type CustomPlanCon
 import { creeazaPlataAbonament } from "@/lib/billing/netopia-checkout";
 import { NUME_PACHET_FIX, PACKAGE_LIMITS, type OrgPackage } from "@/lib/billing/packages";
 import { organizations, platformPayments } from "@/lib/db/schema";
+import { cifFolositDeAltaOrganizatie, MESAJ_CIF_FOLOSIT } from "@/lib/cif";
 import { cifValidFormat } from "@/lib/iban";
 import { gasesteJudet } from "@/lib/judete";
 
@@ -108,7 +109,15 @@ export const salveazaDateFacturareAction = withOrgAdmin(
     if (!cif || !cifValidFormat(cif)) return { error: "CIF invalid — scrie-l cu sau fără prefixul RO (ex. RO12345678)." };
     if (adresa.length < 5 || adresa.length > 300) return { error: "Scrie adresa sediului social (strada, număr, localitate)." };
     if (!judet) return { error: "Alege județul." };
-    await ctx.db.update(organizations).set({ cif, adresaSediu: adresa, judet }).where(eq(organizations.id, ctx.orgId));
+    // CIF unic între organizații (vezi lib/cif.ts) — mesaj clar, nu eroarea brută a indexului unic.
+    if (await cifFolositDeAltaOrganizatie(cif, ctx.orgId)) return { error: MESAJ_CIF_FOLOSIT };
+    try {
+      await ctx.db.update(organizations).set({ cif, adresaSediu: adresa, judet }).where(eq(organizations.id, ctx.orgId));
+    } catch (e) {
+      const mesaj = String((e as { message?: string })?.message ?? "") + String((e as { cause?: { message?: string } })?.cause?.message ?? "");
+      if (mesaj.includes("organizations_cif_norm_unique")) return { error: MESAJ_CIF_FOLOSIT };
+      throw e;
+    }
     return { error: null };
   },
   { permiteAccesBlocat: true },
