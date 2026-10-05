@@ -23,7 +23,7 @@ import {
   getTaskuriSterse,
   useLocalStoreValue,
 } from "./lib/local-store";
-import { numarApeluriUltimele30Zile } from "./dashboard-actions";
+import { dateDashboardLive } from "./dashboard-actions";
 import { useBeneficiari, useCompanii } from "./lib/use-data";
 import { TASKURI, centruDeActiuni, companiiPipelineStats, dashboardKpis, lunarEvolutie, type PerioadaKpi, type Task } from "./mock";
 
@@ -49,8 +49,20 @@ export default function CrmDashboardPage() {
   // Apeluri = date REALE (Twilio), spre deosebire de Emailuri/Întâlniri/
   // Taskuri rezolvate de mai jos, care rămân demonstrative deocamdată.
   const [apeluriReale, setApeluriReale] = useState<number | null>(null);
+  const [topSponsori, setTopSponsori] = useState<Awaited<ReturnType<typeof dateDashboardLive>>["topSponsori"] | null>(null);
+  const [riscPipeline, setRiscPipeline] = useState<Awaited<ReturnType<typeof dateDashboardLive>>["riscPipeline"] | null>(null);
   useEffect(() => {
-    numarApeluriUltimele30Zile(orgSlug).then(setApeluriReale);
+    // O singură cerere pentru apeluri + top sponsori + risc pipeline (înainte: trei acțiuni în coadă).
+    dateDashboardLive(orgSlug)
+      .then((d) => {
+        setApeluriReale(d.apeluri);
+        setTopSponsori(d.topSponsori);
+        setRiscPipeline(d.riscPipeline);
+      })
+      .catch(() => {
+        setTopSponsori([]);
+        setRiscPipeline([]);
+      });
   }, [orgSlug]);
   const locale = useLocale();
   const dict = DASHBOARD_HOME_DICT[locale];
@@ -184,9 +196,9 @@ export default function CrmDashboardPage() {
 
       <FamilyDashboard {...dashboardData} />
 
-      <RiscPipelineCard orgSlug={orgSlug} ro={locale === "ro"} />
+      <RiscPipelineCard orgSlug={orgSlug} ro={locale === "ro"} rows={riscPipeline} />
 
-      <TopSponsoriCard orgSlug={orgSlug} ro={locale === "ro"} />
+      <TopSponsoriCard orgSlug={orgSlug} ro={locale === "ro"} rows={topSponsori} />
     </div>
   );
 }

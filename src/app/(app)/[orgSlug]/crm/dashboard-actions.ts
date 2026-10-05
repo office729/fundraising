@@ -2,7 +2,7 @@
 
 import { and, gte, sql } from "drizzle-orm";
 
-import { withOrgSession } from "@/lib/auth/guard";
+import { withOrgSession, type OrgContext } from "@/lib/auth/guard";
 import { apeluri, companies, companySponsorizari } from "@/lib/db/schema";
 import { segmentFirma } from "@/lib/id-scurt";
 
@@ -10,17 +10,18 @@ import { segmentFirma } from "@/lib/id-scurt";
 // număr de apeluri REALE (Twilio), nu cifra demonstrativă fixă de dinainte.
 // Numără toate încercările (indiferent de rezultat), ca "câte telefoane a
 // dat" să răspundă efectiv la întrebare.
-export const numarApeluriUltimele30Zile = withOrgSession(async (ctx) => {
+async function apeluriImpl(ctx: OrgContext) {
   const [{ n }] = await ctx.db
     .select({ n: sql<number>`count(*)::int` })
     .from(apeluri)
     .where(and(sql`${apeluri.orgId} = ${ctx.orgId}`, gte(apeluri.createdAt, sql`now() - interval '30 days'`)));
   return n;
-});
+}
+export const numarApeluriUltimele30Zile = withOrgSession(apeluriImpl);
 
 // Top firme sponsori (total, toate sponsorizările înregistrate) — date REALE din
 // fișele companiilor, pentru cardul „Top sponsori” de pe prima pagină.
-export const topFirmeSponsori = withOrgSession(async (ctx) => {
+async function topSponsoriImpl(ctx: OrgContext) {
   const rows = await ctx.db
     .select({
       id: companies.id,
@@ -35,14 +36,15 @@ export const topFirmeSponsori = withOrgSession(async (ctx) => {
     .orderBy(sql`sum(${companySponsorizari.suma}) desc`)
     .limit(7);
   return rows.map((r) => ({ id: r.id, nume: r.nume, total: r.total, numar: r.numar, segment: segmentFirma(r.nume, r.id) }));
-});
+}
+export const topFirmeSponsori = withOrgSession(topSponsoriImpl);
 
 // Alertă de risc pe pipeline: firme care sponsorizau, dar n-au mai donat de
 // mult — genul de pierdere care se întâmplă din neatenție, nu din refuz.
 // Doar firme cu istoric real de sponsorizare (nu prospecți niciodată
 // abordați — aceia sunt un subiect diferit, de scor/prospectare).
 const PRAG_ZILE_RISC = 300; // ~10 luni
-export const companiiRiscPipeline = withOrgSession(async (ctx) => {
+async function riscPipelineImpl(ctx: OrgContext) {
   const rows = await ctx.db
     .select({
       id: companies.id,
@@ -58,4 +60,13 @@ export const companiiRiscPipeline = withOrgSession(async (ctx) => {
     .orderBy(sql`max(${companySponsorizari.data}) asc`)
     .limit(8);
   return rows.map((r) => ({ id: r.id, nume: r.nume, ultimaData: r.ultimaData, luni: Math.floor(r.zileDeLaUltima / 30), segment: segmentFirma(r.nume, r.id) }));
+}
+export const companiiRiscPipeline = withOrgSession(riscPipelineImpl);
+
+
+// Cele trei citiri ale paginii principale într-O SINGURĂ cerere și tranzacție: înainte, trei acțiuni separate
+// porneau la montare, iar Next le execută una după alta (fiecare cu verificare de sesiune + tranzacție proprie).
+export const dateDashboardLive = withOrgSession(async (ctx) => {
+  const [apeluri, topSponsori, riscPipeline] = await Promise.all([apeluriImpl(ctx), topSponsoriImpl(ctx), riscPipelineImpl(ctx)]);
+  return { apeluri, topSponsori, riscPipeline };
 });

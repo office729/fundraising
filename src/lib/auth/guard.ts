@@ -369,7 +369,7 @@ export function withBeneficiarSession<A extends unknown[], R>(
 
 export type BeneficiarAccess = Omit<BeneficiarContext, "db">;
 
-export function requireBeneficiarAccess(): Promise<BeneficiarAccess> {
+export const requireBeneficiarAccess = cache(function requireBeneficiarAccess(): Promise<BeneficiarAccess> {
   return withBeneficiarSession(async (ctx) => ({
     beneficiarId: ctx.beneficiarId,
     campaignPageId: ctx.campaignPageId,
@@ -389,4 +389,4 @@ export function requireBeneficiarAccess(): Promise<BeneficiarAccess> {
     userName: ctx.userName,
     userTermsVersion: ctx.userTermsVersion,
   }))();
-}
+});

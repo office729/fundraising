@@ -40,11 +40,14 @@ export default async function SetariPage({
     redirect(`/${orgSlug}`);
   }
 
-  const { cod, numarRecomandari } = await obtineDateReferral(orgSlug);
-  const facturi = await listeazaFacturiAction(orgSlug);
-  const stripeStatus = await obtineStatusStripeDonatii(orgSlug);
-  const canvaStatus = await obtineStatusCanvaAction(orgSlug);
-  const reinnoireAutomata = await obtineStatusReinnoireAutomata(orgSlug);
+  // Cinci citiri independente (fiecare cu propria tranzacție): rulează împreună, nu una după alta.
+  const [{ cod, numarRecomandari }, facturi, stripeStatus, canvaStatus, reinnoireAutomata] = await Promise.all([
+    obtineDateReferral(orgSlug),
+    listeazaFacturiAction(orgSlug),
+    obtineStatusStripeDonatii(orgSlug),
+    obtineStatusCanvaAction(orgSlug),
+    obtineStatusReinnoireAutomata(orgSlug),
+  ]);
   const hdrs = await headers();
   const webhookOrigin = `${hdrs.get("x-forwarded-proto") ?? "https"}://${hdrs.get("x-forwarded-host") ?? hdrs.get("host")}`;
 

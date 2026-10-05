@@ -2,9 +2,8 @@
 
 import { ArrowRight, Trophy } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 
-import { topFirmeSponsori } from "../../dashboard-actions";
+import type { topFirmeSponsori } from "../../dashboard-actions";
 import { formatSuma } from "../../lib/format";
 
 type Rand = Awaited<ReturnType<typeof topFirmeSponsori>>[number];
@@ -26,11 +25,8 @@ function initiale(nume: string) {
     .join("");
 }
 
-export function TopSponsoriCard({ orgSlug, ro }: { orgSlug: string; ro: boolean }) {
-  const [rows, setRows] = useState<Rand[] | null>(null);
-  useEffect(() => {
-    topFirmeSponsori(orgSlug).then(setRows).catch(() => setRows([]));
-  }, [orgSlug]);
+// `rows`: null cât timp se încarcă (datele vin de la pagina părinte, într-o singură cerere pentru tot dashboard-ul).
+export function TopSponsoriCard({ orgSlug, ro, rows }: { orgSlug: string; ro: boolean; rows: Rand[] | null }) {
 
   const total = rows?.reduce((s, r) => s + r.total, 0) ?? 0;
   const max = rows?.[0]?.total ?? 1;

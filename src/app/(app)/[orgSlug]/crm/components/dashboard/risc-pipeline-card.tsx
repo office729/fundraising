@@ -2,18 +2,14 @@
 
 import { ArrowRight, AlertTriangle } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 
-import { companiiRiscPipeline } from "../../dashboard-actions";
+import type { companiiRiscPipeline } from "../../dashboard-actions";
 import { formatData } from "../../lib/format";
 
 type Rand = Awaited<ReturnType<typeof companiiRiscPipeline>>[number];
 
-export function RiscPipelineCard({ orgSlug, ro }: { orgSlug: string; ro: boolean }) {
-  const [rows, setRows] = useState<Rand[] | null>(null);
-  useEffect(() => {
-    companiiRiscPipeline(orgSlug).then(setRows).catch(() => setRows([]));
-  }, [orgSlug]);
+// `rows`: null cât timp se încarcă (datele vin de la pagina părinte, într-o singură cerere pentru tot dashboard-ul).
+export function RiscPipelineCard({ orgSlug, ro, rows }: { orgSlug: string; ro: boolean; rows: Rand[] | null }) {
 
   // Nimic de arătat (niciun sponsor „tăcut" de peste ~10 luni) — nu afișăm
   // deloc cardul, ca să nu ocupe loc degeaba pe un pipeline sănătos.

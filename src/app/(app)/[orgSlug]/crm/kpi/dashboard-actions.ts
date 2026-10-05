@@ -62,29 +62,34 @@ export const obtineDashboardPersonalAction = withOrgSession(async (ctx): Promise
     .innerJoin(kpiDefinitii, eq(kpiDefinitii.id, kpiAtribuiri.kpiDefinitieId))
     .where(and(eq(kpiAtribuiri.angajatId, angajat.id), eq(kpiAtribuiri.status, "activ")));
 
-  const kpiuri: KpiDashboardRand[] = [];
-  for (const a of atribuiri) {
-    const sursaDate = (a.sursaDate as SursaDate | null) ?? null;
-    const { valoare, sursa } = await obtineSauCalculeazaValoareCurenta(ctx.db, ctx.orgId, angajat.id, a.kpiDefinitieId, angajat.appUserId, a.frecventa, sursaDate);
-    const istoric = await istoricValori(ctx.db, angajat.id, a.kpiDefinitieId);
-    kpiuri.push({
-      atribuireId: a.atribuireId,
-      kpiDefinitieId: a.kpiDefinitieId,
-      nume: a.nume,
-      unitate: a.unitate,
-      directie: a.directie,
-      frecventa: a.frecventa,
-      pondere: a.pondere,
-      targetMinim: a.targetMinim,
-      targetNormal: a.targetNormal,
-      targetStretch: a.targetStretch,
-      valoare,
-      sursa,
-      progres: progresProcent(valoare, a.targetNormal, a.directie),
-      status: calculeazaStatus(valoare, a.targetNormal, a.directie),
-      istoric,
-    });
-  }
+  // Câte un KPI pe rând, dar toate KPI-urile în paralel (aceeași conexiune): înainte, 2–3 interogări secvențiale
+  // pentru fiecare atribuire. Promise.all păstrează ordinea.
+  const kpiuri: KpiDashboardRand[] = await Promise.all(
+    atribuiri.map(async (a) => {
+      const sursaDate = (a.sursaDate as SursaDate | null) ?? null;
+      const [{ valoare, sursa }, istoric] = await Promise.all([
+        obtineSauCalculeazaValoareCurenta(ctx.db, ctx.orgId, angajat.id, a.kpiDefinitieId, angajat.appUserId, a.frecventa, sursaDate),
+        istoricValori(ctx.db, angajat.id, a.kpiDefinitieId),
+      ]);
+      return {
+        atribuireId: a.atribuireId,
+        kpiDefinitieId: a.kpiDefinitieId,
+        nume: a.nume,
+        unitate: a.unitate,
+        directie: a.directie,
+        frecventa: a.frecventa,
+        pondere: a.pondere,
+        targetMinim: a.targetMinim,
+        targetNormal: a.targetNormal,
+        targetStretch: a.targetStretch,
+        valoare,
+        sursa,
+        progres: progresProcent(valoare, a.targetNormal, a.directie),
+        status: calculeazaStatus(valoare, a.targetNormal, a.directie),
+        istoric,
+      };
+    }),
+  );
 
   return { areProfil: true, angajatNume: `${angajat.nume} ${angajat.prenume ?? ""}`.trim(), kpiuri };
 });
