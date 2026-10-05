@@ -9,7 +9,7 @@ export const GDPR_DICT = {
     eyebrow: "Legal",
     titlu: "Politica de confidențialitate (GDPR)",
     actualizatLabel: "Ultima actualizare",
-    actualizat: "2 octombrie 2026",
+    actualizat: "5 octombrie 2026",
     sectiuni: [
       {
         titlu: "1. Cine suntem și în ce calitate prelucrăm date",
@@ -79,7 +79,7 @@ export const GDPR_DICT = {
       {
         titlu: "6. Cât timp păstrăm datele",
         puncte: [
-          "date de cont și de organizație: pe durata contractului, iar după încetare le ștergem sau le anonimizăm într-un termen rezonabil, după ce clientul le-a putut exporta;",
+          "date de cont și de organizație: pe durata contractului. Dacă accesul expiră (probă sau abonament) și contul nu este reactivat, le ștergem definitiv la 90 de zile de la expirare. Înainte de ștergere trimitem două avertizări prin email (la 60 și la 83 de zile), iar datele pot fi exportate oricând, inclusiv cu accesul expirat, de către owner;",
           "documente fiscale și contabile (facturi, contracte): conform legislației contabile din România, de regulă 10 ani;",
           "tokenul cardului pentru reînnoirea automată: până îl elimini din Setări, până la încetarea abonamentului sau până la a treia încercare de încasare eșuată, când se șterge automat;",
           "dovada acceptării Termenilor și a Politicii (data și versiunea): pe durata contului și, după încetare, cât timp pot apărea pretenții legate de contract;",
@@ -139,7 +139,7 @@ export const GDPR_DICT = {
     eyebrow: "Legal",
     titlu: "Privacy Policy (GDPR)",
     actualizatLabel: "Last updated",
-    actualizat: "October 2, 2026",
+    actualizat: "October 5, 2026",
     sectiuni: [
       {
         titlu: "1. Who we are and in what capacity we process data",
@@ -209,7 +209,7 @@ export const GDPR_DICT = {
       {
         titlu: "6. How long we keep data",
         puncte: [
-          "account and organization data: for the duration of the contract; afterwards we delete or anonymize it within a reasonable time, after the customer has been able to export it;",
+          "account and organization data: for the duration of the contract. If access expires (trial or subscription) and the account is not reactivated, we permanently delete it 90 days after expiry. Before deletion we send two email warnings (at 60 and 83 days), and the owner can export the data at any time, including after access has expired;",
           "tax and accounting documents (invoices, contracts): under Romanian accounting law, usually 10 years;",
           "card token for automatic renewal: until you remove it in Settings, until the subscription ends, or until the third failed charge attempt, when it is deleted automatically;",
           "proof of acceptance of the Terms and Policy (date and version): for the life of the account and, afterwards, as long as claims related to the contract could arise;",

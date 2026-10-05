@@ -2,6 +2,8 @@
 // de cookies) pe care o acceptă utilizatorul la crearea contului — stocată pe
 // app_users.terms_version ca dovadă. Se schimbă ODATĂ cu data „Ultima
 // actualizare" a textelor, ca să se știe exact ce versiune a fost acceptată.
+// Se schimbă la modificări de FOND (declanșează reacceptarea pentru toți utilizatorii) — nu la clarificări în favoarea
+// utilizatorului (de ex. precizarea termenului de retenție, 2026-10-05, a schimbat doar data afișată).
 export const TERMENI_VERSIUNE = "2026-10-02";
 
 // Cookie scurt, first-party, setat de browser când se apasă „Continuă cu

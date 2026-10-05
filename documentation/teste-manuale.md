@@ -45,7 +45,7 @@ Fiecare test: **pași → rezultat așteptat**. Folosește o organizație de pro
 1. Pe o organizație **fără** CIF/adresă/județ: Setări → Schimbă planul. Așteptat: formularul de facturare apare, iar pachetele sunt dezactivate până îl salvezi. Un CIF deja folosit de altă organizație → mesaj „Există deja o organizație cu acest CIF”.
 2. Salvează datele, alege un pachet, plătește cu cardul de test Netopia (sandbox).
 3. Așteptat: acces activ, plata `reusita`, **cardul salvat** (reînnoire automată pornită). **Factura Oblio NU se emite în sandbox** (protecție: facturile fiscale se emit doar cu `NETOPIA_ENV=live`); plata primește marcajul `NEFACTURAT-SANDBOX`. Ca să testezi și Oblio în sandbox, setează temporar `OBLIO_FACTUREAZA_IN_SANDBOX=1` în Vercel (se consumă din limita de 3 documente/lună a planului gratuit și creează documente fiscale reale — doar cu acordul contabilului). Cu `live`, factura se emite și vine emailul; dacă lipsește, se reia automat la rularea zilnică.
-4. Rambursare (din panoul Netopia): așteptat — accesul se retrage, reînnoirea automată se oprește, tokenul cardului dispare.
+4. Rambursare (din panoul Netopia): așteptat — accesul se retrage, reînnoirea automată se oprește, tokenul cardului dispare. Dacă plata avea factură Oblio, primești un email „Rambursare — de stornat factura …” (la `ALERTE_FACTURARE_EMAIL`) și un avertisment în Sentry; **storno-ul se emite manual în Oblio**, cu contabilul (nu se emite automat). Un IPN de rambursare retrimis nu dublează alerta.
 
 ## 9. Reînnoire automată: aviz și expirarea cardului
 1. Pe organizația de test cu card salvat, mută `current_period_end` la ~3 zile de acum și rulează cron-ul (`/api/cron/netopia-reinnoire` cu `Authorization: Bearer $CRON_SECRET`).

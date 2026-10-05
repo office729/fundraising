@@ -5,6 +5,7 @@ import { and, eq, isNull, lt, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { appUsers, memberships, organizations, platformPayments } from "@/lib/db/schema";
 import { emailConfigurat, trimiteEmail } from "@/lib/email";
+import { escHtml } from "@/lib/html-escape";
 import { clasificaStatus, type RezultatPlataNetopia } from "@/lib/netopia";
 import { raporteazaAvertisment, raporteazaEroare } from "@/lib/monitoring";
 import { emiteFacturaAbonament, facturareFiscalaPermisa, MARCAJ_NEFACTURAT_SANDBOX, oblioConfigurata } from "@/lib/oblio";
@@ -32,7 +33,7 @@ export type ConfirmareNetopia =
   | { actiune: "in_curs" }
   | { actiune: "reusita"; orgId: string; renewal: boolean }
   | { actiune: "esuata"; orgId: string; renewal: boolean; reinnoireDezactivata: boolean }
-  | { actiune: "rambursata"; orgId: string };
+  | { actiune: "rambursata"; orgId: string; nou?: boolean };
 
 // Factura NU se emite din interiorul tranzacției de mai jos (ar ține blocat rândul
 // organizației pe durata apelului către Oblio, un serviciu extern) — se cheamă
@@ -140,6 +141,47 @@ export async function factureazaPlata(orderId: string): Promise<void> {
     });
     raporteazaEroare("oblio-factura", e, { orgId: plata.orgId, orderId: plata.orderId });
   }
+}
+
+async function anuntaStornoNecesar(orderId: string): Promise<void> {
+  const plata = await db.transaction(async (tx) => {
+    await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
+    const [r] = await tx
+      .select({
+        sumaLei: platformPayments.sumaLei,
+        serie: platformPayments.oblioSeriesName,
+        numar: platformPayments.oblioNumber,
+        link: platformPayments.oblioLink,
+        orgName: organizations.name,
+        orgSlug: organizations.slug,
+      })
+      .from(platformPayments)
+      .innerJoin(organizations, eq(organizations.id, platformPayments.orgId))
+      .where(eq(platformPayments.orderId, orderId))
+      .limit(1);
+    return r ?? null;
+  });
+  // Plată fără factură (sau marcată ca nefacturată în sandbox) — nimic de stornat.
+  if (!plata?.numar || plata.numar === MARCAJ_NEFACTURAT_SANDBOX) return;
+
+  const factura = `${plata.serie ?? ""} ${plata.numar}`.trim();
+  raporteazaAvertisment("netopia-rambursare", "rambursare pe o plată deja facturată — factura trebuie stornată manual în Oblio", {
+    orderId,
+    factura,
+    org: plata.orgSlug,
+    sumaLei: plata.sumaLei,
+  });
+  if (!emailConfigurat()) return;
+  await trimiteEmail({
+    to: process.env.ALERTE_FACTURARE_EMAIL || "vlad.placinta@alexandrit.ro",
+    subiect: `Rambursare — de stornat factura ${factura}`,
+    html: `<div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; color: #14213d;">
+      <p>Netopia a confirmat rambursarea comenzii <strong>${escHtml(orderId)}</strong> (${plata.sumaLei} lei, organizația <strong>${escHtml(plata.orgName)}</strong>).</p>
+      <p>Factura <strong>${escHtml(factura)}</strong> a fost deja emisă și <strong>nu se stornează automat</strong>. Verifică cu contabilul și emite factura de storno în Oblio.</p>
+      ${plata.link ? `<p><a href="${escHtml(plata.link)}">Deschide factura</a></p>` : ""}
+      <p style="color:#94a3b8;font-size:12px;">Accesul organizației a fost deja retras, iar reînnoirea automată oprită.</p>
+    </div>`,
+  });
 }
 
 export async function proceseazaRezultatPlataNetopia(orderId: string, rezultat: RezultatPlataNetopia): Promise<ConfirmareNetopia> {
@@ -300,7 +342,7 @@ export async function proceseazaRezultatPlataNetopia(orderId: string, rezultat: 
       if (sfarsit && sfarsit <= new Date()) {
         await tx.update(organizations).set({ subscriptionStatus: "canceled" }).where(eq(organizations.id, plata.orgId));
       }
-      return { actiune: "rambursata", orgId: plata.orgId };
+      return { actiune: "rambursata", orgId: plata.orgId, nou: true };
     }
 
     // Încă în curs (autentificare 3DS, verificare antifraudă) — doar reținem
@@ -312,6 +354,13 @@ export async function proceseazaRezultatPlataNetopia(orderId: string, rezultat: 
   // Best-effort, DUPĂ commit — o eroare de facturare (Oblio indisponibil etc.)
   // nu are voie să se propage la apelant ca eșec al PLĂȚII (accesul e deja
   // acordat, e strict corect); rămâne raportată și de regenerat manual.
+  // Rambursare nouă pe o plată deja facturată: documentul fiscal NU se stornează automat (decizie: storno manual, cu
+  // contabilul — o factură validată în SPV nu se poate anula, iar rambursările parțiale cer tratament separat). Cineva
+  // trebuie anunțat explicit, altfel factura rămâne în vigoare după ce banii au plecat.
+  if (confirmare.actiune === "rambursata" && confirmare.nou) {
+    await anuntaStornoNecesar(orderId).catch((e) => raporteazaEroare("oblio-storno-alerta", e, { orderId }));
+  }
+
   if (confirmare.actiune === "reusita") {
     await factureazaPlata(orderId).catch((e) => raporteazaEroare("oblio-factura", e, { orgId: confirmare.orgId, orderId }));
   }
