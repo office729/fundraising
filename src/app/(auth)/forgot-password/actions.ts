@@ -30,7 +30,10 @@ export async function forgotPasswordAction(
     return { error: errors.preaMulteIncercari, trimis: false };
   }
 
-  const origin = (await headers()).get("origin") ?? "";
+  // Adresa de întoarcere vine din configurare, NU din antetul Origin (controlat de client): altfel un
+  // POST direct cu un Origin fals ar putea trimite victimei un link de resetare către alt domeniu.
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
+  const origin = siteUrl || ((await headers()).get("origin") ?? "");
   const supabase = await createClient();
   await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${origin}/auth/callback?next=/reset-password`,

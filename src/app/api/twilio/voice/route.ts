@@ -51,7 +51,9 @@ export async function POST(req: Request) {
   const prefixePermise = (process.env.TWILIO_ALLOWED_PREFIXES || "+40").split(",").map((p) => p.trim()).filter(Boolean);
   const numarNormalizat = catre.replace(/[\s().-]/g, "");
   const esteE164 = /^\+[1-9]\d{7,14}$/.test(numarNormalizat);
-  if (!esteE164 || !prefixePermise.some((p) => numarNormalizat.startsWith(p))) {
+  // Chiar și în România există numere cu tarif special (0890/0900 → +4089x/+4090x): blocate întotdeauna.
+  const esteTarifSpecial = /^\+40(89|90)\d/.test(numarNormalizat);
+  if (!esteE164 || esteTarifSpecial || !prefixePermise.some((p) => numarNormalizat.startsWith(p))) {
     return new NextResponse('<Response><Say language="ro-RO">Numărul nu este permis.</Say></Response>', {
       status: 400,
       headers: { "Content-Type": "text/xml" },

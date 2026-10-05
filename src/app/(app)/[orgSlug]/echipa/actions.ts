@@ -64,6 +64,9 @@ export type InviteState = { error: string | null; token: string | null; emailTri
 
 export const createInvite = withOrgAdmin(
   async (ctx, email: string, role: "admin" | "member"): Promise<{ token: string; orgName: string; invitatDe: string | null; orgId: string }> => {
+    // Tipurile TypeScript nu protejează o Server Action apelată direct: validăm pe server rolul și emailul.
+    if (role !== "admin" && role !== "member") throw new EroareUtilizator("Rol invalid.");
+    if (typeof email !== "string" || !email.includes("@") || email.length > 320) throw new EroareUtilizator("Email invalid.");
     // Cota de utilizatori (membri + invitații încă în așteptare, care ar
     // deveni membri dacă sunt acceptate) — vezi lib/billing/quota.ts.
     const limite = getLimiteleEfective(ctx.orgPackage, ctx.orgCustomPlanConfig);

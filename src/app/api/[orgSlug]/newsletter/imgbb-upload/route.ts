@@ -35,6 +35,11 @@ const postUpload = withOrgSession(async (ctx, req: Request) => {
   const bytes = Buffer.from(b64, "base64");
   if (!bytes.length) return NextResponse.json({ error: "bad_image" }, { status: 400 });
   if (bytes.length > MAX_BYTES) return NextResponse.json({ error: "too_large" }, { status: 400 });
+  // Se stochează ca image/jpeg într-un bucket public: acceptăm doar conținut care ÎNCEPE ca un JPEG
+  // (semnătura FF D8 FF) — nu orice base64 arbitrar. Tool-ul comprimă oricum poza la JPEG client-side.
+  if (!(bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff)) {
+    return NextResponse.json({ error: "bad_image" }, { status: 400 });
+  }
 
   const supabase = await createClient();
   const path = `newsletter/${ctx.orgId}/${randomUUID()}.jpg`;
