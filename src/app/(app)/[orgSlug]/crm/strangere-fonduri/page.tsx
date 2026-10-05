@@ -114,7 +114,7 @@ export default async function StrangereFonduriPage({ params }: { params: Promise
           <div className="space-y-2">
             {pagini.map((p) => (
               <div key={p.id} className="flex items-center justify-between rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] px-3.5 py-2.5">
-                <Link href={`/${orgSlug}/crm/strangere-fonduri/${p.id}`} className="min-w-0 hover:opacity-80">
+                <Link prefetch={false} href={`/${orgSlug}/crm/strangere-fonduri/${p.id}`} className="min-w-0 hover:opacity-80">
                   <p className="truncate text-[13px] font-medium text-[var(--ci-text)]">{p.titlu}</p>
                   <p className="truncate text-[12px] text-[var(--ci-text-muted)]">
                     {p.numeCreator} · {p.emailCreator} · {formatDataOra(p.createdAt.toISOString())}

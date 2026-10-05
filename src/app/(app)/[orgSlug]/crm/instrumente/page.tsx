@@ -77,7 +77,7 @@ export default function InstrumentePage() {
                     </div>
                     <p className="text-[14px] font-semibold text-[var(--ci-text)]">{instDict.titlu}</p>
                     <p className="mt-1 text-[12px] text-[var(--ci-text-muted)]">{instDict.descriere}</p>
-                    <Link
+                    <Link prefetch={false}
                       href={inst.href.startsWith("/") ? `/${orgSlug}${inst.href}` : `/${orgSlug}/crm/instrumente/${inst.href}`}
                       className="mt-3 flex items-center gap-1 text-[13px] font-medium text-[var(--ci-primary)] hover:underline"
                     >

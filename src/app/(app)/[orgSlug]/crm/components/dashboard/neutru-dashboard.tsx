@@ -44,7 +44,7 @@ export function NeutruDashboard({ base, dict, kpis, actiuni, evolutie, pipeline,
                   {a.responsabil} · termen {formatDataRelativa(a.termen)}
                 </p>
               </div>
-              <Link
+              <Link prefetch={false}
                 href={`${base}/${a.href}`}
                 className="inline-flex h-8 shrink-0 items-center gap-1 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-3 text-[12px] font-medium text-[var(--ci-text)] transition-colors hover:border-[var(--ci-primary)] hover:text-[var(--ci-primary)]"
               >
@@ -82,7 +82,7 @@ export function NeutruDashboard({ base, dict, kpis, actiuni, evolutie, pipeline,
               <Row key={p.stage} label={p.label} value={p.stage === "sponsorizat" ? formatSuma(p.suma) : String(p.count)} tone={p.stage === "sponsorizat" ? undefined : p.count > 0 && blocate > 0 ? "amber" : undefined} />
             ))}
           </div>
-          <Link
+          <Link prefetch={false}
             href={`${base}/companii`}
             className="mt-4 flex items-center justify-center gap-1.5 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] py-2 text-[13px] font-medium text-[var(--ci-text)] transition-colors hover:border-[var(--ci-primary)] hover:text-[var(--ci-primary)]"
           >
@@ -96,7 +96,7 @@ export function NeutruDashboard({ base, dict, kpis, actiuni, evolutie, pipeline,
           title={dict.proiecte.title}
           subtitle={dict.proiecte.subtitle}
           action={
-            <Link href={`${base}/beneficiari`} className="text-[13px] font-medium text-[var(--ci-blue)] hover:underline">
+            <Link prefetch={false} href={`${base}/beneficiari`} className="text-[13px] font-medium text-[var(--ci-blue)] hover:underline">
               {dict.proiecte.seeAll}
             </Link>
           }
@@ -105,7 +105,7 @@ export function NeutruDashboard({ base, dict, kpis, actiuni, evolutie, pipeline,
           {campaniiActive.map((b) => {
             const pct = Math.round((b.sumaStransa / b.obiectiv) * 100);
             return (
-              <Link
+              <Link prefetch={false}
                 key={b.id}
                 href={`${base}/beneficiari/${b.id}`}
                 className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4 shadow-[var(--ci-card-shadow)] transition-shadow hover:shadow-[var(--ci-shadow-md)]"

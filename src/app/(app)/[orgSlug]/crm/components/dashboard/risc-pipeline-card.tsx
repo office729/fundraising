@@ -43,7 +43,7 @@ export function RiscPipelineCard({ orgSlug, ro }: { orgSlug: string; ro: boolean
         <ol className="divide-y divide-[var(--ci-border)]">
           {rows.map((r) => (
             <li key={r.id}>
-              <Link
+              <Link prefetch={false}
                 href={`/${orgSlug}/crm/companii/${r.segment}`}
                 className="flex items-center justify-between gap-3 px-5 py-3 transition-colors hover:bg-[var(--ci-surface-2)]"
               >

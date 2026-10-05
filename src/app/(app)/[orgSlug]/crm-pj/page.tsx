@@ -46,7 +46,7 @@ export default async function CrmPjPage({
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       <header className="flex shrink-0 items-center gap-3 border-b border-line bg-panel px-4 py-3 sm:px-6">
-        <Link href={`/${orgSlug}`} className="text-[13px] text-muted transition hover:text-ink">
+        <Link prefetch={false} href={`/${orgSlug}`} className="text-[13px] text-muted transition hover:text-ink">
           ← Instrumentele tale
         </Link>
         <span className="text-line">/</span>

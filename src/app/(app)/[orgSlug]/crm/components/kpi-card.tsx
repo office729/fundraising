@@ -30,7 +30,7 @@ export function KpiCard({
   const data = spark.map((v, i) => ({ i, v }));
 
   return (
-    <Link
+    <Link prefetch={false}
       href={href}
       className="group flex flex-col rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4 shadow-[var(--ci-card-shadow)] transition-shadow hover:shadow-[var(--ci-shadow-md)]"
     >

@@ -29,7 +29,7 @@ function ToolCard({ tool, orgSlug }: { tool: ToolDefinition; orgSlug: string }) 
   }
 
   return (
-    <Link
+    <Link prefetch={false}
       href={`/${orgSlug}/${tool.href}`}
       className="rounded-xl border border-line bg-panel p-5 transition hover:border-brand-green hover:shadow-sm"
     >

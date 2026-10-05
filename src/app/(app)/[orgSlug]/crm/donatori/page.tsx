@@ -129,7 +129,7 @@ async function DonatoriContent({
         ) : (
           <div className="divide-y divide-[var(--ci-border)]">
             {lista.rows.map((d) => (
-              <Link
+              <Link prefetch={false}
                 key={d.id}
                 href={`/${orgSlug}/crm/donatori/reali/${d.id}`}
                 className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 transition-colors hover:bg-[var(--ci-surface-2)]"

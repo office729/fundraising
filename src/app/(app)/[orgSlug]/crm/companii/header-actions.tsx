@@ -69,7 +69,7 @@ export function CalendarLucruButton() {
         ) : (
           <div className="space-y-1.5">
             {rows.map((r) => (
-              <Link
+              <Link prefetch={false}
                 key={r.id}
                 href={`/${orgSlug}/crm/companii/${segmentFirma(r.nume, r.id)}`}
                 className="flex items-center justify-between rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] px-3 py-2 text-[13px] hover:bg-[var(--ci-surface-2)]"
@@ -92,7 +92,7 @@ export function TopButton() {
   const locale = useLocale();
   const dict = COMPANII_DICT[locale].header;
   return (
-    <Link
+    <Link prefetch={false}
       href={`/${orgSlug}/crm/companii?top=1`}
       className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-3.5 text-sm font-medium text-[var(--ci-text)] transition-colors hover:border-[var(--ci-border-strong)] hover:bg-[var(--ci-surface-2)]"
     >

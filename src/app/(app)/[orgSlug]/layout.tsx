@@ -85,7 +85,7 @@ export default async function OrgLayout({
             următor în loc să se suprapună peste siglă+nume, ca înainte. */}
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-            <Link href={`/${orgSlug}/crm`} className="flex min-w-0 items-center gap-3">
+            <Link prefetch={false} href={`/${orgSlug}/crm`} className="flex min-w-0 items-center gap-3">
               {access.orgLogoUrl ? (
                 <Image
                   src={access.orgLogoUrl}
@@ -124,21 +124,21 @@ export default async function OrgLayout({
               </span>
             )}
             {(access.role === "owner" || access.role === "admin") && (
-              <Link
+              <Link prefetch={false}
                 href={`/${orgSlug}/echipa`}
                 className="text-[13px] font-medium text-muted transition hover:text-brand-blue"
               >
                 {dict.header.team}
               </Link>
             )}
-            <Link
+            <Link prefetch={false}
               href={`/${orgSlug}/setari`}
               className="text-[13px] font-medium text-muted transition hover:text-brand-blue"
             >
               {dict.header.settings}
             </Link>
             {isPlatformAdmin(access.userEmail) && (
-              <Link
+              <Link prefetch={false}
                 href="/platform-admin"
                 className="text-[13px] font-medium text-muted transition hover:text-brand-blue"
                 title="Doar contul platformei"
@@ -171,7 +171,7 @@ export default async function OrgLayout({
           {locale === "ro"
             ? "Acordul de prelucrare a datelor (DPA) nu este încă acceptat pentru această organizație. "
             : "The Data Processing Agreement (DPA) hasn't been accepted for this organization yet. "}
-          <Link href={`/${orgSlug}/setari#dpa`} className="font-semibold underline">
+          <Link prefetch={false} href={`/${orgSlug}/setari#dpa`} className="font-semibold underline">
             {locale === "ro" ? "Citește și acceptă" : "Read and accept"}
           </Link>
         </div>

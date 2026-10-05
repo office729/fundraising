@@ -79,7 +79,7 @@ export function IndraznetDinamicDashboard({
           title={itemLabel ?? dict.proiecte.title}
           subtitle={dict.proiecte.subtitle}
           action={
-            <Link href={`${base}/beneficiari`} className="text-[13px] font-medium text-[var(--ci-primary)] hover:underline">
+            <Link prefetch={false} href={`${base}/beneficiari`} className="text-[13px] font-medium text-[var(--ci-primary)] hover:underline">
               {dict.proiecte.seeAll}
             </Link>
           }
@@ -88,7 +88,7 @@ export function IndraznetDinamicDashboard({
           {campaniiActive.map((b) => {
             const pct = Math.round((b.sumaStransa / b.obiectiv) * 100);
             return (
-              <Link
+              <Link prefetch={false}
                 key={b.id}
                 href={`${base}/beneficiari/${b.id}`}
                 className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4 [border-left:var(--ci-card-accent)] shadow-[var(--ci-card-shadow)] transition-shadow hover:shadow-[var(--ci-shadow-lg)]"
@@ -127,7 +127,7 @@ export function IndraznetDinamicDashboard({
                   {a.responsabil} · termen {formatDataRelativa(a.termen)}
                 </p>
               </div>
-              <Link
+              <Link prefetch={false}
                 href={`${base}/${a.href}`}
                 className="inline-flex h-8 shrink-0 items-center gap-1 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-3 text-[12px] font-medium text-[var(--ci-text)] transition-colors hover:border-[var(--ci-primary)] hover:text-[var(--ci-primary)]"
               >

@@ -55,7 +55,7 @@ export function TopSponsoriCard({ orgSlug, ro }: { orgSlug: string; ro: boolean 
             </p>
           </div>
         </div>
-        <Link
+        <Link prefetch={false}
           href={`/${orgSlug}/crm/companii`}
           className="group flex items-center gap-1 text-[12.5px] font-semibold text-[var(--ci-primary)] hover:underline"
         >
@@ -81,7 +81,7 @@ export function TopSponsoriCard({ orgSlug, ro }: { orgSlug: string; ro: boolean 
             const parte = total > 0 ? Math.round((r.total / total) * 100) : 0;
             return (
               <li key={r.id}>
-                <Link
+                <Link prefetch={false}
                   href={`/${orgSlug}/crm/companii/${r.segment}`}
                   className="flex items-center gap-3.5 px-5 py-3 transition-colors hover:bg-[var(--ci-surface-2)]"
                 >

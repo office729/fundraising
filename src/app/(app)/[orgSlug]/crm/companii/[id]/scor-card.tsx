@@ -43,7 +43,7 @@ export function ScorCard({ input, base, locale }: { input: ScorInput; base: stri
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-3">
             <h2 className="text-[15px] font-bold text-[var(--ci-text)]">{t.titlu}</h2>
-            <Link href={`${base}/companii`} className="shrink-0 text-[13px] font-medium text-[var(--ci-primary)] hover:underline">
+            <Link prefetch={false} href={`${base}/companii`} className="shrink-0 text-[13px] font-medium text-[var(--ci-primary)] hover:underline">
               {t.top}
             </Link>
           </div>

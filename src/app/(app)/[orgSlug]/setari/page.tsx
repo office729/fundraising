@@ -108,7 +108,7 @@ export default async function SetariPage({
           <p className="mt-1 text-xs text-muted">
             Export sau ștergere de date pentru persoane de contact, voluntari și alte persoane care nu sunt donatori.
           </p>
-          <Link
+          <Link prefetch={false}
             href={`/${orgSlug}/setari/gdpr`}
             className="mt-3 inline-block rounded-lg border border-line px-4 py-2 text-sm font-medium text-ink transition hover:bg-panel-2"
           >

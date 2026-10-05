@@ -116,7 +116,7 @@ export function GdprClient({ orgSlug }: { orgSlug: string }) {
               {rezultat.donatorId && (
                 <>
                   {" — "}
-                  <Link href={`/${orgSlug}/crm/donatori/reali/${rezultat.donatorId}`} className="font-medium text-brand-green underline">
+                  <Link prefetch={false} href={`/${orgSlug}/crm/donatori/reali/${rezultat.donatorId}`} className="font-medium text-brand-green underline">
                     deschide profilul
                   </Link>
                 </>

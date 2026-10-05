@@ -211,7 +211,7 @@ export function CrmShell({
       >
         <div className="flex h-full flex-col py-3">
           <div className={cn("mb-3 flex items-center justify-between gap-2 px-3", collapsed && "md:justify-center md:px-0")}>
-            <Link href={base} onClick={() => setMobileOpen(false)} className="flex min-w-0 items-center gap-2">
+            <Link prefetch={false} href={base} onClick={() => setMobileOpen(false)} className="flex min-w-0 items-center gap-2">
               {orgLogoUrl && (
                 <Image
                   src={orgLogoUrl}
@@ -535,7 +535,7 @@ function AvatarMenu({ userName, orgSlug, role }: { userName: string; orgSlug: st
         <div className="absolute top-full right-0 z-50 mt-1.5 w-56 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-1.5 shadow-[var(--ci-shadow-md)]">
           <p className="truncate px-2.5 py-1.5 text-[12.5px] font-semibold text-[var(--ci-text)]">{userName}</p>
           {(role === "owner" || role === "admin") && (
-            <Link
+            <Link prefetch={false}
               href={`/${orgSlug}/echipa`}
               onClick={() => setOpen(false)}
               className="flex items-center gap-2 rounded-[var(--ci-radius-btn)] px-2.5 py-1.5 text-[13px] text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]"
@@ -543,7 +543,7 @@ function AvatarMenu({ userName, orgSlug, role }: { userName: string; orgSlug: st
               <Users className="h-3.5 w-3.5 text-[var(--ci-text-muted)]" /> Echipă
             </Link>
           )}
-          <Link
+          <Link prefetch={false}
             href={`/${orgSlug}/setari`}
             onClick={() => setOpen(false)}
             className="flex items-center gap-2 rounded-[var(--ci-radius-btn)] px-2.5 py-1.5 text-[13px] text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]"
@@ -613,7 +613,7 @@ function NotificationsButton({ base }: { base: string }) {
           {intarziate.length > 0 ? (
             <div className="max-h-72 space-y-0.5 overflow-y-auto">
               {intarziate.slice(0, 8).map((t) => (
-                <Link
+                <Link prefetch={false}
                   key={t.id}
                   href={`${base}/${t.legatDe.tip === "companie" ? "companii" : "donatori"}/${t.legatDe.id}`}
                   onClick={() => setOpen(false)}
@@ -629,7 +629,7 @@ function NotificationsButton({ base }: { base: string }) {
           ) : (
             <p className="px-2 py-2 text-[12px] text-[var(--ci-text-faint)]">Ești la zi cu task-urile.</p>
           )}
-          <Link
+          <Link prefetch={false}
             href={`${base}/taskuri`}
             onClick={() => setOpen(false)}
             className="mt-1 block rounded-[var(--ci-radius-btn)] px-2 py-1.5 text-center text-[12px] font-medium text-[var(--ci-primary)] hover:bg-[var(--ci-primary-soft)]"

@@ -48,7 +48,7 @@ export function TaskuriCard({ taskuri, base, locale }: { taskuri: Task[]; base: 
           <h2 className="text-[15px] font-bold text-[var(--ci-text)]">{t.title}</h2>
           <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">{t.subtitle}</p>
         </div>
-        <Link href={`${base}/taskuri`} className="flex items-center gap-1 text-[13px] font-medium text-[var(--ci-primary)] hover:underline">
+        <Link prefetch={false} href={`${base}/taskuri`} className="flex items-center gap-1 text-[13px] font-medium text-[var(--ci-primary)] hover:underline">
           {t.all} <ArrowRight className="h-3.5 w-3.5" />
         </Link>
       </div>
@@ -66,7 +66,7 @@ export function TaskuriCard({ taskuri, base, locale }: { taskuri: Task[]; base: 
 
 function Tile({ icon: Icon, label, value, color, href }: { icon: typeof ListTodo; label: string; value: number; color: string; href: string }) {
   return (
-    <Link href={href} className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] p-4 transition-shadow hover:shadow-[var(--ci-shadow-md)]">
+    <Link prefetch={false} href={href} className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] p-4 transition-shadow hover:shadow-[var(--ci-shadow-md)]">
       <p className="flex items-center gap-1.5 text-[13px] text-[var(--ci-text-muted)]">
         <Icon className="h-3.5 w-3.5" /> {label}
       </p>

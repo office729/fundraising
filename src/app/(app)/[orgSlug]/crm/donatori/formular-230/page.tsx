@@ -299,7 +299,7 @@ export default async function Formular230StatsPage({
         )}
         {totalPagini > 1 && (
           <div className="mt-3 flex items-center justify-between border-t border-[var(--ci-border)] pt-3">
-            <Link
+            <Link prefetch={false}
               href={hrefPagina(paginaCuruenta - 1)}
               aria-disabled={paginaCuruenta <= 1}
               className={`flex items-center gap-1 rounded-[var(--ci-radius-btn)] px-2.5 py-1.5 text-[12.5px] font-medium ${paginaCuruenta <= 1 ? "pointer-events-none text-[var(--ci-text-faint)]" : "text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]"}`}
@@ -307,7 +307,7 @@ export default async function Formular230StatsPage({
               <ChevronLeft className="h-3.5 w-3.5" /> {dict.raspunsuri.anterior}
             </Link>
             <span className="ci-tabular text-[12.5px] text-[var(--ci-text-muted)]">{dict.raspunsuri.pagina(paginaCuruenta, totalPagini)}</span>
-            <Link
+            <Link prefetch={false}
               href={hrefPagina(paginaCuruenta + 1)}
               aria-disabled={paginaCuruenta >= totalPagini}
               className={`flex items-center gap-1 rounded-[var(--ci-radius-btn)] px-2.5 py-1.5 text-[12.5px] font-medium ${paginaCuruenta >= totalPagini ? "pointer-events-none text-[var(--ci-text-faint)]" : "text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]"}`}

@@ -41,14 +41,14 @@ export function ElegantEditorialDashboard({
           eyebrow="Poveste principală"
           title={itemLabel ?? dict.proiecte.title}
           action={
-            <Link href={`${base}/beneficiari`} className="text-[13px] font-medium text-[var(--ci-primary)] hover:underline">
+            <Link prefetch={false} href={`${base}/beneficiari`} className="text-[13px] font-medium text-[var(--ci-primary)] hover:underline">
               {dict.proiecte.seeAll}
             </Link>
           }
         />
 
         {vedeta && (
-          <Link href={`${base}/beneficiari/${vedeta.id}`} className="mb-8 block">
+          <Link prefetch={false} href={`${base}/beneficiari/${vedeta.id}`} className="mb-8 block">
             <div className="mb-3 flex items-start justify-between gap-3">
               <h2 className="ci-display text-2xl font-semibold text-[var(--ci-text)]">{vedeta.nume}</h2>
               <Badge tone={vedeta.statusCampanie === "urgenta" ? "red" : "blue"}>
@@ -73,7 +73,7 @@ export function ElegantEditorialDashboard({
             {restul.map((b) => {
               const pct = Math.round((b.sumaStransa / b.obiectiv) * 100);
               return (
-                <Link key={b.id} href={`${base}/beneficiari/${b.id}`} className="flex items-center justify-between gap-4 py-3">
+                <Link prefetch={false} key={b.id} href={`${base}/beneficiari/${b.id}`} className="flex items-center justify-between gap-4 py-3">
                   <div className="min-w-0">
                     <p className="truncate text-[14px] font-medium text-[var(--ci-text)]">{b.nume}</p>
                     <p className="text-[12px] text-[var(--ci-text-muted)]">{formatSuma(b.sumaStransa)} {dict.proiecte.din} {formatSuma(b.obiectiv)}</p>
@@ -111,7 +111,7 @@ export function ElegantEditorialDashboard({
                 </Badge>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[13px] text-[var(--ci-text)]">{a.motiv}</p>
-                  <Link href={`${base}/${a.href}`} className="inline-flex items-center gap-0.5 text-[11px] font-medium text-[var(--ci-primary)] hover:underline">
+                  <Link prefetch={false} href={`${base}/${a.href}`} className="inline-flex items-center gap-0.5 text-[11px] font-medium text-[var(--ci-primary)] hover:underline">
                     {dict.actionCenter.resolve} <ArrowRight className="h-2.5 w-2.5" />
                   </Link>
                   <span className="ml-1.5 text-[11px] text-[var(--ci-text-faint)]">· {formatDataRelativa(a.termen)}</span>

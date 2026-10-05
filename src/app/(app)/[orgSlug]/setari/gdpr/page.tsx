@@ -14,7 +14,7 @@ export default async function GdprPage({ params }: { params: Promise<{ orgSlug: 
 
   return (
     <div className="mx-auto max-w-xl">
-      <Link href={`/${orgSlug}/setari`} className="text-sm text-muted hover:text-brand-blue">
+      <Link prefetch={false} href={`/${orgSlug}/setari`} className="text-sm text-muted hover:text-brand-blue">
         ← Setări
       </Link>
       <h1 className="font-display mt-2 text-2xl font-bold text-ink">Cereri GDPR ale persoanelor</h1>

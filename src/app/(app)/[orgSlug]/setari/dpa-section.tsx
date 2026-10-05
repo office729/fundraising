@@ -54,7 +54,7 @@ export function DpaSection({
     <section id="dpa" className="mt-8 rounded-xl border border-line bg-panel p-5">
       <h2 className="font-medium text-ink">{t.titlu}</h2>
       <p className="mt-1 text-xs leading-relaxed text-muted">{t.desc}</p>
-      <Link href="/dpa" target="_blank" className="mt-2 inline-block text-sm font-medium text-brand-green underline">
+      <Link prefetch={false} href="/dpa" target="_blank" className="mt-2 inline-block text-sm font-medium text-brand-green underline">
         {t.citeste}
       </Link>
 

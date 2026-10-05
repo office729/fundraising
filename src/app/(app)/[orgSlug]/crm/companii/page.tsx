@@ -79,7 +79,7 @@ async function CompaniiContent({
         ) : (
           <div className="divide-y divide-[var(--ci-border)]">
             {lista.rows.map((c) => (
-              <Link
+              <Link prefetch={false}
                 key={c.id}
                 href={`/${orgSlug}/crm/companii/${segmentFirma(c.nume, c.id)}`}
                 className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 transition-colors hover:bg-[var(--ci-surface-2)]"
