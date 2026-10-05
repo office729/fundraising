@@ -5,6 +5,8 @@ import { useEffect, useState, useTransition } from "react";
 import { trackEvent } from "@/lib/analytics";
 import { dateFacturareComplete } from "@/lib/billing/date-facturare";
 import { PACKAGE_LIMITS, PACKAGE_PRICE_ANUAL, type OrgPackage } from "@/lib/billing/packages";
+import type { Locale } from "@/lib/i18n/config";
+import { ABONAMENT_DICT } from "@/lib/i18n/dictionaries/abonament";
 import { JUDETE } from "@/lib/judete";
 
 import { citesteDateFacturareAction, salveazaDateFacturareAction, startCheckoutAction } from "./billing-actions";
@@ -16,15 +18,15 @@ const PACHETE: { key: Exclude<OrgPackage, "trial" | "custom">; nume: string; pop
   { key: "impact", nume: "IMPACT" },
 ];
 
-function limiteText(pkg: Exclude<OrgPackage, "trial" | "custom">): string[] {
+function limiteText(pkg: Exclude<OrgPackage, "trial" | "custom">, locale: Locale): string[] {
   const l = PACKAGE_LIMITS[pkg];
+  const t = ABONAMENT_DICT[locale].picker;
+  const loc = locale === "ro" ? "ro-RO" : "en-US";
   return [
-    `${l.utilizatori} ${l.utilizatori === 1 ? "utilizator" : "utilizatori"}`,
-    `${l.contactePf!.toLocaleString("ro-RO")} contacte persoane fizice`,
-    `${l.companiiPj!.toLocaleString("ro-RO")} companii`,
-    l.contracteSponsorizarePeLuna == null
-      ? "Contracte 20% și D177 nelimitate"
-      : `${l.contracteSponsorizarePeLuna} contracte 20% + D177 / lună`,
+    `${l.utilizatori} ${l.utilizatori === 1 ? t.utilizator : t.utilizatori}`,
+    `${l.contactePf!.toLocaleString(loc)} ${t.contactePf}`,
+    `${l.companiiPj!.toLocaleString(loc)} ${t.companii}`,
+    l.contracteSponsorizarePeLuna == null ? t.contracteNelimitate : t.contracte(l.contracteSponsorizarePeLuna),
   ];
 }
 
@@ -38,7 +40,8 @@ type DateFacturare = { cif: string | null; adresaSediu: string | null; judet: st
 // Date de facturare cerute ÎNAINTE de prima plată (factura Oblio nu poate pleca
 // fără CIF și adresă). Formularul e aici, nu doar în Setări: un cont cu proba
 // expirată vede doar paywall-ul și nu poate ajunge în Setări.
-function DateFacturareForm({ orgSlug, initial, onSaved }: { orgSlug: string; initial: DateFacturare; onSaved: (d: DateFacturare) => void }) {
+function DateFacturareForm({ orgSlug, initial, onSaved, locale }: { orgSlug: string; initial: DateFacturare; onSaved: (d: DateFacturare) => void; locale: Locale }) {
+  const t = ABONAMENT_DICT[locale].facturare;
   const [cif, setCif] = useState(initial.cif ?? "");
   const [adresa, setAdresa] = useState(initial.adresaSediu ?? "");
   const [judet, setJudet] = useState(initial.judet ?? "");
@@ -54,7 +57,7 @@ function DateFacturareForm({ orgSlug, initial, onSaved }: { orgSlug: string; ini
         if (r.error) setEroare(r.error);
         else onSaved({ cif: cif.trim(), adresaSediu: adresa.trim(), judet });
       } catch {
-        setEroare("Nu am putut salva datele. Încearcă din nou.");
+        setEroare(t.eroare);
       }
     });
   }
@@ -62,23 +65,21 @@ function DateFacturareForm({ orgSlug, initial, onSaved }: { orgSlug: string; ini
   const camp = "mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink";
   return (
     <form onSubmit={salveaza} className="mx-auto mb-6 max-w-xl rounded-xl border border-line bg-panel p-5">
-      <p className="text-sm font-bold text-ink">Datele de facturare ale organizației</p>
-      <p className="mt-1 text-xs leading-relaxed text-muted">
-        Le cerem înainte de prima plată: apar pe factura fiscală emisă automat. Le poți modifica ulterior din Setări.
-      </p>
+      <p className="text-sm font-bold text-ink">{t.titlu}</p>
+      <p className="mt-1 text-xs leading-relaxed text-muted">{t.desc}</p>
       <div className="mt-3 flex flex-col gap-3">
         <label className="text-sm font-medium text-ink">
-          CIF
-          <input value={cif} onChange={(e) => setCif(e.target.value)} placeholder="ex. RO12345678" className={camp} />
+          {t.cif}
+          <input value={cif} onChange={(e) => setCif(e.target.value)} placeholder={t.cifPlaceholder} className={camp} />
         </label>
         <label className="text-sm font-medium text-ink">
-          Adresa sediului social
-          <input value={adresa} onChange={(e) => setAdresa(e.target.value)} placeholder="ex. Str. Exemplu nr. 1, București" className={camp} />
+          {t.adresa}
+          <input value={adresa} onChange={(e) => setAdresa(e.target.value)} placeholder={t.adresaPlaceholder} className={camp} />
         </label>
         <label className="text-sm font-medium text-ink">
-          Județ
+          {t.judet}
           <select value={judet} onChange={(e) => setJudet(e.target.value)} className={camp}>
-            <option value="">Alege județul</option>
+            <option value="">{t.alegeJudet}</option>
             {JUDETE.map((j) => (
               <option key={j} value={j}>
                 {j}
@@ -93,13 +94,14 @@ function DateFacturareForm({ orgSlug, initial, onSaved }: { orgSlug: string; ini
         disabled={pending}
         className="mt-4 rounded-md bg-brand-green px-5 py-2.5 text-sm font-bold text-white transition hover:bg-brand-green-hover disabled:opacity-60"
       >
-        Salvează și continuă
+        {t.salveaza}
       </button>
     </form>
   );
 }
 
-export function PackagePicker({ orgSlug }: { orgSlug: string }) {
+export function PackagePicker({ orgSlug, locale }: { orgSlug: string; locale: Locale }) {
+  const t = ABONAMENT_DICT[locale].picker;
   const [date, setDate] = useState<DateFacturare | null>(null);
   useEffect(() => {
     let anulat = false;
@@ -134,7 +136,7 @@ export function PackagePicker({ orgSlug }: { orgSlug: string }) {
         });
         window.location.href = url;
       } catch {
-        setEroare("Nu am putut porni plata — încearcă din nou sau scrie-ne la vlad.placinta@alexandrit.ro.");
+        setEroare(t.eroarePlata);
         setSeIncarca(null);
       }
     });
@@ -146,12 +148,9 @@ export function PackagePicker({ orgSlug }: { orgSlug: string }) {
           automată pornește implicit dacă banca permite salvarea cardului (vezi
           netopia-confirm.ts), deci clientul trebuie să știe asta dinainte, nu
           să afle abia la a doua taxare. */}
-      <p className="mx-auto mb-4 max-w-xl text-center text-[12.5px] leading-relaxed text-muted-2">
-        Plata e recurentă: dacă banca permite, cardul e reținut și taxat automat în fiecare lună, până anulezi din
-        Setări → Abonament. Poți opri reînnoirea automată oricând, fără să pierzi accesul deja plătit.
-      </p>
+      <p className="mx-auto mb-4 max-w-xl text-center text-[12.5px] leading-relaxed text-muted-2">{t.recurent}</p>
       {eroare && <p className="mx-auto mb-4 max-w-xl text-center text-sm text-red-600">{eroare}</p>}
-      {date && !dateOk && <DateFacturareForm orgSlug={orgSlug} initial={date} onSaved={setDate} />}
+      {date && !dateOk && <DateFacturareForm orgSlug={orgSlug} initial={date} onSaved={setDate} locale={locale} />}
       <fieldset disabled={!dateOk} className={dateOk ? "" : "opacity-50"}>
       <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
         {PACHETE.map((p) => {
@@ -171,14 +170,14 @@ export function PackagePicker({ orgSlug }: { orgSlug: string }) {
               )}
               <h3 className="font-display text-lg font-bold text-ink">{p.nume}</h3>
               <p className="text-2xl font-extrabold text-ink">
-                {l.pretLunar} lei<span className="text-sm font-medium text-muted">/lună</span>
+                {l.pretLunar} lei<span className="text-sm font-medium text-muted">{t.pePerLuna}</span>
               </p>
-              <p className="text-[12.5px] text-muted-2">{PACKAGE_PRICE_ANUAL[p.key].toLocaleString("ro-RO")} lei/an (2 luni gratuite)</p>
+              <p className="text-[12.5px] text-muted-2">{t.peAn(PACKAGE_PRICE_ANUAL[p.key].toLocaleString(locale === "ro" ? "ro-RO" : "en-US"))}</p>
               <div className="flex flex-col gap-1.5 border-t border-line pt-3">
-                {limiteText(p.key).map((t) => (
-                  <div key={t} className="flex gap-2 text-[13px] text-body">
+                {limiteText(p.key, locale).map((linie) => (
+                  <div key={linie} className="flex gap-2 text-[13px] text-body">
                     <span className="text-brand-green">✓</span>
-                    {t}
+                    {linie}
                   </div>
                 ))}
               </div>
@@ -190,7 +189,7 @@ export function PackagePicker({ orgSlug }: { orgSlug: string }) {
                   activ ? "bg-brand-green text-white" : "border border-brand-blue text-brand-blue hover:bg-brand-blue-soft"
                 }`}
               >
-                {activ ? "Se redirecționează..." : `Alege ${p.nume}`}
+                {activ ? t.seRedirectioneaza : t.alege(p.nume)}
               </button>
             </div>
           );
@@ -198,7 +197,7 @@ export function PackagePicker({ orgSlug }: { orgSlug: string }) {
       </div>
 
       <div className="mt-5">
-        <CustomPlanBuilder orgSlug={orgSlug} />
+        <CustomPlanBuilder orgSlug={orgSlug} locale={locale} />
       </div>
       </fieldset>
     </div>

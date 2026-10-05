@@ -3,33 +3,12 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 
 import { trackEvent } from "@/lib/analytics";
-import { calculateCustomPlanBreakdown, type CustomPlanBreakdownKey } from "@/lib/billing/custom-plan";
+import { calculateCustomPlanBreakdown } from "@/lib/billing/custom-plan";
 import { ALL_TOOLS, PACKAGE_LIMITS, type ToolId } from "@/lib/billing/packages";
+import type { Locale } from "@/lib/i18n/config";
+import { ABONAMENT_DICT } from "@/lib/i18n/dictionaries/abonament";
 
 import { startCustomCheckoutAction } from "./billing-actions";
-
-const TOOL_LABELS: Record<ToolId, string> = {
-  "one-pager": "One-pager companii",
-  "one-pager-generator": "Generator one-pager",
-  "raport-companii": "Rapoarte companii",
-  "newsletter-pf": "Newsletter persoane fizice",
-  "newsletter-pj": "Newsletter companii",
-  crm: "CRM Donatori",
-  "crm-pj": "CRM Companii & Sponsorizări",
-  "contract-sponsorizare": "Contracte de sponsorizare",
-  "crm-pf": "CRM Beneficiari (persoană fizică)",
-  "program-lucru": "Program de lucru echipă",
-};
-
-const BREAKDOWN_LABELS: Record<CustomPlanBreakdownKey, string> = {
-  baza: "Bază (cont + platformă)",
-  utilizatori: "Utilizatori suplimentari",
-  contactePf: "Contacte PF",
-  companiiPj: "Companii PJ",
-  instrumente: "Instrumente alese",
-  generari: "Generări suplimentare",
-  accesDesignToate: "Acces la toate design-urile de campanie",
-};
 
 const FIXED_PACKAGES: { key: "start" | "crestere" | "impact"; nume: string }[] = [
   { key: "start", nume: "START" },
@@ -37,14 +16,13 @@ const FIXED_PACKAGES: { key: "start" | "crestere" | "impact"; nume: string }[] =
   { key: "impact", nume: "IMPACT" },
 ];
 
-function compararePachetFix(pret: number): string | null {
+function compararePachetFix(pret: number, locale: Locale): string | null {
+  const t = ABONAMENT_DICT[locale].custom;
   const preturi = FIXED_PACKAGES.map((p) => ({ ...p, pret: PACKAGE_LIMITS[p.key].pretLunar! }));
   const apropiat = preturi.reduce((a, b) => (Math.abs(b.pret - pret) < Math.abs(a.pret - pret) ? b : a));
   const delta = Math.abs(apropiat.pret - pret);
   if (delta === 0) return null;
-  return pret < apropiat.pret
-    ? `cu ${delta} lei mai puțin decât pachetul ${apropiat.nume}`
-    : `cu ${delta} lei mai mult decât pachetul ${apropiat.nume}`;
+  return pret < apropiat.pret ? t.cuMaiPutin(delta, apropiat.nume) : t.cuMaiMult(delta, apropiat.nume);
 }
 
 function SliderField({
@@ -83,7 +61,9 @@ function SliderField({
   );
 }
 
-export function CustomPlanBuilder({ orgSlug }: { orgSlug: string }) {
+export function CustomPlanBuilder({ orgSlug, locale }: { orgSlug: string; locale: Locale }) {
+  const t = ABONAMENT_DICT[locale].custom;
+  const loc = locale === "ro" ? "ro-RO" : "en-US";
   const [config, setConfig] = useState({
     utilizatori: 1,
     contactePf: 0,
@@ -97,7 +77,7 @@ export function CustomPlanBuilder({ orgSlug }: { orgSlug: string }) {
 
   const breakdown = useMemo(() => calculateCustomPlanBreakdown(config), [config]);
   const pret = breakdown.reduce((sum, item) => sum + item.amount, 0);
-  const comparatie = useMemo(() => compararePachetFix(pret), [pret]);
+  const comparatie = useMemo(() => compararePachetFix(pret, locale), [pret, locale]);
 
   const [puls, setPuls] = useState(false);
   const primulRandăr = useRef(true);
@@ -126,28 +106,28 @@ export function CustomPlanBuilder({ orgSlug }: { orgSlug: string }) {
         trackEvent("begin_checkout", {
           currency: "RON",
           value: pret,
-          items: [{ item_name: "Plan personalizat", quantity: 1 }],
+          items: [{ item_name: "Plan personalizat", quantity: 1 }], // numele evenimentului de analiză rămâne același în ambele limbi
           transport_type: "beacon",
         });
         window.location.href = url;
       } catch {
-        setEroare("Nu am putut porni plata — încearcă din nou sau scrie-ne la vlad.placinta@alexandrit.ro.");
+        setEroare(t.eroarePlata);
       }
     });
   }
 
   return (
     <div className="rounded-2xl border border-dashed border-brand-blue bg-panel p-7 sm:p-9">
-      <h3 className="font-display text-[22px] font-bold text-ink">Plan personalizat</h3>
+      <h3 className="font-display text-[22px] font-bold text-ink">{t.titlu}</h3>
       <p className="mt-1.5 max-w-xl text-[14.5px] leading-relaxed text-muted">
-        Alege exact ce ai nevoie — prețul se calculează automat.
+        {t.desc}
       </p>
 
       <div className="mt-7 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_320px]">
         <div className="flex flex-col gap-7">
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <SliderField
-              label="Utilizatori"
+              label={t.utilizatori}
               min={1}
               max={20}
               step={1}
@@ -156,25 +136,25 @@ export function CustomPlanBuilder({ orgSlug }: { orgSlug: string }) {
               format={(n) => `${n}`}
             />
             <SliderField
-              label="Contacte PF"
+              label={t.contactePf}
               min={0}
               max={50_000}
               step={500}
               value={config.contactePf}
               onChange={(n) => setConfig((c) => ({ ...c, contactePf: n }))}
-              format={(n) => n.toLocaleString("ro-RO")}
+              format={(n) => n.toLocaleString(loc)}
             />
             <SliderField
-              label="Companii PJ"
+              label={t.companiiPj}
               min={0}
               max={10_000}
               step={100}
               value={config.companiiPj}
               onChange={(n) => setConfig((c) => ({ ...c, companiiPj: n }))}
-              format={(n) => n.toLocaleString("ro-RO")}
+              format={(n) => n.toLocaleString(loc)}
             />
             <SliderField
-              label="Generări / lună"
+              label={t.generari}
               min={0}
               max={100}
               step={1}
@@ -185,7 +165,7 @@ export function CustomPlanBuilder({ orgSlug }: { orgSlug: string }) {
           </div>
 
           <div>
-            <span className="text-[13px] font-medium text-ink">Instrumente incluse</span>
+            <span className="text-[13px] font-medium text-ink">{t.instrumente}</span>
             <div className="mt-2.5 flex flex-wrap gap-2">
               {ALL_TOOLS.map((tool) => {
                 const toolActiv = config.tools.includes(tool);
@@ -202,7 +182,7 @@ export function CustomPlanBuilder({ orgSlug }: { orgSlug: string }) {
                     }`}
                   >
                     {toolActiv ? "✓ " : ""}
-                    {TOOL_LABELS[tool]}
+                    {t.tool[tool] ?? tool}
                   </button>
                 );
               })}
@@ -210,10 +190,9 @@ export function CustomPlanBuilder({ orgSlug }: { orgSlug: string }) {
           </div>
 
           <div>
-            <span className="text-[13px] font-medium text-ink">Design-uri de campanie</span>
+            <span className="text-[13px] font-medium text-ink">{t.designuri}</span>
             <p className="mt-1 text-[12.5px] leading-relaxed text-muted">
-              Implicit vezi doar design-urile potrivite domeniului de activitate ales în Setări. Activează asta ca
-              să alegi din toate design-urile, indiferent de domeniu.
+              {t.designuriDesc}
             </p>
             <div className="mt-2.5">
               <button
@@ -226,7 +205,7 @@ export function CustomPlanBuilder({ orgSlug }: { orgSlug: string }) {
                     : "border-line text-body hover:border-brand-blue hover:text-brand-blue"
                 }`}
               >
-                {config.accesDesignToate ? "✓ " : ""}Acces la toate design-urile
+                {config.accesDesignToate ? "✓ " : ""}{t.toateDesignurile}
               </button>
             </div>
           </div>
@@ -237,22 +216,21 @@ export function CustomPlanBuilder({ orgSlug }: { orgSlug: string }) {
             <p
               className={`text-3xl font-extrabold transition-colors duration-300 ${puls ? "text-brand-green" : "text-ink"}`}
             >
-              {pret} lei<span className="text-sm font-medium text-muted">/lună</span>
+              {pret} lei<span className="text-sm font-medium text-muted">{t.pePerLuna}</span>
             </p>
             {comparatie && <p className="mt-1 text-[12.5px] text-muted">{comparatie}</p>}
 
             <div className="mt-4 flex flex-col gap-1.5 border-t border-line pt-4">
               {breakdown.map((item) => (
                 <div key={item.key} className="flex items-center justify-between text-[13px] text-body">
-                  <span>{BREAKDOWN_LABELS[item.key]}</span>
+                  <span>{t.breakdown[item.key] ?? item.key}</span>
                   <span className="font-medium text-ink">+{item.amount} lei</span>
                 </div>
               ))}
             </div>
 
             <p className="mt-4 text-[11.5px] leading-relaxed text-muted-2">
-              Plata e recurentă: dacă banca permite, cardul e reținut și taxat automat în fiecare lună, până anulezi
-              din Setări → Abonament.
+              {t.recurent}
             </p>
 
             {eroare && <p className="mt-3 text-[13px] text-red-600">{eroare}</p>}
@@ -263,7 +241,7 @@ export function CustomPlanBuilder({ orgSlug }: { orgSlug: string }) {
               onClick={trimite}
               className="mt-5 w-full rounded-md bg-brand-green py-3 text-center text-sm font-bold text-white transition hover:bg-brand-green-hover disabled:opacity-60"
             >
-              {pending ? "Se redirecționează..." : "Continuă la plată"}
+              {pending ? t.seRedirectioneaza : t.continua}
             </button>
           </div>
         </div>

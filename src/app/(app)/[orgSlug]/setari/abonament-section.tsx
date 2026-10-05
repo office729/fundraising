@@ -74,7 +74,7 @@ export function AbonamentSection({
               {dict.ascundeOptiunile}
             </button>
           )}
-          <PackagePicker orgSlug={orgSlug} />
+          <PackagePicker orgSlug={orgSlug} locale={locale} />
         </div>
       )}
 

@@ -1,11 +1,14 @@
 "use client";
 
-import { logoutAction } from "./actions";
 import { TRIAL_DAYS } from "@/lib/billing/trial";
+import type { Locale } from "@/lib/i18n/config";
+import { ABONAMENT_DICT } from "@/lib/i18n/dictionaries/abonament";
 
+import { logoutAction } from "./actions";
 import { PackagePicker } from "./package-picker";
 
-export function Paywall({ orgSlug, orgName }: { orgSlug: string; orgName: string }) {
+export function Paywall({ orgSlug, orgName, locale }: { orgSlug: string; orgName: string; locale: Locale }) {
+  const t = ABONAMENT_DICT[locale].paywall;
   return (
     <div className="min-h-screen bg-canvas">
       <header className="border-b border-line bg-panel">
@@ -13,7 +16,7 @@ export function Paywall({ orgSlug, orgName }: { orgSlug: string; orgName: string
           <span className="font-display text-base font-semibold text-brand-blue">{orgName}</span>
           <form action={logoutAction}>
             <button type="submit" className="text-[13px] font-medium text-muted transition hover:text-brand-blue">
-              Deconectare
+              {t.logout}
             </button>
           </form>
         </div>
@@ -26,15 +29,14 @@ export function Paywall({ orgSlug, orgName }: { orgSlug: string; orgName: string
               ceea ce ținea contrastul sub pragul WCAG AA în majoritatea
               domeniilor. */}
           <span className="inline-block rounded-full bg-amber-100 px-3.5 py-1.5 text-xs font-bold tracking-wide text-amber-900 uppercase dark:bg-amber-950 dark:text-amber-200">
-            Perioada de probă s-a încheiat
+            {t.badge}
           </span>
-          <h1 className="font-display mt-4 text-3xl font-bold text-ink">Alege pachetul organizației tale</h1>
+          <h1 className="font-display mt-4 text-3xl font-bold text-ink">{t.titlu}</h1>
           <p className="mt-3 text-base leading-relaxed text-muted">
-            Cele {TRIAL_DAYS} de zile gratuite pentru <strong>{orgName}</strong> s-au terminat. Alege un pachet ca să continui să
-            folosești Alexandrit — te redirecționăm la plată, accesul se reactivează imediat după confirmare.
+            <strong>{orgName}</strong> — {t.desc(TRIAL_DAYS)}
           </p>
           <p className="mt-2 text-sm text-muted">
-            Probleme la plată? Scrie-ne direct la{" "}
+            {t.probleme}{" "}
             <a href="mailto:vlad.placinta@alexandrit.ro" className="font-medium text-brand-green">
               vlad.placinta@alexandrit.ro
             </a>
@@ -43,7 +45,7 @@ export function Paywall({ orgSlug, orgName }: { orgSlug: string; orgName: string
         </div>
 
         <div className="mt-10">
-          <PackagePicker orgSlug={orgSlug} />
+          <PackagePicker orgSlug={orgSlug} locale={locale} />
         </div>
       </main>
     </div>

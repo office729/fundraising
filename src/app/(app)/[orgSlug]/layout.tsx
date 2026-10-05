@@ -49,7 +49,7 @@ export default async function OrgLayout({
       access.userEmail,
     )
   ) {
-    return <Paywall orgSlug={orgSlug} orgName={access.orgName} />;
+    return <Paywall orgSlug={orgSlug} orgName={access.orgName} locale={locale} />;
   }
 
   const zileProba =
