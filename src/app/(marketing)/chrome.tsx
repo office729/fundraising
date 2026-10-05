@@ -41,10 +41,10 @@ export function TopBar({ dict, locale }: { dict: MarketingDict; locale: Locale }
           · <a href="tel:0757401042" className="font-medium text-white hover:underline">0757 401 042</a>
         </span>
         <div className="flex items-center gap-4">
-          <Link href="/studii-de-caz" className="hover:text-white">
+          <Link prefetch={false} href="/studii-de-caz" className="hover:text-white">
             {dict.topbar.caseStudies}
           </Link>
-          <Link href="/blog" className="hover:text-white">
+          <Link prefetch={false} href="/blog" className="hover:text-white">
             {dict.topbar.blog}
           </Link>
           <a href="mailto:vlad.placinta@alexandrit.ro" className="hover:text-white">
@@ -65,7 +65,7 @@ export function SiteHeader({ dict }: { dict: MarketingDict }) {
   return (
     <header className="border-b border-line bg-panel">
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-6 px-6">
-        <Link href="/" className="flex shrink-0 items-center" onClick={() => setDeschis(false)} aria-label="Alexandrit">
+        <Link prefetch={false} href="/" className="flex shrink-0 items-center" onClick={() => setDeschis(false)} aria-label="Alexandrit">
           <Image
             src="/alexandrit-logo.webp"
             alt="Alexandrit"
@@ -86,6 +86,7 @@ export function SiteHeader({ dict }: { dict: MarketingDict }) {
               return (
                 <div key={item.href} className="group relative">
                   <Link
+                    prefetch={false}
                     href={item.href}
                     className={`flex items-center gap-1 text-sm font-medium whitespace-nowrap transition ${
                       activ ? "border-b-2 border-brand-green text-brand-green" : "text-ink group-hover:text-brand-green"
@@ -98,6 +99,7 @@ export function SiteHeader({ dict }: { dict: MarketingDict }) {
                     <div className="min-w-[220px] rounded-xl border border-line bg-panel p-2 shadow-[0_14px_36px_rgba(21,74,133,0.14)]">
                       {dict.navCineSuntem.map((sub) => (
                         <Link
+                          prefetch={false}
                           key={sub.href}
                           href={sub.href}
                           className={`block rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap transition ${
@@ -114,6 +116,7 @@ export function SiteHeader({ dict }: { dict: MarketingDict }) {
             }
             return (
               <Link
+                prefetch={false}
                 key={item.href}
                 href={item.href}
                 className={`text-sm font-medium whitespace-nowrap transition ${
@@ -128,18 +131,21 @@ export function SiteHeader({ dict }: { dict: MarketingDict }) {
 
         <div className="flex shrink-0 items-center gap-3">
           <Link
+            prefetch={false}
             href="/hub#consultanta"
             className="hidden rounded-md bg-brand-green px-4 py-2 text-sm font-bold whitespace-nowrap text-white transition hover:bg-brand-green-hover sm:inline-block lg:hidden xl:inline-block"
           >
             {dict.header.consulting}
           </Link>
           <Link
+            prefetch={false}
             href="/login"
             className="hidden text-sm font-bold whitespace-nowrap text-ink transition hover:text-brand-blue lg:inline-block"
           >
             {dict.header.login}
           </Link>
           <Link
+            prefetch={false}
             href="/signup"
             className="hidden rounded-md bg-brand-blue px-4 py-2 text-sm font-bold whitespace-nowrap text-white transition hover:bg-brand-blue-hover lg:inline-block"
           >
@@ -161,6 +167,7 @@ export function SiteHeader({ dict }: { dict: MarketingDict }) {
           {dict.nav.map((item) => (
             <div key={item.href} className="flex flex-col gap-1">
               <Link
+                prefetch={false}
                 href={item.href}
                 onClick={() => setDeschis(false)}
                 className={`rounded-lg px-2 py-2 text-sm font-medium ${
@@ -172,6 +179,7 @@ export function SiteHeader({ dict }: { dict: MarketingDict }) {
               {item.href === "/cine-suntem" &&
                 dict.navCineSuntem.map((sub) => (
                   <Link
+                    prefetch={false}
                     key={sub.href}
                     href={sub.href}
                     onClick={() => setDeschis(false)}
@@ -185,6 +193,7 @@ export function SiteHeader({ dict }: { dict: MarketingDict }) {
             </div>
           ))}
           <Link
+            prefetch={false}
             href="/hub#consultanta"
             onClick={() => setDeschis(false)}
             className="mt-2 rounded-md bg-brand-green px-4 py-2.5 text-center text-sm font-bold text-white"
@@ -192,6 +201,7 @@ export function SiteHeader({ dict }: { dict: MarketingDict }) {
             {dict.header.consulting}
           </Link>
           <Link
+            prefetch={false}
             href="/signup"
             onClick={() => setDeschis(false)}
             className="mt-1 rounded-md bg-brand-blue px-4 py-2.5 text-center text-sm font-bold text-white"
@@ -199,6 +209,7 @@ export function SiteHeader({ dict }: { dict: MarketingDict }) {
             {dict.header.signup}
           </Link>
           <Link
+            prefetch={false}
             href="/login"
             onClick={() => setDeschis(false)}
             className="mt-1 rounded-md border border-line px-4 py-2.5 text-center text-sm font-bold text-ink"
@@ -223,7 +234,7 @@ export function SiteFooter({ dict }: { dict: MarketingDict }) {
           <p className="text-xs font-bold tracking-wide text-white/50 uppercase">{dict.footer.navTitle}</p>
           <div className="mt-3 flex flex-col gap-2">
             {dict.footer.nav.map((item) => (
-              <Link key={item.label} href={item.href} className="text-sm text-white/75 hover:text-white">
+              <Link prefetch={false} key={item.label} href={item.href} className="text-sm text-white/75 hover:text-white">
                 {item.label}
               </Link>
             ))}
@@ -234,16 +245,16 @@ export function SiteFooter({ dict }: { dict: MarketingDict }) {
           <div className="mt-3 flex flex-col gap-2">
             {/* Draft-uri, marcate vizibil pe fiecare pagină — vezi nota din
                 fiecare fișier. Nu sunt text juridic final. */}
-            <Link href="/termeni" className="text-sm text-white/75 hover:text-white">
+            <Link prefetch={false} href="/termeni" className="text-sm text-white/75 hover:text-white">
               {dict.footer.terms}
             </Link>
-            <Link href="/gdpr" className="text-sm text-white/75 hover:text-white">
+            <Link prefetch={false} href="/gdpr" className="text-sm text-white/75 hover:text-white">
               {dict.footer.gdpr}
             </Link>
-            <Link href="/dpa" className="text-sm text-white/75 hover:text-white">
+            <Link prefetch={false} href="/dpa" className="text-sm text-white/75 hover:text-white">
               {dict.footer.dpa}
             </Link>
-            <Link href="/cookies" className="text-sm text-white/75 hover:text-white">
+            <Link prefetch={false} href="/cookies" className="text-sm text-white/75 hover:text-white">
               {dict.footer.cookies}
             </Link>
           </div>

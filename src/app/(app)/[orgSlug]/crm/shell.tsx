@@ -386,6 +386,9 @@ function NavGroups({
                 <Link
                   key={item.href}
                   href={itemQuery ? `${href}?${itemQuery}` : href}
+                  // Paginile sunt dinamice și nu au loading.tsx: prefetch-ul nu aducea nimic util, dar lansa ~16
+                  // cereri (fiecare cu verificare de sesiune + tranzacție) la FIECARE pagină deschisă.
+                  prefetch={false}
                   onClick={onNavigate}
                   title={collapsed ? item.label : undefined}
                   className={cn(
