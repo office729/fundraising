@@ -29,5 +29,5 @@ export default async function GdprPage({ params }: { params: Promise<{ orgSlug: 
 }
 
 export async function generateMetadata() {
-  return { title: "Cereri GDPR — Alexandrit" };
+  return { title: "Cereri GDPR" };
 }
