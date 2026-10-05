@@ -19,3 +19,5 @@ jobs:
         run: npm run gen:tools
       - run: npx tsc --noEmit
       - run: npx eslint src
+      # Vulnerabilități cunoscute în dependențele de producție (doar severitate înaltă/critică).
+      - run: npm audit --omit=dev --audit-level=high
