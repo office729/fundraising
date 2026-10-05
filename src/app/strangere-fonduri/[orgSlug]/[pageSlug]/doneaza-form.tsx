@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useActionState, useRef, useState, type FormEvent } from "react";
 
 import type { Locale } from "@/lib/i18n/config";
@@ -245,12 +244,7 @@ export function DoneazaForm({
         </label>
         <label className="flex items-start gap-2 text-[13px] text-body">
           <input type="checkbox" name="consimtamantTermeni" required className="mt-0.5 h-4 w-4 rounded border-line" />
-          <span>
-            {t.acordTermeniPre}{" "}
-            <Link href="/termeni" target="_blank" className="font-medium text-brand-green hover:underline">
-              {t.acordTermeniLink}
-            </Link>
-          </span>
+          <span>{t.acordTermeniPre}</span>
         </label>
         <label className="flex items-start gap-2 text-[13px] text-body">
           <input type="checkbox" name="consimtamantWhatsapp" className="mt-0.5 h-4 w-4 rounded border-line" />

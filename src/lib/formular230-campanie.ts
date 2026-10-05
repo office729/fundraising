@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, isNull, or, sql } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { donatoriReali, emailSuppression, formular230Beneficiari, formular230CampaniiEmail, formular230Destinatari } from "@/lib/db/schema";
@@ -74,14 +74,14 @@ export async function trimiteCampanieF230(params: {
     const toti = await tx
       .select({ email: donatoriReali.email, nume: donatoriReali.nume })
       .from(donatoriReali)
-      // Doar cei care NU s-au dezabonat și NU au refuzat explicit emailurile la
-      // donație (consimtamant_email false). NULL = donator dinainte de bifa de
-      // email: primește ca până acum, cu link de dezabonare în fiecare email.
+      // Doar donatorii care au bifat explicit că vor emailuri (consimtamant_email
+      // true) și nu s-au dezabonat ulterior. NULL (donatori dinainte de bifa de
+      // email) și false NU primesc campania: nu avem acordul lor pentru comunicări.
       .where(
         and(
           eq(donatoriReali.orgId, org.id),
           isNull(donatoriReali.dezabonatEmailLa),
-          or(isNull(donatoriReali.consimtamantEmail), eq(donatoriReali.consimtamantEmail, true)),
+          eq(donatoriReali.consimtamantEmail, true),
         ),
       );
     const donatori = toti.filter((d) => !suprimati.has(hashSuprimare(org.id, d.email)));

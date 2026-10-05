@@ -2,7 +2,6 @@
 
 import { Elements, ExpressCheckoutElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { loadStripe, type Stripe } from "@stripe/stripe-js";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
@@ -282,11 +281,7 @@ function ExpressCheckoutForMode({
       {arataAcord && (
         <>
           <p className="text-center text-[11px] text-muted-2">
-            {t.plataRapidaAcordPre}{" "}
-            <Link href="/termeni" target="_blank" className="underline">
-              {t.acordTermeniLink}
-            </Link>{" "}
-            {t.plataRapidaNota}
+            {t.plataRapidaAcordPre} {t.plataRapidaNota}
           </p>
           {!portofel && <p className="text-center text-[11px] text-muted-2">{t.sauCompleteazaFormular}</p>}
         </>

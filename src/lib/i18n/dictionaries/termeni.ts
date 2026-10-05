@@ -10,7 +10,7 @@ export const TERMENI_DICT = {
     eyebrow: "Legal",
     titlu: "Termeni și condiții",
     actualizatLabel: "Ultima actualizare",
-    actualizat: "21 septembrie 2026",
+    actualizat: "5 octombrie 2026",
     sectiuni: [
       {
         titlu: "1. Aspecte generale și identificarea operatorului",
@@ -90,7 +90,7 @@ export const TERMENI_DICT = {
       {
         titlu: "9. Drepturile și obligațiile Clientului",
         paragrafe: [
-          "Organizația este operator pentru datele persoanelor pe care le introduce în Platformă. Se obligă să aibă temeiul legal necesar (de exemplu consimțământul, contractul sau interesul legitim), să își informeze persoanele vizate, să respecte regulile privind comunicările comerciale (inclusiv dezabonarea) și să nu introducă date pe care nu are dreptul să le prelucreze. Pentru date speciale, în special date medicale și date despre minori, Organizația răspunde de obținerea consimțământului explicit și a acordului reprezentantului legal.",
+          "Organizația este operator pentru datele persoanelor pe care le introduce în Platformă. Se obligă să aibă temeiul legal necesar (de exemplu consimțământul, contractul sau interesul legitim), să își informeze persoanele vizate, să respecte regulile privind comunicările comerciale (inclusiv dezabonarea) și să nu introducă date pe care nu are dreptul să le prelucreze. Pentru date speciale, în special date medicale și date despre minori, Organizația răspunde de obținerea consimțământului explicit și a acordului reprezentantului legal și se obligă să introducă doar datele strict necesare, evitând detaliile medicale identificabile în câmpurile libere și în textele trimise funcțiilor AI.",
           "Clientul răspunde de legalitatea și exactitatea conținutului și a datelor introduse, de modul în care folosește Platforma și de deciziile luate pe baza ei. Are dreptul de a folosi Platforma în limitele pachetului, de a primi suport tehnic de bază și de a-și exporta datele.",
         ],
       },
@@ -189,7 +189,7 @@ export const TERMENI_DICT = {
     eyebrow: "Legal",
     titlu: "Terms and Conditions",
     actualizatLabel: "Last updated",
-    actualizat: "September 21, 2026",
+    actualizat: "October 5, 2026",
     sectiuni: [
       {
         titlu: "1. General aspects and operator identification",
@@ -269,7 +269,7 @@ export const TERMENI_DICT = {
       {
         titlu: "9. The Customer's rights and obligations",
         paragrafe: [
-          "The Organization is the controller of the data of the people it enters into the Platform. It must have the necessary legal basis (for example consent, contract or legitimate interest), inform its data subjects, follow the rules on commercial communications (including unsubscribing) and not enter data it has no right to process. For special categories, in particular medical data and data about minors, the Organization is responsible for obtaining explicit consent and the legal representative's agreement.",
+          "The Organization is the controller of the data of the people it enters into the Platform. It must have the necessary legal basis (for example consent, contract or legitimate interest), inform its data subjects, follow the rules on commercial communications (including unsubscribing) and not enter data it has no right to process. For special categories, in particular medical data and data about minors, the Organization is responsible for obtaining explicit consent and the legal representative's agreement, and must enter only the strictly necessary data, avoiding identifiable medical detail in free-text fields and in texts sent to AI features.",
           "The Customer is responsible for the legality and accuracy of the content and data entered, for how it uses the Platform and for decisions taken based on it. It has the right to use the Platform within the plan limits, to receive basic technical support and to export its data.",
         ],
       },
