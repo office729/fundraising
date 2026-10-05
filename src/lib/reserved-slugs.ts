@@ -19,6 +19,7 @@ const RESERVED_SLUGS = new Set([
   "f230",
   "favicon.ico",
   "forgot-password",
+  "dpa",
   "gdpr",
   "hub",
   "invite",

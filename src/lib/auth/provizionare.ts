@@ -12,6 +12,7 @@ import { formular230Beneficiari } from "@/lib/db/schema/formular230";
 import { SLUG_PRINCIPAL } from "@/lib/formular230-constants";
 import { esteSlugRezervat } from "@/lib/reserved-slugs";
 import { genereazaCodScurt } from "@/lib/short-code";
+import { DPA_ACTIV, DPA_VERSIUNE } from "@/lib/legal-version";
 import { slugify } from "@/lib/slugify";
 
 // Provizionarea unei organizații NOI (utilizator + organizație + membership de
@@ -72,7 +73,10 @@ export async function creeazaOrganizatieNoua(p: {
     // de SELECT pentru rândul nou, care cere un membership încă inexistent (fals
     // „row-level security violation"). Id-ul se generează în cod.
     const orgId = randomUUID();
-    await tx.insert(organizations).values({ id: orgId, name: p.orgName, slug, referredByOrgId, ...(p.planAles ?? {}) });
+    // Bifa de acceptare de la înscriere include și Acordul de prelucrare a datelor (DPA) când mecanismul e activ —
+    // acceptarea se înregistrează aici, pe organizația nou creată, în numele ei (cel care o creează devine owner).
+    const dpa = DPA_ACTIV ? { dpaVersion: DPA_VERSIUNE, dpaAcceptedAt: new Date(), dpaAcceptedBy: appUser.id } : {};
+    await tx.insert(organizations).values({ id: orgId, name: p.orgName, slug, referredByOrgId, ...dpa, ...(p.planAles ?? {}) });
     await tx.insert(memberships).values({ orgId, userId: appUser.id, role: "owner" });
     await tx.insert(formular230Beneficiari).values({ orgId, nume: p.orgName, slug: SLUG_PRINCIPAL, shortCode: genereazaCodScurt() });
     return { ok: true, slug };

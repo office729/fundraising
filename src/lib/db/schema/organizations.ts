@@ -73,6 +73,10 @@ export const organizations = pgTable("organizations", {
   netopiaRenewalFailedAt: timestamp("netopia_renewal_failed_at", { withTimezone: true }),
   // Retenție: câte avertizări de ștergere (0/1/2) a primit organizația cu acces expirat și când a fost ultima.
   // Resetate la 0 când își reactivează accesul (vezi lib/billing/netopia-confirm.ts).
+  // Acordul de prelucrare a datelor (DPA) acceptat de organizație: versiunea, momentul și utilizatorul (owner/admin).
+  dpaVersion: text("dpa_version"),
+  dpaAcceptedAt: timestamp("dpa_accepted_at", { withTimezone: true }),
+  dpaAcceptedBy: uuid("dpa_accepted_by"),
   retentieAvertizari: smallint("retentie_avertizari").notNull().default(0),
   retentieUltimaAvertizare: timestamp("retentie_ultima_avertizare", { withTimezone: true }),
   // Contul Stripe PROPRIU al ONG-ului, pentru donațiile primite pe paginile lui

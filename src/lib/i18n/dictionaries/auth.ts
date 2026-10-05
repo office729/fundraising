@@ -46,6 +46,8 @@ export const AUTH_DICT = {
       acceptTermeni: "Termenii și condițiile",
       acceptSi: "și cu",
       acceptGdpr: "Politica de confidențialitate",
+      acceptDpaPre: ", precum și cu",
+      acceptDpa: "Acordul de prelucrare a datelor (DPA)",
       acceptGoogleIndiciu: "Bifează acordul de mai sus ca să continui.",
     },
     forgotPassword: {
@@ -121,6 +123,8 @@ export const AUTH_DICT = {
       acceptTermeni: "Terms and Conditions",
       acceptSi: "and the",
       acceptGdpr: "Privacy Policy",
+      acceptDpaPre: ", as well as the",
+      acceptDpa: "Data Processing Agreement (DPA)",
       acceptGoogleIndiciu: "Tick the box above to continue.",
     },
     forgotPassword: {

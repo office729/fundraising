@@ -37,6 +37,8 @@ export type OrgContext = {
   // lib/billing/trial.ts).
   orgCurrentPeriodEnd: Date | null;
   orgCreatedAt: Date;
+  orgDpaVersion: string | null;
+  orgDpaAcceptedAt: Date | null;
   orgReferralCode: string | null;
   orgReferredByOrgId: string | null;
   orgStripeCustomerId: string | null;
@@ -132,6 +134,8 @@ export function withOrgSession<A extends unknown[], R>(
         orgSubscriptionStatus: found.org.subscriptionStatus,
         orgCurrentPeriodEnd: found.org.currentPeriodEnd,
         orgCreatedAt: found.org.createdAt,
+        orgDpaVersion: found.org.dpaVersion,
+        orgDpaAcceptedAt: found.org.dpaAcceptedAt,
         orgReferralCode: found.org.referralCode,
         orgReferredByOrgId: found.org.referredByOrgId,
         orgStripeCustomerId: found.org.stripeCustomerId,
@@ -242,6 +246,8 @@ export function requireOrgAccess(orgSlug: string): Promise<OrgAccess> {
     orgSubscriptionStatus: ctx.orgSubscriptionStatus,
     orgCurrentPeriodEnd: ctx.orgCurrentPeriodEnd,
     orgCreatedAt: ctx.orgCreatedAt,
+    orgDpaVersion: ctx.orgDpaVersion,
+    orgDpaAcceptedAt: ctx.orgDpaAcceptedAt,
     orgReferralCode: ctx.orgReferralCode,
     orgReferredByOrgId: ctx.orgReferredByOrgId,
     orgStripeCustomerId: ctx.orgStripeCustomerId,

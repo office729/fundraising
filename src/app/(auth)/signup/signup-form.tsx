@@ -7,6 +7,7 @@ import { Suspense, useActionState, useState } from "react";
 import { extractPlanQuery, PLAN_QUERY_KEYS } from "@/lib/billing/plan-query";
 import { useAlegerePlan } from "@/lib/billing/use-alegere-plan";
 import type { Locale } from "@/lib/i18n/config";
+import { DPA_ACTIV } from "@/lib/legal-version";
 import type { AUTH_DICT } from "@/lib/i18n/dictionaries/auth";
 
 import { GoogleButton } from "../google-button";
@@ -57,6 +58,14 @@ function SignupFormInner({ dict }: { dict: Dict }) {
           <Link href="/gdpr" target="_blank" className="font-medium text-brand-green underline">
             {dict.signup.acceptGdpr}
           </Link>
+          {DPA_ACTIV && !inviteToken && !beneficiarInviteToken && (
+            <>
+              {dict.signup.acceptDpaPre}{" "}
+              <Link href="/dpa" target="_blank" className="font-medium text-brand-green underline">
+                {dict.signup.acceptDpa}
+              </Link>
+            </>
+          )}
           .
         </span>
       </label>

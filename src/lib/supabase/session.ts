@@ -59,6 +59,7 @@ export async function updateSession(request: NextRequest, rewriteTo?: URL) {
     "/blog",
     "/termeni",
     "/gdpr",
+    "/dpa",
     "/cookies",
   ];
   const isPublicRoute =

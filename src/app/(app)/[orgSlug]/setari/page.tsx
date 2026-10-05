@@ -15,6 +15,9 @@ import { DomainForm } from "./domain-form";
 import { obtineStatusReinnoireAutomata } from "./netopia-card-actions";
 import { obtineDateReferral } from "./referral-actions";
 import { ReferralSection } from "./referral-section";
+import { DPA_ACTIV, DPA_VERSIUNE } from "@/lib/legal-version";
+
+import { DpaSection } from "./dpa-section";
 import { OrganizatieSection } from "./organizatie-section";
 import { obtineStatusStripeDonatii } from "./stripe-donatii-actions";
 import { StripeDonatiiSection } from "./stripe-donatii-section";
@@ -92,6 +95,14 @@ export default async function SetariPage({
         />
         <ReferralSection cod={cod} numarRecomandari={numarRecomandari} locale={locale} />
         <CanvaSection orgSlug={orgSlug} locale={locale} status={canvaStatus} feedback={canva} />
+        {DPA_ACTIV && (
+          <DpaSection
+            orgSlug={orgSlug}
+            locale={locale}
+            acceptatLa={access.orgDpaAcceptedAt ? access.orgDpaAcceptedAt.toISOString() : null}
+            versiuneCurenta={access.orgDpaVersion === DPA_VERSIUNE}
+          />
+        )}
         <section className="mt-8 rounded-xl border border-line bg-panel p-5">
           <h2 className="font-medium text-ink">Cereri GDPR ale persoanelor</h2>
           <p className="mt-1 text-xs text-muted">

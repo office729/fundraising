@@ -239,6 +239,9 @@ export function SiteFooter({ dict }: { dict: MarketingDict }) {
             <Link href="/gdpr" className="text-sm text-white/75 hover:text-white">
               {dict.footer.gdpr}
             </Link>
+            <Link href="/dpa" className="text-sm text-white/75 hover:text-white">
+              {dict.footer.dpa}
+            </Link>
             <Link href="/cookies" className="text-sm text-white/75 hover:text-white">
               {dict.footer.cookies}
             </Link>

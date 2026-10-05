@@ -5,7 +5,7 @@ import { useActionState, useState, useSyncExternalStore } from "react";
 
 import { PLAN_QUERY_KEYS, type PlanQueryValues } from "@/lib/billing/plan-query";
 import { useAlegerePlan } from "@/lib/billing/use-alegere-plan";
-import { COOKIE_ACCEPTARE_TERMENI } from "@/lib/legal-version";
+import { COOKIE_ACCEPTARE_TERMENI, DPA_ACTIV } from "@/lib/legal-version";
 
 import { finalizeazaOrganizatiaAction } from "./finalize-actions";
 
@@ -89,6 +89,14 @@ export function FinalizeForm({
             <Link href="/gdpr" target="_blank" className="font-medium text-brand-green underline">
               Politica de confidențialitate
             </Link>
+            {DPA_ACTIV && (
+              <>
+                , precum și cu{" "}
+                <Link href="/dpa" target="_blank" className="font-medium text-brand-green underline">
+                  Acordul de prelucrare a datelor (DPA)
+                </Link>
+              </>
+            )}
             .
           </span>
         </label>

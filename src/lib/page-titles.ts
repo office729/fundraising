@@ -16,6 +16,7 @@ const TITLURI = {
   contact: { ro: "Contact", en: "Contact" },
   cookies: { ro: "Politica de cookies", en: "Cookie policy" },
   gdpr: { ro: "Politica de confidențialitate (GDPR)", en: "Privacy policy (GDPR)" },
+  dpa: { ro: "Acord de prelucrare a datelor (DPA)", en: "Data Processing Agreement (DPA)" },
   portofoliu: { ro: "Portofoliu", en: "Portfolio" },
   "portofoliu-clienti": { ro: "Portofoliu clienți", en: "Client portfolio" },
   premii: { ro: "Premii", en: "Awards" },

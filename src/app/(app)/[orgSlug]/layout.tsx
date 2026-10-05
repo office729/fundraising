@@ -4,7 +4,7 @@ import type { CSSProperties } from "react";
 
 import { requireOrgAccess } from "@/lib/auth/guard";
 import { isAccessBlocked, isPlatformAdmin, trialDaysRemaining } from "@/lib/billing/trial";
-import { TERMENI_VERSIUNE } from "@/lib/legal-version";
+import { DPA_ACTIV, DPA_VERSIUNE, TERMENI_VERSIUNE } from "@/lib/legal-version";
 import { TermeniGate } from "@/components/termeni-gate";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { DASHBOARD_DICT } from "@/lib/i18n/dictionaries/dashboard";
@@ -164,6 +164,18 @@ export default async function OrgLayout({
           CRM inclus). Setări/Echipă își păstrează coloana îngustă prin
           propriul div (max-w-xl/-2xl, cu mx-auto acolo) — vezi
           setari/page.tsx și echipa/page.tsx. */}
+      {/* Acordul de prelucrare a datelor (DPA) nu e încă acceptat (sau a apărut o versiune nouă): doar pentru
+          owner/admin, necritic — nu blochează lucrul. */}
+      {DPA_ACTIV && (access.role === "owner" || access.role === "admin") && access.orgDpaVersion !== DPA_VERSIUNE && (
+        <div className="border-b border-line bg-amber-50 px-4 py-2.5 text-center text-[13px] text-amber-900 sm:px-6 dark:bg-amber-950 dark:text-amber-200">
+          {locale === "ro"
+            ? "Acordul de prelucrare a datelor (DPA) nu este încă acceptat pentru această organizație. "
+            : "The Data Processing Agreement (DPA) hasn't been accepted for this organization yet. "}
+          <Link href={`/${orgSlug}/setari#dpa`} className="font-semibold underline">
+            {locale === "ro" ? "Citește și acceptă" : "Read and accept"}
+          </Link>
+        </div>
+      )}
       <main className="px-4 py-6 sm:px-6 sm:py-8">
         <OnboardingCallPrompt show={showOnboarding} orgSlug={orgSlug} dict={dict.onboardingCall} />
         {children}
