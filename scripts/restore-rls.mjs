@@ -267,6 +267,28 @@ const POLICIES = [
   )`,
   // Campanie rezumabilă: revendicare/actualizare/retragere în contextul de
   // încredere + jurnalul per destinatar (lib/formular230-campanie.ts).
+  // Lifecycle (2026-10-02): vezi documentation/rls-setup.sql.
+  `create policy memberships_org_select on memberships for select using (
+    org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
+  )`,
+  `create policy memberships_org_delete on memberships for delete using (
+    org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
+    and role <> 'owner'
+  )`,
+  `create policy invites_org_admin_delete on invites for delete using (
+    org_id in (
+      select org_id from memberships
+      where user_id = nullif(current_setting('app.current_user_id', true), '')::uuid
+        and role in ('owner', 'admin')
+    )
+  )`,
+  `create policy organizations_owner_delete on organizations for delete using (
+    id in (
+      select org_id from memberships
+      where user_id = nullif(current_setting('app.current_user_id', true), '')::uuid
+        and role = 'owner'
+    )
+  )`,
   `create policy formular230_campanii_email_public_lookup_update on formular230_campanii_email for update using (
     nullif(current_setting('app.public_lookup', true), '') = 'true'
   )`,

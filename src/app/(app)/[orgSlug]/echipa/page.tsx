@@ -5,6 +5,7 @@ import { getLocale } from "@/lib/i18n/get-locale";
 import { SETARI_ECHIPA_DICT } from "@/lib/i18n/dictionaries/setari-echipa";
 
 import { listMembers, listPendingInvites } from "./actions";
+import { AnuleazaInvitatieButton, ParasesteOrganizatiaButton, ScoateMembruButton } from "./butoane-echipa";
 import { InviteForm } from "./invite-form";
 import { titluPagina } from "@/lib/page-titles";
 
@@ -49,9 +50,17 @@ export default async function EchipaPage({
                 <p className="text-sm font-medium text-ink">{m.name || m.email}</p>
                 {m.name && <p className="text-xs text-muted">{m.email}</p>}
               </div>
-              <span className="rounded-full border border-line bg-panel-2 px-2.5 py-1 text-xs font-medium text-muted">
-                {ROLE_LABELS[m.role as keyof typeof ROLE_LABELS] ?? m.role}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="rounded-full border border-line bg-panel-2 px-2.5 py-1 text-xs font-medium text-muted">
+                  {ROLE_LABELS[m.role as keyof typeof ROLE_LABELS] ?? m.role}
+                </span>
+                {m.userId === access.userId
+                  ? m.role !== "owner" && <ParasesteOrganizatiaButton orgSlug={orgSlug} locale={locale} />
+                  : m.role !== "owner" &&
+                    (access.role === "owner" || m.role === "member") && (
+                      <ScoateMembruButton orgSlug={orgSlug} userId={m.userId} nume={m.name || m.email} locale={locale} />
+                    )}
+              </div>
             </div>
           ))}
         </div>
@@ -71,9 +80,12 @@ export default async function EchipaPage({
                     {dict.expira(new Date(inv.expiresAt).toLocaleDateString(locale === "ro" ? "ro-RO" : "en-US"))}
                   </p>
                 </div>
-                <span className="rounded-full border border-line bg-panel-2 px-2.5 py-1 text-xs font-medium text-muted">
-                  {ROLE_LABELS[inv.role as keyof typeof ROLE_LABELS] ?? inv.role}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="rounded-full border border-line bg-panel-2 px-2.5 py-1 text-xs font-medium text-muted">
+                    {ROLE_LABELS[inv.role as keyof typeof ROLE_LABELS] ?? inv.role}
+                  </span>
+                  <AnuleazaInvitatieButton orgSlug={orgSlug} inviteId={inv.id} email={inv.email} locale={locale} />
+                </div>
               </div>
             ))}
           </div>

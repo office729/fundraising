@@ -3,8 +3,9 @@
 import { randomUUID } from "node:crypto";
 
 import { and, eq, gt, isNull, sql } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 
-import { withOrgAdmin } from "@/lib/auth/guard";
+import { withOrgAdmin, withOrgSession } from "@/lib/auth/guard";
 import { EroareUtilizator, mesajSigur } from "@/lib/erori";
 import { getLimiteleEfective, subCota } from "@/lib/billing/quota";
 import { appUsers, invites, memberships } from "@/lib/db/schema";
@@ -108,5 +109,83 @@ export async function createInviteAction(
     return { error: null, token };
   } catch (e) {
     return { error: mesajSigur(e, "Invitația a eșuat.", "echipa-invitatie"), token: null };
+  }
+}
+
+export type RezultatSimplu = { error: string | null };
+
+// Scoaterea unui membru din organizație (doar rândul de membership — datele create de el
+// rămân în organizație, atribuite în continuare). Reguli: owner-ul nu poate fi scos de
+// nimeni; adminii pot scoate doar membri simpli; owner-ul poate scoate pe oricine altcineva;
+// pe tine te scoți prin „Părăsește organizația". Politica RLS (memberships_org_delete)
+// refuză oricum rândurile de owner și pe cele din alte organizații.
+const scoateMembru = withOrgAdmin(async (ctx, userId: string): Promise<void> => {
+  if (userId === ctx.userId) throw new EroareUtilizator("Pe tine te poți scoate doar prin „Părăsește organizația”.");
+  const [tinta] = await ctx.db
+    .select({ role: memberships.role })
+    .from(memberships)
+    .where(and(eq(memberships.orgId, ctx.orgId), eq(memberships.userId, userId)))
+    .limit(1);
+  if (!tinta) throw new EroareUtilizator("Membrul nu mai face parte din organizație.");
+  if (tinta.role === "owner") throw new EroareUtilizator("Owner-ul organizației nu poate fi scos.");
+  if (tinta.role === "admin" && ctx.role !== "owner") throw new EroareUtilizator("Doar owner-ul poate scoate un administrator.");
+  const sters = await ctx.db
+    .delete(memberships)
+    .where(and(eq(memberships.orgId, ctx.orgId), eq(memberships.userId, userId)))
+    .returning({ id: memberships.id });
+  if (!sters.length) throw new EroareUtilizator("Nu s-a putut scoate membrul.");
+});
+
+export async function scoateMembruAction(orgSlug: string, userId: string): Promise<RezultatSimplu> {
+  try {
+    await scoateMembru(orgSlug, userId);
+    revalidatePath(`/${orgSlug}/echipa`);
+    return { error: null };
+  } catch (e) {
+    return { error: mesajSigur(e, "Nu am putut scoate membrul.", "echipa-scoate-membru") };
+  }
+}
+
+// Anularea unei invitații în așteptare (eliberează și locul din cota de utilizatori).
+const anuleazaInvitatie = withOrgAdmin(async (ctx, inviteId: string): Promise<void> => {
+  const sters = await ctx.db
+    .delete(invites)
+    .where(and(eq(invites.id, inviteId), eq(invites.orgId, ctx.orgId), isNull(invites.acceptedAt)))
+    .returning({ id: invites.id });
+  if (!sters.length) throw new EroareUtilizator("Invitația nu mai există sau a fost deja acceptată.");
+});
+
+export async function anuleazaInvitatieAction(orgSlug: string, inviteId: string): Promise<RezultatSimplu> {
+  try {
+    await anuleazaInvitatie(orgSlug, inviteId);
+    revalidatePath(`/${orgSlug}/echipa`);
+    return { error: null };
+  } catch (e) {
+    return { error: mesajSigur(e, "Nu am putut anula invitația.", "echipa-anuleaza-invitatie") };
+  }
+}
+
+// Părăsirea organizației de către un membru (orice rol în afară de owner — owner-ul trebuie
+// să șteargă organizația, nu există încă transfer de proprietate).
+const parasesteOrganizatia = withOrgSession(
+  async (ctx): Promise<void> => {
+    if (ctx.role === "owner") {
+      throw new EroareUtilizator("Owner-ul nu poate părăsi organizația — o poate șterge din Setări.");
+    }
+    const sters = await ctx.db
+      .delete(memberships)
+      .where(and(eq(memberships.orgId, ctx.orgId), eq(memberships.userId, ctx.userId)))
+      .returning({ id: memberships.id });
+    if (!sters.length) throw new EroareUtilizator("Nu mai faci parte din această organizație.");
+  },
+  { permiteAccesBlocat: true },
+);
+
+export async function parasesteOrganizatiaAction(orgSlug: string): Promise<RezultatSimplu> {
+  try {
+    await parasesteOrganizatia(orgSlug);
+    return { error: null };
+  } catch (e) {
+    return { error: mesajSigur(e, "Nu am putut părăsi organizația.", "echipa-paraseste") };
   }
 }

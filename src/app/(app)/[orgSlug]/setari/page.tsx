@@ -14,6 +14,7 @@ import { DomainForm } from "./domain-form";
 import { obtineStatusReinnoireAutomata } from "./netopia-card-actions";
 import { obtineDateReferral } from "./referral-actions";
 import { ReferralSection } from "./referral-section";
+import { OrganizatieSection } from "./organizatie-section";
 import { obtineStatusStripeDonatii } from "./stripe-donatii-actions";
 import { StripeDonatiiSection } from "./stripe-donatii-section";
 import { titluPagina } from "@/lib/page-titles";
@@ -90,6 +91,7 @@ export default async function SetariPage({
         />
         <ReferralSection cod={cod} numarRecomandari={numarRecomandari} locale={locale} />
         <CanvaSection orgSlug={orgSlug} locale={locale} status={canvaStatus} feedback={canva} />
+        {access.role === "owner" && <OrganizatieSection orgSlug={orgSlug} locale={locale} />}
       </div>
     </>
   );

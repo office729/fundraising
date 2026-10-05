@@ -213,6 +213,18 @@ create policy memberships_insert_self ON memberships
 create policy memberships_public_lookup ON memberships
   for select using (nullif(current_setting('app.public_lookup', true), '') = 'true');
 
+-- Lifecycle (2026-10-02): vizibilitate pe toată organizația pentru memberships (până atunci
+-- doar propriul rând — lista Echipă și cota de utilizatori vedeau un singur membru),
+-- scoatere de membri non-owner, anulare de invitații, ștergerea organizației de către owner.
+-- app.current_org_id e setat de withOrgSession doar după verificarea apartenenței.
+create policy memberships_org_select ON memberships
+  for select using (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid);
+create policy memberships_org_delete ON memberships
+  for delete using (
+    org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
+    and role <> 'owner'
+  );
+
 -- organizations: doar organizațiile din care faci parte.
 create policy organizations_member ON organizations
   for select using (
@@ -306,6 +318,24 @@ create policy invites_org_admin_insert ON invites
   );
 create policy invites_token_update ON invites
   for update using (token = nullif(current_setting('app.invite_lookup_token', true), ''));
+-- Anularea invitațiilor în așteptare de către owner/admin (lifecycle, 2026-10-02).
+create policy invites_org_admin_delete ON invites
+  for delete using (
+    org_id in (
+      select org_id from memberships
+      where user_id = nullif(current_setting('app.current_user_id', true), '')::uuid
+        and role in ('owner', 'admin')
+    )
+  );
+-- Ștergerea organizației de către owner (FK-urile copil sunt ON DELETE CASCADE).
+create policy organizations_owner_delete ON organizations
+  for delete using (
+    id in (
+      select org_id from memberships
+      where user_id = nullif(current_setting('app.current_user_id', true), '')::uuid
+        and role = 'owner'
+    )
+  );
 
 -- ============================================================================
 -- 4. Tabele de TENANT — toate au o coloană org_id, fără excepție. Șablonul
