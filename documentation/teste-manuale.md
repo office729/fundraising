@@ -44,7 +44,7 @@ Fiecare test: **pași → rezultat așteptat**. Folosește o organizație de pro
 ## 8. Plată reală de abonament (Netopia sandbox) și factură Oblio
 1. Pe o organizație **fără** CIF/adresă/județ: Setări → Schimbă planul. Așteptat: formularul de facturare apare, iar pachetele sunt dezactivate până îl salvezi. Un CIF deja folosit de altă organizație → mesaj „Există deja o organizație cu acest CIF”.
 2. Salvează datele, alege un pachet, plătește cu cardul de test Netopia (sandbox).
-3. Așteptat: acces activ, plata `reusita`, **cardul salvat** (reînnoire automată pornită), factură Oblio emisă și email cu factura. Dacă lipsește factura: se reia automat la rularea zilnică a cron-ului.
+3. Așteptat: acces activ, plata `reusita`, **cardul salvat** (reînnoire automată pornită). **Factura Oblio NU se emite în sandbox** (protecție: facturile fiscale se emit doar cu `NETOPIA_ENV=live`); plata primește marcajul `NEFACTURAT-SANDBOX`. Ca să testezi și Oblio în sandbox, setează temporar `OBLIO_FACTUREAZA_IN_SANDBOX=1` în Vercel (se consumă din limita de 3 documente/lună a planului gratuit și creează documente fiscale reale — doar cu acordul contabilului). Cu `live`, factura se emite și vine emailul; dacă lipsește, se reia automat la rularea zilnică.
 4. Rambursare (din panoul Netopia): așteptat — accesul se retrage, reînnoirea automată se oprește, tokenul cardului dispare.
 
 ## 9. Reînnoire automată: aviz și expirarea cardului

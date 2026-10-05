@@ -7,7 +7,7 @@ import { appUsers, memberships, organizations, platformPayments } from "@/lib/db
 import { emailConfigurat, trimiteEmail } from "@/lib/email";
 import { clasificaStatus, type RezultatPlataNetopia } from "@/lib/netopia";
 import { raporteazaAvertisment, raporteazaEroare } from "@/lib/monitoring";
-import { emiteFacturaAbonament, oblioConfigurata } from "@/lib/oblio";
+import { emiteFacturaAbonament, facturareFiscalaPermisa, MARCAJ_NEFACTURAT_SANDBOX, oblioConfigurata } from "@/lib/oblio";
 import { htmlFacturaEmisa, subiectFacturaEmisa } from "@/lib/oblio-invoice-email-template";
 import { criptareConfigurata, cripteaza } from "@/lib/secret-box";
 
@@ -49,6 +49,20 @@ export type ConfirmareNetopia =
 // nouă, iar cea veche, nefacturată, n-ar mai fi reconsiderată niciodată.
 export async function factureazaPlata(orderId: string): Promise<void> {
   if (!oblioConfigurata()) return;
+
+  // Fără NETOPIA_ENV=live nu emitem facturi fiscale pentru plăți de test. Plata se marchează EXPLICIT ca
+  // nefacturată: altfel, la trecerea pe live, reluarea automată a facturilor ar emite facturi reale pentru toate
+  // plățile sandbox rămase fără factură.
+  if (!facturareFiscalaPermisa()) {
+    await db.transaction(async (tx) => {
+      await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
+      await tx
+        .update(platformPayments)
+        .set({ oblioNumber: MARCAJ_NEFACTURAT_SANDBOX, oblioEroare: null })
+        .where(and(eq(platformPayments.orderId, orderId), eq(platformPayments.status, "reusita"), isNull(platformPayments.oblioNumber)));
+    });
+    return;
+  }
 
   // Citirile/scrierile de mai jos trec prin RLS ca oricare altele — fără
   // `app.public_lookup` (contextul de încredere, ca restul confirmării de mai
@@ -309,7 +323,7 @@ export async function proceseazaRezultatPlataNetopia(orderId: string, rezultat: 
 // emiteFacturaAbonament face reluarea sigură chiar dacă ambele ajung să emită.
 // Cel mult 20 pe rulare, ca un cont Oblio blocat să nu consume toată durata.
 export async function reiaFacturileNeemise(): Promise<{ incercate: number; emise: number }> {
-  if (!oblioConfigurata()) return { incercate: 0, emise: 0 };
+  if (!oblioConfigurata() || !facturareFiscalaPermisa()) return { incercate: 0, emise: 0 };
 
   const comenzi = await db.transaction(async (tx) => {
     await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);

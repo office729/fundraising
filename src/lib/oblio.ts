@@ -22,6 +22,15 @@ export function oblioConfigurata(): boolean {
   return Boolean(process.env.OBLIO_EMAIL && process.env.OBLIO_SECRET);
 }
 
+// Facturile fiscale (și mai ales cele validate în SPV, care se pot corecta doar prin storno) se emit DOAR când plățile
+// sunt reale: NETOPIA_ENV=live. În sandbox, plățile sunt de test, iar o factură emisă pentru ele e un document fiscal
+// fals. Excepție explicită, pentru testarea integrării Oblio: OBLIO_FACTUREAZA_IN_SANDBOX=1.
+export const MARCAJ_NEFACTURAT_SANDBOX = "NEFACTURAT-SANDBOX";
+
+export function facturareFiscalaPermisa(): boolean {
+  return process.env.NETOPIA_ENV === "live" || process.env.OBLIO_FACTUREAZA_IN_SANDBOX === "1";
+}
+
 // --- Token OAuth2 --------------------------------------------------------
 // Cache în memoria procesului (valabil 3600s) — la fiecare invocare Vercel nouă
 // se cere un token nou, dar în cadrul aceleiași instanțe calde nu cerem un
