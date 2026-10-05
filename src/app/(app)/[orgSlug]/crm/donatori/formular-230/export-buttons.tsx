@@ -1,7 +1,6 @@
 "use client";
 
 import { FileSpreadsheet, FileText } from "lucide-react";
-import * as XLSX from "xlsx";
 
 import { Button } from "../../components/ui/button";
 import { useLocale } from "../../lib/locale-context";
@@ -26,7 +25,9 @@ function numeCont(beneficiari: { id: string; nume: string }[], beneficiarId: str
   return beneficiari.find((b) => b.id === beneficiarId)?.nume ?? "—";
 }
 
-function descarcaWorkbook(rows: Record<string, string | number>[], sheetName: string, filename: string) {
+async function descarcaWorkbook(rows: Record<string, string | number>[], sheetName: string, filename: string) {
+  // xlsx e mare (~1 MB): se încarcă doar când se apasă efectiv exportul.
+  const XLSX = await import("xlsx");
   const worksheet = XLSX.utils.json_to_sheet(rows);
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
@@ -66,7 +67,7 @@ export function ExportButtons({
       "Data trimiterii": s.createdAt.toLocaleDateString("ro-RO"),
       "Procesat ANAF": s.procesatAnaf ? "Da" : "Nu",
     }));
-    descarcaWorkbook(rows, "Formulare 230", `formulare-230-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    await descarcaWorkbook(rows, "Formulare 230", `formulare-230-${new Date().toISOString().slice(0, 10)}.xlsx`);
   }
 
   async function exportaBorderou() {
@@ -80,7 +81,7 @@ export function ExportButtons({
       "Sumă/Procent": "3,5%",
       An: s.an ?? s.createdAt.getFullYear(),
     }));
-    descarcaWorkbook(rows, "Borderou ANAF", `borderou-anaf-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    await descarcaWorkbook(rows, "Borderou ANAF", `borderou-anaf-${new Date().toISOString().slice(0, 10)}.xlsx`);
   }
 
   return (

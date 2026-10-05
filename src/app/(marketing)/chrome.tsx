@@ -71,6 +71,7 @@ export function SiteHeader({ dict }: { dict: MarketingDict }) {
             alt="Alexandrit"
             width={1730}
             height={332}
+            sizes="190px"
             priority
             className={`brand-mark h-9 w-auto${seara ? " is-seara" : ""}`}
           />
@@ -215,7 +216,7 @@ export function SiteFooter({ dict }: { dict: MarketingDict }) {
     <footer className="bg-[#1a2332] px-[6%] py-14 text-white">
       <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 sm:grid-cols-3">
         <div>
-          <Image src="/alexandrit-logo-alb.png" alt="Alexandrit" width={1730} height={332} className="h-9 w-auto" />
+          <Image src="/alexandrit-logo-alb.png" alt="Alexandrit" width={1730} height={332} sizes="190px" className="h-9 w-auto" />
           <p className="mt-2 text-sm text-white/60">{dict.footer.tagline}</p>
         </div>
         <div>

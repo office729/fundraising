@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 
-import { completeazaFormular230Pdf, downloadPdfBytes, type DateBeneficiarPdf } from "@/lib/formular230-pdf";
+import type { DateBeneficiarPdf } from "@/lib/formular230-pdf";
 import { JUDETE } from "@/lib/judete";
 
 import { NotaInformare230 } from "./nota-informare";
@@ -119,6 +119,8 @@ export function Formular230Client({
   async function descarcaPdf() {
     setSeDescarca(true);
     try {
+      // pdf-lib + fontkit sunt grei de mari (~0,5–1 MB): se încarcă doar la descărcare, nu la deschiderea paginii.
+      const { completeazaFormular230Pdf, downloadPdfBytes } = await import("@/lib/formular230-pdf");
       const bytes = await completeazaFormular230Pdf({ ...date, semnatura, an: anTrimitere }, beneficiar);
       downloadPdfBytes(bytes, `Formular 230 - ${date.nume} ${date.prenume}.pdf`);
     } finally {

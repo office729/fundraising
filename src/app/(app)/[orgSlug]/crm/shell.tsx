@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import {
   Banknote,
   BarChart3,
@@ -47,14 +48,10 @@ import { DASHBOARD_DICT, type DashboardDict } from "@/lib/i18n/dictionaries/dash
 import type { Locale } from "@/lib/i18n/config";
 
 import { LogoutForm } from "../logout-form";
-import { AddDonorDialog } from "./components/add-donor-dialog";
 import { DomeniuProvider } from "./lib/domeniu-context";
 import { LocaleProvider } from "./lib/locale-context";
-import { AddProjectDialog } from "./components/add-project-dialog";
 import { Avatar } from "./components/ui/avatar";
 import { Dialog } from "./components/ui/dialog";
-import { ImportDialog } from "./components/import-dialog";
-import { AddCompanyFormDialog } from "./companii/add-company-form-dialog";
 import { cn } from "./lib/cn";
 import { formatDataRelativa } from "./lib/format";
 import {
@@ -426,6 +423,12 @@ function contextDinPathname(pathname: string | null, base: string): AddContext {
   return null;
 }
 
+// Formularele din dialogul „Adaugă" se încarcă abia când e apăsat un buton, nu pe fiecare pagină din CRM.
+const AddDonorDialog = dynamic(() => import("./components/add-donor-dialog").then((m) => m.AddDonorDialog), { ssr: false });
+const AddProjectDialog = dynamic(() => import("./components/add-project-dialog").then((m) => m.AddProjectDialog), { ssr: false });
+const ImportDialog = dynamic(() => import("./components/import-dialog").then((m) => m.ImportDialog), { ssr: false });
+const AddCompanyFormDialog = dynamic(() => import("./companii/add-company-form-dialog").then((m) => m.AddCompanyFormDialog), { ssr: false });
+
 function AddDialog({
   open,
   onClose,
@@ -477,24 +480,30 @@ function AddDialog({
         </div>
       </Dialog>
       {importTip && <ImportDialog open={!!importTip} onClose={() => setImportTip(null)} tip={importTip} />}
-      <AddDonorDialog
-        open={donorOpen}
-        onClose={() => setDonorOpen(false)}
-        onCreated={(d) => router.push(`${base}/donatori/${d.id}`)}
-      />
-      <AddProjectDialog
-        open={projectOpen}
-        onClose={() => setProjectOpen(false)}
-        onCreated={(b) => router.push(`${base}/beneficiari/${b.id}`)}
-      />
-      <AddCompanyFormDialog
-        open={companyOpen}
-        onClose={() => setCompanyOpen(false)}
-        onCreated={(id) => {
-          setCompanyOpen(false);
-          router.push(`${base}/companii/${idScurt(id)}`);
-        }}
-      />
+      {donorOpen && (
+        <AddDonorDialog
+          open={donorOpen}
+          onClose={() => setDonorOpen(false)}
+          onCreated={(d) => router.push(`${base}/donatori/${d.id}`)}
+        />
+      )}
+      {projectOpen && (
+        <AddProjectDialog
+          open={projectOpen}
+          onClose={() => setProjectOpen(false)}
+          onCreated={(b) => router.push(`${base}/beneficiari/${b.id}`)}
+        />
+      )}
+      {companyOpen && (
+        <AddCompanyFormDialog
+          open={companyOpen}
+          onClose={() => setCompanyOpen(false)}
+          onCreated={(id) => {
+            setCompanyOpen(false);
+            router.push(`${base}/companii/${idScurt(id)}`);
+          }}
+        />
+      )}
     </>
   );
 }

@@ -1,15 +1,11 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { Input } from "./components/ui/input";
 import { DomainWelcomeBanner } from "./components/domain-welcome-banner";
-import { CaldProtectorDashboard } from "./components/dashboard/cald-protector-dashboard";
-import { ElegantEditorialDashboard } from "./components/dashboard/elegant-editorial-dashboard";
-import { IndraznetDinamicDashboard } from "./components/dashboard/indraznet-dinamic-dashboard";
-import { NaturalAncoratDashboard } from "./components/dashboard/natural-ancorat-dashboard";
-import { NeutruDashboard } from "./components/dashboard/neutru-dashboard";
 import { DemoBanner } from "./components/demo-banner";
 import { TaskuriCard } from "./components/dashboard/taskuri-card";
 import { RiscPipelineCard } from "./components/dashboard/risc-pipeline-card";
@@ -30,6 +26,15 @@ import {
 import { numarApeluriUltimele30Zile } from "./dashboard-actions";
 import { useBeneficiari, useCompanii } from "./lib/use-data";
 import { TASKURI, centruDeActiuni, companiiPipelineStats, dashboardKpis, lunarEvolutie, type PerioadaKpi, type Task } from "./mock";
+
+// Doar dashboard-ul familiei alese de organizație se încarcă (recharts e greu): celelalte patru nu ajung în browser.
+const incarcare = () => <div className="h-96 animate-pulse rounded-xl bg-black/5" aria-hidden />;
+const CaldProtectorDashboard = dynamic(() => import("./components/dashboard/cald-protector-dashboard").then((m) => m.CaldProtectorDashboard), { loading: incarcare });
+const ElegantEditorialDashboard = dynamic(() => import("./components/dashboard/elegant-editorial-dashboard").then((m) => m.ElegantEditorialDashboard), { loading: incarcare });
+const IndraznetDinamicDashboard = dynamic(() => import("./components/dashboard/indraznet-dinamic-dashboard").then((m) => m.IndraznetDinamicDashboard), { loading: incarcare });
+const NaturalAncoratDashboard = dynamic(() => import("./components/dashboard/natural-ancorat-dashboard").then((m) => m.NaturalAncoratDashboard), { loading: incarcare });
+const NeutruDashboard = dynamic(() => import("./components/dashboard/neutru-dashboard").then((m) => m.NeutruDashboard), { loading: incarcare });
+
 
 const EMPTY_TASKURI: Task[] = [];
 const EMPTY_MAP: Record<string, string> = {};

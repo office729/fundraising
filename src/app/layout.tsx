@@ -25,6 +25,8 @@ const sora = Sora({
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin", "latin-ext"],
+  // Nu se preîncarcă pe paginile publice (unde nu e folosit); se descarcă la prima utilizare în CRM.
+  preload: false,
 });
 
 export const metadata: Metadata = {

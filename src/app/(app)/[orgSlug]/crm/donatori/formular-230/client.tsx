@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Button } from "../../components/ui/button";
-import { completeazaFormular230Pdf, downloadPdfBytes, type DateBeneficiarPdf } from "@/lib/formular230-pdf";
+import type { DateBeneficiarPdf } from "@/lib/formular230-pdf";
 import { useLocale } from "../../lib/locale-context";
 import { FORMULAR230_DICT } from "@/lib/i18n/dictionaries/formular230";
 import { obtineDatePdf, seteazaProcesatAnaf, stergeFormular230 } from "./actions";
@@ -56,6 +56,7 @@ export function PdfButton({
     try {
       const submisie = await obtineDatePdf(orgSlug, id);
       if (!submisie) return;
+      const { completeazaFormular230Pdf, downloadPdfBytes } = await import("@/lib/formular230-pdf");
       const bytes = await completeazaFormular230Pdf(submisie, beneficiar);
       downloadPdfBytes(bytes, `Formular 230 - ${submisie.nume} ${submisie.prenume}.pdf`);
     } finally {

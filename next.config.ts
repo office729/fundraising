@@ -58,7 +58,14 @@ const nextConfig: NextConfig = {
     // Stripe ignoră headerele orientate spre pagini din răspuns, deci nu
     // există niciun motiv să existe o excepție (și Next.js 16 nu acceptă
     // oricum un `headers: []` gol pe o rută).
-    return [{ source: "/:path*", headers: securityHeaders }];
+    // Fișierele statice din public/ nu au hash în nume: cache de o zi + revalidare în fundal, nu
+    // `max-age=0` (care cerea o verificare la server la fiecare vizită). Imuabil n-ar fi sigur la înlocuiri.
+    const cacheStatic = [{ key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      { source: "/vendor/:path*", headers: cacheStatic },
+      { source: "/fonts/:path*", headers: cacheStatic },
+    ];
   },
 };
 

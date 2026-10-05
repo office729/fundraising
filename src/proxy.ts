@@ -47,6 +47,6 @@ export const config = {
     // de conținutul lor real. Descoperit real: fetch() client-side pentru
     // /fonts/*.ttf și /formular-230-template.pdf urma redirect-ul și primea
     // HTML-ul paginii de login în loc de font/PDF.
-    "/((?!_next/static|_next/image|icon(?:\\.png)?|apple-icon(?:\\.png)?|api/stripe/webhook|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ttf|woff|woff2|pdf)$).*)",
+    "/((?!_next/static|_next/image|icon(?:\\.png)?|apple-icon(?:\\.png)?|api/stripe/webhook|vendor/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ttf|woff|woff2|pdf)$).*)",
   ],
 };
