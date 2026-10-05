@@ -178,6 +178,40 @@ export function withOrgAdmin<A extends unknown[], R>(
   }, opts);
 }
 
+/**
+ * Acțiune în TREI FAZE, ca o conexiune de bază de date să NU rămână deschisă cât durează un apel extern lent
+ * (model AI de 30–90 s, trimitere de emailuri, Canva etc.). `withOrgSession` ține o tranzacție + o conexiune din
+ * pool (max 5 per instanță) pe toată durata acțiunii — câteva generări AI simultane epuizau pool-ul și blocau
+ * inclusiv webhook-urile Stripe de pe aceeași instanță.
+ *
+ *  1. `pregateste` — în tranzacție, SCURT: verifică accesul, citește ce trebuie, validează. Întoarce fie `{ gata }`
+ *     (răspuns final, ex. o eroare de validare), fie `{ pregatit }` (date SIMPLE, fără `ctx.db`) pentru fazele următoare.
+ *  2. `extern` — FĂRĂ tranzacție și fără conexiune DB: apelul lent.
+ *  3. `salveaza` — o tranzacție nouă (cu verificarea accesului refăcută), scurtă: scrie rezultatul. Opțională: fără ea,
+ *     rezultatul fazei externe e răspunsul.
+ * Argumentele acțiunii se repetă în faza 3. `pregatit` și rezultatul extern nu trec prin rețea (apel în același proces).
+ */
+export function withOrgFaze<A extends unknown[], P, X, R>(cfg: {
+  admin?: boolean;
+  opts?: OrgSessionOptions;
+  pregateste: (ctx: OrgContext, ...args: A) => Promise<{ gata: R } | { pregatit: P }>;
+  extern: (pregatit: P) => Promise<X>;
+  salveaza?: (ctx: OrgContext, pregatit: P, rezultatExtern: X, ...args: A) => Promise<R>;
+}): (orgSlug: string, ...args: A) => Promise<R> {
+  const wrap: typeof withOrgSession = cfg.admin ? (withOrgAdmin as typeof withOrgSession) : withOrgSession;
+  const faza1 = wrap(async (ctx: OrgContext, ...args: A) => cfg.pregateste(ctx, ...args), cfg.opts);
+  const faza3 = cfg.salveaza
+    ? wrap(async (ctx: OrgContext, pregatit: P, rezultatExtern: X, ...args: A) => cfg.salveaza!(ctx, pregatit, rezultatExtern, ...args), cfg.opts)
+    : null;
+  return async (orgSlug: string, ...args: A): Promise<R> => {
+    const r = await faza1(orgSlug, ...args);
+    if ("gata" in r) return r.gata;
+    const extern = await cfg.extern(r.pregatit);
+    if (!faza3) return extern as unknown as R;
+    return faza3(orgSlug, r.pregatit, extern, ...args);
+  };
+}
+
 export type OrgAccess = Omit<OrgContext, "db">;
 
 /**

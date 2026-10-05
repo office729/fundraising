@@ -4,7 +4,7 @@ import { and, eq, sql } from "drizzle-orm";
 
 import { genereazaRaportActivitateAI, type DateFinanciareExtrase, type SectiuniRaportActivitate } from "@/lib/ai";
 import { limitaAIDepasita, MESAJ_LIMITA_AI } from "@/lib/ai-limit";
-import { withOrgAdmin } from "@/lib/auth/guard";
+import { withOrgAdmin, withOrgFaze } from "@/lib/auth/guard";
 import { autofillDesign } from "@/lib/canva";
 import { canvaConnections, companies, companyActivityReports, companySponsorizari, financialDocuments } from "@/lib/db/schema";
 import { EroareUtilizator, mesajSigur } from "@/lib/erori";
@@ -139,51 +139,67 @@ export const obtineDetaliuRaportAction = withOrgAdmin(async (ctx, companyId: str
 // Balanță dacă Bilanțul nu e disponibil/confirmat pentru anul respectiv.
 // Scrie direct în company_activity_reports (upsert pe companyId+an) ca
 // rezultatul să fie imediat editabil/salvabil, nu doar afișat efemer.
-export const genereazaRaportAction = withOrgAdmin(async (ctx, companyId: string, an: number): Promise<SectiuniRaportActivitate> => {
-  const [companie] = await ctx.db.select({ nume: companies.nume }).from(companies).where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId))).limit(1);
-  if (!companie) throw new EroareUtilizator("Firma nu a fost găsită.");
+export const genereazaRaportAction = withOrgFaze<
+  [string, number],
+  { orgName: string; an: number; companie: { nume: string; sumaSponsorizata: number | null; proiecte: string[] }; dateFinanciare: DateFinanciareExtrase | null; sursaFinanciaraId: string | null },
+  SectiuniRaportActivitate | null,
+  SectiuniRaportActivitate
+>({
+  admin: true,
+  // Faza 1 (tranzacție scurtă): datele pentru raport. Faza 2: apelul AI (poate dura zeci de secunde), FĂRĂ conexiune DB.
+  pregateste: async (ctx, companyId, an) => {
+    const [companie] = await ctx.db.select({ nume: companies.nume }).from(companies).where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId))).limit(1);
+    if (!companie) throw new EroareUtilizator("Firma nu a fost găsită.");
+    if (await limitaAIDepasita(ctx)) throw new EroareUtilizator(MESAJ_LIMITA_AI);
 
-  const [agregat] = await ctx.db
-    .select({
-      suma: sql<number>`coalesce(sum(${companySponsorizari.suma}), 0)::int`,
-      proiecte: sql<
-        string[]
-      >`coalesce(array_agg(distinct ${companySponsorizari.proiect}) filter (where ${companySponsorizari.proiect} is not null and ${companySponsorizari.proiect} != ''), array[]::text[])`,
-    })
-    .from(companySponsorizari)
-    .where(and(eq(companySponsorizari.companyId, companyId), eq(companySponsorizari.orgId, ctx.orgId), sql`extract(year from ${companySponsorizari.data}) = ${an}`));
+    const [agregat] = await ctx.db
+      .select({
+        suma: sql<number>`coalesce(sum(${companySponsorizari.suma}), 0)::int`,
+        proiecte: sql<
+          string[]
+        >`coalesce(array_agg(distinct ${companySponsorizari.proiect}) filter (where ${companySponsorizari.proiect} is not null and ${companySponsorizari.proiect} != ''), array[]::text[])`,
+      })
+      .from(companySponsorizari)
+      .where(and(eq(companySponsorizari.companyId, companyId), eq(companySponsorizari.orgId, ctx.orgId), sql`extract(year from ${companySponsorizari.data}) = ${an}`));
 
-  const docuri = await ctx.db
-    .select({ id: financialDocuments.id, tip: financialDocuments.tip, dateExtrase: financialDocuments.dateExtrase })
-    .from(financialDocuments)
-    .where(and(eq(financialDocuments.orgId, ctx.orgId), eq(financialDocuments.an, an), sql`${financialDocuments.confirmatLa} is not null`));
-  const docFolosit = docuri.find((d) => d.tip === "bilant") ?? docuri.find((d) => d.tip === "balanta") ?? null;
+    const docuri = await ctx.db
+      .select({ id: financialDocuments.id, tip: financialDocuments.tip, dateExtrase: financialDocuments.dateExtrase })
+      .from(financialDocuments)
+      .where(and(eq(financialDocuments.orgId, ctx.orgId), eq(financialDocuments.an, an), sql`${financialDocuments.confirmatLa} is not null`));
+    const docFolosit = docuri.find((d) => d.tip === "bilant") ?? docuri.find((d) => d.tip === "balanta") ?? null;
 
-  const sectiuni = await genereazaRaportActivitateAI({
-    orgName: ctx.orgName,
-    an,
-    companie: { nume: companie.nume, sumaSponsorizata: agregat?.suma ?? null, proiecte: agregat?.proiecte ?? [] },
-    dateFinanciare: (docFolosit?.dateExtrase as DateFinanciareExtrase | null) ?? null,
-  });
-  if (!sectiuni) throw new EroareUtilizator("Generarea cu AI a eșuat (sau AI-ul nu e configurat) — completează raportul manual.");
+    return {
+      pregatit: {
+        orgName: ctx.orgName,
+        an,
+        companie: { nume: companie.nume, sumaSponsorizata: agregat?.suma ?? null, proiecte: agregat?.proiecte ?? [] },
+        dateFinanciare: (docFolosit?.dateExtrase as DateFinanciareExtrase | null) ?? null,
+        sursaFinanciaraId: docFolosit?.id ?? null,
+      },
+    };
+  },
+  extern: ({ orgName, an, companie, dateFinanciare }) => genereazaRaportActivitateAI({ orgName, an, companie, dateFinanciare }),
+  salveaza: async (ctx, { sursaFinanciaraId }, sectiuni, companyId, an) => {
+    if (!sectiuni) throw new EroareUtilizator("Generarea cu AI a eșuat (sau AI-ul nu e configurat) — completează raportul manual.");
 
-  await ctx.db
-    .insert(companyActivityReports)
-    .values({
-      orgId: ctx.orgId,
-      companyId,
-      an,
-      sursaFinanciaraId: docFolosit?.id ?? null,
-      continut: sectiuni,
-      status: "generat",
-      generatDe: ctx.userId,
-    })
-    .onConflictDoUpdate({
-      target: [companyActivityReports.companyId, companyActivityReports.an],
-      set: { sursaFinanciaraId: docFolosit?.id ?? null, continut: sectiuni, status: "generat", generatDe: ctx.userId, generatLa: new Date() },
-    });
+    await ctx.db
+      .insert(companyActivityReports)
+      .values({
+        orgId: ctx.orgId,
+        companyId,
+        an,
+        sursaFinanciaraId,
+        continut: sectiuni,
+        status: "generat",
+        generatDe: ctx.userId,
+      })
+      .onConflictDoUpdate({
+        target: [companyActivityReports.companyId, companyActivityReports.an],
+        set: { sursaFinanciaraId, continut: sectiuni, status: "generat", generatDe: ctx.userId, generatLa: new Date() },
+      });
 
-  return sectiuni;
+    return sectiuni;
+  },
 });
 
 // Salvează textul editat manual de admin (după generare sau complet manual,

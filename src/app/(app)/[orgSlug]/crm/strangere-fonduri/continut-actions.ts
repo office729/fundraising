@@ -3,9 +3,9 @@
 import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 
-import { aiConfigurat, genereazaCalendarZilnicAI, genereazaContinutCanalAI } from "@/lib/ai";
+import { aiConfigurat, genereazaCalendarZilnicAI, genereazaContinutCanalAI, type PostCalendarAI } from "@/lib/ai";
 import { limitaAIDepasita, MESAJ_LIMITA_AI } from "@/lib/ai-limit";
-import { withOrgAdmin, withOrgSession } from "@/lib/auth/guard";
+import { withOrgAdmin, withOrgFaze, withOrgSession } from "@/lib/auth/guard";
 import { fundraisingCalendarItems, fundraisingGeneratedContent, fundraisingPages } from "@/lib/db/schema";
 import { genereazaCalendarZilnic, genereazaContinutPeCanal, type ContinutCanal, type DateCampanie } from "@/lib/promovare/generator";
 
@@ -75,16 +75,23 @@ export const genereazaCalendarAction = withOrgAdmin(async (ctx, pageId: string):
 // campaniei; fallback la generatorul determinist când AI nu e configurat/eșuează.
 // Șterge doar rândurile încă "de_facut" (păstrează observațiile agentului pe
 // cele în lucru/publicate).
-export const genereazaCalendarAIAction = withOrgAdmin(
-  async (ctx, pageId: string): Promise<GenereazaState & { aiFolosit?: boolean }> => {
+export const genereazaCalendarAIAction = withOrgFaze<
+  [string],
+  { date: DateCampanie },
+  PostCalendarAI[] | null,
+  GenereazaState & { aiFolosit?: boolean }
+>({
+  admin: true,
+  // Faza 1 (tranzacție scurtă): validări + datele campaniei. Faza 2: apelul AI, FĂRĂ conexiune DB deschisă.
+  pregateste: async (ctx, pageId) => {
     const date = await dateCampanie(ctx.db, pageId, ctx.orgId, ctx.orgSlug, ctx.orgName);
-    if (!date) return { error: "Pagina nu a fost găsită.", ok: false };
-    if (!aiConfigurat())
-      return { error: "AI-ul nu e configurat (ANTHROPIC_API_KEY lipsește). Folosește «Generează (șablon)».", ok: false };
-
-    if (await limitaAIDepasita(ctx)) return { error: MESAJ_LIMITA_AI, ok: false };
-
-    const aiItems = await genereazaCalendarZilnicAI(date, 7);
+    if (!date) return { gata: { error: "Pagina nu a fost găsită.", ok: false } };
+    if (!aiConfigurat()) return { gata: { error: "AI-ul nu e configurat (ANTHROPIC_API_KEY lipsește). Folosește «Generează (șablon)».", ok: false } };
+    if (await limitaAIDepasita(ctx)) return { gata: { error: MESAJ_LIMITA_AI, ok: false } };
+    return { pregatit: { date } };
+  },
+  extern: ({ date }) => genereazaCalendarZilnicAI(date, 7),
+  salveaza: async (ctx, { date }, aiItems, pageId) => {
     const items = aiItems ?? genereazaCalendarZilnic(date).map((it) => ({ obiectiv: it.unghi, text: it.text }));
 
     await ctx.db
@@ -110,7 +117,7 @@ export const genereazaCalendarAIAction = withOrgAdmin(
 
     return { error: null, ok: true, aiFolosit: Boolean(aiItems) };
   },
-);
+});
 
 // Regenerează materialele pe canal — șterge doar rândurile "draft" (nu
 // atinge cele deja aprobate/publicate).
@@ -143,26 +150,32 @@ export const genereazaContinutAction = withOrgAdmin(async (ctx, pageId: string):
 // Generează materialele pe canal CU AI (dacă ANTHROPIC_API_KEY e setat), cu
 // fallback per canal la șablonul determinist când AI-ul nu e configurat sau
 // eșuează. Șterge doar rândurile "draft" (nu atinge aprobat/publicat).
-export const genereazaContinutAIAction = withOrgAdmin(
-  async (ctx, pageId: string): Promise<GenereazaState & { aiFolosit?: boolean }> => {
+export const genereazaContinutAIAction = withOrgFaze<
+  [string],
+  { date: DateCampanie },
+  { item: ContinutCanal; aiFolosit: boolean }[],
+  GenereazaState & { aiFolosit?: boolean }
+>({
+  admin: true,
+  pregateste: async (ctx, pageId) => {
     const date = await dateCampanie(ctx.db, pageId, ctx.orgId, ctx.orgSlug, ctx.orgName);
-    if (!date) return { error: "Pagina nu a fost găsită.", ok: false };
-    if (!aiConfigurat())
-      return { error: "AI-ul nu e configurat (ANTHROPIC_API_KEY lipsește). Folosește «Generează (șablon)».", ok: false };
-
-    if (await limitaAIDepasita(ctx)) return { error: MESAJ_LIMITA_AI, ok: false };
-
+    if (!date) return { gata: { error: "Pagina nu a fost găsită.", ok: false } };
+    if (!aiConfigurat()) return { gata: { error: "AI-ul nu e configurat (ANTHROPIC_API_KEY lipsește). Folosește «Generează (șablon)».", ok: false } };
+    if (await limitaAIDepasita(ctx)) return { gata: { error: MESAJ_LIMITA_AI, ok: false } };
+    return { pregatit: { date } };
+  },
+  // Generăm fiecare canal cu AI în paralel (până la 30 s/apel), FĂRĂ conexiune DB; per canal, fallback la șablon.
+  extern: async ({ date }) => {
     const sablon = genereazaContinutPeCanal(date);
     const sablonDupaCanal = new Map<ContinutCanal["canal"], ContinutCanal>(sablon.map((s) => [s.canal, s]));
-
-    // Generăm fiecare canal cu AI în paralel; per canal, fallback la șablon.
-    const rezultate = await Promise.all(
+    return Promise.all(
       sablon.map(async (s) => {
         const ai = await genereazaContinutCanalAI(date, s.canal);
         return { item: ai ?? (sablonDupaCanal.get(s.canal) as ContinutCanal), aiFolosit: Boolean(ai) };
       }),
     );
-
+  },
+  salveaza: async (ctx, _p, rezultate, pageId) => {
     await ctx.db
       .delete(fundraisingGeneratedContent)
       .where(and(eq(fundraisingGeneratedContent.campaignPageId, pageId), eq(fundraisingGeneratedContent.status, "draft")));
@@ -181,31 +194,38 @@ export const genereazaContinutAIAction = withOrgAdmin(
       })),
     );
 
-    const aiFolosit = rezultate.some((r) => r.aiFolosit);
-    return { error: null, ok: true, aiFolosit };
+    return { error: null, ok: true, aiFolosit: rezultate.some((r) => r.aiFolosit) };
   },
-);
+});
 
 // „Generează altă variantă" (secțiunea 5) — regenerează textul UNUI material cu
 // AI, pe același canal. Doar materiale încă needitate uman (draft). Fallback:
 // dacă AI-ul nu e disponibil, întoarce eroare (nu suprascrie cu șablon identic).
-export const regenereazaVariantaContinutAction = withOrgAdmin(
-  async (ctx, contentId: string): Promise<GenereazaState> => {
+export const regenereazaVariantaContinutAction = withOrgFaze<
+  [string],
+  { date: DateCampanie; canal: ContinutCanal["canal"] },
+  Awaited<ReturnType<typeof genereazaContinutCanalAI>>,
+  GenereazaState
+>({
+  admin: true,
+  pregateste: async (ctx, contentId) => {
     const rows = await ctx.db
       .select()
       .from(fundraisingGeneratedContent)
       .where(and(eq(fundraisingGeneratedContent.id, contentId), eq(fundraisingGeneratedContent.orgId, ctx.orgId)))
       .limit(1);
     const cur = rows[0];
-    if (!cur) return { error: "Materialul nu a fost găsit.", ok: false };
-    if (cur.status !== "draft") return { error: "Doar materialele în stadiul «draft» pot fi regenerate.", ok: false };
-    if (!aiConfigurat()) return { error: "AI-ul nu e configurat (ANTHROPIC_API_KEY lipsește).", ok: false };
+    if (!cur) return { gata: { error: "Materialul nu a fost găsit.", ok: false } };
+    if (cur.status !== "draft") return { gata: { error: "Doar materialele în stadiul «draft» pot fi regenerate.", ok: false } };
+    if (!aiConfigurat()) return { gata: { error: "AI-ul nu e configurat (ANTHROPIC_API_KEY lipsește).", ok: false } };
 
     const date = await dateCampanie(ctx.db, cur.campaignPageId, ctx.orgId, ctx.orgSlug, ctx.orgName);
-    if (!date) return { error: "Pagina nu a fost găsită.", ok: false };
-    if (await limitaAIDepasita(ctx)) return { error: MESAJ_LIMITA_AI, ok: false };
-
-    const ai = await genereazaContinutCanalAI(date, cur.canal, Math.floor(Math.random() * 1000));
+    if (!date) return { gata: { error: "Pagina nu a fost găsită.", ok: false } };
+    if (await limitaAIDepasita(ctx)) return { gata: { error: MESAJ_LIMITA_AI, ok: false } };
+    return { pregatit: { date, canal: cur.canal } };
+  },
+  extern: ({ date, canal }) => genereazaContinutCanalAI(date, canal, Math.floor(Math.random() * 1000)),
+  salveaza: async (ctx, _p, ai, contentId) => {
     if (!ai) return { error: "AI-ul nu a putut genera o variantă. Încearcă din nou.", ok: false };
 
     await ctx.db
@@ -215,7 +235,7 @@ export const regenereazaVariantaContinutAction = withOrgAdmin(
 
     return { error: null, ok: true };
   },
-);
+});
 
 export const listCalendarCampanie = withOrgSession(async (ctx, pageId: string) => {
   return ctx.db.select().from(fundraisingCalendarItems).where(eq(fundraisingCalendarItems.campaignPageId, pageId)).orderBy(fundraisingCalendarItems.ziua);

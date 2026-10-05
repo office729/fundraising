@@ -3,6 +3,7 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 
 import { and, eq, inArray, ne, sql } from "drizzle-orm";
+import { after } from "next/server";
 import type Stripe from "stripe";
 
 import { cursEurRon } from "@/lib/curs-valutar";
@@ -51,6 +52,12 @@ async function trimiteEmailMultumireDacaSePoate(params: {
   } catch (e) {
     raporteazaEroare("stripe-email-multumire", e);
   }
+}
+
+// Emailul de mulțumire se trimite DUPĂ ce webhook-ul a răspuns (after → waitUntil pe Vercel). Înainte, un server SMTP
+// lent întârzia răspunsul către Stripe, care putea face timeout și retrimite evenimentul. Best-effort, ca înainte.
+function trimiteEmailDupaRaspuns(params: Parameters<typeof trimiteEmailMultumireDacaSePoate>[0]) {
+  after(() => trimiteEmailMultumireDacaSePoate(params));
 }
 
 // Exportat — reutilizat și de express-checkout-actions.ts (donații recurente
@@ -189,7 +196,7 @@ export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, s
       raporteazaEroare("stripe-checkout-completed", e, { orgId, eveniment: event.id });
       return false;
     }
-    if (emailParams) await trimiteEmailMultumireDacaSePoate(emailParams);
+    if (emailParams) trimiteEmailDupaRaspuns(emailParams);
   }
 
   if (event.type === "checkout.session.expired" || event.type === "checkout.session.async_payment_failed") {
@@ -241,6 +248,14 @@ export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, s
             cursEur = (await cursEurRon()) ?? (Number(md.cursEur) > 0 ? Number(md.cursEur) : null);
             if (!cursEur) throw new Error("curs EUR→RON indisponibil pentru reînnoirea unui abonament în EUR");
           }
+          // La fel ca la checkout.session.completed — necesar pentru corelarea unei eventuale rambursări a ACESTEI
+          // reînnoiri. Facturile nu mai expun payment_intent direct (restructurat sub InvoicePayments) — trebuie
+          // interogat separat. Apelul către Stripe se face ÎNAINTE de tranzacție: înainte rula înăuntru și ținea o
+          // conexiune din pool cât dura cererea HTTP.
+          const plati = await stripe.invoicePayments.list({ invoice: invoice.id, limit: 1 });
+          const platoInvoice = plati.data[0]?.payment;
+          const paymentIntentId = idDin(platoInvoice?.payment_intent) ?? idDin(platoInvoice?.charge);
+
           await db.transaction(async (tx) => {
             await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
 
@@ -265,14 +280,6 @@ export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, s
             }
 
             const suma = cursEur ? Math.round((invoice.amount_paid / 100) * cursEur) : Math.round(invoice.amount_paid / 100);
-
-            // La fel ca la checkout.session.completed — necesar pentru
-            // corelarea unei eventuale rambursări a ACESTEI reînnoiri.
-            // Facturile nu mai expun payment_intent direct (restructurat sub
-            // InvoicePayments) — trebuie interogat separat.
-            const plati = await stripe.invoicePayments.list({ invoice: invoice.id, limit: 1 });
-            const platoInvoice = plati.data[0]?.payment;
-            const paymentIntentId = idDin(platoInvoice?.payment_intent) ?? idDin(platoInvoice?.charge);
 
             await tx.insert(fundraisingDonations).values({
               id: randomUUID(),
@@ -327,7 +334,7 @@ export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, s
         // în sumaStransa/donatoriReali, fără nicio alertă vizibilă.
         return false;
       }
-      if (emailParams) await trimiteEmailMultumireDacaSePoate(emailParams);
+      if (emailParams) trimiteEmailDupaRaspuns(emailParams);
     }
   }
 
@@ -389,7 +396,7 @@ export async function proceseazaEvenimentDonatie(event: Stripe.Event, { orgId, s
       raporteazaEroare("stripe-pi-succeeded", e, { orgId, eveniment: event.id });
       return false;
     }
-    if (emailParams) await trimiteEmailMultumireDacaSePoate(emailParams);
+    if (emailParams) trimiteEmailDupaRaspuns(emailParams);
   }
 
   if (event.type === "payment_intent.payment_failed") {

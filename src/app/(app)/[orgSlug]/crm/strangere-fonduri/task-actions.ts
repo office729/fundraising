@@ -7,7 +7,7 @@ import { headers } from "next/headers";
 
 import { aiConfigurat, genereazaTextMultumireAI } from "@/lib/ai";
 import { limitaAIDepasita, MESAJ_LIMITA_AI } from "@/lib/ai-limit";
-import { withOrgAdmin, withOrgSession } from "@/lib/auth/guard";
+import { withOrgAdmin, withOrgFaze, withOrgSession } from "@/lib/auth/guard";
 import { fundraisingBeneficiaries, fundraisingPages, fundraisingTaskAttachments, fundraisingTasks } from "@/lib/db/schema";
 import { notifica } from "@/lib/notifications";
 import { createClient } from "@/lib/supabase/server";
@@ -87,17 +87,17 @@ export const creeazaTaskAction = withOrgAdmin(
 // Generează cu AI textul de mulțumire pentru o sarcină de sponsorizare
 // (secțiunea 9). Întoarce textul; clientul îl pune în câmpul din formular ca
 // să poată fi editat înainte de salvare. Fără cheie AI → error clar.
-export const genereazaTextMultumireAIAction = withOrgAdmin(
-  async (
-    ctx,
-    pageId: string,
-    companie: string,
-    suma: number | null,
-    moneda: string | null,
-  ): Promise<{ error: string | null; text: string | null }> => {
-    if (!aiConfigurat()) return { error: "AI-ul nu e configurat (ANTHROPIC_API_KEY lipsește).", text: null };
-    if (!companie.trim()) return { error: "Completează numele companiei mai întâi.", text: null };
-    if (await limitaAIDepasita(ctx)) return { error: MESAJ_LIMITA_AI, text: null };
+export const genereazaTextMultumireAIAction = withOrgFaze<
+  [string, string, number | null, string | null],
+  { pagina: { titlu: string; poveste: string; sumaStransa: number; sumaTinta: number | null }; url: string; orgName: string; companie: string; suma: number | null; moneda: string | null },
+  { error: string | null; text: string | null },
+  { error: string | null; text: string | null }
+>({
+  admin: true,
+  pregateste: async (ctx, pageId, companie, suma, moneda) => {
+    if (!aiConfigurat()) return { gata: { error: "AI-ul nu e configurat (ANTHROPIC_API_KEY lipsește).", text: null } };
+    if (!companie.trim()) return { gata: { error: "Completează numele companiei mai întâi.", text: null } };
+    if (await limitaAIDepasita(ctx)) return { gata: { error: MESAJ_LIMITA_AI, text: null } };
 
     const rows = await ctx.db
       .select()
@@ -105,21 +105,33 @@ export const genereazaTextMultumireAIAction = withOrgAdmin(
       .where(and(eq(fundraisingPages.id, pageId), eq(fundraisingPages.orgId, ctx.orgId)))
       .limit(1);
     const pagina = rows[0];
-    if (!pagina) return { error: "Pagina nu a fost găsită.", text: null };
+    if (!pagina) return { gata: { error: "Pagina nu a fost găsită.", text: null } };
 
     const hdrs = await headers();
     const proto = hdrs.get("x-forwarded-proto") ?? "https";
     const url = `${proto}://${hdrs.get("host")}/strangere-fonduri/${ctx.orgSlug}/${pagina.slug}`;
+    return {
+      pregatit: {
+        pagina: { titlu: pagina.titlu, poveste: pagina.poveste, sumaStransa: pagina.sumaStransa, sumaTinta: pagina.sumaTinta },
+        url,
+        orgName: ctx.orgName,
+        companie: companie.trim(),
+        suma,
+        moneda,
+      },
+    };
+  },
+  // Fără scriere în baza de date: răspunsul fazei externe e rezultatul (fără o a doua tranzacție inutilă).
+  extern: async ({ pagina, url, orgName, companie, suma, moneda }) => {
     const text = await genereazaTextMultumireAI(
-      { titlu: pagina.titlu, poveste: pagina.poveste, orgName: ctx.orgName, url, sumaStransa: pagina.sumaStransa, sumaTinta: pagina.sumaTinta },
-      companie.trim(),
+      { titlu: pagina.titlu, poveste: pagina.poveste, orgName, url, sumaStransa: pagina.sumaStransa, sumaTinta: pagina.sumaTinta },
+      companie,
       suma,
       moneda,
     );
-    if (!text) return { error: "AI-ul nu a putut genera textul. Încearcă din nou.", text: null };
-    return { error: null, text };
+    return text ? { error: null, text } : { error: "AI-ul nu a putut genera textul. Încearcă din nou.", text: null };
   },
-);
+});
 
 export const listTaskuriCampanie = withOrgSession(async (ctx, pageId: string) => {
   return ctx.db.select().from(fundraisingTasks).where(eq(fundraisingTasks.campaignPageId, pageId)).orderBy(asc(fundraisingTasks.dataLimita));

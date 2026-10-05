@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
-import { withOrgSession } from "@/lib/auth/guard";
+import { withOrgFaze, type OrgContext } from "@/lib/auth/guard";
 import { isPlatformAdmin } from "@/lib/billing/trial";
 import { verificaLimitaRata } from "@/lib/auth/rate-limit";
 import { crmKv } from "@/lib/db/schema";
@@ -55,7 +55,10 @@ const MAX_EMAILURI_ZI = 1000;
 
 type Ctx = { params: Promise<{ orgSlug: string }> };
 
-const postSend = withOrgSession(async (ctx, req: Request) => {
+type Pregatit = { destinatari: { email: string; nume: string }[]; subiect: string; html: string; orgId: string };
+
+// Faza 1 (în tranzacție, scurtă): validări, roster, limite. Întoarce un răspuns gata (eroare) SAU datele de trimis.
+async function pregateste(ctx: OrgContext, req: Request): Promise<NextResponse | Pregatit> {
   let body: {
     canal?: string;
     audience?: unknown;
@@ -144,7 +147,12 @@ const postSend = withOrgSession(async (ctx, req: Request) => {
     return NextResponse.json({ ok: false, error: `Ai atins limita zilnică de ${MAX_EMAILURI_ZI} emailuri către voluntari — încearcă mâine.` }, { status: 429 });
   }
 
-  const html = buildHtml(continut, semnatura);
+  return { destinatari, subiect, html: buildHtml(continut, semnatura), orgId: ctx.orgId };
+}
+
+// Faza 2: trimiterea propriu-zisă (până la 500 de emailuri, secvențial) — FĂRĂ conexiune DB deschisă. Înainte, toată
+// trimiterea rula în tranzacția acțiunii și ținea o conexiune din pool minute în șir.
+async function trimite({ destinatari, subiect, html, orgId }: Pregatit): Promise<NextResponse> {
   try {
     if (destinatari.length === 1) {
       await trimiteEmail({ to: destinatari[0].email, subiect, html });
@@ -158,9 +166,17 @@ const postSend = withOrgSession(async (ctx, req: Request) => {
     if (!trimise) return NextResponse.json({ ok: false, error: "Trimiterea a eșuat." });
     return NextResponse.json({ ok: true, total: trimise });
   } catch (e) {
-    raporteazaEroare("voluntari-send", e, { orgId: ctx.orgId });
+    raporteazaEroare("voluntari-send", e, { orgId });
     return NextResponse.json({ ok: false, error: "Trimiterea a eșuat." });
   }
+}
+
+const postSend = withOrgFaze<[Request], Pregatit, NextResponse, NextResponse>({
+  pregateste: async (ctx, req) => {
+    const r = await pregateste(ctx, req);
+    return r instanceof NextResponse ? { gata: r } : { pregatit: r };
+  },
+  extern: trimite,
 });
 
 export async function POST(req: Request, { params }: Ctx) {
