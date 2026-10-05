@@ -79,3 +79,73 @@ export function htmlDateFacturareLipsa(params: { orgName: string; setariUrl: str
     </div>
   `;
 }
+
+// Aviz înainte de reînnoirea automată (bună practică pentru plăți recurente): data, suma și cardul
+// care va fi taxat, plus cum se oprește. Trimis o singură dată pe perioadă.
+export function subiectAvizReinnoire(): string {
+  return "Abonamentul Alexandrit se reînnoiește automat în curând";
+}
+
+export function htmlAvizReinnoire(params: {
+  orgName: string;
+  dataTaxare: string;
+  sumaLei: number;
+  packageLabel: string;
+  card: string;
+  cardExpiraInainte: boolean;
+  setariUrl: string;
+}): string {
+  const orgName = escHtml(params.orgName);
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; color: #14213d;">
+      <p>Bună!</p>
+      <p>
+        Abonamentul Alexandrit al organizației <strong>${orgName}</strong> (${escHtml(params.packageLabel)}) se reînnoiește automat
+        pe <strong>${escHtml(params.dataTaxare)}</strong>. Vom încasa <strong>${params.sumaLei} lei</strong> de pe cardul
+        <strong>${escHtml(params.card)}</strong>.
+      </p>
+      ${
+        params.cardExpiraInainte
+          ? `<p style="color:#b91c1c;">
+              Atenție: cardul expiră înainte de această dată, deci încasarea va eșua. Plătește manual sau salvează un card nou din Setări,
+              ca să nu pierzi accesul.
+            </p>`
+          : `<p>Nu trebuie să faci nimic. Dacă vrei să oprești reînnoirea automată sau să schimbi cardul, poți face asta oricând din Setări.</p>`
+      }
+      <p style="text-align: center; margin: 24px 0;">
+        <a href="${escHtml(params.setariUrl)}" style="background:#154a85;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">
+          Deschide Setările abonamentului
+        </a>
+      </p>
+      <p style="color:#94a3b8;font-size:12px;margin-top:24px;">
+        Primești acest email pentru că ești administrator/owner al organizației ${orgName} pe Alexandrit.
+      </p>
+    </div>
+  `;
+}
+
+export function subiectCardExpirat(): string {
+  return "Cardul salvat pentru abonamentul Alexandrit a expirat";
+}
+
+export function htmlCardExpirat(params: { orgName: string; card: string; setariUrl: string }): string {
+  const orgName = escHtml(params.orgName);
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; color: #14213d;">
+      <p>Bună!</p>
+      <p>
+        Cardul <strong>${escHtml(params.card)}</strong> salvat pentru abonamentul organizației <strong>${orgName}</strong> a expirat,
+        deci nu l-am putut taxa pentru reînnoire. Accesul rămâne activ până la sfârșitul perioadei deja plătite.
+      </p>
+      <p>Plătește manual sau salvează un card nou ca să continui fără întrerupere.</p>
+      <p style="text-align: center; margin: 24px 0;">
+        <a href="${escHtml(params.setariUrl)}" style="background:#154a85;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">
+          Deschide Setările abonamentului
+        </a>
+      </p>
+      <p style="color:#94a3b8;font-size:12px;margin-top:24px;">
+        Primești acest email pentru că ești administrator/owner al organizației ${orgName} pe Alexandrit.
+      </p>
+    </div>
+  `;
+}
