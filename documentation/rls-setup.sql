@@ -474,6 +474,10 @@ create policy formular230_campanii_email_public_lookup_update on formular230_cam
   for update using (nullif(current_setting('app.public_lookup', true), '') = 'true');
 create policy formular230_campanii_email_public_lookup_delete on formular230_campanii_email
   for delete using (nullif(current_setting('app.public_lookup', true), '') = 'true');
+-- Ștergerea GDPR a unui donator (art. 17): lipsea politica de DELETE pe donatori_reali, deci
+-- acțiunea rula pe 0 rânduri. Rolul owner/admin e verificat în server action (withOrgAdmin).
+create policy donatori_reali_member_delete on donatori_reali
+  for delete using (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid);
 -- Lista de suprimare a emailurilor de campanie (2026-10-02): doar HMAC al adresei, per organizație.
 alter table email_suppression force row level security;
 create policy email_suppression_tenant_select on email_suppression

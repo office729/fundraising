@@ -138,7 +138,13 @@ export const stergeDateDonator = withOrgAdmin(
       formulareSterse = sterse.length;
     }
 
-    await ctx.db.delete(donatoriReali).where(and(eq(donatoriReali.id, donator.id), eq(donatoriReali.orgId, ctx.orgId)));
+    const stersDonator = await ctx.db
+      .delete(donatoriReali)
+      .where(and(eq(donatoriReali.id, donator.id), eq(donatoriReali.orgId, ctx.orgId)))
+      .returning({ id: donatoriReali.id });
+    // Fără verificare, un DELETE blocat de RLS (0 rânduri) ar fi părut succes — dreptul la ștergere
+    // rămânea neonorat fără nicio eroare. Aruncarea anulează tranzacția (inclusiv anonimizarea).
+    if (!stersDonator.length) throw new Error("Ștergerea donatorului nu s-a aplicat (0 rânduri șterse).");
 
     await inregistreazaAudit(ctx.db, {
       orgId: ctx.orgId,

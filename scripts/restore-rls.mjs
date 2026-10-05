@@ -295,6 +295,9 @@ const POLICIES = [
   `create policy formular230_campanii_email_public_lookup_delete on formular230_campanii_email for delete using (
     nullif(current_setting('app.public_lookup', true), '') = 'true'
   )`,
+  `create policy donatori_reali_member_delete on donatori_reali for delete using (
+    org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
+  )`,
   `create policy email_suppression_tenant_select on email_suppression for select using (
     org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
   )`,
