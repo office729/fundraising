@@ -1,4 +1,4 @@
-import { boolean, date, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { boolean, date, index, integer, jsonb, pgTable, text, timestamp, unique, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 import { appUsers } from "./app-users";
 import { campaignPageTemplate, fundraisingDonationStatus, fundraisingPageStatus } from "./enums";
@@ -227,4 +227,21 @@ export const donatorNotite = pgTable(
     editatLa: timestamp("editat_la", { withTimezone: true }),
   },
   (t) => [index("donator_notite_org_idx").on(t.orgId), index("donator_notite_donator_idx").on(t.donatorId)],
+).enableRLS();
+
+// Lista de suprimare a emailurilor de campanie, per organizație: cine s-a dezabonat sau a cerut
+// ștergerea nu mai primește campanii, nici dacă rândul din donatori_reali dispare și reapare.
+// Se păstrează doar un HMAC al adresei (vezi lib/dezabonare.ts), nu adresa.
+export const emailSuppression = pgTable(
+  "email_suppression",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    emailHash: text("email_hash").notNull(),
+    motiv: text("motiv").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [unique("email_suppression_org_hash_unique").on(t.orgId, t.emailHash)],
 ).enableRLS();

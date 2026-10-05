@@ -474,6 +474,16 @@ create policy formular230_campanii_email_public_lookup_update on formular230_cam
   for update using (nullif(current_setting('app.public_lookup', true), '') = 'true');
 create policy formular230_campanii_email_public_lookup_delete on formular230_campanii_email
   for delete using (nullif(current_setting('app.public_lookup', true), '') = 'true');
+-- Lista de suprimare a emailurilor de campanie (2026-10-02): doar HMAC al adresei, per organizație.
+alter table email_suppression force row level security;
+create policy email_suppression_tenant_select on email_suppression
+  for select using (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid);
+create policy email_suppression_tenant_insert on email_suppression
+  for insert with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid);
+create policy email_suppression_public_lookup_select on email_suppression
+  for select using (nullif(current_setting('app.public_lookup', true), '') = 'true');
+create policy email_suppression_public_lookup_insert on email_suppression
+  for insert with check (nullif(current_setting('app.public_lookup', true), '') = 'true');
 alter table formular230_destinatari force row level security;
 create policy formular230_destinatari_tenant_isolation on formular230_destinatari
   for select using (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid);

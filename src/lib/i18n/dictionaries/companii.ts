@@ -55,7 +55,10 @@ export const COMPANII_DICT = {
       importTitle: "Import CSV",
       importDesc: "Antet obligatoriu, coloană „nume” necesară. Coloane recunoscute: nume, cui, judet, localitate, caen, industrie, site, administrator, ca, profit, nrAngajati — restul sunt ignorate.",
       seImporta: "Se importă…",
-      rezultat: (importate: number, ignorate: number) => `${importate} firme importate${ignorate ? `, ${ignorate} rânduri ignorate (fără nume)` : ""}.`,
+      rezultat: (importate: number, ignorate: number, duplicate = 0, pesteCota = 0) =>
+        `${importate} firme importate${ignorate ? `, ${ignorate} rânduri ignorate (fără nume)` : ""}${duplicate ? `, ${duplicate} omise (CUI deja existent)` : ""}${pesteCota ? `, ${pesteCota} neimportate (peste limita pachetului)` : ""}.`,
+      fisierPreaMare: "Fișierul e prea mare (maxim ~1 MB). Împarte-l în mai multe fișiere.",
+      importEsuat: "Importul a eșuat. Verifică fișierul și încearcă din nou.",
       inchide: "Închide",
     },
     d177: { tooltip: "Bani încasați prin D177" },
@@ -270,7 +273,10 @@ export const COMPANII_DICT = {
       importTitle: "CSV import",
       importDesc: "A header row is required, with a \"nume\" (name) column. Recognized columns: nume, cui, judet, localitate, caen, industrie, site, administrator, ca, profit, nrAngajati — the rest are ignored.",
       seImporta: "Importing…",
-      rezultat: (importate: number, ignorate: number) => `${importate} companies imported${ignorate ? `, ${ignorate} rows ignored (no name)` : ""}.`,
+      rezultat: (importate: number, ignorate: number, duplicate = 0, pesteCota = 0) =>
+        `${importate} companies imported${ignorate ? `, ${ignorate} rows ignored (no name)` : ""}${duplicate ? `, ${duplicate} skipped (tax ID already exists)` : ""}${pesteCota ? `, ${pesteCota} not imported (over your plan limit)` : ""}.`,
+      fisierPreaMare: "The file is too large (max ~1 MB). Split it into several files.",
+      importEsuat: "The import failed. Check the file and try again.",
       inchide: "Close",
     },
     d177: { tooltip: "Money received via D177" },

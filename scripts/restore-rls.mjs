@@ -295,6 +295,18 @@ const POLICIES = [
   `create policy formular230_campanii_email_public_lookup_delete on formular230_campanii_email for delete using (
     nullif(current_setting('app.public_lookup', true), '') = 'true'
   )`,
+  `create policy email_suppression_tenant_select on email_suppression for select using (
+    org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
+  )`,
+  `create policy email_suppression_tenant_insert on email_suppression for insert with check (
+    org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
+  )`,
+  `create policy email_suppression_public_lookup_select on email_suppression for select using (
+    nullif(current_setting('app.public_lookup', true), '') = 'true'
+  )`,
+  `create policy email_suppression_public_lookup_insert on email_suppression for insert with check (
+    nullif(current_setting('app.public_lookup', true), '') = 'true'
+  )`,
   `create policy formular230_destinatari_tenant_isolation on formular230_destinatari for select using (
     org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
   )`,
@@ -734,6 +746,7 @@ const FORCE_TABLES = [
   "formular230_beneficiari",
   "formular230_campanii_email",
   "formular230_destinatari",
+  "email_suppression",
   "fundraising_pages",
   "fundraising_donations",
   "donatori_reali",

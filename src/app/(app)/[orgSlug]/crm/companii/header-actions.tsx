@@ -109,7 +109,7 @@ export function ImportCsvButton() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
-  const [rezultat, setRezultat] = useState<{ error: string | null; importate?: number; ignorate?: number } | null>(null);
+  const [rezultat, setRezultat] = useState<{ error: string | null; importate?: number; ignorate?: number; duplicate?: number; pesteCota?: number } | null>(null);
 
   function alegeFisier() {
     inputRef.current?.click();
@@ -120,15 +120,26 @@ export function ImportCsvButton() {
     e.target.value = "";
     if (!file) return;
     setOpen(true);
-    setPending(true);
     setRezultat(null);
+    // Limita implicită a cererilor către server e ~1 MB — peste ea importul ar eșua fără mesaj.
+    if (file.size > 1_000_000) {
+      setPending(false);
+      setRezultat({ error: dict.fisierPreaMare });
+      return;
+    }
+    setPending(true);
     const reader = new FileReader();
     reader.onload = async () => {
       const text = String(reader.result ?? "");
-      const r = await importaFirmeCsv(orgSlug, text);
-      setRezultat(r);
-      setPending(false);
-      if (!r.error) router.refresh();
+      try {
+        const r = await importaFirmeCsv(orgSlug, text);
+        setRezultat(r);
+        if (!r.error) router.refresh();
+      } catch {
+        setRezultat({ error: dict.importEsuat });
+      } finally {
+        setPending(false);
+      }
     };
     reader.readAsText(file, "utf-8");
   }
@@ -144,7 +155,7 @@ export function ImportCsvButton() {
         {pending && <p className="text-[13px] text-[var(--ci-text-muted)]">{dict.seImporta}</p>}
         {rezultat?.error && <p className="text-[13px] text-[var(--ci-red)]">{rezultat.error}</p>}
         {rezultat && !rezultat.error && (
-          <p className="text-[13px] text-[var(--ci-green)]">{dict.rezultat(rezultat.importate ?? 0, rezultat.ignorate ?? 0)}</p>
+          <p className="text-[13px] text-[var(--ci-green)]">{dict.rezultat(rezultat.importate ?? 0, rezultat.ignorate ?? 0, rezultat.duplicate ?? 0, rezultat.pesteCota ?? 0)}</p>
         )}
         <div className="mt-4 flex justify-end">
           <Button variant="secondary" onClick={() => setOpen(false)}>

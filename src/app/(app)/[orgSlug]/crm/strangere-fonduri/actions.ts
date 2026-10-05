@@ -387,9 +387,10 @@ export const adaugaDonatieOfflineAction = withOrgAdmin(
       emailDonator: emailDonator || null,
       telefonDonator: telefonDonator || null,
       consimtamantWhatsapp,
-      // Bifă nebifată = nimic înregistrat (null), nu refuz: organizația răspunde
-      // pentru datele de contact pe care le introduce singură.
-      consimtamantEmail: consimtamantEmail ? true : null,
+      // Bifă nebifată = fără consimțământ înregistrat → false (nu primește campanii de email).
+      // Înainte era null, iar null înseamnă „donator dinainte de bifă — primește", deci un
+      // donator offline fără acord ar fi primit reamintiri. Organizația bifează dacă are acordul.
+      consimtamantEmail,
     });
 
     if (emailDonator && info && emailConfigurat()) {

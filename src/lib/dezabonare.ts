@@ -5,7 +5,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { and, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
-import { donatoriReali } from "@/lib/db/schema";
+import { donatoriReali, emailSuppression } from "@/lib/db/schema";
 
 // Link de dezabonare din emailurile de campanie (Formular 230 etc.) — semnat
 // HMAC, fără stare: nu ne trebuie un tabel de tokeni. Semnătura leagă
@@ -17,6 +17,13 @@ function semnatura(orgId: string, email: string): string {
   const cheie = process.env.ORG_SECRETS_KEY;
   if (!cheie) throw new Error("ORG_SECRETS_KEY lipsește — nu se pot semna linkuri de dezabonare.");
   return createHmac("sha256", cheie).update(`dezabonare:${orgId}:${email.toLowerCase()}`).digest("base64url");
+}
+
+// HMAC al adresei, pentru lista de suprimare (nu stocăm adresa). Prefix de scop propriu.
+export function hashSuprimare(orgId: string, email: string): string {
+  const cheie = process.env.ORG_SECRETS_KEY;
+  if (!cheie) throw new Error("ORG_SECRETS_KEY lipsește — nu se poate calcula lista de suprimare.");
+  return createHmac("sha256", cheie).update(`suprimare:${orgId}:${email.trim().toLowerCase()}`).digest("hex");
 }
 
 export function linkDezabonare(baseUrl: string, orgId: string, email: string): string {
@@ -50,5 +57,10 @@ export async function dezaboneazaDonator(orgId: string, email: string): Promise<
       .update(donatoriReali)
       .set({ dezabonatEmailLa: sql`coalesce(${donatoriReali.dezabonatEmailLa}, now())` })
       .where(and(sql`${donatoriReali.orgId} = ${orgId}`, sql`lower(${donatoriReali.email}) = ${email.toLowerCase()}`));
+    // Și în lista de suprimare — acoperă adrese care nu sunt (sau nu mai sunt) în donatori_reali.
+    await tx
+      .insert(emailSuppression)
+      .values({ orgId, emailHash: hashSuprimare(orgId, email), motiv: "dezabonare" })
+      .onConflictDoNothing();
   });
 }

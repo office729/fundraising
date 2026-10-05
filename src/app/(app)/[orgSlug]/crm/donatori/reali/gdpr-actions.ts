@@ -4,7 +4,8 @@ import { and, eq, sql } from "drizzle-orm";
 
 import { inregistreazaAudit } from "@/lib/audit";
 import { withOrgAdmin } from "@/lib/auth/guard";
-import { donatorNotite, donatoriReali, formular230Submissions, fundraisingDonations } from "@/lib/db/schema";
+import { donatorNotite, donatoriReali, emailSuppression, formular230Submissions, fundraisingDonations } from "@/lib/db/schema";
+import { hashSuprimare } from "@/lib/dezabonare";
 import { decripteazaSauLegacy } from "@/lib/secret-box";
 
 // Drepturile persoanei vizate (GDPR art. 15 și 17) pentru un donator real.
@@ -104,11 +105,21 @@ export type StergereDonatorState = {
 export const stergeDateDonator = withOrgAdmin(
   async (ctx, donatorId: string, inclusiv230: boolean): Promise<StergereDonatorState> => {
     const [donator] = await ctx.db
-      .select({ id: donatoriReali.id, email: donatoriReali.email })
+      .select({ id: donatoriReali.id, email: donatoriReali.email, dezabonatEmailLa: donatoriReali.dezabonatEmailLa, consimtamantEmail: donatoriReali.consimtamantEmail })
       .from(donatoriReali)
       .where(and(eq(donatoriReali.id, donatorId), eq(donatoriReali.orgId, ctx.orgId)))
       .limit(1);
     if (!donator) return { ok: false, error: "Donatorul nu a fost găsit." };
+
+    // Cine s-a dezabonat sau a refuzat emailurile NU trebuie să le primească din nou după
+    // ștergere (rândul poate reapărea la o donație nouă, cu consimțământ necunoscut). Păstrăm doar
+    // un HMAC al adresei în lista de suprimare, nu adresa.
+    if (donator.dezabonatEmailLa || donator.consimtamantEmail === false) {
+      await ctx.db
+        .insert(emailSuppression)
+        .values({ orgId: ctx.orgId, emailHash: hashSuprimare(ctx.orgId, donator.email), motiv: donator.dezabonatEmailLa ? "dezabonare_inainte_de_stergere" : "refuz_consimtamant" })
+        .onConflictDoNothing();
+    }
 
     const emailLower = donator.email.toLowerCase();
 

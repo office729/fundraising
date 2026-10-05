@@ -3,9 +3,9 @@ import "server-only";
 import { and, eq, isNull, or, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
-import { donatoriReali, formular230Beneficiari, formular230CampaniiEmail, formular230Destinatari } from "@/lib/db/schema";
+import { donatoriReali, emailSuppression, formular230Beneficiari, formular230CampaniiEmail, formular230Destinatari } from "@/lib/db/schema";
 import { trimiteEmailuriInLot } from "@/lib/email";
-import { linkDezabonare } from "@/lib/dezabonare";
+import { hashSuprimare, linkDezabonare } from "@/lib/dezabonare";
 import { SLUG_PRINCIPAL } from "@/lib/formular230-constants";
 import { anteteDezabonare, htmlEmailF230, subiectEmailF230 } from "@/lib/formular230-email-template";
 import { raporteazaAvertisment } from "@/lib/monitoring";
@@ -66,7 +66,12 @@ export async function trimiteCampanieF230(params: {
       .limit(1);
     if (!beneficiar?.shortCode) return { stare: "fara_link" as const };
 
-    const donatori = await tx
+    // Lista de suprimare (dezabonați / ștergeri GDPR) — nu mai primesc campanii nici dacă
+    // rândul lor din donatori_reali a fost recreat între timp.
+    const suprimati = new Set(
+      (await tx.select({ h: emailSuppression.emailHash }).from(emailSuppression).where(eq(emailSuppression.orgId, org.id))).map((r) => r.h),
+    );
+    const toti = await tx
       .select({ email: donatoriReali.email, nume: donatoriReali.nume })
       .from(donatoriReali)
       // Doar cei care NU s-au dezabonat și NU au refuzat explicit emailurile la
@@ -79,6 +84,7 @@ export async function trimiteCampanieF230(params: {
           or(isNull(donatoriReali.consimtamantEmail), eq(donatoriReali.consimtamantEmail, true)),
         ),
       );
+    const donatori = toti.filter((d) => !suprimati.has(hashSuprimare(org.id, d.email)));
     if (!donatori.length) return { stare: "fara_destinatari" as const };
 
     let campanieId: string;

@@ -383,7 +383,15 @@ export const getCalendarLucru = withOrgSession(async (ctx) => {
     .limit(200);
 });
 
-export type ImportCsvState = ActionState & { importate?: number; ignorate?: number };
+export type ImportCsvState = ActionState & { importate?: number; ignorate?: number; duplicate?: number; pesteCota?: number };
+
+// Plafon de rânduri pe un import (peste el, cererea riscă să depășească limita de timp/memorie).
+const MAX_RANDURI_IMPORT = 5000;
+
+// CUI normalizat (fără spații și prefixul RO) — pentru deduplicare.
+function normalizeazaCui(cui: string): string {
+  return cui.replace(/\s+/g, "").toUpperCase().replace(/^RO/, "");
+}
 
 const CSV_COLOANE = ["nume", "cui", "judet", "localitate", "caen", "industrie", "site", "administrator", "ca", "profit", "nrAngajati"] as const;
 
@@ -424,6 +432,9 @@ function parseCsvLine(line: string): string[] {
 export const importaFirmeCsv = withOrgSession(async (ctx, csvText: string): Promise<ImportCsvState> => {
   const linii = csvText.split(/\r?\n/).filter((l) => l.trim().length > 0);
   if (linii.length < 2) return { error: "Fișierul CSV e gol sau nu are decât antet." };
+  if (linii.length - 1 > MAX_RANDURI_IMPORT) {
+    return { error: `Fișierul are prea multe rânduri (maxim ${MAX_RANDURI_IMPORT} pe import) — împarte-l în mai multe fișiere.` };
+  }
 
   const antet = parseCsvLine(linii[0]).map((h) => h.trim().toLowerCase());
   const indexNume = antet.indexOf("nume");
@@ -431,8 +442,27 @@ export const importaFirmeCsv = withOrgSession(async (ctx, csvText: string): Prom
 
   const coloaneIndex = CSV_COLOANE.map((c) => ({ col: c, idx: antet.indexOf(c.toLowerCase()) }));
 
+  // Cota de companii a pachetului se aplică și la import (înainte ocolea limita: se insera orice
+  // număr de rânduri). Rândurile peste cotă nu se importă și sunt raportate separat.
+  const limite = getLimiteleEfective(ctx.orgPackage, ctx.orgCustomPlanConfig);
+  const [{ firmeCount }] = await ctx.db
+    .select({ firmeCount: sql<number>`count(*)`.mapWith(Number) })
+    .from(companies)
+    .where(and(eq(companies.orgId, ctx.orgId), isNull(companies.deletedAt)));
+  let locuriRamase = limite.companiiPj === null ? Number.POSITIVE_INFINITY : Math.max(0, limite.companiiPj - firmeCount);
+
+  // Deduplicare după CUI: față de firmele existente și față de rândurile anterioare din fișier.
+  const existente = await ctx.db
+    .select({ cui: companies.cui })
+    .from(companies)
+    .where(and(eq(companies.orgId, ctx.orgId), isNull(companies.deletedAt), isNotNull(companies.cui)));
+  const cuiVazute = new Set(existente.map((r) => normalizeazaCui(r.cui ?? "")).filter(Boolean));
+
   let importate = 0;
   let ignorate = 0;
+  let duplicate = 0;
+  let pesteCota = 0;
+  const randuri: (typeof companies.$inferInsert)[] = [];
   for (const linie of linii.slice(1)) {
     const valori = parseCsvLine(linie);
     const nume = valori[indexNume]?.trim();
@@ -455,9 +485,33 @@ export const importaFirmeCsv = withOrgSession(async (ctx, csvText: string): Prom
         rand[col] = v;
       }
     }
-    await ctx.db.insert(companies).values(rand as typeof companies.$inferInsert);
-    importate++;
+    if (typeof rand.cui === "string" && rand.cui) {
+      const n = normalizeazaCui(rand.cui);
+      if (n && cuiVazute.has(n)) {
+        duplicate++;
+        continue;
+      }
+      if (n) cuiVazute.add(n);
+    }
+    if (locuriRamase <= 0) {
+      pesteCota++;
+      continue;
+    }
+    locuriRamase--;
+    randuri.push(rand as typeof companies.$inferInsert);
   }
 
-  return { error: null, importate, ignorate };
+  // Inserare în loturi (nu rând cu rând).
+  for (let i = 0; i < randuri.length; i += 200) {
+    const lot = randuri.slice(i, i + 200);
+    await ctx.db.insert(companies).values(lot);
+    importate += lot.length;
+  }
+
+  if (importate === 0 && pesteCota > 0 && limite.companiiPj !== null) {
+    return {
+      error: `Ai atins limita de ${limite.companiiPj} companii a pachetului tău — șterge firme existente sau treci la un pachet mai mare.`,
+    };
+  }
+  return { error: null, importate, ignorate, duplicate, pesteCota };
 });
