@@ -22,6 +22,7 @@ import { PresaCard } from "../presa-card";
 import { GrupuriLocaleCard } from "../grupuri-locale-card";
 import { FacturiCard } from "../facturi-card";
 import { TaskCard } from "../task-card";
+import { SponsoriZonaCard, TopCompaniiCard } from "../top-companii-card";
 import {
   listAttachmentsCampanieImpl,
   listCalendarCampanieImpl,
@@ -176,6 +177,10 @@ export default async function PaginaDetaliuPage({ params }: { params: Promise<{ 
           </p>
         </Card>
       </div>
+
+      <TopCompaniiCard orgSlug={orgSlug} pageId={pagina.id} />
+
+      <SponsoriZonaCard orgSlug={orgSlug} pageId={pagina.id} />
 
       <BeneficiarCard
         orgSlug={orgSlug}

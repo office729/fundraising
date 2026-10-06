@@ -3,6 +3,7 @@ import "server-only";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 
 import type { OrgContext } from "@/lib/auth/guard";
+import { sqlArray } from "@/lib/sql-array";
 import { angajati, kpiAtribuiri, kpiDefinitii, kpiProfiluriSezoniere, kpiProfiluriSezoniereItemi, kpiValori, roluri } from "@/lib/db/schema";
 
 // Motorul KPI (Faza C) — calculează valori AUTOMATE pentru KPI-urile legate
@@ -311,7 +312,7 @@ export async function obtineRezumateAngajati(dbCtx: OrgContext["db"], orgId: str
   const valoriRows = (await dbCtx.execute(sql`
     select distinct on (angajat_id, kpi_definitie_id) angajat_id, kpi_definitie_id, valoare
     from kpi_valori
-    where org_id = ${orgId} and angajat_id = any(${angajatIds})
+    where org_id = ${orgId} and angajat_id = any(${sqlArray(angajatIds, "uuid")})
     order by angajat_id, kpi_definitie_id, perioada_start desc
   `)) as unknown as { angajat_id: string; kpi_definitie_id: string; valoare: number }[];
   const valoareMap = new Map(valoriRows.map((r) => [`${r.angajat_id}:${r.kpi_definitie_id}`, r.valoare]));
