@@ -1,6 +1,7 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { getAuthUser } from "@/lib/auth/dal";
+import { getAuthUser, getMyOrgSlug } from "@/lib/auth/dal";
 
 import { StergeContForm } from "./form";
 
@@ -9,9 +10,14 @@ export const metadata = { title: "Contul meu", robots: { index: false } };
 export default async function ContPage() {
   const user = await getAuthUser();
   if (!user?.email) redirect("/login");
+  // Pagina nu face parte din layout-ul organizației: fără acest link, utilizatorul n-ar avea cum să se întoarcă în aplicație.
+  const orgSlug = await getMyOrgSlug();
 
   return (
     <main className="mx-auto max-w-lg px-6 py-16">
+      <Link prefetch={false} href={orgSlug ? `/${orgSlug}/crm` : "/"} className="mb-6 inline-block text-[13px] text-muted transition hover:text-ink">
+        ← {orgSlug ? "Înapoi în aplicație" : "Înapoi la site"}
+      </Link>
       <h1 className="font-display text-2xl font-bold text-ink">Contul meu</h1>
       <p className="mt-1 text-sm text-muted">{user.email}</p>
 
