@@ -91,7 +91,7 @@ export function CalendlyInlineWidget({
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-white px-6 text-center">
           <p className="max-w-sm text-sm leading-relaxed text-neutral-600">
             {laClick.descriere}{" "}
-            <Link href="/cookies" target="_blank" className="font-medium text-brand-green underline">
+            <Link href="/cookies" target="_blank" rel="noopener" className="font-medium text-brand-green underline">
               {laClick.link}
             </Link>
             .

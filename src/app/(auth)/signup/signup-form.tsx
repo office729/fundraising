@@ -52,17 +52,17 @@ function SignupFormInner({ dict }: { dict: Dict }) {
         />
         <span>
           {dict.signup.acceptPre}{" "}
-          <Link href="/termeni" target="_blank" className="font-medium text-brand-green underline">
+          <Link href="/termeni" target="_blank" rel="noopener" className="font-medium text-brand-green underline">
             {dict.signup.acceptTermeni}
           </Link>{" "}
           {dict.signup.acceptSi}{" "}
-          <Link href="/gdpr" target="_blank" className="font-medium text-brand-green underline">
+          <Link href="/gdpr" target="_blank" rel="noopener" className="font-medium text-brand-green underline">
             {dict.signup.acceptGdpr}
           </Link>
           {DPA_ACTIV && !inviteToken && !beneficiarInviteToken && (
             <>
               {dict.signup.acceptDpaPre}{" "}
-              <Link href="/dpa" target="_blank" className="font-medium text-brand-green underline">
+              <Link href="/dpa" target="_blank" rel="noopener" className="font-medium text-brand-green underline">
                 {dict.signup.acceptDpa}
               </Link>
             </>
