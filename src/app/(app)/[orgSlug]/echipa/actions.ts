@@ -9,7 +9,7 @@ import { withOrgAdmin, withOrgSession } from "@/lib/auth/guard";
 import { listMembersImpl } from "../crm/strangere-fonduri/detaliu-queries";
 import { EroareUtilizator, mesajSigur } from "@/lib/erori";
 import { getLimiteleEfective, subCota } from "@/lib/billing/quota";
-import { invites, memberships } from "@/lib/db/schema";
+import { appUsers, invites, memberships } from "@/lib/db/schema";
 import { verificaLimitaRata } from "@/lib/auth/rate-limit";
 import { emailConfigurat, trimiteEmail } from "@/lib/email";
 import { htmlInvitatie, subiectInvitatie } from "@/lib/invitatie-email-template";
@@ -56,6 +56,22 @@ export const createInvite = withOrgAdmin(
     // Tipurile TypeScript nu protejează o Server Action apelată direct: validăm pe server rolul și emailul.
     if (role !== "admin" && role !== "member") throw new EroareUtilizator("Rol invalid.");
     if (typeof email !== "string" || !email.includes("@") || email.length > 320) throw new EroareUtilizator("Email invalid.");
+    const emailNormalizat = email.toLowerCase().trim();
+    // Același email invitat de două ori ar consuma de două ori din cota de utilizatori, iar unul deja membru nu are rost invitat.
+    const [deja] = await ctx.db
+      .select({ id: memberships.userId })
+      .from(memberships)
+      .innerJoin(appUsers, eq(appUsers.id, memberships.userId))
+      .where(and(eq(memberships.orgId, ctx.orgId), sql`lower(${appUsers.email}) = ${emailNormalizat}`))
+      .limit(1);
+    if (deja) throw new EroareUtilizator("Această persoană e deja membră a organizației.");
+    const [invitatieActiva] = await ctx.db
+      .select({ id: invites.id })
+      .from(invites)
+      .where(and(eq(invites.orgId, ctx.orgId), sql`lower(${invites.email}) = ${emailNormalizat}`, isNull(invites.acceptedAt), gt(invites.expiresAt, new Date())))
+      .limit(1);
+    if (invitatieActiva) throw new EroareUtilizator("Există deja o invitație activă pentru acest email — anuleaz-o dacă vrei să trimiți alta.");
+
     // Cota de utilizatori (membri + invitații încă în așteptare, care ar
     // deveni membri dacă sunt acceptate) — vezi lib/billing/quota.ts.
     const limite = getLimiteleEfective(ctx.orgPackage, ctx.orgCustomPlanConfig);

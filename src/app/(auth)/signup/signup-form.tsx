@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useActionState, useState } from "react";
+import { Suspense, useState } from "react";
 
 import { extractPlanQuery, PLAN_QUERY_KEYS } from "@/lib/billing/plan-query";
 import { useAlegerePlan } from "@/lib/billing/use-alegere-plan";
@@ -12,11 +12,12 @@ import type { AUTH_DICT } from "@/lib/i18n/dictionaries/auth";
 
 import { GoogleButton } from "../google-button";
 import { signupAction } from "./actions";
+import { useActionStatePastrat } from "@/lib/use-action-state-pastrat";
 
 type Dict = (typeof AUTH_DICT)[Locale];
 
 function SignupFormInner({ dict }: { dict: Dict }) {
-  const [state, formAction, pending] = useActionState(signupAction, { error: null });
+  const [state, formAction, pending, valori] = useActionStatePastrat(signupAction, { error: null });
   const [accepta, setAccepta] = useState(false);
   const params = useSearchParams();
   const inviteToken = params.get("invite") || "";
@@ -106,6 +107,7 @@ function SignupFormInner({ dict }: { dict: Dict }) {
             {dict.signup.numeOrgLabel}
             <input
               name="orgName"
+              defaultValue={valori.orgName}
               required
               className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink"
               placeholder={dict.signup.numeOrgPlaceholder}
@@ -117,6 +119,7 @@ function SignupFormInner({ dict }: { dict: Dict }) {
           <input
             type="email"
             name="email"
+            defaultValue={valori.email}
             autoComplete="username"
             required
             className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink"

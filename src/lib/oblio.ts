@@ -150,7 +150,9 @@ export async function emiteFacturaAbonament(p: {
   const cif = await cifFirma();
   const [serie, tva] = await Promise.all([serieFacturiImplicita(cif), cotaTvaImplicita(cif)]);
 
-  const azi = new Date().toISOString().slice(0, 10);
+  // Data facturii în ora României: cu UTC, între 00:00 și 03:00 factura primea data zilei anterioare (la început de lună,
+  // exigibilitatea TVA ajungea în perioada precedentă).
+  const azi = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Bucharest" }).format(new Date());
   const data = await apelOblio<{ seriesName: string; number: string; link: string }>("/docs/invoice", {
     method: "POST",
     headers: { "Content-Type": "application/json" },

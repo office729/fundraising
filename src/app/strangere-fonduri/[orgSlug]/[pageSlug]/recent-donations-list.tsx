@@ -23,7 +23,8 @@ function acumRelativ(data: Date, t: (typeof DONATION_DICT)[Locale]["recentList"]
 // Listă compactă, sub butonul de donat — lista completă (cu "Top donatori"
 // separat) rămâne mai jos pe pagină; aici e doar un extras rapid, ca omul să
 // vadă imediat că alții au donat deja, fără să scroleze.
-export function RecentDonationsList({ donatii, locale }: { donatii: Donatie[]; locale: Locale }) {
+// `total`: numărul REAL de donații reușite (lista primește doar ultimele 20; contorul afișat nu trebuie să fie plafonat la 20).
+export function RecentDonationsList({ donatii, locale, total }: { donatii: Donatie[]; locale: Locale; total: number }) {
   const extras = donatii.slice(0, 5);
   const dict = DONATION_DICT[locale];
   const t = dict.recentList;
@@ -40,7 +41,7 @@ export function RecentDonationsList({ donatii, locale }: { donatii: Donatie[]; l
   return (
     <div className="mt-5 border-t border-line pt-4">
       <p className="text-xs font-semibold tracking-wide text-muted-2 uppercase">
-        {donatii.length} {donatii.length === 1 ? dict.campaignPage.donatie : dict.campaignPage.donatii}
+        {total.toLocaleString(dict.numeLocale)} {total === 1 ? dict.campaignPage.donatie : dict.campaignPage.donatii}
       </p>
       <div className="mt-3 flex flex-col gap-3">
         {extras.map((d) => {

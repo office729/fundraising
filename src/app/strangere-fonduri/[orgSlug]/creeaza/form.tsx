@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
 
 import { CAMPAIGN_TEMPLATES, type CampaignPageTemplate } from "@/lib/campaign-templates";
 
 import { creeazaPaginaAction, type CreeazaPaginaState } from "./actions";
+import { useActionStatePastrat } from "@/lib/use-action-state-pastrat";
 
 const INITIAL: CreeazaPaginaState = { error: null };
 
@@ -19,7 +19,7 @@ export function CreeazaPaginaForm({
   templateuriDisponibile: CampaignPageTemplate[];
 }) {
   const action = creeazaPaginaAction.bind(null, orgSlug);
-  const [state, formAction, pending] = useActionState(action, INITIAL);
+  const [state, formAction, pending, valori] = useActionStatePastrat(action, INITIAL);
 
   return (
     <main className="mx-auto min-h-screen max-w-lg px-6 py-16">
@@ -38,6 +38,7 @@ export function CreeazaPaginaForm({
           Numele tău
           <input
             name="numeCreator"
+            defaultValue={valori.numeCreator}
             required
             className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink"
           />
@@ -47,6 +48,7 @@ export function CreeazaPaginaForm({
           <input
             type="email"
             name="emailCreator"
+            defaultValue={valori.emailCreator}
             required
             className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink"
           />
@@ -55,6 +57,7 @@ export function CreeazaPaginaForm({
           Titlul paginii
           <input
             name="titlu"
+            defaultValue={valori.titlu}
             required
             placeholder="ex. Alerg pentru Salvează o Inimă"
             className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink"
@@ -64,6 +67,7 @@ export function CreeazaPaginaForm({
           Povestea ta
           <textarea
             name="poveste"
+            defaultValue={valori.poveste}
             required
             rows={6}
             placeholder="De ce strângi fonduri pentru această cauză?"
@@ -93,6 +97,7 @@ export function CreeazaPaginaForm({
           <input
             type="number"
             name="sumaTinta"
+            defaultValue={valori.sumaTinta}
             min={1}
             step={1}
             placeholder="ex. 2000"

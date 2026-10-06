@@ -2,18 +2,19 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useActionState, useRef, useState, useTransition } from "react";
+import { Suspense, useRef, useState, useTransition } from "react";
 
 import type { AUTH_DICT } from "@/lib/i18n/dictionaries/auth";
 import type { Locale } from "@/lib/i18n/config";
 
 import { GoogleButton } from "../google-button";
 import { loginAction, retrimiteConfirmareAction } from "./actions";
+import { useActionStatePastrat } from "@/lib/use-action-state-pastrat";
 
 type Dict = (typeof AUTH_DICT)[Locale];
 
 function LoginFormInner({ dict }: { dict: Dict }) {
-  const [state, formAction, pending] = useActionState(loginAction, { error: null });
+  const [state, formAction, pending, valori] = useActionStatePastrat(loginAction, { error: null });
   const emailRef = useRef<HTMLInputElement>(null);
   const [retrimis, setRetrimis] = useState<string | null>(null);
   const [retrimitePending, startRetrimite] = useTransition();
@@ -64,6 +65,7 @@ function LoginFormInner({ dict }: { dict: Dict }) {
             ref={emailRef}
             type="email"
             name="email"
+            defaultValue={valori.email}
             autoComplete="username"
             required
             className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink"

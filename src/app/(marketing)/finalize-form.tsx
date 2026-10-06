@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState, useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
 
 import { PLAN_QUERY_KEYS, type PlanQueryValues } from "@/lib/billing/plan-query";
 import { useAlegerePlan } from "@/lib/billing/use-alegere-plan";
 import { COOKIE_ACCEPTARE_TERMENI, DPA_ACTIV } from "@/lib/legal-version";
 
 import { finalizeazaOrganizatiaAction } from "./finalize-actions";
+import { useActionStatePastrat } from "@/lib/use-action-state-pastrat";
 
 export function FinalizeForm({
   email,
@@ -20,7 +21,7 @@ export function FinalizeForm({
   referralCode?: string;
   orgNameInitial?: string;
 }) {
-  const [state, formAction, pending] = useActionState(finalizeazaOrganizatiaAction, { error: null });
+  const [state, formAction, pending, valori] = useActionStatePastrat(finalizeazaOrganizatiaAction, { error: null });
   const alegerePlan = useAlegerePlan(planValues);
   // Pre-bifat dacă acordul a fost deja dat pe pagina de înscriere (cookie
   // scurt purtat peste redirectul Google) — altfel cere bifa aici.
@@ -62,7 +63,7 @@ export function FinalizeForm({
           Numele organizației
           <input
             name="orgName"
-            defaultValue={orgNameInitial}
+            defaultValue={valori.orgName ?? orgNameInitial}
             maxLength={120}
             required
             autoFocus

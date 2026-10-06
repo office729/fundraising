@@ -105,13 +105,19 @@ export async function generateMetadata({
   if (!data) return {};
 
   const { org, pagina } = data;
-  const descriere = pagina.poveste.length > 160 ? `${pagina.poveste.slice(0, 157)}...` : pagina.poveste;
+  // Fără rupturi de rând în descriere (apăreau în previzualizări ca text, nu ca spațiu).
+  const poveste = pagina.poveste.replace(/\s+/g, " ").trim();
+  const descriere = poveste.length > 160 ? `${poveste.slice(0, 157)}...` : poveste;
+  const adresa = `/strangere-fonduri/${orgSlug}/${pageSlug}`;
+  // Pagina care se distribuie pe WhatsApp/Facebook: fără `og:image` linkul apărea fără imagine, deși pagina are una.
+  const imagini = pagina.imagineUrl ? [{ url: pagina.imagineUrl }] : undefined;
 
   return {
     title: `${pagina.titlu} — ${org.name}`,
     description: descriere,
-    openGraph: { title: pagina.titlu, description: descriere, type: "website" },
-    twitter: { card: "summary", title: pagina.titlu, description: descriere },
+    alternates: { canonical: adresa },
+    openGraph: { title: pagina.titlu, description: descriere, type: "website", url: adresa, images: imagini },
+    twitter: { card: imagini ? "summary_large_image" : "summary", title: pagina.titlu, description: descriere, images: imagini?.map((i) => i.url) },
   };
 }
 
@@ -287,7 +293,7 @@ export default async function PaginaStrangereFonduriPage({
                     <p className="text-[13px] leading-relaxed text-muted-2">{t.campaignPage.campanieInchisa}</p>
                   )}
                 </div>
-                <RecentDonationsList donatii={recente} locale={locale} />
+                <RecentDonationsList donatii={recente} locale={locale} total={totalDonatii} />
               </div>
 
               <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-body">{pagina.poveste}</p>

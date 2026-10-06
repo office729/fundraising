@@ -9,6 +9,7 @@ import { creeazaPlataAbonament } from "@/lib/billing/netopia-checkout";
 import { NUME_PACHET_FIX, PACKAGE_LIMITS, type OrgPackage } from "@/lib/billing/packages";
 import { organizations, platformPayments } from "@/lib/db/schema";
 import { cifFolositDeAltaOrganizatie, MESAJ_CIF_FOLOSIT } from "@/lib/cif";
+import { EroareUtilizator } from "@/lib/erori";
 import { cifValidFormat } from "@/lib/iban";
 import { gasesteJudet } from "@/lib/judete";
 
@@ -31,6 +32,8 @@ async function origin(): Promise<string> {
 // niciodată optimist, înainte de confirmare.
 export const startCheckoutAction = withOrgAdmin(
   async (ctx, pkg: Exclude<OrgPackage, "trial" | "custom">) => {
+    // Tipurile TypeScript nu protejează o Server Action apelată direct: cu „trial" sau „custom" prețul ar fi null/0.
+    if (pkg !== "start" && pkg !== "crestere" && pkg !== "impact") throw new EroareUtilizator("Pachet invalid.");
     const url = await creeazaPlataAbonament(ctx, {
       pachet: pkg,
       pretLunar: PACKAGE_LIMITS[pkg].pretLunar!,

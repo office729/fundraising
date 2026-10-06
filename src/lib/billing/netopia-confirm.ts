@@ -210,7 +210,7 @@ export async function proceseazaRezultatPlataNetopia(orderId: string, rezultat: 
       // readucă la "reusita" peste o rambursare deja procesată.
       const actualizat = await tx
         .update(platformPayments)
-        .set({ status: "reusita", paidAt: new Date(), ntpId: rezultat.ntpId, netopiaStatus: rezultat.status })
+        .set({ status: "reusita", paidAt: new Date(), ntpId: sql`coalesce(${rezultat.ntpId ?? null}, ${platformPayments.ntpId})`, netopiaStatus: rezultat.status })
         .where(and(eq(platformPayments.id, plata.id), sql`${platformPayments.status} not in ('reusita', 'rambursata')`))
         .returning({ id: platformPayments.id });
       if (!actualizat[0]) {
@@ -278,7 +278,7 @@ export async function proceseazaRezultatPlataNetopia(orderId: string, rezultat: 
     if (decizie === "esuata") {
       await tx
         .update(platformPayments)
-        .set({ status: "esuata", netopiaStatus: rezultat.status, ntpId: rezultat.ntpId })
+        .set({ status: "esuata", netopiaStatus: rezultat.status, ntpId: sql`coalesce(${rezultat.ntpId ?? null}, ${platformPayments.ntpId})` })
         .where(and(eq(platformPayments.id, plata.id), eq(platformPayments.status, "in_asteptare")));
 
       // Doar reînnoirile automate țin evidența eșecurilor consecutive — o plată
@@ -347,7 +347,7 @@ export async function proceseazaRezultatPlataNetopia(orderId: string, rezultat: 
 
     // Încă în curs (autentificare 3DS, verificare antifraudă) — doar reținem
     // starea; va veni o confirmare finală.
-    await tx.update(platformPayments).set({ netopiaStatus: rezultat.status, ntpId: rezultat.ntpId }).where(eq(platformPayments.id, plata.id));
+    await tx.update(platformPayments).set({ netopiaStatus: rezultat.status, ntpId: sql`coalesce(${rezultat.ntpId ?? null}, ${platformPayments.ntpId})` }).where(eq(platformPayments.id, plata.id));
     return { actiune: "in_curs" };
   });
 

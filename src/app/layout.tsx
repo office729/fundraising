@@ -30,6 +30,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  // Baza pentru adresele relative din metadate (canonical, og:image) — fără ea rămâneau relative sau lipseau.
+  metadataBase: new URL("https://alexandrit.ro"),
   // Fiecare pagină își pune titlul propriu (lib/page-titles.ts); sufixul e adăugat aici.
   title: { default: "Alexandrit", template: `%s${SUFIX_TITLU}` },
   description: "Instrumente de fundraising pentru ONG-uri din România",
