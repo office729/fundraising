@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { requireOrgAccess } from "@/lib/auth/guard";
+import { titluAbsolut } from "@/lib/page-titles";
 import { orgHasToolAccess } from "@/lib/billing/packages";
 import { ONE_PAGER_DESIGN_RECOMANDAT } from "@/lib/design-template-recommendations";
 import { ONE_PAGER_GENERATOR_HTML } from "@/modules/crm/one-pager-generator/one-pager-generator-html";
@@ -8,6 +9,10 @@ import { StandaloneToolFrame } from "@/modules/crm/shared/standalone-tool-frame"
 import { ToolLocked } from "@/modules/crm/shared/tool-locked";
 
 const TITLE = "Generator one-pager";
+
+export async function generateMetadata() {
+  return titluAbsolut("crmOnePager");
+}
 
 export default async function OnePagerGeneratorPage({ params }: { params: Promise<{ orgSlug: string }> }) {
   const { orgSlug } = await params;

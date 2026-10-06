@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { requireOrgAccess } from "@/lib/auth/guard";
+import { titluAbsolut } from "@/lib/page-titles";
 import { orgHasToolAccess } from "@/lib/billing/packages";
 import { NEWSLETTER_PJ_DESIGN_RECOMANDAT } from "@/lib/design-template-recommendations";
 import { NEWSLETTER_PJ_HTML } from "@/modules/crm/newsletter-pj/newsletter-pj-html";
@@ -8,6 +9,10 @@ import { StandaloneToolFrame } from "@/modules/crm/shared/standalone-tool-frame"
 import { ToolLocked } from "@/modules/crm/shared/tool-locked";
 
 const TITLE = "Generator newsletter — persoane juridice";
+
+export async function generateMetadata() {
+  return titluAbsolut("crmNewsletterPj");
+}
 
 export default async function NewsletterPjPage({ params }: { params: Promise<{ orgSlug: string }> }) {
   const { orgSlug } = await params;

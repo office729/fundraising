@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { requireOrgAccess } from "@/lib/auth/guard";
+import { titluAbsolut } from "@/lib/page-titles";
 import { orgHasToolAccess } from "@/lib/billing/packages";
 import { NEWSLETTER_PF_DESIGN_RECOMANDAT } from "@/lib/design-template-recommendations";
 import { NEWSLETTER_PF_HTML } from "@/modules/crm/newsletter-pf/newsletter-pf-html";
@@ -8,6 +9,10 @@ import { StandaloneToolFrame } from "@/modules/crm/shared/standalone-tool-frame"
 import { ToolLocked } from "@/modules/crm/shared/tool-locked";
 
 const TITLE = "Generator newsletter — persoane fizice";
+
+export async function generateMetadata() {
+  return titluAbsolut("crmNewsletterPf");
+}
 
 export default async function NewsletterPfPage({ params }: { params: Promise<{ orgSlug: string }> }) {
   const { orgSlug } = await params;
