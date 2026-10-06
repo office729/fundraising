@@ -9,8 +9,9 @@ import { celMaiRecentBilant, verificaStareFiscala } from "@/lib/anaf";
 import { getLimiteleEfective, subCota } from "@/lib/billing/quota";
 import { ETAPE_PATH_KEYS, bifeDinEtapa, etapaCurenta } from "@/lib/etape-companie";
 import { amprentePersoana } from "@/lib/gdpr-persoane";
+import { normalizeazaTelefonE164 } from "@/lib/telefon";
 import { urlWebSigur } from "@/lib/validation";
-import { companies, companyNotite, companySponsorizari, companyStageLog, contacts } from "@/lib/db/schema";
+import { apeluri, companies, companyNotite, companySponsorizari, companyStageLog, contacts } from "@/lib/db/schema";
 
 export type ActionState = { error: string | null };
 
@@ -211,6 +212,7 @@ export type PersoanaDeAprobat = {
   emailStare: "verificat" | "neverificat" | "invalid" | "nesigur" | null;
   telefon: string | null;
   linkedin: string | null;
+  adaugatLa?: string; // ISO — după 60 de zile fără aprobare, persoana se șterge (cron gdpr-persoane)
 };
 
 async function citesteExtra(ctx: OrgContext, companyId: string) {
@@ -286,13 +288,20 @@ export const seteazaRezultat = withOrgSession(async (ctx, companyId: string, rez
 });
 export const stergeContact = withOrgSession(async (ctx, id: string): Promise<ActionState> => {
   const [contact] = await ctx.db
-    .select({ companyId: contacts.companyId, nume: contacts.nume, linkedin: contacts.linkedin })
+    .select({ companyId: contacts.companyId, nume: contacts.nume, linkedin: contacts.linkedin, telefon: contacts.telefon })
     .from(contacts)
     .where(and(eq(contacts.id, id), eq(contacts.orgId, ctx.orgId)))
     .limit(1);
   if (!contact) return { error: null };
   await ctx.db.delete(contacts).where(and(eq(contacts.id, id), eq(contacts.orgId, ctx.orgId)));
-  // GDPR: persoana ștearsă intră în lista „nu mai căuta” doar ca amprentă (hash), nu cu numele.
+  // GDPR: ștergerea înseamnă ștergere efectivă — și din jurnalul de apeluri, unde rămăsese numele / telefonul ca „snapshot”.
+  // Apelurile rămân (pentru statistici / KPI), dar fără datele persoanei.
+  if (contact.telefon) {
+    await ctx.db
+      .update(apeluri)
+      .set({ catreNume: null, catreTelefon: "[șters]" })
+      .where(and(eq(apeluri.orgId, ctx.orgId), eq(apeluri.companyId, contact.companyId), eq(apeluri.catreTelefon, normalizeazaTelefonE164(contact.telefon) ?? contact.telefon)));
+  }  // GDPR: persoana ștearsă intră în lista „nu mai căuta” doar ca amprentă (hash), nu cu numele.
   const amprente = amprentePersoana(ctx.orgId, contact.companyId, contact.nume, contact.linkedin);
   await ctx.db
     .update(companies)

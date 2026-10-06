@@ -127,3 +127,50 @@ export const respingePersoane = withOrgSession(async (ctx, companyId: string, id
   await scoateDinDeAprobat(ctx, companyId, set, amprente);
   return { error: null, respinse: deRespins.length };
 });
+
+// Acordul unei persoane de contact (da / nu / necunoscut). „Sursa” = DOAR dovada acordului (cum și când l-a dat),
+// nu proveniența datelor. Un contact cu acord „nu” e ignorat de „Pasul următor” și nu mai e contactat sau îmbogățit automat.
+export const seteazaConsimtamantContact = withOrgSession(
+  async (ctx, contactId: string, status: "da" | "nu" | "necunoscut", dovada: string | null): Promise<ActionState> => {
+    if (status !== "da" && status !== "nu" && status !== "necunoscut") return { error: "Stare necunoscută." };
+    if (status === "da" && !dovada?.trim()) return { error: "Pentru „da” notează dovada acordului (ex. a acceptat pe telefon, 12.10)." };
+    const r = await ctx.db
+      .update(contacts)
+      .set({
+        consentStatus: status,
+        consentAt: status === "necunoscut" ? null : new Date(),
+        consentBy: status === "necunoscut" ? null : ctx.userId,
+        consentSource: status === "da" ? dovada!.trim().slice(0, 300) : null,
+      })
+      .where(and(eq(contacts.id, contactId), eq(contacts.orgId, ctx.orgId)))
+      .returning({ id: contacts.id });
+    return r[0] ? { error: null } : { error: "Contactul nu a fost găsit." };
+  },
+);
+// Punct unic prin care persoanele GĂSITE (de un import / o integrare) ajung în lista „De aprobat” a firmei — niciodată direct în
+// contacte. Cine e pe lista „nu mai căuta” (amprentă a numelui sau a profilului) nu mai e adus înapoi.
+export const propunePersoane = withOrgSession(
+  async (ctx, companyId: string, persoane: Omit<PersoanaDeAprobat, "id" | "adaugatLa">[]): Promise<ActionState & { adaugate?: number; excluse?: number }> => {
+    const firma = await incarca(ctx, companyId);
+    if (!firma) return { error: "Firma nu a fost găsită." };
+    const excluse = new Set(firma.extra.nuMaiCauta ?? []);
+    const curente = firma.extra.deAprobat ?? [];
+    const noi: PersoanaDeAprobat[] = [];
+    let nrExcluse = 0;
+    for (const p of persoane.slice(0, 100)) {
+      if (!p.nume?.trim()) continue;
+      if (amprentePersoana(ctx.orgId, companyId, p.nume, p.linkedin).some((h) => excluse.has(h))) {
+        nrExcluse++;
+        continue;
+      }
+      noi.push({ ...p, nume: p.nume.trim(), id: randomUUID(), adaugatLa: new Date().toISOString() });
+    }
+    if (noi.length) {
+      await ctx.db
+        .update(companies)
+        .set({ extra: sql`coalesce(${companies.extra}, '{}'::jsonb) || ${JSON.stringify({ deAprobat: [...curente, ...noi] })}::text::jsonb` })
+        .where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId)));
+    }
+    return { error: null, adaugate: noi.length, excluse: nrExcluse };
+  },
+);

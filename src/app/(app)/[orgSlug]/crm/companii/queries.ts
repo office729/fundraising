@@ -5,6 +5,7 @@ import { appUsers, companies, companyNotite, companySponsorizari, companyStageLo
 
 import { citesteSegment, hexFaraCratime, LUNGIME_SUFIX, segmentFirma, slugFirma } from "@/lib/id-scurt";
 import { cifreCui, patternLike, sqlFaraDiacritice } from "@/lib/cautare";
+import { sectiuneSigura } from "@/lib/sectiune-sigura";
 import { calculeazaInterval, type FiltruCompanii, RECENTE_LIMIT, TOP_LIMIT } from "./lib/filters";
 
 const PAGE_SIZE = 25;
@@ -207,22 +208,19 @@ export const getCompanieDetaliu = withOrgSession(async (ctx, segment: string) =>
   // Adresa canonică: „denumire-<8 hex>”; dacă alt rând are aceeași denumire și același prefix, se folosește UUID-ul complet.
   const canonic = segmentFirma(companie.nume, id);
   const prefix8 = hexFaraCratime(id).slice(0, LUNGIME_SUFIX);
-  const aceleasiPrefix = await ctx.db
-    .select({ nume: companies.nume })
-    .from(companies)
-    .where(and(eq(companies.orgId, ctx.orgId), sql`replace(${companies.id}::text, '-', '') like ${prefix8 + "%"}`));
-  const segmentCanonic = aceleasiPrefix.filter((r) => slugFirma(r.nume) === slugFirma(companie.nume)).length > 1 ? id : canonic;
 
-
-  // Bifează vizita — trebuie așteptat, nu fire-and-forget: rulează în aceeași
-  // tranzacție (withOrgSession) care se închide imediat ce funcția revine.
-  // Cel mult o dată la 5 minute: altfel fiecare deschidere a paginii producea o scriere (și WAL) inutilă.
-  await ctx.db
-    .update(companies)
-    .set({ lastViewedAt: new Date() })
-    .where(and(eq(companies.id, id), sql`(${companies.lastViewedAt} is null or ${companies.lastViewedAt} < now() - interval '5 minutes')`));
-
-  const [sponsorizari, notite, contacteFirma, responsabili, jurnalEtape] = await Promise.all([
+  // Citirile principale ale paginii rulează TOATE împreună (aceeași conexiune, pipeline) — înainte erau două așteptări
+  // secvențiale înaintea lor. Bifarea vizitei trebuie așteptată (nu fire-and-forget): tranzacția withOrgSession se închide
+  // imediat ce funcția revine. Cel mult o dată la 5 minute, ca să nu scrie (și WAL) la fiecare deschidere.
+  const [aceleasiPrefix, , sponsorizari, notite, contacteFirma] = await Promise.all([
+    ctx.db
+      .select({ nume: companies.nume })
+      .from(companies)
+      .where(and(eq(companies.orgId, ctx.orgId), sql`replace(${companies.id}::text, '-', '') like ${prefix8 + "%"}`)),
+    ctx.db
+      .update(companies)
+      .set({ lastViewedAt: new Date() })
+      .where(and(eq(companies.id, id), sql`(${companies.lastViewedAt} is null or ${companies.lastViewedAt} < now() - interval '5 minutes')`)),
     ctx.db.select().from(companySponsorizari).where(eq(companySponsorizari.companyId, id)).orderBy(desc(companySponsorizari.data)),
     ctx.db
       .select({ id: companyNotite.id, text: companyNotite.text, createdAt: companyNotite.createdAt, editatLa: companyNotite.editatLa, autorNume: appUsers.name })
@@ -231,28 +229,42 @@ export const getCompanieDetaliu = withOrgSession(async (ctx, segment: string) =>
       .where(eq(companyNotite.companyId, id))
       .orderBy(desc(companyNotite.createdAt)),
     ctx.db.select().from(contacts).where(eq(contacts.companyId, id)).orderBy(desc(contacts.createdAt)),
-    ctx.db
-      .select({ id: appUsers.id, name: appUsers.name })
-      .from(memberships)
-      .innerJoin(appUsers, eq(appUsers.id, memberships.userId))
-      .where(eq(memberships.orgId, ctx.orgId)),
-    ctx.db
-      .select({
-        id: companyStageLog.id,
-        fromStage: companyStageLog.fromStage,
-        toStage: companyStageLog.toStage,
-        fromStatus: companyStageLog.fromStatus,
-        toStatus: companyStageLog.toStatus,
-        createdAt: companyStageLog.createdAt,
-        autor: appUsers.name,
-      })
-      .from(companyStageLog)
-      .leftJoin(appUsers, eq(appUsers.id, companyStageLog.byUserId))
-      .where(eq(companyStageLog.companyId, id))
-      .orderBy(desc(companyStageLog.createdAt))
-      .limit(100),
   ]);
+  const segmentCanonic = aceleasiPrefix.filter((r) => slugFirma(r.nume) === slugFirma(companie.nume)).length > 1 ? id : canonic;
 
+  // Secțiuni secundare (lista de responsabili, jurnalul de etape): dacă pică, pagina se afișează fără ele, iar eroarea se jurnalizează.
+  const responsabili = await sectiuneSigura(
+    ctx,
+    "companie.responsabili",
+    (db) =>
+      db
+        .select({ id: appUsers.id, name: appUsers.name })
+        .from(memberships)
+        .innerJoin(appUsers, eq(appUsers.id, memberships.userId))
+        .where(eq(memberships.orgId, ctx.orgId)),
+    [],
+  );
+  const jurnalEtape = await sectiuneSigura(
+    ctx,
+    "companie.jurnalEtape",
+    (db) =>
+      db
+        .select({
+          id: companyStageLog.id,
+          fromStage: companyStageLog.fromStage,
+          toStage: companyStageLog.toStage,
+          fromStatus: companyStageLog.fromStatus,
+          toStatus: companyStageLog.toStatus,
+          createdAt: companyStageLog.createdAt,
+          autor: appUsers.name,
+        })
+        .from(companyStageLog)
+        .leftJoin(appUsers, eq(appUsers.id, companyStageLog.byUserId))
+        .where(eq(companyStageLog.companyId, id))
+        .orderBy(desc(companyStageLog.createdAt))
+        .limit(100),
+    [],
+  );
   return { companie, sponsorizari, notite, contacte: contacteFirma, responsabili, jurnalEtape, segmentCanonic, orgNume: ctx.orgName, userEmail: ctx.userEmail };
 });
 

@@ -14,6 +14,7 @@ import { COMPANII_DICT } from "@/lib/i18n/dictionaries/companii";
 import { urlWebSigur } from "@/lib/validation";
 import { adaugaContact, comutaContactCheie, stergeContact, type PersoanaDeAprobat } from "../actions";
 import { DeAprobat, InformareGdpr, PasulUrmator, PlanB, type FirmaGhid } from "./contacte-ghid";
+import { seteazaConsimtamantContact } from "./fisa-actions";
 import { NegasitMarcaj } from "./pagini-sociale";
 
 type Contact = {
@@ -82,6 +83,16 @@ export function ContactePanel({
     router.refresh();
   }
 
+  async function onConsimtamant(id: string, status: "da" | "nu" | "necunoscut") {
+    let dovada: string | null = null;
+    if (status === "da") {
+      dovada = window.prompt("Dovada acordului (cum și când l-a dat?), ex. a acceptat pe telefon, 12.10");
+      if (!dovada || !dovada.trim()) return;
+    }
+    const r = await seteazaConsimtamantContact(orgSlug, id, status, dovada);
+    if (r.error) window.alert(r.error);
+    router.refresh();
+  }
   const adaugaAdministrator = () => deschide({ nume: firma.administrator ?? "", rol: "Administrator", dept: "Conducere" });
   const actiune = "flex min-h-8 min-w-8 items-center justify-center rounded-[var(--ci-radius-btn)] text-[var(--ci-text-faint)] hover:bg-[var(--ci-surface-2)]";
 
@@ -139,7 +150,7 @@ export function ContactePanel({
 
               {/* Acțiunile stau sub nume, pe rând întreg — pe telefon nu mai împing numele în afara chenarului. */}
               <div className="mt-2 flex flex-wrap items-center gap-2 pl-10">
-                {c.telefon && (
+                {c.telefon && c.consentStatus !== "nu" && (
                   <a
                     href={`tel:${c.telefon.replace(/[^\d+]/g, "")}`}
                     className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-[var(--ci-radius-btn)] bg-[var(--ci-green)] px-4 text-[14px] font-semibold text-white sm:hidden"
@@ -147,7 +158,7 @@ export function ContactePanel({
                     <Phone className="h-4 w-4" /> Sună
                   </a>
                 )}
-                {c.telefon && (
+                {c.telefon && c.consentStatus !== "nu" && (
                   <span className="hidden sm:inline-flex">
                     <CallButton telefon={c.telefon} nume={c.nume} companyId={companyId} />
                   </span>
@@ -157,7 +168,18 @@ export function ContactePanel({
                     <ExternalLink className="h-3.5 w-3.5" /> {dict.linkedin}
                   </a>
                 )}
-                <button type="button" onClick={() => onSterge(c.id)} disabled={sterge === c.id} title={dict.stergeContactTitle} className={`${actiune} ml-auto hover:text-[var(--ci-red)] disabled:opacity-50`}>
+                <label className="flex min-h-8 items-center gap-1.5 text-[12px] text-[var(--ci-text-muted)]">
+                  Acord
+                  <select
+                    value={c.consentStatus ?? "necunoscut"}
+                    onChange={(e) => onConsimtamant(c.id, e.target.value as "da" | "nu" | "necunoscut")}
+                    className="h-8 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-1.5 text-[12px] text-[var(--ci-text)]"
+                  >
+                    <option value="necunoscut">necunoscut</option>
+                    <option value="da">da</option>
+                    <option value="nu">nu (a refuzat)</option>
+                  </select>
+                </label>                <button type="button" onClick={() => onSterge(c.id)} disabled={sterge === c.id} title={dict.stergeContactTitle} className={`${actiune} ml-auto hover:text-[var(--ci-red)] disabled:opacity-50`}>
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>

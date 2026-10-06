@@ -90,11 +90,13 @@ export const getTopCompaniiCaz = withOrgAdmin(async (ctx, pageId: string): Promi
   const alese = [...marcate, ...nemarcate].sort((a, b) => Number(b.ca ?? -1) - Number(a.ca ?? -1) || a.nume.localeCompare(b.nume, "ro"));
 
   // Avertizare: firma e deja lucrată la ALT caz.
-  const altele = await ctx.db
-    .select({ path: crmKv.path, data: crmKv.data })
-    .from(crmKv)
-    .where(and(eq(crmKv.orgId, ctx.orgId), like(crmKv.path, "caz_top:%")));
-  const titluri = await ctx.db.select({ id: fundraisingPages.id, titlu: fundraisingPages.titlu }).from(fundraisingPages).where(eq(fundraisingPages.orgId, ctx.orgId));
+  const [altele, titluri] = await Promise.all([
+    ctx.db
+      .select({ path: crmKv.path, data: crmKv.data })
+      .from(crmKv)
+      .where(and(eq(crmKv.orgId, ctx.orgId), like(crmKv.path, "caz_top:%"))),
+    ctx.db.select({ id: fundraisingPages.id, titlu: fundraisingPages.titlu }).from(fundraisingPages).where(eq(fundraisingPages.orgId, ctx.orgId)),
+  ]);
   const titluDupaId = new Map(titluri.map((t) => [t.id, t.titlu]));
   const altCaz = new Map<string, string>();
   for (const o of altele) {

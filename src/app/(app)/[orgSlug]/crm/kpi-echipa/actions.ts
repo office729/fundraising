@@ -40,7 +40,7 @@ async function scrieKv(db: OrgContext["db"], orgId: string, path: string, data: 
 const DATA_ISO = /^\d{4}-\d{2}-\d{2}$/;
 const ISO_LOCAL = (d: Date) => d.toLocaleDateString("en-CA");
 
-// Cele 6 semnale automate, din activitatea reală din CRM — o singură interogare pivotată pe (utilizator, metrică).
+// Cele 7 semnale automate, din activitatea reală din CRM — o singură interogare pivotată pe (utilizator, metrică).
 // Fiecare rând-sursă are autorul + momentul; `org` e filtrat pe fiecare tabel (defensiv, pe lângă RLS).
 function semnale(orgId: string) {
   return sql`
@@ -51,6 +51,15 @@ function semnale(orgId: string) {
       union all select created_by, 'sponsorizari', created_at from company_sponsorizari where org_id = ${orgId} and created_by is not null
       union all select created_by, 'notite', created_at from company_notite where org_id = ${orgId} and created_by is not null
       union all select by_user_id, 'etape', created_at from company_stage_log where org_id = ${orgId} and by_user_id is not null
+      -- „Firme cu LinkedIn / Facebook adăugat”: firme DISTINCTE la care s-a adăugat un link NOU (companies.extra, vezi fisa-actions.ts).
+      -- Dacă același om a adăugat ambele linkuri în aceeași zi, firma se numără o singură dată.
+      union all select (extra->'linkedinAdaugat'->>'de')::uuid, 'linkuri', (extra->'linkedinAdaugat'->>'la')::timestamptz
+        from companies where org_id = ${orgId} and deleted_at is null and jsonb_exists(coalesce(extra, '{}'::jsonb), 'linkedinAdaugat')
+      union all select (extra->'facebookAdaugat'->>'de')::uuid, 'linkuri', (extra->'facebookAdaugat'->>'la')::timestamptz
+        from companies where org_id = ${orgId} and deleted_at is null and jsonb_exists(coalesce(extra, '{}'::jsonb), 'facebookAdaugat')
+          and not (jsonb_exists(extra, 'linkedinAdaugat')
+            and extra->'linkedinAdaugat'->>'de' = extra->'facebookAdaugat'->>'de'
+            and ((extra->'linkedinAdaugat'->>'la')::timestamptz at time zone 'Europe/Bucharest')::date = ((extra->'facebookAdaugat'->>'la')::timestamptz at time zone 'Europe/Bucharest')::date)
     ) s`;
 }
 

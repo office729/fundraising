@@ -3,7 +3,7 @@
 // CRM-ului Salvează o Inimă, generalizat pentru orice organizație: metricile automate
 // vin din activitatea reală din CRM (cine a făcut ce), cele manuale au contor „+1".
 
-export const KPI_METRICE = ["companii", "contacte", "apeluri", "sponsorizari", "notite", "etape", "emailuri", "intalniri"] as const;
+export const KPI_METRICE = ["companii", "contacte", "apeluri", "sponsorizari", "notite", "etape", "linkuri", "emailuri", "intalniri"] as const;
 export type KpiMetric = (typeof KPI_METRICE)[number];
 
 export const KPI_LABEL: Record<KpiMetric, string> = {
@@ -13,6 +13,7 @@ export const KPI_LABEL: Record<KpiMetric, string> = {
   sponsorizari: "Sponsorizări înregistrate",
   notite: "Notițe",
   etape: "Mutări în pipeline",
+  linkuri: "Firme cu LinkedIn / Facebook adăugat",
   emailuri: "Emailuri trimise",
   intalniri: "Întâlniri",
 };

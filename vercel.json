@@ -8,6 +8,10 @@
     {
       "path": "/api/cron/netopia-reinnoire",
       "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/cron/gdpr-persoane",
+      "schedule": "30 4 * * *"
     }
   ],
   "regions": [
