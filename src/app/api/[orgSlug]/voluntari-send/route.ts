@@ -4,8 +4,10 @@ import { NextResponse } from "next/server";
 import { withOrgFaze, type OrgContext } from "@/lib/auth/guard";
 import { esteAbonamentPlatit, isPlatformAdmin } from "@/lib/billing/trial";
 import { verificaLimitaRata } from "@/lib/auth/rate-limit";
-import { crmKv } from "@/lib/db/schema";
+import { crmKv, emailSuppression } from "@/lib/db/schema";
+import { hashSuprimare, linkDezabonare } from "@/lib/dezabonare";
 import { emailConfigurat, trimiteEmail, trimiteEmailuriInLot } from "@/lib/email";
+import { anteteDezabonare } from "@/lib/formular230-email-template";
 import { escHtml } from "@/lib/html-escape";
 import { raporteazaEroare } from "@/lib/monitoring";
 
@@ -55,7 +57,7 @@ const MAX_EMAILURI_ZI = 1000;
 
 type Ctx = { params: Promise<{ orgSlug: string }> };
 
-type Pregatit = { destinatari: { email: string; nume: string }[]; subiect: string; html: string; orgId: string };
+type Pregatit = { destinatari: { email: string; nume: string }[]; subiect: string; html: string; orgId: string; orgName: string; masa: boolean };
 
 // Faza 1 (în tranzacție, scurtă): validări, roster, limite. Întoarce un răspuns gata (eroare) SAU datele de trimis.
 async function pregateste(ctx: OrgContext, req: Request): Promise<NextResponse | Pregatit> {
@@ -130,6 +132,12 @@ async function pregateste(ctx: OrgContext, req: Request): Promise<NextResponse |
   if (body.test) {
     destinatari = [{ email: ctx.userEmail, nume: ctx.userName || ctx.userEmail }];
   }
+  // Cine s-a dezabonat dintr-un mesaj anterior (lista de suprimare a organizației) nu mai primește mesaje în masă.
+  const masa = !body.test && destinatari.length > 1;
+  if (masa) {
+    const suprimati = new Set((await ctx.db.select({ h: emailSuppression.emailHash }).from(emailSuppression).where(eq(emailSuppression.orgId, ctx.orgId))).map((r) => r.h));
+    destinatari = destinatari.filter((d) => !suprimati.has(hashSuprimare(ctx.orgId, d.email)));
+  }
   if (!destinatari.length) {
     return NextResponse.json({ ok: false, error: "Niciun destinatar valid pentru email." });
   }
@@ -147,21 +155,28 @@ async function pregateste(ctx: OrgContext, req: Request): Promise<NextResponse |
     return NextResponse.json({ ok: false, error: `Ai atins limita zilnică de ${MAX_EMAILURI_ZI} emailuri către voluntari — încearcă mâine.` }, { status: 429 });
   }
 
-  return { destinatari, subiect, html: buildHtml(continut, semnatura), orgId: ctx.orgId };
+  return { destinatari, subiect, html: buildHtml(continut, semnatura), orgId: ctx.orgId, orgName: ctx.orgName, masa };
 }
 
 // Faza 2: trimiterea propriu-zisă (până la 500 de emailuri, secvențial) — FĂRĂ conexiune DB deschisă. Înainte, toată
 // trimiterea rula în tranzacția acțiunii și ținea o conexiune din pool minute în șir.
-async function trimite({ destinatari, subiect, html, orgId }: Pregatit): Promise<NextResponse> {
+async function trimite({ destinatari, subiect, html, orgId, orgName, masa }: Pregatit): Promise<NextResponse> {
   try {
     if (destinatari.length === 1) {
       await trimiteEmail({ to: destinatari[0].email, subiect, html });
       return NextResponse.json({ ok: true, total: 1 });
     }
+    // Mesajele în masă pleacă de la expeditorul comun al platformei: fiecare are link de dezabonare (semnat, per
+    // destinatar) și antetele List-Unsubscribe (RFC 8058) — cum cer textele noastre și legea (comunicări comerciale).
+    const baza = (process.env.NEXT_PUBLIC_SITE_URL || "https://alexandrit.ro").replace(/\/$/, "");
     const { trimise } = await trimiteEmailuriInLot({
       destinatari,
       subiect: () => subiect,
-      html: () => html,
+      html: masa
+        ? (d) =>
+            `${html}<p style="margin-top:24px;font-size:12px;color:#94a3b8;">Primești acest mesaj de la ${escHtml(orgName)}. <a href="${linkDezabonare(baza, orgId, d.email)}" style="color:#94a3b8;">Nu mai vreau emailuri de la această organizație</a>.</p>`
+        : () => html,
+      ...(masa ? { headers: (d: { email: string }) => anteteDezabonare(linkDezabonare(baza, orgId, d.email)) } : {}),
     });
     if (!trimise) return NextResponse.json({ ok: false, error: "Trimiterea a eșuat." });
     return NextResponse.json({ ok: true, total: trimise });

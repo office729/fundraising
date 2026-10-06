@@ -49,6 +49,7 @@ async function obtineToken(): Promise<string> {
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({ client_id: email, client_secret: secret }).toString(),
     cache: "no-store",
+    signal: AbortSignal.timeout(20_000),
   });
   const json = (await res.json().catch(() => null)) as { access_token?: string; expires_in?: string } | null;
   if (!res.ok || !json?.access_token) {
@@ -65,6 +66,7 @@ async function apelOblio<T>(cale: string, init?: RequestInit): Promise<T> {
     ...init,
     headers: { ...(init?.headers ?? {}), Authorization: `Bearer ${token}` },
     cache: "no-store",
+    signal: AbortSignal.timeout(20_000),
   });
   const json = (await res.json().catch(() => null)) as { status?: number; statusMessage?: string; data?: T } | null;
   if (!res.ok || json?.status !== 200) {

@@ -14,6 +14,41 @@ type GtagWindow = Window & {
   __faGaInit?: boolean;
 };
 
+// Pagini cu date personale sau cu tokenuri în URL (adresa de email din linkul de dezabonare, formularul 230, donațiile,
+// invitațiile, rezultatul plății): analiza NU rulează deloc aici, chiar dacă vizitatorul a acceptat statisticile —
+// notele de informare ale donatorilor nu menționează Google și URL-ul ar ajunge la Google ca `page_location`.
+const PRIMUL_SEGMENT_EXCLUS = new Set([
+  "f230",
+  "strangere-fonduri",
+  "dezabonare",
+  "invite",
+  "invite-beneficiar",
+  "auth",
+  "reset-password",
+  "beneficiar",
+  "s",
+]);
+
+export function esteCaleExclusaDinAnaliza(pathname: string): boolean {
+  return PRIMUL_SEGMENT_EXCLUS.has(pathname.split("/")[1] ?? "");
+}
+
+// Identificatori din adresele dashboard-ului (UUID-uri de donatori/companii, sufixul de 8 caractere din „denumire-c2607e5a")
+// nu trebuie să ajungă la Google: se înlocuiesc cu „:id" în `page_path`.
+export function caleFaraIdentificatori(pathname: string): string {
+  return pathname
+    .split("/")
+    .map((seg) => (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(seg) || /-[0-9a-f]{8}$/i.test(seg) ? ":id" : seg))
+    .join("/");
+}
+
+// Google respectă `window['ga-disable-<ID>']` la FIECARE cerere — așa oprim și page_view-urile automate la navigări
+// din aplicație (fără reîncărcare) spre o cale exclusă, și le reactivăm la întoarcerea pe una permisă.
+export function aplicaExcluderea(pathname: string) {
+  if (typeof window === "undefined") return;
+  (window as unknown as Record<string, unknown>)[`ga-disable-${GA_ID}`] = esteCaleExclusaDinAnaliza(pathname);
+}
+
 export function esteAcordDat(): boolean {
   try {
     return window.localStorage.getItem(CONSENT_KEY) === "granted";
@@ -26,6 +61,7 @@ export function esteAcordDat(): boolean {
 // această ordine, înaintea oricărui eveniment) și adaugă scriptul Google.
 export function ensureAnalyticsInit() {
   if (typeof window === "undefined") return;
+  if (esteCaleExclusaDinAnaliza(window.location.pathname)) return; // nu încărcăm scriptul Google pe pagini cu date personale
   const w = window as GtagWindow;
   if (w.__faGaInit) return;
   w.__faGaInit = true;
@@ -47,6 +83,7 @@ export function ensureAnalyticsInit() {
 
 export function trackEvent(name: string, params: Record<string, unknown> = {}) {
   if (typeof window === "undefined" || !esteAcordDat()) return;
+  if (esteCaleExclusaDinAnaliza(window.location.pathname)) return;
   ensureAnalyticsInit();
   (window as GtagWindow).gtag?.("event", name, params);
 }
@@ -65,5 +102,5 @@ export function trackEvent(name: string, params: Record<string, unknown> = {}) {
 // ep.org_slug) și devin coloane filtrabile în rapoarte după ce sunt
 // înregistrate ca dimensiuni personalizate: Admin → Definiții dimensiuni.
 export function trimitePaginaContext(group: "public" | "dashboard", orgSlug?: string, pagePath?: string) {
-  trackEvent("page_context", { content_group: group, org_slug: orgSlug, page_path: pagePath });
+  trackEvent("page_context", { content_group: group, org_slug: orgSlug, page_path: pagePath ? caleFaraIdentificatori(pagePath) : undefined });
 }

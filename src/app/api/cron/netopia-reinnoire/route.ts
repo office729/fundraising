@@ -66,7 +66,7 @@ const RETENTIE_PRIMA_AVERTIZARE = 60;
 const RETENTIE_A_DOUA_AVERTIZARE = 83;
 
 async function avertizariRetentie(): Promise<{ avertizate: number; peste_termen: string[] }> {
-  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://fundraising-academy-one.vercel.app").replace(/\/$/, "");
+  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://alexandrit.ro").replace(/\/$/, "");
   const { orgs, proprietari } = await db.transaction(async (tx) => {
     await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
     const orgs = await tx
@@ -137,16 +137,13 @@ function formatData(d: Date): string {
 // organizație e procesată separat, cu contextul de încredere app.public_lookup,
 // la fel ca celelalte cron-uri/webhook-uri.
 
-export async function GET(req: Request) {
-  if (!process.env.CRON_SECRET) {
-    return NextResponse.json({ error: "cron_neconfigurat" }, { status: 501 });
-  }
-  if (!cronAutorizat(req)) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
+// Se poate rula până la 5 minute (ca și cron-ul F230); înainte nu exista nicio limită explicită.
+export const maxDuration = 300;
 
-  // Reluarea facturilor rămase neemise — independentă de reînnoiri (rulează și
-  // când nu e nimic de taxat sau Netopia nu e configurat).
+// Pașii secundari (facturi rămase neemise, curățenie, avertizări de retenție) rulează DUPĂ taxări: dacă Oblio sau
+// SMTP sunt lente, nu trebuie să consume timpul necesar încasării reînnoirilor din ziua respectivă.
+async function pasiAuxiliari() {
+  // Reluarea facturilor rămase neemise — independentă de reînnoiri.
   const facturi = await reiaFacturileNeemise().catch((e) => {
     raporteazaEroare("oblio-factura-reluare", e);
     return { incercate: 0, emise: 0 };
@@ -163,12 +160,33 @@ export async function GET(req: Request) {
     raporteazaEroare("retentie", e);
     return { avertizate: 0, peste_termen: [] as string[] };
   });
+  return { facturi, retentie };
+}
 
+export async function GET(req: Request) {
+  if (!process.env.CRON_SECRET) {
+    return NextResponse.json({ error: "cron_neconfigurat" }, { status: 501 });
+  }
+  if (!cronAutorizat(req)) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+  const principal = await proceseazaReinnoiri();
+  const auxiliar = await pasiAuxiliari();
+  return NextResponse.json({ ...principal, ...auxiliar });
+}
+
+async function proceseazaReinnoiri(): Promise<Record<string, unknown>> {
   if (!netopiaConfigurata()) {
-    return NextResponse.json({ ok: true, procesate: 0, motiv: "netopia_neconfigurat", facturi, retentie });
+    // Fără aceasta, reînnoirile ar înceta tăcut (cron-ul răspunde 200) până când clienții își pierd accesul.
+    const [{ n }] = await db.transaction(async (tx) => {
+      await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
+      return tx.select({ n: sql<number>`count(*)`.mapWith(Number) }).from(organizations).where(eq(organizations.netopiaAutoRenew, true));
+    });
+    if (n > 0) raporteazaAvertisment("netopia-reinnoire", "Netopia neconfigurat, dar există organizații cu reînnoire automată activă", { organizatii: n });
+    return { ok: true, procesate: 0, motiv: "netopia_neconfigurat" };
   }
 
-  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://fundraising-academy-one.vercel.app").replace(/\/$/, "");
+  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://alexandrit.ro").replace(/\/$/, "");
 
   // Fără `app.public_lookup`, RLS pe organizations/memberships/app_users
   // respinge silențios — rulat fără sesiune de user, ca orice cron/webhook —
@@ -243,7 +261,7 @@ export async function GET(req: Request) {
   });
 
   if (orgs.length === 0 && avize.length === 0) {
-    return NextResponse.json({ ok: true, procesate: 0, facturi });
+    return { ok: true, procesate: 0 };
   }
   const emailProprietar = new Map<string, string>();
   for (const p of proprietari) if (!emailProprietar.has(p.orgId)) emailProprietar.set(p.orgId, p.email);
@@ -352,7 +370,8 @@ export async function GET(req: Request) {
       );
 
       if (!rezultat.ok) {
-        rezultate.push({ orgSlug: org.slug, rezultat: `eroare:${rezultat.motiv}` });
+        // „deja_reinnoit" nu e o problemă (altă rulare sau o plată manuală a prelungit deja perioada).
+        rezultate.push({ orgSlug: org.slug, rezultat: rezultat.motiv === "deja_reinnoit" ? "omisa:deja_reinnoit" : `eroare:${rezultat.motiv}` });
         continue;
       }
 
@@ -377,5 +396,12 @@ export async function GET(req: Request) {
     }
   }
 
-  return NextResponse.json({ ok: true, procesate: orgs.length, rezultate, facturi });
+  // Cron-ul răspunde mereu 200; fără aceasta, o zi în care TOATE taxările au eșuat nu lăsa nicio urmă.
+  const esecuri = rezultate.filter((r) => r.rezultat.startsWith("eroare"));
+  if (esecuri.length > 0) {
+    raporteazaAvertisment("netopia-reinnoire", `${esecuri.length} reînnoiri au eșuat tehnic în această rulare`, {
+      organizatii: esecuri.map((r) => `${r.orgSlug}:${r.rezultat}`).join(", "),
+    });
+  }
+  return { ok: true, procesate: orgs.length, rezultate };
 }

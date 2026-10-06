@@ -7,8 +7,8 @@ import { and, eq, sql } from "drizzle-orm";
 import type { OrgContext } from "@/lib/auth/guard";
 import { db, type Tx } from "@/lib/db";
 import { EroareUtilizator } from "@/lib/erori";
-import { raporteazaEroare } from "@/lib/monitoring";
-import { platformPayments } from "@/lib/db/schema";
+import { raporteazaAvertisment, raporteazaEroare } from "@/lib/monitoring";
+import { organizations, platformPayments } from "@/lib/db/schema";
 import { clasificaStatus, interogheazaStatus, netopiaConfigurata, pornestePlata, taxeazaCuTokenSalvat, type DateFacturare } from "@/lib/netopia";
 import { decripteaza } from "@/lib/secret-box";
 
@@ -74,6 +74,16 @@ async function salveazaNtpId(orderId: string, ntpId: string): Promise<void> {
   });
 }
 
+async function marcheazaComandaEsuata(orderId: string): Promise<void> {
+  await db.transaction(async (tx) => {
+    await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
+    await tx
+      .update(platformPayments)
+      .set({ status: "esuata" })
+      .where(and(eq(platformPayments.orderId, orderId), eq(platformPayments.status, "in_asteptare")));
+  });
+}
+
 // Pornește plata (o lună de acces) prin Netopia și întoarce URL-ul paginii lor
 // de plată — clientul redirecționează la URL-ul întors. Dacă Netopia refuză
 // pornirea, eroarea se propagă și tranzacția organizației (inclusiv comanda de
@@ -95,32 +105,46 @@ export async function creeazaPlataAbonament(
     throw new EroareUtilizator(MESAJ_DATE_FACTURARE_LIPSA);
   }
 
-  const { orderId, sumaLei } = await insereazaComandaAbonament(ctx.db as unknown as Tx, {
-    orgId: ctx.orgId,
-    orgReferredByOrgId: ctx.orgReferredByOrgId,
-    pachet: params.pachet,
-    pretLunar: params.pretLunar,
-    planConfig: params.planConfig,
-    renewal: false,
+  // Comanda se scrie într-o tranzacție SCURTĂ, separată și comisă imediat (cu context de încredere), nu în tranzacția
+  // organizației: altfel `salveazaNtpId` (alt rând de conexiune) nu vedea rândul necomis, actualiza 0 rânduri și
+  // fallback-ul de status (pentru IPN întârziat) nu putea funcționa niciodată.
+  const { orderId, sumaLei } = await db.transaction(async (tx) => {
+    await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
+    return insereazaComandaAbonament(tx, {
+      orgId: ctx.orgId,
+      orgReferredByOrgId: ctx.orgReferredByOrgId,
+      pachet: params.pachet,
+      pretLunar: params.pretLunar,
+      planConfig: params.planConfig,
+      renewal: false,
+    });
   });
 
   const [prenume, ...restNume] = (ctx.userName ?? "").trim().split(/\s+/).filter(Boolean);
 
-  const { paymentUrl, ntpId } = await pornestePlata({
-    orderId,
-    sumaLei,
-    descriere: `Alexandrit — ${params.packageLabel} (o lună)`,
-    facturare: {
-      email: ctx.userEmail,
-      prenume: prenume ?? "Client",
-      nume: restNume.join(" ") || ctx.orgName.slice(0, 60),
-      // Nu colectăm încă un telefon al plătitorului; Netopia îl cere obligatoriu.
-      telefon: "0700000000",
-    },
-    notifyUrl: `${params.origin}/api/netopia/ipn`,
-    redirectUrl: `${params.origin}/abonament/${ctx.orgSlug}/rezultat?comanda=${orderId}`,
-    cancelUrl: `${params.origin}/${ctx.orgSlug}/setari`,
-  });
+  let paymentUrl: string;
+  let ntpId: string | null;
+  try {
+    ({ paymentUrl, ntpId } = await pornestePlata({
+      orderId,
+      sumaLei,
+      descriere: `Alexandrit — ${params.packageLabel} (o lună)`,
+      facturare: {
+        email: ctx.userEmail,
+        prenume: prenume ?? "Client",
+        nume: restNume.join(" ") || ctx.orgName.slice(0, 60),
+        // Nu colectăm încă un telefon al plătitorului; Netopia îl cere obligatoriu.
+        telefon: "0700000000",
+      },
+      notifyUrl: `${params.origin}/api/netopia/ipn`,
+      redirectUrl: `${params.origin}/abonament/${ctx.orgSlug}/rezultat?comanda=${orderId}`,
+      cancelUrl: `${params.origin}/${ctx.orgSlug}/setari`,
+    }));
+  } catch (e) {
+    // Netopia a refuzat pornirea: comanda nu mai e anulată odată cu tranzacția organizației (e deja comisă) — o închidem noi.
+    await marcheazaComandaEsuata(orderId).catch((err) => raporteazaEroare("netopia-comanda-esuata", err, { orderId }));
+    throw e;
+  }
   // Best-effort — o eroare aici nu trebuie să blocheze redirectul spre plată;
   // fără ntpID salvat, fallback-ul de status de pe pagina de rezultat pur și
   // simplu nu se poate folosi pentru această comandă (rămâne doar IPN-ul).
@@ -130,7 +154,7 @@ export async function creeazaPlataAbonament(
 
 export type RezultatReinnoire =
   | { ok: true; confirmare: ConfirmareNetopia }
-  | { ok: false; motiv: "fara_card" | "criptare_indisponibila" | "eroare" | "comanda_in_curs" };
+  | { ok: false; motiv: "fara_card" | "criptare_indisponibila" | "eroare" | "comanda_in_curs" | "deja_reinnoit" };
 
 // O taxare cu token căzută după ce Netopia a încasat (timeout, răspuns pierdut)
 // lasă comanda `in_asteptare`; fără verificare, rularea de a doua zi ar taxa a
@@ -220,10 +244,19 @@ export async function taxeazaReinnoireAutomata(
           eq(platformPayments.orgId, org.id),
           eq(platformPayments.renewal, true),
           eq(platformPayments.status, "in_asteptare"),
-          sql`${platformPayments.createdAt} > now() - interval '36 hours'`,
+          sql`${platformPayments.createdAt} > now() - interval '72 hours'`,
         ),
       );
-    if (nelamurite > 0) return null;
+    if (nelamurite > 0) return "in_curs" as const;
+    // Re-verificare SUB lock: lista de organizații a cron-ului s-a citit la început; între timp altă rulare (sau o plată
+    // manuală) a putut prelungi deja perioada — fără asta, a doua rulare taxa a doua oară același card.
+    const [stare] = await tx
+      .select({ autoRenew: organizations.netopiaAutoRenew, sfarsit: organizations.currentPeriodEnd })
+      .from(organizations)
+      .where(eq(organizations.id, org.id))
+      .limit(1);
+    if (!stare?.autoRenew) return "deja_reinnoit" as const;
+    if (stare.sfarsit && stare.sfarsit.getTime() > Date.now() + 86_400_000) return "deja_reinnoit" as const;
     return insereazaComandaAbonament(tx, {
       orgId: org.id,
       orgReferredByOrgId: org.referredByOrgId,
@@ -233,7 +266,12 @@ export async function taxeazaReinnoireAutomata(
       renewal: true,
     });
   });
-  if (!comanda) return { ok: false, motiv: "comanda_in_curs" };
+  if (comanda === "deja_reinnoit") return { ok: false, motiv: "deja_reinnoit" };
+  if (comanda === "in_curs" || !comanda) {
+    // O comandă nelămurită (răspuns pierdut, fără IPN) blochează retaxarea 72h, ca să nu taxăm de două ori: cere verificare manuală.
+    raporteazaAvertisment("netopia-reinnoire", "taxare blocată: există o comandă de reînnoire nelămurită (verifică în Netopia)", { orgSlug: org.slug });
+    return { ok: false, motiv: "comanda_in_curs" };
+  }
   const { orderId, sumaLei } = comanda;
 
   const facturare: DateFacturare = {
@@ -255,7 +293,9 @@ export async function taxeazaReinnoireAutomata(
     });
     const confirmare = await proceseazaRezultatPlataNetopia(orderId, rezultat);
     return { ok: true, confirmare };
-  } catch {
+  } catch (e) {
+    // Cauza (timeout, Netopia căzut, răspuns pierdut) se pierdea complet; comanda rămâne „în așteptare" și blochează retaxarea.
+    raporteazaEroare("netopia-reinnoire-taxare", e, { orgSlug: org.slug, orderId });
     return { ok: false, motiv: "eroare" };
   }
 }

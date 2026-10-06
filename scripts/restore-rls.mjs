@@ -313,6 +313,9 @@ const POLICIES = [
   `create policy formular230_destinatari_tenant_isolation on formular230_destinatari for select using (
     org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
   )`,
+  `create policy formular230_destinatari_member_delete on formular230_destinatari for delete using (
+    org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
+  )`,
   `create policy formular230_destinatari_public_lookup_select on formular230_destinatari for select using (
     nullif(current_setting('app.public_lookup', true), '') = 'true'
   )`,

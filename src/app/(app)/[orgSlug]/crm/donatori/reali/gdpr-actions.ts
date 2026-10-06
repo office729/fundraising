@@ -4,8 +4,10 @@ import { and, eq, sql } from "drizzle-orm";
 
 import { inregistreazaAudit } from "@/lib/audit";
 import { withOrgAdmin } from "@/lib/auth/guard";
-import { donatorNotite, donatoriReali, emailSuppression, formular230Submissions, fundraisingDonations } from "@/lib/db/schema";
+import { donatorNotite, donatoriReali, emailSuppression, formular230Destinatari, formular230Submissions, fundraisingDonations } from "@/lib/db/schema";
 import { hashSuprimare } from "@/lib/dezabonare";
+import { raporteazaEroare } from "@/lib/monitoring";
+import { stripeOrgDupaId } from "@/lib/org-stripe";
 import { decripteazaSauLegacy } from "@/lib/secret-box";
 
 // Drepturile persoanei vizate (GDPR art. 15 și 17) pentru un donator real.
@@ -111,6 +113,43 @@ export const stergeDateDonator = withOrgAdmin(
       .limit(1);
     if (!donator) return { ok: false, error: "Donatorul nu a fost găsit." };
 
+    // Abonamentul lunar rămas activ în Stripe ar continua să-l taxeze și, la fiecare factură plătită, i-ar RECREA datele
+    // (nume, email, telefon) din metadata abonamentului — ștergerea s-ar anula singură. Îl anulăm ÎNAINTE de orice
+    // modificare; dacă nu reușim, ștergerea se oprește (nu pretindem că am șters ceva ce continuă să se reînnoiască).
+    const emailPentruAbonamente = donator.email.toLowerCase();
+    const abonamente = await ctx.db
+      .selectDistinct({ id: fundraisingDonations.stripeSubscriptionId })
+      .from(fundraisingDonations)
+      .where(
+        and(
+          eq(fundraisingDonations.orgId, ctx.orgId),
+          sql`${fundraisingDonations.stripeSubscriptionId} is not null`,
+          sql`lower(${fundraisingDonations.emailDonator}) = ${emailPentruAbonamente}`,
+        ),
+      );
+    if (abonamente.length > 0) {
+      const stripeOrg = await stripeOrgDupaId(ctx.orgId).catch(() => null);
+      if (!stripeOrg) {
+        return {
+          ok: false,
+          error:
+            "Donatorul are abonament lunar în Stripe, dar contul Stripe al organizației nu e conectat. Anulează abonamentul din Dashboard-ul Stripe, apoi repetă ștergerea.",
+        };
+      }
+      for (const a of abonamente) {
+        if (!a.id) continue;
+        try {
+          await stripeOrg.stripe.subscriptions.cancel(a.id);
+        } catch (e) {
+          const cod = (e as { code?: string }).code;
+          // Deja anulat / inexistent = ce voiam; orice altă eroare oprește ștergerea.
+          if (cod === "resource_missing") continue;
+          raporteazaEroare("gdpr-anulare-abonament", e, { orgId: ctx.orgId });
+          return { ok: false, error: "Nu am putut anula abonamentul lunar din Stripe, deci nu am șters nimic. Încearcă din nou sau anulează-l din Dashboard-ul Stripe." };
+        }
+      }
+    }
+
     // Cine s-a dezabonat sau a refuzat emailurile NU trebuie să le primească din nou după
     // ștergere (rândul poate reapărea la o donație nouă, cu consimțământ necunoscut). Păstrăm doar
     // un HMAC al adresei în lista de suprimare, nu adresa.
@@ -128,6 +167,11 @@ export const stergeDateDonator = withOrgAdmin(
       .set({ numeDonator: null, emailDonator: null, telefonDonator: null, mesaj: null, anonim: true })
       .where(and(eq(fundraisingDonations.orgId, ctx.orgId), sql`lower(${fundraisingDonations.emailDonator}) = ${emailLower}`))
       .returning({ id: fundraisingDonations.id });
+
+    // Jurnalul campaniei F230 păstrează adresa de email în clar (pentru a nu retrimite): se șterge odată cu donatorul.
+    await ctx.db
+      .delete(formular230Destinatari)
+      .where(and(eq(formular230Destinatari.orgId, ctx.orgId), sql`lower(${formular230Destinatari.email}) = ${emailLower}`));
 
     let formulareSterse = 0;
     if (inclusiv230) {

@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 
-import { trackEvent, trimitePaginaContext } from "@/lib/analytics";
+import { aplicaExcluderea, trackEvent, trimitePaginaContext } from "@/lib/analytics";
 import { esteSlugRezervat } from "@/lib/reserved-slugs";
 
 // Cookie scurt setat de server (lib/analytics-server.ts) când o acțiune se
@@ -70,6 +70,7 @@ export function AnalyticsEvents() {
       trackEvent("sign_up", { method: "email" });
     }
 
+    aplicaExcluderea(pathname);
     const { group, orgSlug } = grupDeContinut(pathname);
     trimitePaginaContext(group, orgSlug, pathname);
   }, [pathname]);

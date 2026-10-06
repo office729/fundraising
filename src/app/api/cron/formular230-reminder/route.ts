@@ -56,7 +56,7 @@ export async function GET(req: Request) {
   }
 
   const an = acum.getUTCFullYear();
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://fundraising-academy-one.vercel.app";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://alexandrit.ro";
   const deadline = Date.now() + DEADLINE_MS;
 
   const orgs = await db.transaction(async (tx) => {

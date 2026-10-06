@@ -35,7 +35,7 @@ export const trimiteCampanieEmailF230 = withOrgFaze<
   },
   extern: async ({ org, userId }): Promise<CampanieState> => {
     const an = new Date().getFullYear();
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://fundraising-academy-one.vercel.app";
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://alexandrit.ro";
     const r = await trimiteCampanieF230({ org, an, baseUrl, trimisDe: userId, deadline: Date.now() + DEADLINE_MANUAL_MS });
 
     switch (r.stare) {

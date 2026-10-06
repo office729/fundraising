@@ -20,7 +20,7 @@ export default async function DezabonarePage({ searchParams }: { searchParams: P
       <h1 className="text-xl font-bold text-ink">Dezabonare de la emailuri</h1>
       {valid ? (
         <>
-          <p className="mb-4 mt-2 text-sm text-body">Confirmă că nu mai vrei să primești emailuri de campanie (ex. reamintirea Formularului 230).</p>
+          <p className="mb-4 mt-2 text-sm text-body">Confirmă că nu mai vrei să primești emailuri în masă de la această organizație (campanii, reamintirea Formularului 230, mesaje către voluntari).</p>
           <DezabonareForm o={o} e={e} t={t} />
         </>
       ) : (

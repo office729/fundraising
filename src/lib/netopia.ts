@@ -199,6 +199,8 @@ async function netopiaStart(body: unknown): Promise<{
     headers: { "Content-Type": "application/json", Authorization: apiKey },
     body: JSON.stringify(body),
     cache: "no-store",
+    // Fără limită, un apel agățat ținea funcția (și cron-ul de reînnoire) până la limita platformei.
+    signal: AbortSignal.timeout(30_000),
   });
   const json = (await res.json().catch(() => null)) as { payment?: PaymentJson & { paymentURL?: string }; error?: { code?: string; message?: string } } | null;
   return { payment: json?.payment, error: json?.error, ok: res.ok, httpStatus: res.status };
@@ -232,6 +234,7 @@ export async function interogheazaStatus(p: { orderId: string; ntpId: string }):
     headers: { "Content-Type": "application/json", Authorization: apiKey },
     body: JSON.stringify({ posID: posSignature, ntpID: p.ntpId, orderID: p.orderId }),
     cache: "no-store",
+    signal: AbortSignal.timeout(30_000),
   });
   const json = (await res.json().catch(() => null)) as { payment?: PaymentJson; error?: { code?: string; message?: string } } | null;
   // code "00" = găsită și returnată cu succes; orice alt cod (ex. "103" — comandă
