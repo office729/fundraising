@@ -5,6 +5,7 @@ import { ChevronDown, Settings } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { DataTable } from "../components/data-table";
+import { DemoBanner } from "../components/demo-banner";
 import { Badge } from "../components/ui/badge";
 import { Select } from "../components/ui/input";
 import { formatData, formatSuma } from "../lib/format";
@@ -90,6 +91,12 @@ export default function DonatiiPage() {
           </button>
         </div>
       </div>
+
+      <DemoBanner>
+        {locale === "ro"
+          ? "Date demonstrative: tranzacțiile de pe această pagină sunt exemple, nu donațiile reale ale organizației. Donațiile reale le găsești la Strângere fonduri și în CRM persoane fizice."
+          : "Demo data: the transactions on this page are examples, not your organization's real donations. Real donations are under Fundraising pages and the individuals CRM."}
+      </DemoBanner>
 
       {extins && (
       <div className="flex flex-wrap gap-2">

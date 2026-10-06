@@ -4,6 +4,7 @@ import { Archive, ChevronDown } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { DemoBanner } from "../components/demo-banner";
 import { Badge } from "../components/ui/badge";
 import { ProgressBar } from "../components/ui/progress-bar";
 import { formatSuma } from "../lib/format";
@@ -51,6 +52,12 @@ export default function BeneficiariPage() {
         <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">{dict.title}</h1>
         <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">{dict.subtitle(active.length)}</p>
       </div>
+
+      <DemoBanner>
+        {locale === "ro"
+          ? "Date demonstrative: proiectele de aici sunt exemple, iar cele importate se păstrează doar în acest browser, nu pe server. Campaniile reale le găsești la Strângere fonduri."
+          : "Demo data: the projects here are examples, and imported ones are kept only in this browser, not on the server. Real campaigns are under Fundraising pages."}
+      </DemoBanner>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {active.map(card)}

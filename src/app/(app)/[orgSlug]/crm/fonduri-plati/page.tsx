@@ -5,6 +5,7 @@ import { Download, HandCoins, Hourglass, ShieldCheck, Wallet } from "lucide-reac
 import { useMemo, useState } from "react";
 
 import { DataTable } from "../components/data-table";
+import { DemoBanner } from "../components/demo-banner";
 import { Badge, type StatusTone } from "../components/ui/badge";
 import { Card } from "../components/ui/card";
 import { Select } from "../components/ui/input";
@@ -68,6 +69,12 @@ export default function FonduriPlatiPage() {
           <Download className="h-4 w-4" /> {dict.export}
         </button>
       </div>
+
+      <DemoBanner>
+        {locale === "ro"
+          ? "Date demonstrative: alocările și plățile de pe această pagină sunt exemple, nu situația reală a organizației. Facturile și plățile reale le găsești pe pagina fiecărei campanii, la Strângere fonduri."
+          : "Demo data: the allocations and payments on this page are examples, not your organization's real figures. Real invoices and payments are on each campaign's page under Fundraising pages."}
+      </DemoBanner>
 
       <div className="grid grid-cols-3 gap-4">
         <Card><p className="text-[12px] text-[var(--ci-text-muted)]">{dict.totalIncasat}</p><p className="ci-tabular mt-1 text-lg font-bold text-[var(--ci-text)]">{formatSuma(totale.incasat)}</p></Card>
