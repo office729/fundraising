@@ -230,7 +230,9 @@ export function DoneazaForm({
         <textarea name="mesaj" rows={2} defaultValue={valori.mesaj} className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink" />
       </label>
       <label className="flex items-center gap-2 text-sm text-body">
-        <input type="checkbox" name="anonim" className="h-4 w-4 rounded border-line" />
+        {/* Păstrată după o eroare de validare: dacă s-ar reseta, donatorul ar putea retrimite fără să observe și numele lui ar deveni public.
+            Acordurile (GDPR, WhatsApp, email) rămân intenționat nebifate la reîncercare — cer un act nou. */}
+        <input type="checkbox" name="anonim" defaultChecked={valori.anonim !== undefined} className="h-4 w-4 rounded border-line" />
         {t.nuAfisaNume}
       </label>
 
