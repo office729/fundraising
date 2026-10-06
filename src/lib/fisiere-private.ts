@@ -19,6 +19,20 @@ export function caleDinReferinta(ref: string | null | undefined): string | null 
   return ref && ref.startsWith(PREFIX) ? ref.slice(PREFIX.length) : null;
 }
 
+// Șterge din bucket fișierele din referințele date, după ce rândurile lor au fost șterse. Ating doar căi din bucket-ul
+// privat și doar din folderul organizației; best-effort: rândul e deja șters, iar un fișier rămas se curăță la
+// ștergerea organizației.
+export async function stergeFisierePrivate(orgSlug: string, referinte: Array<string | null | undefined>): Promise<void> {
+  const cai = referinte.map(caleDinReferinta).filter((c): c is string => Boolean(c) && c!.startsWith(`${orgSlug}/`));
+  if (!cai.length) return;
+  try {
+    const supabase = await createClient();
+    await supabase.storage.from(BUCKET_PRIVAT).remove(cai);
+  } catch {
+    // vezi comentariul de mai sus
+  }
+}
+
 export async function urlsSemnate<T extends { fisierUrl: string | null }>(randuri: T[]): Promise<T[]> {
   const caleDeSemnat = randuri.map((r) => caleDinReferinta(r.fisierUrl)).filter((c): c is string => Boolean(c));
   if (!caleDeSemnat.length) return randuri;

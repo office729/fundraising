@@ -11,7 +11,7 @@ import { withOrgAdmin, withOrgFaze, withOrgSession } from "@/lib/auth/guard";
 import { listAttachmentsCampanieImpl, listTaskuriCampanieImpl } from "./detaliu-queries";
 import { fundraisingBeneficiaries, fundraisingPages, fundraisingTaskAttachments, fundraisingTasks } from "@/lib/db/schema";
 import { notifica } from "@/lib/notifications";
-import { BUCKET_PRIVAT, referintaPrivata } from "@/lib/fisiere-private";
+import { BUCKET_PRIVAT, referintaPrivata, stergeFisierePrivate } from "@/lib/fisiere-private";
 import { createClient } from "@/lib/supabase/server";
 import { extensieImagine } from "@/lib/upload-imagini";
 
@@ -138,7 +138,13 @@ export const genereazaTextMultumireAIAction = withOrgFaze<
 export const listTaskuriCampanie = withOrgSession(listTaskuriCampanieImpl);
 
 export const stergeTaskAction = withOrgAdmin(async (ctx, taskId: string) => {
+  // Rândurile de atașamente dispar în cascadă; fișierele din Storage le ștergem explicit.
+  const atasamente = await ctx.db
+    .select({ fisierUrl: fundraisingTaskAttachments.fisierUrl })
+    .from(fundraisingTaskAttachments)
+    .where(and(eq(fundraisingTaskAttachments.taskId, taskId), eq(fundraisingTaskAttachments.orgId, ctx.orgId)));
   await ctx.db.delete(fundraisingTasks).where(and(eq(fundraisingTasks.id, taskId), eq(fundraisingTasks.orgId, ctx.orgId)));
+  await stergeFisierePrivate(ctx.orgSlug, atasamente.map((a) => a.fisierUrl));
 });
 
 export const finalizeazaTaskAdminAction = withOrgAdmin(async (ctx, taskId: string) => {

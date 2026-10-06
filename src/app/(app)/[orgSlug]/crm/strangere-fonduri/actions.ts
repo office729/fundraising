@@ -8,9 +8,19 @@ import { withOrgAdmin } from "@/lib/auth/guard";
 import type { CustomPlanConfigSaved } from "@/lib/billing/custom-plan";
 import { getLimiteleEfective, subCota } from "@/lib/billing/quota";
 import { getTemplatesDisponibile, type CampaignPageTemplate } from "@/lib/campaign-templates";
-import { donatoriReali, fundraisingDonations, fundraisingPages, fundraisingUpdates, organizations } from "@/lib/db/schema";
+import {
+  donatoriReali,
+  fundraisingDonations,
+  fundraisingInvoices,
+  fundraisingPages,
+  fundraisingTaskAttachments,
+  fundraisingTasks,
+  fundraisingUpdates,
+  organizations,
+} from "@/lib/db/schema";
 import { htmlEmailMultumireDonatie, subiectEmailMultumireDonatie } from "@/lib/donation-email-template";
 import { emailConfigurat, trimiteEmail } from "@/lib/email";
+import { stergeFisierePrivate } from "@/lib/fisiere-private";
 import { crediteazaPaginaSiDonator } from "@/lib/fundraising-credit";
 import { slugify } from "@/lib/slugify";
 import { createClient } from "@/lib/supabase/server";
@@ -40,7 +50,20 @@ export const stergePaginaStrangereFonduri = withOrgAdmin(async (ctx, id: string)
   // mai șterge donațiile în cascadă odată cu pagina.
   await ctx.db.delete(fundraisingDonations).where(and(eq(fundraisingDonations.pageId, id), eq(fundraisingDonations.orgId, ctx.orgId)));
 
+  // Facturile și atașamentele sarcinilor se șterg în cascadă din baza de date, dar fișierele lor stau în Storage:
+  // le colectăm înainte și le ștergem după.
+  const facturi = await ctx.db
+    .select({ fisierUrl: fundraisingInvoices.fisierUrl })
+    .from(fundraisingInvoices)
+    .where(and(eq(fundraisingInvoices.campaignPageId, id), eq(fundraisingInvoices.orgId, ctx.orgId)));
+  const atasamente = await ctx.db
+    .select({ fisierUrl: fundraisingTaskAttachments.fisierUrl })
+    .from(fundraisingTaskAttachments)
+    .innerJoin(fundraisingTasks, eq(fundraisingTasks.id, fundraisingTaskAttachments.taskId))
+    .where(and(eq(fundraisingTasks.campaignPageId, id), eq(fundraisingTaskAttachments.orgId, ctx.orgId)));
+
   await ctx.db.delete(fundraisingPages).where(and(eq(fundraisingPages.id, id), eq(fundraisingPages.orgId, ctx.orgId)));
+  await stergeFisierePrivate(ctx.orgSlug, [...facturi, ...atasamente].map((r) => r.fisierUrl));
   return { error: null };
 });
 
