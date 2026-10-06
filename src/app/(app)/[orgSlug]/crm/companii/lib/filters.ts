@@ -21,7 +21,7 @@ export type FiltruCompanii = {
   judet: string; // "toate" sau un județ din JUDETE
   contact: "toate" | "cu" | "fara";
   marcaje: string[]; // subset din ["d177", "decembrie", "caz"]
-  vezi: "toata" | "lucrate";
+  vezi: "toata" | "lucrate" | "recente"; // „recente” = ultimele 20 firme la care a lucrat utilizatorul curent
   q: string;
   pagina: number;
   // "Top 2000" — sortare după sumă sponsorizată desc, paginare limitată la
@@ -30,6 +30,19 @@ export type FiltruCompanii = {
 };
 
 export const TOP_LIMIT = 2000;
+export const RECENTE_LIMIT = 20;
+
+// Câte filtre (în afară de căutarea text) restrâng lista — folosit de bara de filtre și de mesajul „nimic găsit”.
+export function numarFiltreActive(f: FiltruCompanii): number {
+  return (
+    (f.perioadaTip !== "toate" ? 1 : 0) +
+    (f.responsabil !== "toti" ? 1 : 0) +
+    (f.judet !== "toate" ? 1 : 0) +
+    (f.contact !== "toate" ? 1 : 0) +
+    f.marcaje.length +
+    (f.vezi !== "toata" ? 1 : 0)
+  );
+}
 
 const MARCAJE_VALIDE = new Set(["d177", "decembrie", "caz"]);
 const PERIOADA_VALIDA = new Set<PerioadaTip>(["toate", "q1", "q2", "q3", "q4", "an", "luna", "saptamana", "interval"]);
@@ -52,7 +65,7 @@ export function parseFiltru(sp: URLSearchParams): FiltruCompanii {
     judet: sp.get("judet") ?? "toate",
     contact: sp.get("contact") === "cu" || sp.get("contact") === "fara" ? (sp.get("contact") as "cu" | "fara") : "toate",
     marcaje: marcajeRaw.filter((m) => MARCAJE_VALIDE.has(m)),
-    vezi: sp.get("vezi") === "lucrate" ? "lucrate" : "toata",
+    vezi: sp.get("vezi") === "lucrate" ? "lucrate" : sp.get("vezi") === "recente" ? "recente" : "toata",
     q: sp.get("q") ?? "",
     pagina: Math.max(1, Number(sp.get("pagina")) || 1),
     top: sp.get("top") === "1",

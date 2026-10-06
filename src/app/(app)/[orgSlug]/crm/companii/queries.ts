@@ -4,20 +4,24 @@ import { withOrgSession, type OrgContext } from "@/lib/auth/guard";
 import { appUsers, companies, companyNotite, companySponsorizari, companyStageLog, contacts, memberships } from "@/lib/db/schema";
 
 import { citesteSegment, hexFaraCratime, LUNGIME_SUFIX, segmentFirma, slugFirma } from "@/lib/id-scurt";
-import { calculeazaInterval, type FiltruCompanii, TOP_LIMIT } from "./lib/filters";
+import { cifreCui, patternLike, sqlFaraDiacritice } from "@/lib/cautare";
+import { calculeazaInterval, type FiltruCompanii, RECENTE_LIMIT, TOP_LIMIT } from "./lib/filters";
 
 const PAGE_SIZE = 25;
 
 // Condiții COMUNE listei și statisticilor — orice filtru nou trebuie adăugat
 // AICI o singură dată, ca lista și cardurile de sus să rămână mereu coerente
 // (aceleași firme numărate = aceleași firme afișate).
-function conditiiComune(f: FiltruCompanii) {
+function conditiiComune(f: FiltruCompanii, userId: string) {
   const cond = [sql`1=1`];
-  // Căutare insensibilă la diacritice și la majuscule (fără extensia unaccent): normalizăm ambele
-  // părți — „Țiriac Asigurări” găsește „TIRIAC ASIGURARI” și invers.
+  // Căutare insensibilă la diacritice și la majuscule (fără extensia unaccent) — vezi lib/cautare.ts.
+  // Dacă textul e doar cifre (eventual cu „RO”, spații, puncte) se caută și după CUI, comparând doar cifrele.
   if (f.q.trim()) {
-    cond.push(sql`translate(lower(${companies.nume}), 'ăâîșțşţ', 'aaistst') like translate(lower(${"%" + f.q.trim() + "%"}), 'ăâîșțşţ', 'aaistst')`);
+    const dupaNume = sql`${sqlFaraDiacritice(companies.nume)} like ${patternLike(f.q)}`;
+    const cifre = cifreCui(f.q);
+    cond.push(cifre ? sql`(${dupaNume} or regexp_replace(coalesce(${companies.cui}, ''), '[^0-9]', '', 'g') = ${cifre})` : dupaNume);
   }
+  if (f.vezi === "recente") cond.push(eq(companies.updatedBy, userId));
   if (f.judet !== "toate") cond.push(eq(companies.judet, f.judet));
   if (f.responsabil !== "toti") cond.push(eq(companies.ownerId, f.responsabil));
   if (f.contact === "cu") {
@@ -49,6 +53,8 @@ export type RandCompanie = {
   nume: string;
   judet: string | null;
   localitate: string | null;
+  linkedin: string | null;
+  facebook: string | null;
   responsabilNume: string | null;
   sumaSponsorizata: number;
   recurent: boolean;
@@ -62,10 +68,11 @@ export type RandCompanie = {
 };
 
 const getCompaniiListaImpl = async (ctx: OrgContext, filtru: FiltruCompanii) => {
-  const where = and(eq(companies.orgId, ctx.orgId), sql`${companies.deletedAt} is null`, conditiiComune(filtru));
+  const where = and(eq(companies.orgId, ctx.orgId), sql`${companies.deletedAt} is null`, conditiiComune(filtru, ctx.userId));
 
+  const recente = filtru.vezi === "recente";
   const [{ total: totalReal }] = await ctx.db.select({ total: sql<number>`count(*)::int` }).from(companies).where(where);
-  const total = filtru.top ? Math.min(totalReal, TOP_LIMIT) : totalReal;
+  const total = recente ? Math.min(totalReal, RECENTE_LIMIT) : filtru.top ? Math.min(totalReal, TOP_LIMIT) : totalReal;
 
   const rows = await ctx.db
     .select({
@@ -73,6 +80,8 @@ const getCompaniiListaImpl = async (ctx: OrgContext, filtru: FiltruCompanii) => 
       nume: companies.nume,
       judet: companies.judet,
       localitate: companies.localitate,
+      linkedin: companies.linkedin,
+      facebook: companies.facebook,
       responsabilNume: appUsers.name,
       sumaSponsorizata: sql<number>`coalesce(${companies.sumaSponsorizata}, 0)::int`,
       recurent: companies.recurent,
@@ -90,7 +99,9 @@ const getCompaniiListaImpl = async (ctx: OrgContext, filtru: FiltruCompanii) => 
     // Ordinea implicită: firmele „lucrate” întâi (au responsabil, altă etapă decât „nou”, alt status
     // decât „open” sau sponsorizări), apoi după suma sponsorizată, apoi după suma disponibilă.
     .orderBy(
-      ...(filtru.top
+      ...(recente
+        ? [desc(companies.updatedAt)]
+        : filtru.top
         ? [desc(sql`coalesce(${companies.sumaSponsorizata}, 0)`)]
         : [
             sql`(case when (${companies.ownerId} is not null or ${companies.stage} <> 'nou' or ${companies.status} <> 'open' or coalesce(${companies.sumaSponsorizata}, 0) > 0) then 1 else 0 end) desc`,
@@ -99,10 +110,11 @@ const getCompaniiListaImpl = async (ctx: OrgContext, filtru: FiltruCompanii) => 
             desc(companies.id),
           ]),
     )
-    .limit(PAGE_SIZE)
-    .offset((filtru.pagina - 1) * PAGE_SIZE);
+    .limit(recente ? RECENTE_LIMIT : PAGE_SIZE)
+    .offset(recente ? 0 : (filtru.pagina - 1) * PAGE_SIZE);
 
-  return { rows: rows as RandCompanie[], total, pageSize: PAGE_SIZE, pageCount: Math.max(1, Math.ceil(total / PAGE_SIZE)) };
+  const pageSize = recente ? RECENTE_LIMIT : PAGE_SIZE;
+  return { rows: rows as RandCompanie[], total, pageSize, pageCount: Math.max(1, Math.ceil(total / pageSize)) };
 };
 export const getCompaniiLista = withOrgSession(getCompaniiListaImpl);
 
@@ -127,7 +139,7 @@ const getStatisticiCompaniiImpl = async (ctx: OrgContext, filtru: FiltruCompanii
   const dataCond = start && end ? sql`and ${companySponsorizari.data} >= ${start} and ${companySponsorizari.data} < ${end}` : sql``;
 
   const filtruFaraPerioada: FiltruCompanii = { ...filtru, perioadaTip: "toate" };
-  const condCompanii = conditiiComune(filtruFaraPerioada);
+  const condCompanii = conditiiComune(filtruFaraPerioada, ctx.userId);
 
   const [row] = await ctx.db
     .select({

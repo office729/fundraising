@@ -12,6 +12,12 @@ import { companies, companyNotite, companySponsorizari, companyStageLog, contact
 
 export type ActionState = { error: string | null };
 
+// „Lucrat de utilizatorul curent” — alimentează butonul „Lucrate recent” din listă (companies.updated_by +
+// updated_at, care se actualizează singur la orice UPDATE).
+async function marcheazaLucrat(ctx: OrgContext, companyId: string) {
+  await ctx.db.update(companies).set({ updatedBy: ctx.userId }).where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId)));
+}
+
 // Recalculează cache-ul companies.suma_sponsorizata din SUM-ul real al
 // company_sponsorizari — apelat după orice adăugare/ștergere de sponsorizare,
 // ca lista de companii (care afișează cache-ul, nu recalculează live) să nu
@@ -34,7 +40,7 @@ export const comutaMarcaj = withOrgSession(
     marcaj: "cald" | "rece" | "recurent" | "d177" | "d177Incasat" | "mec20" | "decembrie",
     activ: boolean,
   ): Promise<ActionState> => {
-    const set: Partial<typeof companies.$inferInsert> = {};
+    const set: Partial<typeof companies.$inferInsert> = { updatedBy: ctx.userId };
     if (marcaj === "cald") set.temperatura = activ ? "cald" : null;
     else if (marcaj === "rece") set.temperatura = activ ? "rece" : null;
     else if (marcaj === "recurent") set.recurent = activ;
@@ -71,7 +77,7 @@ export const actualizeazaContract = withOrgSession(
   ): Promise<ActionState> => {
     const r = await ctx.db
       .update(companies)
-      .set({ numarContract: date.numarContract, dataSemnare: date.dataSemnare, contractStatus: date.contractStatus })
+      .set({ numarContract: date.numarContract, dataSemnare: date.dataSemnare, contractStatus: date.contractStatus, updatedBy: ctx.userId })
       .where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId)))
       .returning({ id: companies.id });
     if (!r[0]) return { error: "Firma nu a fost găsită." };
@@ -105,6 +111,7 @@ export const adaugaSponsorizare = withOrgSession(
       createdBy: ctx.userId,
     });
     await recalculeazaSumaSponsorizata(ctx.db, companyId);
+    await marcheazaLucrat(ctx, companyId);
     return { error: null };
   },
 );
@@ -125,6 +132,7 @@ export const adaugaNotita = withOrgSession(async (ctx, companyId: string, text: 
   const firma = await ctx.db.select({ id: companies.id }).from(companies).where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId))).limit(1);
   if (!firma[0]) return { error: "Firma nu a fost găsită." };
   await ctx.db.insert(companyNotite).values({ id: randomUUID(), orgId: ctx.orgId, companyId, text: trimmed, createdBy: ctx.userId });
+  await marcheazaLucrat(ctx, companyId);
   return { error: null };
 });
 
@@ -170,6 +178,7 @@ export const adaugaContact = withOrgSession(async (ctx, _prev: AdaugaContactStat
     linkedin: urlWebSigur(linkedin),
     createdBy: ctx.userId,
   });
+  await marcheazaLucrat(ctx, companyId);
   return { error: null };
 });
 
@@ -198,7 +207,7 @@ export const seteazaEtapa = withOrgSession(async (ctx, companyId: string, etapa:
   // Jurnal și update DOAR dacă s-a schimbat ceva (nu la fiecare click pe aceeași etapă).
   if (stageNou === curent.stage && statusNou === curent.status) return { error: null };
 
-  await ctx.db.update(companies).set({ stage: stageNou, status: statusNou }).where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId)));
+  await ctx.db.update(companies).set({ stage: stageNou, status: statusNou, updatedBy: ctx.userId }).where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId)));
   await ctx.db.insert(companyStageLog).values({
     orgId: ctx.orgId,
     companyId,

@@ -7,7 +7,7 @@ import { useState } from "react";
 import { Input, Select } from "../components/ui/input";
 import { useLocale } from "../lib/locale-context";
 import { COMPANII_DICT } from "@/lib/i18n/dictionaries/companii";
-import { JUDETE, parseFiltru, type PerioadaTip } from "./lib/filters";
+import { JUDETE, numarFiltreActive, parseFiltru, type PerioadaTip } from "./lib/filters";
 
 const PERIOADA_KEYS = ["toate", "q1", "q2", "q3", "q4", "an", "luna", "saptamana"] as const satisfies readonly PerioadaTip[];
 
@@ -35,13 +35,7 @@ export function FilterBar({ responsabili }: { responsabili: { id: string; name: 
   // Rândurile de filtre detaliate ocupă mult spațiu pe verticală — se restrâng
   // implicit, în spatele rotiței (doar căutarea rapidă rămâne vizibilă); numărul
   // de filtre active apare lângă rotiță, ca să se vadă că sunt aplicate.
-  const filtreActive =
-    (f.perioadaTip !== "toate" ? 1 : 0) +
-    (f.responsabil !== "toti" ? 1 : 0) +
-    (f.judet !== "toate" ? 1 : 0) +
-    (f.contact !== "toate" ? 1 : 0) +
-    f.marcaje.length +
-    (f.vezi !== "toata" ? 1 : 0);
+  const filtreActive = numarFiltreActive(f);
   const [extins, setExtins] = useState(false);
 
   function push(next: Record<string, string | string[] | null>) {
@@ -84,6 +78,14 @@ export function FilterBar({ responsabili }: { responsabili: { id: string; name: 
         />
         <button type="submit" className="h-9 rounded-[var(--ci-radius-btn)] bg-[var(--ci-primary)] px-4 text-[13px] font-semibold text-white hover:opacity-90">
           {dict.cauta}
+        </button>
+        <button
+          type="button"
+          onClick={() => push({ vezi: f.vezi === "recente" ? null : "recente" })}
+          title={dict.lucrateRecentHint}
+          className={pill(f.vezi === "recente")}
+        >
+          {dict.lucrateRecent}
         </button>
         <button
           type="button"

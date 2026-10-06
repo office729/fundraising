@@ -43,6 +43,8 @@ export const COMPANII_DICT = {
       vezi: "Vezi:",
       toataBaza: "Toată baza",
       doarLucrate: "Doar firme lucrate",
+      lucrateRecent: "Lucrate recent",
+      lucrateRecentHint: "Ultimele 20 de firme la care ai lucrat tu",
     },
     header: {
       adaugaFirma: "Adaugă firmă",
@@ -261,6 +263,8 @@ export const COMPANII_DICT = {
       vezi: "View:",
       toataBaza: "Entire database",
       doarLucrate: "Worked companies only",
+      lucrateRecent: "Recently worked",
+      lucrateRecentHint: "The last 20 companies you worked on",
     },
     header: {
       adaugaFirma: "Add company",
