@@ -8,8 +8,11 @@ import {
   contacts,
   crmKv,
   donatoriReali,
+  formular230Destinatari,
   formular230Submissions,
+  fundraisingBeneficiaryInvites,
   fundraisingDonations,
+  invites,
   fundraisingMediaContacts,
   fundraisingMessages,
   fundraisingPages,
@@ -169,6 +172,33 @@ const sterge = withOrgAdmin(async (ctx, emailBrut: string) => {
     .where(and(eq(fundraisingMessages.orgId, ctx.orgId), sql`lower(${fundraisingMessages.senderEmail}) = ${email}`))
     .returning({ id: fundraisingMessages.id });
 
+  // Urme ale adresei în alte tabele ale organizației: jurnalul campaniilor F230 (adresa în clar), invitațiile încă
+  // neacceptate (de echipă și de beneficiar) și încercările de donație neterminate (în așteptare / eșuate — fără valoare
+  // contabilă; donațiile încasate rămân, ca evidență, și se gestionează din panoul donatorului).
+  const destinatari = await ctx.db
+    .delete(formular230Destinatari)
+    .where(and(eq(formular230Destinatari.orgId, ctx.orgId), sql`lower(${formular230Destinatari.email}) = ${email}`))
+    .returning({ id: formular230Destinatari.id });
+  const invitatiiEchipa = await ctx.db
+    .delete(invites)
+    .where(and(eq(invites.orgId, ctx.orgId), sql`lower(${invites.email}) = ${email}`, sql`${invites.acceptedAt} is null`))
+    .returning({ id: invites.id });
+  const invitatiiBeneficiar = await ctx.db
+    .delete(fundraisingBeneficiaryInvites)
+    .where(and(eq(fundraisingBeneficiaryInvites.orgId, ctx.orgId), sql`lower(${fundraisingBeneficiaryInvites.email}) = ${email}`, sql`${fundraisingBeneficiaryInvites.acceptedAt} is null`))
+    .returning({ id: fundraisingBeneficiaryInvites.id });
+  const donatiiNeterminate = await ctx.db
+    .update(fundraisingDonations)
+    .set({ numeDonator: null, emailDonator: null, telefonDonator: null, mesaj: null, anonim: true })
+    .where(
+      and(
+        eq(fundraisingDonations.orgId, ctx.orgId),
+        sql`lower(${fundraisingDonations.emailDonator}) = ${email}`,
+        sql`${fundraisingDonations.status} in ('in_asteptare', 'esuata')`,
+      ),
+    )
+    .returning({ id: fundraisingDonations.id });
+
   // Voluntarii trăiesc într-un blob JSON (crm_kv) — se scot din listă.
   const { toti } = await citesteVoluntari(ctx);
   const ramasi = toti.filter((v) => (v.email ?? "").trim().toLowerCase() !== email);
@@ -186,6 +216,9 @@ const sterge = withOrgAdmin(async (ctx, emailBrut: string) => {
     paginiAnonimizate: pagini.length,
     mesajeAnonimizate: mesaje.length,
     voluntariStersi,
+    jurnalCampaniiSters: destinatari.length,
+    invitatiiSterse: invitatiiEchipa.length + invitatiiBeneficiar.length,
+    donatiiNeterminateAnonimizate: donatiiNeterminate.length,
   };
   await inregistreazaAudit(ctx.db, { orgId: ctx.orgId, actorAppUserId: ctx.userId, actiune: "persoana_sters_gdpr", entitate: "persoana", detalii: rezumat });
   return rezumat;

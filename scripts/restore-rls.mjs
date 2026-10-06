@@ -299,6 +299,10 @@ const POLICIES = [
     org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
   )`,
   // --- adăugate la audit (6 oct 2026): existau pe baza live, dar lipseau din script (un db:push + restore le pierdea) ---
+  `create policy fundraising_donations_member_delete_neterminate on fundraising_donations for delete using (
+    org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
+    and status in ('in_asteptare', 'esuata')
+  )`,
   `create policy auth_rate_limits_all on auth_rate_limits for all using (true) with check (true)`,
   `create policy formular230_member_update on formular230_submissions for update using (
     org_id = nullif(current_setting('app.current_org_id', true), '')::uuid

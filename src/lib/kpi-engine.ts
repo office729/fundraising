@@ -44,7 +44,10 @@ function queryCrm(cfg: (typeof TABELE_CRM)[string], orgId: string, appUserId: st
   return sql`
     select count(*)::int as n from ${sql.raw(cfg.tabel)}
     where org_id = ${orgId} and ${sql.raw(cfg.actorCol)} = ${appUserId}
-      and ${sql.raw(cfg.dataCol)} >= ${periodStart}::date and ${sql.raw(cfg.dataCol)} < ${periodEndExclusive}::date
+      -- limitele perioadei sunt zile calendaristice din România: ancorate în Europe/Bucharest, nu în UTC (altfel activitatea
+      -- dintre 00:00 și 03:00 pe 1 a lunii/săptămânii cădea în perioada anterioară)
+      and ${sql.raw(cfg.dataCol)} >= (${periodStart}::date)::timestamp at time zone 'Europe/Bucharest'
+      and ${sql.raw(cfg.dataCol)} < (${periodEndExclusive}::date)::timestamp at time zone 'Europe/Bucharest'
       ${filtru}
   `;
 }

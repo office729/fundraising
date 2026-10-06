@@ -152,6 +152,9 @@ export default async function OrgLayout({
             >
               {dict.header.roles[access.role as keyof typeof dict.header.roles] ?? access.role}
             </span>
+            <Link prefetch={false} href="/cont" className="text-[13px] font-medium text-muted transition hover:text-brand-blue">
+              {locale === "ro" ? "Contul meu" : "My account"}
+            </Link>
             <LanguageSwitcher locale={locale} />
             <LogoutForm className="text-[13px] font-medium text-muted transition hover:text-brand-blue">{dict.header.logout}</LogoutForm>
           </div>

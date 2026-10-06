@@ -94,7 +94,7 @@ export const GDPR_DICT = {
         titlu: "7. Drepturile tale",
         paragrafe: [
           "Conform GDPR ai dreptul de acces, rectificare, ștergere, restricționare a prelucrării, portabilitate, opoziție și dreptul de a nu face obiectul unei decizii bazate exclusiv pe prelucrare automată. Îți poți retrage oricând consimțământul, fără a afecta legalitatea prelucrării de până atunci.",
-          "Pentru a-ți exercita drepturile, scrie-ne la vlad.placinta@alexandrit.ro; îți răspundem în cel mult o lună. Dacă datele tale se află în CRM-ul unei organizații (de exemplu ești donator), cererea trebuie adresată acelei organizații; noi o vom ajuta să răspundă.",
+          "Pentru a-ți exercita drepturile, scrie-ne la vlad.placinta@alexandrit.ro; îți răspundem în cel mult o lună. Dacă datele tale se află în CRM-ul unei organizații (de exemplu ești donator), cererea trebuie adresată acelei organizații; noi o vom ajuta să răspundă. Dacă ai cont în platformă, îl poți șterge singur, oricând, din pagina „Contul meu” (alexandrit.ro/cont).",
           "Ai dreptul să depui o plângere la Autoritatea Națională de Supraveghere a Prelucrării Datelor cu Caracter Personal (ANSPDCP), www.dataprotection.ro.",
         ],
       },
@@ -226,7 +226,7 @@ export const GDPR_DICT = {
         titlu: "7. Your rights",
         paragrafe: [
           "Under the GDPR you have the right of access, rectification, erasure, restriction of processing, portability, objection, and the right not to be subject to a decision based solely on automated processing. You may withdraw consent at any time, without affecting the lawfulness of prior processing.",
-          "To exercise your rights write to vlad.placinta@alexandrit.ro; we reply within one month. If your data is in an organization's CRM (for example you are a donor), the request must be addressed to that organization; we will help it respond.",
+          "To exercise your rights write to vlad.placinta@alexandrit.ro; we reply within one month. If your data is in an organization's CRM (for example you are a donor), the request must be addressed to that organization; we will help it respond. If you have an account on the platform, you can delete it yourself at any time from the “My account” page (alexandrit.ro/cont).",
           "You have the right to lodge a complaint with the National Supervisory Authority for Personal Data Processing (ANSPDCP), www.dataprotection.ro.",
         ],
       },
