@@ -1,6 +1,6 @@
 import { and, desc, eq, gte, lt, sql } from "drizzle-orm";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Info } from "lucide-react";
 
 import { withOrgSession } from "@/lib/auth/guard";
 import { formular230Beneficiari, formular230Submissions } from "@/lib/db/schema";
@@ -227,6 +227,11 @@ export default async function Formular230StatsPage({
         <Card><p className="text-[12px] text-[var(--ci-text-muted)]">{dict.stats.lunaAceasta}</p><p className="ci-tabular mt-1 text-xl font-bold text-[var(--ci-primary)]">{lunaAceasta}</p></Card>
         <Card><p className="text-[12px] text-[var(--ci-text-muted)]">{dict.stats.distributie2Ani}</p><p className="ci-tabular mt-1 text-xl font-bold text-[var(--ci-text)]">{submisii.filter((s) => s.distributie2Ani).length}</p></Card>
       </div>
+
+      <p className="flex items-start gap-2 rounded-[var(--ci-radius-card)] bg-[var(--ci-amber-soft)] px-3.5 py-2.5 text-[12px] text-[var(--ci-text)]">
+        <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+        <span>{dict.memento}</span>
+      </p>
 
       <BeneficiariPanel orgSlug={orgSlug} beneficiari={beneficiari} />
 

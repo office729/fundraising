@@ -9,6 +9,8 @@ export const FORMULAR230_DICT = {
     title: "Formularul 230",
     subtitle: "Redirecționare 3,5% din impozitul pe venit — răspunsuri reale, trimise de public prin link",
     stats: { total: "Total formulare", lunaAceasta: "Luna aceasta", distributie2Ani: "Distribuție 2 ani" },
+    memento:
+      "Memento ANAF: organizația primește cei 3,5% doar dacă figurează în Registrul public ANAF al entităților eligibile la data plății (înscrierea se cere cu Formularul 163). Formularele și situația centralizatoare au, de regulă, termen 25 mai (în 2025 a fost 26 mai), sub sancțiunea decăderii; verifică data exactă în ghidul ANAF al anului. Păstrează originalele pe hârtie: ANAF le poate cere.",
     raspunsuri: {
       title: "Răspunsuri",
       recente: "cele mai recente",
@@ -90,6 +92,8 @@ export const FORMULAR230_DICT = {
     title: "Form 230",
     subtitle: "3.5% income-tax redirection — real responses, submitted by the public via link",
     stats: { total: "Total forms", lunaAceasta: "This month", distributie2Ani: "2-year distribution" },
+    memento:
+      "ANAF reminder: the organization receives the 3.5% only if it is in ANAF's public registry of eligible entities at the time of payment (registration is requested with Form 163). Forms and the centralised statement are usually due on 25 May (in 2025 it was 26 May), on pain of forfeiture; check the exact date in ANAF's guide for the year. Keep the paper originals: ANAF may ask for them.",
     raspunsuri: {
       title: "Responses",
       recente: "most recent",
