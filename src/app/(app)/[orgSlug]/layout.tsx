@@ -77,6 +77,12 @@ export default async function OrgLayout({
         initialCif={access.orgCif}
         initialDomeniuActivitate={access.orgDomeniuActivitate}
       />
+      <a
+        href="#continut"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[100] focus:rounded-md focus:bg-panel focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-ink focus:shadow-lg"
+      >
+        {locale === "ro" ? "Sari la conținut" : "Skip to content"}
+      </a>
       <header className="border-b border-line bg-panel">
         {/* Fără max-w — bară pe toată lățimea, la fel ca <main> de mai jos
             (vezi comentariul de-acolo). flex-wrap: pe ecran îngust (telefon),
@@ -179,7 +185,7 @@ export default async function OrgLayout({
           </Link>
         </div>
       )}
-      <main className="px-4 py-6 sm:px-6 sm:py-8">
+      <main id="continut" tabIndex={-1} className="px-4 py-6 focus:outline-none sm:px-6 sm:py-8">
         <OnboardingCallPrompt show={showOnboarding} orgSlug={orgSlug} dict={dict.onboardingCall} />
         {children}
       </main>
