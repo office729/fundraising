@@ -181,6 +181,8 @@ export function CrmShell({
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setSearchOpen(true);
+      } else if (e.key === "Escape") {
+        setMobileOpen(false);
       }
     }
     document.addEventListener("keydown", onKey);
