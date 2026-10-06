@@ -7,6 +7,8 @@ import { and, asc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import { type OrgContext, withOrgSession } from "@/lib/auth/guard";
 import { celMaiRecentBilant, verificaStareFiscala } from "@/lib/anaf";
 import { getLimiteleEfective, subCota } from "@/lib/billing/quota";
+import { ETAPE_PATH_KEYS, bifeDinEtapa, etapaCurenta } from "@/lib/etape-companie";
+import { amprentePersoana } from "@/lib/gdpr-persoane";
 import { urlWebSigur } from "@/lib/validation";
 import { companies, companyNotite, companySponsorizari, companyStageLog, contacts } from "@/lib/db/schema";
 
@@ -161,6 +163,7 @@ export const adaugaContact = withOrgSession(async (ctx, _prev: AdaugaContactStat
   const email = String(formData.get("email") ?? "").trim();
   const telefon = String(formData.get("telefon") ?? "").trim();
   const linkedin = String(formData.get("linkedin") ?? "").trim();
+  const dept = String(formData.get("dept") ?? "").trim();
 
   if (!companyId || !nume) return { error: "Numele contactului e obligatoriu." };
   if (linkedin && !urlWebSigur(linkedin)) return { error: "Linkul LinkedIn nu e o adresă web validă (http/https)." };
@@ -173,6 +176,7 @@ export const adaugaContact = withOrgSession(async (ctx, _prev: AdaugaContactStat
     companyId,
     nume,
     rol: rol || null,
+    dept: dept || null,
     email: email || null,
     telefon: telefon || null,
     linkedin: urlWebSigur(linkedin),
@@ -188,40 +192,118 @@ export const comutaContactCheie = withOrgSession(async (ctx, id: string, cheie: 
   return { error: null };
 });
 
-// Etapa în pipeline. „respins” marchează firma ca pierdută (status lost) și păstrează etapa;
-// „sponsorizat” o marchează câștigată; orice altă etapă redeschide o firmă respinsă.
-const ETAPE_VALIDE = new Set(["nou", "pe_viitor", "email", "mesaj", "onepager", "telefon", "online", "contract_trimis", "contract_semnat", "contract_asteptare", "sponsorizat"]);
-export const seteazaEtapa = withOrgSession(async (ctx, companyId: string, etapa: string): Promise<ActionState> => {
-  if (etapa !== "respins" && !ETAPE_VALIDE.has(etapa)) return { error: "Etapă necunoscută." };
+// Câmpuri de lucru ne-mapate în coloane (companies.extra, jsonb) — îmbinare superficială, fără migrare.
+type ExtraFirma = {
+  etapeBifate?: string[];
+  negasit?: { la: string; de: string; deNume: string | null };
+  linkedinAdaugat?: { la: string; de: string };
+  facebookAdaugat?: { la: string; de: string };
+  nuMaiCauta?: string[];
+  deAprobat?: PersoanaDeAprobat[];
+};
+export type PersoanaDeAprobat = {
+  id: string;
+  nume: string;
+  functie: string | null;
+  departament: string | null;
+  sursa: string | null;
+  email: string | null;
+  emailStare: "verificat" | "neverificat" | "invalid" | "nesigur" | null;
+  telefon: string | null;
+  linkedin: string | null;
+};
 
-  const [curent] = await ctx.db
-    .select({ stage: companies.stage, status: companies.status })
+async function citesteExtra(ctx: OrgContext, companyId: string) {
+  const [r] = await ctx.db
+    .select({ extra: companies.extra, stage: companies.stage, status: companies.status })
     .from(companies)
     .where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId)))
     .limit(1);
-  if (!curent) return { error: "Firma nu a fost găsită." };
+  return r ? { extra: (r.extra ?? {}) as ExtraFirma, stage: r.stage, status: r.status } : null;
+}
 
-  const stageNou = (etapa === "respins" ? curent.stage : etapa) as NonNullable<(typeof companies.$inferInsert)["stage"]>;
-  const statusNou = etapa === "respins" ? "lost" : etapa === "sponsorizat" ? "won" : "open";
+async function scrieExtra(ctx: OrgContext, companyId: string, patch: Partial<ExtraFirma>, scoate: (keyof ExtraFirma)[] = [], campuri: Partial<typeof companies.$inferInsert> = {}) {
+  let expr = sql`coalesce(${companies.extra}, '{}'::jsonb)`;
+  for (const k of scoate) expr = sql`(${expr}) - ${k}::text`;
+  if (Object.keys(patch).length) expr = sql`(${expr}) || ${JSON.stringify(patch)}::text::jsonb`;
+  await ctx.db
+    .update(companies)
+    .set({ extra: expr, updatedBy: ctx.userId, ...campuri })
+    .where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId)));
+}
 
-  // Jurnal și update DOAR dacă s-a schimbat ceva (nu la fiecare click pe aceeași etapă).
-  if (stageNou === curent.stage && statusNou === curent.status) return { error: null };
+type StageEnum = NonNullable<(typeof companies.$inferInsert)["stage"]>;
 
-  await ctx.db.update(companies).set({ stage: stageNou, status: statusNou, updatedBy: ctx.userId }).where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId)));
+async function jurnalEtapa(ctx: OrgContext, companyId: string, de: { stage: string; status: string }, spre: { stage: string; status: string }) {
+  if (de.stage === spre.stage && de.status === spre.status) return;
   await ctx.db.insert(companyStageLog).values({
     orgId: ctx.orgId,
     companyId,
-    fromStage: curent.stage,
-    toStage: stageNou,
-    fromStatus: curent.status,
-    toStatus: statusNou,
+    fromStage: de.stage as StageEnum,
+    toStage: spre.stage as StageEnum,
+    fromStatus: de.status as "open" | "won" | "lost" | "parked",
+    toStatus: spre.status as "open" | "won" | "lost" | "parked",
     byUserId: ctx.userId,
   });
+}
+
+// Path-ul din fișa firmei: clic pe o etapă o bifează / debifează (salvare imediată). Etapa curentă
+// (companies.stage) = cea mai avansată bifată, după ordinea din lib/etape-companie.ts — aceeași listă ca în interfață.
+// Clic pe „Nou” șterge toate bifele. O firmă respinsă se redeschide la orice bifare.
+export const comutaEtapaBifata = withOrgSession(async (ctx, companyId: string, etapa: string): Promise<ActionState> => {
+  if (!ETAPE_PATH_KEYS.includes(etapa)) return { error: "Etapă necunoscută." };
+  const firma = await citesteExtra(ctx, companyId);
+  if (!firma) return { error: "Firma nu a fost găsită." };
+
+  const bifateAcum = new Set(firma.extra.etapeBifate ?? bifeDinEtapa(firma.stage));
+  if (etapa === "nou") bifateAcum.clear();
+  else if (bifateAcum.has(etapa)) bifateAcum.delete(etapa);
+  else bifateAcum.add(etapa);
+
+  const bifate = ETAPE_PATH_KEYS.filter((k) => bifateAcum.has(k));
+  const statusNou = firma.status === "lost" ? "open" : firma.status;
+  // O firmă câștigată rămâne la „sponsorizat”; bifele se păstrează pentru cazul în care rezultatul se retrage.
+  const stageNou = statusNou === "won" ? "sponsorizat" : etapaCurenta(bifate);
+
+  await scrieExtra(ctx, companyId, { etapeBifate: bifate }, [], { stage: stageNou as StageEnum, status: statusNou });
+  await jurnalEtapa(ctx, companyId, { stage: firma.stage, status: firma.status }, { stage: stageNou, status: statusNou });
   return { error: null };
 });
 
+// „Sponsorizat” (câștigată) și „Respins” (pierdută) sunt rezultate separate de path; al doilea clic le retrage.
+export const seteazaRezultat = withOrgSession(async (ctx, companyId: string, rezultat: "sponsorizat" | "respins", activ: boolean): Promise<ActionState> => {
+  if (rezultat !== "sponsorizat" && rezultat !== "respins") return { error: "Rezultat necunoscut." };
+  const firma = await citesteExtra(ctx, companyId);
+  if (!firma) return { error: "Firma nu a fost găsită." };
+
+  const bifate = firma.extra.etapeBifate ?? bifeDinEtapa(firma.stage === "sponsorizat" ? "contract_semnat" : firma.stage);
+  const statusNou = !activ ? "open" : rezultat === "sponsorizat" ? "won" : "lost";
+  const stageNou = statusNou === "won" ? "sponsorizat" : etapaCurenta(bifate);
+
+  await scrieExtra(ctx, companyId, { etapeBifate: [...bifate] }, [], { stage: stageNou as StageEnum, status: statusNou });
+  await jurnalEtapa(ctx, companyId, { stage: firma.stage, status: firma.status }, { stage: stageNou, status: statusNou });
+  return { error: null };
+});
 export const stergeContact = withOrgSession(async (ctx, id: string): Promise<ActionState> => {
+  const [contact] = await ctx.db
+    .select({ companyId: contacts.companyId, nume: contacts.nume, linkedin: contacts.linkedin })
+    .from(contacts)
+    .where(and(eq(contacts.id, id), eq(contacts.orgId, ctx.orgId)))
+    .limit(1);
+  if (!contact) return { error: null };
   await ctx.db.delete(contacts).where(and(eq(contacts.id, id), eq(contacts.orgId, ctx.orgId)));
+  // GDPR: persoana ștearsă intră în lista „nu mai căuta” doar ca amprentă (hash), nu cu numele.
+  const amprente = amprentePersoana(ctx.orgId, contact.companyId, contact.nume, contact.linkedin);
+  await ctx.db
+    .update(companies)
+    .set({
+      extra: sql`jsonb_set(coalesce(${companies.extra}, '{}'::jsonb), '{nuMaiCauta}', (
+        select coalesce(jsonb_agg(distinct v), '[]'::jsonb) from jsonb_array_elements_text(
+          coalesce(${companies.extra}->'nuMaiCauta', '[]'::jsonb) || ${JSON.stringify(amprente)}::text::jsonb
+        ) as t(v)
+      ))`,
+    })
+    .where(and(eq(companies.id, contact.companyId), eq(companies.orgId, ctx.orgId)));
   return { error: null };
 });
 

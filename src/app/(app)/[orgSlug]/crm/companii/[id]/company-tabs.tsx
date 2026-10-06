@@ -35,7 +35,11 @@ export function CompanyTabs({
   contacte,
   activitate,
   contractSectiune,
+  defaultTab,
+  ghid,
 }: {
+  defaultTab: string;
+  ghid: Omit<Parameters<typeof ContactePanel>[0], "companyId" | "contacte">;
   firma: Firma;
   sponsorizari: Parameters<typeof SponsorizariPanel>[0]["sponsorizari"];
   notite: Parameters<typeof NotitePanel>[0]["notite"];
@@ -49,15 +53,16 @@ export function CompanyTabs({
   return (
     <Tabs
       accent="primary"
+      defaultTab={defaultTab}
       tabs={[
         { key: "prezentare", label: dict.tabs.prezentare },
+        { key: "contacte", label: dict.tabs.contacte(contacte.length) },
         { key: "financiar", label: dict.tabs.financiar },
         { key: "sponsorizari", label: dict.tabs.sponsorizari(sponsorizari.length) },
         { key: "contract", label: dict.tabs.contract },
         { key: "notite", label: dict.tabs.notite },
         { key: "activitate", label: dict.tabs.activitate },
         { key: "documente", label: dict.tabs.documente },
-        { key: "contacte", label: dict.tabs.contacte(contacte.length) },
         { key: "editare", label: dict.tabs.editare },
       ]}
     >
@@ -130,7 +135,7 @@ export function CompanyTabs({
               description={dict.documenteEmpty.description}
             />
           );
-        if (active === "contacte") return <ContactePanel companyId={c.id} contacte={contacte} />;
+        if (active === "contacte") return <ContactePanel companyId={c.id} contacte={contacte} {...ghid} />;
         return (
           <EditarePanel
             companyId={c.id}

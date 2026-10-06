@@ -11,14 +11,26 @@ import { getCompanieDetaliu } from "../queries";
 import { CompanyTabs } from "./company-tabs";
 import { IstoricEtape } from "./istoric-etape";
 import { ContractSponsorizareSection } from "./contract-sponsorizare-section";
+import { bifeDinEtapa } from "@/lib/etape-companie";
+import type { PersoanaDeAprobat } from "../actions";
+import { PaginiSociale } from "./pagini-sociale";
 import { PipelineCard } from "./pipeline-card";
 import { ScorCard } from "./scor-card";
 import { TagPills } from "./tag-pills";
 
 const CONTRACT_TONE: Record<string, StatusTone> = { trimis: "blue", asteptare: "amber", semnat: "green", anulat: "red" };
 
-export default async function CompanieProfilPage({ params }: { params: Promise<{ orgSlug: string; id: string }> }) {
+const TABURI_VALIDE = ["prezentare", "contacte", "financiar", "sponsorizari", "contract", "notite", "activitate", "documente", "editare"];
+
+export default async function CompanieProfilPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ orgSlug: string; id: string }>;
+  searchParams: Promise<{ tab?: string | string[] }>;
+}) {
   const { orgSlug, id } = await params;
+  const { tab } = await searchParams;
   const data = await getCompanieDetaliu(orgSlug, id);
   if (!data) notFound();
   // adresa veche (UUID complet, doar hex) → adresa cu denumirea firmei
@@ -26,7 +38,16 @@ export default async function CompanieProfilPage({ params }: { params: Promise<{
   const locale = await getLocale();
   const dict = COMPANII_DICT[locale].detail;
 
-  const { companie: c, sponsorizari, notite, contacte, responsabili, jurnalEtape } = data;
+  const { companie: c, sponsorizari, notite, contacte, responsabili, jurnalEtape, orgNume, userEmail } = data;
+  const extra = (c.extra ?? {}) as {
+    etapeBifate?: string[];
+    negasit?: { la: string; deNume?: string | null };
+    deAprobat?: PersoanaDeAprobat[];
+  };
+  // Firmele care încă n-au sponsorizat se deschid direct pe „Contacte”; ?tab=… alege explicit tabul.
+  const tabCerut = Array.isArray(tab) ? tab[0] : tab;
+  const nuAreSponsorizat = sponsorizari.length === 0 && !(c.sumaSponsorizata && c.sumaSponsorizata > 0) && c.status !== "won";
+  const defaultTab = tabCerut && TABURI_VALIDE.includes(tabCerut) ? tabCerut : nuAreSponsorizat ? "contacte" : "prezentare";
 
   const activitate = [
     ...sponsorizari.map((s) => ({
@@ -72,6 +93,8 @@ export default async function CompanieProfilPage({ params }: { params: Promise<{
           </div>
         </div>
 
+        <PaginiSociale companyId={c.id} nume={c.nume} linkedin={c.linkedin} facebook={c.facebook} />
+
         <div className="mt-5 grid grid-cols-2 gap-4 border-t border-[var(--ci-border)] pt-4 sm:grid-cols-4">
           <Stat label={dict.stats.totalSponsorizat} value={`${(c.sumaSponsorizata ?? 0).toLocaleString("ro-RO")} RON`} />
           <Stat label={dict.stats.soldDisponibil} value={c.sumaDisponibila != null ? `${c.sumaDisponibila.toLocaleString("ro-RO")} RON` : "—"} />
@@ -90,7 +113,11 @@ export default async function CompanieProfilPage({ params }: { params: Promise<{
         }}
       />
 
-      <PipelineCard companyId={c.id} stage={c.stage} status={c.status} />
+      <PipelineCard
+        companyId={c.id}
+        bifate={extra.etapeBifate ?? bifeDinEtapa(c.stage === "sponsorizat" ? "contract_semnat" : c.stage)}
+        status={c.status}
+      />
 
       <IstoricEtape intrari={jurnalEtape} locale={locale} />
 
@@ -115,6 +142,14 @@ export default async function CompanieProfilPage({ params }: { params: Promise<{
         notite={notite}
         contacte={contacte}
         activitate={activitate}
+        defaultTab={defaultTab}
+        ghid={{
+          firma: { id: c.id, nume: c.nume, administrator: c.administrator, linkedin: c.linkedin, site: c.site },
+          deAprobat: extra.deAprobat ?? [],
+          negasit: extra.negasit ? { la: extra.negasit.la, deNume: extra.negasit.deNume ?? null } : null,
+          orgNume,
+          emailContact: userEmail,
+        }}
         contractSectiune={
           <ContractSponsorizareSection
                 firma={{

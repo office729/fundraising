@@ -253,7 +253,7 @@ export const getCompanieDetaliu = withOrgSession(async (ctx, segment: string) =>
       .limit(100),
   ]);
 
-  return { companie, sponsorizari, notite, contacte: contacteFirma, responsabili, jurnalEtape, segmentCanonic };
+  return { companie, sponsorizari, notite, contacte: contacteFirma, responsabili, jurnalEtape, segmentCanonic, orgNume: ctx.orgName, userEmail: ctx.userEmail };
 });
 
 
