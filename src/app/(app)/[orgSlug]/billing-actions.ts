@@ -3,7 +3,8 @@
 import { desc, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 
-import { withOrgAdmin } from "@/lib/auth/guard";
+import { inregistreazaAudit } from "@/lib/audit";
+import { withOrgAdmin, type OrgContext } from "@/lib/auth/guard";
 import { calculateCustomPlanPrice, normalizeCustomPlanConfig, type CustomPlanConfigSaved } from "@/lib/billing/custom-plan";
 import { creeazaPlataAbonament } from "@/lib/billing/netopia-checkout";
 import { NUME_PACHET_FIX, PACKAGE_LIMITS, type OrgPackage } from "@/lib/billing/packages";
@@ -12,6 +13,7 @@ import { cifFolositDeAltaOrganizatie, MESAJ_CIF_FOLOSIT } from "@/lib/cif";
 import { EroareUtilizator } from "@/lib/erori";
 import { cifValidFormat } from "@/lib/iban";
 import { gasesteJudet } from "@/lib/judete";
+import { TERMENI_VERSIUNE } from "@/lib/legal-version";
 
 // Adresa platformei, pentru notifyUrl/redirectUrl/cancelUrl trimise la Netopia.
 // Sursa e NEXT_PUBLIC_SITE_URL (fixă, din mediu), NU headerele cererii
@@ -26,14 +28,28 @@ async function origin(): Promise<string> {
   return hdrs.get("origin") ?? `${hdrs.get("x-forwarded-proto") ?? "https"}://${hdrs.get("host")}`;
 }
 
+// Acordul pentru taxarea automată lunară (plată inițiată de comerciant): fără el nu pornește plata, iar bifa e
+// înregistrată în jurnalul de audit cu versiunea Termenilor, ca dovadă a acordului scris.
+async function inregistreazaAcordReinnoire(ctx: OrgContext, acord: boolean, pachet: string, pretLunar: number): Promise<void> {
+  if (acord !== true) throw new EroareUtilizator("Bifează acordul pentru reînnoirea automată ca să continui la plată.");
+  await inregistreazaAudit(ctx.db, {
+    orgId: ctx.orgId,
+    actorAppUserId: ctx.userId,
+    actiune: "acord_reinnoire_automata",
+    entitate: "abonament",
+    detalii: { pachet, pretLunar, termeniVersiune: TERMENI_VERSIUNE },
+  });
+}
+
 // Alegerea unui pachet fix — pornește o plată Netopia pentru o lună de acces;
 // clientul redirecționează la URL-ul întors. Pachetul și starea organizației se
 // schimbă abia când IPN-ul verificat confirmă plata (api/netopia/ipn/route.ts),
 // niciodată optimist, înainte de confirmare.
 export const startCheckoutAction = withOrgAdmin(
-  async (ctx, pkg: Exclude<OrgPackage, "trial" | "custom">) => {
+  async (ctx, pkg: Exclude<OrgPackage, "trial" | "custom">, acordReinnoire: boolean) => {
     // Tipurile TypeScript nu protejează o Server Action apelată direct: cu „trial" sau „custom" prețul ar fi null/0.
     if (pkg !== "start" && pkg !== "crestere" && pkg !== "impact") throw new EroareUtilizator("Pachet invalid.");
+    await inregistreazaAcordReinnoire(ctx, acordReinnoire, pkg, PACKAGE_LIMITS[pkg].pretLunar!);
     const url = await creeazaPlataAbonament(ctx, {
       pachet: pkg,
       pretLunar: PACKAGE_LIMITS[pkg].pretLunar!,
@@ -60,10 +76,12 @@ export const startCustomCheckoutAction = withOrgAdmin(
       tools: string[];
       accesDesignToate?: boolean;
     },
+    acordReinnoire: boolean,
   ) => {
     const config = normalizeCustomPlanConfig(rawConfig);
     const pretLunar = calculateCustomPlanPrice(config);
     const saved: CustomPlanConfigSaved = { ...config, pretLunar };
+    await inregistreazaAcordReinnoire(ctx, acordReinnoire, "custom", pretLunar);
 
     const url = await creeazaPlataAbonament(ctx, {
       pachet: "custom",

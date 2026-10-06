@@ -61,7 +61,7 @@ function SliderField({
   );
 }
 
-export function CustomPlanBuilder({ orgSlug, locale }: { orgSlug: string; locale: Locale }) {
+export function CustomPlanBuilder({ orgSlug, locale, acord }: { orgSlug: string; locale: Locale; acord: boolean }) {
   const t = ABONAMENT_DICT[locale].custom;
   const loc = locale === "ro" ? "ro-RO" : "en-US";
   const [config, setConfig] = useState({
@@ -102,7 +102,7 @@ export function CustomPlanBuilder({ orgSlug, locale }: { orgSlug: string; locale
     setEroare(null);
     startTransition(async () => {
       try {
-        const { url } = await startCustomCheckoutAction(orgSlug, config);
+        const { url } = await startCustomCheckoutAction(orgSlug, config, acord);
         trackEvent("begin_checkout", {
           currency: "RON",
           value: pret,

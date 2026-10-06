@@ -117,6 +117,9 @@ export function PackagePicker({ orgSlug, locale }: { orgSlug: string; locale: Lo
     };
   }, [orgSlug]);
   const dateOk = date !== null && dateFacturareComplete(date);
+  // Acord explicit pentru taxarea automată lunară (cerut de rețelele de carduri pentru plățile inițiate de comerciant):
+  // butoanele de plată (pachete și plan personalizat) rămân blocate până e bifat.
+  const [acord, setAcord] = useState(false);
 
   const [pending, startTransition] = useTransition();
   const [seLncarca, setSeIncarca] = useState<Exclude<OrgPackage, "trial"> | null>(null);
@@ -127,7 +130,7 @@ export function PackagePicker({ orgSlug, locale }: { orgSlug: string; locale: Lo
     setSeIncarca(pkg);
     startTransition(async () => {
       try {
-        const { url } = await startCheckoutAction(orgSlug, pkg);
+        const { url } = await startCheckoutAction(orgSlug, pkg, acord);
         trackEvent("begin_checkout", {
           currency: "RON",
           value: PACKAGE_LIMITS[pkg].pretLunar ?? undefined,
@@ -151,7 +154,17 @@ export function PackagePicker({ orgSlug, locale }: { orgSlug: string; locale: Lo
       <p className="mx-auto mb-4 max-w-xl text-center text-[12.5px] leading-relaxed text-muted-2">{t.recurent}</p>
       {eroare && <p className="mx-auto mb-4 max-w-xl text-center text-sm text-red-600">{eroare}</p>}
       {date && !dateOk && <DateFacturareForm orgSlug={orgSlug} initial={date} onSaved={setDate} locale={locale} />}
-      <fieldset disabled={!dateOk} className={dateOk ? "" : "opacity-50"}>
+      <label className="mx-auto mb-5 flex max-w-xl items-start gap-2.5 text-[13px] leading-relaxed text-ink">
+        <input type="checkbox" checked={acord} onChange={(e) => setAcord(e.target.checked)} className="mt-1 h-4 w-4 shrink-0 rounded border-line" />
+        <span>
+          {t.acord}{" "}
+          <a href="/termeni" target="_blank" rel="noopener" className="font-medium underline">
+            {t.acordTermeni}
+          </a>
+          .
+        </span>
+      </label>
+      <fieldset disabled={!dateOk || !acord} className={dateOk && acord ? "" : "opacity-50"}>
       <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
         {PACHETE.map((p) => {
           const l = PACKAGE_LIMITS[p.key];
@@ -196,7 +209,7 @@ export function PackagePicker({ orgSlug, locale }: { orgSlug: string; locale: Lo
       </div>
 
       <div className="mt-5">
-        <CustomPlanBuilder orgSlug={orgSlug} locale={locale} />
+        <CustomPlanBuilder orgSlug={orgSlug} locale={locale} acord={acord} />
       </div>
       </fieldset>
     </div>

@@ -16,6 +16,8 @@ export const ABONAMENT_DICT = {
     picker: {
       recurent:
         "Plata e recurentă: dacă banca permite, cardul e reținut și taxat automat în fiecare lună, până anulezi din Setări → Abonament. Poți opri reînnoirea automată oricând, fără să pierzi accesul deja plătit.",
+      acord: "Sunt de acord ca cardul să fie reținut și taxat automat în fiecare lună, la prețul pachetului ales în vigoare la reînnoire, până anulez din Setări → Abonament.",
+      acordTermeni: "Termenii și condițiile",
       utilizator: "utilizator",
       utilizatori: "utilizatori",
       contactePf: "contacte persoane fizice",
@@ -112,6 +114,8 @@ export const ABONAMENT_DICT = {
     picker: {
       recurent:
         "Payment is recurring: if your bank allows it, the card is saved and charged automatically every month until you cancel in Settings → Subscription. You can stop automatic renewal at any time without losing the access you've already paid for.",
+      acord: "I agree that my card is saved and charged automatically every month, at the price of the chosen plan in force at renewal, until I cancel in Settings → Subscription.",
+      acordTermeni: "Terms and conditions",
       utilizator: "user",
       utilizatori: "users",
       contactePf: "individual contacts",
