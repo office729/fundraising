@@ -3,7 +3,7 @@ import "server-only";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 
 import type { OrgContext } from "@/lib/auth/guard";
-import { angajati, kpiAtribuiri, kpiDefinitii, kpiValori, roluri } from "@/lib/db/schema";
+import { angajati, kpiAtribuiri, kpiDefinitii, kpiProfiluriSezoniere, kpiProfiluriSezoniereItemi, kpiValori, roluri } from "@/lib/db/schema";
 
 // Motorul KPI (Faza C) — calculează valori AUTOMATE pentru KPI-urile legate
 // de o sursă de date reală (sursaDate.tip !== 'manual'), din activitatea deja
@@ -213,6 +213,48 @@ export async function istoricValori(dbCtx: OrgContext["db"], angajatId: string, 
   return rows.reverse();
 }
 
+// --- Profiluri KPI sezoniere (Faza F) ----------------------------------
+// Un profil sezonier se aplică ORG-WIDE pe durata lui, nu per atribuire:
+// pentru KPI-urile incluse, targetul/ponderea din profil înlocuiesc temporar
+// pe cele normale din kpi_atribuiri. După perioadă revine automat la normal
+// — pur și simplu data curentă nu se mai potrivește intervalul, nimic de
+// "dezactivat" manual. Un profil `recurent` se reactivează în fiecare an pe
+// aceleași lună/zi (anul din dataStart/dataSfarsit e ignorat la comparație).
+
+export type OverrideSezonier = { targetOverride: number | null; pondereOverride: number | null; profilNume: string };
+
+function inIntervalSezonier(lunaZi: string, startLunaZi: string, endLunaZi: string): boolean {
+  if (startLunaZi <= endLunaZi) return lunaZi >= startLunaZi && lunaZi <= endLunaZi;
+  return lunaZi >= startLunaZi || lunaZi <= endLunaZi; // interval ce trece peste Anul Nou (ex. 20-12 → 10-01)
+}
+
+export async function obtineOverrideSezonierActiv(dbCtx: OrgContext["db"], orgId: string, acum: Date = new Date()): Promise<Map<string, OverrideSezonier>> {
+  const azi = ISO_UTC(dataBucuresti(acum));
+  const lunaZi = azi.slice(5);
+
+  const profiluri = await dbCtx
+    .select({ id: kpiProfiluriSezoniere.id, nume: kpiProfiluriSezoniere.nume, dataStart: kpiProfiluriSezoniere.dataStart, dataSfarsit: kpiProfiluriSezoniere.dataSfarsit, recurent: kpiProfiluriSezoniere.recurent })
+    .from(kpiProfiluriSezoniere)
+    .where(eq(kpiProfiluriSezoniere.orgId, orgId));
+
+  const activeIds = profiluri
+    .filter((p) => (p.recurent ? inIntervalSezonier(lunaZi, p.dataStart.slice(5), p.dataSfarsit.slice(5)) : azi >= p.dataStart && azi <= p.dataSfarsit))
+    .map((p) => p.id);
+  if (activeIds.length === 0) return new Map();
+
+  const itemi = await dbCtx
+    .select({ profilId: kpiProfiluriSezoniereItemi.profilId, kpiDefinitieId: kpiProfiluriSezoniereItemi.kpiDefinitieId, targetOverride: kpiProfiluriSezoniereItemi.targetOverride, pondereOverride: kpiProfiluriSezoniereItemi.pondereOverride })
+    .from(kpiProfiluriSezoniereItemi)
+    .where(inArray(kpiProfiluriSezoniereItemi.profilId, activeIds));
+
+  const numeProfil = new Map(profiluri.map((p) => [p.id, p.nume]));
+  const rezultat = new Map<string, OverrideSezonier>();
+  for (const it of itemi) {
+    rezultat.set(it.kpiDefinitieId, { targetOverride: it.targetOverride as number | null, pondereOverride: it.pondereOverride, profilNume: numeProfil.get(it.profilId) ?? "" });
+  }
+  return rezultat;
+}
+
 // --- Rezumate pe echipă (Faza E — dashboard Manager/Departament/Organizație) ---
 // SPRE DEOSEBIRE de dashboard-ul personal (Faza D), care recalculează live
 // KPI-urile automate la fiecare vizită, aici citim DOAR ultima valoare deja
@@ -223,14 +265,17 @@ export async function istoricValori(dbCtx: OrgContext["db"], angajatId: string, 
 // plan) — aici totul e DOAR 3 interogări în bloc, indiferent de mărimea
 // echipei.
 
-export type StareKpiAngajat = { nume: string; valoare: number | null; targetNormal: number | null; unitate: string | null; status: StatusKpi; progres: number | null };
+export type StareKpiAngajat = { nume: string; valoare: number | null; targetNormal: number | null; unitate: string | null; status: StatusKpi; progres: number | null; profilSezonierNume: string | null; pondere: number | null };
 export type RezumatAngajat = {
   angajatId: string;
   nume: string;
   prenume: string | null;
   roleNume: string | null;
   kpiuri: StareKpiAngajat[];
-  scorMediu: number | null; // media progreselor KPI-urilor care au target — null dacă niciunul nu are
+  // Scor Mode 2: dacă cel puțin o atribuire are pondere setată, scorul e
+  // media ponderată (Σ progres×pondere / Σpondere) — altfel cade pe media
+  // simplă (Mode 1, echivalent cu ce calcula motorul înainte de Faza F).
+  scorMediu: number | null;
   restante: number;
   finalizate: number;
 };
@@ -251,6 +296,7 @@ export async function obtineRezumateAngajati(dbCtx: OrgContext["db"], orgId: str
     .select({
       angajatId: kpiAtribuiri.angajatId,
       kpiDefinitieId: kpiAtribuiri.kpiDefinitieId,
+      pondere: kpiAtribuiri.pondere,
       targetNormal: kpiAtribuiri.targetNormal,
       kpiNume: kpiDefinitii.nume,
       unitate: kpiDefinitii.unitate,
@@ -270,21 +316,32 @@ export async function obtineRezumateAngajati(dbCtx: OrgContext["db"], orgId: str
   `)) as unknown as { angajat_id: string; kpi_definitie_id: string; valoare: number }[];
   const valoareMap = new Map(valoriRows.map((r) => [`${r.angajat_id}:${r.kpi_definitie_id}`, r.valoare]));
 
+  const overrideSezonier = await obtineOverrideSezonierActiv(dbCtx, orgId);
+
   return angajatiRows.map((a) => {
     const atribuiri = atribuiriRows.filter((x) => x.angajatId === a.id);
     const kpiuri: StareKpiAngajat[] = atribuiri.map((x) => {
       const valoare = valoareMap.get(`${a.id}:${x.kpiDefinitieId}`) ?? null;
+      const override = overrideSezonier.get(x.kpiDefinitieId);
+      const targetNormal = override?.targetOverride ?? x.targetNormal;
       return {
         nume: x.kpiNume,
         valoare,
-        targetNormal: x.targetNormal,
+        targetNormal,
         unitate: x.unitate,
-        status: calculeazaStatus(valoare, x.targetNormal, x.directie),
-        progres: progresProcent(valoare, x.targetNormal, x.directie),
+        status: calculeazaStatus(valoare, targetNormal, x.directie),
+        progres: progresProcent(valoare, targetNormal, x.directie),
+        profilSezonierNume: override?.profilNume ?? null,
+        pondere: override?.pondereOverride ?? x.pondere,
       };
     });
     const cuTarget = kpiuri.filter((k) => k.progres !== null);
-    const scorMediu = cuTarget.length ? Math.round(cuTarget.reduce((s, k) => s + Math.min(100, k.progres as number), 0) / cuTarget.length) : null;
+    const totalPondere = cuTarget.reduce((s, k) => s + (k.pondere ?? 0), 0);
+    const scorMediu = !cuTarget.length
+      ? null
+      : totalPondere > 0
+        ? Math.round(cuTarget.reduce((s, k) => s + Math.min(100, k.progres as number) * (k.pondere ?? 0), 0) / totalPondere)
+        : Math.round(cuTarget.reduce((s, k) => s + Math.min(100, k.progres as number), 0) / cuTarget.length);
     return {
       angajatId: a.id,
       nume: a.nume,

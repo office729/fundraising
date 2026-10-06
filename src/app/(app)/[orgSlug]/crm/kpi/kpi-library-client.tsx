@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, ChevronDown, Copy, LayoutGrid, Pencil, Plus, Power, Sparkles, Trash2, TrendingUp, Users } from "lucide-react";
+import { Building2, CalendarRange, ChevronDown, Copy, GitBranch, LayoutGrid, Pencil, Plus, Power, Sparkles, Trash2, TrendingUp, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 
@@ -151,6 +151,20 @@ export function KpiLibraryClient({
               </>
             )}
           </DropdownMenu>
+          {esteAdmin && (
+            <DropdownMenu trigger={<Button variant="secondary">Configurare <ChevronDown className="h-3.5 w-3.5" /></Button>}>
+              {(close) => (
+                <>
+                  <DropdownItem onClick={() => { close(); router.push(`/${orgSlug}/crm/kpi/sezoniere`); }}>
+                    <CalendarRange className="h-3.5 w-3.5" /> Profiluri sezoniere
+                  </DropdownItem>
+                  <DropdownItem onClick={() => { close(); router.push(`/${orgSlug}/crm/kpi/funnel`); }}>
+                    <GitBranch className="h-3.5 w-3.5" /> Funnel-uri
+                  </DropdownItem>
+                </>
+              )}
+            </DropdownMenu>
+          )}
           {esteAdmin && (
             <Button
               onClick={() => {

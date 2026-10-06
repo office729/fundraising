@@ -4,7 +4,7 @@ import { and, eq } from "drizzle-orm";
 
 import { withOrgSession } from "@/lib/auth/guard";
 import { angajati, kpiAtribuiri, kpiDefinitii } from "@/lib/db/schema";
-import { calculeazaStatus, istoricValori, obtineSauCalculeazaValoareCurenta, progresProcent, type Directie, type Frecventa, type PunctIstoric, type StatusKpi, type SursaDate } from "@/lib/kpi-engine";
+import { calculeazaStatus, istoricValori, obtineOverrideSezonierActiv, obtineSauCalculeazaValoareCurenta, progresProcent, type Directie, type Frecventa, type PunctIstoric, type StatusKpi, type SursaDate } from "@/lib/kpi-engine";
 
 // Dashboard personal (Faza D) — generat AUTOMAT din KPI-urile atribuite
 // profilului de angajat al utilizatorului curent (legătura app_users →
@@ -28,12 +28,14 @@ export type KpiDashboardRand = {
   progres: number | null;
   status: StatusKpi;
   istoric: PunctIstoric[];
+  profilSezonierNume: string | null;
 };
 
 export type DashboardPersonal = {
   areProfil: boolean;
   angajatNume: string | null;
   kpiuri: KpiDashboardRand[];
+  profileSezoniereActive: string[];
 };
 
 export const obtineDashboardPersonalAction = withOrgSession(async (ctx): Promise<DashboardPersonal> => {
@@ -42,7 +44,7 @@ export const obtineDashboardPersonalAction = withOrgSession(async (ctx): Promise
     .from(angajati)
     .where(and(eq(angajati.orgId, ctx.orgId), eq(angajati.appUserId, ctx.userId)))
     .limit(1);
-  if (!angajat) return { areProfil: false, angajatNume: null, kpiuri: [] };
+  if (!angajat) return { areProfil: false, angajatNume: null, kpiuri: [], profileSezoniereActive: [] };
 
   const atribuiri = await ctx.db
     .select({
@@ -62,8 +64,9 @@ export const obtineDashboardPersonalAction = withOrgSession(async (ctx): Promise
     .innerJoin(kpiDefinitii, eq(kpiDefinitii.id, kpiAtribuiri.kpiDefinitieId))
     .where(and(eq(kpiAtribuiri.angajatId, angajat.id), eq(kpiAtribuiri.status, "activ")));
 
-  // Câte un KPI pe rând, dar toate KPI-urile în paralel (aceeași conexiune): înainte, 2–3 interogări secvențiale
-  // pentru fiecare atribuire. Promise.all păstrează ordinea.
+  const overrideSezonier = await obtineOverrideSezonierActiv(ctx.db, ctx.orgId);
+
+  // Toate KPI-urile în paralel (aceeași conexiune); Promise.all păstrează ordinea.
   const kpiuri: KpiDashboardRand[] = await Promise.all(
     atribuiri.map(async (a) => {
       const sursaDate = (a.sursaDate as SursaDate | null) ?? null;
@@ -71,6 +74,8 @@ export const obtineDashboardPersonalAction = withOrgSession(async (ctx): Promise
         obtineSauCalculeazaValoareCurenta(ctx.db, ctx.orgId, angajat.id, a.kpiDefinitieId, angajat.appUserId, a.frecventa, sursaDate),
         istoricValori(ctx.db, angajat.id, a.kpiDefinitieId),
       ]);
+      const override = overrideSezonier.get(a.kpiDefinitieId);
+      const targetNormal = override?.targetOverride ?? a.targetNormal;
       return {
         atribuireId: a.atribuireId,
         kpiDefinitieId: a.kpiDefinitieId,
@@ -78,18 +83,20 @@ export const obtineDashboardPersonalAction = withOrgSession(async (ctx): Promise
         unitate: a.unitate,
         directie: a.directie,
         frecventa: a.frecventa,
-        pondere: a.pondere,
+        pondere: override?.pondereOverride ?? a.pondere,
         targetMinim: a.targetMinim,
-        targetNormal: a.targetNormal,
+        targetNormal,
         targetStretch: a.targetStretch,
         valoare,
         sursa,
-        progres: progresProcent(valoare, a.targetNormal, a.directie),
-        status: calculeazaStatus(valoare, a.targetNormal, a.directie),
+        progres: progresProcent(valoare, targetNormal, a.directie),
+        status: calculeazaStatus(valoare, targetNormal, a.directie),
         istoric,
+        profilSezonierNume: override?.profilNume ?? null,
       };
     }),
   );
+  const profileSezoniereActive = [...new Set(kpiuri.map((k) => k.profilSezonierNume).filter((n): n is string => n !== null))];
 
-  return { areProfil: true, angajatNume: `${angajat.nume} ${angajat.prenume ?? ""}`.trim(), kpiuri };
+  return { areProfil: true, angajatNume: `${angajat.nume} ${angajat.prenume ?? ""}`.trim(), kpiuri, profileSezoniereActive };
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, Sparkles, Target } from "lucide-react";
+import { CalendarRange, Eye, Sparkles, Target } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 
@@ -48,6 +48,15 @@ export function DashboardClient({ orgSlug, dashboard }: { orgSlug: string; dashb
         <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">Performanța mea</h1>
         <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">{dashboard.angajatNume}</p>
       </div>
+
+      {dashboard.profileSezoniereActive.length > 0 && (
+        <div className="flex items-center gap-2 rounded-[var(--ci-radius-card)] border border-[var(--ci-primary-soft)] bg-[var(--ci-primary-soft)] px-3.5 py-2.5 text-[13px] text-[var(--ci-text)]">
+          <CalendarRange className="h-4 w-4 shrink-0 text-[var(--ci-primary)]" />
+          <p>
+            Perioadă sezonieră activă: <span className="font-medium">{dashboard.profileSezoniereActive.join(", ")}</span> — targeturile de mai jos sunt ajustate pentru această perioadă.
+          </p>
+        </div>
+      )}
 
       {dashboard.kpiuri.length === 0 ? (
         <EmptyState
