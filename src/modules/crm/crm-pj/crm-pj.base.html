@@ -1569,7 +1569,7 @@ function importBackup(file){const r=new FileReader();r.onload=()=>{try{const d=J
 function raportPDF(){if(!isAdmin()){toast("Export permis doar administratorilor organizației.");return}if(!window.jspdf){toast("PDF indisponibil offline.");return}
   const dd=s=>String(s==null?"":s).normalize("NFD").replace(/[\u0300-\u036f]/g,"");
   const {jsPDF}=window.jspdf,doc=new jsPDF(),total=data.reduce((s,c)=>s+(c.suma||0),0),ct=data.reduce((s,c)=>s+c.contacte.length,0);
-  doc.setFontSize(15);doc.text("Raport prospectare corporate - salveaza o inima",14,18);
+  doc.setFontSize(15);doc.text("Raport prospectare corporate"+("__FA_ORG_NAME__"?" - __FA_ORG_NAME__":""),14,18);
   doc.setFontSize(9);doc.setTextColor(120);doc.text("Generat: "+new Date().toLocaleDateString("ro-RO")+"   "+dd(config.eu||""),14,25);
   doc.setTextColor(20);doc.setFontSize(10);
   doc.text("Companii: "+data.length+"    Contacte: "+ct+"    Suma totala de redirectionat: "+Number(total).toLocaleString("ro-RO")+" lei",14,33);

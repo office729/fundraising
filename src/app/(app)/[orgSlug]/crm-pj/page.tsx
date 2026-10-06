@@ -41,6 +41,7 @@ export default async function CrmPjPage({
   // gazdei, deci îl injectăm direct în locul citirii.
   const html = CRM_PJ_HTML.replaceAll("__FA_ORG_SLUG__", orgSlug)
     .replaceAll("__FA_ORG_ROLE__", access.role)
+    .replaceAll("__FA_ORG_NAME__", access.orgName.replace(/[<>&"'\\]/g, ""))
     .replace('localStorage.getItem("soi-crm-loginname")', () => literalJs(userName));
 
   return (

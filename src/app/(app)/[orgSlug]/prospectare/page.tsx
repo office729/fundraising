@@ -16,7 +16,7 @@ export default async function ProspectarePage({ params }: { params: Promise<{ or
 
   return (
     <CrmToolPage orgSlug={orgSlug} access={access}>
-      <StandaloneToolFrame html={PROSPECTARE_HTML} title={TITLE} orgSlug={orgSlug} />
+      <StandaloneToolFrame html={PROSPECTARE_HTML} title={TITLE} orgSlug={orgSlug} orgName={access.orgName} />
     </CrmToolPage>
   );
 }
