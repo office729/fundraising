@@ -302,11 +302,12 @@ export function CrmShell({
           <AvatarMenu userName={userName} orgSlug={orgSlug} role={role} />
         </header>
 
-        <main className="ci-scrollbar relative flex-1 overflow-y-auto px-6 py-6">
+        {/* Nu <main>: layout-ul organizației (app/[orgSlug]/layout.tsx) are deja reperul „main"; două ar fi invalide. */}
+        <div className="ci-scrollbar relative flex-1 overflow-y-auto px-6 py-6">
           <DomeniuProvider domeniu={orgDomeniuActivitate}>
             <LocaleProvider locale={locale}>{children}</LocaleProvider>
           </DomeniuProvider>
-        </main>
+        </div>
       </div>
 
       <AddDialog open={addOpen} onClose={() => setAddOpen(false)} base={base} pathname={pathname} />
