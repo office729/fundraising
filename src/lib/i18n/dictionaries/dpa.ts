@@ -11,7 +11,7 @@ export const DPA_DICT = {
     eyebrow: "Legal",
     titlu: "Acord de prelucrare a datelor (DPA)",
     actualizatLabel: "Versiune",
-    actualizat: "5 octombrie 2026",
+    actualizat: "6 octombrie 2026",
     sectiuni: [
       {
         titlu: "1. Părțile și obiectul acordului",
@@ -89,12 +89,13 @@ export const DPA_DICT = {
         titlu: "9. Încălcări ale securității datelor",
         paragrafe: [
           "Persoana împuternicită notifică Operatorul fără întârzieri nejustificate, de regulă în cel mult 48 de ore de la luarea la cunoștință, despre orice încălcare a securității care afectează datele Operatorului, cu informațiile disponibile (natura incidentului, datele și persoanele afectate, măsurile luate), pentru ca Operatorul să își poată îndeplini obligațiile de notificare către autoritate și persoanele vizate.",
+          "Punctul nostru de contact pentru incidente este vlad.placinta@alexandrit.ro (telefon 0757 401 042). Notificarea se trimite prin email către owner-ul și administratorii organizației din Platformă, iar Operatorul ne poate raporta o încălcare la aceeași adresă.",
         ],
       },
       {
         titlu: "10. Încetarea contractului: returnare și ștergere",
         paragrafe: [
-          "Operatorul își poate exporta datele oricând, inclusiv după expirarea accesului (owner). Dacă accesul expiră și contul nu este reactivat, ștergem definitiv datele Operatorului la 90 de zile de la expirare, după două avertizări prin email (la 60 și la 83 de zile). Operatorul poate cere ștergerea mai devreme, din Setări sau în scris. Copiile de siguranță se șterg la expirarea ciclului lor normal.",
+          "Operatorul își poate exporta datele oricând, inclusiv după expirarea accesului (owner). Dacă accesul expiră și contul nu este reactivat, ștergem definitiv datele Operatorului la 90 de zile de la expirare, după două avertizări prin email (la 60 și la 83 de zile). Operatorul poate cere ștergerea mai devreme, din Setări sau în scris. Copiile de siguranță se șterg la expirarea ciclului lor normal. După finalizarea ștergerii o confirmăm Operatorului în scris, prin email către owner, în cel mult 14 zile.",
           "Fac excepție datele pe care legea ne obligă să le păstrăm (de exemplu documentele fiscale emise de noi pentru abonament, 10 ani).",
         ],
       },
@@ -124,7 +125,7 @@ export const DPA_DICT = {
     eyebrow: "Legal",
     titlu: "Data Processing Agreement (DPA)",
     actualizatLabel: "Version",
-    actualizat: "October 5, 2026",
+    actualizat: "October 6, 2026",
     sectiuni: [
       {
         titlu: "1. Parties and subject matter",
@@ -202,12 +203,13 @@ export const DPA_DICT = {
         titlu: "9. Personal data breaches",
         paragrafe: [
           "The Processor notifies the Controller without undue delay, as a rule within 48 hours of becoming aware, of any security breach affecting the Controller's data, with the information available (nature of the incident, data and people affected, measures taken), so that the Controller can meet its notification obligations to the authority and data subjects.",
+          "Our contact point for incidents is vlad.placinta@alexandrit.ro (phone +40 757 401 042). The notice is sent by email to the owner and the administrators of the organization on the Platform, and the Controller can report a breach to us at the same address.",
         ],
       },
       {
         titlu: "10. Termination: return and deletion",
         paragrafe: [
-          "The Controller can export its data at any time, including after access has expired (owner). If access expires and the account is not reactivated, we permanently delete the Controller's data 90 days after expiry, after two email warnings (at 60 and 83 days). The Controller may request earlier deletion, from Settings or in writing. Backups are deleted when their normal cycle ends.",
+          "The Controller can export its data at any time, including after access has expired (owner). If access expires and the account is not reactivated, we permanently delete the Controller's data 90 days after expiry, after two email warnings (at 60 and 83 days). The Controller may request earlier deletion, from Settings or in writing. Backups are deleted when their normal cycle ends. Once the deletion is complete we confirm it to the Controller in writing, by email to the owner, within 14 days.",
           "Data we are legally required to keep (for example tax documents we issue for the subscription, 10 years) is excepted.",
         ],
       },
