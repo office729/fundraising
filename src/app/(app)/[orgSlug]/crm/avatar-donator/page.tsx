@@ -2,6 +2,7 @@ import { requireOrgAccess } from "@/lib/auth/guard";
 
 import { getAvatar } from "./actions";
 import { AvatarDonatorClient } from "./avatar-donator-client";
+import { titluAbsolut } from "@/lib/page-titles";
 
 export const dynamic = "force-dynamic";
 
@@ -12,4 +13,8 @@ export default async function AvatarDonatorPage({ params }: { params: Promise<{ 
   await requireOrgAccess(orgSlug);
   const { data, stat } = await getAvatar(orgSlug);
   return <AvatarDonatorClient initial={data} stat={stat} />;
+}
+
+export async function generateMetadata() {
+  return titluAbsolut("crmAvatarDonator");
 }

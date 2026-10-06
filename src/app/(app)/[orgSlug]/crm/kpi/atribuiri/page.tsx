@@ -4,6 +4,7 @@ import { listeazaAtribuiriAction } from "../atribuiri-actions";
 import { AtribuiriClient } from "../atribuiri-client";
 import { listeazaDefinitiiAction } from "../library-actions";
 import { listeazaAngajatiAction } from "../../organizatie/actions";
+import { titluAbsolut } from "@/lib/page-titles";
 
 export default async function AtribuiriPage({ params }: { params: Promise<{ orgSlug: string }> }) {
   const { orgSlug } = await params;
@@ -23,4 +24,8 @@ export default async function AtribuiriPage({ params }: { params: Promise<{ orgS
       esteAdmin={access.role === "owner" || access.role === "admin"}
     />
   );
+}
+
+export async function generateMetadata() {
+  return titluAbsolut("crmKpiAtribuiri");
 }

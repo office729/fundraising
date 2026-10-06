@@ -323,19 +323,30 @@ body {
 }
 
 
-/* Text pe butoane pline verzi/albastre: alb în tema deschisă, închis în cea întunecată (acolo culorile sunt deschise și
-   textul alb avea contrast 2,1–2,2:1). Specificitate de două clase > utilitarul `text-white`, fără a edita fiecare buton. */
+/* Tema întunecată, suprafețe pline: --brand-blue/--brand-green devin PASTELATE în .dark (gândite ca TEXT), dar mai multe
+   secțiuni și butoane le folosesc ca FUNDAL cu text alb (hero-ul din Hub, bara de sus, butoanele „Începe gratuit"): text alb pe
+   albastru deschis avea contrast ~2,2:1, iar logo-ul (cuvânt bleumarin) se pierdea pe fundalul închis. Fundalul albastru rămâne
+   SOLID (bleumarin) și în tema întunecată; verdele își schimbă textul în închis. Specificitate mai mare decât utilitarele Tailwind. */
 :root {
   --on-brand-green: #ffffff;
-  --on-brand-blue: #ffffff;
+  --brand-solid-hover: #103a68;
 }
 .dark {
   --on-brand-green: #0b0f16;
-  --on-brand-blue: #0b0f16;
 }
 .bg-brand-green.text-white {
   color: var(--on-brand-green);
 }
-.bg-brand-blue.text-white {
-  color: var(--on-brand-blue);
+.dark .bg-brand-blue {
+  background-color: var(--brand-solid);
+}
+.dark .hover\:bg-brand-blue-hover:hover {
+  background-color: var(--brand-solid-hover);
+}
+/* Logo: cuvântul „ALEXANDRIT" e bleumarin; în tema întunecată îl luminăm ca să se citească pe fundal închis. */
+.dark .brand-mark {
+  filter: brightness(2.1);
+}
+.dark .brand-mark.is-seara {
+  filter: hue-rotate(55deg) saturate(1.15) brightness(2.1);
 }

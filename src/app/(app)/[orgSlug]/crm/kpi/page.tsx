@@ -2,6 +2,7 @@ import { requireOrgAccess } from "@/lib/auth/guard";
 
 import { listeazaCategoriiAction, listeazaDefinitiiAction } from "./library-actions";
 import { KpiLibraryClient } from "./kpi-library-client";
+import { titluAbsolut } from "@/lib/page-titles";
 
 export default async function KpiLibraryPage({ params }: { params: Promise<{ orgSlug: string }> }) {
   const { orgSlug } = await params;
@@ -11,4 +12,8 @@ export default async function KpiLibraryPage({ params }: { params: Promise<{ org
   return (
     <KpiLibraryClient orgSlug={orgSlug} initialCategorii={categorii} initialDefinitii={definitii} esteAdmin={access.role === "owner" || access.role === "admin"} />
   );
+}
+
+export async function generateMetadata() {
+  return titluAbsolut("crmKpiLibrary");
 }

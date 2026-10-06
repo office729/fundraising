@@ -7,6 +7,7 @@ import { getObiective, getTendinta } from "./obiective-actions";
 import { ObiectiveBoard } from "./obiective-board";
 import { PerioadaPicker } from "./perioada-picker";
 import { Tendinta } from "./tendinta";
+import { titluAbsolut } from "@/lib/page-titles";
 
 export const dynamic = "force-dynamic";
 
@@ -64,4 +65,8 @@ export default async function KpiEchipaPage({
       )}
     </div>
   );
+}
+
+export async function generateMetadata() {
+  return titluAbsolut("crmKpiEchipa");
 }

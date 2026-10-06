@@ -2,6 +2,7 @@ import { requireOrgAccess } from "@/lib/auth/guard";
 
 import { listeazaAngajatiAction, listeazaDepartamenteAction, listeazaRoluriAction } from "./actions";
 import { OrganizatieClient } from "./organizatie-client";
+import { titluAbsolut } from "@/lib/page-titles";
 
 export default async function OrganizatiePage({ params }: { params: Promise<{ orgSlug: string }> }) {
   const { orgSlug } = await params;
@@ -20,4 +21,8 @@ export default async function OrganizatiePage({ params }: { params: Promise<{ or
       esteAdmin={access.role === "owner" || access.role === "admin"}
     />
   );
+}
+
+export async function generateMetadata() {
+  return titluAbsolut("crmOrganizatie");
 }

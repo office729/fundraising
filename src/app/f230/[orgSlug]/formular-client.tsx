@@ -231,6 +231,9 @@ export function Formular230Client({
   );
 }
 
+// Câmpurile cu text lung (CNP, email, telefon, adresă) ocupă tot rândul pe mobil; cele scurte (număr, bloc, scară, cod poștal…) rămân câte două.
+const LATE_PE_MOBIL = new Set<Camp>(["nume", "prenume", "cnp", "email", "telefon", "strada", "localitate", "judet"]);
+
 const AUTOCOMPLETE: Partial<Record<Camp, string>> = {
   nume: "family-name",
   prenume: "given-name",
@@ -254,7 +257,7 @@ function Field({
   // Completare automată a browserului (și evită zoom-ul iOS la focus, cu text de minim 16px pe mobil).
   const autoComplete = AUTOCOMPLETE[campo.key];
   return (
-    <label className="block text-xs font-medium text-muted">
+    <label className={`block text-xs font-medium text-muted ${LATE_PE_MOBIL.has(campo.key) ? "col-span-2 sm:col-span-1" : ""}`}>
       {campo.label}
       {campo.obligatoriu && " *"}
       {campo.select ? (
