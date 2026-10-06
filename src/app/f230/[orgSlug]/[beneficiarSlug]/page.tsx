@@ -1,4 +1,5 @@
 import { and, eq, sql } from "drizzle-orm";
+import { cache } from "react";
 import { notFound } from "next/navigation";
 
 import { db } from "@/lib/db";
@@ -10,7 +11,7 @@ import { Formular230Client } from "../formular-client";
 // contul/beneficiarul (pentru numele afișat + PDF-ul folosit la generare)
 // prin lookup public (app.public_lookup, vezi documentation/rls-setup.sql),
 // la fel ca /f230/[orgSlug] dinainte.
-async function getFormularPublic(orgSlug: string, beneficiarSlug: string) {
+const getFormularPublic = cache(async function getFormularPublic(orgSlug: string, beneficiarSlug: string) {
   return db.transaction(async (tx) => {
     await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
     const orgRows = await tx
@@ -36,6 +37,16 @@ async function getFormularPublic(orgSlug: string, beneficiarSlug: string) {
 
     return { org, beneficiar };
   });
+});
+
+// Titlu propriu în fila browserului (înainte, toate paginile se numeau „Alexandrit"); formularul nu se indexează.
+export async function generateMetadata({ params }: { params: Promise<{ orgSlug: string; beneficiarSlug: string }> }) {
+  const { orgSlug, beneficiarSlug } = await params;
+  const rezultat = await getFormularPublic(orgSlug, beneficiarSlug);
+  return {
+    title: rezultat ? `Formularul 230 — ${rezultat.beneficiar.nume}` : "Formularul 230",
+    robots: { index: false, follow: false },
+  };
 }
 
 export default async function Formular230PublicPage({
