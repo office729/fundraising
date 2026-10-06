@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import { requireOrgAccess } from "@/lib/auth/guard";
 import { getLocale } from "@/lib/i18n/get-locale";
+import { FitCrmShell } from "@/modules/crm/shared/fit-viewport";
 
 import "./calm-impact.css";
 import { CrmShell } from "./shell";
@@ -24,6 +25,7 @@ export async function CrmToolPage({ orgSlug, access, children }: { orgSlug: stri
       role={access.role}
       locale={locale}
     >
+      <FitCrmShell />
       <div className="absolute inset-0">{children}</div>
     </CrmShell>
   );

@@ -5,6 +5,7 @@ import { titluAbsolut } from "@/lib/page-titles";
 import { orgHasToolAccess } from "@/lib/billing/packages";
 import { ONE_PAGER_DESIGN_RECOMANDAT } from "@/lib/design-template-recommendations";
 import { ONE_PAGER_GENERATOR_HTML } from "@/modules/crm/one-pager-generator/one-pager-generator-html";
+import { ToolViewport } from "@/modules/crm/shared/fit-viewport";
 import { StandaloneToolFrame } from "@/modules/crm/shared/standalone-tool-frame";
 import { ToolLocked } from "@/modules/crm/shared/tool-locked";
 
@@ -23,7 +24,7 @@ export default async function OnePagerGeneratorPage({ params }: { params: Promis
   }
 
   return (
-    <div className="relative left-1/2 -ml-[50vw] flex h-screen w-screen flex-col overflow-hidden">
+    <ToolViewport className="relative left-1/2 -ml-[50vw] flex h-screen w-screen flex-col overflow-hidden">
       <header className="flex shrink-0 items-center gap-3 border-b border-line bg-panel px-4 py-3 sm:px-6">
         <Link prefetch={false} href={`/${orgSlug}/crm/instrumente`} className="text-[13px] text-muted transition hover:text-ink">
           ← Instrumente
@@ -40,6 +41,6 @@ export default async function OnePagerGeneratorPage({ params }: { params: Promis
           designRecomandat={access.orgDomeniuActivitate ? ONE_PAGER_DESIGN_RECOMANDAT[access.orgDomeniuActivitate] : []}
         />
       </div>
-    </div>
+    </ToolViewport>
   );
 }
