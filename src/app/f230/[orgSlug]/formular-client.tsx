@@ -234,7 +234,16 @@ export function Formular230Client({
 // Câmpurile cu text lung (CNP, email, telefon, adresă) ocupă tot rândul pe mobil; cele scurte (număr, bloc, scară, cod poștal…) rămân câte două.
 const LATE_PE_MOBIL = new Set<Camp>(["nume", "prenume", "cnp", "email", "telefon", "strada", "localitate", "judet"]);
 
+// Tastatura potrivită pe telefon (numerică pentru CNP și cod poștal). Fără maxLength: un CNP lipit cu spații nu trebuie trunchiat.
+const INPUT_MODE: Partial<Record<Camp, "numeric" | "tel">> = {
+  cnp: "numeric",
+  codPostal: "numeric",
+  telefon: "tel",
+};
+
 const AUTOCOMPLETE: Partial<Record<Camp, string>> = {
+  // CNP-ul nu trebuie salvat în completarea automată a browserului.
+  cnp: "off",
   nume: "family-name",
   prenume: "given-name",
   email: "email",
@@ -278,6 +287,7 @@ function Field({
           onChange={(e) => onChange(e.target.value)}
           required={campo.obligatoriu}
           autoComplete={autoComplete}
+          inputMode={INPUT_MODE[campo.key]}
           className={className}
         />
       )}
