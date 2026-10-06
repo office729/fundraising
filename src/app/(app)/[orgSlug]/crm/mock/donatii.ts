@@ -20,7 +20,9 @@ const rng = mulberry32(707);
 const CAMPANII = ["Copii cu boli rare", "Educație pentru toți", "Urgențe medicale", "Ajutor bătrâni singuri"];
 
 function randomDateInLast(months: number) {
+  // Ancorat la prânzul UTC al zilei curente (ca daysAgo din rand.ts), ca server și browser să genereze aceleași momente.
   const now = new Date();
+  now.setUTCHours(12, 0, 0, 0);
   const past = new Date(now);
   past.setMonth(past.getMonth() - months);
   const t = past.getTime() + rng() * (now.getTime() - past.getTime());

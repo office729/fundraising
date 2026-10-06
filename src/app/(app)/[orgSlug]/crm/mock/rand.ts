@@ -20,8 +20,13 @@ export function int(rng: () => number, min: number, max: number) {
   return Math.floor(rng() * (max - min + 1)) + min;
 }
 
+// Ancorat la 12:00 UTC a zilei curente, nu la ora exactă a încărcării modulului. Modulul se evaluează pe server (la pornirea
+// funcției, uneori cu ore în urmă) și în browser (la deschiderea paginii): cu ora exactă, `formatDataRelativa` (care rotunjește
+// la zile) putea da „acum 3 zile" pe server și „acum 2 zile" în browser — nepotrivire de hidratare (React #418).
+// Cu ancora la prânz UTC, diferența rotunjită e aceeași pe tot parcursul zilei UTC.
 export function daysAgo(n: number) {
   const d = new Date();
-  d.setDate(d.getDate() - n);
+  d.setUTCHours(12, 0, 0, 0);
+  d.setUTCDate(d.getUTCDate() - n);
   return d.toISOString();
 }
