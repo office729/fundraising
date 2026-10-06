@@ -17,7 +17,7 @@ export function SandboxedFrame({ html, title, orgSlug }: { html: string; title: 
     () => {
       let v = SNAPSHOTURI.get(cheie);
       if (v == null) {
-        v = JSON.stringify(citesteSnapshot(window.localStorage));
+        v = JSON.stringify(citesteSnapshot(window.localStorage, orgSlug));
         SNAPSHOTURI.set(cheie, v);
       }
       return v;
@@ -34,7 +34,7 @@ export function SandboxedFrame({ html, title, orgSlug }: { html: string; title: 
       const m = e.data as { fa?: number; t?: string } | null;
       if (!frame || e.source !== frame || !m || m.fa !== 1 || typeof m.t !== "string") return;
       if (m.t.startsWith("ls-")) {
-        persistaStocare(m as { t: string; k?: string; v?: string }, window.localStorage);
+        persistaStocare(m as { t: string; k?: string; v?: string }, window.localStorage, orgSlug);
       } else if (m.t === "fetch") {
         handeazaFetch(m as unknown as FetchMsg, orgSlug, window.location.origin).then((r) => frame.postMessage(r, "*"));
       } else if (m.t === "fetch-abort") {

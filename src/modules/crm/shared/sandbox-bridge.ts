@@ -21,14 +21,35 @@ export type ShimConfig = {
 // Chei care NU intră niciodată în iframe (sesiunea de autentificare etc.).
 const EXCLUSE = /^(sb-|supabase)|auth-token|access[_-]?token|refresh[_-]?token/i;
 
-export function citesteSnapshot(storage: Storage): Record<string, string> {
+// Stocarea instrumentelor e separată pe organizații: localStorage aparține browserului, nu organizației, iar un utilizator
+// poate lucra pentru mai multe (consultant, voluntar în două ONG-uri). Fără separare, draft-urile (newsletter, one-pager)
+// unei organizații apăreau în alta. Cheile se scriu sub `fa-org:<slug>:<cheie>`.
+const prefixOrg = (orgSlug: string) => `fa-org:${orgSlug}:`;
+// Cheile gazdei (consimțământ cookie, notificări, onboarding) nu aparțin instrumentelor.
+const CHEI_GAZDA = /^(fa[_-]|ci-)/;
+// Înaintea separării, draft-urile erau fără prefix. Singura organizație care le-a creat e cea pilot: le păstrează vizibile.
+const ORG_CU_CHEI_VECHI = "salveaza-o-inima";
+
+export function citesteSnapshot(storage: Storage, orgSlug: string): Record<string, string> {
   const out: Record<string, string> = {};
+  const prefix = prefixOrg(orgSlug);
+  const adoptaVechi = orgSlug === ORG_CU_CHEI_VECHI;
   try {
+    // Chei vechi (fără prefix) întâi, ca cele cu prefix să le suprascrie.
+    if (adoptaVechi) {
+      for (let i = 0; i < storage.length; i++) {
+        const k = storage.key(i);
+        if (k && !k.startsWith("fa-org:") && !EXCLUSE.test(k) && !CHEI_GAZDA.test(k)) {
+          const v = storage.getItem(k);
+          if (v != null) out[k] = v;
+        }
+      }
+    }
     for (let i = 0; i < storage.length; i++) {
       const k = storage.key(i);
-      if (k && !EXCLUSE.test(k)) {
+      if (k && k.startsWith(prefix)) {
         const v = storage.getItem(k);
-        if (v != null) out[k] = v;
+        if (v != null) out[k.slice(prefix.length)] = v;
       }
     }
   } catch {
@@ -175,13 +196,21 @@ export function anuleazaFetch(id: number) {
   controllere.delete(id);
 }
 
-export function persistaStocare(m: { t: string; k?: string; v?: string }, storage: Storage) {
+export function persistaStocare(m: { t: string; k?: string; v?: string }, storage: Storage, orgSlug: string) {
+  const prefix = prefixOrg(orgSlug);
   try {
-    if (m.t === "ls-set" && scriereAcceptata(m.k ?? "") && typeof m.v === "string") storage.setItem(m.k!, m.v);
-    else if (m.t === "ls-del" && scriereAcceptata(m.k ?? "")) storage.removeItem(m.k!);
-    // ls-clear: șterge doar cheile care ar fi intrat în snapshot (nu sesiunea)
+    if (m.t === "ls-set" && scriereAcceptata(m.k ?? "") && typeof m.v === "string") storage.setItem(prefix + m.k!, m.v);
+    else if (m.t === "ls-del" && scriereAcceptata(m.k ?? "")) {
+      storage.removeItem(prefix + m.k!);
+      // Pentru organizația pilot, o cheie veche (fără prefix) ștearsă de instrument trebuie să dispară și ea.
+      if (orgSlug === ORG_CU_CHEI_VECHI && !CHEI_GAZDA.test(m.k!)) storage.removeItem(m.k!);
+    }
+    // ls-clear: șterge doar cheile organizației curente (nu sesiunea, nu alte organizații, nu cheile gazdei)
     else if (m.t === "ls-clear") {
-      for (const k of Object.keys(citesteSnapshot(storage))) storage.removeItem(k);
+      for (const k of Object.keys(citesteSnapshot(storage, orgSlug))) {
+        storage.removeItem(prefix + k);
+        if (orgSlug === ORG_CU_CHEI_VECHI && !CHEI_GAZDA.test(k)) storage.removeItem(k);
+      }
     }
   } catch {
     /* cota depășită sau stocare blocată */
