@@ -159,6 +159,7 @@ function TaskRow({ t, linkHref }: { t: Task; linkHref: string; onOpen: () => voi
       <input
         type="checkbox"
         checked={inchis}
+        aria-label={t.titlu}
         onChange={() => setTaskStatus(t.id, inchis ? "de_facut" : "finalizat")}
         className="h-4 w-4 shrink-0 rounded border-[var(--ci-border)]"
       />
@@ -173,6 +174,7 @@ function TaskRow({ t, linkHref }: { t: Task; linkHref: string; onOpen: () => voi
       </span>
       <input
         type="date"
+        aria-label={`${dict.dialog.termen}: ${t.titlu}`}
         value={t.termenLa.slice(0, 10)}
         onChange={(e) => e.target.value && setTaskTermen(t.id, new Date(e.target.value).toISOString())}
         className="h-8 shrink-0 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-2 text-[12px] text-[var(--ci-text)]"

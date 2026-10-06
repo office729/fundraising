@@ -42,13 +42,13 @@ export default function ComunicarePage() {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <Select value={tip} onChange={(e) => setTip(e.target.value)} className="w-40">
+        <Select value={tip} onChange={(e) => setTip(e.target.value)} aria-label={locale === "ro" ? "Filtrează după tip" : "Filter by type"} className="w-40">
           <option value="toate">{dict.toateTipurile}</option>
           {Object.entries(TIP_LABEL).map(([k, v]) => (
             <option key={k} value={k}>{v}</option>
           ))}
         </Select>
-        <Select value={autor} onChange={(e) => setAutor(e.target.value)} className="w-48">
+        <Select value={autor} onChange={(e) => setAutor(e.target.value)} aria-label={locale === "ro" ? "Filtrează după autor" : "Filter by author"} className="w-48">
           <option value="toti">{dict.toataEchipa}</option>
           {autori.map((a) => (
             <option key={a} value={a}>{a}</option>

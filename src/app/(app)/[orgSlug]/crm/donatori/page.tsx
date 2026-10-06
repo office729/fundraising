@@ -66,6 +66,11 @@ async function DonatoriContent({
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-5">
+      <div>
+        <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">{dict.title}</h1>
+        <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">{dict.subtitle}</p>
+      </div>
+
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card>
           <p className="text-[12px] text-[var(--ci-text-muted)]">{dict.stats.donatori}</p>

@@ -2,7 +2,10 @@ import type { Locale } from "../config";
 
 export const FORMULAR230_DICT = {
   ro: {
-    filter: { toateConturile: "Toate conturile", toiAnii: "Toți anii", toateJudetele: "Toate județele", toateVarstele: "Toate vârstele", localitate: "Localitate…" },
+    filter: {
+      toateConturile: "Toate conturile", toiAnii: "Toți anii", toateJudetele: "Toate județele", toateVarstele: "Toate vârstele", localitate: "Localitate…",
+      ariaCont: "Filtrează după cont", ariaAn: "Filtrează după an", ariaJudet: "Filtrează după județ", ariaVarsta: "Filtrează după vârstă",
+    },
     map: { title: "Formulare pe județe", subtitle: "Culoarea mai închisă = mai multe formulare completate din acel județ.", ariaLabel: "Formulare 230 pe județe" },
     statsChart: { title: "Formulare completate pe conturi", subtitle: "Câte formulare a strâns fiecare cont/subcont, până acum", niciunCont: "Niciun cont încă." },
     breadcrumb: { persoaneFizice: "Persoane fizice", formular230: "Formularul 230" },
@@ -85,7 +88,10 @@ export const FORMULAR230_DICT = {
     },
   },
   en: {
-    filter: { toateConturile: "All accounts", toiAnii: "All years", toateJudetele: "All counties", toateVarstele: "All ages", localitate: "Location…" },
+    filter: {
+      toateConturile: "All accounts", toiAnii: "All years", toateJudetele: "All counties", toateVarstele: "All ages", localitate: "Location…",
+      ariaCont: "Filter by account", ariaAn: "Filter by year", ariaJudet: "Filter by county", ariaVarsta: "Filter by age",
+    },
     map: { title: "Forms by county", subtitle: "Darker color = more forms completed from that county.", ariaLabel: "Form 230 responses by county" },
     statsChart: { title: "Forms completed per account", subtitle: "How many forms each account/sub-account has collected so far", niciunCont: "No account yet." },
     breadcrumb: { persoaneFizice: "Individuals", formular230: "Form 230" },

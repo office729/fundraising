@@ -2,6 +2,8 @@ import type { Locale } from "../config";
 
 export const DONATORI_REALI_DICT = {
   ro: {
+    title: "Persoane fizice",
+    subtitle: "Donatorii reali ai organizației, adăugați automat din paginile de strângere de fonduri",
     stats: { donatori: "Donatori reali", totalDonat: "Total donat", numarDonatii: "Donații", optInWhatsapp: "Acord WhatsApp" },
     filterBar: { cautaPlaceholder: "Caută după nume sau email…", cauta: "Caută" },
     columns: { nume: "Nume", contact: "Contact", sursa: "Sursă", donatii: "Donații", totalDonat: "Total donat", ultimaDonatie: "Ultima donație" },
@@ -54,6 +56,8 @@ export const DONATORI_REALI_DICT = {
     },
   },
   en: {
+    title: "Individuals",
+    subtitle: "Your organization's real donors, added automatically from the fundraising pages",
     stats: { donatori: "Real donors", totalDonat: "Total donated", numarDonatii: "Donations", optInWhatsapp: "WhatsApp opt-in" },
     filterBar: { cautaPlaceholder: "Search by name or email…", cauta: "Search" },
     columns: { nume: "Name", contact: "Contact", sursa: "Source", donatii: "Donations", totalDonat: "Total donated", ultimaDonatie: "Last donation" },

@@ -40,6 +40,7 @@ export function FilterBar({
       <Select
         value={searchParams.get("beneficiar") ?? "toate"}
         onChange={(e) => push({ beneficiar: e.target.value })}
+        aria-label={dict.ariaCont}
         className="h-8 w-auto text-[12px]"
       >
         <option value="toate">{dict.toateConturile}</option>
@@ -50,7 +51,7 @@ export function FilterBar({
         ))}
       </Select>
 
-      <Select value={searchParams.get("an") ?? "toate"} onChange={(e) => push({ an: e.target.value })} className="h-8 w-auto text-[12px]">
+      <Select value={searchParams.get("an") ?? "toate"} onChange={(e) => push({ an: e.target.value })} aria-label={dict.ariaAn} className="h-8 w-auto text-[12px]">
         <option value="toate">{dict.toiAnii}</option>
         {ani.map((a) => (
           <option key={a} value={a}>
@@ -59,7 +60,7 @@ export function FilterBar({
         ))}
       </Select>
 
-      <Select value={searchParams.get("judet") ?? "toate"} onChange={(e) => push({ judet: e.target.value })} className="h-8 w-auto text-[12px]">
+      <Select value={searchParams.get("judet") ?? "toate"} onChange={(e) => push({ judet: e.target.value })} aria-label={dict.ariaJudet} className="h-8 w-auto text-[12px]">
         <option value="toate">{dict.toateJudetele}</option>
         {JUDETE.map((j) => (
           <option key={j} value={j}>
@@ -68,7 +69,7 @@ export function FilterBar({
         ))}
       </Select>
 
-      <Select value={searchParams.get("varsta") ?? "toate"} onChange={(e) => push({ varsta: e.target.value })} className="h-8 w-auto text-[12px]">
+      <Select value={searchParams.get("varsta") ?? "toate"} onChange={(e) => push({ varsta: e.target.value })} aria-label={dict.ariaVarsta} className="h-8 w-auto text-[12px]">
         <option value="toate">{dict.toateVarstele}</option>
         {INTERVALE_VARSTA.map((i) => (
           <option key={i.key} value={i.key}>

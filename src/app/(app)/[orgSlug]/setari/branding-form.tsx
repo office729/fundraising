@@ -154,6 +154,7 @@ export function BrandingForm({
           <input
             type="color"
             name="brandColor"
+            aria-label={dict.culoareOrg}
             value={color}
             onChange={(e) => setColor(e.target.value)}
             className="h-9 w-14 cursor-pointer rounded border border-line p-1"

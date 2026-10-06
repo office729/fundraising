@@ -23,6 +23,7 @@ export function ReferralSection({ cod, numarRecomandari, locale }: { cod: string
       <div className="mt-3 flex flex-col gap-2 sm:flex-row">
         <input
           readOnly
+          aria-label={dict.title}
           value={link}
           onFocus={(e) => e.currentTarget.select()}
           className="flex-1 rounded-lg border border-line bg-panel-2 px-3 py-2 text-sm text-body"
