@@ -295,7 +295,7 @@ export function CrmShell({
             rel="noopener"
             aria-label="Ajutor"
             title="Ajutor — contactează echipa Alexandrit"
-            className="flex h-9 w-9 items-center justify-center rounded-[var(--ci-radius-btn)] text-[var(--ci-text-muted)] transition-colors hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)]"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--ci-radius-btn)] text-[var(--ci-text-muted)] transition-colors hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)]"
           >
             <HelpCircle className="h-4 w-4" />
           </a>
