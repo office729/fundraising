@@ -9,7 +9,6 @@ export const TRIAL_DAYS = 30;
 // clienții reali (vezi isAccessBlocked mai jos).
 const PLATFORM_ADMIN_EMAILS = [
   "vlad.placinta@alexandrit.ro",
-  "vlad.placinta@fundrasingacademy.ro",
   "office@salveazaoinima.ro",
   "andrei.placinta@alexandrit.ro",
 ];

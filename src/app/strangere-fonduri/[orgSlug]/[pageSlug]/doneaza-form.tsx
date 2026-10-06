@@ -214,15 +214,15 @@ export function DoneazaForm({
         <>
       <label className="text-sm font-medium text-ink">
         {t.numeleTau}
-        <input name="numeDonator" required className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink" />
+        <input name="numeDonator" required autoComplete="name" className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink" />
       </label>
       <label className="text-sm font-medium text-ink">
         {t.email}
-        <input type="email" name="emailDonator" required className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink" />
+        <input type="email" name="emailDonator" required autoComplete="email" className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink" />
       </label>
       <label className="text-sm font-medium text-ink">
         {t.telefonOptional}
-        <input type="tel" name="telefonDonator" className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink" />
+        <input type="tel" name="telefonDonator" autoComplete="tel" className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink" />
       </label>
       <label className="text-sm font-medium text-ink">
         {t.mesajOptional}
@@ -254,7 +254,7 @@ export function DoneazaForm({
       </div>
 
       {(redirect ? revolutEroare : state.error) && (
-        <p className="text-sm text-red-600">{redirect ? revolutEroare : state.error}</p>
+        <p role="alert" className="text-sm text-red-600">{redirect ? revolutEroare : state.error}</p>
       )}
 
       <button

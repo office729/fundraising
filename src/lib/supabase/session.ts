@@ -64,6 +64,8 @@ export async function updateSession(request: NextRequest, rewriteTo?: URL) {
   ];
   const isPublicRoute =
     MARKETING_ROUTES.includes(path) ||
+    path === "/robots.txt" ||
+    path === "/sitemap.xml" ||
     path === "/login" ||
     path === "/signup" ||
     path === "/forgot-password" ||

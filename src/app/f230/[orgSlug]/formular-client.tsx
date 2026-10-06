@@ -212,7 +212,7 @@ export function Formular230Client({
           <SignaturePad value={semnatura} onChange={setSemnatura} />
         </div>
 
-        {eroare && <p className="rounded-lg bg-red-50 px-3.5 py-2.5 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">{eroare}</p>}
+        {eroare && <p role="alert" className="rounded-lg bg-red-50 px-3.5 py-2.5 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">{eroare}</p>}
 
         <button
           type="submit"
@@ -231,6 +231,16 @@ export function Formular230Client({
   );
 }
 
+const AUTOCOMPLETE: Partial<Record<Camp, string>> = {
+  nume: "family-name",
+  prenume: "given-name",
+  email: "email",
+  telefon: "tel",
+  strada: "address-line1",
+  localitate: "address-level2",
+  codPostal: "postal-code",
+};
+
 function Field({
   campo,
   value,
@@ -240,7 +250,9 @@ function Field({
   value: string;
   onChange: (v: string) => void;
 }) {
-  const className = "mt-1 h-9 w-full rounded-lg border border-line bg-canvas px-3 text-sm text-ink focus:border-brand-blue focus:outline-none";
+  const className = "mt-1 h-9 w-full rounded-lg border border-line bg-canvas px-3 text-base text-ink focus:border-brand-blue focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue sm:text-sm";
+  // Completare automată a browserului (și evită zoom-ul iOS la focus, cu text de minim 16px pe mobil).
+  const autoComplete = AUTOCOMPLETE[campo.key];
   return (
     <label className="block text-xs font-medium text-muted">
       {campo.label}
@@ -262,6 +274,7 @@ function Field({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           required={campo.obligatoriu}
+          autoComplete={autoComplete}
           className={className}
         />
       )}
@@ -273,6 +286,8 @@ function SignaturePad({ value, onChange }: { value: string; onChange: (dataUrl: 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawingRef = useRef(false);
   const initedRef = useRef(false);
+  // true doar dacă s-a tras efectiv o linie: un simplu tap nu trebuie să conteze drept semnătură.
+  const areCerneala = useRef(false);
 
   function ctxPregatit() {
     const canvas = canvasRef.current;
@@ -303,6 +318,7 @@ function SignaturePad({ value, onChange }: { value: string; onChange: (dataUrl: 
     const ctx = ctxPregatit();
     if (!ctx) return;
     drawingRef.current = true;
+    areCerneala.current = false;
     const { x, y } = pos(e);
     ctx.beginPath();
     ctx.moveTo(x, y);
@@ -316,13 +332,14 @@ function SignaturePad({ value, onChange }: { value: string; onChange: (dataUrl: 
     const { x, y } = pos(e);
     ctx.lineTo(x, y);
     ctx.stroke();
+    areCerneala.current = true;
   }
 
   function end() {
     if (!drawingRef.current) return;
     drawingRef.current = false;
     const canvas = canvasRef.current;
-    if (canvas) onChange(canvas.toDataURL("image/png"));
+    if (canvas && areCerneala.current) onChange(canvas.toDataURL("image/png"));
   }
 
   function sterge() {
@@ -340,7 +357,7 @@ function SignaturePad({ value, onChange }: { value: string; onChange: (dataUrl: 
         onPointerMove={move}
         onPointerUp={end}
         onPointerLeave={end}
-        className="h-36 w-full touch-none rounded-lg border border-line bg-canvas"
+        className="h-36 w-full touch-none rounded-lg border border-line bg-white"
       />
       <div className="mt-1.5 flex items-center justify-between">
         <span className="text-xs text-muted-2">{value ? "Semnătură înregistrată." : "Semnează cu mouse-ul sau cu degetul, aici sus."}</span>

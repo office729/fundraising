@@ -27,7 +27,7 @@ const csp = [
   `font-src 'self' data: https://fonts.gstatic.com`,
   // `data:` — necesar ca fetch() să poată citi imaginea semnăturii olografe
   // (canvas.toDataURL) la completarea PDF-ului Formularului 230 (pdf-lib).
-  `connect-src 'self' data: https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://js.stripe.com https://m.stripe.network https://calendly.com https://*.ingest.sentry.io https://*.ingest.de.sentry.io https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com${isDev ? " ws:" : ""}`,
+  `connect-src 'self' data: https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://js.stripe.com https://m.stripe.network https://calendly.com https://*.ingest.sentry.io https://*.ingest.de.sentry.io https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://*.twilio.com wss://*.twilio.com${isDev ? " ws:" : ""}`,
   // js.stripe.com/pay.google.com — iframe-uri interne folosite de Stripe
   // Elements (ExpressCheckoutElement) pentru Google Pay/Link; checkout.stripe.com
   // rămâne pentru fluxul vechi (redirect Checkout Session), neatins.
@@ -44,7 +44,7 @@ const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+  { key: "Permissions-Policy", value: "camera=(), microphone=(self), geolocation=()" },
   { key: "X-DNS-Prefetch-Control", value: "off" },
 ];
 
