@@ -24,7 +24,7 @@ export default async function OnePagerGeneratorPage({ params }: { params: Promis
   }
 
   return (
-    <ToolViewport className="relative left-1/2 -ml-[50vw] flex h-screen w-screen flex-col overflow-hidden">
+    <ToolViewport className="-mx-4 -my-6 flex h-screen flex-col overflow-hidden sm:-mx-6 sm:-my-8">
       <header className="flex shrink-0 items-center gap-3 border-b border-line bg-panel px-4 py-3 sm:px-6">
         <Link prefetch={false} href={`/${orgSlug}/crm/instrumente`} className="text-[13px] text-muted transition hover:text-ink">
           ← Instrumente
