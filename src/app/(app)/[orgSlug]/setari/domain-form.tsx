@@ -14,6 +14,9 @@ import {
 
 const VERCEL_CNAME_TARGET = "cname.vercel-dns.com";
 
+// Adresa publică a platformei, afișată ca prefix al slug-ului organizației (nu domeniul tehnic de pe Vercel).
+const HOST_PLATFORMA = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://alexandrit.ro").replace(/^https?:\/\//, "").replace(/\/$/, "");
+
 export function DomainForm({
   orgSlug,
   locale,
@@ -54,7 +57,7 @@ export function DomainForm({
         <label className="text-sm font-medium text-ink">
           {dict.adresaPlatforma}
           <div className="mt-1 flex items-center gap-1 text-sm text-muted">
-            <span className="whitespace-nowrap">fundraising-academy-one.vercel.app/</span>
+            <span className="whitespace-nowrap">{HOST_PLATFORMA}/</span>
             <input
               name="slug"
               defaultValue={orgSlug}

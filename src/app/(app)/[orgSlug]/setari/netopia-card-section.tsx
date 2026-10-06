@@ -21,7 +21,8 @@ export function NetopiaCardSection({ orgSlug, status, locale }: { orgSlug: strin
 
   if (!status.cardSalvat) return null;
 
-  const card = status.cardMasked ?? "•••• ????";
+  // Netopia nu returnează mereu ultimele cifre (de exemplu în sandbox): fără ele, propoziția rămâne naturală, nu „•••• ????".
+  const card = status.cardMasked ?? (locale === "ro" ? "salvat" : "on file");
 
   return (
     <section className="mt-6 border-t border-line pt-5">
