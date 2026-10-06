@@ -6,6 +6,7 @@ import { orgHasToolAccess } from "@/lib/billing/packages";
 import { NEWSLETTER_PF_DESIGN_RECOMANDAT } from "@/lib/design-template-recommendations";
 import { NEWSLETTER_PF_HTML } from "@/modules/crm/newsletter-pf/newsletter-pf-html";
 import { ToolViewport } from "@/modules/crm/shared/fit-viewport";
+import { neutralizeazaLinkuriPilot } from "@/modules/crm/shared/neutralizeaza-pilot";
 import { StandaloneToolFrame } from "@/modules/crm/shared/standalone-tool-frame";
 import { ToolLocked } from "@/modules/crm/shared/tool-locked";
 
@@ -34,9 +35,10 @@ export default async function NewsletterPfPage({ params }: { params: Promise<{ o
       </header>
       <div className="min-h-0 flex-1">
         <StandaloneToolFrame
-          html={NEWSLETTER_PF_HTML}
+          html={neutralizeazaLinkuriPilot(NEWSLETTER_PF_HTML, orgSlug)}
           title={TITLE}
           orgSlug={orgSlug}
+          orgName={access.orgName}
           domeniuActivitate={access.orgDomeniuActivitate}
           designRecomandat={access.orgDomeniuActivitate ? NEWSLETTER_PF_DESIGN_RECOMANDAT[access.orgDomeniuActivitate] : []}
         />
