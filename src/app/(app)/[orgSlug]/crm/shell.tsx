@@ -68,6 +68,7 @@ import {
 import { useDonatori } from "./lib/use-data";
 import { TASKURI, type Task } from "./mock";
 import { idScurt } from "@/lib/id-scurt";
+import { useSalut } from "@/lib/use-salut";
 import { getOrgCustomization } from "@/lib/org-customizations";
 
 const EMPTY_TASKURI_GLOBALE: Task[] = [];
@@ -185,8 +186,7 @@ export function CrmShell({
     return () => document.removeEventListener("keydown", onKey);
   }, []);
 
-  const hour = new Date().getHours();
-  const salut = hour < 12 ? dict.greeting.morning : hour < 18 ? dict.greeting.afternoon : dict.greeting.evening;
+  const salut = useSalut(dict.greeting);
 
   return (
     <div

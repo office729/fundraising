@@ -16,6 +16,7 @@ import { useDomeniu } from "./lib/domeniu-context";
 import { CAMPAIGN_TEMPLATES } from "@/lib/campaign-templates";
 import { DASHBOARD_HOME_DICT } from "@/lib/i18n/dictionaries/dashboard-home";
 import { DASHBOARD_MOCK_DICT } from "@/lib/i18n/dictionaries/dashboard-mock";
+import { useSalut } from "@/lib/use-salut";
 import {
   getTaskStatusOverride,
   getTaskTermenOverride,
@@ -126,8 +127,7 @@ export default function CrmDashboardPage() {
   const inLucruPipeline = pipeline.filter((p) => p.stage !== "sponsorizat").reduce((s, p) => s + p.count, 0);
   const blocate = actiuni.filter((a) => a.tip === "companie").length;
 
-  const hour = new Date().getHours();
-  const salut = hour < 12 ? dict.greeting.morning : hour < 18 ? dict.greeting.afternoon : dict.greeting.evening;
+  const salut = useSalut(dict.greeting);
 
   const domeniu = useDomeniu();
   const familie = domeniu ? CAMPAIGN_TEMPLATES[domeniu].familie : "neutru";
