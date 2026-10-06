@@ -5,6 +5,7 @@ import { titluAbsolut } from "@/lib/page-titles";
 import { orgHasToolAccess } from "@/lib/billing/packages";
 import { ONE_PAGER_DESIGN_RECOMANDAT } from "@/lib/design-template-recommendations";
 import { ONE_PAGER_GENERATOR_HTML } from "@/modules/crm/one-pager-generator/one-pager-generator-html";
+import { adapteazaOnePagerPentruOrg } from "@/modules/crm/one-pager-generator/adapteaza-org";
 import { ToolViewport } from "@/modules/crm/shared/fit-viewport";
 import { StandaloneToolFrame } from "@/modules/crm/shared/standalone-tool-frame";
 import { ToolLocked } from "@/modules/crm/shared/tool-locked";
@@ -34,9 +35,10 @@ export default async function OnePagerGeneratorPage({ params }: { params: Promis
       </header>
       <div className="min-h-0 flex-1">
         <StandaloneToolFrame
-          html={ONE_PAGER_GENERATOR_HTML}
+          html={adapteazaOnePagerPentruOrg(ONE_PAGER_GENERATOR_HTML, orgSlug, access.orgName)}
           title={TITLE}
           orgSlug={orgSlug}
+          orgName={access.orgName}
           domeniuActivitate={access.orgDomeniuActivitate}
           designRecomandat={access.orgDomeniuActivitate ? ONE_PAGER_DESIGN_RECOMANDAT[access.orgDomeniuActivitate] : []}
         />
