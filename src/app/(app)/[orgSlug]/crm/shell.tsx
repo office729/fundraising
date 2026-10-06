@@ -67,6 +67,7 @@ import {
 } from "./lib/local-store";
 import { useDonatori } from "./lib/use-data";
 import { TASKURI, type Task } from "./mock";
+import { cautaDonatoriReali, type RezultatCautareDonator } from "./donatori/reali/actions";
 import { idScurt } from "@/lib/id-scurt";
 import { useSalut } from "@/lib/use-salut";
 import { getOrgCustomization } from "@/lib/org-customizations";
@@ -303,7 +304,7 @@ export function CrmShell({
       </div>
 
       <AddDialog open={addOpen} onClose={() => setAddOpen(false)} base={base} pathname={pathname} />
-      <SearchDialog open={searchOpen} onClose={() => setSearchOpen(false)} base={base} />
+      <SearchDialog open={searchOpen} onClose={() => setSearchOpen(false)} base={base} orgSlug={orgSlug} />
       <span className="sr-only" suppressHydrationWarning>
         {salut}, {userName.split(" ")[0]}.
       </span>
@@ -642,22 +643,48 @@ function NotificationsButton({ base }: { base: string }) {
   );
 }
 
-function SearchDialog({ open, onClose, base }: { open: boolean; onClose: () => void; base: string }) {
+function SearchDialog({ open, onClose, base, orgSlug }: { open: boolean; onClose: () => void; base: string; orgSlug: string }) {
   const [q, setQ] = useState("");
+  const [reali, setReali] = useState<{ termen: string; rezultate: RezultatCautareDonator[] }>({ termen: "", rezultate: [] });
   const router = useRouter();
   const DONATORI = useDonatori();
+  const termen = q.trim();
 
-  // Doar donatori (persoane fizice) — modulul Companii e conectat la date
-  // reale (potențial multe firme), nu la array-ul mock; căutarea de firme
-  // reale se face direct în /crm/companii (are propriul câmp de căutare,
-  // server-side), deci nu amestecăm cele două aici.
+  // Donatorii reali ai organizației se caută pe server (nume sau email), cu o mică întârziere cât scrie utilizatorul.
+  useEffect(() => {
+    if (termen.length < 2) return;
+    let anulat = false;
+    const timer = setTimeout(() => {
+      cautaDonatoriReali(orgSlug, termen)
+        .then((rezultate) => {
+          if (!anulat) setReali({ termen, rezultate });
+        })
+        .catch(() => {
+          if (!anulat) setReali({ termen, rezultate: [] });
+        });
+    }, 250);
+    return () => {
+      anulat = true;
+      clearTimeout(timer);
+    };
+  }, [termen, orgSlug]);
+
+  // Donatorii reali (din plățile primite) apar primii; setul demonstrativ / importat local rămâne dedesubt, marcat „Demo".
+  // Companiile reale se caută direct în /crm/companii (câmp propriu, pe server), deci nu le amestecăm aici.
   const results = useMemo(() => {
-    if (!q.trim()) return [];
-    const needle = q.toLowerCase();
-    return DONATORI.filter((x) => x.nume.toLowerCase().includes(needle))
-      .map((x) => ({ label: x.nume, sub: "Donator", href: `${base}/donatori/${x.id}` }))
-      .slice(0, 8);
-  }, [q, base, DONATORI]);
+    if (!termen) return [];
+    const needle = termen.toLowerCase();
+    const realiAfisati = reali.termen === termen ? reali.rezultate : [];
+    const locale = DONATORI.filter((x) => x.nume.toLowerCase().includes(needle)).map((x) => ({
+      label: x.nume,
+      sub: "Demo",
+      href: `${base}/donatori/${x.id}`,
+    }));
+    return [
+      ...realiAfisati.map((x) => ({ label: x.nume, sub: x.email, href: `${base}/donatori/reali/${x.id}` })),
+      ...locale,
+    ].slice(0, 8);
+  }, [termen, base, DONATORI, reali]);
 
   return (
     <Dialog open={open} onClose={onClose} title="Căutare persoane fizice">

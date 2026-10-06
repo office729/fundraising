@@ -2,12 +2,27 @@
 
 import { randomUUID } from "node:crypto";
 
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq, ilike, or } from "drizzle-orm";
 
 import { withOrgSession } from "@/lib/auth/guard";
 import { donatorNotite, donatoriReali } from "@/lib/db/schema";
 
 export type ActionState = { error: string | null };
+
+export type RezultatCautareDonator = { id: string; nume: string; email: string };
+
+// Căutarea globală din antet (Ctrl+K): donatorii reali ai organizației, după nume sau email.
+export const cautaDonatoriReali = withOrgSession(async (ctx, termen: string): Promise<RezultatCautareDonator[]> => {
+  const q = termen.trim().slice(0, 80);
+  if (q.length < 2) return [];
+  const model = `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+  return ctx.db
+    .select({ id: donatoriReali.id, nume: donatoriReali.nume, email: donatoriReali.email })
+    .from(donatoriReali)
+    .where(and(eq(donatoriReali.orgId, ctx.orgId), or(ilike(donatoriReali.nume, model), ilike(donatoriReali.email, model))))
+    .orderBy(desc(donatoriReali.ultimaDonatieLa))
+    .limit(8);
+});
 
 export const adaugaNotitaDonator = withOrgSession(async (ctx, donatorId: string, text: string): Promise<ActionState> => {
   const trimmed = text.trim();
