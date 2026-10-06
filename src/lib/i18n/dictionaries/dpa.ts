@@ -65,6 +65,7 @@ export const DPA_DICT = {
           "Anthropic (Claude) — generare de conținut asistată de AI, doar când Operatorul folosește funcția respectivă;",
           "Twilio — apeluri și mesaje, unde funcția este activată de Operator;",
           "Calendly — programarea consilierilor;",
+          "Sentry — monitorizarea erorilor tehnice ale Platformei (fără datele din formulare sau din CRM; adresele paginilor sunt curățate de parametri și tokenuri);",
           "servicii de integrare activate la cererea Operatorului (de exemplu Make.com, Canva, Newsman, Brevo, Mailchimp, BoldSign) — doar pentru Operatorul care le solicită.",
         ],
         incheiere: [
@@ -177,6 +178,7 @@ export const DPA_DICT = {
           "Anthropic (Claude) — AI-assisted content generation, only when the Controller uses that feature;",
           "Twilio — calls and messages, where the Controller enables the feature;",
           "Calendly — scheduling of advisors;",
+          "Sentry — monitoring of the Platform's technical errors (without form or CRM data; page addresses are stripped of parameters and tokens);",
           "integration services enabled at the Controller's request (for example Make.com, Canva, Newsman, Brevo, Mailchimp, BoldSign) — only for the Controller that requests them.",
         ],
         incheiere: [

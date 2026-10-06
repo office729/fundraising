@@ -130,7 +130,14 @@ export function ImportCsvButton() {
     setPending(true);
     const reader = new FileReader();
     reader.onload = async () => {
-      const text = String(reader.result ?? "");
+      // UTF-8 dacă e valid; altfel Windows-1250 (Excel în Windows exportă CSV „ANSI", iar diacriticele ă â î ș ț se pierdeau).
+      const buf = reader.result as ArrayBuffer;
+      let text: string;
+      try {
+        text = new TextDecoder("utf-8", { fatal: true }).decode(buf);
+      } catch {
+        text = new TextDecoder("windows-1250").decode(buf);
+      }
       try {
         const r = await importaFirmeCsv(orgSlug, text);
         setRezultat(r);
@@ -141,7 +148,7 @@ export function ImportCsvButton() {
         setPending(false);
       }
     };
-    reader.readAsText(file, "utf-8");
+    reader.readAsArrayBuffer(file);
   }
 
   return (

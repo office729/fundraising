@@ -67,6 +67,14 @@ const stergeOrganizatia = withOrgSession(
       await tx.update(organizations).set({ referredByOrgId: null }).where(eq(organizations.referredByOrgId, ctx.orgId));
     });
 
+    // Plățile abonamentului (cu seria/numărul facturii) dispar în cascadă odată cu organizația, dar sunt evidență
+    // contabilă: le copiem într-o arhivă fără cheie străină, în aceeași tranzacție ca ștergerea.
+    await ctx.db.execute(sql`
+      insert into platform_payments_arhiva (org_id, org_name, org_cif, order_id, package, suma_lei, status, created_at, paid_at, oblio_series_name, oblio_number, oblio_link)
+      select p.org_id, ${ctx.orgName}, ${ctx.orgCif}, p.order_id, p.package::text, p.suma_lei, p.status::text, p.created_at, p.paid_at, p.oblio_series_name, p.oblio_number, p.oblio_link
+      from platform_payments p where p.org_id = ${ctx.orgId}
+      on conflict (order_id) do nothing`);
+
     // Fișierele din Storage se șterg ÎNAINTE de rândul organizației (politica verifică încă apartenența
     // owner-ului la organizație).
     const fisiereSterse = await stergeFisiereOrganizatie(ctx.orgSlug, ctx.orgId);

@@ -7,7 +7,7 @@ import { getLocale } from "@/lib/i18n/get-locale";
 import { MARKETING_DICT } from "@/lib/i18n/dictionaries/marketing";
 
 import { FinalizeForm } from "./finalize-form";
-import { titluPagina } from "@/lib/page-titles";
+import { metadatePagina } from "@/lib/page-titles";
 
 export default async function LandingPage({
   searchParams,
@@ -184,5 +184,5 @@ export default async function LandingPage({
 
 // Titlu întreg (fără sufixul „ — Alexandrit”): pagina de start e chiar brandul.
 export async function generateMetadata() {
-  return { title: { absolute: await titluPagina("acasa") } };
+  return await metadatePagina("acasa");
 }

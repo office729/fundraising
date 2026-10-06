@@ -1,6 +1,6 @@
 import * as Sentry from "@sentry/nextjs";
 
-import { curataMesajEroare } from "@/lib/monitoring";
+import { curataMesajEroare, curataUrlPentruSentry } from "@/lib/monitoring";
 
 // Monitorizare erori (Sentry). Activă DOAR dacă SENTRY_DSN e setat în mediu (Vercel);
 // fără el nu se trimite nimic și aplicația se comportă exact ca înainte.
@@ -13,6 +13,8 @@ export async function register() {
   Sentry.init({
     dsn,
     environment: process.env.VERCEL_ENV ?? process.env.NODE_ENV,
+    // Versiunea (commit-ul) din care vine eroarea — fără ea nu se pot corela erorile cu un deploy anume.
+    release: process.env.VERCEL_GIT_COMMIT_SHA,
     sendDefaultPii: false,
     tracesSampleRate: 0,
     // sendDefaultPii:false NU curăță mesajele de eroare — cele Drizzle conțin
@@ -22,6 +24,8 @@ export async function register() {
         if (v.value) v.value = curataMesajEroare(v.value);
       });
       if (event.message) event.message = curataMesajEroare(event.message);
+      if (event.request?.url) event.request.url = curataUrlPentruSentry(event.request.url);
+      if (event.request) delete event.request.query_string;
       return event;
     },
   });

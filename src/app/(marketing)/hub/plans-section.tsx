@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 
 import type { Locale } from "@/lib/i18n/config";
 
@@ -35,36 +34,12 @@ const PLAN_KEYS = ["start", "crestere", "impact"] as const;
 const LUNI_PLATITE_ANUAL = 10;
 
 export function PlansSection({ plans, texte, locale }: { plans: Plan[]; texte: Texte; locale: Locale }) {
-  const [anual, setAnual] = useState(true);
+  // Plata anuală nu e încă disponibilă la checkout (se taxează o singură lună): afișăm DOAR prețul lunar real, fără comutator.
+  const anual = false;
   const fmt = (n: number) => n.toLocaleString(locale === "ro" ? "ro-RO" : "en-US", { maximumFractionDigits: 0 });
 
   return (
     <div>
-      <div className="mx-auto mb-8 flex max-w-[1200px] flex-col items-center gap-3">
-        <p className="text-[13px] font-semibold text-muted">{texte.facturareTitlu}</p>
-        <div role="group" aria-label={texte.facturareTitlu} className="inline-flex rounded-full border border-line bg-panel p-1">
-          <button
-            type="button"
-            onClick={() => setAnual(false)}
-            aria-pressed={!anual}
-            className={`rounded-full px-5 py-2 text-sm font-bold transition ${anual ? "text-muted hover:text-ink" : "bg-brand-blue text-white"}`}
-          >
-            {texte.facturareLunar}
-          </button>
-          <button
-            type="button"
-            onClick={() => setAnual(true)}
-            aria-pressed={anual}
-            className={`flex items-center gap-2 rounded-full px-5 py-2 text-sm font-bold transition ${anual ? "bg-brand-blue text-white" : "text-muted hover:text-ink"}`}
-          >
-            {texte.facturareAnual}
-            <span className={`rounded-full px-2 py-0.5 text-[11px] font-extrabold ${anual ? "bg-white/20 text-white" : "bg-brand-green-soft text-brand-green"}`}>
-              {texte.facturareReducere}
-            </span>
-          </button>
-        </div>
-      </div>
-
       <div className="mx-auto mb-11 grid max-w-[1200px] grid-cols-1 items-stretch gap-[22px] md:grid-cols-3">
         {plans.map((plan, i) => {
           const lunar = parseInt(plan.pret, 10);

@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { getLocale } from "@/lib/i18n/get-locale";
 import { PREMII_DICT } from "@/lib/i18n/dictionaries/premii";
-import { titluPagina } from "@/lib/page-titles";
+import { metadatePagina } from "@/lib/page-titles";
 
 export default async function PremiiPage() {
   const locale = await getLocale();
@@ -47,7 +47,7 @@ export default async function PremiiPage() {
                     {dict.distinctieMajora}
                   </span>
                 )}
-                <h3 className="font-display text-[15px] font-bold text-ink">{p.titlu}</h3>
+                <h2 className="font-display text-[15px] font-bold text-ink">{p.titlu}</h2>
                 <p className="mt-1.5 text-[13.5px] leading-relaxed text-muted">{p.desc}</p>
                 {p.link && (
                   <a href={p.link} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-[13px] font-bold text-brand-blue hover:underline">
@@ -82,5 +82,5 @@ export default async function PremiiPage() {
 }
 
 export async function generateMetadata() {
-  return { title: await titluPagina("premii") };
+  return await metadatePagina("premii");
 }

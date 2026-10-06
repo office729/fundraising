@@ -64,6 +64,8 @@ export const organizations = pgTable("organizations", {
   // din Setări, fără să șteargă cardul salvat (poate reactiva ulterior). Cron-ul de
   // reînnoire taxează DOAR organizațiile cu acest flag true și un token salvat.
   netopiaAutoRenew: boolean("netopia_auto_renew").notNull().default(false),
+  // true = clientul a oprit explicit reînnoirea automată: o plată manuală ulterioară NU o mai reactivează în tăcere.
+  netopiaAutorenewOptOut: boolean("netopia_autorenew_opt_out").notNull().default(false),
   // Încercări CONSECUTIVE de reînnoire eșuate (card expirat/refuzat) — reset la 0 la
   // orice reînnoire reușită. După NETOPIA_RENEWAL_MAX_INCERCARI (netopia-checkout.ts),
   // cron-ul dezactivează reînnoirea automată și șterge token-ul, ca să nu mai

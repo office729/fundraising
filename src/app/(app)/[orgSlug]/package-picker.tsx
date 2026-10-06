@@ -4,7 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 
 import { trackEvent } from "@/lib/analytics";
 import { dateFacturareComplete } from "@/lib/billing/date-facturare";
-import { PACKAGE_LIMITS, PACKAGE_PRICE_ANUAL, type OrgPackage } from "@/lib/billing/packages";
+import { PACKAGE_LIMITS, type OrgPackage } from "@/lib/billing/packages";
 import type { Locale } from "@/lib/i18n/config";
 import { ABONAMENT_DICT } from "@/lib/i18n/dictionaries/abonament";
 import { JUDETE } from "@/lib/judete";
@@ -172,7 +172,6 @@ export function PackagePicker({ orgSlug, locale }: { orgSlug: string; locale: Lo
               <p className="text-2xl font-extrabold text-ink">
                 {l.pretLunar} lei<span className="text-sm font-medium text-muted">{t.pePerLuna}</span>
               </p>
-              <p className="text-[12.5px] text-muted-2">{t.peAn(PACKAGE_PRICE_ANUAL[p.key].toLocaleString(locale === "ro" ? "ro-RO" : "en-US"))}</p>
               <div className="flex flex-col gap-1.5 border-t border-line pt-3">
                 {limiteText(p.key, locale).map((linie) => (
                   <div key={linie} className="flex gap-2 text-[13px] text-body">

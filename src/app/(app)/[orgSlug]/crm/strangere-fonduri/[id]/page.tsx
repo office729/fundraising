@@ -2,6 +2,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 
 import { withOrgSession, type OrgContext } from "@/lib/auth/guard";
+import { urlsSemnate } from "@/lib/fisiere-private";
 import { EroareUtilizator } from "@/lib/erori";
 import { fundraisingBeneficiaries, fundraisingBeneficiaryInvites, fundraisingCampaignAgents, fundraisingDonations, fundraisingPages, fundraisingUpdates } from "@/lib/db/schema";
 
@@ -128,6 +129,8 @@ export default async function PaginaDetaliuPage({ params }: { params: Promise<{ 
   if (!data) notFound();
 
   const { pagina, donatii, actualizari, beneficiar, inviteActiv, agent } = data;
+  // Facturile și atașamentele sunt în bucket privat: URL-uri semnate, cu valabilitate scurtă.
+  const [facturiCuUrl, atasamenteCuUrl] = await Promise.all([urlsSemnate(facturi), urlsSemnate(taskAttachments)]);
   const locale = await getLocale();
   const dict = STRANGERE_FONDURI_DICT[locale];
   const dictDetail = dict.detail;
@@ -226,7 +229,7 @@ export default async function PaginaDetaliuPage({ params }: { params: Promise<{ 
       <FacturiCard
         orgSlug={orgSlug}
         pageId={pagina.id}
-        facturi={facturi.map((f) => ({ id: f.id, denumire: f.denumire, suma: f.suma, categorie: f.categorie, status: f.status, fisierUrl: f.fisierUrl, createdAt: f.createdAt.toISOString() }))}
+        facturi={facturiCuUrl.map((f) => ({ id: f.id, denumire: f.denumire, suma: f.suma, categorie: f.categorie, status: f.status, fisierUrl: f.fisierUrl, createdAt: f.createdAt.toISOString() }))}
       />
 
       <TaskCard
@@ -244,7 +247,7 @@ export default async function PaginaDetaliuPage({ params }: { params: Promise<{ 
           textMultumire: t.textMultumire,
           canalRecomandat: t.canalRecomandat,
         }))}
-        attachments={taskAttachments.map((a) => ({ id: a.id, taskId: a.taskId, fisierUrl: a.fisierUrl, denumire: a.denumire }))}
+        attachments={atasamenteCuUrl.map((a) => ({ id: a.id, taskId: a.taskId, fisierUrl: a.fisierUrl, denumire: a.denumire }))}
       />
 
       <Card>

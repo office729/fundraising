@@ -1,3 +1,4 @@
+import { urlsSemnate } from "@/lib/fisiere-private";
 import { asc, eq, inArray } from "drizzle-orm";
 
 import { withBeneficiarSession } from "@/lib/auth/guard";
@@ -21,7 +22,8 @@ const getSarcini = withBeneficiarSession(async (ctx) => {
 });
 
 export default async function SarcinileMelePage() {
-  const { taskuri, attachments } = await getSarcini();
+  const { taskuri, attachments: atasamenteBrute } = await getSarcini();
+  const attachments = await urlsSemnate(atasamenteBrute);
 
   return (
     <div className="space-y-6">

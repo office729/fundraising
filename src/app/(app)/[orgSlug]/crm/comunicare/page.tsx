@@ -8,6 +8,7 @@ import { Badge, type StatusTone } from "../components/ui/badge";
 import { Select } from "../components/ui/input";
 import { EmptyState } from "../components/ui/states";
 import { formatDataRelativa } from "../lib/format";
+import { DemoBanner } from "../components/demo-banner";
 import { useLocale } from "../lib/locale-context";
 import { COMUNICARE_DICT } from "@/lib/i18n/dictionaries/comunicare";
 import { COMUNICARI, type Comunicare } from "../mock";
@@ -34,6 +35,7 @@ export default function ComunicarePage() {
 
   return (
     <div className="mx-auto max-w-[900px] space-y-5">
+      <DemoBanner>{locale === "ro" ? "Date demonstrative: indicatorii de pe această pagină sunt exemple și se păstrează doar în acest browser, nu pe server." : "Demo data: the figures on this page are examples and are kept only in this browser, not on the server."}</DemoBanner>
       <div>
         <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">{dict.title}</h1>
         <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">{dict.subtitle(filtered.length)}</p>

@@ -11,6 +11,7 @@ import { withOrgAdmin, withOrgFaze, withOrgSession } from "@/lib/auth/guard";
 import { listAttachmentsCampanieImpl, listTaskuriCampanieImpl } from "./detaliu-queries";
 import { fundraisingBeneficiaries, fundraisingPages, fundraisingTaskAttachments, fundraisingTasks } from "@/lib/db/schema";
 import { notifica } from "@/lib/notifications";
+import { BUCKET_PRIVAT, referintaPrivata } from "@/lib/fisiere-private";
 import { createClient } from "@/lib/supabase/server";
 import { extensieImagine } from "@/lib/upload-imagini";
 
@@ -166,12 +167,12 @@ export const adaugaAttachmentAction = withOrgAdmin(
 
     const supabase = await createClient();
     const path = `${ctx.orgSlug}/taskuri/${taskId}-${randomUUID()}.${ext}`;
-    const { error: uploadError } = await supabase.storage.from("org-branding").upload(path, fisier, {
+    const { error: uploadError } = await supabase.storage.from(BUCKET_PRIVAT).upload(path, fisier, {
       contentType: fisier.type,
       upsert: false,
     });
     if (uploadError) return { error: "Încărcarea fișierului a eșuat: " + uploadError.message, ok: false };
-    const fisierUrl = supabase.storage.from("org-branding").getPublicUrl(path).data.publicUrl;
+    const fisierUrl = referintaPrivata(path); // bucket privat: URL semnat la afișare (vezi lib/fisiere-private.ts)
 
     await ctx.db.insert(fundraisingTaskAttachments).values({ taskId, orgId: ctx.orgId, fisierUrl, denumire: fisier.name });
     return { error: null, ok: true };

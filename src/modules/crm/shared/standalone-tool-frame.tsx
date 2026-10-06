@@ -39,6 +39,18 @@ export function StandaloneToolFrame({
   // Sigla și numele organizației (sigla lipsă → imaginea se ascunde, vezi onerror în tool).
   finalHtml = finalHtml.replaceAll("__FA_ORG_NAME__", (orgName ?? "").replace(/[<>&"']/g, ""));
   finalHtml = finalHtml.replaceAll("__FA_ORG_LOGO__", orgLogoUrl ?? "");
+  // Șabloanele de newsletter au subsolul „Asociația salvează o inimă" scris direct în ele (organizația-pilot). Pentru ORICE
+  // altă organizație, identitatea expeditorului trebuie să fie a ei, nu a altcuiva: înlocuim numele la randare.
+  // Organizația-pilot rămâne neatinsă (păstrează denumirea ei juridică exactă).
+  const nume = (orgName ?? "").replace(/[<>&"']/g, "").trim();
+  const esteOrgPilot = nume
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .includes("salveaza o inima");
+  if (nume && !esteOrgPilot) {
+    finalHtml = finalHtml.replace(/Asocia[țţ]ia salvează o inimă/gi, nume);
+  }
   return (
     <div className="h-full">
       <SandboxedFrame html={finalHtml} title={title} orgSlug={orgSlug} />

@@ -6,6 +6,8 @@
 // tratează deja recurent=true drept relație caldă).
 // Fără semnătură electronică: se descarcă Word sau se tipărește PDF, iar semnarea se face în afara platformei.
 
+import { parseazaNumarRo } from "@/lib/numere-ro";
+
 export type ContractTip = "d177" | "mec20" | "recurent";
 
 export type ContractVals = {
@@ -46,23 +48,10 @@ function escHtml(s: string): string {
 }
 
 function d177Deadline(): string {const y=new Date().getFullYear();const d=new Date(y,5,25);return d<new Date()?("25.06."+(y+1)):("25.06."+y);}
-// Suma e text liber, scris cum o scrie omul: „1500", „1.500", „1 500", „1.500,50", „1500.50". Înainte se păstrau doar
-// cifrele, deci „1.500,50" ajungea „150.050" în contract. Separatorul zecimal = ultimul „,"/„." urmat de 1–2 cifre.
-function parseazaSuma(x: unknown): number | null {
-  const t = ("" + (x == null ? "" : x)).replace(/[^\d.,]/g, "");
-  if (!/\d/.test(t)) return null;
-  const ultim = Math.max(t.lastIndexOf(","), t.lastIndexOf("."));
-  const dupa = ultim >= 0 ? t.slice(ultim + 1) : "";
-  const zecimale = ultim >= 0 && dupa.length >= 1 && dupa.length <= 2;
-  const intreg = (zecimale ? t.slice(0, ultim) : t).replace(/[.,]/g, "");
-  const n = Number(zecimale ? `${intreg}.${dupa}` : intreg);
-  return Number.isFinite(n) ? n : null;
-}
-
 export function buildContract(v: ContractVals, tip: ContractTip, config: OngConfig): string {
  const g = (x: unknown) =>(x!=null&&(""+x).trim())?escHtml(""+x):"____";
  const og = (k: string) => g(config[k]);
- const gsuma = (x: unknown) => { const n = parseazaSuma(x); return n === null ? "____" : n.toLocaleString("ro-RO", { maximumFractionDigits: 2 }); };
+ const gsuma = (x: unknown) => { const n = parseazaNumarRo(x); return n === null ? "____" : n.toLocaleString("ro-RO", { maximumFractionDigits: 2 }); };
  const sediu=(v.judet&&(""+v.judet).trim())?(g(v.sediu)+", jud. "+g(v.judet)):g(v.sediu);
  const dt=(v.data&&/^\d{4}-\d{2}-\d{2}$/.test(v.data))?v.data.split("-").reverse().join("."):g(v.data);
  const FORMAT_LABEL = tip==="d177"?"D177 — redirecţionare impozit pe profit":tip==="mec20"?"20% — sponsorizare directă":"Angajament de sponsorizare recurentă lunară";

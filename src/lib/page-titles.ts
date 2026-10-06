@@ -1,5 +1,7 @@
 import "server-only";
 
+import type { Metadata } from "next";
+
 import { getLocale } from "@/lib/i18n/get-locale";
 
 // Titlurile paginilor publice, în limba aleasă de vizitator. Layout-ul rădăcină
@@ -76,4 +78,105 @@ export async function titluPagina(pagina: PaginaCuTitlu): Promise<string> {
 // niveluri de layout există între rădăcină și pagină.
 export async function titluAbsolut(pagina: PaginaCuTitlu): Promise<{ title: { absolute: string } }> {
   return { title: { absolute: `${await titluPagina(pagina)}${SUFIX_TITLU}` } };
+}
+
+// Metadate complete pentru paginile publice: descriere PROPRIE (înainte toate aveau aceeași, de 53 de caractere),
+// canonical, Open Graph / Twitter, iar paginile fără conținut real sau cu rol tehnic (autentificare, „în curând")
+// sunt marcate noindex.
+const DESCRIERI: Partial<Record<PaginaCuTitlu, { ro: string; en: string }>> = {
+  acasa: {
+    ro: "Alexandrit organizează donatorii, companiile sponsor și campaniile ONG-ului tău: CRM, pagini de donații, Formular 230 și instrumente de fundraising într-un singur loc.",
+    en: "Alexandrit keeps your NGO's donors, corporate sponsors and campaigns in one place: CRM, donation pages, Form 230 and fundraising tools.",
+  },
+  hub: {
+    ro: "Alege pachetul Alexandrit potrivit ONG-ului tău: prețuri clare, 30 de zile de probă gratuită și consiliere de fundraising 1 la 1.",
+    en: "Choose the Alexandrit plan that fits your NGO: clear pricing, a 30-day free trial and 1-to-1 fundraising advice.",
+  },
+  automatizari: {
+    ro: "Automatizări pentru fundraising: mesaje de mulțumire, reamintiri pentru Formularul 230 și fluxuri care economisesc timp echipei ONG-ului tău.",
+    en: "Fundraising automations: thank-you messages, Form 230 reminders and workflows that save your NGO team time.",
+  },
+  "ce-facem": {
+    ro: "Ce facem la Alexandrit: platformă de fundraising, consiliere și instrumente pentru ONG-uri care vor să strângă mai mulți bani, mai organizat.",
+    en: "What Alexandrit does: a fundraising platform, advice and tools for NGOs that want to raise more, in a more organized way.",
+  },
+  "cine-suntem": {
+    ro: "Cine suntem: echipa din spatele Alexandrit și experiența noastră în fundraising pentru ONG-uri din România.",
+    en: "Who we are: the team behind Alexandrit and our experience in fundraising for NGOs in Romania.",
+  },
+  contact: {
+    ro: "Contactează echipa Alexandrit: întrebări despre platformă, prețuri sau consiliere de fundraising pentru ONG-ul tău.",
+    en: "Contact the Alexandrit team: questions about the platform, pricing or fundraising advice for your NGO.",
+  },
+  cookies: {
+    ro: "Politica de cookies Alexandrit: ce cookie-uri folosim, în ce scop și cum îți poți retrage oricând acordul pentru statistici.",
+    en: "Alexandrit cookie policy: which cookies we use, why, and how to withdraw your consent for analytics at any time.",
+  },
+  gdpr: {
+    ro: "Politica de confidențialitate (GDPR) Alexandrit: ce date prelucrăm, de ce, cât timp le păstrăm și ce drepturi ai.",
+    en: "Alexandrit privacy policy (GDPR): what data we process, why, how long we keep it and what rights you have.",
+  },
+  dpa: {
+    ro: "Acordul de prelucrare a datelor (DPA) dintre Alexandrit și organizațiile care folosesc platforma, conform art. 28 GDPR.",
+    en: "The Data Processing Agreement (DPA) between Alexandrit and the organizations using the platform, under Art. 28 GDPR.",
+  },
+  portofoliu: {
+    ro: "Portofoliul Alexandrit: campanii, proiecte și rezultate obținute împreună cu ONG-uri din România.",
+    en: "The Alexandrit portfolio: campaigns, projects and results achieved together with NGOs in Romania.",
+  },
+  "portofoliu-clienti": {
+    ro: "Clienții Alexandrit: organizații și companii cu care am lucrat la campanii de fundraising și sponsorizări.",
+    en: "Alexandrit clients: organizations and companies we have worked with on fundraising and sponsorship campaigns.",
+  },
+  premii: {
+    ro: "Premiile și recunoașterile primite pentru proiectele de fundraising și comunicare ale echipei Alexandrit.",
+    en: "Awards and recognition received for the Alexandrit team's fundraising and communication projects.",
+  },
+  termeni: {
+    ro: "Termenii și condițiile de utilizare a platformei Alexandrit: abonamente, plăți, responsabilități și încetarea contractului.",
+    en: "Terms and conditions for using the Alexandrit platform: subscriptions, payments, responsibilities and termination.",
+  },
+  "vlad-placinta": {
+    ro: "Vlad Plăcintă: consiliere de fundraising pentru ONG-uri, prin platforma Alexandrit.",
+    en: "Vlad Plăcintă: fundraising advice for NGOs, through the Alexandrit platform.",
+  },
+};
+
+const CALE_CANONICA: Partial<Record<PaginaCuTitlu, string>> = {
+  acasa: "/",
+  hub: "/hub",
+  automatizari: "/automatizari",
+  "ce-facem": "/ce-facem",
+  "cine-suntem": "/cine-suntem",
+  contact: "/contact",
+  cookies: "/cookies",
+  gdpr: "/gdpr",
+  dpa: "/dpa",
+  portofoliu: "/portofoliu",
+  "portofoliu-clienti": "/portofoliu-clienti",
+  premii: "/premii",
+  termeni: "/termeni",
+  "vlad-placinta": "/vlad-placinta",
+};
+
+const FARA_INDEXARE: ReadonlySet<PaginaCuTitlu> = new Set<PaginaCuTitlu>(["login", "signup", "forgot-password", "reset-password", "blog", "studii-de-caz"]);
+
+export async function metadatePagina(pagina: PaginaCuTitlu): Promise<Metadata> {
+  const locale = await getLocale();
+  const titlu = TITLURI[pagina][locale];
+  const descriere = DESCRIERI[pagina]?.[locale];
+  const cale = CALE_CANONICA[pagina];
+  const titluComplet = pagina === "acasa" ? titlu : `${titlu}${SUFIX_TITLU}`;
+  return {
+    title: pagina === "acasa" ? { absolute: titlu } : titlu,
+    ...(descriere ? { description: descriere } : {}),
+    ...(cale ? { alternates: { canonical: cale } } : {}),
+    ...(FARA_INDEXARE.has(pagina) ? { robots: { index: false, follow: true } } : {}),
+    ...(descriere && cale
+      ? {
+          openGraph: { title: titluComplet, description: descriere, url: cale, type: "website" as const, siteName: "Alexandrit", locale: locale === "ro" ? "ro_RO" : "en_US" },
+          twitter: { card: "summary" as const, title: titluComplet, description: descriere },
+        }
+      : {}),
+  };
 }

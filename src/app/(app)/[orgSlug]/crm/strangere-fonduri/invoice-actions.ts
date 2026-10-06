@@ -8,6 +8,7 @@ import { withOrgAdmin, withOrgSession } from "@/lib/auth/guard";
 import { listFacturiCampanieImpl } from "./detaliu-queries";
 import { inregistreazaAudit } from "@/lib/audit";
 import { fundraisingInvoices, fundraisingPages } from "@/lib/db/schema";
+import { BUCKET_PRIVAT, caleDinReferinta, referintaPrivata } from "@/lib/fisiere-private";
 import { createClient } from "@/lib/supabase/server";
 import { extensieImagine } from "@/lib/upload-imagini";
 
@@ -58,12 +59,12 @@ export const incarcaFacturaAction = withOrgAdmin(
 
     const supabase = await createClient();
     const path = `${ctx.orgSlug}/facturi/${pageId}-${randomUUID()}.${ext}`;
-    const { error: uploadError } = await supabase.storage.from("org-branding").upload(path, fisier, {
+    const { error: uploadError } = await supabase.storage.from(BUCKET_PRIVAT).upload(path, fisier, {
       contentType: fisier.type || "application/octet-stream",
       upsert: false,
     });
     if (uploadError) return { error: "Încărcarea fișierului a eșuat: " + uploadError.message, ok: false };
-    const fisierUrl = supabase.storage.from("org-branding").getPublicUrl(path).data.publicUrl;
+    const fisierUrl = referintaPrivata(path); // bucket privat: URL semnat la afișare (vezi lib/fisiere-private.ts)
 
     const [inserat] = await ctx.db
       .insert(fundraisingInvoices)
@@ -118,19 +119,23 @@ export const stergeFacturaAction = withOrgAdmin(async (ctx, invoiceId: string) =
     .limit(1);
   await ctx.db.delete(fundraisingInvoices).where(and(eq(fundraisingInvoices.id, invoiceId), eq(fundraisingInvoices.orgId, ctx.orgId)));
 
-  // Fișierul stă într-un bucket cu URL public: dacă rămânea în Storage, factura „ștearsă" rămânea accesibilă oricui avea linkul.
-  const marcaj = "/storage/v1/object/public/org-branding/";
-  const idx = rand?.fisierUrl?.indexOf(marcaj) ?? -1;
-  if (rand?.fisierUrl && idx >= 0) {
-    const cale = decodeURIComponent(rand.fisierUrl.slice(idx + marcaj.length).split("?")[0]);
-    // Doar în folderul organizației curente — nu ștergem nimic din altă parte pe baza unui URL din DB.
-    if (cale.startsWith(`${ctx.orgSlug}/`)) {
-      try {
-        const supabase = await createClient();
-        await supabase.storage.from("org-branding").remove([cale]);
-      } catch {
-        // best-effort: rândul e deja șters; un fișier rămas se curăță la ștergerea organizației
-      }
+  // Fișierul se șterge din Storage odată cu rândul (altfel factura „ștearsă" rămânea în bucket). Doar în folderul
+  // organizației curente — nu ștergem nimic din altă parte pe baza unei valori din DB. Rândurile vechi (URL public în
+  // `org-branding`) se tratează ca înainte.
+  const veche = "/storage/v1/object/public/org-branding/";
+  const idx = rand?.fisierUrl?.indexOf(veche) ?? -1;
+  const caleNoua = caleDinReferinta(rand?.fisierUrl);
+  const [bucket, cale] = caleNoua
+    ? [BUCKET_PRIVAT, caleNoua]
+    : rand?.fisierUrl && idx >= 0
+      ? ["org-branding", decodeURIComponent(rand.fisierUrl.slice(idx + veche.length).split("?")[0])]
+      : [null, null];
+  if (bucket && cale && cale.startsWith(`${ctx.orgSlug}/`)) {
+    try {
+      const supabase = await createClient();
+      await supabase.storage.from(bucket).remove([cale]);
+    } catch {
+      // best-effort: rândul e deja șters; un fișier rămas se curăță la ștergerea organizației
     }
   }
 });

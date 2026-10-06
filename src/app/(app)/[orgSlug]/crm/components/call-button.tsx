@@ -3,7 +3,7 @@
 import type { Call, Device } from "@twilio/voice-sdk";
 import { Loader2, Mic, MicOff, Phone, PhoneOff } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { normalizeazaTelefonE164 } from "@/lib/telefon";
 
@@ -27,6 +27,21 @@ export function CallButton({ telefon, nume, companyId }: { telefon: string; nume
   const deviceRef = useRef<Device | null>(null);
   const callRef = useRef<Call | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Setat sincron la prima apăsare (starea React se actualizează abia la următoarea randare).
+  const pornitRef = useRef(false);
+
+  // Navigarea în timpul unui apel demonta componenta, dar apelul, dispozitivul și cronometrul rămâneau active, fără UI.
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      try {
+        callRef.current?.disconnect();
+        deviceRef.current?.destroy();
+      } catch {
+        // deja închis
+      }
+    };
+  }, []);
 
   function inchide() {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -39,16 +54,21 @@ export function CallButton({ telefon, nume, companyId }: { telefon: string; nume
     }
     callRef.current = null;
     deviceRef.current = null;
+    pornitRef.current = false;
     setStare("idle");
     setDurata(0);
     setMuted(false);
   }
 
   async function suna() {
+    // Un dublu-click rapid (înainte să se schimbe starea) crea două dispozitive; primul se pierdea.
+    if (pornitRef.current) return;
+    pornitRef.current = true;
     setEroare("");
     const e164 = normalizeazaTelefonE164(telefon);
     if (!e164) {
       setEroare("Numărul de telefon nu pare valid.");
+      pornitRef.current = false;
       setStare("eroare");
       return;
     }
@@ -62,7 +82,8 @@ export function CallButton({ telefon, nume, companyId }: { telefon: string; nume
             ? "Apelarea din CRM nu e încă activată pentru această platformă."
             : "Nu am putut porni apelul.",
         );
-        setStare("eroare");
+        pornitRef.current = false;
+      setStare("eroare");
         return;
       }
 
@@ -83,10 +104,12 @@ export function CallButton({ telefon, nume, companyId }: { telefon: string; nume
       call.on("cancel", inchide);
       call.on("error", (e) => {
         setEroare(e.message || "Eroare la apel.");
-        setStare("eroare");
+        pornitRef.current = false;
+      setStare("eroare");
       });
     } catch (e) {
       setEroare(e instanceof Error ? e.message : "Nu am putut porni apelul.");
+      pornitRef.current = false;
       setStare("eroare");
     }
   }

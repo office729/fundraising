@@ -1,3 +1,4 @@
+import { urlsSemnate } from "@/lib/fisiere-private";
 import { eq } from "drizzle-orm";
 
 import { withBeneficiarSession } from "@/lib/auth/guard";
@@ -19,7 +20,7 @@ const getInvoices = withBeneficiarSession(async (ctx) => {
 });
 
 export default async function FacturiPage() {
-  const invoices = await getInvoices();
+  const invoices = await urlsSemnate(await getInvoices());
 
   return (
     <div className="space-y-6">

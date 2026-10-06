@@ -105,15 +105,33 @@ export function CreeazaPaginaForm({
           />
         </label>
 
-        <label className="flex items-start gap-2 border-t border-line pt-4 text-[13px] text-body">
+        <section aria-label="Informare privind datele personale" className="border-t border-line pt-4 text-[12px] leading-relaxed text-body">
+          <p className="font-medium text-ink">Cum îți folosim datele (informare)</p>
+          <ul className="mt-1.5 list-disc space-y-1 pl-4">
+            <li>
+              Operator: <strong>{orgName}</strong>. Platforma Alexandrit (MEDIGROUPPLUS SRL) găzduiește tehnic pagina, ca persoană împuternicită.
+            </li>
+            <li>Ce date: numele, emailul tău (rămâne vizibil doar organizației) și povestea; numele și povestea devin publice pe pagina creată.</li>
+            <li>
+              Pentru ce: crearea și administrarea paginii tale de campanie, pe baza consimțământului tău, pe care îl poți retrage oricând cerând
+              ștergerea paginii. Nu include în poveste date medicale sau despre minori fără acordul persoanelor în cauză.
+            </li>
+            <li>
+              Drepturile tale (acces, rectificare, ștergere, opoziție, portabilitate): adresează-te organizației {orgName} sau scrie la{" "}
+              <a href="mailto:vlad.placinta@alexandrit.ro" className="font-medium text-brand-green hover:underline">
+                vlad.placinta@alexandrit.ro
+              </a>
+              ; plângere la ANSPDCP. Detalii în{" "}
+              <Link href="/gdpr" target="_blank" className="font-medium text-brand-green hover:underline">
+                politica de confidențialitate a platformei
+              </Link>
+              .
+            </li>
+          </ul>
+        </section>
+        <label className="flex items-start gap-2 text-[13px] text-body">
           <input type="checkbox" name="consimtamantGdpr" required className="mt-0.5 h-4 w-4 rounded border-line" />
-          <span>
-            Sunt de acord ca numele și povestea de mai sus să fie publicate pe pagină, conform{" "}
-            <Link href="/gdpr" target="_blank" className="font-medium text-brand-green hover:underline">
-              Politicii de prelucrare a datelor cu caracter personal
-            </Link>
-            .
-          </span>
+          <span>Am citit informarea de mai sus și sunt de acord ca numele și povestea să fie publicate pe pagina de campanie.</span>
         </label>
 
         {state.error && <p className="text-sm text-red-600">{state.error}</p>}

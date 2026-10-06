@@ -58,9 +58,11 @@ export const fundraisingDonations = pgTable(
   "fundraising_donations",
   {
     id: uuid("id").primaryKey(),
+    // NO ACTION (nu cascade): ștergerea unei campanii nu trebuie să șteargă în tăcere donațiile (evidență de bani).
+    // Ștergerea organizației merge în continuare — donațiile pleacă și prin org_id în aceeași instrucțiune.
     pageId: uuid("page_id")
       .notNull()
-      .references(() => fundraisingPages.id, { onDelete: "cascade" }),
+      .references(() => fundraisingPages.id, { onDelete: "no action" }),
     // Denormalizat intenționat — permite politici RLS simple (scoping direct
     // pe org_id) și interogări din CRM fără JOIN pe fundraising_pages.
     orgId: uuid("org_id")

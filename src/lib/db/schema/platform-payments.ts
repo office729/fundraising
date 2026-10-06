@@ -1,4 +1,4 @@
-import { boolean, index, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, index, integer, jsonb, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 import { orgPackage } from "./enums";
 import { organizations } from "./organizations";
@@ -47,4 +47,39 @@ export const platformPayments = pgTable(
     oblioEroare: text("oblio_eroare"),
   },
   (t) => [index("platform_payments_org_idx").on(t.orgId)],
+).enableRLS();
+
+// Copie a plăților abonamentului, FĂRĂ cheie străină: se păstrează după ștergerea organizației (evidență contabilă —
+// `platform_payments` dispare în cascadă odată cu organizația). Scrisă de acțiunea de ștergere a organizației.
+export const platformPaymentsArhiva = pgTable(
+  "platform_payments_arhiva",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    orgId: uuid("org_id").notNull(),
+    orgName: text("org_name"),
+    orgCif: text("org_cif"),
+    orderId: text("order_id").notNull(),
+    package: text("package"),
+    sumaLei: integer("suma_lei").notNull(),
+    status: text("status").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }),
+    paidAt: timestamp("paid_at", { withTimezone: true }),
+    oblioSeriesName: text("oblio_series_name"),
+    oblioNumber: text("oblio_number"),
+    oblioLink: text("oblio_link"),
+    arhivatLa: timestamp("arhivat_la", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [uniqueIndex("platform_payments_arhiva_order_idx").on(t.orderId)],
+).enableRLS();
+
+// Registru PERSISTENT al organizațiilor create (hash de email normalizat, fără cheie străină): nu se șterge odată cu
+// organizația, deci proba gratuită nu se poate reseta prin ștergere + recreare.
+export const orgCreariRegistru = pgTable(
+  "org_creari_registru",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    emailHash: text("email_hash").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index("org_creari_registru_email_idx").on(t.emailHash, t.createdAt)],
 ).enableRLS();

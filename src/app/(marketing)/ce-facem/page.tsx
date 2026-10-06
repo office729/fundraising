@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { getLocale } from "@/lib/i18n/get-locale";
 import { CE_FACEM_DICT } from "@/lib/i18n/dictionaries/ce-facem";
-import { titluPagina } from "@/lib/page-titles";
+import { metadatePagina } from "@/lib/page-titles";
 
 export default async function CeFacemPage() {
   const locale = await getLocale();
@@ -41,5 +41,5 @@ export default async function CeFacemPage() {
 }
 
 export async function generateMetadata() {
-  return { title: await titluPagina("ce-facem") };
+  return await metadatePagina("ce-facem");
 }

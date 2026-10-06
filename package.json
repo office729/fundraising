@@ -16,7 +16,8 @@
     "db:restore-rls": "node --env-file=.env.local scripts/restore-rls.mjs",
     "test:rls": "node --env-file=.env.local scripts/test-rls.mjs",
     "db:studio": "drizzle-kit studio",
-    "storage:setup": "node --env-file=.env.local scripts/setup-storage.mjs"
+    "storage:setup": "node --env-file=.env.local scripts/setup-storage.mjs",
+    "test": "node --experimental-strip-types --no-warnings --test \"tests/*.test.mjs\""
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",

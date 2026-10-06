@@ -223,6 +223,7 @@ export async function proceseazaRezultatPlataNetopia(orderId: string, rezultat: 
         // eliminat sau schimbat între timp).
         const recenta = plata.paidAt !== null && Date.now() - plata.paidAt.getTime() < 6 * 3600_000;
         if (plata.status === "reusita" && recenta && rezultat.cardToken && criptareConfigurata()) {
+          const [optOutRand] = await tx.select({ o: organizations.netopiaAutorenewOptOut }).from(organizations).where(eq(organizations.id, plata.orgId)).limit(1);
           await tx
             .update(organizations)
             .set({
@@ -230,7 +231,7 @@ export async function proceseazaRezultatPlataNetopia(orderId: string, rezultat: 
               netopiaCardMasked: rezultat.cardMasked,
               netopiaCardExpireMonth: rezultat.cardExpireMonth,
               netopiaCardExpireYear: rezultat.cardExpireYear,
-              netopiaAutoRenew: true,
+              netopiaAutoRenew: !optOutRand?.o,
             })
             .where(and(eq(organizations.id, plata.orgId), isNull(organizations.netopiaCardTokenEnc)));
         }
@@ -242,6 +243,8 @@ export async function proceseazaRezultatPlataNetopia(orderId: string, rezultat: 
       // Implicit ACTIV (reînnoire automată) — disclosure-ul apare pe pagina de
       // alegere a pachetului, ÎNAINTE de plată; organizația poate opri oricând
       // din Setări, fără să piardă cardul salvat.
+      // Clientul care a oprit explicit reînnoirea automată nu o primește înapoi doar pentru că a plătit manual o lună.
+      const [optOutOrg] = await tx.select({ o: organizations.netopiaAutorenewOptOut }).from(organizations).where(eq(organizations.id, plata.orgId)).limit(1);
       const setCard: Partial<typeof organizations.$inferInsert> =
         rezultat.cardToken && criptareConfigurata()
           ? {
@@ -249,7 +252,7 @@ export async function proceseazaRezultatPlataNetopia(orderId: string, rezultat: 
               netopiaCardMasked: rezultat.cardMasked,
               netopiaCardExpireMonth: rezultat.cardExpireMonth,
               netopiaCardExpireYear: rezultat.cardExpireYear,
-              netopiaAutoRenew: true,
+              netopiaAutoRenew: !optOutOrg?.o,
             }
           : {};
       const actualizatOrg = await tx

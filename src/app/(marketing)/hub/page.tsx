@@ -8,7 +8,7 @@ import { HUB_DICT } from "@/lib/i18n/dictionaries/hub";
 
 import { CustomPlanCalculator } from "./custom-plan-calculator";
 import { PlansSection } from "./plans-section";
-import { titluPagina } from "@/lib/page-titles";
+import { metadatePagina } from "@/lib/page-titles";
 
 // Calculatorul „Ai nevoie de altceva?" (plan personalizat) e ascuns momentan; pune true ca să reapară.
 const AFISEAZA_PLAN_PERSONALIZAT = false;
@@ -194,5 +194,5 @@ export default async function HubPage() {
 }
 
 export async function generateMetadata() {
-  return { title: await titluPagina("hub") };
+  return await metadatePagina("hub");
 }

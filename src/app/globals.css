@@ -8,8 +8,9 @@
   --brand-blue: #154a85;
   --brand-blue-hover: #103a68;
   --brand-blue-soft: #eaf0f8;
-  --brand-green: #3fa85c;
-  --brand-green-hover: #2f8548;
+  /* Verde mai închis decât paleta inițială (#3fa85c): text alb pe el avea contrast 3,0:1 (WCAG cere 4,5:1). */
+  --brand-green: #2a7d44;
+  --brand-green-hover: #256a39;
   --brand-green-soft: #e9f6ec;
   --brand-amber: #b7791f;
   --brand-amber-soft: #fbf1de;
@@ -33,7 +34,7 @@
   --ink: #154a85;
   --body: #374151;
   --muted: #4a5a6e;
-  --muted-2: #7e8b9c;
+  --muted-2: #647285; /* era #7e8b9c (contrast 3,5:1 pe alb) */
   --line: #e6e9ee;
 
   /* Radius de temă — variază pe "familie de layout" per domeniu (vezi mai
@@ -319,4 +320,22 @@ body {
   color: var(--body);
   font-family: var(--font-manrope), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+
+
+/* Text pe butoane pline verzi/albastre: alb în tema deschisă, închis în cea întunecată (acolo culorile sunt deschise și
+   textul alb avea contrast 2,1–2,2:1). Specificitate de două clase > utilitarul `text-white`, fără a edita fiecare buton. */
+:root {
+  --on-brand-green: #ffffff;
+  --on-brand-blue: #ffffff;
+}
+.dark {
+  --on-brand-green: #0b0f16;
+  --on-brand-blue: #0b0f16;
+}
+.bg-brand-green.text-white {
+  color: var(--on-brand-green);
+}
+.bg-brand-blue.text-white {
+  color: var(--on-brand-blue);
 }

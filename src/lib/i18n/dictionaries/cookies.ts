@@ -6,7 +6,7 @@ export const COOKIES_DICT = {
     eyebrow: "Legal",
     titlu: "Politica de cookies",
     actualizatLabel: "Ultima actualizare",
-    actualizat: "5 octombrie 2026",
+    actualizat: "6 octombrie 2026",
     banner: {
       titlu: "Cookie-uri și statistici",
       text: "Folosim cookie-uri strict necesare pentru autentificare. Cu acordul tău, folosim și Google Analytics pentru statistici despre utilizarea site-ului (date pseudonimizate, nu complet anonime). Poți schimba alegerea oricând.",
@@ -30,6 +30,8 @@ export const COOKIES_DICT = {
         { nume: "sb-*-auth-token-code-verifier", scop: "Verificare tehnică temporară pentru finalizarea autentificării (cod OAuth/email).", durata: "Câteva minute" },
         { nume: "fa_evt", scop: "Semnal tehnic scurt, fără date personale: anunță pagina următoare că ți-ai creat contul, ca statistica să poată fi raportată doar dacă ai acceptat cookie-urile de analiză. Se șterge imediat ce e citit.", durata: "Maximum 2 minute" },
         { nume: "fa_terms", scop: "Reține, doar la înscrierea cu Google, că ai bifat acceptarea Termenilor și a Politicii de confidențialitate, ca să nu ți-o cerem a doua oară după întoarcerea de la Google. Conține doar versiunea textelor acceptate.", durata: "30 de minute" },
+        { nume: "fa_locale", scop: "Reține limba aleasă (română/engleză), ca să te întâmpinăm în limba ta la următoarea vizită.", durata: "1 an" },
+        { nume: "canva_pkce_verifier", scop: "Valoare tehnică temporară, doar dacă conectezi contul Canva din Setări: protejează procesul de conectare (OAuth).", durata: "10 minute" },
       ],
     },
     sAnalytics: {
@@ -44,13 +46,13 @@ export const COOKIES_DICT = {
     s3: {
       titlu: "4. Stocare locală (nu e tehnic un cookie)",
       textBefore: "Folosim și",
-      textAfter: "în browser — nu se trimite către server — pentru preferința de temă (light/dark), pentru alegerea ta privind cookie-urile de analiză și, în modulul CRM demonstrativ, pentru datele de test introduse local. Se șterge dacă ștergi datele site-ului din browser.",
+      textAfter: "în browser — nu se trimite către server — pentru preferința de temă (light/dark), pentru alegerea ta privind cookie-urile de analiză, pentru a ține minte ce mesaje de întâmpinare ai închis în aplicație, pentru starea instrumentelor din CRM (datele pe care le introduci în ele, înainte să fie salvate) și, în modulele demonstrative, pentru datele de test introduse local. Pe pagina de rezultat a unei plăți de abonament, în sessionStorage ținem temporar numărul comenzii, ca să nu raportăm de două ori aceeași plată. Se șterge dacă ștergi datele site-ului din browser.",
     },
     s4: {
       titlu: "5. Cookie-uri terțe",
       textBefore: "Dacă activezi autentificarea cu Google, Google poate seta propriile cookie-uri în timpul procesului de autentificare, conform",
       linkText: "politicii de confidențialitate Google",
-      textAfter: ". Procesatorii de plăți — Stripe (donații, în contul propriu al organizației) și Netopia (abonamentul platformei) — pot seta, pe pagina lor securizată de plată, cookie-uri proprii, necesare procesării plății. Programarea consultanțelor se face prin Calendly: pe pagina publică „Hub”, calendarul se încarcă abia după ce apeși „Deschide calendarul”; în aplicație se încarcă la deschiderea paginii de consultanță. Calendly poate seta propriile cookie-uri și primește adresa ta IP, conform politicii lui de confidențialitate.",
+      textAfter: ". Procesatorii de plăți — Stripe (donații, în contul propriu al organizației) și Netopia (abonamentul platformei) — pot seta cookie-uri proprii, necesare procesării plății și prevenirii fraudei: pe pagina lor securizată de plată și, pentru Stripe, și pe pagina de donație, după ce deschizi fereastra de donație (scriptul Stripe se încarcă abia atunci). Unele instrumente din interiorul aplicației (zona autentificată) încarcă fonturi de la Google Fonts și biblioteci de la Cloudflare (cdnjs); aceste servicii primesc adresa ta IP la încărcare. Programarea consultanțelor se face prin Calendly: pe pagina publică „Hub”, calendarul se încarcă abia după ce apeși „Deschide calendarul”; în aplicație se încarcă la deschiderea paginii de consultanță. Calendly poate seta propriile cookie-uri și primește adresa ta IP, conform politicii lui de confidențialitate.",
     },
     s5: {
       titlu: "6. Cum gestionezi cookie-urile",
@@ -62,7 +64,7 @@ export const COOKIES_DICT = {
     eyebrow: "Legal",
     titlu: "Cookie Policy",
     actualizatLabel: "Last updated",
-    actualizat: "October 5, 2026",
+    actualizat: "October 6, 2026",
     banner: {
       titlu: "Cookies and statistics",
       text: "We use strictly necessary cookies for sign-in. With your consent, we also use Google Analytics for statistics about how the site is used (pseudonymized data, not fully anonymous). You can change your choice at any time.",
@@ -86,6 +88,8 @@ export const COOKIES_DICT = {
         { nume: "sb-*-auth-token-code-verifier", scop: "Temporary technical verification to complete authentication (OAuth/email code).", durata: "A few minutes" },
         { nume: "fa_evt", scop: "Short technical signal, no personal data: tells the next page you just created your account, so the statistic can be reported only if you accepted analytics cookies. Deleted as soon as it's read.", durata: "2 minutes at most" },
         { nume: "fa_terms", scop: "Remembers, only when signing up with Google, that you ticked acceptance of the Terms and Privacy Policy, so we don't ask again after you return from Google. Contains only the version of the texts accepted.", durata: "30 minutes" },
+        { nume: "fa_locale", scop: "Remembers the language you chose (Romanian/English), so we greet you in your language on your next visit.", durata: "1 year" },
+        { nume: "canva_pkce_verifier", scop: "Temporary technical value, only if you connect your Canva account in Settings: protects the connection (OAuth) process.", durata: "10 minutes" },
       ],
     },
     sAnalytics: {
@@ -100,13 +104,13 @@ export const COOKIES_DICT = {
     s3: {
       titlu: "4. Local storage (not technically a cookie)",
       textBefore: "We also use",
-      textAfter: "in the browser — never sent to the server — for the theme preference (light/dark), for your analytics-cookie choice and, in the demo CRM module, for locally entered test data. It's cleared if you clear the site's data from your browser.",
+      textAfter: "in the browser — never sent to the server — for the theme preference (light/dark), for your analytics-cookie choice, to remember which welcome messages you closed in the app, for the state of the CRM tools (the data you enter in them, before it is saved) and, in the demo modules, for locally entered test data. On the result page of a subscription payment we keep the order number temporarily in sessionStorage, so the same payment is not reported twice. It's cleared if you clear the site's data from your browser.",
     },
     s4: {
       titlu: "5. Third-party cookies",
       textBefore: "If you enable sign-in with Google, Google may set its own cookies during the authentication process, per the",
       linkText: "Google privacy policy",
-      textAfter: ". Payment processors — Stripe (donations, into the organization's own account) and Netopia (the platform's subscription) — may set their own cookies on their secure payment page, needed to process the payment. Consultations are booked through Calendly: on the public “Hub” page the calendar loads only after you press “Open the calendar”; inside the app it loads when you open the consultation page. Calendly may set its own cookies and receives your IP address, per its own privacy policy.",
+      textAfter: ". Payment processors — Stripe (donations, into the organization's own account) and Netopia (the platform's subscription) — may set their own cookies, needed to process the payment and prevent fraud: on their secure payment page and, for Stripe, also on the donation page once you open the donation window (the Stripe script loads only then). Some tools inside the app (the signed-in area) load fonts from Google Fonts and libraries from Cloudflare (cdnjs); these services receive your IP address when loading. Consultations are booked through Calendly: on the public “Hub” page the calendar loads only after you press “Open the calendar”; inside the app it loads when you open the consultation page. Calendly may set its own cookies and receives your IP address, per its own privacy policy.",
     },
     s5: {
       titlu: "6. Managing cookies",

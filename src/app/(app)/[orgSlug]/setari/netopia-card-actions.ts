@@ -43,7 +43,8 @@ export const obtineStatusReinnoireAutomata = withOrgAdmin(async (ctx): Promise<S
 // reactiva oricând, fără să treacă din nou printr-o plată). Cronul de reînnoire
 // (api/cron/netopia-reinnoire) selectează doar organizațiile cu acest flag activ.
 export const dezactiveazaReinnoireAutomataAction = withOrgAdmin(async (ctx): Promise<void> => {
-  await ctx.db.update(organizations).set({ netopiaAutoRenew: false }).where(eq(organizations.id, ctx.orgId));
+  // opt-out explicit: o plată manuală ulterioară nu trebuie să repornească taxarea automată pe care clientul a oprit-o.
+  await ctx.db.update(organizations).set({ netopiaAutoRenew: false, netopiaAutorenewOptOut: true }).where(eq(organizations.id, ctx.orgId));
 });
 
 // Reactivează taxarea automată — doar dacă mai există un token salvat (dacă a
@@ -57,7 +58,7 @@ export const activeazaReinnoireAutomataAction = withOrgAdmin(async (ctx): Promis
   if (!rows[0]?.token) return { ok: false };
   await ctx.db
     .update(organizations)
-    .set({ netopiaAutoRenew: true, netopiaRenewalAttempts: 0, netopiaRenewalFailedAt: null })
+    .set({ netopiaAutoRenew: true, netopiaAutorenewOptOut: false, netopiaRenewalAttempts: 0, netopiaRenewalFailedAt: null })
     .where(eq(organizations.id, ctx.orgId));
   return { ok: true };
 });

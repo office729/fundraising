@@ -298,6 +298,17 @@ const POLICIES = [
   `create policy donatori_reali_member_delete on donatori_reali for delete using (
     org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
   )`,
+  // --- adăugate la audit (6 oct 2026): existau pe baza live, dar lipseau din script (un db:push + restore le pierdea) ---
+  `create policy auth_rate_limits_all on auth_rate_limits for all using (true) with check (true)`,
+  `create policy formular230_member_update on formular230_submissions for update using (
+    org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
+  )`,
+  // Registrul persistent al organizațiilor create (anti-resetare a probei) și arhiva plăților abonamentului.
+  `create policy org_creari_registru_insert on org_creari_registru for insert with check (true)`,
+  `create policy org_creari_registru_select on org_creari_registru for select using (true)`,
+  `create policy platform_payments_arhiva_insert on platform_payments_arhiva for insert with check (
+    org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
+  )`,
   `create policy email_suppression_tenant_select on email_suppression for select using (
     org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
   )`,
@@ -753,6 +764,8 @@ const FORCE_TABLES = [
   "formular230_campanii_email",
   "formular230_destinatari",
   "email_suppression",
+  "org_creari_registru",
+  "platform_payments_arhiva",
   "fundraising_pages",
   "fundraising_donations",
   "donatori_reali",

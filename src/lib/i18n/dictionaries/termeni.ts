@@ -10,7 +10,7 @@ export const TERMENI_DICT = {
     eyebrow: "Legal",
     titlu: "Termeni și condiții",
     actualizatLabel: "Ultima actualizare",
-    actualizat: "5 octombrie 2026",
+    actualizat: "6 octombrie 2026",
     sectiuni: [
       {
         titlu: "1. Aspecte generale și identificarea operatorului",
@@ -60,8 +60,8 @@ export const TERMENI_DICT = {
       {
         titlu: "5. Comercializarea serviciilor: abonamente și prețuri",
         paragrafe: [
-          "Abonamentele (START, CREȘTERE, IMPACT) se plătesc lunar sau anual, la prețurile în lei afișate pe pagina Hub Fundraising în momentul comenzii; la plata anuală se aplică reducerea afișată („2 luni gratuite”). Prețul final aferent perioadei alese este afișat înainte de plată. Perioada de probă gratuită este de 30 de zile, fără card bancar; după probă, accesul continuă doar după alegerea și plata unui pachet.",
-          "Abonamentul se reînnoiește automat pentru aceeași perioadă, până la anulare. Îl poți anula oricând, din cont sau prin email; anularea produce efecte de la sfârșitul perioadei deja plătite. Sumele plătite pentru perioada în curs nu se rambursează, cu excepția cazurilor prevăzute de lege sau a unei erori imputabile nouă, având în vedere natura digitală a serviciului, care se furnizează imediat după plată.",
+          "Abonamentele (START, CREȘTERE, IMPACT) se plătesc lunar, la prețurile în lei afișate pe pagina Hub Fundraising în momentul comenzii. Prețul final este afișat înainte de plată. Perioada de probă gratuită este de 30 de zile, fără card bancar; după probă, accesul continuă doar după alegerea și plata unui pachet.",
+          "Abonamentul se reînnoiește automat în fiecare lună, dacă banca emitentă a cardului permite plățile recurente (cardul se salvează la prima plată, iar reînnoirea se poate opri oricând din Setări); altfel, plata se face manual lună de lună. Îl poți anula oricând, din cont sau prin email; anularea produce efecte de la sfârșitul perioadei deja plătite. Sumele plătite pentru perioada în curs nu se rambursează, cu excepția cazurilor prevăzute de lege sau a unei erori imputabile nouă, având în vedere natura digitală a serviciului, care se furnizează imediat după plată.",
           "Ne rezervăm dreptul de a modifica prețurile pentru perioadele viitoare, cu anunț prealabil de cel puțin 30 de zile. Depășirea limitelor pachetului (utilizatori, contacte, companii) poate fi rezolvată prin trecerea la un pachet superior sau prin opțiunile suplimentare afișate.",
         ],
       },
@@ -109,7 +109,7 @@ export const TERMENI_DICT = {
       {
         titlu: "11. Datele Clientului, export și ștergere",
         paragrafe: [
-          "Datele introduse de Client în Platformă rămân proprietatea Clientului. Ne acorzi doar dreptul de a le stoca și prelucra pentru a-ți furniza serviciile. Poți exporta datele (CSV/Excel) cât timp contul este activ.",
+          "Datele introduse de Client în Platformă rămân proprietatea Clientului. Ne acorzi doar dreptul de a le stoca și prelucra pentru a-ți furniza serviciile. Owner-ul organizației poate exporta datele (fișier JSON), inclusiv după expirarea abonamentului, până la ștergerea lor.",
           "La încetarea contractului, datele Clientului sunt șterse sau anonimizate într-un termen rezonabil, după ce Clientul are posibilitatea de a le exporta, cu excepția datelor pe care suntem obligați să le păstrăm conform legii (de exemplu documente contabile și fiscale).",
         ],
       },
@@ -189,7 +189,7 @@ export const TERMENI_DICT = {
     eyebrow: "Legal",
     titlu: "Terms and Conditions",
     actualizatLabel: "Last updated",
-    actualizat: "October 5, 2026",
+    actualizat: "October 6, 2026",
     sectiuni: [
       {
         titlu: "1. General aspects and operator identification",
@@ -239,8 +239,8 @@ export const TERMENI_DICT = {
       {
         titlu: "5. Commercialization of services: subscriptions and prices",
         paragrafe: [
-          "Subscriptions (START, CREȘTERE, IMPACT) are paid monthly or annually at the prices in lei shown on the Fundraising Hub page when ordering; annual payment carries the displayed discount (“2 months free”). The final price for the chosen period is shown before payment. The free trial is 30 days, no bank card required; after the trial, access continues only after choosing and paying for a plan.",
-          "The subscription renews automatically for the same period until cancelled. You may cancel at any time, from the account or by email; cancellation takes effect at the end of the period already paid. Amounts paid for the current period are not refunded, except where required by law or in case of an error attributable to us, given the digital nature of the service, which is provided immediately after payment.",
+          "Subscriptions (START, CREȘTERE, IMPACT) are paid monthly, at the prices in lei shown on the Fundraising Hub page when ordering. The final price is shown before payment. The free trial is 30 days, no bank card required; after the trial, access continues only after choosing and paying for a plan.",
+          "The subscription renews automatically every month, if the card-issuing bank allows recurring payments (the card is saved at the first payment and automatic renewal can be turned off at any time in Settings); otherwise payment is made manually each month. You may cancel at any time, from the account or by email; cancellation takes effect at the end of the period already paid. Amounts paid for the current period are not refunded, except where required by law or in case of an error attributable to us, given the digital nature of the service, which is provided immediately after payment.",
           "We may change prices for future periods with at least 30 days' notice. Exceeding plan limits (users, contacts, companies) can be resolved by moving to a higher plan or through the additional options shown.",
         ],
       },
@@ -288,7 +288,7 @@ export const TERMENI_DICT = {
       {
         titlu: "11. Customer data, export and deletion",
         paragrafe: [
-          "Data entered by the Customer remains the Customer's property. You grant us only the right to store and process it to provide the services. You can export your data (CSV/Excel) while the account is active.",
+          "Data entered by the Customer remains the Customer's property. You grant us only the right to store and process it to provide the services. The organization owner can export the data (JSON file), including after the subscription has expired, until it is deleted.",
           "When the contract ends, the Customer's data is deleted or anonymized within a reasonable time, after the Customer has had the opportunity to export it, except for data we must keep by law (for example accounting and tax records).",
         ],
       },

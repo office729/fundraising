@@ -1,13 +1,15 @@
 import "server-only";
 
-import { randomUUID } from "node:crypto";
+import { createHmac, randomUUID } from "node:crypto";
 
 import { and, eq, sql } from "drizzle-orm";
 
 import { ensureAppUser, inregistreazaAcceptareTermeni } from "@/lib/auth/dal";
 import type { citestePlanulAlesDinFormular } from "@/lib/billing/plan-from-form";
 import { db } from "@/lib/db";
-import { memberships, organizations } from "@/lib/db/schema";
+import { isPlatformAdmin } from "@/lib/billing/trial";
+import { emailNormalizatPentruRegistru } from "@/lib/email-normalizat";
+import { memberships, orgCreariRegistru, organizations } from "@/lib/db/schema";
 import { formular230Beneficiari } from "@/lib/db/schema/formular230";
 import { SLUG_PRINCIPAL } from "@/lib/formular230-constants";
 import { esteSlugRezervat } from "@/lib/reserved-slugs";
@@ -25,6 +27,13 @@ import { slugify } from "@/lib/slugify";
 // în serie, iar numele rămâne rezonabil.
 export const MAX_ORGANIZATII_PE_UTILIZATOR = 3;
 export const MAX_LUNGIME_NUME_ORGANIZATIE = 120;
+// Plafon pe VIAȚĂ, per adresă de email normalizată (registru care nu se șterge odată cu organizația): ștergerea unei
+// organizații și crearea alteia nu mai repornește proba gratuită la nesfârșit.
+export const MAX_ORGANIZATII_CREATE_PE_VIATA = 5;
+
+function hashRegistru(email: string): string {
+  return createHmac("sha256", process.env.ORG_SECRETS_KEY ?? "").update(`trial:${emailNormalizatPentruRegistru(email)}`).digest("hex");
+}
 
 export type RezultatProvizionare = { ok: true; slug: string } | { ok: false; motiv: "limita_organizatii" };
 
@@ -47,6 +56,16 @@ export async function creeazaOrganizatieNoua(p: {
       .from(memberships)
       .where(and(eq(memberships.userId, appUser.id), eq(memberships.role, "owner")));
     if (detinute.length >= MAX_ORGANIZATII_PE_UTILIZATOR) return { ok: false, motiv: "limita_organizatii" };
+
+    // Registrul persistent (supraviețuiește ștergerii organizațiilor). Administratorii platformei sunt exceptați.
+    const hashEmail = hashRegistru(p.email);
+    if (!isPlatformAdmin(p.email)) {
+      const [{ creari }] = await tx
+        .select({ creari: sql<number>`count(*)`.mapWith(Number) })
+        .from(orgCreariRegistru)
+        .where(eq(orgCreariRegistru.emailHash, hashEmail));
+      if (creari >= MAX_ORGANIZATII_CREATE_PE_VIATA) return { ok: false, motiv: "limita_organizatii" };
+    }
 
     // Necesar pentru verificarea de unicitate a slug-ului ȘI rezolvarea codului de
     // recomandare — la acest moment nu există încă niciun membership, deci
@@ -78,6 +97,7 @@ export async function creeazaOrganizatieNoua(p: {
     const dpa = DPA_ACTIV ? { dpaVersion: DPA_VERSIUNE, dpaAcceptedAt: new Date(), dpaAcceptedBy: appUser.id } : {};
     await tx.insert(organizations).values({ id: orgId, name: p.orgName, slug, referredByOrgId, ...dpa, ...(p.planAles ?? {}) });
     await tx.insert(memberships).values({ orgId, userId: appUser.id, role: "owner" });
+    await tx.insert(orgCreariRegistru).values({ emailHash: hashEmail });
     await tx.insert(formular230Beneficiari).values({ orgId, nume: p.orgName, slug: SLUG_PRINCIPAL, shortCode: genereazaCodScurt() });
     return { ok: true, slug };
   });

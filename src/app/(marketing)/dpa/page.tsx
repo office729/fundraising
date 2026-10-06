@@ -2,7 +2,7 @@ import { getLocale } from "@/lib/i18n/get-locale";
 import { DPA_DICT } from "@/lib/i18n/dictionaries/dpa";
 
 import { LegalLayout, Sectiune } from "../legal-shared";
-import { titluPagina } from "@/lib/page-titles";
+import { metadatePagina } from "@/lib/page-titles";
 
 export default async function DpaPage() {
   const locale = await getLocale();
@@ -35,5 +35,5 @@ export default async function DpaPage() {
 }
 
 export async function generateMetadata() {
-  return { title: await titluPagina("dpa") };
+  return await metadatePagina("dpa");
 }

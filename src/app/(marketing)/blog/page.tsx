@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { getLocale } from "@/lib/i18n/get-locale";
 import { BLOG_DICT } from "@/lib/i18n/dictionaries/blog";
-import { titluPagina } from "@/lib/page-titles";
+import { metadatePagina } from "@/lib/page-titles";
 
 export default async function BlogPage() {
   const locale = await getLocale();
@@ -33,5 +33,5 @@ export default async function BlogPage() {
 }
 
 export async function generateMetadata() {
-  return { title: await titluPagina("blog") };
+  return await metadatePagina("blog");
 }

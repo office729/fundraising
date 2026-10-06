@@ -2,7 +2,7 @@ import { getLocale } from "@/lib/i18n/get-locale";
 import { GDPR_DICT } from "@/lib/i18n/dictionaries/gdpr";
 
 import { LegalLayout, Sectiune } from "../legal-shared";
-import { titluPagina } from "@/lib/page-titles";
+import { metadatePagina } from "@/lib/page-titles";
 
 export default async function GdprPage() {
   const locale = await getLocale();
@@ -35,5 +35,5 @@ export default async function GdprPage() {
 }
 
 export async function generateMetadata() {
-  return { title: await titluPagina("gdpr") };
+  return await metadatePagina("gdpr");
 }

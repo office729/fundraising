@@ -77,7 +77,7 @@ export function SiteHeader({ dict }: { dict: MarketingDict }) {
           />
         </Link>
 
-        <nav className="hidden items-center gap-4 lg:flex xl:gap-6">
+        <nav aria-label="Principal" className="hidden items-center gap-4 lg:flex xl:gap-6">
           {/* „Acasă" lipsește de aici: logo-ul duce deja la prima pagină (rămâne în meniul de mobil). */}
           {dict.nav.filter((item) => item.href !== "/").map((item) => {
             const subPaginiActive = dict.navCineSuntem.some((x) => pathname === x.href);
@@ -155,6 +155,8 @@ export function SiteHeader({ dict }: { dict: MarketingDict }) {
             type="button"
             onClick={() => setDeschis((v) => !v)}
             aria-label={deschis ? dict.header.closeMenu : dict.header.openMenu}
+            aria-expanded={deschis}
+            aria-controls="meniu-mobil"
             className="flex h-9 w-9 items-center justify-center rounded-lg text-ink lg:hidden"
           >
             {deschis ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -163,7 +165,7 @@ export function SiteHeader({ dict }: { dict: MarketingDict }) {
       </div>
 
       {deschis && (
-        <nav className="flex flex-col gap-1 border-t border-line px-6 py-3 lg:hidden">
+        <nav id="meniu-mobil" aria-label="Meniu mobil" className="flex flex-col gap-1 border-t border-line px-6 py-3 lg:hidden">
           {dict.nav.map((item) => (
             <div key={item.href} className="flex flex-col gap-1">
               <Link
@@ -312,7 +314,7 @@ export function SiteFooter({ dict }: { dict: MarketingDict }) {
         ))}
       </div>
 
-      <p className="mx-auto mt-8 max-w-6xl text-xs text-white/40">© 2026 alexandrit.ro · MEDIGROUPPLUS SRL</p>
+      <p className="mx-auto mt-8 max-w-6xl text-xs text-white/60">© 2026 alexandrit.ro · MEDIGROUPPLUS SRL</p>
     </footer>
   );
 }

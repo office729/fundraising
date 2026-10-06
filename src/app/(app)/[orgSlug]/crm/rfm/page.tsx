@@ -3,6 +3,7 @@
 import { AlertTriangle, Heart, RotateCcw, Sparkles, Star, TrendingUp, UserPlus } from "lucide-react";
 
 import { Badge, type StatusTone } from "../components/ui/badge";
+import { DemoBanner } from "../components/demo-banner";
 import { Card, CardHeader } from "../components/ui/card";
 import { formatSuma } from "../lib/format";
 import { useDonatori } from "../lib/use-data";
@@ -43,6 +44,7 @@ export default function RfmPage() {
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-5">
+      <DemoBanner>{locale === "ro" ? "Date demonstrative: indicatorii de pe această pagină sunt exemple și se păstrează doar în acest browser, nu pe server." : "Demo data: the figures on this page are examples and are kept only in this browser, not on the server."}</DemoBanner>
       <div>
         <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">{dict.title}</h1>
         <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">{dict.subtitle(DONATORI.length)}</p>

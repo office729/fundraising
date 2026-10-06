@@ -73,6 +73,14 @@ export async function ajusteazaOrgAction(
   values: { package: string; subscriptionStatus: string; currentPeriodEnd: string | null },
 ): Promise<void> {
   const actorEmail = await cerePlatformAdmin();
+  // Tipurile TypeScript nu protejează o acțiune apelată direct: validăm id-ul, enumurile și data înainte de scriere.
+  const PACHETE = ["trial", "start", "crestere", "impact", "custom"];
+  const STATUSURI = ["trialing", "active", "past_due", "canceled", "incomplete"];
+  const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const sfarsit = values.currentPeriodEnd ? new Date(values.currentPeriodEnd) : null;
+  if (!UUID.test(orgId) || !PACHETE.includes(values.package) || !STATUSURI.includes(values.subscriptionStatus) || (sfarsit && Number.isNaN(sfarsit.getTime()))) {
+    throw new Error("Valori invalide pentru ajustarea organizației.");
+  }
   await db.transaction(async (tx) => {
     await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
     await tx
@@ -80,7 +88,7 @@ export async function ajusteazaOrgAction(
       .set({
         package: values.package as (typeof organizations.$inferInsert)["package"],
         subscriptionStatus: values.subscriptionStatus as (typeof organizations.$inferInsert)["subscriptionStatus"],
-        currentPeriodEnd: values.currentPeriodEnd ? new Date(values.currentPeriodEnd) : null,
+        currentPeriodEnd: sfarsit,
       })
       .where(eq(organizations.id, orgId));
   });

@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 
+import { urlsSemnate } from "@/lib/fisiere-private";
 import { requireBeneficiarAccess, withBeneficiarSession } from "@/lib/auth/guard";
 import { fundraisingInvoices } from "@/lib/db/schema";
 
@@ -23,7 +24,8 @@ const getInvoices = withBeneficiarSession(async (ctx) => {
 });
 
 export default async function SituatieFinanciaraPage() {
-  const [access, invoices] = await Promise.all([requireBeneficiarAccess(), getInvoices()]);
+  const [access, facturiBrute] = await Promise.all([requireBeneficiarAccess(), getInvoices()]);
+  const invoices = await urlsSemnate(facturiBrute);
 
   const sumaStransa = access.campaignSumaStransa ?? 0;
   const sumaTinta = access.campaignSumaTinta;

@@ -12,6 +12,13 @@ export function curataMesajEroare(mesaj: string): string {
   return (i >= 0 ? mesaj.slice(0, i) : mesaj).slice(0, 500);
 }
 
+// URL-urile unor pagini conțin date personale sau tokenuri (linkul de dezabonare are emailul în base64, invitațiile au
+// tokenul în cale): le tăiem înainte să ajungă la Sentry (query string + segmentul de token).
+export function curataUrlPentruSentry(url: string): string {
+  const faraQuery = url.split("?")[0].split("#")[0];
+  return faraQuery.replace(/\/(invite|invite-beneficiar)\/[^/]+/, "/$1/:token");
+}
+
 type Extra = Record<string, string | number | boolean | null | undefined>;
 
 export function raporteazaEroare(zona: string, e: unknown, extra?: Extra): void {

@@ -9,7 +9,7 @@ export const GDPR_DICT = {
     eyebrow: "Legal",
     titlu: "Politica de confidențialitate (GDPR)",
     actualizatLabel: "Ultima actualizare",
-    actualizat: "5 octombrie 2026",
+    actualizat: "6 octombrie 2026",
     sectiuni: [
       {
         titlu: "1. Cine suntem și în ce calitate prelucrăm date",
@@ -67,6 +67,8 @@ export const GDPR_DICT = {
           "Twilio — apeluri și mesaje, unde funcția este activată;",
           "Calendly — programarea consilierilor 1 la 1;",
           "Google Analytics — statistici de utilizare, doar cu consimțământul tău;",
+          "Sentry — monitorizarea erorilor tehnice ale aplicației (mesaje de eroare și informații despre dispozitiv/browser; adresele paginilor sunt curățate de parametri și tokenuri, iar emailurile și datele din formulare nu se trimit);",
+          "Google Fonts și Cloudflare (cdnjs) — fonturi și biblioteci încărcate de unele instrumente din zona autentificată a platformei (primesc adresa IP a utilizatorului la încărcare);",
           "Anthropic (Claude) — generare de conținut asistată de AI în modulul de strângere de fonduri (comunicate de presă, postări pentru rețele sociale, mesaje de mulțumire pentru sponsori), pe baza titlului campaniei, a poveștii, a sumelor și, pentru mesajele de mulțumire, a numelui sponsorului; funcție opțională, folosită doar când organizația apasă „Generează cu AI”. La fel, în modulul de rapoarte pentru companii, documentele financiare încărcate de organizație (Balanță, Bilanț) și datele sponsorizărilor sunt trimise către Anthropic pentru extragerea cifrelor și redactarea raportului;",
           "servicii de integrare activate la cerere de client (de exemplu Make.com, BoldSign, Newsman, Brevo, Mailchimp, Canva) — doar pentru clientul care le solicită.",
         ],
@@ -139,7 +141,7 @@ export const GDPR_DICT = {
     eyebrow: "Legal",
     titlu: "Privacy Policy (GDPR)",
     actualizatLabel: "Last updated",
-    actualizat: "October 5, 2026",
+    actualizat: "October 6, 2026",
     sectiuni: [
       {
         titlu: "1. Who we are and in what capacity we process data",
@@ -197,6 +199,8 @@ export const GDPR_DICT = {
           "Twilio — calls and messages, where the feature is enabled;",
           "Calendly — booking 1-on-1 consultations;",
           "Google Analytics — usage statistics, only with your consent;",
+          "Sentry — monitoring of the application's technical errors (error messages and device/browser information; page addresses are stripped of parameters and tokens, and emails and form data are not sent);",
+          "Google Fonts and Cloudflare (cdnjs) — fonts and libraries loaded by some tools in the platform's signed-in area (they receive the user's IP address when loading);",
           "Anthropic (Claude) — AI-assisted content generation in the fundraising module (press releases, social media posts, sponsor thank-you messages), based on the campaign's title, story, amounts and, for thank-you messages, the sponsor's name; optional feature, used only when the organization clicks \"Generate with AI\". Likewise, in the company-reports module, the financial documents uploaded by the organization (Trial balance, Balance sheet) and the sponsorship data are sent to Anthropic to extract the figures and draft the report;",
           "integration services enabled on a customer's request (for example Make.com, BoldSign, Newsman, Brevo, Mailchimp, Canva) — only for the customer who requests them.",
         ],

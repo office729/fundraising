@@ -19,5 +19,7 @@ jobs:
         run: npm run gen:tools
       - run: npx tsc --noEmit
       - run: npx eslint src
+      # Teste unitare pentru logica pură (numere, abonament plătit/grație, normalizarea emailului).
+      - run: npm test
       # Vulnerabilități cunoscute în dependențele de producție (doar severitate înaltă/critică).
       - run: npm audit --omit=dev --audit-level=high

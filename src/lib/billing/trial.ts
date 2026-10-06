@@ -3,6 +3,8 @@ import type { OrgPackage } from "./packages";
 // 30 de zile de probă, fără card, de la crearea organizației — după care
 // accesul se blochează dacă nu s-a ales (și confirmat manual) un pachet.
 export const TRIAL_DAYS = 30;
+// Grație după sfârșitul unei perioade plătite (Termenii §6: „după 14 zile de la scadență putem suspenda accesul").
+export const GRATIE_ZILE = 14;
 
 // Contul(ele) administratorului platformei — niciodată blocate de perioada
 // de probă, indiferent de organizația în care lucrează. Nu afectează
@@ -53,5 +55,8 @@ export function isAccessBlocked(
 ): boolean {
   if (isPlatformAdmin(userEmail)) return false;
   if (esteAbonamentPlatit(org)) return false;
+  // Termenii (§6) promit că accesul se suspendă cel mai devreme la 14 zile după scadență: un client care a plătit cândva
+  // și nu a reînnoit încă are o perioadă de grație (acces complet), nu e blocat din prima zi.
+  if (org.subscriptionStatus === "active" && org.currentPeriodEnd && org.currentPeriodEnd.getTime() + GRATIE_ZILE * 86_400_000 > Date.now()) return false;
   return trialDaysRemaining(org.createdAt) <= 0;
 }

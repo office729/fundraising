@@ -2,7 +2,7 @@
 
 import { randomUUID } from "node:crypto";
 
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 
 import { withOrgAdmin } from "@/lib/auth/guard";
 import type { CustomPlanConfigSaved } from "@/lib/billing/custom-plan";
@@ -31,11 +31,14 @@ export const stergePaginaStrangereFonduri = withOrgAdmin(async (ctx, id: string)
   const donatii = await ctx.db
     .select({ id: fundraisingDonations.id })
     .from(fundraisingDonations)
-    .where(and(eq(fundraisingDonations.pageId, id), eq(fundraisingDonations.status, "reusita")))
+    .where(and(eq(fundraisingDonations.pageId, id), inArray(fundraisingDonations.status, ["reusita", "rambursata"])))
     .limit(1);
   if (donatii[0]) {
-    return { error: "Pagina are donații reușite — nu poate fi ștearsă definitiv. Închide-o în loc, ca să păstrezi istoricul." };
+    return { error: "Pagina are donații reușite sau rambursate — nu poate fi ștearsă definitiv. Închide-o în loc, ca să păstrezi istoricul." };
   }
+  // Încercările neterminate (în așteptare / eșuate) nu au valoare contabilă; se curăță explicit, fiindcă baza de date nu
+  // mai șterge donațiile în cascadă odată cu pagina.
+  await ctx.db.delete(fundraisingDonations).where(and(eq(fundraisingDonations.pageId, id), eq(fundraisingDonations.orgId, ctx.orgId)));
 
   await ctx.db.delete(fundraisingPages).where(and(eq(fundraisingPages.id, id), eq(fundraisingPages.orgId, ctx.orgId)));
   return { error: null };

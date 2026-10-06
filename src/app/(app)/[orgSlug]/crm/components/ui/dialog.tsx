@@ -1,7 +1,8 @@
 "use client";
 
+import { useFocusTrap } from "@/lib/use-focus-trap";
 import { X } from "lucide-react";
-import { useEffect } from "react";
+import { useId, useRef } from "react";
 import type { ReactNode } from "react";
 
 export function Dialog({
@@ -17,14 +18,10 @@ export function Dialog({
   children: ReactNode;
   width?: string;
 }) {
-  useEffect(() => {
-    if (!open) return;
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-    }
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  // id unic per instanță: două dialoguri deschise odată nu mai împart același `aria-labelledby`.
+  const titluId = useId();
+  useFocusTrap(open, dialogRef, onClose);
 
   if (!open) return null;
 
@@ -32,17 +29,20 @@ export function Dialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <button
         aria-label="Închide"
+        tabIndex={-1}
         onClick={onClose}
         className="absolute inset-0 bg-[var(--ci-text)]/40 backdrop-blur-[1px]"
       />
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="ci-dialog-title"
+        aria-labelledby={titluId}
+        tabIndex={-1}
         className={`relative w-full ${width} rounded-[var(--ci-radius-dialog)] border border-[var(--ci-border)] bg-[var(--ci-surface)] shadow-[var(--ci-shadow-lg)]`}
       >
         <div className="flex items-center justify-between border-b border-[var(--ci-border)] px-5 py-4">
-          <h2 id="ci-dialog-title" className="ci-display text-[15px] font-semibold text-[var(--ci-text)]">
+          <h2 id={titluId} className="ci-display text-[15px] font-semibold text-[var(--ci-text)]">
             {title}
           </h2>
           <button

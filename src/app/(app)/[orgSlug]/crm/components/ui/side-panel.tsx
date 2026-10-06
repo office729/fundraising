@@ -1,7 +1,10 @@
 "use client";
 
 import { X } from "lucide-react";
+import { useId, useRef } from "react";
 import type { ReactNode } from "react";
+
+import { useFocusTrap } from "@/lib/use-focus-trap";
 
 export function SidePanel({
   open,
@@ -16,26 +19,35 @@ export function SidePanel({
   subtitle?: string;
   children: ReactNode;
 }) {
+  const panouRef = useRef<HTMLDivElement>(null);
+  const titluId = useId();
+  useFocusTrap(open, panouRef, onClose);
   return (
     <div
+      // `inert` când e închis: panoul rămâne în DOM (animație), dar butoanele lui nu mai pot fi atinse cu Tab.
+      inert={!open}
       className={`fixed inset-0 z-50 transition-opacity ${open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"}`}
       aria-hidden={!open}
     >
       <button
         aria-label="Închide"
+        tabIndex={-1}
         onClick={onClose}
         className="absolute inset-0 bg-[var(--ci-text)]/30"
       />
       <div
+        ref={panouRef}
         role="dialog"
         aria-modal="true"
+        aria-labelledby={titluId}
+        tabIndex={-1}
         className={`ci-scrollbar absolute top-0 right-0 h-full w-full max-w-md overflow-y-auto border-l border-[var(--ci-border)] bg-[var(--ci-surface)] shadow-[var(--ci-shadow-lg)] transition-transform duration-200 ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
       >
         <div className="sticky top-0 z-10 flex items-start justify-between border-b border-[var(--ci-border)] bg-[var(--ci-surface)] px-5 py-4">
           <div>
-            <h2 className="ci-display text-[15px] font-semibold text-[var(--ci-text)]">{title}</h2>
+            <h2 id={titluId} className="ci-display text-[15px] font-semibold text-[var(--ci-text)]">{title}</h2>
             {subtitle && <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">{subtitle}</p>}
           </div>
           <button

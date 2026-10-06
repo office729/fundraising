@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 
 import { and, asc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 
+import { parseazaNumarRo } from "@/lib/numere-ro";
 import { type OrgContext, withOrgSession } from "@/lib/auth/guard";
 import { celMaiRecentBilant, verificaStareFiscala } from "@/lib/anaf";
 import { getLimiteleEfective, subCota } from "@/lib/billing/quota";
@@ -495,7 +496,7 @@ function normalizeazaCui(cui: string): string {
 
 const CSV_COLOANE = ["nume", "cui", "judet", "localitate", "caen", "industrie", "site", "administrator", "ca", "profit", "nrAngajati"] as const;
 
-function parseCsvLine(line: string): string[] {
+function parseCsvLine(line: string, sep: string = ","): string[] {
   // Parser CSV minimal, suficient pentru export standard (virgulă, ghilimele
   // duble pentru câmpuri cu virgulă/ghilimele interioare) — nu un parser RFC
   // 4180 complet, dar acoperă exporturile obișnuite din Excel/Google Sheets.
@@ -515,7 +516,7 @@ function parseCsvLine(line: string): string[] {
       }
     } else if (c === '"') {
       inQuotes = true;
-    } else if (c === ",") {
+    } else if (c === sep) {
       out.push(cur);
       cur = "";
     } else {
@@ -526,17 +527,54 @@ function parseCsvLine(line: string): string[] {
   return out.map((s) => s.trim());
 }
 
+// Împarte textul în înregistrări, respectând câmpurile între ghilimele care conțin ruperi de rând (un simplu split pe
+// rând ar fi tăiat un câmp în două și ar fi decalat coloanele).
+function imparteInInregistrari(text: string): string[] {
+  const out: string[] = [];
+  let cur = "";
+  let inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (c === '"') {
+      if (inQuotes && text[i + 1] === '"') {
+        cur += '""';
+        i++;
+        continue;
+      }
+      inQuotes = !inQuotes;
+      cur += c;
+    } else if ((c === "\n" || c === "\r") && !inQuotes) {
+      if (c === "\r" && text[i + 1] === "\n") i++;
+      out.push(cur);
+      cur = "";
+    } else {
+      cur += c;
+    }
+  }
+  out.push(cur);
+  return out.filter((l) => l.trim().length > 0);
+}
+
+// Excel în varianta românească exportă CSV cu „;" (virgula e separator zecimal): alegem separatorul cel mai frecvent din antet.
+function detecteazaSeparator(antet: string): string {
+  const numara = (ch: string) => antet.split(ch).length - 1;
+  const candidati = [",", ";", "\t"].map((ch) => ({ ch, n: numara(ch) }));
+  candidati.sort((a, b) => b.n - a.n);
+  return candidati[0].n > 0 ? candidati[0].ch : ",";
+}
+
 // Import CSV real — antet obligatoriu, coloane recunoscute din CSV_COLOANE
 // (restul sunt ignorate). Fără fișiere/Storage — textul CSV vine direct din
 // formular (citit client-side cu FileReader, trimis ca string).
 export const importaFirmeCsv = withOrgSession(async (ctx, csvText: string): Promise<ImportCsvState> => {
-  const linii = csvText.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  const linii = imparteInInregistrari(csvText.replace(/^﻿/, ""));
   if (linii.length < 2) return { error: "Fișierul CSV e gol sau nu are decât antet." };
   if (linii.length - 1 > MAX_RANDURI_IMPORT) {
     return { error: `Fișierul are prea multe rânduri (maxim ${MAX_RANDURI_IMPORT} pe import) — împarte-l în mai multe fișiere.` };
   }
 
-  const antet = parseCsvLine(linii[0]).map((h) => h.trim().toLowerCase());
+  const sep = detecteazaSeparator(linii[0]);
+  const antet = parseCsvLine(linii[0], sep).map((h) => h.trim().toLowerCase());
   const indexNume = antet.indexOf("nume");
   if (indexNume === -1) return { error: "CSV-ul trebuie să aibă o coloană „nume”." };
 
@@ -564,7 +602,7 @@ export const importaFirmeCsv = withOrgSession(async (ctx, csvText: string): Prom
   let pesteCota = 0;
   const randuri: (typeof companies.$inferInsert)[] = [];
   for (const linie of linii.slice(1)) {
-    const valori = parseCsvLine(linie);
+    const valori = parseCsvLine(linie, sep);
     const nume = valori[indexNume]?.trim();
     if (!nume) {
       ignorate++;
@@ -576,8 +614,8 @@ export const importaFirmeCsv = withOrgSession(async (ctx, csvText: string): Prom
       const v = valori[idx]?.trim();
       if (!v) continue;
       if (col === "ca" || col === "profit" || col === "nrAngajati") {
-        const n = Math.round(Number(v.replace(/[^0-9-]/g, "")));
-        if (Number.isFinite(n)) rand[col] = n;
+        const n = parseazaNumarRo(v);
+        if (n !== null) rand[col] = Math.round(n);
       } else if (col === "site") {
         const url = urlWebSigur(v);
         if (url) rand[col] = url;

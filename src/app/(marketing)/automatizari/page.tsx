@@ -1,6 +1,6 @@
 import { getLocale } from "@/lib/i18n/get-locale";
 import { AUTOMATIZARE_DICT } from "@/lib/i18n/dictionaries/automatizare";
-import { titluPagina } from "@/lib/page-titles";
+import { metadatePagina } from "@/lib/page-titles";
 
 export default async function AutomatizarePage() {
   const locale = await getLocale();
@@ -89,5 +89,5 @@ export default async function AutomatizarePage() {
 }
 
 export async function generateMetadata() {
-  return { title: await titluPagina("automatizari") };
+  return await metadatePagina("automatizari");
 }
