@@ -39,6 +39,8 @@ const TITLURI = {
   orgEchipa: { ro: "Echipă", en: "Team" },
   crmAcasa: { ro: "Tablou de bord — CRM", en: "Dashboard — CRM" },
   crmDonatori: { ro: "CRM persoane fizice", en: "Individuals CRM" },
+  // Fără numele donatorului: titlurile ajung în istoricul browserului și în rapoartele de analiză.
+  crmDonatorProfil: { ro: "Donator — CRM", en: "Donor — CRM" },
   crmCompanii: { ro: "CRM Companii", en: "Companies CRM" },
   crmBeneficiari: { ro: "Beneficiari & proiecte — CRM", en: "Beneficiaries & projects — CRM" },
   crmDonatii: { ro: "Donații — CRM", en: "Donations — CRM" },

@@ -7,6 +7,7 @@ import { Card } from "../../../components/ui/card";
 import { formatData, formatDataOra, formatDataRelativa } from "../../../lib/format";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { DONATORI_REALI_DICT } from "@/lib/i18n/dictionaries/donatori-reali";
+import { titluAbsolut } from "@/lib/page-titles";
 
 import { getDonatorRealDetaliu } from "../../queries";
 import { DonatorTabs } from "./donator-tabs";
@@ -115,6 +116,10 @@ export default async function DonatorRealProfilPage({ params }: { params: Promis
       />
     </div>
   );
+}
+
+export async function generateMetadata() {
+  return titluAbsolut("crmDonatorProfil");
 }
 
 function Stat({ label, value }: { label: string; value: string }) {
