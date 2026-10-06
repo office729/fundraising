@@ -1,7 +1,7 @@
 import "server-only";
 
 import { verificaLimitaRata } from "@/lib/auth/rate-limit";
-import { isPlatformAdmin } from "@/lib/billing/trial";
+import { esteAbonamentPlatit, isPlatformAdmin } from "@/lib/billing/trial";
 
 // Plafon zilnic de generări AI pe organizație (cost Anthropic): fără el, un cont
 // de probă gratuită poate genera nelimitat pe contul platformei. O „generare" =
@@ -16,8 +16,16 @@ export const MESAJ_LIMITA_AI = "Ai atins limita zilnică de generări AI pentru 
 // true = limita a fost depășită (apelantul întoarce MESAJ_LIMITA_AI în forma lui
 // de eroare). Contorul crește la fiecare apel, deci se pune DUPĂ verificările
 // de intrare (pagina găsită, AI configurat) și ÎNAINTE de apelul către model.
-export async function limitaAIDepasita(ctx: { orgId: string; orgPackage: string; userEmail: string }): Promise<boolean> {
+export async function limitaAIDepasita(ctx: {
+  orgId: string;
+  userEmail: string;
+  orgSubscriptionStatus: string;
+  orgCurrentPeriodEnd: Date | null;
+}): Promise<boolean> {
   if (isPlatformAdmin(ctx.userEmail)) return false;
-  const max = ctx.orgPackage === "trial" ? LIMITA_ZILNICA_PROBA : LIMITA_ZILNICA_PLATIT;
+  // Limita mare doar cu abonament efectiv plătit — nu după `package` (poate fi ales la înscriere, fără plată).
+  const max = esteAbonamentPlatit({ subscriptionStatus: ctx.orgSubscriptionStatus, currentPeriodEnd: ctx.orgCurrentPeriodEnd })
+    ? LIMITA_ZILNICA_PLATIT
+    : LIMITA_ZILNICA_PROBA;
   return !(await verificaLimitaRata("ai-generari", ctx.orgId, max, 24 * 60));
 }

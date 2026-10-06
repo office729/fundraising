@@ -34,6 +34,14 @@ export function trialDaysRemaining(orgCreatedAt: Date): number {
 // Netopia o confirmă (api/netopia/ipn/route.ts), niciodată optimist.
 // `currentPeriodEnd` null cu stare "active" = rânduri mai vechi, fără dată de
 // sfârșit — rămân active, ca să nu blocăm pe nimeni retroactiv.
+// „Plătit" = abonament activ ȘI perioada plătită încă nu a expirat. Pachetul (`package`) NU spune dacă s-a plătit:
+// la înscriere cu un plan ales (/signup?plan=...) organizația pornește deja cu `package` = planul respectiv, dar cu
+// `subscriptionStatus` = "incomplete" (nicio plată). Funcțiile care costă bani sau pot fi abuzate (AI, emailuri în
+// masă) trebuie să verifice AICI, nu `package === "trial"`.
+export function esteAbonamentPlatit(org: { subscriptionStatus: string; currentPeriodEnd?: Date | null }): boolean {
+  return org.subscriptionStatus === "active" && (!org.currentPeriodEnd || org.currentPeriodEnd > new Date());
+}
+
 export function isAccessBlocked(
   org: {
     createdAt: Date;
@@ -44,6 +52,6 @@ export function isAccessBlocked(
   userEmail?: string,
 ): boolean {
   if (isPlatformAdmin(userEmail)) return false;
-  if (org.subscriptionStatus === "active" && (!org.currentPeriodEnd || org.currentPeriodEnd > new Date())) return false;
+  if (esteAbonamentPlatit(org)) return false;
   return trialDaysRemaining(org.createdAt) <= 0;
 }

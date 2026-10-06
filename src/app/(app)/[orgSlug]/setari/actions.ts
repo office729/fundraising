@@ -160,6 +160,18 @@ const updateSlugRow = withOrgAdmin(async (ctx, slug: string) => {
   if (conflict) {
     throw new EroareUtilizator("Această adresă e deja folosită de altă organizație.");
   }
+  // Webhook-urile Stripe configurate înainte de adresa cu ID au slug-ul în URL: redenumirea ar opri tăcut confirmarea
+  // donațiilor (rămân „în așteptare", fără alertă). Se face împreună, ca URL-ul din Stripe să fie mutat întâi.
+  const [stripe] = await ctx.db
+    .select({ webhook: organizations.donationStripeWebhookSecretEnc })
+    .from(organizations)
+    .where(eq(organizations.id, ctx.orgId))
+    .limit(1);
+  if (stripe?.webhook) {
+    throw new EroareUtilizator(
+      "Ai conectat Stripe pentru donații: schimbarea adresei ar opri confirmarea donațiilor. Scrie-ne la vlad.placinta@alexandrit.ro și o schimbăm împreună, fără pierderi.",
+    );
+  }
   await ctx.db.update(organizations).set({ slug }).where(eq(organizations.id, ctx.orgId));
 });
 

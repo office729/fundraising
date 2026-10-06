@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 import { withOrgFaze, type OrgContext } from "@/lib/auth/guard";
-import { isPlatformAdmin } from "@/lib/billing/trial";
+import { esteAbonamentPlatit, isPlatformAdmin } from "@/lib/billing/trial";
 import { verificaLimitaRata } from "@/lib/auth/rate-limit";
 import { crmKv } from "@/lib/db/schema";
 import { emailConfigurat, trimiteEmail, trimiteEmailuriInLot } from "@/lib/email";
@@ -88,7 +88,7 @@ async function pregateste(ctx: OrgContext, req: Request): Promise<NextResponse |
     if (ctx.role !== "owner" && ctx.role !== "admin") {
       return NextResponse.json({ ok: false, error: "Doar administratorii organizației pot trimite emailuri în masă." }, { status: 403 });
     }
-    if (ctx.orgPackage === "trial" && !isPlatformAdmin(ctx.userEmail)) {
+    if (!esteAbonamentPlatit({ subscriptionStatus: ctx.orgSubscriptionStatus, currentPeriodEnd: ctx.orgCurrentPeriodEnd }) && !isPlatformAdmin(ctx.userEmail)) {
       return NextResponse.json({ ok: false, error: "Trimiterea de emailuri către voluntari e disponibilă după alegerea unui pachet." }, { status: 403 });
     }
   }

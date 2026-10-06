@@ -92,7 +92,7 @@ export default async function SetariPage({
       <div className="mx-auto max-w-xl">
         <StripeDonatiiSection
           orgSlug={orgSlug}
-          webhookUrl={`${webhookOrigin}/api/stripe/webhook/${orgSlug}`}
+          webhookUrl={`${webhookOrigin}/api/stripe/webhook/${access.orgId}`}
           status={stripeStatus}
           locale={locale}
         />

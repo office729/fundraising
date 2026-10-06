@@ -111,5 +111,26 @@ export const stergeFacturaAction = withOrgAdmin(async (ctx, invoiceId: string) =
     entitate: "fundraising_invoices",
     entitateId: invoiceId,
   });
+  const [rand] = await ctx.db
+    .select({ fisierUrl: fundraisingInvoices.fisierUrl })
+    .from(fundraisingInvoices)
+    .where(and(eq(fundraisingInvoices.id, invoiceId), eq(fundraisingInvoices.orgId, ctx.orgId)))
+    .limit(1);
   await ctx.db.delete(fundraisingInvoices).where(and(eq(fundraisingInvoices.id, invoiceId), eq(fundraisingInvoices.orgId, ctx.orgId)));
+
+  // Fișierul stă într-un bucket cu URL public: dacă rămânea în Storage, factura „ștearsă" rămânea accesibilă oricui avea linkul.
+  const marcaj = "/storage/v1/object/public/org-branding/";
+  const idx = rand?.fisierUrl?.indexOf(marcaj) ?? -1;
+  if (rand?.fisierUrl && idx >= 0) {
+    const cale = decodeURIComponent(rand.fisierUrl.slice(idx + marcaj.length).split("?")[0]);
+    // Doar în folderul organizației curente — nu ștergem nimic din altă parte pe baza unui URL din DB.
+    if (cale.startsWith(`${ctx.orgSlug}/`)) {
+      try {
+        const supabase = await createClient();
+        await supabase.storage.from("org-branding").remove([cale]);
+      } catch {
+        // best-effort: rândul e deja șters; un fișier rămas se curăță la ștergerea organizației
+      }
+    }
+  }
 });

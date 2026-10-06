@@ -127,7 +127,8 @@ export async function pregatesteDonatie(
     raporteazaEroare("donatie-cheie-stripe", e, { orgSlug });
     return { ok: false, error: errors.stripeIndisponibil };
   }
-  if (!stripeOrg) {
+  // Fără secret de webhook donația ar fi încasată în Stripe, dar niciodată confirmată în platformă.
+  if (!stripeOrg || !stripeOrg.webhookSecret) {
     return { ok: false, error: errors.stripeNeconectat };
   }
 
