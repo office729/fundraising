@@ -7,7 +7,9 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
   return (
     <main className="flex min-h-screen flex-col items-center bg-panel-2 px-4 py-10 sm:justify-center sm:py-12">
       <Link href="/" aria-label="Alexandrit" className="mb-6 shrink-0">
-        <Image src="/alexandrit-logo.webp" alt="Alexandrit" width={1730} height={332} sizes="170px" priority className="h-8 w-auto" />
+        {/* Logo-ul închis nu se vede pe fundal întunecat: în tema întunecată folosim varianta albă. */}
+        <Image src="/alexandrit-logo.webp" alt="Alexandrit" width={1730} height={332} sizes="170px" priority className="h-8 w-auto dark:hidden" />
+        <Image src="/alexandrit-logo-alb.png" alt="" aria-hidden width={1730} height={332} sizes="170px" priority className="hidden h-8 w-auto dark:block" />
       </Link>
       <div className="w-full max-w-[420px] rounded-2xl border border-line bg-panel p-6 shadow-sm sm:p-8">{children}</div>
     </main>
