@@ -39,7 +39,7 @@ function SignupFormInner({ dict }: { dict: Dict }) {
 
   return (
     <>
-      <h1 className="text-center font-display text-2xl font-bold text-ink">
+      <h1 className="text-center font-display text-2xl font-bold text-balance text-ink">
         {areInvitatie ? dict.signup.titluInvitatie : dict.signup.titluOrg}
       </h1>
       <p className="mt-1.5 text-center text-sm text-muted">

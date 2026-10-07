@@ -14,7 +14,7 @@ export function ResetPasswordForm({ dict }: { dict: (typeof AUTH_DICT)[Locale] }
 
   return (
     <AuthShell>
-      <h1 className="text-center font-display text-2xl font-bold text-ink">{dict.resetPassword.titlu}</h1>
+      <h1 className="text-center font-display text-2xl font-bold text-balance text-ink">{dict.resetPassword.titlu}</h1>
 
       <form action={formAction} className="mt-6 flex flex-col gap-3">
         <PasswordField

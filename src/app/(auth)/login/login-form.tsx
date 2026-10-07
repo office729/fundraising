@@ -32,7 +32,7 @@ function LoginFormInner({ dict }: { dict: Dict }) {
 
   return (
     <>
-      <h1 className="text-center font-display text-2xl font-bold text-ink">{dict.login.titlu}</h1>
+      <h1 className="text-center font-display text-2xl font-bold text-balance text-ink">{dict.login.titlu}</h1>
 
       {confirmareNecesara && (
         <p className="mt-3 rounded-lg bg-brand-amber-soft px-3 py-2 text-sm text-ink">{dict.login.confirmareNecesara}</p>

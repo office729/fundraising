@@ -17,7 +17,7 @@ export function ForgotPasswordForm({ dict }: { dict: (typeof AUTH_DICT)[Locale] 
 
   return (
     <AuthShell>
-      <h1 className="text-center font-display text-2xl font-bold text-ink">{dict.forgotPassword.titlu}</h1>
+      <h1 className="text-center font-display text-2xl font-bold text-balance text-ink">{dict.forgotPassword.titlu}</h1>
       <p className="mt-2 text-center text-sm text-muted">{dict.forgotPassword.descriere}</p>
 
       {state.trimis ? (
