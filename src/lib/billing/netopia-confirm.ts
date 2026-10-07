@@ -162,7 +162,8 @@ async function anuntaStornoNecesar(orderId: string): Promise<void> {
     return r ?? null;
   });
   // Plată fără factură (sau marcată ca nefacturată în sandbox) — nimic de stornat.
-  if (!plata?.numar || plata.numar === MARCAJ_NEFACTURAT_SANDBOX) return;
+  // Orice marcaj „NEFACTURAT…" (sandbox sau marcat manual pentru teste) = nu există factură fiscală de stornat.
+  if (!plata?.numar || plata.numar.startsWith("NEFACTURAT")) return;
 
   const factura = `${plata.serie ?? ""} ${plata.numar}`.trim();
   raporteazaAvertisment("netopia-rambursare", "rambursare pe o plată deja facturată — factura trebuie stornată manual în Oblio", {

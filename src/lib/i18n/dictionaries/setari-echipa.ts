@@ -104,6 +104,7 @@ export const SETARI_ECHIPA_DICT = {
           gol: "Nicio factură încă.",
           descarca: "Descarcă",
           inAsteptare: "se emite…",
+          nefacturat: "fără factură (plată de test)",
         },
       },
       reinnoireAutomata: {
@@ -363,6 +364,7 @@ export const SETARI_ECHIPA_DICT = {
           gol: "No invoices yet.",
           descarca: "Download",
           inAsteptare: "issuing…",
+          nefacturat: "no invoice (test payment)",
         },
       },
       reinnoireAutomata: {

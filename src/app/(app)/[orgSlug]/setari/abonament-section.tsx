@@ -92,7 +92,7 @@ export function AbonamentSection({
                     {dict.facturi.descarca} {f.facturaNumar ? `#${f.facturaNumar}` : ""}
                   </a>
                 ) : (
-                  <span className="text-muted-2">{dict.facturi.inAsteptare}</span>
+                  <span className="text-muted-2">{f.facturaNumar?.startsWith("NEFACTURAT") ? dict.facturi.nefacturat : dict.facturi.inAsteptare}</span>
                 )}
               </li>
             ))}
