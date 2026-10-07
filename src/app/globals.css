@@ -63,6 +63,20 @@
   --line: #253044;
 }
 
+/* Numele organizației din antet, în culoarea ei de brand: o culoare deschisă (ex. #5fb6ab) avea doar 2,4:1 pe fundal alb.
+   Aici o ajustăm după luminozitate (OKLCH): închisă în tema clară, luminată în cea întunecată. */
+.org-nume-brand {
+  color: var(--org-accent);
+}
+@supports (color: oklch(from red l c h)) {
+  .org-nume-brand {
+    color: oklch(from var(--org-accent) min(l, 0.48) c h);
+  }
+  .dark .org-nume-brand {
+    color: oklch(from var(--org-accent) max(l, 0.72) c h);
+  }
+}
+
 /* Sigla din antetul site-ului: seara (19:00–06:00, ora locală a
    vizitatorului — vezi clasa .is-seara pusă din chrome.tsx), gema își
    schimbă culoarea spre mov/violet — ca efectul de „alexandrite” al pietrei

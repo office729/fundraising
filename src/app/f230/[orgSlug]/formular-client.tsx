@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, type CSSProperties } from "react";
 
 import { culoareTextPeFundal } from "@/lib/culoare-text";
 import type { DateBeneficiarPdf } from "@/lib/formular230-pdf";
@@ -157,7 +157,7 @@ export function Formular230Client({
       <div className="mb-8 text-center">
         <p className="text-xs font-semibold tracking-wide text-muted uppercase">Formularul 230</p>
         <h1 className="font-display mt-1 text-2xl font-bold text-ink">
-          Redirecționează 3,5% din impozit către <span style={{ color: accent }}>{orgName}</span>
+          Redirecționează 3,5% din impozit către <span className="org-nume-brand" style={{ "--org-accent": accent } as CSSProperties}>{orgName}</span>
         </h1>
         <p className="mt-2 text-sm text-muted">
           Nu te costă nimic — banii sunt oricum reținuți din salariu de stat. Completezi o dată, ANAF face restul.
