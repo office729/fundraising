@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 
+import { culoareTextPeFundal } from "@/lib/culoare-text";
 import type { DateBeneficiarPdf } from "@/lib/formular230-pdf";
 import { JUDETE } from "@/lib/judete";
 
@@ -142,7 +143,7 @@ export function Formular230Client({
           onClick={descarcaPdf}
           disabled={seDescarca}
           className="mt-6 inline-flex h-11 items-center gap-2 rounded-lg px-5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
-          style={{ background: accent }}
+          style={{ background: accent, color: culoareTextPeFundal(accent) }}
         >
           {seDescarca ? "Se generează…" : "Descarcă formularul completat (PDF)"}
         </button>
@@ -218,7 +219,7 @@ export function Formular230Client({
           type="submit"
           disabled={seTrimite}
           className="flex h-11 w-full items-center justify-center rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
-          style={{ background: accent }}
+          style={{ background: accent, color: culoareTextPeFundal(accent) }}
         >
           {seTrimite ? "Se trimite…" : "Trimite formularul"}
         </button>

@@ -1,6 +1,7 @@
 import { cn } from "../../lib/cn";
 
-const PALETTE = ["#2563EB", "#16A34A", "#D97706", "#E63946", "#7C3AED", "#0891B2"];
+// Fiecare culoare are cel puțin 4,5:1 cu textul alb al inițialelor (WCAG AA).
+const PALETTE = ["#2563EB", "#15803d", "#b45309", "#c92a3a", "#7C3AED", "#0e7490"];
 
 function hashColor(seed: string) {
   let h = 0;

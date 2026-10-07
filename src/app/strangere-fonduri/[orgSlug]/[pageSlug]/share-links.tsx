@@ -23,7 +23,7 @@ export function ShareLinksClient({ url, titlu, locale }: { url: string; titlu: s
         href={`https://wa.me/?text=${encodeURIComponent(mesaj)}`}
         target="_blank"
         rel="noreferrer"
-        className="rounded-full bg-[#25D366] px-3.5 py-1.5 text-[13px] font-bold text-white transition hover:opacity-90"
+        className="rounded-full bg-[#0f7a4a] px-3.5 py-1.5 text-[13px] font-bold text-white transition hover:opacity-90"
       >
         WhatsApp
       </a>
@@ -37,7 +37,7 @@ export function ShareLinksClient({ url, titlu, locale }: { url: string; titlu: s
         href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`}
         target="_blank"
         rel="noreferrer"
-        className="rounded-full bg-[#1877F2] px-3.5 py-1.5 text-[13px] font-bold text-white transition hover:opacity-90"
+        className="rounded-full bg-[#1664d0] px-3.5 py-1.5 text-[13px] font-bold text-white transition hover:opacity-90"
       >
         Facebook
       </a>
