@@ -70,7 +70,7 @@ export default function InstrumentePage() {
                 return (
                   <div key={inst.key} className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4 shadow-[var(--ci-card-shadow)]">
                     <div className="mb-2 flex items-center justify-between">
-                      <span className="flex items-center gap-1.5 text-[12px] font-medium" style={{ color: cat.culoare }}>
+                      <span className="flex items-center gap-1.5 text-[12px] font-medium text-[var(--ci-text-muted)]">
                         <span className="h-1.5 w-1.5 rounded-full" style={{ background: cat.culoare }} /> {catDict.nume.split(" ")[0]}
                       </span>
                       <span className="rounded-full bg-[var(--ci-green-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--ci-green)]">{dict.disponibil}</span>

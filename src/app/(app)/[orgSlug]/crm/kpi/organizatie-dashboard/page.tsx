@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { requireOrgAccess } from "@/lib/auth/guard";
+import { titluAbsolut } from "@/lib/page-titles";
 
 import { obtineOrganizatieDashboardAction } from "../echipa-actions";
 import { OrganizatieDashboardClient } from "../organizatie-dashboard-client";
@@ -14,4 +15,8 @@ export default async function OrganizatieDashboardPage({ params }: { params: Pro
   const dashboard = await obtineOrganizatieDashboardAction(orgSlug);
 
   return <OrganizatieDashboardClient orgSlug={orgSlug} dashboard={dashboard} />;
+}
+
+export async function generateMetadata() {
+  return titluAbsolut("crmKpiOrganizatie");
 }

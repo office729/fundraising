@@ -31,7 +31,7 @@ export default async function OnePagerGeneratorPage({ params }: { params: Promis
           ← Instrumente
         </Link>
         <span className="text-line">/</span>
-        <span className="font-display text-sm font-semibold text-ink">{TITLE}</span>
+        <h1 className="font-display text-sm font-semibold text-ink">{TITLE}</h1>
       </header>
       <div className="min-h-0 flex-1">
         <StandaloneToolFrame

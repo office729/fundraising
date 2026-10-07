@@ -1,4 +1,5 @@
 import { requireOrgAccess } from "@/lib/auth/guard";
+import { titluAbsolut } from "@/lib/page-titles";
 
 import { listeazaDefinitiiAction } from "../library-actions";
 import { listeazaProfiluriSezoniereAction } from "../sezoniere-actions";
@@ -12,4 +13,8 @@ export default async function ProfiluriSezonierePage({ params }: { params: Promi
   return (
     <SezoniereClient orgSlug={orgSlug} initialProfiluri={profiluri} definitii={definitii} esteAdmin={access.role === "owner" || access.role === "admin"} />
   );
+}
+
+export async function generateMetadata() {
+  return titluAbsolut("crmKpiSezoniere");
 }

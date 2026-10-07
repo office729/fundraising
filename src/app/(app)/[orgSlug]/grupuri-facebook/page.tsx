@@ -1,10 +1,15 @@
 import Link from "next/link";
 
 import { requireOrgAccess } from "@/lib/auth/guard";
+import { titluPagina } from "@/lib/page-titles";
 import { GRUPURI_FACEBOOK_HTML } from "@/modules/crm/grupuri-facebook/grupuri-facebook-html";
 import { StandaloneToolFrame } from "@/modules/crm/shared/standalone-tool-frame";
 
 const TITLE = "Împărțire grupuri Facebook";
+
+export async function generateMetadata() {
+  return { title: await titluPagina("crmGrupuriFacebook") };
+}
 
 export default async function GrupuriFacebookPage({ params }: { params: Promise<{ orgSlug: string }> }) {
   const { orgSlug } = await params;
@@ -17,7 +22,7 @@ export default async function GrupuriFacebookPage({ params }: { params: Promise<
           ← Instrumente
         </Link>
         <span className="text-line">/</span>
-        <span className="font-display text-sm font-semibold text-ink">{TITLE}</span>
+        <h1 className="font-display text-sm font-semibold text-ink">{TITLE}</h1>
       </header>
       <div className="min-h-0 flex-1">
         <StandaloneToolFrame html={GRUPURI_FACEBOOK_HTML} title={TITLE} orgSlug={orgSlug} />

@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { requireOrgAccess } from "@/lib/auth/guard";
+import { titluPagina } from "@/lib/page-titles";
 import { orgHasToolAccess } from "@/lib/billing/packages";
 import { CRM_PJ_HTML } from "@/modules/crm/crm-pj/crm-pj-html";
 import { SandboxedFrame } from "@/modules/crm/shared/sandboxed-frame";
@@ -19,6 +20,10 @@ function literalJs(v: string): string {
     .join(BS + "u2028")
     .split(String.fromCharCode(0x2029))
     .join(BS + "u2029");
+}
+
+export async function generateMetadata() {
+  return { title: await titluPagina("crmPj") };
 }
 
 export default async function CrmPjPage({
@@ -51,7 +56,7 @@ export default async function CrmPjPage({
           ← Instrumentele tale
         </Link>
         <span className="text-line">/</span>
-        <span className="font-display text-sm font-semibold text-ink">CRM Persoane Juridice</span>
+        <h1 className="font-display text-sm font-semibold text-ink">CRM Persoane Juridice</h1>
       </header>
       <div className="min-h-0 flex-1">
         <SandboxedFrame html={html} title="CRM Persoane Juridice" orgSlug={orgSlug} />
