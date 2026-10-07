@@ -12,6 +12,7 @@ import {
   normalizeDonatorRow,
   type ColumnMapping,
 } from "../lib/normalize-import";
+import { DemoBanner } from "./demo-banner";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Dialog } from "./ui/dialog";
@@ -158,6 +159,9 @@ export function ImportDialog({ open, onClose, tip }: { open: boolean; onClose: (
     <Dialog open={open} onClose={inchide} title={`Importă ${TIP_LABEL[tip].toLowerCase()}`} width="max-w-lg">
       <div className="space-y-4">
         <Badge tone={tip === "donatori" ? "blue" : "green"}>{TIP_LABEL[tip]}</Badge>
+        <DemoBanner>
+          Versiune demonstrativă: datele importate aici se păstrează doar în acest browser, nu pe server — nu apar pe alt dispozitiv și se pierd dacă ștergi datele browserului.
+        </DemoBanner>
 
         {importat === null && (
           <div>

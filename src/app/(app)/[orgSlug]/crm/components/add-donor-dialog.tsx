@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { addDonatorManual } from "../lib/local-store";
 import type { Donator } from "../mock";
+import { DemoBanner } from "./demo-banner";
 import { Button } from "./ui/button";
 import { Dialog } from "./ui/dialog";
 import { Input, Label, Select } from "./ui/input";
@@ -58,6 +59,9 @@ export function AddDonorDialog({
   return (
     <Dialog open={open} onClose={inchide} title="Donator nou" width="max-w-sm">
       <div className="space-y-3">
+        <DemoBanner>
+          Versiune demonstrativă: persoanele adăugate aici se păstrează doar în acest browser, nu pe server. Donatorii reali apar singuri în „Persoane fizice” după ce cineva donează pe o pagină de campanie.
+        </DemoBanner>
         <div>
           <Label>Nume</Label>
           <Input autoFocus value={nume} onChange={(e) => setNume(e.target.value)} placeholder="Nume și prenume" />

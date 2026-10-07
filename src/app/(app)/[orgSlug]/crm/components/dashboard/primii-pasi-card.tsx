@@ -27,8 +27,10 @@ export function PrimiiPasiCard({ orgSlug, ro, pasi }: { orgSlug: string; ro: boo
     {
       key: "donatori",
       done: pasi.donatori,
-      label: ro ? "Adaugă sau importă donatorii tăi" : "Add or import your donors",
-      hint: ro ? "Din Excel sau CSV, sau unul câte unul cu butonul „Adaugă”." : "From Excel or CSV, or one by one with the “Add” button.",
+      label: ro ? "Primește prima donație" : "Receive your first donation",
+      hint: ro
+        ? "Donatorii apar singuri în „Persoane fizice” după ce cineva donează pe pagina ta de campanie."
+        : "Donors appear on their own under “Individuals” once someone donates on your campaign page.",
       href: `/${orgSlug}/crm/donatori`,
     },
     {
