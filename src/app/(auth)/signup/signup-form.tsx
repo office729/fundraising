@@ -1,8 +1,9 @@
 "use client";
 
+import { AuthShell } from "../auth-shell";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useRef, useState } from "react";
 
 import { extractPlanQuery, PLAN_QUERY_KEYS } from "@/lib/billing/plan-query";
 import { useAlegerePlan } from "@/lib/billing/use-alegere-plan";
@@ -20,6 +21,14 @@ type Dict = (typeof AUTH_DICT)[Locale];
 function SignupFormInner({ dict }: { dict: Dict }) {
   const [state, formAction, pending, valori] = useActionStatePastrat(signupAction, { error: null });
   const [accepta, setAccepta] = useState(false);
+  const [acordLipsa, setAcordLipsa] = useState(false);
+  const acordRef = useRef<HTMLInputElement>(null);
+  // Butonul Google nu e gri: dacă acordul lipsește, ducem utilizatorul la bifa de lângă butonul „Creează cont”.
+  function cereAcord() {
+    setAcordLipsa(true);
+    acordRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    acordRef.current?.focus({ preventScroll: true });
+  }
   const params = useSearchParams();
   const inviteToken = params.get("invite") || "";
   const beneficiarInviteToken = params.get("beneficiarInvite") || "";
@@ -30,10 +39,10 @@ function SignupFormInner({ dict }: { dict: Dict }) {
 
   return (
     <>
-      <h1 className="font-display text-2xl font-bold text-ink">
+      <h1 className="text-center font-display text-2xl font-bold text-ink">
         {areInvitatie ? dict.signup.titluInvitatie : dict.signup.titluOrg}
       </h1>
-      <p className="mt-1 text-sm text-muted">
+      <p className="mt-1.5 text-center text-sm text-muted">
         {inviteToken
           ? dict.signup.descInvitatieOrg
           : beneficiarInviteToken
@@ -41,43 +50,12 @@ function SignupFormInner({ dict }: { dict: Dict }) {
             : dict.signup.descNou}
       </p>
 
-      <label className="mt-6 flex items-start gap-2.5 text-[13px] leading-relaxed text-body">
-        <input
-          type="checkbox"
-          name="acceptTermeni"
-          form="signup-form"
-          required
-          checked={accepta}
-          onChange={(e) => setAccepta(e.target.checked)}
-          className="mt-0.5 h-4 w-4 shrink-0 rounded border-line"
-        />
-        <span>
-          {dict.signup.acceptPre}{" "}
-          <Link href="/termeni" target="_blank" rel="noopener" className="font-medium text-brand-green underline">
-            {dict.signup.acceptTermeni}
-          </Link>{" "}
-          {dict.signup.acceptSi}{" "}
-          <Link href="/gdpr" target="_blank" rel="noopener" className="font-medium text-brand-green underline">
-            {dict.signup.acceptGdpr}
-          </Link>
-          {DPA_ACTIV && !inviteToken && !beneficiarInviteToken && (
-            <>
-              {dict.signup.acceptDpaPre}{" "}
-              <Link href="/dpa" target="_blank" rel="noopener" className="font-medium text-brand-green underline">
-                {dict.signup.acceptDpa}
-              </Link>
-            </>
-          )}
-          .
-        </span>
-      </label>
 
-      <div className="mt-4">
-        <GoogleButton dict={dict} acceptat={accepta} />
-        {!accepta && <p className="mt-1.5 text-xs text-muted">{dict.signup.acceptGoogleIndiciu}</p>}
+      <div className="mt-6">
+        <GoogleButton dict={dict} acceptat={accepta} onNeacceptat={cereAcord} />
       </div>
 
-      <div className="my-4 flex items-center gap-3 text-xs font-medium text-muted-2">
+      <div className="my-5 flex items-center gap-3 text-xs font-medium text-muted-2">
         <span className="h-px flex-1 bg-line" />
         {dict.dividerEmail}
         <span className="h-px flex-1 bg-line" />
@@ -137,6 +115,48 @@ function SignupFormInner({ dict }: { dict: Dict }) {
           ascunde={dict.ascundeParola}
         />
 
+        <div>
+          <label className="flex items-start gap-3 text-[13px] leading-relaxed text-body">
+            <input
+              ref={acordRef}
+              type="checkbox"
+              name="acceptTermeni"
+              required
+              checked={accepta}
+              onChange={(e) => {
+                setAccepta(e.target.checked);
+                if (e.target.checked) setAcordLipsa(false);
+              }}
+              aria-describedby={acordLipsa ? "acord-eroare" : undefined}
+              className="mt-0.5 h-5 w-5 shrink-0 rounded border-line accent-[var(--brand-green)]"
+            />
+            <span>
+              {dict.signup.acceptPre}{" "}
+              <Link href="/termeni" target="_blank" rel="noopener" className="font-medium text-brand-green underline">
+                {dict.signup.acceptTermeni}
+              </Link>{" "}
+              {dict.signup.acceptSi}{" "}
+              <Link href="/gdpr" target="_blank" rel="noopener" className="font-medium text-brand-green underline">
+                {dict.signup.acceptGdpr}
+              </Link>
+              {DPA_ACTIV && !inviteToken && !beneficiarInviteToken && (
+                <>
+                  {dict.signup.acceptDpaPre}{" "}
+                  <Link href="/dpa" target="_blank" rel="noopener" className="font-medium text-brand-green underline">
+                    {dict.signup.acceptDpa}
+                  </Link>
+                </>
+              )}
+              .
+            </span>
+          </label>
+          {acordLipsa && (
+            <p id="acord-eroare" role="alert" className="mt-1.5 pl-8 text-xs font-medium text-red-600">
+              {dict.signup.acceptGoogleIndiciu}
+            </p>
+          )}
+        </div>
+
         {state.error && (
           <p role="alert" className="text-sm text-red-600">
             {state.error}
@@ -146,13 +166,13 @@ function SignupFormInner({ dict }: { dict: Dict }) {
         <button
           type="submit"
           disabled={pending}
-          className="mt-2 rounded-lg bg-brand-green px-4 py-2.5 font-medium text-white transition hover:bg-brand-green-hover disabled:opacity-60"
+          className="rounded-lg bg-brand-green px-4 py-3 font-semibold text-white transition hover:bg-brand-green-hover disabled:opacity-60"
         >
           {pending ? dict.signup.seCreeaza : dict.signup.submit}
         </button>
       </form>
 
-      <p className="mt-4 text-sm text-muted">
+      <p className="mt-6 border-t border-line pt-5 text-center text-sm text-muted">
         {dict.signup.aiCont}{" "}
         <Link
           href={
@@ -173,10 +193,10 @@ function SignupFormInner({ dict }: { dict: Dict }) {
 
 export function SignupForm({ dict }: { dict: Dict }) {
   return (
-    <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-6">
+    <AuthShell>
       <Suspense fallback={null}>
         <SignupFormInner dict={dict} />
       </Suspense>
-    </main>
+    </AuthShell>
   );
 }

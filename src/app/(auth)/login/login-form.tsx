@@ -1,5 +1,6 @@
 "use client";
 
+import { AuthShell } from "../auth-shell";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useRef, useState, useTransition } from "react";
@@ -31,7 +32,7 @@ function LoginFormInner({ dict }: { dict: Dict }) {
 
   return (
     <>
-      <h1 className="font-display text-2xl font-bold text-ink">{dict.login.titlu}</h1>
+      <h1 className="text-center font-display text-2xl font-bold text-ink">{dict.login.titlu}</h1>
 
       {confirmareNecesara && (
         <p className="mt-3 rounded-lg bg-brand-amber-soft px-3 py-2 text-sm text-ink">{dict.login.confirmareNecesara}</p>
@@ -116,13 +117,13 @@ function LoginFormInner({ dict }: { dict: Dict }) {
         <button
           type="submit"
           disabled={pending}
-          className="mt-2 rounded-lg bg-brand-green px-4 py-2.5 font-medium text-white transition hover:bg-brand-green-hover disabled:opacity-60"
+          className="mt-2 rounded-lg bg-brand-green px-4 py-3 font-semibold text-white transition hover:bg-brand-green-hover disabled:opacity-60"
         >
           {pending ? dict.login.seAutentifica : dict.login.submit}
         </button>
       </form>
 
-      <p className="mt-4 text-sm text-muted">
+      <p className="mt-6 border-t border-line pt-5 text-center text-sm text-muted">
         {dict.login.nuAiCont}{" "}
         <Link
           href={
@@ -143,10 +144,10 @@ function LoginFormInner({ dict }: { dict: Dict }) {
 
 export function LoginForm({ dict }: { dict: Dict }) {
   return (
-    <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-6">
+    <AuthShell>
       <Suspense fallback={null}>
         <LoginFormInner dict={dict} />
       </Suspense>
-    </main>
+    </AuthShell>
   );
 }

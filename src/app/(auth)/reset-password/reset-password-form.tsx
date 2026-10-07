@@ -1,5 +1,6 @@
 "use client";
 
+import { AuthShell } from "../auth-shell";
 import { PasswordField } from "../password-field";
 import { useActionState } from "react";
 
@@ -12,8 +13,8 @@ export function ResetPasswordForm({ dict }: { dict: (typeof AUTH_DICT)[Locale] }
   const [state, formAction, pending] = useActionState(resetPasswordAction, { error: null });
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-6">
-      <h1 className="font-display text-2xl font-bold text-ink">{dict.resetPassword.titlu}</h1>
+    <AuthShell>
+      <h1 className="text-center font-display text-2xl font-bold text-ink">{dict.resetPassword.titlu}</h1>
 
       <form action={formAction} className="mt-6 flex flex-col gap-3">
         <PasswordField
@@ -48,6 +49,6 @@ export function ResetPasswordForm({ dict }: { dict: (typeof AUTH_DICT)[Locale] }
           {pending ? dict.resetPassword.seSalveaza : dict.resetPassword.submit}
         </button>
       </form>
-    </main>
+    </AuthShell>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { AuthShell } from "../auth-shell";
 import Link from "next/link";
 import { useActionState } from "react";
 
@@ -15,9 +16,9 @@ export function ForgotPasswordForm({ dict }: { dict: (typeof AUTH_DICT)[Locale] 
   });
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-6">
-      <h1 className="font-display text-2xl font-bold text-ink">{dict.forgotPassword.titlu}</h1>
-      <p className="mt-2 text-sm text-muted">{dict.forgotPassword.descriere}</p>
+    <AuthShell>
+      <h1 className="text-center font-display text-2xl font-bold text-ink">{dict.forgotPassword.titlu}</h1>
+      <p className="mt-2 text-center text-sm text-muted">{dict.forgotPassword.descriere}</p>
 
       {state.trimis ? (
         <p className="mt-6 rounded-lg bg-brand-green-soft px-3 py-2.5 text-sm text-ink">{dict.forgotPassword.trimis}</p>
@@ -50,6 +51,6 @@ export function ForgotPasswordForm({ dict }: { dict: (typeof AUTH_DICT)[Locale] 
           {dict.forgotPassword.inapoiLogin}
         </Link>
       </p>
-    </main>
+    </AuthShell>
   );
 }

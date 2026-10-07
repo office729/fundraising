@@ -12,12 +12,15 @@ import { createClient } from "@/lib/supabase/client";
 // `acceptat` — doar pe pagina de înscriere: false blochează butonul până la
 // bifa de acceptare a Termenilor, true o poartă peste redirectul OAuth printr-un
 // cookie scurt (vezi lib/legal-version.ts). Lipsă (login) = fără gardă.
-export function GoogleButton({ dict, acceptat }: { dict: (typeof AUTH_DICT)[Locale]; acceptat?: boolean }) {
+export function GoogleButton({ dict, acceptat, onNeacceptat }: { dict: (typeof AUTH_DICT)[Locale]; acceptat?: boolean; onNeacceptat?: () => void }) {
   const [pending, setPending] = useState(false);
   const params = useSearchParams();
 
   async function onClick() {
-    if (acceptat === false) return;
+    if (acceptat === false) {
+      onNeacceptat?.();
+      return;
+    }
     if (acceptat === true) {
       document.cookie = `${COOKIE_ACCEPTARE_TERMENI}=${TERMENI_VERSIUNE}; path=/; max-age=1800; SameSite=Lax${window.location.protocol === "https:" ? "; Secure" : ""}`;
     }
@@ -42,9 +45,8 @@ export function GoogleButton({ dict, acceptat }: { dict: (typeof AUTH_DICT)[Loca
     <button
       type="button"
       onClick={onClick}
-      disabled={pending || acceptat === false}
-      title={acceptat === false ? dict.signup.acceptGoogleIndiciu : undefined}
-      className="flex w-full items-center justify-center gap-2.5 rounded-lg border border-line bg-panel px-4 py-2.5 text-sm font-medium text-ink transition hover:bg-panel-2 disabled:opacity-60"
+      disabled={pending}
+      className="flex w-full items-center justify-center gap-2.5 rounded-lg border border-line bg-panel px-4 py-3 text-sm font-semibold text-ink transition hover:bg-panel-2 disabled:opacity-60"
     >
       <svg viewBox="0 0 48 48" className="h-4.5 w-4.5" aria-hidden="true">
         <path
