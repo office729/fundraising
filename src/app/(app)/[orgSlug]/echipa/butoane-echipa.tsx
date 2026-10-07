@@ -9,6 +9,8 @@ import { anuleazaInvitatieAction, parasesteOrganizatiaAction, scoateMembruAction
 
 const T = {
   ro: {
+    da: "Da, confirm",
+    nu: "Nu",
     scoate: "Scoate",
     anuleaza: "Anulează",
     paraseste: "Părăsește organizația",
@@ -17,6 +19,8 @@ const T = {
     confirmaParaseste: "Părăsești organizația? Vei pierde imediat accesul la datele ei.",
   },
   en: {
+    da: "Yes, confirm",
+    nu: "No",
     scoate: "Remove",
     anuleaza: "Cancel",
     paraseste: "Leave organization",
@@ -33,25 +37,46 @@ function Buton({ eticheta, confirmare, ruleaza, locale, dupa }: {
   locale: Locale;
   dupa?: () => void;
 }) {
-  void locale;
+  const t = T[locale];
   const router = useRouter();
   const [eroare, setEroare] = useState<string | null>(null);
+  const [seIntreaba, setSeIntreaba] = useState(false);
   const [pending, startTransition] = useTransition();
+
+  function executa() {
+    setSeIntreaba(false);
+    setEroare(null);
+    startTransition(async () => {
+      const r = await ruleaza();
+      if (r.error) setEroare(r.error);
+      else if (dupa) dupa();
+      else router.refresh();
+    });
+  }
+
+  // Confirmare în pagină, nu fereastra nativă window.confirm(): aceea e blocată în unele browsere/panouri și arată ciudat pe telefon.
+  if (seIntreaba) {
+    return (
+      <span role="alertdialog" aria-label={confirmare} className="inline-flex max-w-[260px] flex-col items-end gap-1.5 text-right">
+        <span className="text-xs leading-snug text-body">{confirmare}</span>
+        <span className="inline-flex gap-1.5">
+          <button type="button" onClick={() => setSeIntreaba(false)} className="rounded-md border border-line px-2.5 py-1 text-xs font-medium text-ink transition hover:bg-panel-2">
+            {t.nu}
+          </button>
+          <button type="button" onClick={executa} className="rounded-md bg-red-600 px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-red-700">
+            {t.da}
+          </button>
+        </span>
+      </span>
+    );
+  }
+
   return (
     <span className="inline-flex flex-col items-end">
       <button
         type="button"
         disabled={pending}
-        onClick={() => {
-          if (!window.confirm(confirmare)) return;
-          setEroare(null);
-          startTransition(async () => {
-            const r = await ruleaza();
-            if (r.error) setEroare(r.error);
-            else if (dupa) dupa();
-            else router.refresh();
-          });
-        }}
+        onClick={() => setSeIntreaba(true)}
         className="rounded-md border border-line px-2.5 py-1 text-xs font-medium text-red-600 transition hover:bg-panel-2 disabled:opacity-60"
       >
         {eticheta}
