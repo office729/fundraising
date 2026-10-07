@@ -74,7 +74,14 @@ export async function signupAction(
   // rămâne netradus intenționat, ca excepție de la restul acestui flux.
   const { data, error } = await supabase.auth.signUp({ email, password, options: metadate ? { data: metadate } : undefined });
   if (error) {
-    return { error: error.message };
+    // Mesajele Supabase vin în engleză și sunt tehnice — le traducem pe cele pe care un utilizator obișnuit le poate întâlni.
+    const m = error.message.toLowerCase();
+    if (m.includes("already registered") || m.includes("already been registered")) return { error: errors.emailDejaInregistrat };
+    if (m.includes("rate limit") || m.includes("security purposes") || m.includes("too many")) return { error: errors.preaMulteIncercari };
+    if (m.includes("password") && (m.includes("weak") || m.includes("easy to guess") || m.includes("should contain"))) return { error: errors.parolaSlaba };
+    if (m.includes("password") && (m.includes("least") || m.includes("short"))) return { error: errors.parolaMinim };
+    if (m.includes("email") && (m.includes("invalid") || m.includes("valid"))) return { error: errors.emailInvalid };
+    return { error: errors.signupEsuat };
   }
   if (!data.user) {
     return { error: errors.signupEsuat };

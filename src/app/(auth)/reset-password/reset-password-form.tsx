@@ -1,5 +1,6 @@
 "use client";
 
+import { PasswordField } from "../password-field";
 import { useActionState } from "react";
 
 import type { Locale } from "@/lib/i18n/config";
@@ -15,28 +16,29 @@ export function ResetPasswordForm({ dict }: { dict: (typeof AUTH_DICT)[Locale] }
       <h1 className="font-display text-2xl font-bold text-ink">{dict.resetPassword.titlu}</h1>
 
       <form action={formAction} className="mt-6 flex flex-col gap-3">
-        <label className="text-sm font-medium text-ink">
-          {dict.resetPassword.parolaNoua}
-          <input
-            type="password"
-            name="password"
-            required
-            minLength={8}
-            className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink"
-          />
-        </label>
-        <label className="text-sm font-medium text-ink">
-          {dict.resetPassword.confirmaParola}
-          <input
-            type="password"
-            name="confirmare"
-            required
-            minLength={8}
-            className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink"
-          />
-        </label>
+        <PasswordField
+          label={dict.resetPassword.parolaNoua}
+          name="password"
+          autoComplete="new-password"
+          minLength={8}
+          hint={dict.parolaIndiciu}
+          arata={dict.arataParola}
+          ascunde={dict.ascundeParola}
+        />
+        <PasswordField
+          label={dict.resetPassword.confirmaParola}
+          name="confirmare"
+          autoComplete="new-password"
+          minLength={8}
+          arata={dict.arataParola}
+          ascunde={dict.ascundeParola}
+        />
 
-        {state.error && <p className="text-sm text-red-600">{state.error}</p>}
+        {state.error && (
+          <p role="alert" className="text-sm text-red-600">
+            {state.error}
+          </p>
+        )}
 
         <button
           type="submit"

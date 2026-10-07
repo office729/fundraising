@@ -14,6 +14,7 @@ import { getLocale } from "@/lib/i18n/get-locale";
 import { FARA_METODE_REDIRECT, metodeRedirect } from "@/lib/metode-plata-donatii";
 
 import { CampaignFooter } from "../campaign-footer";
+import { BaraDoneazaMobil } from "./bara-doneaza-mobil";
 import { DoneazaModal } from "./doneaza-modal";
 import { ProgressRing } from "./progress-ring";
 import { RecentDonationsList } from "./recent-donations-list";
@@ -274,7 +275,7 @@ export default async function PaginaStrangereFonduriPage({
             )}
 
             <div className="mt-6 grid gap-6 sm:grid-cols-[260px_minmax(0,1fr)]">
-              <div className="h-fit rounded-2xl border border-brand-green-soft bg-brand-green-soft/60 p-5">
+              <div id="sustine-campania" className="h-fit scroll-mt-6 rounded-2xl border border-brand-green-soft bg-brand-green-soft/60 p-5">
                 <p className="font-display text-sm font-bold text-ink">{t.campaignPage.sustineCampania}</p>
                 <p className="mt-1 text-[12.5px] leading-relaxed text-muted-2">{t.campaignPage.sustineDescriere}</p>
                 <div className="mt-4">
@@ -386,6 +387,8 @@ export default async function PaginaStrangereFonduriPage({
           </section>
         )}
       </main>
+
+      {pagina.status === "activa" && <BaraDoneazaMobil tintaId="sustine-campania" eticheta={t.donateModal.donezaAcum} />}
 
       <CampaignFooter orgSlug={orgSlug} orgName={org.name} orgLogoUrl={org.logoUrl} orgSlogan={org.slogan} orgCif={org.cif} locale={locale} />
     </div>

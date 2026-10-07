@@ -10,9 +10,11 @@ import { DemoBanner } from "./components/demo-banner";
 import { TaskuriCard } from "./components/dashboard/taskuri-card";
 import { RiscPipelineCard } from "./components/dashboard/risc-pipeline-card";
 import { TopSponsoriCard } from "./components/dashboard/top-sponsori-card";
+import { PrimiiPasiCard, type PrimiiPasi } from "./components/dashboard/primii-pasi-card";
 import type { DashboardData } from "./components/dashboard/types";
 import { useLocale } from "./lib/locale-context";
 import { useDomeniu } from "./lib/domeniu-context";
+import { useUtilizatorPrenume } from "./lib/utilizator-context";
 import { CAMPAIGN_TEMPLATES } from "@/lib/campaign-templates";
 import { DASHBOARD_HOME_DICT } from "@/lib/i18n/dictionaries/dashboard-home";
 import { DASHBOARD_MOCK_DICT } from "@/lib/i18n/dictionaries/dashboard-mock";
@@ -51,6 +53,7 @@ export default function CrmDashboardPage() {
   // Taskuri rezolvate de mai jos, care rămân demonstrative deocamdată.
   const [apeluriReale, setApeluriReale] = useState<number | null>(null);
   const [topSponsori, setTopSponsori] = useState<Awaited<ReturnType<typeof dateDashboardLive>>["topSponsori"] | null>(null);
+  const [primiiPasi, setPrimiiPasi] = useState<PrimiiPasi | null>(null);
   const [riscPipeline, setRiscPipeline] = useState<Awaited<ReturnType<typeof dateDashboardLive>>["riscPipeline"] | null>(null);
   useEffect(() => {
     // O singură cerere pentru apeluri + top sponsori + risc pipeline (înainte: trei acțiuni în coadă).
@@ -59,6 +62,7 @@ export default function CrmDashboardPage() {
         setApeluriReale(d.apeluri);
         setTopSponsori(d.topSponsori);
         setRiscPipeline(d.riscPipeline);
+        setPrimiiPasi(d.primiiPasi);
       })
       .catch(() => {
         setTopSponsori([]);
@@ -128,6 +132,7 @@ export default function CrmDashboardPage() {
   const blocate = actiuni.filter((a) => a.tip === "companie").length;
 
   const salut = useSalut(dict.greeting);
+  const prenume = useUtilizatorPrenume();
 
   const domeniu = useDomeniu();
   const familie = domeniu ? CAMPAIGN_TEMPLATES[domeniu].familie : "neutru";
@@ -157,15 +162,17 @@ export default function CrmDashboardPage() {
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-6">
+      <PrimiiPasiCard orgSlug={orgSlug} ro={locale === "ro"} pasi={primiiPasi} />
+
       <DemoBanner>
         {locale === "ro"
-          ? "Date demonstrative: taskurile și indicatorii de pe această pagină sunt exemple și se păstrează doar în acest browser, nu pe server."
-          : "Demo data: the tasks and indicators on this page are examples and are kept only in this browser, not on the server."}
+          ? "Atenție: cifrele, proiectele și taskurile de mai jos sunt EXEMPLE, ca să vezi cum arată platforma — nu sunt datele organizației tale. Datele tale reale apar în „Persoane fizice”, „Donații” și „Strângere fonduri”. Exemplele se păstrează doar în acest browser."
+          : "Note: the figures, projects and tasks below are EXAMPLES so you can see how the platform looks — they are not your organization's data. Your real data appears under “Individuals”, “Donations” and “Fundraising pages”. The examples are kept only in this browser."}
       </DemoBanner>
 
       <TaskuriCard taskuri={taskuriLive} base={base} locale={locale} />
 
-      <DomainWelcomeBanner salut={salut} nume="Vlad" subtitle={dict.summary(actiuni.length, blocate)} />
+      <DomainWelcomeBanner salut={salut} nume={prenume} subtitle={dict.summary(actiuni.length, blocate)} />
 
       {/* Filtrul de perioadă rămâne identic pentru orice familie — e un
           control, nu un widget de conținut, deci nu face parte din

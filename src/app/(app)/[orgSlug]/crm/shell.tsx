@@ -69,6 +69,7 @@ import { useDonatori } from "./lib/use-data";
 import { TASKURI, type Task } from "./mock";
 import { cautaDonatoriReali, type RezultatCautareDonator } from "./donatori/reali/actions";
 import { idScurt } from "@/lib/id-scurt";
+import { UtilizatorProvider } from "./lib/utilizator-context";
 import { useSalut } from "@/lib/use-salut";
 import { getOrgCustomization } from "@/lib/org-customizations";
 
@@ -80,50 +81,50 @@ const EMPTY_VAZUTE_MAP: Record<string, boolean> = {};
 
 // Etichetele vin din dicționarul RO/EN (vezi lib/i18n/dictionaries/dashboard.ts)
 // — restul (href/icon) rămâne fix, doar textul se traduce.
-function buildNav(dict: DashboardDict, orgSlug: string): { section: string; items: { href: string; label: string; icon: typeof Gauge }[] }[] {
+function buildNav(dict: DashboardDict, orgSlug: string): { section: string; items: { href: string; label: string; hint?: string; icon: typeof Gauge }[] }[] {
   const baza = [
-    { section: "", items: [{ href: "", label: dict.nav.home, icon: Gauge }] },
+    { section: "", items: [{ href: "", label: dict.nav.home, hint: dict.hints.home, icon: Gauge }] },
     {
       section: dict.nav.sectionRelatii,
       items: [
-        { href: "companii", label: dict.nav.companii, icon: Building2 },
-        { href: "/prospectare", label: dict.nav.prospectare, icon: Target },
-        { href: "companii?marcaj=d177", label: dict.nav.companiiD177, icon: Landmark },
-        { href: "donatori", label: dict.nav.donatori, icon: Users },
-        { href: "avatar-donator", label: dict.nav.avatarDonator, icon: ScanFace },
-        { href: "donatori/formular-230", label: dict.nav.formular230, icon: FileSignature },
-        { href: "/crm-voluntari", label: dict.nav.voluntari, icon: HandHeart },
-        { href: "beneficiari", label: dict.nav.beneficiari, icon: HeartHandshake },
+        { href: "companii", label: dict.nav.companii, hint: dict.hints.companii, icon: Building2 },
+        { href: "/prospectare", label: dict.nav.prospectare, hint: dict.hints.prospectare, icon: Target },
+        { href: "companii?marcaj=d177", label: dict.nav.companiiD177, hint: dict.hints.companiiD177, icon: Landmark },
+        { href: "donatori", label: dict.nav.donatori, hint: dict.hints.donatori, icon: Users },
+        { href: "avatar-donator", label: dict.nav.avatarDonator, hint: dict.hints.avatarDonator, icon: ScanFace },
+        { href: "donatori/formular-230", label: dict.nav.formular230, hint: dict.hints.formular230, icon: FileSignature },
+        { href: "/crm-voluntari", label: dict.nav.voluntari, hint: dict.hints.voluntari, icon: HandHeart },
+        { href: "beneficiari", label: dict.nav.beneficiari, hint: dict.hints.beneficiari, icon: HeartHandshake },
       ],
     },
     {
       section: dict.nav.sectionFinanciar,
       items: [
-        { href: "donatii", label: dict.nav.donatii, icon: Sparkles },
-        { href: "strangere-fonduri", label: dict.nav.strangereFonduri, icon: HandCoins },
-        { href: "fonduri-plati", label: dict.nav.fonduriPlati, icon: Banknote },
-        { href: "rfm", label: dict.nav.rfm, icon: LayoutGrid },
-        { href: "portal-beneficiari", label: dict.nav.portalBeneficiari, icon: HeartHandshake },
+        { href: "donatii", label: dict.nav.donatii, hint: dict.hints.donatii, icon: Sparkles },
+        { href: "strangere-fonduri", label: dict.nav.strangereFonduri, hint: dict.hints.strangereFonduri, icon: HandCoins },
+        { href: "fonduri-plati", label: dict.nav.fonduriPlati, hint: dict.hints.fonduriPlati, icon: Banknote },
+        { href: "rfm", label: dict.nav.rfm, hint: dict.hints.rfm, icon: LayoutGrid },
+        { href: "portal-beneficiari", label: dict.nav.portalBeneficiari, hint: dict.hints.portalBeneficiari, icon: HeartHandshake },
       ],
     },
     {
       section: dict.nav.sectionOperare,
       items: [
-        { href: "taskuri", label: dict.nav.taskuri, icon: ClipboardList },
-        { href: "comunicare", label: dict.nav.comunicare, icon: MessageSquare },
-        { href: "/program-lucru", label: dict.nav.programLucru, icon: CalendarClock },
-        { href: "kpi-echipa", label: dict.nav.kpiEchipa, icon: BarChart3 },
-        { href: "organizatie", label: dict.nav.organizatie, icon: Network },
-        { href: "kpi", label: dict.nav.kpiLibrary, icon: LibraryBig },
-        { href: "kpi/dashboard", label: dict.nav.kpiPerformantaMea, icon: TrendingUp },
+        { href: "taskuri", label: dict.nav.taskuri, hint: dict.hints.taskuri, icon: ClipboardList },
+        { href: "comunicare", label: dict.nav.comunicare, hint: dict.hints.comunicare, icon: MessageSquare },
+        { href: "/program-lucru", label: dict.nav.programLucru, hint: dict.hints.programLucru, icon: CalendarClock },
+        { href: "kpi-echipa", label: dict.nav.kpiEchipa, hint: dict.hints.kpiEchipa, icon: BarChart3 },
+        { href: "organizatie", label: dict.nav.organizatie, hint: dict.hints.organizatie, icon: Network },
+        { href: "kpi", label: dict.nav.kpiLibrary, hint: dict.hints.kpiLibrary, icon: LibraryBig },
+        { href: "kpi/dashboard", label: dict.nav.kpiPerformantaMea, hint: dict.hints.kpiPerformantaMea, icon: TrendingUp },
       ],
     },
     {
       section: dict.nav.sectionPlatforma,
       items: [
-        { href: "instrumente", label: dict.nav.instrumente, icon: Wrench },
-        { href: "consultanta", label: dict.nav.consultanta, icon: GraduationCap },
-        { href: "setari", label: dict.nav.setari, icon: Settings },
+        { href: "instrumente", label: dict.nav.instrumente, hint: dict.hints.instrumente, icon: Wrench },
+        { href: "consultanta", label: dict.nav.consultanta, hint: dict.hints.consultanta, icon: GraduationCap },
+        { href: "setari", label: dict.nav.setari, hint: dict.hints.setari, icon: Settings },
       ],
     },
   ];
@@ -305,7 +306,9 @@ export function CrmShell({
         {/* Nu <main>: layout-ul organizației (app/[orgSlug]/layout.tsx) are deja reperul „main"; două ar fi invalide. */}
         <div className="ci-scrollbar relative flex-1 overflow-y-auto px-6 py-6">
           <DomeniuProvider domeniu={orgDomeniuActivitate}>
-            <LocaleProvider locale={locale}>{children}</LocaleProvider>
+            <UtilizatorProvider prenume={userName.includes("@") ? "" : userName.split(" ")[0]}>
+              <LocaleProvider locale={locale}>{children}</LocaleProvider>
+            </UtilizatorProvider>
           </DomeniuProvider>
         </div>
       </div>
@@ -313,7 +316,7 @@ export function CrmShell({
       <AddDialog open={addOpen} onClose={() => setAddOpen(false)} base={base} pathname={pathname} />
       <SearchDialog open={searchOpen} onClose={() => setSearchOpen(false)} base={base} orgSlug={orgSlug} />
       <span className="sr-only" suppressHydrationWarning>
-        {salut}, {userName.split(" ")[0]}.
+        {userName.includes("@") ? `${salut}.` : `${salut}, ${userName.split(" ")[0]}.`}
       </span>
     </div>
   );
@@ -398,7 +401,7 @@ function NavGroups({
                   // cereri (fiecare cu verificare de sesiune + tranzacție) la FIECARE pagină deschisă.
                   prefetch={false}
                   onClick={onNavigate}
-                  title={collapsed ? item.label : undefined}
+                  title={collapsed ? `${item.label}${item.hint ? ` — ${item.hint}` : ""}` : item.hint}
                   className={cn(
                     "flex items-center gap-2.5 rounded-[var(--ci-radius-btn)] px-2.5 py-1.5 text-[13px] font-medium transition-colors",
                     collapsed && "md:justify-center md:px-0",
@@ -408,7 +411,7 @@ function NavGroups({
                   )}
                 >
                   <Icon className="h-4 w-4 shrink-0" />
-                  <span className={cn("truncate", collapsed && "md:hidden")}>{item.label}</span>
+                  <span className={cn("min-w-0 leading-tight break-words", collapsed && "md:hidden")}>{item.label}</span>
                 </Link>
               );
             })}
@@ -599,7 +602,7 @@ function NotificationsButton({ base }: { base: string }) {
   return (
     <div className="relative" data-notificari>
       <button
-        aria-label="Notificări"
+        aria-label={neVazute.length > 0 ? `Notificări: ${neVazute.length} noi` : "Notificări"}
         onClick={() => {
           setOpen((v) => !v);
           if (intarziate.length) marcheazaNotificariVazute(intarziate.map((t) => t.id));
@@ -612,6 +615,14 @@ function NotificationsButton({ base }: { base: string }) {
         )}
       >
         <Bell className="h-4 w-4" />
+        {neVazute.length > 0 && (
+          <span
+            aria-hidden="true"
+            className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-white px-1 text-[10px] font-bold text-[var(--ci-red)] ring-1 ring-[var(--ci-red)]"
+          >
+            {neVazute.length}
+          </span>
+        )}
       </button>
       {open && (
         <div className="absolute top-full right-0 z-50 mt-1.5 w-80 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-2 shadow-[var(--ci-shadow-md)]">
@@ -637,6 +648,7 @@ function NotificationsButton({ base }: { base: string }) {
           ) : (
             <p className="px-2 py-2 text-[12px] text-[var(--ci-text-faint)]">Ești la zi cu task-urile.</p>
           )}
+          <p className="px-2 pb-1 text-[11px] text-[var(--ci-text-faint)]">Taskurile din această listă sunt exemple demonstrative, păstrate doar în acest browser.</p>
           <Link prefetch={false}
             href={`${base}/taskuri`}
             onClick={() => setOpen(false)}

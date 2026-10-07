@@ -46,7 +46,7 @@ const TITLURI = {
   crmDonatii: { ro: "Donații — CRM", en: "Donations — CRM" },
   crmStrangereFonduri: { ro: "Strângere fonduri — CRM", en: "Fundraising pages — CRM" },
   crmFonduriPlati: { ro: "Fonduri și plăți — CRM", en: "Funds & payments — CRM" },
-  crmRfm: { ro: "RFM & segmentare — CRM", en: "RFM & segmentation — CRM" },
+  crmRfm: { ro: "Segmente de donatori (RFM) — CRM", en: "Donor segments (RFM) — CRM" },
   crmPortalBeneficiari: { ro: "Panou beneficiari — CRM", en: "Beneficiary panel — CRM" },
   crmTaskuri: { ro: "Taskuri — CRM", en: "Tasks — CRM" },
   crmComunicare: { ro: "Comunicare — CRM", en: "Communication — CRM" },

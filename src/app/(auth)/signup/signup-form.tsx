@@ -11,6 +11,7 @@ import { DPA_ACTIV } from "@/lib/legal-version";
 import type { AUTH_DICT } from "@/lib/i18n/dictionaries/auth";
 
 import { GoogleButton } from "../google-button";
+import { PasswordField } from "../password-field";
 import { signupAction } from "./actions";
 import { useActionStatePastrat } from "@/lib/use-action-state-pastrat";
 
@@ -73,6 +74,7 @@ function SignupFormInner({ dict }: { dict: Dict }) {
 
       <div className="mt-4">
         <GoogleButton dict={dict} acceptat={accepta} />
+        {!accepta && <p className="mt-1.5 text-xs text-muted">{dict.signup.acceptGoogleIndiciu}</p>}
       </div>
 
       <div className="my-4 flex items-center gap-3 text-xs font-medium text-muted-2">
@@ -125,19 +127,21 @@ function SignupFormInner({ dict }: { dict: Dict }) {
             className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink"
           />
         </label>
-        <label className="text-sm font-medium text-ink">
-          {dict.parolaLabel}
-          <input
-            type="password"
-            name="password"
-            autoComplete="new-password"
-            required
-            minLength={8}
-            className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink"
-          />
-        </label>
+        <PasswordField
+          label={dict.parolaLabel}
+          name="password"
+          autoComplete="new-password"
+          minLength={8}
+          hint={dict.parolaIndiciu}
+          arata={dict.arataParola}
+          ascunde={dict.ascundeParola}
+        />
 
-        {state.error && <p className="text-sm text-red-600">{state.error}</p>}
+        {state.error && (
+          <p role="alert" className="text-sm text-red-600">
+            {state.error}
+          </p>
+        )}
 
         <button
           type="submit"

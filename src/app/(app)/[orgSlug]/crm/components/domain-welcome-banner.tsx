@@ -25,7 +25,7 @@ export function DomainWelcomeBanner({
 
   const titlu = (
     <h1 className="ci-display text-xl font-bold text-[var(--ci-text)]">
-      {salut}, {nume}.
+      {nume ? `${salut}, ${nume}.` : `${salut}.`}
     </h1>
   );
   const sub = <p className="mt-1 text-[13px] text-[var(--ci-text-muted)]">{subtitle}</p>;
@@ -74,7 +74,7 @@ export function DomainWelcomeBanner({
           style={{ clipPath: "polygon(40% 0, 100% 0, 100% 100%, 0 100%)" }}
         />
         <h1 className="ci-display relative text-xl font-bold text-white">
-          {salut}, {nume}.
+          {nume ? `${salut}, ${nume}.` : `${salut}.`}
         </h1>
         <p className="relative mt-1 text-[13px] text-white/80">{subtitle}</p>
       </div>

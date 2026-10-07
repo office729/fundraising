@@ -8,9 +8,11 @@ export const DASHBOARD_HOME_DICT = {
     greeting: { morning: "Bună dimineața", afternoon: "Bună ziua", evening: "Bună seara" },
     summary: (actiuni: number, blocate: number) => (
       <>
-        Astăzi ai <strong className="text-[var(--ci-text)]">{actiuni} acțiuni importante</strong> și{" "}
-        <strong className="text-[var(--ci-text)]">{blocate} companii blocate în pipeline</strong> care necesită
-        follow-up.
+        Astăzi ai <strong className="text-[var(--ci-text)]">{actiuni === 1 ? "1 acțiune importantă" : `${actiuni}${actiuni >= 20 ? " de" : ""} acțiuni importante`}</strong> și{" "}
+        <strong className="text-[var(--ci-text)]">
+          {blocate === 1 ? "1 companie" : `${blocate}${blocate >= 20 ? " de" : ""} companii`}
+        </strong>{" "}
+        {blocate === 1 ? "căreia" : "cărora"} trebuie să {blocate === 1 ? "îi" : "le"} scrii sau să {blocate === 1 ? "o" : "le"} suni din nou.
       </>
     ),
     perioade: [
@@ -35,7 +37,7 @@ export const DASHBOARD_HOME_DICT = {
     },
     pipeline: { titlePrefix: "Pipeline D177 / 20%", inLucru: (n: number) => `${n} companii în lucru`, seeAll: "Vezi toate companiile" },
     proiecte: { title: "Proiecte active", subtitle: "Proiecte cu strângere de fonduri în desfășurare", seeAll: "Vezi toate", urgenta: "Urgentă", activa: "Activă", zileActive: (n: number) => `${n} zile active`, din: "din" },
-    team: { title: "Activitatea echipei", subtitle: "Ultimele 30 de zile", calls: "Apeluri (real, Twilio)", emails: "Emailuri", meetings: "Întâlniri", tasksDone: "Taskuri rezolvate" },
+    team: { title: "Activitatea echipei", subtitle: "Ultimele 30 de zile", calls: "Apeluri", emails: "Emailuri", meetings: "Întâlniri", tasksDone: "Taskuri rezolvate" },
   },
   en: {
     greeting: { morning: "Good morning", afternoon: "Good afternoon", evening: "Good evening" },
@@ -68,7 +70,7 @@ export const DASHBOARD_HOME_DICT = {
     },
     pipeline: { titlePrefix: "D177 / 20% pipeline", inLucru: (n: number) => `${n} companies in progress`, seeAll: "See all companies" },
     proiecte: { title: "Active projects", subtitle: "Projects with fundraising in progress", seeAll: "See all", urgenta: "Urgent", activa: "Active", zileActive: (n: number) => `${n} days active`, din: "of" },
-    team: { title: "Team activity", subtitle: "Last 30 days", calls: "Calls (live, Twilio)", emails: "Emails", meetings: "Meetings", tasksDone: "Tasks completed" },
+    team: { title: "Team activity", subtitle: "Last 30 days", calls: "Calls", emails: "Emails", meetings: "Meetings", tasksDone: "Tasks completed" },
   },
 } satisfies Record<Locale, unknown>;
 

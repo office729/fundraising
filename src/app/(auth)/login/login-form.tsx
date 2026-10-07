@@ -8,6 +8,7 @@ import type { AUTH_DICT } from "@/lib/i18n/dictionaries/auth";
 import type { Locale } from "@/lib/i18n/config";
 
 import { GoogleButton } from "../google-button";
+import { PasswordField } from "../password-field";
 import { loginAction, retrimiteConfirmareAction } from "./actions";
 import { useActionStatePastrat } from "@/lib/use-action-state-pastrat";
 
@@ -71,16 +72,13 @@ function LoginFormInner({ dict }: { dict: Dict }) {
             className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink"
           />
         </label>
-        <label className="text-sm font-medium text-ink">
-          {dict.parolaLabel}
-          <input
-            type="password"
-            name="password"
-            autoComplete="current-password"
-            required
-            className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink"
-          />
-        </label>
+        <PasswordField
+          label={dict.parolaLabel}
+          name="password"
+          autoComplete="current-password"
+          arata={dict.arataParola}
+          ascunde={dict.ascundeParola}
+        />
 
         <Link href="/forgot-password" className="-mt-1 self-start text-sm font-medium text-brand-green">
           {dict.login.uitatParola}
@@ -91,7 +89,11 @@ function LoginFormInner({ dict }: { dict: Dict }) {
           {dict.login.ramaiConectat}
         </label>
 
-        {state.error && <p className="text-sm text-red-600">{state.error}</p>}
+        {state.error && (
+          <p role="alert" className="text-sm text-red-600">
+            {state.error}
+          </p>
+        )}
         {state.reTrimite && (
           <div className="-mt-1">
             <button

@@ -3,7 +3,7 @@
 import { and, gte, sql } from "drizzle-orm";
 
 import { withOrgSession, type OrgContext } from "@/lib/auth/guard";
-import { apeluri, companies, companySponsorizari } from "@/lib/db/schema";
+import { apeluri, companies, companySponsorizari, donatoriReali, fundraisingPages, memberships, organizations } from "@/lib/db/schema";
 import { segmentFirma } from "@/lib/id-scurt";
 
 // Sursa reală pentru cardul "Apeluri" din "Activitatea echipei" (dashboard) —
@@ -64,9 +64,25 @@ async function riscPipelineImpl(ctx: OrgContext) {
 export const companiiRiscPipeline = withOrgSession(riscPipelineImpl);
 
 
-// Cele trei citiri ale paginii principale într-O SINGURĂ cerere și tranzacție: înainte, trei acțiuni separate
-// porneau la montare, iar Next le execută una după alta (fiecare cu verificare de sesiune + tranzacție proprie).
+// „Primii pași”: ce a făcut deja organizația, pe date reale (sigla, prima pagină de campanie, donatori, colegi în echipă).
+async function primiiPasiImpl(ctx: OrgContext) {
+  const [[org], [pagini], [donatori], [membri]] = await Promise.all([
+    ctx.db.select({ logo: organizations.logoUrl }).from(organizations).where(sql`${organizations.id} = ${ctx.orgId}`).limit(1),
+    ctx.db.select({ n: sql<number>`count(*)::int` }).from(fundraisingPages).where(sql`${fundraisingPages.orgId} = ${ctx.orgId}`),
+    ctx.db.select({ n: sql<number>`count(*)::int` }).from(donatoriReali).where(sql`${donatoriReali.orgId} = ${ctx.orgId}`),
+    ctx.db.select({ n: sql<number>`count(*)::int` }).from(memberships).where(sql`${memberships.orgId} = ${ctx.orgId}`),
+  ]);
+  return { logo: Boolean(org?.logo), pagina: pagini.n > 0, donatori: donatori.n > 0, echipa: membri.n > 1 };
+}
+
+// Citirile paginii principale într-O SINGURĂ cerere și tranzacție: înainte, acțiuni separate porneau la montare, iar Next le
+// execută una după alta (fiecare cu verificare de sesiune + tranzacție proprie).
 export const dateDashboardLive = withOrgSession(async (ctx) => {
-  const [apeluri, topSponsori, riscPipeline] = await Promise.all([apeluriImpl(ctx), topSponsoriImpl(ctx), riscPipelineImpl(ctx)]);
-  return { apeluri, topSponsori, riscPipeline };
+  const [apeluri, topSponsori, riscPipeline, primiiPasi] = await Promise.all([
+    apeluriImpl(ctx),
+    topSponsoriImpl(ctx),
+    riscPipelineImpl(ctx),
+    primiiPasiImpl(ctx),
+  ]);
+  return { apeluri, topSponsori, riscPipeline, primiiPasi };
 });
