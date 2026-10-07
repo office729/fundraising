@@ -38,7 +38,7 @@ export function OrganizatieSection({ orgSlug, locale }: { orgSlug: string; local
   const [pending, startTransition] = useTransition();
 
   return (
-    <section className="mt-8 rounded-xl border border-line bg-panel p-5">
+    <section id="date-organizatie" className="mt-8 scroll-mt-4 rounded-xl border border-line bg-panel p-5">
       <h2 className="font-medium text-ink">{t.titlu}</h2>
       <p className="mt-1 text-xs text-muted">{t.exportDesc}</p>
       <a

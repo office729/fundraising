@@ -50,7 +50,7 @@ export function DomainForm({
   }, [slugState.slug]);
 
   return (
-    <div className="mt-8 border-t border-line pt-6">
+    <div id="adresa" className="mt-8 scroll-mt-4 border-t border-line pt-6">
       <h2 className="font-display text-lg font-bold text-ink">{dict.title}</h2>
 
       <form action={slugFormAction} className="mt-4 flex flex-col gap-2">

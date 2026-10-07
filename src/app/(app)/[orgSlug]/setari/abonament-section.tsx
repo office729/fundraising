@@ -49,7 +49,7 @@ export function AbonamentSection({
   const statusLabel = (dict.status as Record<string, string>)[statusCurent] ?? statusCurent;
 
   return (
-    <section className="mt-8 border-t border-line pt-6">
+    <section id="abonament" className="mt-8 scroll-mt-4 border-t border-line pt-6">
       <h2 className="font-display text-lg font-bold text-ink">{dict.title}</h2>
       <p className="mt-1 text-sm text-muted">
         {dict.pachetCurent(NUME_PACHET[pachetCurent])} · {statusLabel}

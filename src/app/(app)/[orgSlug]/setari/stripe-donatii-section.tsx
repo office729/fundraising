@@ -219,7 +219,7 @@ export function StripeDonatiiSection({
   const pkMascat = pk ? `${pk.slice(0, 8)}…${pk.slice(-4)}` : null;
 
   return (
-    <section className="mt-8 border-t border-line pt-6">
+    <section id="plati-donatii" className="mt-8 scroll-mt-4 border-t border-line pt-6">
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="font-display text-lg font-bold text-ink">{dict.title}</h2>
         {modTest !== null && (

@@ -75,7 +75,7 @@ export function CanvaSection({
   };
 
   return (
-    <section className="mt-8 border-t border-line pt-6">
+    <section id="canva" className="mt-8 scroll-mt-4 border-t border-line pt-6">
       <div className="flex items-center gap-2.5">
         <h2 className="font-display text-lg font-bold text-ink">{ro ? "Integrare Canva" : "Canva integration"}</h2>
         <Pastila ok={conectat} text={conectat ? (ro ? "Conectat" : "Connected") : ro ? "Neconectat" : "Not connected"} />

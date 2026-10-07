@@ -17,7 +17,7 @@ export function ReferralSection({ cod, numarRecomandari, locale }: { cod: string
   }
 
   return (
-    <section className="mt-8 border-t border-line pt-6">
+    <section id="recomanda" className="mt-8 scroll-mt-4 border-t border-line pt-6">
       <h2 className="font-display text-lg font-bold text-ink">{dict.title}</h2>
       <p className="mt-1 text-sm text-muted">{dict.descriere}</p>
       <div className="mt-3 flex flex-col gap-2 sm:flex-row">

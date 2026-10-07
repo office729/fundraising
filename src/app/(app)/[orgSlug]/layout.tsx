@@ -179,8 +179,8 @@ export default async function OrgLayout({
       {DPA_ACTIV && (access.role === "owner" || access.role === "admin") && access.orgDpaVersion !== DPA_VERSIUNE && (
         <div className="border-b border-line bg-amber-50 px-4 py-2.5 text-center text-[13px] text-amber-900 sm:px-6 dark:bg-amber-950 dark:text-amber-200">
           {locale === "ro"
-            ? "Acordul de prelucrare a datelor (DPA) nu este încă acceptat pentru această organizație. "
-            : "The Data Processing Agreement (DPA) hasn't been accepted for this organization yet. "}
+            ? "Mai ai de acceptat Acordul de prelucrare a datelor (DPA) — o formalitate legală, durează un minut. "
+            : "You still need to accept the Data Processing Agreement (DPA) — a legal formality that takes a minute. "}
           <Link prefetch={false} href={`/${orgSlug}/setari#dpa`} className="font-semibold underline">
             {locale === "ro" ? "Citește și acceptă" : "Read and accept"}
           </Link>

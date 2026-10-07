@@ -59,6 +59,22 @@ export default async function SetariPage({
       <div className="mx-auto max-w-xl">
         <h1 className="font-display text-2xl font-bold text-ink">{dict.title}</h1>
         <p className="mt-1 text-muted">{dict.subtitle}</p>
+        <nav aria-label={locale === "ro" ? "Secțiunile paginii" : "Page sections"} className="mt-4 flex flex-wrap gap-2 text-[13px]">
+          {[
+            ["identitate", locale === "ro" ? "Logo și culori" : "Logo and colors"],
+            ["adresa", locale === "ro" ? "Adresa în platformă" : "Platform address"],
+            ["abonament", locale === "ro" ? "Abonament și facturi" : "Subscription and invoices"],
+            ["plati-donatii", locale === "ro" ? "Plăți donații" : "Donation payments"],
+            ["recomanda", locale === "ro" ? "Recomandă" : "Refer"],
+            ...(DPA_ACTIV ? [["dpa", locale === "ro" ? "Acord date (DPA)" : "Data agreement (DPA)"]] : []),
+            ...(access.role === "owner" ? [["date-organizatie", locale === "ro" ? "Date și ștergere" : "Data and deletion"]] : []),
+          ].map(([id, label]) => (
+            <a key={id} href={`#${id}`} className="rounded-full border border-line px-3 py-1.5 font-medium text-ink transition hover:bg-panel-2">
+              {label}
+            </a>
+          ))}
+        </nav>
+        <div id="identitate" className="scroll-mt-4" />
         <BrandingForm
           orgSlug={orgSlug}
           locale={locale}

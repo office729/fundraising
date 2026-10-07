@@ -51,7 +51,7 @@ export function DpaSection({
   const data = acceptatLa ? new Date(acceptatLa).toLocaleDateString(locale === "ro" ? "ro-RO" : "en-US") : null;
 
   return (
-    <section id="dpa" className="mt-8 rounded-xl border border-line bg-panel p-5">
+    <section id="dpa" className="mt-8 scroll-mt-4 rounded-xl border border-line bg-panel p-5">
       <h2 className="font-medium text-ink">{t.titlu}</h2>
       <p className="mt-1 text-xs leading-relaxed text-muted">{t.desc}</p>
       <Link prefetch={false} href="/dpa" target="_blank" className="mt-2 inline-block text-sm font-medium text-brand-green underline">
