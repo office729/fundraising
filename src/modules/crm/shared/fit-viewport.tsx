@@ -21,6 +21,9 @@ function potriveste(el: HTMLElement): () => void {
   return () => {
     window.removeEventListener("resize", aplica);
     obs.disconnect();
+    // Elementul poate supraviețui navigării (shell-ul CRM): fără reset, ar rămâne cu o înălțime fixă învechită.
+    el.style.height = "";
+    el.style.minHeight = "";
   };
 }
 
