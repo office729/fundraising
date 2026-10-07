@@ -70,6 +70,7 @@ import { TASKURI, type Task } from "./mock";
 import { cautaDonatoriReali, type RezultatCautareDonator } from "./donatori/reali/actions";
 import { idScurt } from "@/lib/id-scurt";
 import { UtilizatorProvider } from "./lib/utilizator-context";
+import { useExempleDemo } from "./lib/exemple-demo";
 import { useSalut } from "@/lib/use-salut";
 import { getOrgCustomization } from "@/lib/org-customizations";
 
@@ -289,7 +290,7 @@ export function CrmShell({
             <Plus className="h-4 w-4" />
             {dict.header.add}
           </button>
-          <NotificationsButton base={base} />
+          <NotificationsButton base={base} orgSlug={orgSlug} />
           <a
             href="/contact"
             target="_blank"
@@ -571,8 +572,9 @@ function AvatarMenu({ userName, orgSlug, role }: { userName: string; orgSlug: st
   );
 }
 
-function NotificationsButton({ base }: { base: string }) {
+function NotificationsButton({ base, orgSlug }: { base: string; orgSlug: string }) {
   const [open, setOpen] = useState(false);
+  const exemple = useExempleDemo(orgSlug);
 
   const globale = useLocalStoreValue(getTaskuriGlobale, EMPTY_TASKURI_GLOBALE);
   const statusOverride = useLocalStoreValue(getTaskStatusOverride, EMPTY_STATUS_MAP);
@@ -581,13 +583,16 @@ function NotificationsButton({ base }: { base: string }) {
   const vazute = useLocalStoreValue(getNotificariVazute, EMPTY_VAZUTE_MAP);
 
   const intarziate = useMemo(() => {
-    const mock = TASKURI.filter((t) => !sterse[t.id]).map((t) => ({
-      ...t,
-      status: statusOverride[t.id] ?? t.status,
-      termenLa: termenOverride[t.id] ?? t.termenLa,
-    }));
+    // Taskurile demonstrative intră în clopoțel doar când utilizatorul a cerut exemplele; altfel un cont nou ar vedea alerte inventate.
+    const mock = exemple
+      ? TASKURI.filter((t) => !sterse[t.id]).map((t) => ({
+          ...t,
+          status: statusOverride[t.id] ?? t.status,
+          termenLa: termenOverride[t.id] ?? t.termenLa,
+        }))
+      : [];
     return [...globale, ...mock].filter((t) => t.status === "intarziat");
-  }, [globale, statusOverride, termenOverride, sterse]);
+  }, [globale, statusOverride, termenOverride, sterse, exemple]);
   const neVazute = intarziate.filter((t) => !vazute[t.id]);
 
   useEffect(() => {
