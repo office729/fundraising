@@ -207,3 +207,19 @@
     color: oklch(from var(--ci-primary) min(l, 0.48) c h);
   }
 }
+
+/* Culorile de stare (verde/chihlimbar/roșu) sunt prea deschise ca TEXT pe fundal deschis (2,7–4,2:1). Fundalurile și
+   pictogramele rămân cu culorile originale; doar textul primește variante de ≥4,5:1 inclusiv pe fundalul „soft" al insignelor. */
+.ci-root [class~="text-[var(--ci-green)]"]:not(:hover) {
+  color: #1f7a3d;
+}
+.ci-root [class~="text-[var(--ci-amber)]"]:not(:hover) {
+  color: #a35a05;
+}
+.ci-root [class~="text-[var(--ci-red)]"]:not(:hover) {
+  color: #c21f1f;
+}
+/* Legenda graficelor: textul în culoarea seriei (ex. #16a34a, 3,3:1) devine neutru; pătratul colorat rămâne. */
+.ci-root .recharts-legend-item-text {
+  color: var(--ci-text-muted) !important;
+}
