@@ -7,8 +7,9 @@
   --ci-surface: #ffffff;
   --ci-surface-2: #fafbfd;
   --ci-text: #14213d;
-  --ci-text-muted: #64748b;
-  --ci-text-faint: #94a3b8;
+  /* Contrast minim 4,5:1 (WCAG AA) pe toate suprafețele de mai sus; #94a3b8 avea doar ~2,5:1. */
+  --ci-text-muted: #475569;
+  --ci-text-faint: #5b6b80;
 
   /* Accentul primar + verdele „succes" sunt legate de marca reală
      Alexandrit (albastru #154A85 / verde #3FA85C, vezi
@@ -190,5 +191,19 @@
   .ci-sidebar {
     transform: none;
     transition: width 150ms;
+  }
+}
+
+/* Contrast automat pentru culoarea de brand aleasă de organizație (WCAG AA). Culoarea poate fi oricât de deschisă: text alb
+   pe #5fb6ab are doar ~2,4:1, iar text colorat cu brandul pe fundal deschis ~2,1:1. Alegem culoarea textului după
+   luminozitatea (OKLCH) brandului. Brandurile închise (inclusiv albastrul implicit) rămân neschimbate. */
+@supports (color: oklch(from red l c h)) {
+  /* Butoane/insigne pe fundal de brand: text negru când brandul e deschis, alb când e închis. */
+  .ci-root[data-brand] [class~="bg-[var(--ci-primary)]"][class~="text-white"] {
+    color: oklch(from var(--ci-primary) clamp(0, (l - 0.6) * -1000, 1) 0 0);
+  }
+  /* Text/link în culoarea brandului pe fundal deschis: se închide doar dacă brandul e mai deschis de L=0,48. */
+  .ci-root[data-brand] [class~="text-[var(--ci-primary)]"]:not(:hover) {
+    color: oklch(from var(--ci-primary) min(l, 0.48) c h);
   }
 }
