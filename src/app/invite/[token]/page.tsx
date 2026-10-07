@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { AuthShell } from "@/app/(auth)/auth-shell";
 import { getAuthUser } from "@/lib/auth/dal";
 import { ABONAMENT_DICT } from "@/lib/i18n/dictionaries/abonament";
 import { getLocale } from "@/lib/i18n/get-locale";
@@ -53,7 +54,8 @@ export default async function InvitePage({
     authUser?.email && authUser.email.toLowerCase() !== invite.email.toLowerCase();
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-6 text-center">
+    <AuthShell>
+      <div className="text-center">
       <h1 className="font-display text-xl font-bold text-ink">{t.titlu}</h1>
       <p className="mt-2 text-muted">
         {t.alaturaTe} <b className="text-ink">{invite.orgName}</b> {t.ca}{" "}
@@ -85,6 +87,8 @@ export default async function InvitePage({
           </Link>
         </div>
       )}
-    </main>
+      {!loggedInWrongEmail && !authUser && <p className="mt-4 text-[13px] leading-relaxed text-muted">{t.indiciuCont}</p>}
+      </div>
+    </AuthShell>
   );
 }
