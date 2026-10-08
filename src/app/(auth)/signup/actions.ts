@@ -1,6 +1,6 @@
 "use server";
 
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 
 import { semnalizeazaEveniment } from "@/lib/analytics-server";
@@ -10,6 +10,7 @@ import { obtineIpClient, verificaLimitaRata } from "@/lib/auth/rate-limit";
 import { citestePlanulAlesDinFormular } from "@/lib/billing/plan-from-form";
 import { PLAN_QUERY_KEYS } from "@/lib/billing/plan-query";
 import { db } from "@/lib/db";
+import { appUsers } from "@/lib/db/schema";
 import { verificaCifLaInscriere } from "@/lib/auth/verifica-cif";
 import { esteEmailTemporar } from "@/lib/email-temporar";
 import { cifValidFormat } from "@/lib/iban";
@@ -17,6 +18,14 @@ import { normalizeazaTelefon } from "@/lib/telefon";
 import { AUTH_DICT } from "@/lib/i18n/dictionaries/auth";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { createClient } from "@/lib/supabase/server";
+
+async function emailulExista(email: string): Promise<boolean> {
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`select set_config('app.current_user_email', ${email}, true)`);
+    const r = await tx.select({ id: appUsers.id }).from(appUsers).where(eq(appUsers.email, email)).limit(1);
+    return r.length > 0;
+  });
+}
 
 export async function signupAction(
   _prevState: { error: string | null },
@@ -62,6 +71,10 @@ export async function signupAction(
     return { error: errors.preaMulteIncercari };
   }
 
+  // Adresă deja înregistrată: mesaj clar, înainte de verificările CIF (altfel cine are deja cont ar primi „CIF existent").
+  // Doar după limita de rată de mai sus, ca verificarea să nu poată fi folosită la scară pentru a afla ce adrese au conturi.
+  if (await emailulExista(email)) return { error: errors.emailDejaInregistrat };
+
   // Organizație nouă: nume, telefon și CIF obligatorii (cei invitați într-o organizație existentă nu le completează).
   const esteOrgNoua = !inviteToken && !beneficiarInviteToken;
   let telefon: string | null = null;
@@ -105,6 +118,11 @@ export async function signupAction(
     if (m.includes("password") && (m.includes("least") || m.includes("short"))) return { error: errors.parolaMinim };
     if (m.includes("email") && (m.includes("invalid") || m.includes("valid"))) return { error: errors.emailInvalid };
     return { error: errors.signupEsuat };
+  }
+  // Cu confirmarea de email activă, Supabase NU dă eroare pentru o adresă existentă: întoarce un utilizator „de fațadă", fără
+  // identități și fără sesiune, iar nicio confirmare nu pleacă. Fără această verificare omul ar aștepta un email care nu vine.
+  if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+    return { error: errors.emailDejaInregistrat };
   }
   if (!data.user) {
     return { error: errors.signupEsuat };
