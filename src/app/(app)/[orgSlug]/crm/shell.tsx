@@ -30,7 +30,6 @@ import {
   Search,
   Settings,
   Sparkles,
-  Target,
   TrendingUp,
   Upload,
   Users,
@@ -89,7 +88,6 @@ function buildNav(dict: DashboardDict, orgSlug: string): { section: string; item
       section: dict.nav.sectionRelatii,
       items: [
         { href: "companii", label: dict.nav.companii, hint: dict.hints.companii, icon: Building2 },
-        { href: "/prospectare", label: dict.nav.prospectare, hint: dict.hints.prospectare, icon: Target },
         { href: "companii?marcaj=d177", label: dict.nav.companiiD177, hint: dict.hints.companiiD177, icon: Landmark },
         { href: "donatori", label: dict.nav.donatori, hint: dict.hints.donatori, icon: Users },
         { href: "avatar-donator", label: dict.nav.avatarDonator, hint: dict.hints.avatarDonator, icon: ScanFace },

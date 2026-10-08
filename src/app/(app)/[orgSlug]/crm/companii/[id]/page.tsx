@@ -12,6 +12,7 @@ import { CompanyTabs } from "./company-tabs";
 import { IstoricEtape } from "./istoric-etape";
 import { ContractSponsorizareSection } from "./contract-sponsorizare-section";
 import { bifeDinEtapa } from "@/lib/etape-companie";
+import { urlsSemnate } from "@/lib/fisiere-private";
 import type { PersoanaDeAprobat } from "../actions";
 import { PaginiSociale } from "./pagini-sociale";
 import { PipelineCard } from "./pipeline-card";
@@ -42,7 +43,11 @@ export default async function CompanieProfilPage({
   const extra = (c.extra ?? {}) as {
     etapeBifate?: string[];
     deAprobat?: PersoanaDeAprobat[];
+    documente?: { id: string; nume: string; ref: string; tip: string; marime: number; la: string; deNume: string | null }[];
   };
+  // Documentele stau în bucket privat — URL semnat, cu valabilitate scurtă, generat la fiecare afișare.
+  const documenteSemnate = await urlsSemnate((extra.documente ?? []).map((d) => ({ ...d, fisierUrl: d.ref })));
+  const documente = documenteSemnate.map((d) => ({ id: d.id, nume: d.nume, tip: d.tip, marime: d.marime, la: d.la, deNume: d.deNume, url: d.fisierUrl }));
   // Firmele care încă n-au sponsorizat se deschid direct pe „Contacte”; ?tab=… alege explicit tabul.
   const tabCerut = Array.isArray(tab) ? tab[0] : tab;
   const nuAreSponsorizat = sponsorizari.length === 0 && !(c.sumaSponsorizata && c.sumaSponsorizata > 0) && c.status !== "won";
@@ -142,6 +147,7 @@ export default async function CompanieProfilPage({
         contacte={contacte}
         activitate={activitate}
         campanii={campanii}
+        documente={documente}
         defaultTab={defaultTab}
         ghid={{
           firma: { id: c.id, nume: c.nume, administrator: c.administrator, linkedin: c.linkedin, site: c.site },

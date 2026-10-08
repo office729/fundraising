@@ -6,7 +6,8 @@ import { and, asc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 
 import { parseazaNumarRo } from "@/lib/numere-ro";
 import { type OrgContext, withOrgSession } from "@/lib/auth/guard";
-import { celMaiRecentBilant, verificaStareFiscala } from "@/lib/anaf";
+import { celMaiRecentBilant, curataCui, verificaStareFiscala } from "@/lib/anaf";
+import { gasesteJudet } from "@/lib/judete";
 import { getLimiteleEfective, subCota } from "@/lib/billing/quota";
 import { ETAPE_PATH_KEYS, bifeDinEtapa, etapaCurenta } from "@/lib/etape-companie";
 import { valideazaAlocari } from "@/lib/alocari-sponsorizare";
@@ -366,6 +367,7 @@ export const adaugaFirma = withOrgSession(async (ctx, _prev: AdaugaFirmaState, f
   const profit = numar("profit");
   const nrAngajati = numar("nrAngajati");
   const anInfiintare = numar("anInfiintare");
+  const anBilant = numar("anBilant");
   const dataSemnare = txt("dataSemnare");
 
   if (!nume) return { error: "Numele firmei e obligatoriu." };
@@ -425,6 +427,14 @@ export const adaugaFirma = withOrgSession(async (ctx, _prev: AdaugaFirmaState, f
     linkedin,
     facebook,
     administrator: txt("administrator"),
+    ...(formData.get("anafActiv") != null
+      ? {
+          anafActiv: formData.get("anafActiv") === "1",
+          anafVerificatLa: acum,
+          anBilant: typeof anBilant === "number" ? anBilant : null,
+          sursaFin: "ANAF",
+        }
+      : {}),
     ca: typeof ca === "number" ? ca : null,
     profit: typeof profit === "number" ? profit : null,
     nrAngajati: typeof nrAngajati === "number" ? nrAngajati : null,
@@ -456,6 +466,52 @@ export const adaugaFirma = withOrgSession(async (ctx, _prev: AdaugaFirmaState, f
   }
   return { error: null, id };
 });
+// „Adu date din ANAF” din formularul de firmă nouă: pe baza CUI-ului întoarce datele de identificare și ultimul bilanț
+// (nu scrie nimic în baza de date — formularul le preia și le salvează odată cu firma).
+export type DateAnaf = {
+  denumire: string | null;
+  activ: boolean;
+  caen: string | null;
+  nrRegCom: string | null;
+  adresa: string | null;
+  judet: string | null;
+  localitate: string | null;
+  anInfiintare: number | null;
+  ca: number | null;
+  profit: number | null;
+  nrAngajati: number | null;
+  anBilant: number | null;
+};
+export const cautaDateAnaf = withOrgSession(async (_ctx, cui: string): Promise<ActionState & { date?: DateAnaf }> => {
+  if (!curataCui(cui)) return { error: "Introdu un CUI valid." };
+  let stare: Awaited<ReturnType<typeof verificaStareFiscala>>;
+  try {
+    stare = await verificaStareFiscala(cui);
+  } catch {
+    return { error: "ANAF nu a răspuns — încearcă din nou peste puțin timp." };
+  }
+  if (!stare) return { error: `Niciun rezultat ANAF pentru CUI ${curataCui(cui)} — verifică dacă e corect.` };
+  const bilant = await celMaiRecentBilant(cui).catch(() => null);
+  const anInreg = stare.dataInregistrare ? Number(stare.dataInregistrare.slice(0, 4)) : NaN;
+  return {
+    error: null,
+    date: {
+      denumire: stare.denumire,
+      activ: stare.activ,
+      caen: stare.codCaen,
+      nrRegCom: stare.nrRegCom,
+      adresa: stare.adresa,
+      judet: gasesteJudet(stare.judet) ?? gasesteJudet(stare.adresa),
+      localitate: stare.localitate,
+      anInfiintare: Number.isFinite(anInreg) && anInreg > 1800 ? anInreg : null,
+      ca: bilant?.cifraAfaceri ?? null,
+      profit: bilant?.profitNet ?? null,
+      nrAngajati: bilant?.numarSalariati ?? null,
+      anBilant: bilant?.an ?? null,
+    },
+  };
+});
+
 // Scor de capacitate REAL: preia din ANAF (stare fiscală + ultimul bilanț
 // depus) și scrie direct în ca/profit/nrAngajati/anBilant — aceleași coloane
 // pe care lib/scor-companie.ts le folosește deja la „Mărime & profitabilitate",

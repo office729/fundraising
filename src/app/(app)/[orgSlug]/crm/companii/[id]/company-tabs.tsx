@@ -8,6 +8,7 @@ import { useLocale } from "../../lib/locale-context";
 import { COMPANII_DICT } from "@/lib/i18n/dictionaries/companii";
 import { ContactePanel } from "./contacte-panel";
 import { ContractPanel } from "./contract-panel";
+import { DocumentePanel } from "./documente-panel";
 import { EditarePanel } from "./editare-panel";
 import { NotitePanel } from "./notite-panel";
 import { SponsorizariPanel } from "./sponsorizari-panel";
@@ -38,7 +39,9 @@ export function CompanyTabs({
   defaultTab,
   ghid,
   campanii,
+  documente,
 }: {
+  documente: Parameters<typeof DocumentePanel>[0]["documente"];
   campanii: Parameters<typeof SponsorizariPanel>[0]["campanii"];
   defaultTab: string;
   ghid: Omit<Parameters<typeof ContactePanel>[0], "companyId" | "contacte">;
@@ -130,13 +133,7 @@ export function CompanyTabs({
               ))}
             </div>
           );
-        if (active === "documente")
-          return (
-            <EmptyState
-              title={dict.documenteEmpty.title}
-              description={dict.documenteEmpty.description}
-            />
-          );
+        if (active === "documente") return <DocumentePanel companyId={c.id} documente={documente} />;
         if (active === "contacte") return <ContactePanel companyId={c.id} contacte={contacte} {...ghid} />;
         return (
           <EditarePanel

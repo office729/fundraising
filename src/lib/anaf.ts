@@ -31,6 +31,10 @@ export type AnafStareFiscala = {
   platitorTva: boolean;
   codCaen: string | null;
   dataInregistrare: string | null;
+  adresa: string | null;
+  nrRegCom: string | null;
+  judet: string | null; // text brut ANAF, ex. „Județul Ilfov” / „Municipiul București”
+  localitate: string | null;
 };
 
 export async function verificaStareFiscala(cuiText: string): Promise<AnafStareFiscala | null> {
@@ -55,6 +59,10 @@ export async function verificaStareFiscala(cuiText: string): Promise<AnafStareFi
     platitorTva: g.inregistrare_scop_Tva?.scpTVA === true,
     codCaen: g.date_generale?.cod_CAEN ?? null,
     dataInregistrare: g.date_generale?.data_inregistrare ?? null,
+    adresa: g.date_generale?.adresa ?? null,
+    nrRegCom: g.date_generale?.nrRegCom ?? null,
+    judet: g.adresa_sediu_social?.sdenumire_Judet ?? null,
+    localitate: g.adresa_sediu_social?.sdenumire_Localitate ?? null,
   };
 }
 
