@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Manrope, Sora } from "next/font/google";
 
 import { AnalyticsConsent } from "@/components/analytics-consent";
@@ -29,6 +29,10 @@ const inter = Inter({
   preload: false,
 });
 
+// Doar temă albă: fără comutare automată pe întunecat după setarea telefonului/computerului (amesteca părți închise cu părți albe).
+// colorScheme „light” ține și controalele browserului (câmpuri, bare de derulare) în aspect deschis.
+export const viewport: Viewport = { colorScheme: "light" };
+
 export const metadata: Metadata = {
   // Baza pentru adresele relative din metadate (canonical, og:image) — fără ea rămâneau relative sau lipseau.
   metadataBase: new URL("https://alexandrit.ro"),
@@ -36,8 +40,6 @@ export const metadata: Metadata = {
   title: { default: "Alexandrit", template: `%s${SUFIX_TITLU}` },
   description: "Instrumente de fundraising pentru ONG-uri din România",
 };
-
-const themeScript = `(function(){try{var t=localStorage.getItem('theme');var d=t?t==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;if(d)document.documentElement.classList.add('dark');}catch(e){}})();`;
 
 export default async function RootLayout({
   children,
@@ -51,9 +53,6 @@ export default async function RootLayout({
       suppressHydrationWarning
       className={`${manrope.variable} ${sora.variable} ${inter.variable} h-full antialiased`}
     >
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-      </head>
       <body className="min-h-full">
         {children}
         <AnalyticsConsent texts={COOKIES_DICT[locale].banner} />
