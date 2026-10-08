@@ -83,16 +83,61 @@ function SignupFormInner({ dict }: { dict: Dict }) {
         {!areInvitatie &&
           PLAN_QUERY_KEYS.map((key) => <input key={key} type="hidden" name={key} value={planValues[key] ?? ""} />)}
         {!areInvitatie && (
-          <label className="text-sm font-medium text-ink">
-            {dict.signup.numeOrgLabel}
-            <input
-              name="orgName"
-              defaultValue={valori.orgName}
-              required
-              className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink"
-              placeholder={dict.signup.numeOrgPlaceholder}
-            />
-          </label>
+          <>
+            <label className="text-sm font-medium text-ink">
+              {dict.signup.numeTauLabel}
+              <input
+                name="numeContact"
+                defaultValue={valori.numeContact}
+                autoComplete="name"
+                maxLength={120}
+                required
+                className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink"
+                placeholder={dict.signup.numeTauPlaceholder}
+              />
+            </label>
+            <label className="text-sm font-medium text-ink">
+              {dict.signup.numeOrgLabel}
+              <input
+                name="orgName"
+                defaultValue={valori.orgName}
+                maxLength={120}
+                required
+                className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink"
+                placeholder={dict.signup.numeOrgPlaceholder}
+              />
+            </label>
+            <label className="text-sm font-medium text-ink">
+              {dict.signup.telefonLabel}
+              <input
+                type="tel"
+                name="telefon"
+                defaultValue={valori.telefon}
+                autoComplete="tel"
+                inputMode="tel"
+                required
+                className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink"
+                placeholder={dict.signup.telefonPlaceholder}
+              />
+            </label>
+            <div className="text-sm font-medium text-ink">
+              <label htmlFor="cif-org">{dict.signup.cifLabel}</label>
+              <input
+                id="cif-org"
+                name="cif"
+                defaultValue={valori.cif}
+                autoCapitalize="characters"
+                autoComplete="off"
+                required
+                aria-describedby="cif-indiciu"
+                className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink"
+                placeholder={dict.signup.cifPlaceholder}
+              />
+              <p id="cif-indiciu" className="mt-1 text-xs font-normal text-muted">
+                {dict.signup.cifIndiciu}
+              </p>
+            </div>
+          </>
         )}
         <label className="text-sm font-medium text-ink">
           {dict.emailLabel}

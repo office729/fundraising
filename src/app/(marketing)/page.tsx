@@ -34,7 +34,7 @@ export default async function LandingPage({
     const sp = await searchParams;
     // Valorile alese la înscrierea cu email (păstrate în metadatele contului cât
     // timp emailul aștepta confirmarea) servesc drept implicit; query-ul are prioritate.
-    const meta = (authUser.user_metadata ?? {}) as { org_name?: unknown; ref?: unknown; plan_query?: unknown };
+    const meta = (authUser.user_metadata ?? {}) as { org_name?: unknown; full_name?: unknown; telefon?: unknown; cif?: unknown; ref?: unknown; plan_query?: unknown };
     const metaPlan = meta.plan_query && typeof meta.plan_query === "object" ? (meta.plan_query as Record<string, unknown>) : {};
     const dinQuery = extractPlanQuery((key) => {
       const value = sp[key];
@@ -46,7 +46,18 @@ export default async function LandingPage({
     const refValue = sp.ref;
     const referralCode = (Array.isArray(refValue) ? refValue[0] : refValue) ?? (typeof meta.ref === "string" ? meta.ref : "");
     const orgNameInitial = typeof meta.org_name === "string" ? meta.org_name : "";
-    return <FinalizeForm email={authUser.email} planValues={planValues} referralCode={referralCode} orgNameInitial={orgNameInitial} />;
+    const text = (v: unknown) => (typeof v === "string" ? v : "");
+    return (
+      <FinalizeForm
+        email={authUser.email}
+        planValues={planValues}
+        referralCode={referralCode}
+        orgNameInitial={orgNameInitial}
+        numeInitial={text(meta.full_name)}
+        telefonInitial={text(meta.telefon)}
+        cifInitial={text(meta.cif)}
+      />
+    );
   }
 
   const locale = await getLocale();

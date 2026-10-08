@@ -5,12 +5,14 @@ import { redirect } from "next/navigation";
 
 import { semnalizeazaEveniment } from "@/lib/analytics-server";
 import { ensureAppUser, inregistreazaAcceptareTermeni } from "@/lib/auth/dal";
-import { creeazaOrganizatieNoua, MAX_LUNGIME_NUME_ORGANIZATIE } from "@/lib/auth/provizionare";
+import { cifFolosit, creeazaOrganizatieNoua, MAX_LUNGIME_NUME_ORGANIZATIE } from "@/lib/auth/provizionare";
 import { obtineIpClient, verificaLimitaRata } from "@/lib/auth/rate-limit";
 import { citestePlanulAlesDinFormular } from "@/lib/billing/plan-from-form";
 import { PLAN_QUERY_KEYS } from "@/lib/billing/plan-query";
 import { db } from "@/lib/db";
 import { esteEmailTemporar } from "@/lib/email-temporar";
+import { cifValidFormat } from "@/lib/iban";
+import { normalizeazaTelefon } from "@/lib/telefon";
 import { AUTH_DICT } from "@/lib/i18n/dictionaries/auth";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { createClient } from "@/lib/supabase/server";
@@ -23,6 +25,9 @@ export async function signupAction(
   const inviteToken = String(formData.get("inviteToken") ?? "").trim();
   const beneficiarInviteToken = String(formData.get("beneficiarInviteToken") ?? "").trim();
   const orgName = String(formData.get("orgName") ?? "").trim();
+  const numeContact = String(formData.get("numeContact") ?? "").trim();
+  const telefonBrut = String(formData.get("telefon") ?? "").trim();
+  const cifBrut = String(formData.get("cif") ?? "").trim();
   const referralCode = String(formData.get("ref") ?? "").trim();
   const email = String(formData.get("email") ?? "")
     .trim()
@@ -56,6 +61,17 @@ export async function signupAction(
     return { error: errors.preaMulteIncercari };
   }
 
+  // Organizație nouă: nume, telefon și CIF obligatorii (cei invitați într-o organizație existentă nu le completează).
+  const esteOrgNoua = !inviteToken && !beneficiarInviteToken;
+  let telefon: string | null = null;
+  if (esteOrgNoua) {
+    if (!numeContact || numeContact.length > 120) return { error: errors.numeLipsa };
+    telefon = normalizeazaTelefon(telefonBrut);
+    if (!telefon) return { error: errors.telefonInvalid };
+    if (!cifBrut || !cifValidFormat(cifBrut)) return { error: errors.cifInvalid };
+    if (await cifFolosit(cifBrut)) return { error: errors.cifExistent };
+  }
+
   // Ce a ales userul la înscriere (numele organizației, planul, codul de
   // recomandare) se păstrează în metadatele contului: dacă emailul trebuie
   // confirmat, organizația se creează abia după confirmare (pasul de finalizare
@@ -65,7 +81,7 @@ export async function signupAction(
     const v = formData.get(key);
     if (typeof v === "string" && v) planQuery[key] = v.slice(0, 200);
   }
-  const metadate = inviteToken || beneficiarInviteToken ? undefined : { org_name: orgName, ref: referralCode.slice(0, 100), plan_query: planQuery };
+  const metadate = inviteToken || beneficiarInviteToken ? undefined : { org_name: orgName, full_name: numeContact, telefon, cif: cifBrut.toUpperCase().replace(/\s+/g, ""), ref: referralCode.slice(0, 100), plan_query: planQuery };
 
   const supabase = await createClient();
   // Mesajul Supabase (error.message) vine mereu în engleză, indiferent de
@@ -119,12 +135,15 @@ export async function signupAction(
   // provizionare imediată — utilizator + organizație + membership de owner.
   const rezultat = await creeazaOrganizatieNoua({
     email,
+    numeUtilizator: numeContact,
+    telefon,
+    cif: cifBrut,
     orgName,
     referralCode,
     planAles: citestePlanulAlesDinFormular(formData),
   });
   if (!rezultat.ok) {
-    return { error: errors.limitaOrganizatii };
+    return { error: rezultat.motiv === "cif_existent" ? errors.cifExistent : errors.limitaOrganizatii };
   }
 
   // redirect() trebuie apelat DUPĂ ce tranzacția s-a încheiat — aruncă o

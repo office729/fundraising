@@ -28,6 +28,8 @@ export const organizations = pgTable("organizations", {
   // src/lib/campaign-templates.ts); CIF-ul e validat doar ca FORMAT (nu
   // checksum complet), cu cifValidFormat() din lib/iban.ts.
   cif: text("cif"),
+  // Telefonul de contact al organizației (completat la înscriere); folosit și la plata cu cardul (cerut de procesator).
+  telefon: text("telefon"),
   // Date de facturare — completate din Setări, folosite la emiterea automată a
   // facturii Oblio pentru abonamentul platformei (vezi lib/oblio.ts,
   // lib/billing/netopia-confirm.ts). Opționale (nu blochează nimic la lipsă,

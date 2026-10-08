@@ -15,11 +15,17 @@ export function FinalizeForm({
   planValues = {},
   referralCode = "",
   orgNameInitial = "",
+  numeInitial = "",
+  telefonInitial = "",
+  cifInitial = "",
 }: {
   email: string;
   planValues?: PlanQueryValues;
   referralCode?: string;
   orgNameInitial?: string;
+  numeInitial?: string;
+  telefonInitial?: string;
+  cifInitial?: string;
 }) {
   const [state, formAction, pending, valori] = useActionStatePastrat(finalizeazaOrganizatiaAction, { error: null });
   const alegerePlan = useAlegerePlan(planValues);
@@ -38,7 +44,7 @@ export function FinalizeForm({
     <main className="mx-auto flex max-w-sm flex-col justify-center px-6 py-24">
       <h1 className="font-display text-2xl font-bold text-ink">Încă un pas</h1>
       <p className="mt-1 text-sm text-muted">
-        Ești autentificat(ă) ca <strong>{email}</strong>. Cum se numește organizația pentru care creezi contul?
+        Ești autentificat(ă) ca <strong>{email}</strong>. Completează datele organizației pentru care creezi contul.
       </p>
 
       {alegerePlan && (
@@ -60,17 +66,59 @@ export function FinalizeForm({
           <input key={key} type="hidden" name={key} value={planValues[key] ?? ""} />
         ))}
         <label className="text-sm font-medium text-ink">
+          Numele tău
+          <input
+            name="numeContact"
+            defaultValue={valori.numeContact ?? numeInitial}
+            autoComplete="name"
+            maxLength={120}
+            required
+            autoFocus
+            placeholder="ex. Maria Popescu"
+            className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink"
+          />
+        </label>
+        <label className="text-sm font-medium text-ink">
           Numele organizației
           <input
             name="orgName"
             defaultValue={valori.orgName ?? orgNameInitial}
             maxLength={120}
             required
-            autoFocus
             placeholder="ex. Asociația Sprijin"
             className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink"
           />
         </label>
+        <label className="text-sm font-medium text-ink">
+          Număr de telefon
+          <input
+            type="tel"
+            name="telefon"
+            defaultValue={valori.telefon ?? telefonInitial}
+            autoComplete="tel"
+            inputMode="tel"
+            required
+            placeholder="ex. 0722 123 456"
+            className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink"
+          />
+        </label>
+        <div className="text-sm font-medium text-ink">
+          <label htmlFor="cif-org-fin">CIF-ul organizației</label>
+          <input
+            id="cif-org-fin"
+            name="cif"
+            defaultValue={valori.cif ?? cifInitial}
+            autoCapitalize="characters"
+            autoComplete="off"
+            required
+            aria-describedby="cif-indiciu-fin"
+            placeholder="ex. RO12345678"
+            className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink"
+          />
+          <p id="cif-indiciu-fin" className="mt-1 text-xs font-normal text-muted">
+            Îl găsești pe certificatul de înregistrare al organizației (doar cifre, cu sau fără RO).
+          </p>
+        </div>
 
         <label className="flex items-start gap-2.5 text-[13px] leading-relaxed text-body">
           <input

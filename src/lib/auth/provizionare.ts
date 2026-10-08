@@ -35,11 +35,30 @@ function hashRegistru(email: string): string {
   return createHmac("sha256", process.env.ORG_SECRETS_KEY ?? "").update(`trial:${emailNormalizatPentruRegistru(email)}`).digest("hex");
 }
 
-export type RezultatProvizionare = { ok: true; slug: string } | { ok: false; motiv: "limita_organizatii" };
+export type RezultatProvizionare = { ok: true; slug: string } | { ok: false; motiv: "limita_organizatii" | "cif_existent" };
+
+// Același calcul ca indexul unic organizations_cif_norm_unique: fără spații, fără prefixul RO, majuscule.
+function cifNormalizat(cif: string): string {
+  return cif.trim().toUpperCase().replace(/\s/g, "").replace(/^RO/, "");
+}
+const EXPRESIE_CIF_NORMALIZAT = sql`upper(regexp_replace(regexp_replace(${organizations.cif}, '\s', '', 'g'), '^RO', '', 'i'))`;
+
+// Există deja o organizație cu acest CIF? (verificare înainte de crearea contului de autentificare, ca utilizatorul
+// să afle imediat și să nu rămână cu un cont fără organizație).
+export async function cifFolosit(cif: string): Promise<boolean> {
+  const norm = cifNormalizat(cif);
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
+    const r = await tx.select({ id: organizations.id }).from(organizations).where(sql`${EXPRESIE_CIF_NORMALIZAT} = ${norm}`).limit(1);
+    return r.length > 0;
+  });
+}
 
 export async function creeazaOrganizatieNoua(p: {
   email: string;
   numeUtilizator?: string | null;
+  telefon?: string | null;
+  cif?: string | null;
   orgName: string;
   referralCode: string;
   planAles: ReturnType<typeof citestePlanulAlesDinFormular>;
@@ -73,6 +92,13 @@ export async function creeazaOrganizatieNoua(p: {
     // ar rula silențios pe 0 rânduri sub FORCE ROW LEVEL SECURITY.
     await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
 
+    // CIF-ul e unic între organizații (anti-abuz al probei gratuite): un mesaj clar, nu o eroare de bază de date.
+    const cifOrg = p.cif ? p.cif.trim().toUpperCase().replace(/\s+/g, "") : null;
+    if (cifOrg) {
+      const existent = await tx.select({ id: organizations.id }).from(organizations).where(sql`${EXPRESIE_CIF_NORMALIZAT} = ${cifNormalizat(cifOrg)}`).limit(1);
+      if (existent[0]) return { ok: false, motiv: "cif_existent" };
+    }
+
     let slug = baseSlug;
     for (let attempt = 1; attempt <= 20; attempt++) {
       const existing = esteSlugRezervat(slug)
@@ -95,7 +121,7 @@ export async function creeazaOrganizatieNoua(p: {
     // Bifa de acceptare de la înscriere include și Acordul de prelucrare a datelor (DPA) când mecanismul e activ —
     // acceptarea se înregistrează aici, pe organizația nou creată, în numele ei (cel care o creează devine owner).
     const dpa = DPA_ACTIV ? { dpaVersion: DPA_VERSIUNE, dpaAcceptedAt: new Date(), dpaAcceptedBy: appUser.id } : {};
-    await tx.insert(organizations).values({ id: orgId, name: p.orgName, slug, referredByOrgId, ...dpa, ...(p.planAles ?? {}) });
+    await tx.insert(organizations).values({ id: orgId, name: p.orgName, slug, cif: cifOrg, telefon: p.telefon ?? null, referredByOrgId, ...dpa, ...(p.planAles ?? {}) });
     await tx.insert(memberships).values({ orgId, userId: appUser.id, role: "owner" });
     await tx.insert(orgCreariRegistru).values({ emailHash: hashEmail });
     await tx.insert(formular230Beneficiari).values({ orgId, nume: p.orgName, slug: SLUG_PRINCIPAL, shortCode: genereazaCodScurt() });

@@ -14,3 +14,13 @@ export function normalizeazaTelefonE164(telefon: string): string | null {
   if (curatat.startsWith("0") && curatat.length === 10) return `+4${curatat}`;
   return curatat.startsWith("00") ? `+${curatat.slice(2)}` : null;
 }
+
+// Telefon introdus la înscriere (ex. „0722 123 456", „+40 722 123 456", „0722-123-456") -> forma curată, doar cifre
+// (cu „+" la început, dacă l-a scris). Null dacă nu arată a număr de telefon (9–15 cifre, fără litere).
+export function normalizeazaTelefon(brut: string): string | null {
+  const t = brut.trim();
+  if (!/^[+\d\s().-]+$/.test(t)) return null;
+  const cifre = t.replace(/\D/g, "");
+  if (cifre.length < 9 || cifre.length > 15) return null;
+  return (t.startsWith("+") ? "+" : "") + cifre;
+}
