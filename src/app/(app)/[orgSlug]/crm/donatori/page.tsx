@@ -13,7 +13,7 @@ import { DemoDatasetSection } from "./demo-dataset-section";
 import { FilterBarReali } from "./filter-bar-reali";
 import { parseFiltruDonatoriReali } from "./lib/filters";
 import { PaginaNavReali } from "./pagina-nav-reali";
-import { getDonatoriRealiLista, getStatisticiDonatoriReali } from "./queries";
+import { getCampaniiOptiuni, getDonatoriRealiLista, getStatisticiDonatoriReali } from "./queries";
 import { titluAbsolut } from "@/lib/page-titles";
 
 // Exemple fictive, afișate doar cât timp organizația nu are niciun donator real (nu se salvează nicăieri).
@@ -25,6 +25,10 @@ const DONATORI_EXEMPLU = [
   { nume: "Elena Georgescu", email: "elena.georgescu@exemplu.ro", telefon: "0755 400 500", sursa: "Pagina de campanie", wa: true, nr: 1, total: 50, zile: 21 },
   { nume: "Vlad Marinescu", email: "vlad.marinescu@exemplu.ro", telefon: "0766 500 600", sursa: "Donație recurentă", wa: false, nr: 12, total: 720, zile: 30 },
 ];
+
+// Data și ora în fusul României — „ultima donație” se arată cu ora, nu doar relativ.
+const dataOra = (d: Date) => d.toLocaleString("ro-RO", { timeZone: "Europe/Bucharest", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+const dataSimpla = (d: Date) => d.toLocaleDateString("ro-RO", { timeZone: "Europe/Bucharest", day: "2-digit", month: "2-digit", year: "numeric" });
 
 export default function DonatoriPage({
   params,
@@ -59,9 +63,10 @@ async function DonatoriContent({
   const locale = await getLocale();
   const dict = DONATORI_REALI_DICT[locale];
 
-  const [lista, stats] = await Promise.all([
+  const [lista, stats, campanii] = await Promise.all([
     getDonatoriRealiLista(orgSlug, filtru),
     getStatisticiDonatoriReali(orgSlug),
+    getCampaniiOptiuni(orgSlug),
   ]);
 
   return (
@@ -90,7 +95,7 @@ async function DonatoriContent({
         </Card>
       </div>
 
-      <FilterBarReali />
+      <FilterBarReali campanii={campanii} />
 
       <Card padded={false}>
         {lista.rows.length === 0 && stats.donatori === 0 ? (
@@ -142,7 +147,12 @@ async function DonatoriContent({
                 <div className="min-w-0">
                   <p className="truncate text-[13px] font-semibold text-[var(--ci-text)]">{d.nume}</p>
                   <p className="mt-0.5 truncate text-[12px] text-[var(--ci-text-muted)]">
-                    {d.email} · {d.telefon || dict.faraTelefon} · {d.sursa}
+                    {d.email} · {d.telefon || dict.faraTelefon}
+                    {(d.localitate || d.judet) && ` · ${[d.localitate, d.judet].filter(Boolean).join(", ")}`}
+                  </p>
+                  <p className="mt-0.5 truncate text-[12px] text-[var(--ci-text-muted)]">
+                    {d.pentruCine ? `Pentru: ${d.pentruCine}` : d.sursa}
+                    {d.numarDonatii > 0 ? ` · prima donație ${dataSimpla(d.primaDonatieLa)}` : " · fără donații încă"}
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-1.5">
@@ -157,7 +167,9 @@ async function DonatoriContent({
                   <span className="ci-tabular ml-2 text-[13px] font-semibold text-[var(--ci-text)]">
                     {d.totalDonat.toLocaleString("ro-RO")} lei
                   </span>
-                  <span className="text-[12px] text-[var(--ci-text-faint)]">{formatDataRelativa(d.ultimaDonatieLa.toISOString())}</span>
+                  <span className="ci-tabular text-[12px] text-[var(--ci-text-muted)]" title={formatDataRelativa(d.ultimaDonatieLa.toISOString())}>
+                    {d.numarDonatii > 0 ? `ultima: ${dataOra(d.ultimaDonatieLa)}` : "—"}
+                  </span>
                 </div>
               </Link>
             ))}

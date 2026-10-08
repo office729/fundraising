@@ -505,7 +505,7 @@ function AddDialog({
         <AddDonorDialog
           open={donorOpen}
           onClose={() => setDonorOpen(false)}
-          onCreated={(d) => router.push(`${base}/donatori/${d.id}`)}
+          onCreated={(id) => router.push(id ? `${base}/donatori/reali/${id}` : `${base}/donatori`)}
         />
       )}
       {projectOpen && (

@@ -184,6 +184,10 @@ export const donatoriReali = pgTable(
     nume: text("nume").notNull(),
     email: text("email").notNull(),
     telefon: text("telefon"),
+    // Completate manual (dialogul „Donator nou” / fișa donatorului) — pagina publică nu le colectează.
+    localitate: text("localitate"),
+    judet: text("judet"),
+    responsabil: text("responsabil"),
     sursa: text("sursa").notNull(),
     metodaPlata: text("metoda_plata").notNull().default("Card (Stripe)"),
     totalDonat: integer("total_donat").notNull().default(0), // lei, cache
