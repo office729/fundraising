@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { ImagePlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState } from "react";
 
@@ -92,9 +93,25 @@ export function BrandingForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.ok]);
 
-  function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+  const [numeFisier, setNumeFisier] = useState<string | null>(null);
+  const [eroareLogo, setEroareLogo] = useState<string | null>(null);
+  const [tragere, setTragere] = useState(false);
+
+  // Verificăm fișierul imediat, la alegere (nu abia la salvare, după ce omul a completat tot formularul).
+  function preiaFisier(file: File | undefined) {
     if (!file) return;
+    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+      setEroareLogo(dict.logoTipInvalid);
+      if (fileRef.current) fileRef.current.value = "";
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setEroareLogo(dict.logoPreaMare);
+      if (fileRef.current) fileRef.current.value = "";
+      return;
+    }
+    setEroareLogo(null);
+    setNumeFisier(file.name);
     const reader = new FileReader();
     reader.onload = () => {
       const dataUrl = reader.result as string;
@@ -106,26 +123,65 @@ export function BrandingForm({
     reader.readAsDataURL(file);
   }
 
+  function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    preiaFisier(e.target.files?.[0]);
+  }
+
+  function onDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setTragere(false);
+    const file = e.dataTransfer.files?.[0];
+    if (!file || !fileRef.current) return;
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    fileRef.current.files = dt.files;
+    preiaFisier(file);
+  }
+
   return (
     <form action={formAction} className="mt-6 flex flex-col gap-5">
       <div>
-        <label className="text-sm font-medium text-ink">{dict.logo}</label>
-        <div className="mt-2 flex items-center gap-4">
-          <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-lg border border-line bg-panel-2">
+        <div className="flex items-center gap-2">
+          <label htmlFor="logo-input" className="text-sm font-medium text-ink">
+            {dict.logo}
+          </label>
+          {!initialLogoUrl && !numeFisier && (
+            <span className="rounded-full bg-brand-green-soft px-2 py-0.5 text-[11px] font-semibold text-brand-green">{dict.logoIncepeAici}</span>
+          )}
+        </div>
+        <div
+          onDragOver={(e) => {
+            e.preventDefault();
+            setTragere(true);
+          }}
+          onDragLeave={() => setTragere(false)}
+          onDrop={onDrop}
+          className={`mt-2 flex flex-col items-center gap-4 rounded-xl border-2 border-dashed p-5 text-center transition sm:flex-row sm:text-left ${
+            tragere ? "border-brand-green bg-brand-green-soft" : "border-line bg-panel-2"
+          }`}
+        >
+          <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-line bg-white">
             {preview ? (
-              <Image src={preview} alt="" width={64} height={64} className="h-full w-full object-contain" unoptimized />
+              <Image src={preview} alt="" width={96} height={96} className="h-full w-full object-contain" unoptimized />
             ) : (
-              <span className="text-xs text-muted">{dict.faraLogo}</span>
+              <ImagePlus className="h-8 w-8 text-muted-2" aria-hidden />
             )}
           </div>
-          <button
-            type="button"
-            onClick={() => fileRef.current?.click()}
-            className="rounded-lg border border-line bg-panel px-3 py-1.5 text-sm font-medium text-ink transition hover:border-brand-green"
-          >
-            {dict.incarcaLogo}
-          </button>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-ink">{preview ? dict.logoSchimbaTitlu : dict.logoDropTitlu}</p>
+            <p className="mt-0.5 text-xs text-muted">
+              {dict.logoDropIndiciu} {dict.logoFormat}
+            </p>
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="mt-3 rounded-lg bg-brand-green px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-green-hover"
+            >
+              {preview ? dict.logoSchimba : dict.incarcaLogo}
+            </button>
+          </div>
           <input
+            id="logo-input"
             ref={fileRef}
             type="file"
             name="logo"
@@ -134,7 +190,23 @@ export function BrandingForm({
             onChange={onFileChange}
           />
         </div>
-        <p className="mt-1 text-xs text-muted">{dict.logoFormat}</p>
+        {eroareLogo && (
+          <p role="alert" className="mt-2 text-sm text-red-600">
+            {eroareLogo}
+          </p>
+        )}
+        {numeFisier && !eroareLogo && (
+          <div className="mt-2 flex flex-wrap items-center gap-3 rounded-lg bg-brand-amber-soft px-3 py-2 text-sm text-ink">
+            <span>{dict.logoAleasa(numeFisier)}</span>
+            <button
+              type="submit"
+              disabled={pending}
+              className="rounded-md bg-brand-green px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-brand-green-hover disabled:opacity-60"
+            >
+              {pending ? dict.seSalveaza : dict.logoSalveazaAcum}
+            </button>
+          </div>
+        )}
       </div>
 
       <label className="text-sm font-medium text-ink">
