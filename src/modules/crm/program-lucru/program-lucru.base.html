@@ -18,10 +18,12 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--body);background:var(--parchment);color:var(--ink);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;padding-bottom:80px}
 .wrap{max-width:980px;margin:0 auto;padding:24px 16px}
-header{display:flex;align-items:center;gap:14px;margin-bottom:12px;flex-wrap:wrap}
-h1{font-family:var(--display);font-weight:700;font-size:23px;letter-spacing:-.015em}
-h1 small{display:block;font-family:var(--body);font-weight:500;font-size:12.5px;color:var(--muted)}
-.userbox{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted)}
+/* Antet: fără logo — eticheta organizației (eyebrow) + titlul, pe un panou curat; „Eu sunt” în dreapta. */
+header{display:flex;align-items:center;gap:18px;margin-bottom:16px;flex-wrap:wrap;background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:18px 22px;box-shadow:0 1px 2px rgba(43,35,32,.04),0 8px 24px rgba(43,35,32,.05)}
+h1{font-family:var(--display);font-weight:700;font-size:24px;letter-spacing:-.02em;line-height:1.15}
+h1 .eyebrow{display:block;font-family:var(--body);font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+h1 small{display:block;font-family:var(--body);font-weight:500;font-size:12.5px;color:var(--muted);margin-top:4px;letter-spacing:0}
+.userbox{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 select,input[type=text],input[type=date],input[type=number]{padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:var(--paper);font-family:var(--body);font-size:14px;color:var(--ink);outline:none}
 .userbox select{border:1.5px solid var(--red);font-weight:600;color:var(--red-deep)}
 input:focus,select:focus{border-color:var(--red);box-shadow:0 0 0 3px var(--red-soft)}
@@ -32,7 +34,10 @@ input:focus,select:focus{border-color:var(--red);box-shadow:0 0 0 3px var(--red-
 .chipbtn{padding:9px 15px;border-radius:99px;border:1px solid var(--line);background:var(--paper);font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;font-family:var(--body)}
 .chipbtn.on{background:var(--ink);border-color:var(--ink);color:var(--parchment)}
 .chipbtn .bdg{display:inline-block;background:var(--red);color:#fff;border-radius:99px;font-size:11px;padding:1px 7px;margin-left:6px;font-weight:700}
-.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:16px;background:#F3ECDF;border:1px solid var(--line);border-radius:14px;padding:5px}
+.tabs .chipbtn{border:none;background:transparent;border-radius:10px;padding:9px 14px;color:var(--muted);transition:background .12s,color .12s}
+.tabs .chipbtn:hover{color:var(--ink)}
+.tabs .chipbtn.on{background:var(--paper);color:var(--ink);box-shadow:0 1px 3px rgba(43,35,32,.16)}
 .toolrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
 .info{background:var(--blue-soft);color:var(--blue);border-radius:12px;padding:11px 15px;font-size:12.5px;margin-bottom:14px}
 .warn{background:var(--amber-soft);color:var(--amber);border-radius:12px;padding:11px 15px;font-size:12.5px;margin-bottom:14px}
@@ -115,8 +120,7 @@ input[type=range].fs::-moz-range-thumb{height:19px;width:19px;border-radius:50%;
 <body>
 <div class="wrap">
 <header>
-  <img src="__FA_ORG_LOGO__" alt="__FA_ORG_NAME__" style="height:56px;width:auto;flex:none" onerror="this.style.display='none'">
-  <h1>Program de lucru pe cazuri<small>echipa de fundraising · 8:30–15:30 · rutina fiecăreia + cazurile active, intercalate fără suprapunere</small></h1>
+  <h1><span class="eyebrow">__FA_ORG_NAME__</span>Program de lucru pe cazuri<small>echipa de fundraising · 8:30–15:30 · rutina fiecăreia + cazurile active, intercalate fără suprapunere</small></h1>
   <div class="userbox">Eu sunt:
     <select id="whoami" onchange="setUser(this.value)">
       <option value="">— alege —</option>
