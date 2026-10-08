@@ -8,6 +8,7 @@ import { type OrgContext, withOrgSession } from "@/lib/auth/guard";
 import { amprentePersoana } from "@/lib/gdpr-persoane";
 import { companies, contacts } from "@/lib/db/schema";
 import { valideazaFacebook, valideazaLinkedin } from "@/lib/pagini-sociale";
+import { stadiuD177Valid } from "@/lib/stadii-d177";
 
 import type { ActionState, PersoanaDeAprobat } from "../actions";
 
@@ -172,3 +173,16 @@ export const propunePersoane = withOrgSession(
     return { error: null, adaugate: noi.length, excluse: nrExcluse };
   },
 );
+// Stadiul contractului D177 (vezi lib/stadii-d177.ts). Al doilea clic pe stadiul curent îl resetează la „nou”.
+export const seteazaStadiuD177 = withOrgSession(async (ctx, companyId: string, stadiu: string): Promise<ActionState> => {
+  if (!stadiuD177Valid(stadiu)) return { error: "Stadiu necunoscut." };
+  const r = await ctx.db
+    .update(companies)
+    .set({
+      updatedBy: ctx.userId,
+      extra: sql`coalesce(${companies.extra}, '{}'::jsonb) || ${JSON.stringify({ d177Stadiu: stadiu })}::text::jsonb`,
+    })
+    .where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId)))
+    .returning({ id: companies.id });
+  return r[0] ? { error: null } : { error: "Firma nu a fost găsită." };
+});

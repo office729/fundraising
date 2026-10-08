@@ -8,6 +8,7 @@ import { useLocale } from "../../lib/locale-context";
 import { COMPANII_DICT } from "@/lib/i18n/dictionaries/companii";
 import { ContactePanel } from "./contacte-panel";
 import { ContractPanel } from "./contract-panel";
+import { D177StadiuCard } from "./d177-stadiu-card";
 import { DocumentePanel } from "./documente-panel";
 import { EditarePanel } from "./editare-panel";
 import { NotitePanel } from "./notite-panel";
@@ -40,7 +41,9 @@ export function CompanyTabs({
   ghid,
   campanii,
   documente,
+  d177Stadiu,
 }: {
+  d177Stadiu: string;
   documente: Parameters<typeof DocumentePanel>[0]["documente"];
   campanii: Parameters<typeof SponsorizariPanel>[0]["campanii"];
   defaultTab: string;
@@ -110,6 +113,7 @@ export function CompanyTabs({
         if (active === "contract")
           return (
             <div className="space-y-6">
+              <D177StadiuCard companyId={c.id} stadiu={d177Stadiu} />
               <ContractPanel
                 companyId={c.id}
                 numarContract={c.numarContract}

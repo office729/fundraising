@@ -13,6 +13,7 @@ import { IstoricEtape } from "./istoric-etape";
 import { ContractSponsorizareSection } from "./contract-sponsorizare-section";
 import { bifeDinEtapa } from "@/lib/etape-companie";
 import { urlsSemnate } from "@/lib/fisiere-private";
+import { stadiuD177Valid } from "@/lib/stadii-d177";
 import type { PersoanaDeAprobat } from "../actions";
 import { PaginiSociale } from "./pagini-sociale";
 import { PipelineCard } from "./pipeline-card";
@@ -43,6 +44,7 @@ export default async function CompanieProfilPage({
   const extra = (c.extra ?? {}) as {
     etapeBifate?: string[];
     deAprobat?: PersoanaDeAprobat[];
+    d177Stadiu?: string;
     documente?: { id: string; nume: string; ref: string; tip: string; marime: number; la: string; deNume: string | null }[];
   };
   // Documentele stau în bucket privat — URL semnat, cu valabilitate scurtă, generat la fiecare afișare.
@@ -148,6 +150,7 @@ export default async function CompanieProfilPage({
         activitate={activitate}
         campanii={campanii}
         documente={documente}
+        d177Stadiu={stadiuD177Valid(extra.d177Stadiu) ? extra.d177Stadiu : "nou"}
         defaultTab={defaultTab}
         ghid={{
           firma: { id: c.id, nume: c.nume, administrator: c.administrator, linkedin: c.linkedin, site: c.site },

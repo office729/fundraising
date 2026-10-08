@@ -1,26 +1,18 @@
 "use client";
 
-import { Check, Trophy, X } from "lucide-react";
+import { Trophy, X } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 
 import { ETAPE, ETAPE_PATH_KEYS, ETICHETE_REZULTAT, FAZE, etapaCurenta } from "@/lib/etape-companie";
 
 import { Card } from "../../components/ui/card";
+import { ProgresPath, StadiiPath, type FazaPath } from "../../components/stadii-path";
 import { useLocale } from "../../lib/locale-context";
 import { comutaEtapaBifata, seteazaRezultat } from "../actions";
 
-const SAGEATA = 10; // px — vârful săgeții (chevron)
-
-function formaSageata(prima: boolean): string {
-  const s = SAGEATA;
-  return prima
-    ? `polygon(0 0, calc(100% - ${s}px) 0, 100% 50%, calc(100% - ${s}px) 100%, 0 100%)`
-    : `polygon(0 0, calc(100% - ${s}px) 0, 100% 50%, calc(100% - ${s}px) 100%, 0 100%, ${s}px 50%)`;
-}
-
-// Path în stil Salesforce / HubSpot: 4 faze colorate, fiecare etapă e o săgeată bifabilă. Clic = bifează / debifează
-// (se salvează imediat); etapa curentă = cea mai avansată bifată. „Sponsorizat” și „Respins” sunt rezultate separate.
+// Etapele firmei, ca path cu faze colorate. Clic pe o etapă o bifează / debifează (se salvează imediat); etapa curentă =
+// cea mai avansată bifată. „Sponsorizat” și „Respins” sunt rezultate separate de path.
 export function PipelineCard({ companyId, bifate: bifateInitiale, status }: { companyId: string; bifate: string[]; status: string }) {
   const { orgSlug } = useParams<{ orgSlug: string }>();
   const router = useRouter();
@@ -34,6 +26,10 @@ export function PipelineCard({ companyId, bifate: bifateInitiale, status }: { co
   const pas = ETAPE_PATH_KEYS.indexOf(curenta) + 1;
   const eticheta = ETAPE.find((e) => e.k === curenta)?.[locale] ?? curenta;
   const faza = FAZE.find((f) => f.etape.some((e) => e.k === curenta));
+  const faze: FazaPath[] = useMemo(
+    () => FAZE.map((f) => ({ k: f.k, titlu: locale === "ro" ? f.ro : f.en, culoare: f.culoare, etape: f.etape.map((e) => ({ k: e.k, eticheta: locale === "ro" ? e.ro : e.en })) })),
+    [locale],
+  );
 
   function comuta(k: string) {
     const urmator = new Set(bifate);
@@ -71,15 +67,18 @@ export function PipelineCard({ companyId, bifate: bifateInitiale, status }: { co
 
   const sponsorizat = statusLocal === "won";
   const respins = statusLocal === "lost";
+  const btnRezultat = "flex min-h-9 items-center gap-1.5 rounded-full border px-3.5 text-[13px] font-semibold transition-colors disabled:opacity-60";
 
   return (
     <Card>
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
         <div className="min-w-0">
           <h2 className="text-[15px] font-bold text-[var(--ci-text)]">{locale === "ro" ? "Etapă în pipeline" : "Pipeline stage"}</h2>
-          <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">
-            {locale === "ro" ? "Etapa curentă" : "Current stage"}:{" "}
-            <span className="font-semibold" style={{ color: faza?.culoare }}>{eticheta}</span> · {locale === "ro" ? `pasul ${pas} din ${ETAPE.length}` : `step ${pas} of ${ETAPE.length}`}
+          <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-[var(--ci-text-muted)]">
+            <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[12px] font-bold text-white" style={{ background: faza?.culoare }}>
+              {eticheta}
+            </span>
+            <span className="ci-tabular">{locale === "ro" ? `pasul ${pas} din ${ETAPE.length}` : `step ${pas} of ${ETAPE.length}`}</span>
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -88,9 +87,7 @@ export function PipelineCard({ companyId, bifate: bifateInitiale, status }: { co
             disabled={pending}
             onClick={() => rezultat("sponsorizat")}
             aria-pressed={sponsorizat}
-            className={`flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-semibold transition-colors ${
-              sponsorizat ? "bg-[var(--ci-green)] text-white" : "border border-[var(--ci-border)] text-[var(--ci-text-muted)] hover:border-[var(--ci-green)] hover:text-[var(--ci-green)]"
-            }`}
+            className={`${btnRezultat} ${sponsorizat ? "border-[var(--ci-green)] bg-[var(--ci-green)] text-white shadow-sm" : "border-[var(--ci-border)] text-[var(--ci-text-muted)] hover:border-[var(--ci-green)] hover:text-[var(--ci-green)]"}`}
           >
             <Trophy className="h-3.5 w-3.5" /> {ETICHETE_REZULTAT.sponsorizat[locale]}
           </button>
@@ -99,57 +96,19 @@ export function PipelineCard({ companyId, bifate: bifateInitiale, status }: { co
             disabled={pending}
             onClick={() => rezultat("respins")}
             aria-pressed={respins}
-            className={`flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-semibold transition-colors ${
-              respins ? "bg-[var(--ci-red)] text-white" : "border border-[var(--ci-border)] text-[var(--ci-text-muted)] hover:border-[var(--ci-red)] hover:text-[var(--ci-red)]"
-            }`}
+            className={`${btnRezultat} ${respins ? "border-[var(--ci-red)] bg-[var(--ci-red)] text-white shadow-sm" : "border-[var(--ci-border)] text-[var(--ci-text-muted)] hover:border-[var(--ci-red)] hover:text-[var(--ci-red)]"}`}
           >
             <X className="h-3.5 w-3.5" /> {ETICHETE_REZULTAT.respins[locale]}
           </button>
         </div>
       </div>
 
-      <div className={`mt-4 grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2 min-[1500px]:grid-cols-4 ${pending ? "opacity-80" : ""}`}>
-        {FAZE.map((f) => (
-          <div key={f.k} className="min-w-0">
-            <p className="mb-1 text-[10px] font-bold tracking-wide uppercase" style={{ color: f.culoare }}>
-              {locale === "ro" ? f.ro : f.en}
-            </p>
-            <div className="flex">
-              {f.etape.map((e, i) => {
-                const esteCurenta = e.k === curenta;
-                const esteFacuta = !esteCurenta && bifate.has(e.k);
-                const text = locale === "ro" ? e.ro : e.en;
-                return (
-                  <button
-                    key={e.k}
-                    type="button"
-                    disabled={pending}
-                    onClick={() => comuta(e.k)}
-                    title={text}
-                    aria-pressed={bifate.has(e.k)}
-                    className={`flex h-9 min-w-0 flex-1 items-center justify-center gap-1 text-[12px] font-semibold transition-[filter] hover:brightness-95 ${i > 0 ? "-ml-[3px]" : ""} ${
-                      esteCurenta ? "text-white" : esteFacuta ? "" : "bg-[var(--ci-surface-2)] text-[var(--ci-text-muted)]"
-                    }`}
-                    style={{
-                      clipPath: formaSageata(i === 0),
-                      paddingLeft: i === 0 ? 8 : SAGEATA + 4,
-                      paddingRight: SAGEATA + 2,
-                      ...(esteCurenta
-                        ? { background: f.culoare }
-                        : esteFacuta
-                          ? { background: `color-mix(in srgb, ${f.culoare} 18%, white)`, color: f.culoare }
-                          : {}),
-                    }}
-                  >
-                    {esteCurenta && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-white" />}
-                    {esteFacuta && <Check className="h-3 w-3 shrink-0" />}
-                    <span className="truncate">{text}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ))}
+      <div className="mt-3">
+        <ProgresPath pas={pas} total={ETAPE.length} culoare={faza?.culoare ?? "var(--ci-primary)"} />
+      </div>
+
+      <div className="mt-4">
+        <StadiiPath faze={faze} dezactivat={pending} onAlege={comuta} stare={(k) => (k === curenta ? "curenta" : bifate.has(k) ? "facuta" : "viitoare")} />
       </div>
       {eroare && <p className="mt-2 text-[13px] text-[var(--ci-red)]">{eroare}</p>}
     </Card>

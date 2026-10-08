@@ -56,6 +56,7 @@ export type RandCompanie = {
   localitate: string | null;
   linkedin: string | null;
   facebook: string | null;
+  d177Stadiu: string | null;
   responsabilNume: string | null;
   sumaSponsorizata: number;
   recurent: boolean;
@@ -83,6 +84,7 @@ const getCompaniiListaImpl = async (ctx: OrgContext, filtru: FiltruCompanii) => 
       localitate: companies.localitate,
       linkedin: companies.linkedin,
       facebook: companies.facebook,
+      d177Stadiu: sql<string | null>`${companies.extra}->>'d177Stadiu'`,
       responsabilNume: appUsers.name,
       sumaSponsorizata: sql<number>`coalesce(${companies.sumaSponsorizata}, 0)::int`,
       recurent: companies.recurent,

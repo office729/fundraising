@@ -7,6 +7,7 @@ import { Card } from "../components/ui/card";
 import { EmptyState } from "../components/ui/states";
 import { formatDataRelativa } from "../lib/format";
 import { segmentFirma } from "@/lib/id-scurt";
+import { etichetaStadiuD177 } from "@/lib/stadii-d177";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { COMPANII_DICT } from "@/lib/i18n/dictionaries/companii";
 import { D177Badge } from "./d177-badge";
@@ -128,6 +129,7 @@ async function CompaniiContent({
                       <D177Badge companyId={c.id} incasat={c.d177Incasat} />
                     </span>
                   )}
+                  {c.d177 && c.d177Stadiu && c.d177Stadiu !== "nou" && <Badge tone="indigo" icon={false}>{etichetaStadiuD177(c.d177Stadiu)}</Badge>}
                   {c.mec20 && <Badge tone="pink" icon={false}>20%</Badge>}
                   {c.decembrie && <Badge tone="indigo" icon={false}>{COMPANII_DICT[locale].filterBar.decembrie}</Badge>}
                   <span className="ci-tabular ml-2 text-[13px] font-semibold text-[var(--ci-text)]">
