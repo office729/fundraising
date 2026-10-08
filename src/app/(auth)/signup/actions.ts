@@ -10,6 +10,7 @@ import { obtineIpClient, verificaLimitaRata } from "@/lib/auth/rate-limit";
 import { citestePlanulAlesDinFormular } from "@/lib/billing/plan-from-form";
 import { PLAN_QUERY_KEYS } from "@/lib/billing/plan-query";
 import { db } from "@/lib/db";
+import { verificaCifLaInscriere } from "@/lib/auth/verifica-cif";
 import { esteEmailTemporar } from "@/lib/email-temporar";
 import { cifValidFormat } from "@/lib/iban";
 import { normalizeazaTelefon } from "@/lib/telefon";
@@ -64,12 +65,18 @@ export async function signupAction(
   // Organizație nouă: nume, telefon și CIF obligatorii (cei invitați într-o organizație existentă nu le completează).
   const esteOrgNoua = !inviteToken && !beneficiarInviteToken;
   let telefon: string | null = null;
+  let adresaSediu: string | null = null;
+  let judet: string | null = null;
   if (esteOrgNoua) {
     if (!numeContact || numeContact.length > 120) return { error: errors.numeLipsa };
     telefon = normalizeazaTelefon(telefonBrut);
     if (!telefon) return { error: errors.telefonInvalid };
     if (!cifBrut || !cifValidFormat(cifBrut)) return { error: errors.cifInvalid };
     if (await cifFolosit(cifBrut)) return { error: errors.cifExistent };
+    const anaf = await verificaCifLaInscriere(cifBrut);
+    if (!anaf.ok) return { error: anaf.motiv === "negasit" ? errors.cifNegasit : errors.cifInactiv };
+    adresaSediu = anaf.adresaSediu;
+    judet = anaf.judet;
   }
 
   // Ce a ales userul la înscriere (numele organizației, planul, codul de
@@ -138,6 +145,8 @@ export async function signupAction(
     numeUtilizator: numeContact,
     telefon,
     cif: cifBrut,
+    adresaSediu,
+    judet,
     orgName,
     referralCode,
     planAles: citestePlanulAlesDinFormular(formData),

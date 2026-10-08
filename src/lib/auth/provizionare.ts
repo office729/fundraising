@@ -59,6 +59,8 @@ export async function creeazaOrganizatieNoua(p: {
   numeUtilizator?: string | null;
   telefon?: string | null;
   cif?: string | null;
+  adresaSediu?: string | null;
+  judet?: string | null;
   orgName: string;
   referralCode: string;
   planAles: ReturnType<typeof citestePlanulAlesDinFormular>;
@@ -121,7 +123,7 @@ export async function creeazaOrganizatieNoua(p: {
     // Bifa de acceptare de la înscriere include și Acordul de prelucrare a datelor (DPA) când mecanismul e activ —
     // acceptarea se înregistrează aici, pe organizația nou creată, în numele ei (cel care o creează devine owner).
     const dpa = DPA_ACTIV ? { dpaVersion: DPA_VERSIUNE, dpaAcceptedAt: new Date(), dpaAcceptedBy: appUser.id } : {};
-    await tx.insert(organizations).values({ id: orgId, name: p.orgName, slug, cif: cifOrg, telefon: p.telefon ?? null, referredByOrgId, ...dpa, ...(p.planAles ?? {}) });
+    await tx.insert(organizations).values({ id: orgId, name: p.orgName, slug, cif: cifOrg, telefon: p.telefon ?? null, adresaSediu: p.adresaSediu ?? null, judet: p.judet ?? null, referredByOrgId, ...dpa, ...(p.planAles ?? {}) });
     await tx.insert(memberships).values({ orgId, userId: appUser.id, role: "owner" });
     await tx.insert(orgCreariRegistru).values({ emailHash: hashEmail });
     await tx.insert(formular230Beneficiari).values({ orgId, nume: p.orgName, slug: SLUG_PRINCIPAL, shortCode: genereazaCodScurt() });

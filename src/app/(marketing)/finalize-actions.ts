@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { getAuthUser } from "@/lib/auth/dal";
 import { creeazaOrganizatieNoua, MAX_LUNGIME_NUME_ORGANIZATIE } from "@/lib/auth/provizionare";
+import { verificaCifLaInscriere } from "@/lib/auth/verifica-cif";
 import { cifValidFormat } from "@/lib/iban";
 import { normalizeazaTelefon } from "@/lib/telefon";
 import { citestePlanulAlesDinFormular } from "@/lib/billing/plan-from-form";
@@ -43,6 +44,16 @@ export async function finalizeazaOrganizatiaAction(
     return { error: "Pentru a crea contul trebuie să accepți Termenii și condițiile și Politica de confidențialitate." };
   }
 
+  const anaf = await verificaCifLaInscriere(cifBrut);
+  if (!anaf.ok) {
+    return {
+      error:
+        anaf.motiv === "negasit"
+          ? "Nu am găsit acest CIF în ANAF. Verifică cifrele (fără spații) sau scrie-ne la vlad.placinta@alexandrit.ro."
+          : "Organizația cu acest CIF figurează ca inactivă sau radiată în ANAF, deci nu putem crea contul. Dacă e o greșeală, scrie-ne la vlad.placinta@alexandrit.ro.",
+    };
+  }
+
   const authUser = await getAuthUser();
   if (!authUser?.email) {
     redirect("/login");
@@ -54,6 +65,8 @@ export async function finalizeazaOrganizatiaAction(
     numeUtilizator: numeContact,
     telefon,
     cif: cifBrut,
+    adresaSediu: anaf.adresaSediu,
+    judet: anaf.judet,
     orgName,
     referralCode,
     planAles: citestePlanulAlesDinFormular(formData),

@@ -51,6 +51,11 @@ export async function verificaStareFiscala(cuiText: string): Promise<AnafStareFi
   const j = await r.json();
   const g = j?.found?.[0];
   if (!g) return null;
+  return stareDinRaspuns(cui, g);
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- forma răspunsului ANAF nu are tipuri publicate
+function stareDinRaspuns(cui: string, g: any): AnafStareFiscala {
   return {
     cui,
     denumire: g.date_generale?.denumire ?? null,
@@ -64,6 +69,31 @@ export async function verificaStareFiscala(cuiText: string): Promise<AnafStareFi
     judet: g.adresa_sediu_social?.sdenumire_Judet ?? null,
     localitate: g.adresa_sediu_social?.sdenumire_Localitate ?? null,
   };
+}
+
+// Pentru înscriere: spre deosebire de verificaStareFiscala (care întoarce null și când ANAF e picat), aici distingem
+// „CIF-ul nu există" de „nu am putut întreba ANAF" — un serviciu public cu limită de 1 cerere/secundă nu trebuie să blocheze înscrierile.
+export type CautareCifAnaf = { tip: "gasit"; stare: AnafStareFiscala } | { tip: "negasit" } | { tip: "indisponibil" };
+
+export async function cautaCifAnaf(cuiText: string): Promise<CautareCifAnaf> {
+  const cui = curataCui(cuiText);
+  if (!cui) return { tip: "negasit" };
+  try {
+    const azi = new Date().toISOString().slice(0, 10);
+    const r = await fetch(TVA_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify([{ cui: Number(cui), data: azi }]),
+      signal: AbortSignal.timeout(6000),
+    });
+    if (!r.ok) return { tip: "indisponibil" };
+    const j = await r.json();
+    const g = j?.found?.[0];
+    if (g) return { tip: "gasit", stare: stareDinRaspuns(cui, g) };
+    return Array.isArray(j?.notFound) && j.notFound.length > 0 ? { tip: "negasit" } : { tip: "indisponibil" };
+  } catch {
+    return { tip: "indisponibil" };
+  }
 }
 
 export type AnafBilant = {
