@@ -8,8 +8,6 @@ import { SETARI_ECHIPA_DICT } from "@/lib/i18n/dictionaries/setari-echipa";
 import { AbonamentSection } from "./abonament-section";
 import { listeazaFacturiAction } from "../billing-actions";
 import { BrandingForm } from "./branding-form";
-import { obtineStatusCanvaAction } from "./canva-actions";
-import { CanvaSection } from "./canva-section";
 import { DomainForm } from "./domain-form";
 import { obtineStatusReinnoireAutomata } from "./netopia-card-actions";
 import { obtineDateReferral } from "./referral-actions";
@@ -17,23 +15,21 @@ import { ReferralSection } from "./referral-section";
 import { DPA_ACTIV, DPA_VERSIUNE } from "@/lib/legal-version";
 
 import { DpaSection } from "./dpa-section";
-import { OrganizatieSection } from "./organizatie-section";
 import { obtineStatusStripeDonatii } from "./stripe-donatii-actions";
 import { StripeDonatiiSection } from "./stripe-donatii-section";
 
 // Corpul paginii de setări ale organizației (logo, adresă, abonament, plăți donații etc.) — afișat în CRM → Setări
 // (crm/setari/page.tsx), doar pentru owner/admin. Vechiul /setari redirecționează acolo.
-export async function SetariContinut({ orgSlug, canva }: { orgSlug: string; canva?: string }) {
+export async function SetariContinut({ orgSlug }: { orgSlug: string }) {
   const access = await requireOrgAccess(orgSlug);
   const locale = await getLocale();
   const dict = SETARI_ECHIPA_DICT[locale].orgSetari;
 
-  // Cinci citiri independente (fiecare cu propria tranzacție): rulează împreună, nu una după alta.
-  const [{ cod, numarRecomandari }, facturi, stripeStatus, canvaStatus, reinnoireAutomata] = await Promise.all([
+  // Patru citiri independente (fiecare cu propria tranzacție): rulează împreună, nu una după alta.
+  const [{ cod, numarRecomandari }, facturi, stripeStatus, reinnoireAutomata] = await Promise.all([
     obtineDateReferral(orgSlug),
     listeazaFacturiAction(orgSlug),
     obtineStatusStripeDonatii(orgSlug),
-    obtineStatusCanvaAction(orgSlug),
     obtineStatusReinnoireAutomata(orgSlug),
   ]);
   const hdrs = await headers();
@@ -55,7 +51,6 @@ export async function SetariContinut({ orgSlug, canva }: { orgSlug: string; canv
             ["plati-donatii", locale === "ro" ? "Plăți donații" : "Donation payments"],
             ["recomanda", locale === "ro" ? "Recomandă" : "Refer"],
             ...(DPA_ACTIV ? [["dpa", locale === "ro" ? "Acord date (DPA)" : "Data agreement (DPA)"]] : []),
-            ...(access.role === "owner" ? [["date-organizatie", locale === "ro" ? "Date și ștergere" : "Data and deletion"]] : []),
             ["roluri-integrari", locale === "ro" ? "Roluri și integrări" : "Roles and integrations"],
           ].map(([id, label]) => (
             <a key={id} href={`#${id}`} className="rounded-full border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-1.5 font-medium text-[var(--ci-text)] transition hover:bg-[var(--ci-surface-2)]">
@@ -107,7 +102,6 @@ export async function SetariContinut({ orgSlug, canva }: { orgSlug: string; canv
           locale={locale}
         />
         <ReferralSection cod={cod} numarRecomandari={numarRecomandari} locale={locale} />
-        <CanvaSection orgSlug={orgSlug} locale={locale} status={canvaStatus} feedback={canva} />
         {DPA_ACTIV && (
           <DpaSection
             orgSlug={orgSlug}
@@ -128,7 +122,6 @@ export async function SetariContinut({ orgSlug, canva }: { orgSlug: string; canv
             Deschide
           </Link>
         </section>
-        {access.role === "owner" && <OrganizatieSection orgSlug={orgSlug} locale={locale} />}
       </div>
       </div>
     </>
