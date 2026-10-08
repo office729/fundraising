@@ -12,6 +12,9 @@ import { JUDETE } from "@/lib/judete";
 import { citesteDateFacturareAction, salveazaDateFacturareAction, startCheckoutAction } from "./billing-actions";
 import { CustomPlanBuilder } from "./custom-plan-builder";
 
+// Planul personalizat (la cartă) e ascuns, la fel ca pe pagina publică de prețuri (hub/page.tsx). Codul rămâne; pune true ca să reapară.
+const AFISEAZA_PLAN_PERSONALIZAT = false;
+
 const PACHETE: { key: Exclude<OrgPackage, "trial" | "custom">; nume: string; popular?: boolean }[] = [
   { key: "start", nume: "START" },
   { key: "crestere", nume: "CREȘTERE", popular: true },
@@ -208,9 +211,11 @@ export function PackagePicker({ orgSlug, locale }: { orgSlug: string; locale: Lo
         })}
       </div>
 
-      <div className="mt-5">
-        <CustomPlanBuilder orgSlug={orgSlug} locale={locale} acord={acord} />
-      </div>
+      {AFISEAZA_PLAN_PERSONALIZAT && (
+        <div className="mt-5">
+          <CustomPlanBuilder orgSlug={orgSlug} locale={locale} acord={acord} />
+        </div>
+      )}
       </fieldset>
     </div>
   );
