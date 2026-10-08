@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { finalizeazaAutomatDinInscriere } from "@/lib/auth/finalizare-automata";
 import { createClient } from "@/lib/supabase/server";
 
 // Punct de ieșire comun pentru toate link-urile trimise pe email de Supabase
@@ -24,6 +25,13 @@ export async function GET(request: Request) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      // Confirmare de email după înscriere (destinația implicită „/"): organizația se creează acum, din datele date la înscriere.
+      // Pentru Google, resetare de parolă etc. nu există aceste date, deci nu se întâmplă nimic și se merge mai departe ca până acum.
+      if (new URL(destinatie).pathname === "/") {
+        const { data } = await supabase.auth.getUser();
+        const slug = data.user ? await finalizeazaAutomatDinInscriere(data.user).catch(() => null) : null;
+        if (slug) return NextResponse.redirect(`${origin}/${slug}/crm`);
+      }
       return NextResponse.redirect(destinatie);
     }
   }

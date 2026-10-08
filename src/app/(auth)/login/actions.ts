@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { findBeneficiaryProfile } from "@/lib/auth/beneficiar";
 import { ensureAppUser } from "@/lib/auth/dal";
+import { finalizeazaAutomatDinInscriere } from "@/lib/auth/finalizare-automata";
 import { obtineIpClient, verificaLimitaRata } from "@/lib/auth/rate-limit";
 import { db } from "@/lib/db";
 import { appUsers, memberships, organizations } from "@/lib/db/schema";
@@ -100,7 +101,11 @@ export async function loginAction(
     redirect("/beneficiar");
   }
   if (!orgSlug) {
-    redirect("/signup");
+    // Cont confirmat, dar organizația nu a apucat să se creeze (ex. a confirmat emailul din alt browser): o creăm din datele
+    // de la înscriere; dacă nu se poate, „/" arată formularul „Încă un pas", precompletat.
+    const { data } = await supabase.auth.getUser();
+    const slug = data.user ? await finalizeazaAutomatDinInscriere(data.user).catch(() => null) : null;
+    redirect(slug ? `/${slug}/crm` : "/");
   }
   redirect(`/${orgSlug}/crm`);
 }
