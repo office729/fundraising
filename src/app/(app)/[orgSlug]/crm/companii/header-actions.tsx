@@ -3,7 +3,7 @@
 import { idScurt, segmentFirma } from "@/lib/id-scurt";
 import { CalendarClock, Plus, Trophy, Upload } from "lucide-react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useRef, useState } from "react";
 
 import { Button } from "../components/ui/button";
@@ -21,6 +21,9 @@ export function AddCompanyButton() {
   const locale = useLocale();
   const dict = COMPANII_DICT[locale].header;
   const [open, setOpen] = useState(false);
+  // Pe o listă filtrată după marcaj (ex. ?marcaj=d177), firma nouă primește marcajul respectiv și rămâi pe listă,
+  // ca să o vezi apărând — nu ești dus pe fișa ei.
+  const marcaje = useSearchParams().getAll("marcaj").filter((m) => m === "d177" || m === "decembrie" || m === "caz");
 
   return (
     <>
@@ -30,9 +33,11 @@ export function AddCompanyButton() {
       <AddCompanyFormDialog
         open={open}
         onClose={() => setOpen(false)}
+        marcaje={marcaje}
         onCreated={(id) => {
           setOpen(false);
-          router.push(`/${orgSlug}/crm/companii/${idScurt(id)}`);
+          if (marcaje.length > 0) router.refresh();
+          else router.push(`/${orgSlug}/crm/companii/${idScurt(id)}`);
         }}
       />
     </>

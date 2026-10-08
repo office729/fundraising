@@ -36,7 +36,9 @@ export function AddCompanyFormDialog({
   open,
   onClose,
   onCreated,
+  marcaje = [],
 }: {
+  marcaje?: string[];
   open: boolean;
   onClose: () => void;
   onCreated: (id: string) => void;
@@ -118,6 +120,10 @@ export function AddCompanyFormDialog({
   return (
     <Dialog open={open} onClose={onClose} title={dict.title} width="max-w-2xl">
       <form action={onSubmit} className="space-y-4">
+        {marcaje.map((m) => (
+          <input key={m} type="hidden" name="marcaj" value={m} />
+        ))}
+        {marcaje.includes("d177") && <p className="rounded-md bg-[var(--ci-primary-soft)] px-3 py-2 text-[13px] text-[var(--ci-primary)]">Firma se adaugă direct în lista D177.</p>}
         <Sectiune titlu="Date firmă">
           <Rand eticheta={dict.numeFirma}>
             <Input name="nume" required autoFocus placeholder={dict.numeFirmaPlaceholder} value={valori.nume} onChange={(e) => seteaza("nume", e.target.value)} />

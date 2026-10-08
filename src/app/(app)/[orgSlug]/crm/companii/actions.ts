@@ -442,6 +442,10 @@ export const adaugaFirma = withOrgSession(async (ctx, _prev: AdaugaFirmaState, f
     dataSemnare,
     sumaPropusa: typeof sumaContract === "number" ? sumaContract : null,
     nota: txt("nota"),
+    // Marcajele listei din care s-a adăugat firma (ex. D177).
+    d177: formData.getAll("marcaj").includes("d177"),
+    decembrie: formData.getAll("marcaj").includes("decembrie"),
+    mec20: formData.getAll("marcaj").includes("caz"),
     updatedBy: ctx.userId,
     // Linkurile adăugate acum contează pentru indicatorul KPI „Firme cu LinkedIn / Facebook adăugat”.
     extra: {

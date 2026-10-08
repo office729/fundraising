@@ -458,6 +458,9 @@ function AddDialog({
   const [donorOpen, setDonorOpen] = useState(false);
   const [projectOpen, setProjectOpen] = useState(false);
   const [companyOpen, setCompanyOpen] = useState(false);
+  // Dacă meniul e deschis dintr-o listă filtrată după marcaj (ex. companii?marcaj=d177), firma nouă primește marcajul
+  // și rămâi pe listă.
+  const [companyMarcaje, setCompanyMarcaje] = useState<string[]>([]);
 
   const context = contextDinPathname(pathname, base);
   const pentru = (c: AddContext) => context === null || context === c;
@@ -467,7 +470,12 @@ function AddDialog({
     { context: "beneficiari" as const, label: "Proiect", icon: HeartHandshake, action: () => setProjectOpen(true) },
     // Companie — server action REALĂ (adaugaFirma), nu mock; vezi
     // companii/add-company-form-dialog.tsx.
-    { context: "companii" as const, label: "Companie", icon: Building2, action: () => setCompanyOpen(true) },
+    { context: "companii" as const, label: "Companie", icon: Building2, action: () => {
+        const m = new URLSearchParams(window.location.search).getAll("marcaj").filter((x) => x === "d177" || x === "decembrie" || x === "caz");
+        setCompanyMarcaje(m);
+        setCompanyOpen(true);
+      },
+    },
     { context: "taskuri" as const, label: "Task", icon: ClipboardList, action: () => router.push(`${base}/taskuri`) },
     { context: "donatori" as const, label: "Importă persoane fizice (CSV, Excel, JSON)", icon: Upload, action: () => setImportTip("donatori") },
     { context: "companii" as const, label: "Importă persoane juridice / companii (CSV, Excel, JSON)", icon: Upload, action: () => setImportTip("companii") },
@@ -511,9 +519,11 @@ function AddDialog({
         <AddCompanyFormDialog
           open={companyOpen}
           onClose={() => setCompanyOpen(false)}
+          marcaje={companyMarcaje}
           onCreated={(id) => {
             setCompanyOpen(false);
-            router.push(`${base}/companii/${idScurt(id)}`);
+            if (companyMarcaje.length > 0) router.refresh();
+            else router.push(`${base}/companii/${idScurt(id)}`);
           }}
         />
       )}
