@@ -1,9 +1,12 @@
 "use client";
 
-import { CheckCircle2, FileCode2, FileSpreadsheet, FileText } from "lucide-react";
+import { CheckCircle2, Eye, FileCode2, FileSpreadsheet, FileText } from "lucide-react";
 import { useState } from "react";
 
+import { PROCENT_IMPLICIT, type DateBorderou } from "@/lib/borderou230";
+
 import { Card, CardHeader } from "../../components/ui/card";
+import { Dialog } from "../../components/ui/dialog";
 import { listeazaBorderouri, marcheazaBorderouDepus, obtineDateBorderou, type BorderouSumar } from "./borderouri-actions";
 import { descarcaExcelBorderou, descarcaPdfBorderou, descarcaXmlBorderou } from "./borderou-fisiere";
 
@@ -17,6 +20,7 @@ export function BorderouriCard({ orgSlug, initial }: { orgSlug: string; initial:
   const [borderouri, setBorderouri] = useState<BorderouSumar[] | null>(initial);
   const [eroare, setEroare] = useState("");
   const [lucru, setLucru] = useState<string | null>(null);
+  const [previzualizare, setPrevizualizare] = useState<DateBorderou | null>(null);
 
   const cheie = (b: BorderouSumar, f?: string) => `${b.beneficiarId ?? "-"}|${b.an}|${b.nr}${f ? `|${f}` : ""}`;
 
@@ -30,6 +34,19 @@ export function BorderouriCard({ orgSlug, initial }: { orgSlug: string; initial:
       else descarcaXmlBorderou(date);
     } catch (e) {
       setEroare(e instanceof Error ? e.message : "Nu am putut genera fișierul.");
+    } finally {
+      setLucru(null);
+    }
+  }
+
+  // „Vezi borderoul”: același conținut ca în fișiere, direct pe ecran.
+  async function vezi(b: BorderouSumar) {
+    setLucru(cheie(b, "vezi"));
+    setEroare("");
+    try {
+      setPrevizualizare(await obtineDateBorderou(orgSlug, b.beneficiarId, b.an, b.nr));
+    } catch (e) {
+      setEroare(e instanceof Error ? e.message : "Nu am putut deschide borderoul.");
     } finally {
       setLucru(null);
     }
@@ -83,6 +100,9 @@ export function BorderouriCard({ orgSlug, initial }: { orgSlug: string; initial:
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-1.5">
+                    <button type="button" className={`${btn} !border-[var(--ci-primary)] !text-[var(--ci-primary)]`} disabled={lucru !== null} onClick={() => vezi(b)}>
+                      <Eye className="h-3.5 w-3.5" /> Vezi borderoul
+                    </button>
                     <button type="button" className={btn} disabled={lucru !== null} onClick={() => genereaza(b, "xlsx")}>
                       <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
                     </button>
@@ -105,6 +125,66 @@ export function BorderouriCard({ orgSlug, initial }: { orgSlug: string; initial:
           })}
         </div>
       )}
-    </Card>
+      <Dialog open={previzualizare !== null} onClose={() => setPrevizualizare(null)} title={previzualizare ? `Borderou nr. ${previzualizare.nr} · ${previzualizare.an}` : "Borderou"} width="max-w-6xl">
+        {previzualizare && (
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 gap-x-6 gap-y-1 rounded-lg bg-[var(--ci-surface-2)] p-3 text-[13px] sm:grid-cols-2">
+              <p>
+                <span className="text-[var(--ci-text-muted)]">Entitate beneficiară:</span> <strong>{previzualizare.entitate.den}</strong>
+              </p>
+              <p>
+                <span className="text-[var(--ci-text-muted)]">CUI / CIF:</span> <strong>{previzualizare.entitate.cui || "—"}</strong>
+              </p>
+              <p>
+                <span className="text-[var(--ci-text-muted)]">IBAN:</span> <strong className="break-all">{previzualizare.entitate.iban || "—"}</strong>
+              </p>
+              <p>
+                <span className="text-[var(--ci-text-muted)]">Data borderoului:</span> <strong>{previzualizare.dataBorderou}</strong> · procent {PROCENT_IMPLICIT}% · <strong>{previzualizare.declaratii.length}</strong> declarații
+              </p>
+            </div>
+            <div className="max-h-[60vh] overflow-auto rounded-lg border border-[var(--ci-border)]">
+              <table className="w-full min-w-[900px] text-[12px]">
+                <thead className="sticky top-0 bg-[var(--ci-surface-2)] text-left text-[11px] tracking-wide text-[var(--ci-text-muted)] uppercase">
+                  <tr>
+                    {["Nr.", "Nume", "Ini.", "Prenume", "CNP", "Adresă", "Telefon", "Email", "2 ani", "Acord", "Data"].map((h) => (
+                      <th key={h} className="px-2.5 py-2 font-semibold">
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {previzualizare.declaratii.map((x) => (
+                    <tr key={x.nrPoz} className="border-t border-[var(--ci-border)] align-top">
+                      <td className="ci-tabular px-2.5 py-1.5">{x.nrPoz}</td>
+                      <td className="px-2.5 py-1.5 font-medium text-[var(--ci-text)]">{x.nume}</td>
+                      <td className="px-2.5 py-1.5">{x.initiala}</td>
+                      <td className="px-2.5 py-1.5 font-medium text-[var(--ci-text)]">{x.prenume}</td>
+                      <td className="ci-tabular px-2.5 py-1.5">{x.cnp}</td>
+                      <td className="px-2.5 py-1.5">{x.adresa || "—"}</td>
+                      <td className="px-2.5 py-1.5 whitespace-nowrap">{x.telefon || "—"}</td>
+                      <td className="px-2.5 py-1.5 break-all">{x.email}</td>
+                      <td className="px-2.5 py-1.5">{x.doiAni ? "Da" : "Nu"}</td>
+                      <td className="px-2.5 py-1.5">{x.acord ? "Da" : "Nu"}</td>
+                      <td className="px-2.5 py-1.5 whitespace-nowrap">{x.dataCompletarii}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex flex-wrap justify-end gap-2">
+              <button type="button" className={btn} onClick={() => descarcaExcelBorderou(previzualizare)}>
+                <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
+              </button>
+              <button type="button" className={btn} onClick={() => descarcaPdfBorderou(previzualizare)}>
+                <FileText className="h-3.5 w-3.5" /> PDF
+              </button>
+              <button type="button" className={btn} onClick={() => descarcaXmlBorderou(previzualizare)}>
+                <FileCode2 className="h-3.5 w-3.5" /> XML
+              </button>
+            </div>
+          </div>
+        )}
+      </Dialog>    </Card>
   );
 }
