@@ -84,7 +84,7 @@ function buildNav(dict: DashboardDict, orgSlug: string): { section: string; item
       section: dict.nav.sectionRelatii,
       items: [
         { href: "companii", label: dict.nav.companii, hint: dict.hints.companii, icon: Building2 },
-        { href: "companii?marcaj=d177", label: dict.nav.companiiD177, hint: dict.hints.companiiD177, icon: Landmark },
+        { href: "d177", label: dict.nav.companiiD177, hint: dict.hints.companiiD177, icon: Landmark },
         { href: "donatori", label: dict.nav.donatori, hint: dict.hints.donatori, icon: Users },
         { href: "avatar-donator", label: dict.nav.avatarDonator, hint: dict.hints.avatarDonator, icon: ScanFace },
         { href: "donatori/formular-230", label: dict.nav.formular230, hint: dict.hints.formular230, icon: FileSignature },

@@ -48,6 +48,16 @@ export const comutaMarcaj = withOrgSession(
     activ: boolean,
   ): Promise<ActionState> => {
     const set: Partial<typeof companies.$inferInsert> = { updatedBy: ctx.userId };
+    // Debifarea „bani încasați” (D177) șterge și sponsorizarea creată automat din pagina Companii D177, ca totalurile să rămână corecte.
+    if (marcaj === "d177Incasat" && !activ) {
+      const [f] = await ctx.db.select({ extra: companies.extra }).from(companies).where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId))).limit(1);
+      const d = ((f?.extra ?? {}) as { d177Date?: { sponsorizareId?: string | null } }).d177Date;
+      if (d?.sponsorizareId) {
+        await ctx.db.delete(companySponsorizari).where(and(eq(companySponsorizari.id, d.sponsorizareId), eq(companySponsorizari.orgId, ctx.orgId)));
+        await recalculeazaSumaSponsorizata(ctx.db, companyId);
+        set.extra = sql`jsonb_set(coalesce(${companies.extra}, '{}'::jsonb), '{d177Date}', (coalesce(${companies.extra}->'d177Date', '{}'::jsonb) - 'sponsorizareId' - 'incasatSuma' - 'incasatLa'))`;
+      }
+    }
     if (marcaj === "cald") set.temperatura = activ ? "cald" : null;
     else if (marcaj === "rece") set.temperatura = activ ? "rece" : null;
     else if (marcaj === "recurent") set.recurent = activ;
