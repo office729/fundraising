@@ -4,7 +4,6 @@ import { ChevronLeft, ChevronRight, Info } from "lucide-react";
 
 import { withOrgSession } from "@/lib/auth/guard";
 import { formular230Beneficiari, formular230Submissions } from "@/lib/db/schema";
-import { emailConfigurat } from "@/lib/email";
 import { SLUG_PRINCIPAL } from "@/lib/formular230-constants";
 import { codJudetDinTextLiber, gasesteJudet } from "@/lib/judete";
 import { getLocale } from "@/lib/i18n/get-locale";
@@ -21,8 +20,6 @@ import { formatDataOra } from "../../lib/format";
 import { BeneficiariPanel } from "./beneficiari-panel";
 import { BorderouriCard } from "./borderouri-card";
 import { listeazaBorderouri } from "./borderouri-actions";
-import { CampanieEmailCard } from "./campanie-email-card";
-import { getUltimaCampanieEmail } from "./campanie-email-actions";
 import { CopyLinkButton, DeleteButton, PdfButton, ProcesatAnafCheckbox } from "./client";
 import { ExportButtons } from "./export-buttons";
 import { FilterBar } from "./filter-bar";
@@ -194,7 +191,6 @@ export default async function Formular230StatsPage({
     beneficiar: sp.beneficiar ?? "toate",
   };
   const { total, lunaAceasta, beneficiari, ani, submisii, poateVedeaDateSensibile, dupaJudet, cnpDuplicat, tainuit } = await getDate(orgSlug, filtru);
-  const ultimaCampanie = await getUltimaCampanieEmail(orgSlug);
   // Atribuirea formularelor la borderouri (max. 50 / borderou) se face aici, pe server, și doar pentru owner/admin.
   const borderouri = poateVedeaDateSensibile ? await listeazaBorderouri(orgSlug).catch(() => null) : null;
   const locale = await getLocale();
@@ -240,8 +236,6 @@ export default async function Formular230StatsPage({
       <BeneficiariPanel orgSlug={orgSlug} beneficiari={beneficiari} />
 
       {borderouri && <BorderouriCard orgSlug={orgSlug} initial={borderouri} />}
-
-      <CampanieEmailCard orgSlug={orgSlug} emailConfigurat={emailConfigurat()} ultimaCampanie={ultimaCampanie} />
 
       <StatsChartCard beneficiari={beneficiari} />
 
