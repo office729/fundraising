@@ -37,7 +37,9 @@ export function CompanyTabs({
   contractSectiune,
   defaultTab,
   ghid,
+  campanii,
 }: {
+  campanii: Parameters<typeof SponsorizariPanel>[0]["campanii"];
   defaultTab: string;
   ghid: Omit<Parameters<typeof ContactePanel>[0], "companyId" | "contacte">;
   firma: Firma;
@@ -101,7 +103,7 @@ export function CompanyTabs({
               </Card>
             </>
           );
-        if (active === "sponsorizari") return <SponsorizariPanel companyId={c.id} sponsorizari={sponsorizari} />;
+        if (active === "sponsorizari") return <SponsorizariPanel companyId={c.id} sponsorizari={sponsorizari} campanii={campanii} />;
         if (active === "contract")
           return (
             <div className="space-y-6">

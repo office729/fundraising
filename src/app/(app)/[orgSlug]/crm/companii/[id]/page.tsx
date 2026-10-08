@@ -38,10 +38,9 @@ export default async function CompanieProfilPage({
   const locale = await getLocale();
   const dict = COMPANII_DICT[locale].detail;
 
-  const { companie: c, sponsorizari, notite, contacte, responsabili, jurnalEtape, orgNume, userEmail } = data;
+  const { companie: c, sponsorizari, notite, contacte, responsabili, jurnalEtape, orgNume, userEmail, campanii } = data;
   const extra = (c.extra ?? {}) as {
     etapeBifate?: string[];
-    negasit?: { la: string; deNume?: string | null };
     deAprobat?: PersoanaDeAprobat[];
   };
   // Firmele care încă n-au sponsorizat se deschid direct pe „Contacte”; ?tab=… alege explicit tabul.
@@ -142,11 +141,11 @@ export default async function CompanieProfilPage({
         notite={notite}
         contacte={contacte}
         activitate={activitate}
+        campanii={campanii}
         defaultTab={defaultTab}
         ghid={{
           firma: { id: c.id, nume: c.nume, administrator: c.administrator, linkedin: c.linkedin, site: c.site },
           deAprobat: extra.deAprobat ?? [],
-          negasit: extra.negasit ? { la: extra.negasit.la, deNume: extra.negasit.deNume ?? null } : null,
           orgNume,
           emailContact: userEmail,
         }}

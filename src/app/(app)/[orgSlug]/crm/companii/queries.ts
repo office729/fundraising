@@ -1,7 +1,7 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 
 import { withOrgSession, type OrgContext } from "@/lib/auth/guard";
-import { appUsers, companies, companyNotite, companySponsorizari, companyStageLog, contacts, memberships } from "@/lib/db/schema";
+import { appUsers, companies, fundraisingPages, companyNotite, companySponsorizari, companyStageLog, contacts, memberships } from "@/lib/db/schema";
 
 import { citesteSegment, hexFaraCratime, LUNGIME_SUFIX, segmentFirma, slugFirma } from "@/lib/id-scurt";
 import { cifreCui, patternLike, sqlFaraDiacritice } from "@/lib/cautare";
@@ -244,6 +244,12 @@ export const getCompanieDetaliu = withOrgSession(async (ctx, segment: string) =>
         .where(eq(memberships.orgId, ctx.orgId)),
     [],
   );
+  const campanii = await sectiuneSigura(
+    ctx,
+    "companie.campanii",
+    (db) => db.select({ id: fundraisingPages.id, titlu: fundraisingPages.titlu }).from(fundraisingPages).where(eq(fundraisingPages.orgId, ctx.orgId)).orderBy(desc(fundraisingPages.createdAt)).limit(200),
+    [] as { id: string; titlu: string }[],
+  );
   const jurnalEtape = await sectiuneSigura(
     ctx,
     "companie.jurnalEtape",
@@ -265,7 +271,7 @@ export const getCompanieDetaliu = withOrgSession(async (ctx, segment: string) =>
         .limit(100),
     [],
   );
-  return { companie, sponsorizari, notite, contacte: contacteFirma, responsabili, jurnalEtape, segmentCanonic, orgNume: ctx.orgName, userEmail: ctx.userEmail };
+  return { companie, sponsorizari, notite, contacte: contacteFirma, responsabili, jurnalEtape, campanii, segmentCanonic, orgNume: ctx.orgName, userEmail: ctx.userEmail };
 });
 
 

@@ -9,7 +9,9 @@ import { type OrgContext, withOrgSession } from "@/lib/auth/guard";
 import { celMaiRecentBilant, verificaStareFiscala } from "@/lib/anaf";
 import { getLimiteleEfective, subCota } from "@/lib/billing/quota";
 import { ETAPE_PATH_KEYS, bifeDinEtapa, etapaCurenta } from "@/lib/etape-companie";
+import { valideazaAlocari } from "@/lib/alocari-sponsorizare";
 import { amprentePersoana } from "@/lib/gdpr-persoane";
+import { valideazaFacebook, valideazaLinkedin } from "@/lib/pagini-sociale";
 import { normalizeazaTelefonE164 } from "@/lib/telefon";
 import { urlWebSigur } from "@/lib/validation";
 import { apeluri, companies, companyNotite, companySponsorizari, companyStageLog, contacts } from "@/lib/db/schema";
@@ -100,6 +102,14 @@ export const adaugaSponsorizare = withOrgSession(
 
     if (!companyId || !Number.isFinite(suma) || suma <= 0) return { error: "Suma trebuie să fie un număr pozitiv." };
     if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) return { error: "Data e obligatorie." };
+    let alocariBrut: unknown = [];
+    try {
+      alocariBrut = JSON.parse(String(formData.get("alocari") ?? "[]"));
+    } catch {
+      return { error: "Defalcarea sumei nu a putut fi citită." };
+    }
+    const al = valideazaAlocari(suma, alocariBrut);
+    if (!al.ok) return { error: al.eroare };
 
     const firma = await ctx.db.select({ id: companies.id }).from(companies).where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId))).limit(1);
     if (!firma[0]) return { error: "Firma nu a fost găsită." };
@@ -112,6 +122,7 @@ export const adaugaSponsorizare = withOrgSession(
       data,
       proiect: proiect || null,
       nota: nota || null,
+      alocari: al.alocari.length ? al.alocari : null,
       createdBy: ctx.userId,
     });
     await recalculeazaSumaSponsorizata(ctx.db, companyId);
@@ -119,6 +130,24 @@ export const adaugaSponsorizare = withOrgSession(
     return { error: null };
   },
 );
+
+// Defalcarea ulterioară (sau corectarea ei) pe o sponsorizare deja înregistrată.
+export const seteazaAlocariSponsorizare = withOrgSession(async (ctx, id: string, alocari: unknown): Promise<ActionState> => {
+  const [s] = await ctx.db
+    .select({ suma: companySponsorizari.suma, companyId: companySponsorizari.companyId })
+    .from(companySponsorizari)
+    .where(and(eq(companySponsorizari.id, id), eq(companySponsorizari.orgId, ctx.orgId)))
+    .limit(1);
+  if (!s) return { error: "Sponsorizarea nu a fost găsită." };
+  const al = valideazaAlocari(s.suma, alocari);
+  if (!al.ok) return { error: al.eroare };
+  await ctx.db
+    .update(companySponsorizari)
+    .set({ alocari: al.alocari.length ? al.alocari : null })
+    .where(and(eq(companySponsorizari.id, id), eq(companySponsorizari.orgId, ctx.orgId)));
+  await marcheazaLucrat(ctx, s.companyId);
+  return { error: null };
+});
 
 export const stergeSponsorizare = withOrgSession(async (ctx, id: string, companyId: string): Promise<ActionState> => {
   const r = await ctx.db
@@ -319,18 +348,49 @@ export const stergeContact = withOrgSession(async (ctx, id: string): Promise<Act
 
 export type AdaugaFirmaState = ActionState & { id?: string };
 export const adaugaFirma = withOrgSession(async (ctx, _prev: AdaugaFirmaState, formData: FormData): Promise<AdaugaFirmaState> => {
-  const nume = String(formData.get("nume") ?? "").trim();
-  const cui = String(formData.get("cui") ?? "").trim();
-  const judet = String(formData.get("judet") ?? "").trim();
-  const industrie = String(formData.get("industrie") ?? "").trim();
-  const site = String(formData.get("site") ?? "").trim();
-  const numarContract = String(formData.get("numarContract") ?? "").trim();
-  const sumaBruta = String(formData.get("sumaContract") ?? "").trim();
-  const sumaContract = sumaBruta ? Math.round(Number(sumaBruta)) : null;
+  const txt = (k: string) => {
+    const v = String(formData.get(k) ?? "").trim();
+    return v || null;
+  };
+  const numar = (k: string): number | null | "invalid" => {
+    const brut = String(formData.get(k) ?? "").trim();
+    if (!brut) return null;
+    const n = Math.round(Number(brut.replace(/\s/g, "")));
+    return Number.isFinite(n) ? n : "invalid";
+  };
+
+  const nume = txt("nume");
+  const site = txt("site");
+  const sumaContract = numar("sumaContract");
+  const ca = numar("ca");
+  const profit = numar("profit");
+  const nrAngajati = numar("nrAngajati");
+  const anInfiintare = numar("anInfiintare");
+  const dataSemnare = txt("dataSemnare");
 
   if (!nume) return { error: "Numele firmei e obligatoriu." };
   if (site && !urlWebSigur(site)) return { error: "Site-ul nu e o adresă web validă (http/https)." };
-  if (sumaContract !== null && (!Number.isFinite(sumaContract) || sumaContract < 0)) return { error: "Suma contractului trebuie să fie un număr pozitiv." };
+  if (sumaContract === "invalid" || (sumaContract !== null && sumaContract < 0)) return { error: "Suma contractului trebuie să fie un număr pozitiv." };
+  for (const [n, v] of [["Cifra de afaceri", ca], ["Profitul", profit], ["Numărul de angajați", nrAngajati], ["Anul înființării", anInfiintare]] as const) {
+    if (v === "invalid") return { error: `${n} trebuie să fie un număr.` };
+  }
+  if (dataSemnare && !/^\d{4}-\d{2}-\d{2}$/.test(dataSemnare)) return { error: "Data semnării nu e validă." };
+
+  // Linkurile de pagină de firmă — aceeași validare ca în fișă (lib/pagini-sociale.ts).
+  let linkedin: string | null = null;
+  let facebook: string | null = null;
+  const li = txt("linkedin");
+  if (li) {
+    const r = valideazaLinkedin(li);
+    if (!r.ok) return { error: r.eroare };
+    linkedin = r.url;
+  }
+  const fb = txt("facebook");
+  if (fb) {
+    const r = valideazaFacebook(fb);
+    if (!r.ok) return { error: r.eroare };
+    facebook = r.url;
+  }
 
   const limite = getLimiteleEfective(ctx.orgPackage, ctx.orgCustomPlanConfig);
   if (limite.companiiPj !== null) {
@@ -346,21 +406,56 @@ export const adaugaFirma = withOrgSession(async (ctx, _prev: AdaugaFirmaState, f
   }
 
   const id = randomUUID();
+  const acum = new Date();
+  const azi = acum.toLocaleDateString("en-CA", { timeZone: "Europe/Bucharest" });
+  const numarContract = txt("numarContract");
   await ctx.db.insert(companies).values({
     id,
     orgId: ctx.orgId,
     nume,
-    cui: cui || null,
-    judet: judet || null,
-    industrie: industrie || null,
-    site: urlWebSigur(site),
-    numarContract: numarContract || null,
-    sumaPropusa: sumaContract,
+    cui: txt("cui"),
+    nrRegCom: txt("nrRegCom"),
+    judet: txt("judet"),
+    localitate: txt("localitate"),
+    adresa: txt("adresa"),
+    caen: txt("caen"),
+    industrie: txt("industrie"),
+    anInfiintare: typeof anInfiintare === "number" ? anInfiintare : null,
+    site: site ? urlWebSigur(site) : null,
+    linkedin,
+    facebook,
+    administrator: txt("administrator"),
+    ca: typeof ca === "number" ? ca : null,
+    profit: typeof profit === "number" ? profit : null,
+    nrAngajati: typeof nrAngajati === "number" ? nrAngajati : null,
+    numarContract,
+    dataSemnare,
+    sumaPropusa: typeof sumaContract === "number" ? sumaContract : null,
+    nota: txt("nota"),
     updatedBy: ctx.userId,
+    // Linkurile adăugate acum contează pentru indicatorul KPI „Firme cu LinkedIn / Facebook adăugat”.
+    extra: {
+      ...(linkedin ? { linkedinAdaugat: { la: acum.toISOString(), de: ctx.userId } } : {}),
+      ...(facebook ? { facebookAdaugat: { la: acum.toISOString(), de: ctx.userId } } : {}),
+    },
   });
+
+  // Suma contractului se înregistrează și ca sponsorizare (tabul „Sponsorizări”, totaluri, statistici); poate fi
+  // defalcată pe campanii / destinatari de acolo.
+  if (sumaContract !== null && sumaContract > 0) {
+    await ctx.db.insert(companySponsorizari).values({
+      id: randomUUID(),
+      orgId: ctx.orgId,
+      companyId: id,
+      suma: sumaContract,
+      data: dataSemnare ?? azi,
+      proiect: numarContract ? `Contract ${numarContract}` : null,
+      createdBy: ctx.userId,
+    });
+    await recalculeazaSumaSponsorizata(ctx.db, id);
+  }
   return { error: null, id };
 });
-
 // Scor de capacitate REAL: preia din ANAF (stare fiscală + ultimul bilanț
 // depus) și scrie direct în ca/profit/nrAngajati/anBilant — aceleași coloane
 // pe care lib/scor-companie.ts le folosește deja la „Mărime & profitabilitate",

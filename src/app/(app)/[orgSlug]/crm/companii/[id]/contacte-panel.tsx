@@ -13,9 +13,8 @@ import { useLocale } from "../../lib/locale-context";
 import { COMPANII_DICT } from "@/lib/i18n/dictionaries/companii";
 import { urlWebSigur } from "@/lib/validation";
 import { adaugaContact, comutaContactCheie, stergeContact, type PersoanaDeAprobat } from "../actions";
-import { DeAprobat, InformareGdpr, PasulUrmator, PlanB, type FirmaGhid } from "./contacte-ghid";
+import { DeAprobat, InformareGdpr, PasulUrmator, type FirmaGhid } from "./contacte-ghid";
 import { seteazaConsimtamantContact } from "./fisa-actions";
-import { NegasitMarcaj } from "./pagini-sociale";
 
 type Contact = {
   id: string; nume: string; rol: string | null; email: string | null; telefon: string | null; linkedin: string | null;
@@ -30,7 +29,6 @@ export function ContactePanel({
   contacte,
   firma,
   deAprobat,
-  negasit,
   orgNume,
   emailContact,
 }: {
@@ -38,7 +36,6 @@ export function ContactePanel({
   contacte: Contact[];
   firma: FirmaGhid;
   deAprobat: PersoanaDeAprobat[];
-  negasit: { la: string; deNume: string | null } | null;
   orgNume: string;
   emailContact: string | null;
 }) {
@@ -84,12 +81,7 @@ export function ContactePanel({
   }
 
   async function onConsimtamant(id: string, status: "da" | "nu" | "necunoscut") {
-    let dovada: string | null = null;
-    if (status === "da") {
-      dovada = window.prompt("Dovada acordului (cum și când l-a dat?), ex. a acceptat pe telefon, 12.10");
-      if (!dovada || !dovada.trim()) return;
-    }
-    const r = await seteazaConsimtamantContact(orgSlug, id, status, dovada);
+    const r = await seteazaConsimtamantContact(orgSlug, id, status);
     if (r.error) window.alert(r.error);
     router.refresh();
   }
@@ -187,17 +179,6 @@ export function ContactePanel({
           ))}
         </div>
       )}
-
-      {contacte.length > 0 && (
-        <div className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4">
-          <p className="text-[12px] font-bold tracking-wide text-[var(--ci-text-muted)] uppercase">Nu găsești persoana potrivită?</p>
-          <PlanB firma={firma} onAdaugaAdministrator={adaugaAdministrator} />
-        </div>
-      )}
-
-      <div className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-4 py-3">
-        <NegasitMarcaj companyId={companyId} negasit={negasit} />
-      </div>
 
       <InformareGdpr orgNume={orgNume} emailContact={emailContact} />
 

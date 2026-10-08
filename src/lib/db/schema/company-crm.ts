@@ -1,4 +1,4 @@
-import { date, index, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { date, index, integer, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 import { appUsers } from "./app-users";
 import { companies } from "./companies";
@@ -24,6 +24,8 @@ export const companySponsorizari = pgTable(
     data: date("data").notNull(),
     proiect: text("proiect"),
     nota: text("nota"),
+    // Defalcarea sumei: cui a fost redirecționată (toată sau parțial) — vezi lib/alocari-sponsorizare.ts.
+    alocari: jsonb("alocari").$type<{ tip: "campanie" | "altul"; pageId: string | null; nume: string; suma: number }[]>(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     createdBy: uuid("created_by").references(() => appUsers.id),
   },
