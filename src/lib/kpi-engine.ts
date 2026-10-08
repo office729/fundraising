@@ -165,6 +165,15 @@ export function calculeazaStatus(valoare: number | null, targetNormal: number | 
   return "restant";
 }
 
+export type ValoareCurenta = {
+  valoare: number | null;
+  sursa: "automat" | "manual" | null;
+  perioadaStart: string;
+  comentariu: string | null;
+  dovadaUrl: string | null;
+  actualizatLa: Date | null;
+};
+
 // Valoarea perioadei CURENTE — calculează automat (dacă sursa e conectată) și
 // o persistă, altfel citește ultima valoare manuală salvată pentru perioadă.
 // Reutilizat atât de pagina de Atribuiri cât și de Dashboardul personal, ca
@@ -177,7 +186,7 @@ export async function obtineSauCalculeazaValoareCurenta(
   appUserId: string | null,
   frecventa: Frecventa,
   sursaDate: SursaDate | null,
-): Promise<{ valoare: number | null; sursa: "automat" | "manual" | null; perioadaStart: string }> {
+): Promise<ValoareCurenta> {
   const { start, endExclusiv } = perioadaCurenta(frecventa);
 
   if (sursaDate && sursaDate.tip !== "manual") {
@@ -190,16 +199,23 @@ export async function obtineSauCalculeazaValoareCurenta(
           target: [kpiValori.angajatId, kpiValori.kpiDefinitieId, kpiValori.perioadaStart, kpiValori.perioadaTip],
           set: { valoare: valoareAutomata, sursa: "automat", createdAt: new Date() },
         });
-      return { valoare: valoareAutomata, sursa: "automat", perioadaStart: start };
+      return { valoare: valoareAutomata, sursa: "automat", perioadaStart: start, comentariu: null, dovadaUrl: null, actualizatLa: new Date() };
     }
   }
 
   const [existenta] = await dbCtx
-    .select({ valoare: kpiValori.valoare, sursa: kpiValori.sursa })
+    .select({ valoare: kpiValori.valoare, sursa: kpiValori.sursa, comentariu: kpiValori.comentariu, dovadaUrl: kpiValori.dovadaUrl, createdAt: kpiValori.createdAt })
     .from(kpiValori)
     .where(and(eq(kpiValori.angajatId, angajatId), eq(kpiValori.kpiDefinitieId, kpiDefinitieId), eq(kpiValori.perioadaStart, start), eq(kpiValori.perioadaTip, frecventa)))
     .limit(1);
-  return { valoare: existenta?.valoare ?? null, sursa: existenta?.sursa ?? null, perioadaStart: start };
+  return {
+    valoare: existenta?.valoare ?? null,
+    sursa: existenta?.sursa ?? null,
+    perioadaStart: start,
+    comentariu: existenta?.comentariu ?? null,
+    dovadaUrl: existenta?.dovadaUrl ?? null,
+    actualizatLa: existenta?.createdAt ?? null,
+  };
 }
 
 export type PunctIstoric = { perioadaStart: string; valoare: number };

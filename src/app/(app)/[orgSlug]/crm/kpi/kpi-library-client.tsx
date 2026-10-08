@@ -224,6 +224,8 @@ export function KpiLibraryClient({
       ) : (
         <div className="ci-scrollbar flex gap-1.5 overflow-x-auto pb-1">
           <button
+            type="button"
+            aria-pressed={filtruCategorie === "toate"}
             onClick={() => setFiltruCategorie("toate")}
             className={`shrink-0 rounded-full px-3 py-1 text-[12px] font-medium ${filtruCategorie === "toate" ? "bg-[var(--ci-primary)] text-white" : "bg-[var(--ci-surface-2)] text-[var(--ci-text-muted)]"}`}
           >
@@ -232,6 +234,8 @@ export function KpiLibraryClient({
           {categorii.map((c) => (
             <button
               key={c.id}
+              type="button"
+              aria-pressed={filtruCategorie === c.id}
               onClick={() => setFiltruCategorie(c.id)}
               className={`shrink-0 rounded-full px-3 py-1 text-[12px] font-medium ${filtruCategorie === c.id ? "bg-[var(--ci-primary)] text-white" : "bg-[var(--ci-surface-2)] text-[var(--ci-text-muted)]"}`}
             >

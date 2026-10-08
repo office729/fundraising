@@ -6,7 +6,7 @@ import { withOrgSession } from "@/lib/auth/guard";
 import { poateAtribui, poateIntroduceValori, verificaCitire } from "@/lib/kpi-acces";
 import { angajati, kpiAtribuiri, kpiAuditLog, kpiDefinitii, kpiValori } from "@/lib/db/schema";
 import { EroareUtilizator } from "@/lib/erori";
-import { calculeazaValoareAutomata, perioadaCurenta, type Frecventa, type SursaDate } from "@/lib/kpi-engine";
+import { obtineSauCalculeazaValoareCurenta, perioadaCurenta, type Frecventa, type SursaDate } from "@/lib/kpi-engine";
 
 // Atribuiri & Targeturi + motorul KPI (Faza C) — leagă un KPI din bibliotecă
 // de UN angajat, cu target/pondere proprii; valorile (kpi_valori) se scriu
@@ -124,29 +124,9 @@ export const obtineValoareCurentaAction = withOrgSession(async (ctx, angajatId: 
   const [definitie] = await ctx.db.select({ frecventa: kpiDefinitii.frecventa, sursaDate: kpiDefinitii.sursaDate }).from(kpiDefinitii).where(and(eq(kpiDefinitii.id, kpiDefinitieId), eq(kpiDefinitii.orgId, ctx.orgId))).limit(1);
   if (!definitie) throw new EroareUtilizator("KPI-ul nu a fost găsit.");
   const [angajat] = await ctx.db.select({ appUserId: angajati.appUserId }).from(angajati).where(and(eq(angajati.id, angajatId), eq(angajati.orgId, ctx.orgId))).limit(1);
-  const { start, endExclusiv } = perioadaCurenta(definitie.frecventa);
-
-  const sursaDate = (definitie.sursaDate as SursaDate | null) ?? null;
-  if (sursaDate && sursaDate.tip !== "manual") {
-    const valoareAutomata = await calculeazaValoareAutomata(ctx.db, ctx.orgId, sursaDate, angajat?.appUserId ?? null, start, endExclusiv);
-    if (valoareAutomata !== null) {
-      await ctx.db
-        .insert(kpiValori)
-        .values({ orgId: ctx.orgId, angajatId, kpiDefinitieId, perioadaStart: start, perioadaTip: definitie.frecventa, valoare: valoareAutomata, sursa: "automat" })
-        .onConflictDoUpdate({ target: [kpiValori.angajatId, kpiValori.kpiDefinitieId, kpiValori.perioadaStart, kpiValori.perioadaTip], set: { valoare: valoareAutomata, sursa: "automat", createdAt: new Date() } });
-      return { valoare: valoareAutomata, sursa: "automat", comentariu: null, dovadaUrl: null, actualizatLa: new Date(), perioadaStart: start };
-    }
-  }
-
-  const [existenta] = await ctx.db
-    .select({ valoare: kpiValori.valoare, sursa: kpiValori.sursa, comentariu: kpiValori.comentariu, dovadaUrl: kpiValori.dovadaUrl, createdAt: kpiValori.createdAt })
-    .from(kpiValori)
-    .where(and(eq(kpiValori.angajatId, angajatId), eq(kpiValori.kpiDefinitieId, kpiDefinitieId), eq(kpiValori.perioadaStart, start), eq(kpiValori.perioadaTip, definitie.frecventa)))
-    .limit(1);
-  if (!existenta) return { valoare: null, sursa: null, comentariu: null, dovadaUrl: null, actualizatLa: null, perioadaStart: start };
-  return { valoare: existenta.valoare, sursa: existenta.sursa, comentariu: existenta.comentariu, dovadaUrl: existenta.dovadaUrl, actualizatLa: existenta.createdAt, perioadaStart: start };
+  // Aceeași logică (automat → persistat, altfel ultima valoare manuală) ca la dashboardul personal — o singură implementare în lib/kpi-engine.ts.
+  return obtineSauCalculeazaValoareCurenta(ctx.db, ctx.orgId, angajatId, kpiDefinitieId, angajat?.appUserId ?? null, definitie.frecventa, (definitie.sursaDate as SursaDate | null) ?? null);
 });
-
 // Introducere/corectare MANUALĂ — păstrează istoricul schimbării (valoare
 // veche → nouă) în kpi_audit_log, nu printr-un rând kpi_valori duplicat.
 export const inregistreazaValoareManualaAction = withOrgSession(

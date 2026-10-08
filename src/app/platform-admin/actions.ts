@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { getAuthUser } from "@/lib/auth/dal";
 import { isPlatformAdmin } from "@/lib/billing/trial";
 import { db } from "@/lib/db";
-import { appUsers, memberships, organizations } from "@/lib/db/schema";
+import { appUsers, fundraisingAuditLog, memberships, organizations } from "@/lib/db/schema";
 import { EroareUtilizator } from "@/lib/erori";
 
 // Garda pentru toate acțiunile din acest fișier — propriul verificator, NU
@@ -83,6 +83,12 @@ export async function ajusteazaOrgAction(
   }
   await db.transaction(async (tx) => {
     await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
+    const [vechi] = await tx
+      .select({ package: organizations.package, subscriptionStatus: organizations.subscriptionStatus, currentPeriodEnd: organizations.currentPeriodEnd })
+      .from(organizations)
+      .where(eq(organizations.id, orgId))
+      .limit(1);
+    const [actor] = await tx.select({ id: appUsers.id }).from(appUsers).where(eq(appUsers.email, actorEmail)).limit(1);
     await tx
       .update(organizations)
       .set({
@@ -91,8 +97,17 @@ export async function ajusteazaOrgAction(
         currentPeriodEnd: sfarsit,
       })
       .where(eq(organizations.id, orgId));
+    // Jurnal de audit: cine, ce a schimbat (valori vechi → noi). Se scrie în jurnalul organizației (RLS cere contextul ei);
+    // îl pot citi owner-ii/adminii acelei organizații — schimbările făcute de platformă nu rămân ascunse.
+    await tx.execute(sql`select set_config('app.current_org_id', ${orgId}, true)`);
+    await tx.insert(fundraisingAuditLog).values({
+      orgId,
+      actorAppUserId: actor?.id ?? null,
+      actiune: "platform_ajustare_org",
+      entitate: "organizatie",
+      entitateId: orgId,
+      detalii: { de: actorEmail, vechi: vechi ? { ...vechi, currentPeriodEnd: vechi.currentPeriodEnd?.toISOString() ?? null } : null, noi: values },
+    });
   });
-  // Doar în log-ul serverului (Sentry/consolă) — un audit log dedicat
-  // platform-admin e în afara scopului acestei treceri.
   console.log(`[platform-admin] ${actorEmail} a ajustat org ${orgId}:`, values);
 }

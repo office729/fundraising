@@ -21,10 +21,27 @@ export function Tabs({
   const accentVar = accent === "red" ? "var(--ci-red)" : "var(--ci-primary)";
   return (
     <div>
-      <div className="ci-scrollbar flex gap-1 overflow-x-auto border-b border-[var(--ci-border)]">
+      {/* Semantică de tab-uri (cititoare de ecran) + săgeți stânga/dreapta pentru navigare de la tastatură. */}
+      <div
+        role="tablist"
+        className="ci-scrollbar flex gap-1 overflow-x-auto border-b border-[var(--ci-border)]"
+        onKeyDown={(e) => {
+          if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+          const i = tabs.findIndex((x) => x.key === active);
+          const urm = tabs[(i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
+          if (!urm) return;
+          setActive(urm.key);
+          e.currentTarget.querySelector<HTMLElement>(`[data-tab="${urm.key}"]`)?.focus();
+        }}
+      >
         {tabs.map((t) => (
           <button
             key={t.key}
+            type="button"
+            role="tab"
+            data-tab={t.key}
+            aria-selected={active === t.key}
+            tabIndex={active === t.key ? 0 : -1}
             onClick={() => setActive(t.key)}
             className={cn(
               "relative shrink-0 px-3.5 py-2.5 text-[13px] font-medium whitespace-nowrap transition-colors",
@@ -40,7 +57,7 @@ export function Tabs({
           </button>
         ))}
       </div>
-      <div className="pt-5">{children(active ?? "")}</div>
+      <div role="tabpanel" className="pt-5">{children(active ?? "")}</div>
     </div>
   );
 }

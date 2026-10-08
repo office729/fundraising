@@ -67,7 +67,8 @@ const SURSE: { v: NonNullable<SursaDate>["tip"]; eticheta: string; conectata: bo
   { v: "api_extern", eticheta: "API extern (neconectat încă — manual)", conectata: false },
 ];
 
-const PASI = ["Nume", "Categorie", "Ce măsurăm?", "Sursă", "Frecvență", "Preview"];
+// Trei pași (nu șase): ce urmărim → de unde vin datele și cât de des → rezumat.
+const PASI = ["Ce urmărim", "Datele", "Rezumat"];
 
 function golInput(initial?: DefinitieRand): DefinitieInput {
   if (initial) {
@@ -134,12 +135,7 @@ export function KpiBuilderWizard({
     }
   };
 
-  const poatInainte =
-    (pas === 0 && form.nume.trim().length > 0) ||
-    pas === 1 ||
-    (pas === 2 && true) ||
-    (pas === 3 && true) ||
-    pas === 4;
+  const poatInainte = pas !== 0 || form.nume.trim().length > 0;
 
   return (
     <Dialog open={open} onClose={inchide} title={editId ? "Editează KPI" : "KPI nou"} width="max-w-lg">
@@ -162,33 +158,28 @@ export function KpiBuilderWizard({
             <Label>Descriere (opțional)</Label>
             <Textarea value={form.descriere ?? ""} onChange={(e) => setForm({ ...form, descriere: e.target.value || null })} rows={2} />
           </div>
-        </div>
-      )}
-
-      {pas === 1 && (
-        <div>
-          <Label>Categorie (opțional)</Label>
-          <Select value={form.categorieId ?? ""} onChange={(e) => setForm({ ...form, categorieId: e.target.value || null })}>
-            <option value="">— fără categorie —</option>
-            {categorii.map((c) => <option key={c.id} value={c.id}>{c.nume}</option>)}
-          </Select>
-        </div>
-      )}
-
-      {pas === 2 && (
-        <div className="space-y-3.5">
           <div>
-            <Label>Tip</Label>
-            <Select value={form.tip} onChange={(e) => setForm({ ...form, tip: e.target.value as DefinitieInput["tip"] })}>
-              {TIPURI.map((t) => <option key={t.v} value={t.v}>{t.eticheta}{t.exemplu ? ` — ${t.exemplu}` : ""}</option>)}
+            <Label>Categorie (opțional)</Label>
+            <Select value={form.categorieId ?? ""} onChange={(e) => setForm({ ...form, categorieId: e.target.value || null })}>
+              <option value="">— fără categorie —</option>
+              {categorii.map((c) => <option key={c.id} value={c.id}>{c.nume}</option>)}
             </Select>
           </div>
-          <div>
-            <Label>Unitate de măsură (opțional)</Label>
-            <Input value={form.unitate ?? ""} onChange={(e) => setForm({ ...form, unitate: e.target.value || null })} placeholder="ex. contacte, RON, ore" />
+          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+            <div>
+              <Label>Tip</Label>
+              <Select value={form.tip} onChange={(e) => setForm({ ...form, tip: e.target.value as DefinitieInput["tip"] })}>
+                {TIPURI.map((t) => <option key={t.v} value={t.v}>{t.eticheta}</option>)}
+              </Select>
+              {TIPURI.find((t) => t.v === form.tip)?.exemplu && <p className="mt-1 text-[11.5px] text-[var(--ci-text-faint)]">{TIPURI.find((t) => t.v === form.tip)?.exemplu}</p>}
+            </div>
+            <div>
+              <Label>Unitate (opțional)</Label>
+              <Input value={form.unitate ?? ""} onChange={(e) => setForm({ ...form, unitate: e.target.value || null })} placeholder="ex. contacte, RON, ore" />
+            </div>
           </div>
           <div>
-            <Label>Direcție</Label>
+            <Label>Ce înseamnă „bine”?</Label>
             <Select value={form.directie} onChange={(e) => setForm({ ...form, directie: e.target.value as DefinitieInput["directie"] })}>
               {DIRECTII.map((d) => <option key={d.v} value={d.v}>{d.eticheta}</option>)}
             </Select>
@@ -196,7 +187,7 @@ export function KpiBuilderWizard({
         </div>
       )}
 
-      {pas === 3 && (
+      {pas === 1 && (
         <div className="space-y-3.5">
           <div>
             <Label>De unde vin datele?</Label>
@@ -233,19 +224,16 @@ export function KpiBuilderWizard({
               Permite și completare manuală (pe lângă automatizare)
             </label>
           )}
+
+          <div>
+            <Label>Cât de des se măsoară</Label>
+            <Select value={form.frecventa} onChange={(e) => setForm({ ...form, frecventa: e.target.value as DefinitieInput["frecventa"] })}>
+              {FRECVENTE.map((f) => <option key={f.v} value={f.v}>{f.eticheta}</option>)}
+            </Select>
+          </div>
         </div>
       )}
-
-      {pas === 4 && (
-        <div>
-          <Label>Frecvență</Label>
-          <Select value={form.frecventa} onChange={(e) => setForm({ ...form, frecventa: e.target.value as DefinitieInput["frecventa"] })}>
-            {FRECVENTE.map((f) => <option key={f.v} value={f.v}>{f.eticheta}</option>)}
-          </Select>
-        </div>
-      )}
-
-      {pas === 5 && (
+      {pas === 2 && (
         <div className="space-y-3">
           <div className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] p-3.5">
             <p className="text-[13px] font-semibold text-[var(--ci-text)]">{form.nume || "—"}</p>
