@@ -5,11 +5,13 @@ import { and, eq, sql } from "drizzle-orm";
 import { withOrgSession } from "@/lib/auth/guard";
 import { normalizeaza, type AvatarData, type StatisticiPlatforma } from "@/lib/avatar-donator/tipuri";
 import { crmKv } from "@/lib/db/schema";
+import { sectiuneSigura } from "@/lib/sectiune-sigura";
+import { obtineSegmenteReale, type SegmentStat } from "@/lib/segmente-donatori";
 
 // Documentul „Avatar donator" al organizației: un singur rând în crm_kv (izolat pe organizație prin RLS).
 const CHEIE = "avatar_donator";
 
-export const getAvatar = withOrgSession(async (ctx): Promise<{ data: AvatarData; stat: StatisticiPlatforma | null }> => {
+export const getAvatar = withOrgSession(async (ctx): Promise<{ data: AvatarData; stat: StatisticiPlatforma | null; segmente: SegmentStat[] | null }> => {
   const [row] = await ctx.db.select({ data: crmKv.data }).from(crmKv).where(and(eq(crmKv.orgId, ctx.orgId), eq(crmKv.path, CHEIE))).limit(1);
 
   // Reper real din platformă: donațiile online reușite ale organizației. Sumele sunt NETE de rambursări, iar donațiile
@@ -51,7 +53,9 @@ export const getAvatar = withOrgSession(async (ctx): Promise<{ data: AvatarData;
           procentRecurent: Number(s.suma) > 0 ? Math.round((Number(s.suma_rec) / Number(s.suma)) * 100) : 0,
         }
       : null;
-  return { data: normalizeaza(row?.data), stat };
+  // Segmentele reale ale donatorilor (secțiune secundară: dacă pică, fișa merge și fără ele).
+  const segmente = await sectiuneSigura(ctx, "avatar-segmente", (db) => obtineSegmenteReale(db, ctx.orgId), null as SegmentStat[] | null);
+  return { data: normalizeaza(row?.data), stat, segmente };
 });
 
 export const salveazaAvatar = withOrgSession(async (ctx, data: AvatarData): Promise<{ ok: true; actualizat: string }> => {
@@ -62,6 +66,23 @@ export const salveazaAvatar = withOrgSession(async (ctx, data: AvatarData): Prom
     r.variante = r.variante.slice(0, 500);
     r.perioada = r.perioada.slice(0, 120);
     r.responsabil = r.responsabil.slice(0, 120);
+  }
+  // Fișele de avatar (varianta simplă): aceleași limite defensive ca la chestionar.
+  const taie = (r: Record<string, string>) => {
+    for (const k of Object.keys(r)) r[k] = String(r[k] ?? "").slice(0, 4000);
+  };
+  taie(curat.rezumat);
+  for (const lista of [curat.validari, ...curat.fiseExtra.map((f) => f.validari)]) {
+    for (const v of lista) {
+      v.persoana = v.persoana.slice(0, 120);
+      v.nota = v.nota.slice(0, 500);
+    }
+  }
+  for (const f of curat.fiseExtra) {
+    taie(f.rezumat);
+    f.nume = f.nume.slice(0, 120);
+    f.donatieUnica = f.donatieUnica.slice(0, 40);
+    f.lunar = f.lunar.slice(0, 40);
   }
   const actualizat = new Date().toISOString();
   curat.actualizat = actualizat;

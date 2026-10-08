@@ -144,6 +144,84 @@ export const CHECKLIST_CONFORMITATE: { key: string; text: string }[] = [
   { key: "surplus", text: "Donatorii află din ce bani se plătește promovarea și ce se întâmplă cu surplusul sau dacă beneficiarul nu mai poate folosi fondurile." },
 ];
 
+// ===== Fișe de avatar (varianta simplă) =====
+// Fișa PRINCIPALĂ trăiește în câmpurile documentului (rezumat, conversie, buget), ca varianta detaliată și motorul să o folosească;
+// fișele SUPLIMENTARE (donator lunar, firme etc.) sunt independente și nu intră în calculul de buget.
+export type TipFisa = "unic" | "lunar" | "firme" | "alta";
+export const TIPURI_FISA: { key: TipFisa; label: string; conversie: Conversie; descriere: string }[] = [
+  { key: "unic", label: "Donator unic", conversie: "unica", descriere: "Donează o dată, de obicei pentru un caz concret." },
+  { key: "lunar", label: "Donator lunar", conversie: "recurenta", descriere: "Donație recurentă, relație pe termen lung." },
+  { key: "firme", label: "Firmă / sponsor", conversie: "sponsorizare", descriere: "Companii care sponsorizează sau redirecționează impozit." },
+  { key: "alta", label: "Altă fișă", conversie: "", descriere: "Orice alt segment: voluntari, ambasadori, presă." },
+];
+export const FISA_PRINCIPALA = "principal";
+export const MAX_FISE_SUPLIMENTARE = 5;
+export const MAX_VALIDARI = 10;
+
+export type Recunoastere = "" | "da" | "partial" | "nu";
+export type Validare = { id: string; persoana: string; recunoaste: Recunoastere; nota: string };
+
+export type Fisa = {
+  id: string;
+  nume: string;
+  tip: TipFisa;
+  rezumat: Record<string, string>;
+  conversie: Conversie;
+  donatieUnica: string;
+  lunar: string;
+  validari: Validare[];
+  revizuitLa: string | null;
+  creat: string;
+};
+
+export function citesteFisa(d: AvatarData, id: string): Fisa {
+  const extra = id === FISA_PRINCIPALA ? undefined : d.fiseExtra.find((f) => f.id === id);
+  if (extra) return extra;
+  return {
+    id: FISA_PRINCIPALA,
+    nume: d.rezumat.nume?.trim() || "Principală",
+    tip: "unic",
+    rezumat: d.rezumat,
+    conversie: d.conversie,
+    donatieUnica: d.buget.donatieUnica,
+    lunar: d.buget.lunar,
+    validari: d.validari,
+    revizuitLa: d.revizuitLa,
+    creat: d.actualizat ?? "",
+  };
+}
+
+export function scrieFisa(d: AvatarData, f: Fisa): AvatarData {
+  if (f.id === FISA_PRINCIPALA) {
+    return { ...d, rezumat: f.rezumat, conversie: f.conversie, buget: { ...d.buget, donatieUnica: f.donatieUnica, lunar: f.lunar }, validari: f.validari, revizuitLa: f.revizuitLa };
+  }
+  return { ...d, fiseExtra: d.fiseExtra.map((x) => (x.id === f.id ? f : x)) };
+}
+
+export function toateFisele(d: AvatarData): Fisa[] {
+  return [citesteFisa(d, FISA_PRINCIPALA), ...d.fiseExtra];
+}
+
+const UN_AN_MS = 365 * 24 * 3600 * 1000;
+// O fișă începută și nerevizuită de peste 12 luni (Bloomerang: refă exercițiul în fiecare an). Pentru fișa principală,
+// ultima salvare numără ca „atingere”; pentru cele suplimentare, data creării.
+export function fiseDeRevizuit(d: AvatarData, acum: number): Fisa[] {
+  return toateFisele(d).filter((f) => {
+    if (Object.values(f.rezumat).every((v) => !v)) return false;
+    const baza = Date.parse(f.revizuitLa ?? f.creat);
+    return Number.isFinite(baza) && acum - baza > UN_AN_MS;
+  });
+}
+
+// Cât de bine a fost verificată fișa pe donatori reali: 5+ interviuri cu cel puțin 70% recunoaștere = validată.
+export function incredereValidari(validari: Validare[]): { grad: Exclude<Grad, "">; n: number; pct: number } {
+  const completate = validari.filter((v) => v.recunoaste !== "");
+  const n = completate.length;
+  const pct = n === 0 ? 0 : Math.round((completate.reduce((s, v) => s + (v.recunoaste === "da" ? 1 : v.recunoaste === "partial" ? 0.5 : 0), 0) / n) * 100);
+  const grad: Exclude<Grad, ""> = n >= 5 && pct >= 70 ? "masurat" : n >= 3 ? "estimat" : "ipoteza";
+  return { grad, n, pct };
+}
+
 export type AvatarData = {
   raspunsuri: Record<number, Raspuns>;
   conformitate: Record<string, boolean>;
@@ -155,6 +233,9 @@ export type AvatarData = {
   canale: Record<CanalId, CanalDate>;
   profile: Record<ProfilId, Segment[]>;
   rezumat: Record<string, string>;
+  validari: Validare[]; // verificarea fișei principale pe donatori reali
+  revizuitLa: string | null; // ultima revizuire confirmată a fișei principale
+  fiseExtra: Fisa[];
   actualizat: string | null;
 };
 
@@ -174,8 +255,43 @@ export function avatarGol(): AvatarData {
     canale,
     profile,
     rezumat: {},
+    validari: [],
+    revizuitLa: null,
+    fiseExtra: [],
     actualizat: null,
   };
+}
+
+function normalizeazaValidari(x: unknown): Validare[] {
+  if (!Array.isArray(x)) return [];
+  return x.slice(0, MAX_VALIDARI).map((v, i) => {
+    const o = (v ?? {}) as Partial<Validare>;
+    const rec: Recunoastere = o.recunoaste === "da" || o.recunoaste === "partial" || o.recunoaste === "nu" ? o.recunoaste : "";
+    return { id: typeof o.id === "string" && o.id ? o.id : `v${i}`, persoana: String(o.persoana ?? ""), recunoaste: rec, nota: String(o.nota ?? "") };
+  });
+}
+
+function normalizeazaFise(x: unknown): Fisa[] {
+  if (!Array.isArray(x)) return [];
+  return x.slice(0, MAX_FISE_SUPLIMENTARE).flatMap((v, i) => {
+    const o = (v ?? {}) as Partial<Fisa>;
+    if (typeof o.id !== "string" || !o.id || o.id === FISA_PRINCIPALA) return [];
+    const tip: TipFisa = TIPURI_FISA.some((t) => t.key === o.tip) ? (o.tip as TipFisa) : "alta";
+    return [
+      {
+        id: o.id,
+        nume: String(o.nume ?? "") || `Fișa ${i + 2}`,
+        tip,
+        rezumat: { ...(o.rezumat ?? {}) },
+        conversie: (o.conversie ?? "") as Conversie,
+        donatieUnica: String(o.donatieUnica ?? ""),
+        lunar: String(o.lunar ?? ""),
+        validari: normalizeazaValidari(o.validari),
+        revizuitLa: typeof o.revizuitLa === "string" ? o.revizuitLa : null,
+        creat: typeof o.creat === "string" ? o.creat : "",
+      },
+    ];
+  });
 }
 
 // Completează un document salvat (posibil mai vechi/incomplet) cu valorile implicite lipsă.
@@ -202,6 +318,9 @@ export function normalizeaza(x: unknown): AvatarData {
       ]),
     ) as Record<ProfilId, Segment[]>,
     rezumat: { ...(s.rezumat ?? {}) },
+    validari: normalizeazaValidari(s.validari),
+    revizuitLa: typeof s.revizuitLa === "string" ? s.revizuitLa : null,
+    fiseExtra: normalizeazaFise(s.fiseExtra),
     actualizat: s.actualizat ?? null,
   };
 }

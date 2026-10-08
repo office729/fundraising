@@ -4,7 +4,8 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { calculeazaAlocare, genereazaSfaturi, parseNum, parseazaExport, progresChestionar } from "@/lib/avatar-donator/motor";
-import type { AvatarData, StatisticiPlatforma } from "@/lib/avatar-donator/tipuri";
+import { fiseDeRevizuit, type AvatarData, type StatisticiPlatforma } from "@/lib/avatar-donator/tipuri";
+import type { SegmentStat } from "@/lib/segmente-donatori";
 
 import { salveazaAvatar } from "./actions";
 import { TabBuget } from "./tab-buget";
@@ -26,7 +27,7 @@ const TABURI: { id: TabId; label: string }[] = [
 export type Actualizeaza = (fn: (d: AvatarData) => AvatarData) => void;
 type Stare = "salvat" | "modificat" | "se-salveaza" | "eroare";
 
-export function AvatarDonatorClient({ initial, stat }: { initial: AvatarData; stat: StatisticiPlatforma | null }) {
+export function AvatarDonatorClient({ initial, stat, segmente }: { initial: AvatarData; stat: StatisticiPlatforma | null; segmente: SegmentStat[] | null }) {
   const { orgSlug } = useParams<{ orgSlug: string }>();
   const [data, setData] = useState<AvatarData>(initial);
   // Organizație nouă (nimic completat) → ghidul simplu; fără buget → intrările; altfel rezultatul.
@@ -36,6 +37,9 @@ export function AvatarDonatorClient({ initial, stat }: { initial: AvatarData; st
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Contor de încercări de salvare: „Reîncearcă” îl incrementează ca să repornească salvarea fără a modifica datele.
   const [reincearca, setReincearca] = useState(0);
+
+  // Momentul deschiderii paginii: fixat o dată (nu se recalculează la fiecare randare).
+  const [acum] = useState(() => Date.now());
 
   const setTab = useCallback((t: TabId) => {
     setTabState(t);
@@ -79,6 +83,7 @@ export function AvatarDonatorClient({ initial, stat }: { initial: AvatarData; st
   const alocare = useMemo(() => calculeazaAlocare(data), [data]);
   const sfaturi = useMemo(() => genereazaSfaturi(data, alocare, stat), [data, alocare, stat]);
   const progres = useMemo(() => progresChestionar(data), [data]);
+  const deRevizuit = useMemo(() => fiseDeRevizuit(initial, acum), [initial, acum]);
 
   async function importaDinFisier(file: File) {
     const text = await file.text();
@@ -129,6 +134,17 @@ export function AvatarDonatorClient({ initial, stat }: { initial: AvatarData; st
           </label>
         </div>
       </div>
+      {deRevizuit.length > 0 && (
+        <div role="note" className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--ci-radius-card)] bg-[var(--ci-amber-soft)] px-3 py-2 text-[13px] text-[var(--ci-text)]">
+          <span>
+            {deRevizuit.length === 1 ? "O fișă de avatar" : `${deRevizuit.length} fișe de avatar`} nu {deRevizuit.length === 1 ? "a" : "au"} fost revizuit{deRevizuit.length === 1 ? "ă" : "e"} de peste 12 luni:{" "}
+            <strong>{deRevizuit.map((f) => f.nume).join(", ")}</strong>.
+          </span>
+          <button type="button" onClick={() => setTab("simplu")} className="font-semibold text-[var(--ci-primary)] hover:underline">
+            Revizuiește acum →
+          </button>
+        </div>
+      )}
       {mesaj && (
         <p role="status" className="rounded-lg bg-[var(--ci-surface-2)] px-3 py-2 text-[12.5px] text-[var(--ci-text)]">
           {mesaj}
@@ -185,7 +201,7 @@ export function AvatarDonatorClient({ initial, stat }: { initial: AvatarData; st
       </div>
 
       <div role="tabpanel" id={`panou-${tab}`} aria-labelledby={`tab-${tab}`}>
-        {tab === "simplu" && <TabSimplu data={data} actualizeaza={actualizeaza} mergiLa={setTab} />}
+        {tab === "simplu" && <TabSimplu data={data} actualizeaza={actualizeaza} mergiLa={setTab} segmente={segmente} stat={stat} />}
         {tab === "buget" && <TabBuget data={data} actualizeaza={actualizeaza} alocare={alocare} stat={stat} continua={() => setTab("sinteza")} />}
         {tab === "sinteza" && <TabSinteza data={data} actualizeaza={actualizeaza} alocare={alocare} sfaturi={sfaturi} mergiLa={setTab} />}
         {tab === "chestionar" && <TabChestionar data={data} actualizeaza={actualizeaza} progres={progres} />}
