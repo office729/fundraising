@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Program de lucru pe cazuri</title>
+<title>Program de lucru pe proiecte</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -120,7 +120,7 @@ input[type=range].fs::-moz-range-thumb{height:19px;width:19px;border-radius:50%;
 <body>
 <div class="wrap">
 <header>
-  <h1><span class="eyebrow">__FA_ORG_NAME__</span>Program de lucru pe cazuri<small>echipa de fundraising · 8:30–15:30 · rutina fiecăreia + cazurile active, intercalate fără suprapunere</small></h1>
+  <h1><span class="eyebrow">__FA_ORG_NAME__</span>Program de lucru pe proiecte<small>echipa de fundraising · 8:30–15:30 · rutina fiecăreia + proiectele active, intercalate fără suprapunere</small></h1>
   <div class="userbox">Eu sunt:
     <select id="whoami" onchange="setUser(this.value)">
       <option value="">— alege —</option>
@@ -134,7 +134,7 @@ input[type=range].fs::-moz-range-thumb{height:19px;width:19px;border-radius:50%;
 
 <div class="tabs">
   <button class="chipbtn on" id="tab_zi" onclick="setView('zi')">📅 Ziua mea</button>
-  <button class="chipbtn" id="tab_caz" onclick="setView('caz')">🗂 Cazuri</button>
+  <button class="chipbtn" id="tab_caz" onclick="setView('caz')">🗂 Proiecte</button>
   <button class="chipbtn" id="tab_final" onclick="setView('final')">✅ Finalizate</button>
   <button class="chipbtn" id="tab_rest" onclick="setView('rest')">⏰ Restanțe<span class="bdg" id="restbdg" style="display:none">0</span></button>
   <button class="chipbtn" id="tab_extra" onclick="setView('extra')">📌 Sarcini colegi<span class="bdg" id="extrabdg" style="display:none">0</span></button>
@@ -911,7 +911,7 @@ function mergiLaCaz(id){setView('caz');setTimeout(function(){const el=document.g
 function tagCaz(t){
   if(!t.caz)return '<span class="tag tgen">rutină</span>';
   const inner=esc(t.caz)+' · Z'+t.ziN+'/'+t.zile;
-  if(esteCazReal(t.cazId))return '<span class="tag '+TIERS[t.zile].cls+'" style="cursor:pointer" title="Vezi cazul" onclick="mergiLaCaz(\''+t.cazId+'\')">'+inner+' ↗</span>';
+  if(esteCazReal(t.cazId))return '<span class="tag '+TIERS[t.zile].cls+'" style="cursor:pointer" title="Vezi proiectul" onclick="mergiLaCaz(\''+t.cazId+'\')">'+inner+' ↗</span>';
   return '<span class="tag '+TIERS[t.zile].cls+'">'+inner+'</span>';
 }
 function setView(v){VIEW=v;if(v==='extra')marcheazaVazute();['zi','caz','final','rest','extra','fisa'].forEach(x=>document.getElementById('tab_'+x).classList.toggle('on',x===v));render();}
@@ -935,7 +935,7 @@ function render(){
     al+='<div class="alarm">🔔 <b>'+r.length+' sarcini neîndeplinite</b> din zilele trecute'
      +(USER?' — dintre care <b>'+r.filter(x=>x.pers===USER).length+'</b> ale tale':'')
      +'<button class="btn small" onclick="setView(\'rest\')">Vezi restanțele</button></div>'
-     +(BLOCATI.length?'<div class="alarm" style="background:var(--red-deep)">🚫 <b>'+BLOCATI.map(esc).join(', ')+'</b> — peste '+PRAG_RESTANTE+' restanțe. Cazurile nu mai generează sarcini noi pentru ei; rutina zilnică rămâne. Se deblochează automat sub '+PRAG_RESTANTE+'.</div>':'');
+     +(BLOCATI.length?'<div class="alarm" style="background:var(--red-deep)">🚫 <b>'+BLOCATI.map(esc).join(', ')+'</b> — peste '+PRAG_RESTANTE+' restanțe. Proiectele nu mai generează sarcini noi pentru ei; rutina zilnică rămâne. Se deblochează automat sub '+PRAG_RESTANTE+'.</div>':'');
   const exR=USER?EXTRA.filter(e=>!e.sters&&e.pers===USER&&e.data<todayIso()&&!BIFE['extra|'+e.id]):[];
   if(exR.length&&VIEW!=='extra')
     al+='<div class="alarm" style="background:var(--amber)">📌 <b>'+exR.length+(exR.length===1?' sarcină primită restantă':' sarcini primite restante')+'</b> — nefăcute din zilele trecute<button class="btn small" onclick="setView(\'extra\')">Vezi-le</button></div>';
@@ -946,7 +946,7 @@ function render(){
     +'<button class="btn small" onclick="setZi(\''+addDays(ZI,1)+'\')">→</button>'
     +'<button class="btn small" onclick="setZi(\''+todayIso()+'\')">Azi</button>'
     +'<button class="btn" onclick="refresh(this)">🔄 Actualizează</button>';
-  else if(VIEW==='caz')tr.innerHTML='<button class="btn primary" onclick="FORM=!FORM;render()">➕ Caz nou</button><button class="btn" onclick="refresh(this)">🔄 Actualizează</button>';
+  else if(VIEW==='caz')tr.innerHTML='<button class="btn primary" onclick="FORM=!FORM;render()">➕ Proiect nou</button><button class="btn" onclick="refresh(this)">🔄 Actualizează</button>';
   else tr.innerHTML='<button class="btn" onclick="refresh(this)">🔄 Actualizează</button>';
   tr.innerHTML+='<button class="btn small" onclick="SETARI=!SETARI;render()" title="Sincronizare între calculatoare">⚙️</button>'
     +'<span class="mini" id="autosv" style="'+((ST_LOCAL||ST_CLOUD||ST_NET||!TESTAT)?'':'color:var(--red-deep);font-weight:700')+'">'+stareText()+'</span><span style="flex:1"></span>'
@@ -1066,7 +1066,7 @@ function randZi(){
     const rutBtn='<button class="btn small" onclick="editRutina(\''+p+'\')" title="Editează sarcinile recurente">🔁 Rutină</button>';
     if(abs){
       h+='<div class="card" style="opacity:.8"><div class="chead"><b>'+p+'</b><span class="sub">'+(ROL[p]||'')+'</span><span class="right">'+concBtn+' '+rutBtn+'</span></div>'
-       +'<div class="slot break" style="background:var(--teal-soft)"><div class="hh">🏖</div><div class="bd" style="color:var(--teal)"><b>În concediu azi</b> — sarcinile pe cazuri merg automat la celelalte colege.</div></div>'
+       +'<div class="slot break" style="background:var(--teal-soft)"><div class="hh">🏖</div><div class="bd" style="color:var(--teal)"><b>În concediu azi</b> — sarcinile pe proiecte merg automat la celelalte colege.</div></div>'
        +concEditor+rutEditor+'</div>';
       return;
     }
@@ -1074,11 +1074,11 @@ function randZi(){
     const taiateP=alegePentruZi(ZI).taiate.filter(t=>t.pers===p).length;
     const done=rez.concat(over).filter(t=>BIFE[t.key]).length;
     h+='<div class="card"><div class="chead"><b>'+p+'</b><span class="sub">'+ROL[p]+'</span><span class="right mini">'+done+'/'+(rez.length+over.length)+' bifate · '+Math.round(incarcare/60*10)/10+'h din 5h '+concBtn+' '+rutBtn+'</span></div>'+concEditor+rutEditor;
-    if(taiateP)h+='<div class="slot break"><div class="hh">⚖️</div><div class="bd">Program plin — ziua e limitată la 5 ore, așa că '+taiateP+(taiateP===1?' sarcină':' sarcini')+' din cazurile mai puțin urgente nu au intrat azi în program (și nu devin restanțe).</div></div>';
+    if(taiateP)h+='<div class="slot break"><div class="hh">⚖️</div><div class="bd">Program plin — ziua e limitată la 5 ore, așa că '+taiateP+(taiateP===1?' sarcină':' sarcini')+' din proiectele mai puțin urgente nu au intrat azi în program (și nu devin restanțe).</div></div>';
     if(!lucru){h+='<div class="empty">Weekend — fără program de birou.</div></div>';return;}
     h+='<div class="slot break"><div class="hh">'+hhmm(CITIT[0])+'–'+hhmm(CITIT[1])+'</div><div class="bd">📖 Citit cărți, cu o cafea fierbinte</div></div>';
     if(w===ZI_SEDINTA)h+='<div class="slot break" style="background:var(--teal-soft)"><div class="hh">'+hhmm(SEDINTA[0])+'–'+hhmm(SEDINTA[1])+'</div><div class="bd" style="color:var(--teal)">👥 Ședința echipei: bilanțul săptămânii, cine e blocat, ce preluăm și ce lansăm săptămâna viitoare</div></div>';
-    if(BLOCATI.indexOf(p)>=0)h+='<div class="slot over"><div class="hh">blocat</div><div class="bd"><b>'+RESTP[p]+' restanțe</b> — cazurile nu-ți mai dau sarcini noi până cobori sub '+PRAG_RESTANTE+'. Rutina zilnică rămâne. <a href="#" onclick="setView(\'rest\');return false" style="color:var(--red-deep)">Recuperează acum →</a></div></div>';
+    if(BLOCATI.indexOf(p)>=0)h+='<div class="slot over"><div class="hh">blocat</div><div class="bd"><b>'+RESTP[p]+' restanțe</b> — proiectele nu-ți mai dau sarcini noi până cobori sub '+PRAG_RESTANTE+'. Rutina zilnică rămâne. <a href="#" onclick="setView(\'rest\');return false" style="color:var(--red-deep)">Recuperează acum →</a></div></div>';
     let masaPusa=false;
     rez.forEach(t=>{
       if(!masaPusa&&t.de>=MASA[0]){h+='<div class="slot break"><div class="hh">'+hhmm(MASA[0])+'–'+hhmm(MASA[1])+'</div><div class="bd">🍽 Pauză de masă</div></div>';masaPusa=true;}
@@ -1129,8 +1129,8 @@ function randZi(){
 
 function randCazuri(){
   const nLuna=intensiveLunaCurenta().length, nInt=CAZURI.filter(c=>!c.sters&&!c.gata&&(c.mod||'intens')==='intens').length, nCon=CAZURI.filter(c=>!c.sters&&!c.gata&&c.mod==='intretinere').length;
-  let h='<div class="'+(nLuna>=MAX_CAZ?'warn':'info')+'">🎯 <b>Cazuri noi preluate în '+fmtLuna(todayIso())+': '+nLuna+' / '+MAX_CAZ+'</b> · în lucru acum: '+nInt+' intensive, '+nCon+' în continuare. '
-    +(nLuna>=MAX_CAZ?'Norma lunii e atinsă. Următoarele preluări, din '+fmtLuna(lunaUrm())+'.':'Mai poți prelua '+(MAX_CAZ-nLuna)+' cazuri noi luna aceasta.')
+  let h='<div class="'+(nLuna>=MAX_CAZ?'warn':'info')+'">🎯 <b>Proiecte noi preluate în '+fmtLuna(todayIso())+': '+nLuna+' / '+MAX_CAZ+'</b> · în lucru acum: '+nInt+' intensive, '+nCon+' în continuare. '
+    +(nLuna>=MAX_CAZ?'Norma lunii e atinsă. Următoarele preluări, din '+fmtLuna(lunaUrm())+'.':'Mai poți prelua '+(MAX_CAZ-nLuna)+' proiecte noi luna aceasta.')
     +' <button class="btn small" onclick="preiaToate(this)">⟳ Preia sumele de pe site</button></div>';
   if(FORM){
     h+='<div class="card"><div class="chead"><b>Caz nou</b></div>'
@@ -1151,8 +1151,8 @@ function randCazuri(){
   }
   const vizibile=CAZURI.filter(c=>!c.sters&&!c.gata);
   const nFin=CAZURI.filter(c=>!c.sters&&c.gata).length;
-  if(nFin)h+='<div class="info">✅ '+nFin+(nFin===1?' caz finalizat':' cazuri finalizate')+' — le găsești în tabul <b>Finalizate</b>. <button class="btn small" onclick="setView(\'final\')">Vezi-le</button></div>';
-  if(!vizibile.length)return h+'<div class="empty">Niciun caz în lucru.</div>';
+  if(nFin)h+='<div class="info">✅ '+nFin+(nFin===1?' proiect finalizat':' proiecte finalizate')+' — le găsești în tabul <b>Finalizate</b>. <button class="btn small" onclick="setView(\'final\')">Vezi-le</button></div>';
+  if(!vizibile.length)return h+'<div class="empty">Niciun proiect în lucru.</div>';
   vizibile.forEach(cz=>{
     const T=TIERS[cz.zile],d=diffDays(cz.start,todayIso())+1,ram=cz.zile-d+1;
     h+='<div class="card" id="caz-'+cz.id+'"'+(cz.gata?' style="opacity:.55"':'')+'><div class="chead"><b>'+esc(cz.nume)+'</b>'
@@ -1164,7 +1164,7 @@ function randCazuri(){
       +'<span class="right"><select onchange="schimbaResp(\''+cz.id+'\',this.value)">'+RESPONSABILI.map(r=>'<option '+(r===cz.resp?'selected':'')+'>'+r+'</option>').join('')+'</select>'
       +'<button class="btn small" onclick="EDITCAZ=EDITCAZ===\''+cz.id+'\'?\'\':\''+cz.id+'\';render()" title="Corectează numele, startul sau termenul">✏️ Editează</button>'
       +'<button class="btn small" onclick="toggleMod(\''+cz.id+'\')">'+((cz.mod||'intens')==='intens'?'🔁 Trec în continuare':'🔥 Trec intensiv')+'</button>'
-      +'<label class="btn small" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;'+(cz.gata?'background:var(--green-soft);border-color:var(--green);color:var(--green);font-weight:700':'')+'"><input type="checkbox" '+(cz.gata?'checked':'')+' onchange="toggleGata(\''+cz.id+'\')" style="accent-color:var(--green);width:16px;height:16px;margin:0">'+(cz.gata?'Caz finalizat':'Finalizare caz')+'</label>'
+      +'<label class="btn small" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;'+(cz.gata?'background:var(--green-soft);border-color:var(--green);color:var(--green);font-weight:700':'')+'"><input type="checkbox" '+(cz.gata?'checked':'')+' onchange="toggleGata(\''+cz.id+'\')" style="accent-color:var(--green);width:16px;height:16px;margin:0">'+(cz.gata?'Proiect finalizat':'Finalizare proiect')+'</label>'
       +'<button class="btn small" onclick="stergeCaz(\''+cz.id+'\')">✕</button></span></div>';
     if(EDITCAZ===cz.id){
       h+='<div class="frow" style="background:#FDFBF6"><label>Nume</label><input type="text" id="ed_nume" value="'+esc(cz.nume)+'" style="flex:1;min-width:170px">'
@@ -1196,8 +1196,8 @@ function randCazuri(){
       +'oninput="finLive(\''+cz.id+'\',this.value,'+Math.max(1,cz.tinta||1)+')" onchange="setSuma(\''+cz.id+'\',this.value)">'
       +'<div class="frow" style="border:none;padding:8px 0 0"><label>Strâns</label><input type="number" value="'+(cz.strans||0)+'" style="width:120px" onchange="setSuma(\''+cz.id+'\',this.value)"> €'
       +'<label>Obiectiv</label><input type="number" value="'+(cz.tinta||0)+'" style="width:120px" onchange="setCamp(\''+cz.id+'\',\'tinta\',+this.value)"> €'
-      +(cz.link?'<button class="btn small" onclick="preiaSuma(\''+cz.id+'\',this)">⟳ Preia de pe site</button><a href="'+esc(cz.link)+'" target="_blank" rel="noopener" class="mini" style="color:var(--muted)">pagina cazului ↗</a>'
-               :'<span class="mini">pune linkul cazului la ✏️ Editează și suma se preia singură de pe site</span>')
+      +(cz.link?'<button class="btn small" onclick="preiaSuma(\''+cz.id+'\',this)">⟳ Preia de pe site</button><a href="'+esc(cz.link)+'" target="_blank" rel="noopener" class="mini" style="color:var(--muted)">pagina proiectului ↗</a>'
+               :'<span class="mini">pune linkul proiectului la ✏️ Editează și suma se preia singură de pe site</span>')
       +'</div></div>'
       +'<div class="freqhead">Praguri — se aprind singure din sumă</div><div class="prag">'
       +[25,50,75,100].map(x=>{const k=cz.id+'|prag'+x, vid=BIFE['prag|'+cz.id+'|'+x], areVideo=(x===50||x===75);
@@ -1210,8 +1210,8 @@ function randCazuri(){
 /* ============ PAGINA CAZURILOR FINALIZATE ============ */
 function randFinalizate(){
   const fin=CAZURI.filter(c=>!c.sters&&c.gata);
-  if(!fin.length)return '<div class="empty">Niciun caz finalizat încă. Când bifezi „Finalizare caz" în tabul Cazuri, cazul se mută aici.</div>';
-  let h='<div class="info">✅ <b>'+fin.length+(fin.length===1?' caz finalizat':' cazuri finalizate')+'</b> — sarcinile lor au fost scoase din program și din restanțe. De aici le poți redeschide oricând.</div>';
+  if(!fin.length)return '<div class="empty">Niciun proiect finalizat încă. Când bifezi „Finalizare proiect" în tabul Proiecte, proiectul se mută aici.</div>';
+  let h='<div class="info">✅ <b>'+fin.length+(fin.length===1?' proiect finalizat':' proiecte finalizate')+'</b> — sarcinile lor au fost scoase din program și din restanțe. De aici le poți redeschide oricând.</div>';
   fin.forEach(cz=>{
     const proc=procCaz(cz);
     h+='<div class="card"><div class="chead"><b>'+esc(cz.nume)+'</b>'
@@ -1221,7 +1221,7 @@ function randFinalizate(){
       +'<span class="tag '+clsProc(proc)+'" style="padding:4px 9px">'+eur(cz.strans||0)+' / '+eur(cz.tinta||0)+' · '+proc+'%</span>'
       +'<span class="sub">start '+fmtZi(cz.start)+' · încheiat</span>'
       +'<span class="right">'
-      +(cz.link?'<a href="'+esc(cz.link)+'" target="_blank" rel="noopener" class="btn small">pagina cazului ↗</a>':'')
+      +(cz.link?'<a href="'+esc(cz.link)+'" target="_blank" rel="noopener" class="btn small">pagina proiectului ↗</a>':'')
       +'<button class="btn small" onclick="toggleGata(\''+cz.id+'\')">↩︎ Redeschide</button>'
       +'<button class="btn small" onclick="stergeCaz(\''+cz.id+'\')">✕</button></span></div>'
       +notiteHtml(cz)+'</div>';
@@ -1258,7 +1258,7 @@ function previzualizare(){
   const el=document.getElementById('prev'); if(!el)return;
   const z=+document.getElementById('f_zile').value, resp=document.getElementById('f_resp').value, st=document.getElementById('f_start').value||todayIso();
   const md=(document.getElementById('f_mod')||{}).value||'intens';
-  const fictiv={id:'__prev',nume:'(caz nou)',zile:z,start:st,resp,mod:md,gata:false};
+  const fictiv={id:'__prev',nume:'(proiect nou)',zile:z,start:st,resp,mod:md,gata:false};
   CAZURI.push(fictiv);
   let h='<div class="loadbar">';
   ECHIPA.forEach(p=>{
