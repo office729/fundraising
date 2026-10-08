@@ -3,8 +3,8 @@ import type { Locale } from "../config";
 export const SETARI_ECHIPA_DICT = {
   ro: {
     crmSetari: {
-      title: "Setările modulului CRM",
-      subtitle: "Separat de setările de branding ale organizației (acelea sunt la Setări organizație)",
+      title: "Roluri și integrări",
+      subtitle: "Ce poate face fiecare rol din echipă și ce integrări sunt pregătite pentru viitor.",
       coloaneDonatori: { title: "Coloane implicite — Persoane fizice", subtitle: "Ce se vede în lista de donatori, implicit" },
       coloaneCompanii: { title: "Coloane implicite — Companii", subtitle: "Ce se vede în lista de companii, implicit" },
       coloane: {
@@ -37,8 +37,8 @@ export const SETARI_ECHIPA_DICT = {
       neconectat: "neconectat",
     },
     orgSetari: {
-      title: "Setări — identitate vizuală",
-      subtitle: "Logo-ul și culoarea se aplică pe toate instrumentele organizației.",
+      title: "Setări",
+      subtitle: "Logo și culori, adresă, abonament, plăți donații, acorduri și date ale organizației.",
       logo: "Logo",
       faraLogo: "fără logo",
       incarcaLogo: "Încarcă logo",
@@ -263,8 +263,8 @@ export const SETARI_ECHIPA_DICT = {
   },
   en: {
     crmSetari: {
-      title: "CRM module settings",
-      subtitle: "Separate from the organization's branding settings (those live under Organization Settings)",
+      title: "Roles and integrations",
+      subtitle: "What each team role can do and which integrations are being prepared.",
       coloaneDonatori: { title: "Default columns — Individuals", subtitle: "What's shown in the donor list by default" },
       coloaneCompanii: { title: "Default columns — Companies", subtitle: "What's shown in the company list by default" },
       coloane: {
@@ -297,8 +297,8 @@ export const SETARI_ECHIPA_DICT = {
       neconectat: "not connected",
     },
     orgSetari: {
-      title: "Settings — visual identity",
-      subtitle: "The logo and color apply across all of the organization's tools.",
+      title: "Settings",
+      subtitle: "Logo and colors, address, subscription, donation payments, agreements and organization data.",
       logo: "Logo",
       faraLogo: "no logo",
       incarcaLogo: "Upload logo",
