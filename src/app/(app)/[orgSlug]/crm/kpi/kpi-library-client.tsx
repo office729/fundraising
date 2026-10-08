@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, CalendarRange, ChevronDown, Copy, GitBranch, LayoutGrid, Pencil, Plus, Power, Sparkles, Trash2, TrendingUp, Users } from "lucide-react";
+import { Building2, CalendarRange, FileText, ChevronDown, Copy, GitBranch, LayoutGrid, Pencil, Plus, Power, Sparkles, Trash2, TrendingUp, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 
@@ -142,6 +142,9 @@ export function KpiLibraryClient({
                 </DropdownItem>
                 <DropdownItem onClick={() => { close(); router.push(`/${orgSlug}/crm/kpi/departament`); }}>
                   <Building2 className="h-3.5 w-3.5" /> Departament
+                </DropdownItem>
+                <DropdownItem onClick={() => { close(); router.push(`/${orgSlug}/crm/kpi/rapoarte`); }}>
+                  <FileText className="h-3.5 w-3.5" /> Rapoarte
                 </DropdownItem>
                 {esteAdmin && (
                   <DropdownItem onClick={() => { close(); router.push(`/${orgSlug}/crm/kpi/organizatie-dashboard`); }}>
