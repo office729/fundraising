@@ -10,7 +10,6 @@ import {
   ChevronsLeft,
   ChevronsRight,
   ClipboardList,
-  Command,
   FileSignature,
   Gauge,
   GraduationCap,
@@ -27,7 +26,6 @@ import {
   Network,
   Plus,
   ScanFace,
-  Search,
   Settings,
   Sparkles,
   TrendingUp,
@@ -64,9 +62,7 @@ import {
   setSidebarRestrans,
   useLocalStoreValue,
 } from "./lib/local-store";
-import { useDonatori } from "./lib/use-data";
 import { TASKURI, type Task } from "./mock";
-import { cautaDonatoriReali, type RezultatCautareDonator } from "./donatori/reali/actions";
 import { idScurt } from "@/lib/id-scurt";
 import { UtilizatorProvider } from "./lib/utilizator-context";
 import { useExempleDemo } from "./lib/exemple-demo";
@@ -164,24 +160,13 @@ export function CrmShell({
   const collapsed = useLocalStoreValue(getSidebarRestrans, false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
   const pathname = usePathname();
   const base = `/${orgSlug}/crm`;
-  // Căutarea pe persoane fizice nu are sens în Companii, Instrumente, Consultanță,
-  // Organizație & Echipă, KPI Library și în instrumentele HTML (care stau în
-  // afara /crm) — acolo n-o afișăm.
-  const cautarePersoaneFizice =
-    (pathname ?? "").startsWith(base) &&
-    (pathname ?? "").replace(/\/$/, "") !== base &&
-    !["/companii", "/instrumente", "/consultanta", "/organizatie", "/kpi"].some((x) => (pathname ?? "").startsWith(base + x));
   const dict = DASHBOARD_DICT[locale];
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        setSearchOpen(true);
-      } else if (e.key === "Escape") {
+      if (e.key === "Escape") {
         setMobileOpen(false);
       }
     }
@@ -265,21 +250,6 @@ export function CrmShell({
           >
             <Menu className="h-4 w-4" />
           </button>
-          {/* Căutarea de mai jos e doar pe persoane fizice (mock) — pe Companii,
-              unde există deja o căutare reală, server-side, în FilterBar, n-o
-              mai afișăm (era redundantă și confuza cu cea reală). */}
-          {cautarePersoaneFizice && (
-            <button
-              onClick={() => setSearchOpen(true)}
-              className="flex h-9 w-9 shrink-0 items-center gap-2 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface-2)] px-3 text-[13px] text-[var(--ci-text-faint)] transition-colors hover:border-[var(--ci-border-strong)] sm:w-auto md:w-72"
-            >
-              <Search className="h-4 w-4 shrink-0" />
-              <span className="hidden flex-1 text-left sm:inline">{dict.header.searchPersoane}</span>
-              <span className="hidden items-center gap-0.5 rounded border border-[var(--ci-border)] px-1 text-[10px] md:flex">
-                <Command className="h-2.5 w-2.5" />K
-              </span>
-            </button>
-          )}
           <div className="flex-1" />
           <button
             onClick={() => setAddOpen(true)}
@@ -313,7 +283,6 @@ export function CrmShell({
       </div>
 
       <AddDialog open={addOpen} onClose={() => setAddOpen(false)} base={base} pathname={pathname} />
-      <SearchDialog open={searchOpen} onClose={() => setSearchOpen(false)} base={base} orgSlug={orgSlug} />
       <span className="sr-only" suppressHydrationWarning>
         {userName.includes("@") ? `${salut}.` : `${salut}, ${userName.split(" ")[0]}.`}
       </span>
@@ -675,77 +644,3 @@ function NotificationsButton({ base, orgSlug }: { base: string; orgSlug: string 
   );
 }
 
-function SearchDialog({ open, onClose, base, orgSlug }: { open: boolean; onClose: () => void; base: string; orgSlug: string }) {
-  const [q, setQ] = useState("");
-  const [reali, setReali] = useState<{ termen: string; rezultate: RezultatCautareDonator[] }>({ termen: "", rezultate: [] });
-  const router = useRouter();
-  const DONATORI = useDonatori();
-  const termen = q.trim();
-
-  // Donatorii reali ai organizației se caută pe server (nume sau email), cu o mică întârziere cât scrie utilizatorul.
-  useEffect(() => {
-    if (termen.length < 2) return;
-    let anulat = false;
-    const timer = setTimeout(() => {
-      cautaDonatoriReali(orgSlug, termen)
-        .then((rezultate) => {
-          if (!anulat) setReali({ termen, rezultate });
-        })
-        .catch(() => {
-          if (!anulat) setReali({ termen, rezultate: [] });
-        });
-    }, 250);
-    return () => {
-      anulat = true;
-      clearTimeout(timer);
-    };
-  }, [termen, orgSlug]);
-
-  // Donatorii reali (din plățile primite) apar primii; setul demonstrativ / importat local rămâne dedesubt, marcat „Demo".
-  // Companiile reale se caută direct în /crm/companii (câmp propriu, pe server), deci nu le amestecăm aici.
-  const results = useMemo(() => {
-    if (!termen) return [];
-    const needle = termen.toLowerCase();
-    const realiAfisati = reali.termen === termen ? reali.rezultate : [];
-    const locale = DONATORI.filter((x) => x.nume.toLowerCase().includes(needle)).map((x) => ({
-      label: x.nume,
-      sub: "Demo",
-      href: `${base}/donatori/${x.id}`,
-    }));
-    return [
-      ...realiAfisati.map((x) => ({ label: x.nume, sub: x.email, href: `${base}/donatori/reali/${x.id}` })),
-      ...locale,
-    ].slice(0, 8);
-  }, [termen, base, DONATORI, reali]);
-
-  return (
-    <Dialog open={open} onClose={onClose} title="Căutare persoane fizice">
-      <input
-        autoFocus
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        placeholder="Nume donator…"
-        className="h-10 w-full rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-3 text-sm focus:border-[var(--ci-blue)] focus:outline-none"
-      />
-      <div className="mt-3 space-y-1">
-        {results.length === 0 && q.trim() && (
-          <p className="px-1 py-2 text-[13px] text-[var(--ci-text-muted)]">Niciun rezultat pentru „{q}”.</p>
-        )}
-        {results.map((r, i) => (
-          <button
-            key={i}
-            onClick={() => {
-              onClose();
-              setQ("");
-              router.push(r.href);
-            }}
-            className="flex w-full items-center justify-between rounded-[var(--ci-radius-btn)] px-3 py-2 text-left text-sm transition-colors hover:bg-[var(--ci-surface-2)]"
-          >
-            <span className="font-medium text-[var(--ci-text)]">{r.label}</span>
-            <span className="text-[12px] text-[var(--ci-text-muted)]">{r.sub}</span>
-          </button>
-        ))}
-      </div>
-    </Dialog>
-  );
-}
