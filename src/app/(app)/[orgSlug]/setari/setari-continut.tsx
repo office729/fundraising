@@ -1,5 +1,4 @@
 import { headers } from "next/headers";
-import Link from "next/link";
 
 import { requireOrgAccess } from "@/lib/auth/guard";
 import { getLocale } from "@/lib/i18n/get-locale";
@@ -110,18 +109,6 @@ export async function SetariContinut({ orgSlug }: { orgSlug: string }) {
             versiuneCurenta={access.orgDpaVersion === DPA_VERSIUNE}
           />
         )}
-        <section className="mt-8 rounded-xl border border-line bg-panel p-5">
-          <h2 className="font-medium text-ink">Cereri GDPR ale persoanelor</h2>
-          <p className="mt-1 text-xs text-muted">
-            Export sau ștergere de date pentru persoane de contact, voluntari și alte persoane care nu sunt donatori.
-          </p>
-          <Link prefetch={false}
-            href={`/${orgSlug}/setari/gdpr`}
-            className="mt-3 inline-block rounded-lg border border-line px-4 py-2 text-sm font-medium text-ink transition hover:bg-panel-2"
-          >
-            Deschide
-          </Link>
-        </section>
       </div>
       </div>
     </>
