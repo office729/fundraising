@@ -19,6 +19,7 @@ import { Card, CardHeader } from "../../components/ui/card";
 import { EmptyState } from "../../components/ui/states";
 import { formatDataOra } from "../../lib/format";
 import { BeneficiariPanel } from "./beneficiari-panel";
+import { BorderouriCard } from "./borderouri-card";
 import { CampanieEmailCard } from "./campanie-email-card";
 import { getUltimaCampanieEmail } from "./campanie-email-actions";
 import { CopyLinkButton, DeleteButton, PdfButton, ProcesatAnafCheckbox } from "./client";
@@ -234,6 +235,8 @@ export default async function Formular230StatsPage({
       </p>
 
       <BeneficiariPanel orgSlug={orgSlug} beneficiari={beneficiari} />
+
+      {poateVedeaDateSensibile && <BorderouriCard orgSlug={orgSlug} />}
 
       <CampanieEmailCard orgSlug={orgSlug} emailConfigurat={emailConfigurat()} ultimaCampanie={ultimaCampanie} />
 

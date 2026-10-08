@@ -96,6 +96,9 @@ export const formular230Submissions = pgTable(
     // într-un lot trimis/depus la ANAF — nu are efect automat, e doar
     // urmărire internă (vezi și exportul „borderou" din pagina de admin).
     procesatAnaf: boolean("procesat_anaf").notNull().default(false),
+    // Numărul borderoului ANAF în care a intrat formularul (per cont beneficiar și an): maximum 50 de formulare pe
+    // borderou, apoi se completează automat următorul. Atribuit la prima deschidere a secțiunii „Borderouri”.
+    borderouNr: integer("borderou_nr"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [
