@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, CalendarRange, FileText, History, ListChecks, MessageSquare, ChevronDown, Copy, GitBranch, LayoutGrid, Pencil, Plus, Power, Sparkles, Trash2, TrendingUp, Users } from "lucide-react";
+import { Building2, CalendarRange, FileText, History, ListChecks, MessageSquare, ShieldCheck, ChevronDown, Copy, GitBranch, LayoutGrid, Pencil, Plus, Power, Sparkles, Trash2, TrendingUp, Users } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
@@ -171,6 +171,9 @@ export function KpiLibraryClient({
                   </DropdownItem>
                   <DropdownItem onClick={() => { close(); router.push(`/${orgSlug}/crm/kpi/sezoniere`); }}>
                     <CalendarRange className="h-3.5 w-3.5" /> Profiluri sezoniere
+                  </DropdownItem>
+                  <DropdownItem onClick={() => { close(); router.push(`/${orgSlug}/crm/kpi/permisiuni`); }}>
+                    <ShieldCheck className="h-3.5 w-3.5" /> Permisiuni
                   </DropdownItem>
                   <DropdownItem onClick={() => { close(); router.push(`/${orgSlug}/crm/kpi/jurnal`); }}>
                     <History className="h-3.5 w-3.5" /> Jurnal modificări

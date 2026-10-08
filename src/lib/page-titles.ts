@@ -65,6 +65,7 @@ const TITLURI = {
   crmKpiFunnel: { ro: "Funnel-uri — CRM", en: "Funnels — CRM" },
   crmD177: { ro: "Companii D177 — CRM", en: "D177 companies — CRM" },
   crmKpiStart: { ro: "Configurare KPI — CRM", en: "KPI setup — CRM" },
+  crmKpiPermisiuni: { ro: "Permisiuni KPI — CRM", en: "KPI permissions — CRM" },
   crmKpiRapoarte: { ro: "Rapoarte KPI — CRM", en: "KPI reports — CRM" },
   crmKpiJurnal: { ro: "Jurnal modificări KPI — CRM", en: "KPI change log — CRM" },
   crmKpiRitm: { ro: "Check-in și 1:1 — CRM", en: "Check-ins and 1:1s — CRM" },

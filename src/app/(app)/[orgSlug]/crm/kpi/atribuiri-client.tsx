@@ -22,9 +22,9 @@ import {
   type IstoricValoare,
   type ValoarePerioada,
 } from "./atribuiri-actions";
+import type { AngajatAccesibil } from "./permisiuni-actions";
 import type { DefinitieRand } from "./library-actions";
 
-type AngajatOptiune = { id: string; nume: string; prenume: string | null };
 
 const GOL_ATRIBUIRE: AtribuireInput = { kpiDefinitieId: "", pondere: null, targetMinim: null, targetNormal: null, targetStretch: null, proRata: true };
 
@@ -34,14 +34,12 @@ export function AtribuiriClient({
   definitii,
   initialAngajatId,
   initialAtribuiri,
-  esteAdmin,
 }: {
   orgSlug: string;
-  angajati: AngajatOptiune[];
+  angajati: AngajatAccesibil[];
   definitii: DefinitieRand[];
   initialAngajatId: string | null;
   initialAtribuiri: AtribuireRand[];
-  esteAdmin: boolean;
 }) {
   const [angajatId, setAngajatId] = useState(initialAngajatId ?? "");
   const [atribuiri, setAtribuiri] = useState(initialAtribuiri);
@@ -105,6 +103,9 @@ export function AtribuiriClient({
   };
 
   const angajatulCurent = angajati.find((a) => a.id === angajatId);
+  // Drepturile mele pe persoana aleasă (admin: toate; manager / angajat: după permisiunile din pagina „Permisiuni”).
+  const poateAtribui = angajatulCurent?.poateAtribui ?? false;
+  const poateValori = angajatulCurent?.poateValori ?? false;
 
   return (
     <div className="mx-auto max-w-[1000px] space-y-5">
@@ -117,7 +118,7 @@ export function AtribuiriClient({
         </div>
         <Select value={angajatId} onChange={(e) => schimbaAngajat(e.target.value)} className="w-56">
           <option value="">— alege un membru —</option>
-          {angajati.map((a) => <option key={a.id} value={a.id}>{a.nume} {a.prenume}</option>)}
+          {angajati.map((a) => <option key={a.id} value={a.id}>{a.nume} {a.prenume}{a.esteEu ? " (eu)" : ""}</option>)}
         </Select>
       </div>
 
@@ -134,10 +135,10 @@ export function AtribuiriClient({
           <CardHeader
             title={`KPI-urile lui ${angajatulCurent?.nume ?? ""}`}
             subtitle={`Pondere totală activă: ${totalPondere}%${totalPondere !== 100 && atribuiri.some((a) => a.status === "activ") ? " — nu însumează 100%, dar nu e obligatoriu" : ""}`}
-            action={esteAdmin && <Button size="sm" onClick={() => setDialogDeschis(true)} disabled={definitiiDisponibile.length === 0}><Plus className="h-3.5 w-3.5" /> Atribuie KPI</Button>}
+            action={poateAtribui && <Button size="sm" onClick={() => setDialogDeschis(true)} disabled={definitiiDisponibile.length === 0}><Plus className="h-3.5 w-3.5" /> Atribuie KPI</Button>}
           />
           {atribuiri.length === 0 ? (
-            <EmptyState title="Niciun KPI atribuit încă" description="Atribuie primul KPI din bibliotecă acestui membru." action={esteAdmin && <Button size="sm" onClick={() => setDialogDeschis(true)}>Atribuie KPI</Button>} />
+            <EmptyState title="Niciun KPI atribuit încă" description="Atribuie primul KPI din bibliotecă acestui membru." action={poateAtribui && <Button size="sm" onClick={() => setDialogDeschis(true)}>Atribuie KPI</Button>} />
           ) : (
             <div className="space-y-2">
               {atribuiri.map((a) => {
@@ -164,7 +165,7 @@ export function AtribuiriClient({
                       </div>
                       <div className="flex items-center gap-1">
                         <Button variant="ghost" size="icon" title="Istoric" onClick={() => onVeziIstoric(a.kpiDefinitieId, a.kpiNume)}><History className="h-3.5 w-3.5" /></Button>
-                        {esteAdmin && <Button variant="ghost" size="icon" title="Șterge atribuirea" onClick={() => onSterge(a.id)} disabled={pending}><Trash2 className="h-3.5 w-3.5" /></Button>}
+                        {poateAtribui && <Button variant="ghost" size="icon" title="Șterge atribuirea" onClick={() => onSterge(a.id)} disabled={pending}><Trash2 className="h-3.5 w-3.5" /></Button>}
                       </div>
                     </div>
 
@@ -181,8 +182,13 @@ export function AtribuiriClient({
                           </p>
                           <Button variant="ghost" size="icon" title="Recalculează" onClick={() => incarcaValoare(a.kpiDefinitieId)} disabled={pending}><RefreshCw className="h-3.5 w-3.5" /></Button>
                         </div>
-                      ) : (
+                      ) : poateValori ? (
                         <ManualEntry orgSlug={orgSlug} angajatId={angajatId} kpiDefinitieId={a.kpiDefinitieId} unitate={a.kpiUnitate} valoare={v} onSalvat={() => incarcaValoare(a.kpiDefinitieId)} />
+                      ) : (
+                        <p className="text-[13px] text-[var(--ci-text)]">
+                          Perioada curentă: <span className="ci-tabular font-semibold">{v.valoare ?? "—"}</span>{a.kpiUnitate ? ` ${a.kpiUnitate}` : ""}
+                          <span className="text-[var(--ci-text-muted)]"> — nu ai voie să modifici această valoare</span>
+                        </p>
                       )}
                     </div>
                   </div>
