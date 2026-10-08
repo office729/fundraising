@@ -27,7 +27,7 @@ export function ToolLocked({
         Planul tău personalizat nu include acest instrument momentan. Adaugă-l din Setări ca să-l activezi.
       </p>
       <Link
-        href={`/${orgSlug}/setari`}
+        href={`/${orgSlug}/crm/setari`}
         className="mt-5 inline-block rounded-md bg-brand-green px-6 py-3 font-bold text-white transition hover:bg-brand-green-hover"
       >
         Mergi la Setări

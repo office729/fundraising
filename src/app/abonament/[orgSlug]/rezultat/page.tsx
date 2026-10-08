@@ -27,7 +27,7 @@ export default async function RezultatPlataPage({
 }) {
   const { orgSlug } = await params;
   const { comanda } = await searchParams;
-  if (!comanda) redirect(`/${orgSlug}/setari`);
+  if (!comanda) redirect(`/${orgSlug}/crm/setari`);
 
   const plata = await citestePlata(orgSlug, comanda);
 
@@ -91,7 +91,7 @@ export default async function RezultatPlataPage({
       )}
 
       <Link
-        href={plata?.status === "reusita" ? `/${orgSlug}/crm` : `/${orgSlug}/setari`}
+        href={plata?.status === "reusita" ? `/${orgSlug}/crm` : `/${orgSlug}/crm/setari`}
         className="mt-6 rounded-md bg-brand-green px-6 py-3 font-bold text-white transition hover:bg-brand-green-hover"
       >
         {plata?.status === "reusita" ? "Mergi la platformă" : "Înapoi la Setări"}

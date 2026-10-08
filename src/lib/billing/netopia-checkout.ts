@@ -138,7 +138,7 @@ export async function creeazaPlataAbonament(
       },
       notifyUrl: `${params.origin}/api/netopia/ipn`,
       redirectUrl: `${params.origin}/abonament/${ctx.orgSlug}/rezultat?comanda=${orderId}`,
-      cancelUrl: `${params.origin}/${ctx.orgSlug}/setari`,
+      cancelUrl: `${params.origin}/${ctx.orgSlug}/crm/setari`,
     }));
   } catch (e) {
     // Netopia a refuzat pornirea: comanda nu mai e anulată odată cu tranzacția organizației (e deja comisă) — o închidem noi.

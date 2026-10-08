@@ -139,7 +139,7 @@ export default async function OrgLayout({
               </Link>
             )}
             <Link prefetch={false}
-              href={`/${orgSlug}/setari`}
+              href={`/${orgSlug}/crm/setari`}
               className="text-[13px] font-medium text-muted transition hover:text-brand-blue"
             >
               {dict.header.settings}
@@ -181,7 +181,7 @@ export default async function OrgLayout({
           {locale === "ro"
             ? "Mai ai de acceptat Acordul de prelucrare a datelor (DPA) — o formalitate legală, durează un minut. "
             : "You still need to accept the Data Processing Agreement (DPA) — a legal formality that takes a minute. "}
-          <Link prefetch={false} href={`/${orgSlug}/setari#dpa`} className="font-semibold underline">
+          <Link prefetch={false} href={`/${orgSlug}/crm/setari#dpa`} className="font-semibold underline">
             {locale === "ro" ? "Citește și acceptă" : "Read and accept"}
           </Link>
         </div>

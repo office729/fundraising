@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
   if (access.orgId !== parsed.orgId || (access.role !== "owner" && access.role !== "admin")) {
-    const res = NextResponse.redirect(new URL(`/${parsed.orgSlug}/setari?canva=eroare`, req.url));
+    const res = NextResponse.redirect(new URL(`/${parsed.orgSlug}/crm/setari?canva=eroare`, req.url));
     res.cookies.delete("canva_pkce_verifier");
     return res;
   }
@@ -38,12 +38,12 @@ export async function GET(req: NextRequest) {
   try {
     const tokens = await schimbaCodPeToken(code, verifier, redirectUri);
     await salveazaConexiuneCanva(access.orgId, access.userId, tokens);
-    const res = NextResponse.redirect(new URL(`/${parsed.orgSlug}/setari?canva=ok`, req.url));
+    const res = NextResponse.redirect(new URL(`/${parsed.orgSlug}/crm/setari?canva=ok`, req.url));
     res.cookies.delete("canva_pkce_verifier");
     return res;
   } catch (e) {
     raporteazaEroare("canva-oauth-callback", e, { orgId: access.orgId });
-    const res = NextResponse.redirect(new URL(`/${parsed.orgSlug}/setari?canva=eroare`, req.url));
+    const res = NextResponse.redirect(new URL(`/${parsed.orgSlug}/crm/setari?canva=eroare`, req.url));
     res.cookies.delete("canva_pkce_verifier");
     return res;
   }

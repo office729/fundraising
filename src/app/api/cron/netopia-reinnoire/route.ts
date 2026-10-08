@@ -288,7 +288,7 @@ async function proceseazaReinnoiri(): Promise<Record<string, unknown>> {
           packageLabel: pret.eticheta,
           card: org.netopiaCardMasked ?? "salvat",
           cardExpiraInainte: cardExpiratLa(org.netopiaCardExpireMonth, org.netopiaCardExpireYear, dataTaxare),
-          setariUrl: `${baseUrl}/${org.slug}/setari`,
+          setariUrl: `${baseUrl}/${org.slug}/crm/setari`,
         }),
       }).catch((e) => raporteazaEroare("netopia-reinnoire-aviz", e, { orgSlug: org.slug }));
       rezultate.push({ orgSlug: org.slug, rezultat: "aviz_trimis" });
@@ -322,7 +322,7 @@ async function proceseazaReinnoiri(): Promise<Record<string, unknown>> {
           await trimiteEmail({
             to: facturareEmail,
             subiect: subiectDateFacturareLipsa(),
-            html: htmlDateFacturareLipsa({ orgName: org.name, setariUrl: `${baseUrl}/${org.slug}/setari` }),
+            html: htmlDateFacturareLipsa({ orgName: org.name, setariUrl: `${baseUrl}/${org.slug}/crm/setari` }),
           }).catch((e) => raporteazaEroare("netopia-reinnoire-email", e, { orgSlug: org.slug }));
         }
         continue;
@@ -337,7 +337,7 @@ async function proceseazaReinnoiri(): Promise<Record<string, unknown>> {
           await trimiteEmail({
             to: facturareEmail,
             subiect: subiectCardExpirat(),
-            html: htmlCardExpirat({ orgName: org.name, card: org.netopiaCardMasked ?? "salvat", setariUrl: `${baseUrl}/${org.slug}/setari` }),
+            html: htmlCardExpirat({ orgName: org.name, card: org.netopiaCardMasked ?? "salvat", setariUrl: `${baseUrl}/${org.slug}/crm/setari` }),
           }).catch((e) => raporteazaEroare("netopia-reinnoire-email", e, { orgSlug: org.slug }));
         }
         continue;
@@ -384,7 +384,7 @@ async function proceseazaReinnoiri(): Promise<Record<string, unknown>> {
           subiect: subiectReinnoireEsuata(incercariRamase),
           html: htmlReinnoireEsuata({
             orgName: org.name,
-            setariUrl: `${baseUrl}/${org.slug}/setari`,
+            setariUrl: `${baseUrl}/${org.slug}/crm/setari`,
             incercariRamase,
             reinnoireDezactivata: rezultat.confirmare.reinnoireDezactivata,
           }),

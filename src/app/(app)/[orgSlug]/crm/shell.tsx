@@ -533,7 +533,7 @@ function AvatarMenu({ userName, orgSlug, role }: { userName: string; orgSlug: st
             </Link>
           )}
           <Link prefetch={false}
-            href={`/${orgSlug}/setari`}
+            href={`/${orgSlug}/crm/setari`}
             onClick={() => setOpen(false)}
             className="flex items-center gap-2 rounded-[var(--ci-radius-btn)] px-2.5 py-1.5 text-[13px] text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]"
           >

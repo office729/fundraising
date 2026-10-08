@@ -15,7 +15,7 @@ export function PrimiiPasiCard({ orgSlug, ro, pasi }: { orgSlug: string; ro: boo
       done: pasi.logo,
       label: ro ? "Adaugă sigla organizației" : "Add your organization's logo",
       hint: ro ? "Apare pe paginile publice și în documente." : "It appears on your public pages and documents.",
-      href: `/${orgSlug}/setari`,
+      href: `/${orgSlug}/crm/setari`,
     },
     {
       key: "pagina",

@@ -11,10 +11,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ orgS
   const access = await requireOrgAccess(orgSlug);
 
   if (access.role !== "owner" && access.role !== "admin") {
-    return NextResponse.redirect(new URL(`/${orgSlug}/setari`, req.url));
+    return NextResponse.redirect(new URL(`/${orgSlug}/crm/setari`, req.url));
   }
   if (!canvaConfigurat()) {
-    return NextResponse.redirect(new URL(`/${orgSlug}/setari?canva=neconfigurat`, req.url));
+    return NextResponse.redirect(new URL(`/${orgSlug}/crm/setari?canva=neconfigurat`, req.url));
   }
 
   const { verifier, challenge } = genereazaPkce();
