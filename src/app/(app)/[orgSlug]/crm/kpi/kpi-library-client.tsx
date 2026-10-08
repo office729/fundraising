@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, CalendarRange, FileText, ChevronDown, Copy, GitBranch, LayoutGrid, Pencil, Plus, Power, Sparkles, Trash2, TrendingUp, Users } from "lucide-react";
+import { Building2, CalendarRange, FileText, History, MessageSquare, ChevronDown, Copy, GitBranch, LayoutGrid, Pencil, Plus, Power, Sparkles, Trash2, TrendingUp, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 
@@ -143,6 +143,9 @@ export function KpiLibraryClient({
                 <DropdownItem onClick={() => { close(); router.push(`/${orgSlug}/crm/kpi/departament`); }}>
                   <Building2 className="h-3.5 w-3.5" /> Departament
                 </DropdownItem>
+                <DropdownItem onClick={() => { close(); router.push(`/${orgSlug}/crm/kpi/ritm`); }}>
+                  <MessageSquare className="h-3.5 w-3.5" /> Check-in și 1:1
+                </DropdownItem>
                 <DropdownItem onClick={() => { close(); router.push(`/${orgSlug}/crm/kpi/rapoarte`); }}>
                   <FileText className="h-3.5 w-3.5" /> Rapoarte
                 </DropdownItem>
@@ -160,6 +163,9 @@ export function KpiLibraryClient({
                 <>
                   <DropdownItem onClick={() => { close(); router.push(`/${orgSlug}/crm/kpi/sezoniere`); }}>
                     <CalendarRange className="h-3.5 w-3.5" /> Profiluri sezoniere
+                  </DropdownItem>
+                  <DropdownItem onClick={() => { close(); router.push(`/${orgSlug}/crm/kpi/jurnal`); }}>
+                    <History className="h-3.5 w-3.5" /> Jurnal modificări
                   </DropdownItem>
                   <DropdownItem onClick={() => { close(); router.push(`/${orgSlug}/crm/kpi/funnel`); }}>
                     <GitBranch className="h-3.5 w-3.5" /> Funnel-uri

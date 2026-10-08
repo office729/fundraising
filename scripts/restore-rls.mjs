@@ -745,6 +745,10 @@ const POLICIES = [
   `create policy kpi_audit_log_tenant_select on kpi_audit_log for select using (
     org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
   )`,
+  // Check-in săptămânal / 1:1 (Faza G): izolare pe organizație; cine vede ce (angajat / manager / admin) se decide în actions.
+  `create policy kpi_interactiuni_tenant_isolation on kpi_interactiuni
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
   `create policy kpi_audit_log_member_insert on kpi_audit_log for insert with check (
     org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
   )`,
@@ -808,6 +812,7 @@ const FORCE_TABLES = [
   "kpi_funnels",
   "kpi_funnel_etape",
   "kpi_audit_log",
+  "kpi_interactiuni",
 ];
 
 try {

@@ -1,4 +1,4 @@
-import { boolean, date, integer, jsonb, numeric, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { boolean, date, index, integer, jsonb, numeric, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
 import { appUsers } from "./app-users";
@@ -268,4 +268,22 @@ export const kpiAuditLog = pgTable(
     detalii: jsonb("detalii"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
+).enableRLS();
+
+// --- Check-in săptămânal și 1:1 (Faza G) -----------------------------------
+// Un singur tabel pentru ambele: `tip` = "checkin" (scris de angajat despre sine) | "1la1" (notițele manager-ului după o
+// discuție, vizibile și angajatului — transparență, nu supraveghere). `continut` ține câmpurile fiecărui tip.
+export const kpiInteractiuni = pgTable(
+  "kpi_interactiuni",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    orgId: uuid("org_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+    angajatId: uuid("angajat_id").notNull().references(() => angajati.id, { onDelete: "cascade" }),
+    autorUserId: uuid("autor_user_id").references(() => appUsers.id),
+    tip: text("tip").notNull(),
+    data: date("data").notNull(),
+    continut: jsonb("continut").$type<Record<string, unknown>>().notNull().default({}),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index("kpi_interactiuni_angajat_idx").on(t.orgId, t.angajatId, t.tip, t.data.desc())],
 ).enableRLS();
