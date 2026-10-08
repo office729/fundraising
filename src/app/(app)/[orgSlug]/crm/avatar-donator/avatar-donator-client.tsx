@@ -10,11 +10,13 @@ import { salveazaAvatar } from "./actions";
 import { TabBuget } from "./tab-buget";
 import { TabChestionar } from "./tab-chestionar";
 import { TabProfile } from "./tab-profile";
+import { TabSimplu } from "./tab-simplu";
 import { TabSinteza } from "./tab-sinteza";
 
-type TabId = "buget" | "sinteza" | "chestionar" | "profile";
+type TabId = "simplu" | "buget" | "sinteza" | "chestionar" | "profile";
 // Intrările (Buget) înaintea rezultatului (Sinteză): altfel omul nou ajunge pe o pagină goală.
 const TABURI: { id: TabId; label: string }[] = [
+  { id: "simplu", label: "Varianta simplă" },
   { id: "buget", label: "1. Buget & canale" },
   { id: "sinteza", label: "2. Sinteză & recomandări" },
   { id: "chestionar", label: "Chestionar (100 întrebări)" },
@@ -27,8 +29,8 @@ type Stare = "salvat" | "modificat" | "se-salveaza" | "eroare";
 export function AvatarDonatorClient({ initial, stat }: { initial: AvatarData; stat: StatisticiPlatforma | null }) {
   const { orgSlug } = useParams<{ orgSlug: string }>();
   const [data, setData] = useState<AvatarData>(initial);
-  // Fără buget introdus încă, începem de la intrări; altfel de la rezultat.
-  const [tab, setTabState] = useState<TabId>(parseNum(initial.buget.lunar) ? "sinteza" : "buget");
+  // Organizație nouă (nimic completat) → ghidul simplu; fără buget → intrările; altfel rezultatul.
+  const [tab, setTabState] = useState<TabId>(parseNum(initial.buget.lunar) ? "sinteza" : Object.values(initial.rezumat).some((v) => v) || initial.conversie ? "buget" : "simplu");
   const [stare, setStare] = useState<Stare>("salvat");
   const [mesaj, setMesaj] = useState("");
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -183,6 +185,7 @@ export function AvatarDonatorClient({ initial, stat }: { initial: AvatarData; st
       </div>
 
       <div role="tabpanel" id={`panou-${tab}`} aria-labelledby={`tab-${tab}`}>
+        {tab === "simplu" && <TabSimplu data={data} actualizeaza={actualizeaza} mergiLa={setTab} />}
         {tab === "buget" && <TabBuget data={data} actualizeaza={actualizeaza} alocare={alocare} stat={stat} continua={() => setTab("sinteza")} />}
         {tab === "sinteza" && <TabSinteza data={data} actualizeaza={actualizeaza} alocare={alocare} sfaturi={sfaturi} mergiLa={setTab} />}
         {tab === "chestionar" && <TabChestionar data={data} actualizeaza={actualizeaza} progres={progres} />}
