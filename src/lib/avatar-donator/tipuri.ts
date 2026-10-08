@@ -116,15 +116,21 @@ export const NR_SEGMENTE = 3;
 export const REZUMAT_CAMPURI: { key: string; label: string }[] = [
   { key: "nume", label: "Nume intern al profilului" },
   { key: "marime", label: "Mărimea segmentului" },
-  { key: "date", label: "Date definitorii" },
+  { key: "date", label: "Date definitorii (persoana reală: nume, vârstă, meserie, oraș)" },
+  { key: "citat", label: "În cuvintele lui (un citat care îl descrie)" },
+  { key: "ciclu", label: "Etapa relației (nou, recurent, fidel, major, în risc, inactiv)" },
   { key: "comportament", label: "Comportament financiar" },
+  { key: "sume", label: "Sume propuse (cele 3 sume din cerere)" },
+  { key: "recurent", label: "Disponibilitate pentru donație lunară" },
   { key: "motivatie", label: "Motivație principală" },
   { key: "obiectii", label: "Obiecții și dovezi" },
   { key: "mesaj", label: "Mesaj și format" },
   { key: "canale", label: "Canale" },
+  { key: "contact", label: "Preferință de contact" },
   { key: "momente", label: "Momente" },
   { key: "excluderi", label: "Excluderi" },
   { key: "kpi", label: "KPI și limite" },
+  { key: "baza", label: "Pe ce se bazează fișa (date reale, interviuri, intuiție)" },
 ];
 
 // Verificări obligatorii înainte de orice promovare plătită (cazuri medicale / minori). Afișate mereu, nu doar
