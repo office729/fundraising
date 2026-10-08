@@ -6,6 +6,7 @@ import { ImportExportPanel } from "../components/import-export-panel";
 import { Card } from "../components/ui/card";
 import { EmptyState } from "../components/ui/states";
 import { formatDataRelativa } from "../lib/format";
+import { DONATORI } from "../mock";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { DONATORI_REALI_DICT } from "@/lib/i18n/dictionaries/donatori-reali";
 
@@ -88,7 +89,36 @@ async function DonatoriContent({
       <FilterBarReali campanii={campanii} />
 
       <Card padded={false}>
-        {lista.rows.length === 0 ? (
+        {lista.rows.length === 0 && stats.donatori === 0 ? (
+          <div>
+            <div className="border-b border-[var(--ci-border)] bg-[var(--ci-surface-2)] px-4 py-2.5 text-[12.5px] text-[var(--ci-text-muted)]">{dict.exempluNota}</div>
+            <div className="divide-y divide-[var(--ci-border)]">
+              {DONATORI.slice(0, 5).map((d) => (
+                <Link
+                  prefetch={false}
+                  key={d.id}
+                  href={`/${orgSlug}/crm/donatori/${d.id}`}
+                  className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 transition-colors hover:bg-[var(--ci-surface-2)]"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-[13px] font-semibold text-[var(--ci-text)]">
+                      {d.nume} <Badge tone="neutral" icon={false}>{dict.exempluBadge}</Badge>
+                    </p>
+                    <p className="mt-0.5 truncate text-[12px] text-[var(--ci-text-muted)]">
+                      {d.email} · {d.telefon} · {d.localitate}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <span className="ci-tabular ml-2 text-[13px] font-semibold text-[var(--ci-text)]">
+                      {d.totalDonat.toLocaleString("ro-RO")} {d.moneda}
+                    </span>
+                    <span className="ci-tabular text-[12px] text-[var(--ci-text-muted)]">ultima: {dataOra(new Date(d.ultimaDonatieLa))}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        ) : lista.rows.length === 0 ? (
 
           <div className="p-5">
             <EmptyState title={dict.empty.title} description={dict.empty.description} />
