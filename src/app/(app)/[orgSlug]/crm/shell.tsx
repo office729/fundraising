@@ -108,10 +108,15 @@ function buildNav(dict: DashboardDict, orgSlug: string): { section: string; item
         { href: "taskuri", label: dict.nav.taskuri, hint: dict.hints.taskuri, icon: ClipboardList },
         { href: "comunicare", label: dict.nav.comunicare, hint: dict.hints.comunicare, icon: MessageSquare },
         { href: "/program-lucru", label: dict.nav.programLucru, hint: dict.hints.programLucru, icon: CalendarClock },
-        { href: "kpi-echipa", label: dict.nav.kpiEchipa, hint: dict.hints.kpiEchipa, icon: BarChart3 },
-        { href: "organizatie", label: dict.nav.organizatie, hint: dict.hints.organizatie, icon: Network },
-        { href: "kpi", label: dict.nav.kpiLibrary, hint: dict.hints.kpiLibrary, icon: LibraryBig },
+      ],
+    },
+    {
+      section: dict.nav.sectionPerformanta,
+      items: [
         { href: "kpi/dashboard", label: dict.nav.kpiPerformantaMea, hint: dict.hints.kpiPerformantaMea, icon: TrendingUp },
+        { href: "kpi", label: dict.nav.kpiLibrary, hint: dict.hints.kpiLibrary, icon: LibraryBig },
+        { href: "organizatie", label: dict.nav.organizatie, hint: dict.hints.organizatie, icon: Network },
+        { href: "kpi-echipa", label: dict.nav.kpiEchipa, hint: dict.hints.kpiEchipa, icon: BarChart3 },
       ],
     },
     {

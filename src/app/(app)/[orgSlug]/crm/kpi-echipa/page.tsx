@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { requireOrgAccess } from "@/lib/auth/guard";
 
 import { getKpiEchipa, getKpiPersonal } from "./actions";
@@ -34,6 +36,18 @@ export default async function KpiEchipaPage({
 
   return (
     <div className="mx-auto max-w-[1100px] space-y-6">
+      <div
+        role="note"
+        className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-primary-soft)] px-3 py-2 text-[13px] text-[var(--ci-text-muted)]"
+      >
+        <span>
+          Aceasta este varianta veche de KPI, cu ținte fixe. Indicatorii configurabili (după rol, cu ponderi și perioade) se află în noul modul.
+        </span>
+        <Link href={`/${orgSlug}/crm/kpi`} className="font-semibold text-[var(--ci-primary)] hover:underline">
+          Deschide KPI Library →
+        </Link>
+      </div>
+
       <div>
         <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">KPI echipă</h1>
         <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">
