@@ -22,9 +22,13 @@ export function AddDonorDialog({ open, onClose, onCreated }: { open: boolean; on
 
   useEffect(() => {
     if (!open || optiuni) return;
-    getOptiuniDonatorNou(orgSlug)
-      .then(setOptiuni)
-      .catch(() => setOptiuni({ campanii: [], responsabili: [] }));
+    // Amânat după randare: o acțiune de server apelată direct din efectul de la montare dă eroarea React #441.
+    const timer = setTimeout(() => {
+      getOptiuniDonatorNou(orgSlug)
+        .then(setOptiuni)
+        .catch(() => setOptiuni({ campanii: [], responsabili: [] }));
+    }, 0);
+    return () => clearTimeout(timer);
   }, [open, optiuni, orgSlug]);
 
   function inchide() {

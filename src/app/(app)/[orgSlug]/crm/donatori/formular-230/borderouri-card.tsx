@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCircle2, FileCode2, FileSpreadsheet, FileText } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { Card, CardHeader } from "../../components/ui/card";
 import { listeazaBorderouri, marcheazaBorderouDepus, obtineDateBorderou, type BorderouSumar } from "./borderouri-actions";
@@ -11,16 +11,12 @@ type Format = "xlsx" | "pdf" | "xml";
 
 // Borderouri ANAF: formularele se grupează automat câte 50 (pe cont beneficiar și an); când un borderou se umple, următoarele
 // formulare intră în borderoul următor. Fiecare borderou se descarcă în Excel, PDF sau XML (formatul borderoului ANAF).
-export function BorderouriCard({ orgSlug }: { orgSlug: string }) {
-  const [borderouri, setBorderouri] = useState<BorderouSumar[] | null>(null);
+// Lista vine de la server (page.tsx) — o acțiune de server nu poate fi apelată la prima randare a unui component client
+// (eroarea React #441), deci nu o apelăm dintr-un efect la montare.
+export function BorderouriCard({ orgSlug, initial }: { orgSlug: string; initial: BorderouSumar[] }) {
+  const [borderouri, setBorderouri] = useState<BorderouSumar[] | null>(initial);
   const [eroare, setEroare] = useState("");
   const [lucru, setLucru] = useState<string | null>(null);
-
-  useEffect(() => {
-    listeazaBorderouri(orgSlug)
-      .then(setBorderouri)
-      .catch((e) => setEroare(e instanceof Error ? e.message : "Nu am putut încărca borderourile."));
-  }, [orgSlug]);
 
   const cheie = (b: BorderouSumar, f?: string) => `${b.beneficiarId ?? "-"}|${b.an}|${b.nr}${f ? `|${f}` : ""}`;
 

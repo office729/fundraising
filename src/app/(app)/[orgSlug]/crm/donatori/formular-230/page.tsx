@@ -20,6 +20,7 @@ import { EmptyState } from "../../components/ui/states";
 import { formatDataOra } from "../../lib/format";
 import { BeneficiariPanel } from "./beneficiari-panel";
 import { BorderouriCard } from "./borderouri-card";
+import { listeazaBorderouri } from "./borderouri-actions";
 import { CampanieEmailCard } from "./campanie-email-card";
 import { getUltimaCampanieEmail } from "./campanie-email-actions";
 import { CopyLinkButton, DeleteButton, PdfButton, ProcesatAnafCheckbox } from "./client";
@@ -194,6 +195,8 @@ export default async function Formular230StatsPage({
   };
   const { total, lunaAceasta, beneficiari, ani, submisii, poateVedeaDateSensibile, dupaJudet, cnpDuplicat, tainuit } = await getDate(orgSlug, filtru);
   const ultimaCampanie = await getUltimaCampanieEmail(orgSlug);
+  // Atribuirea formularelor la borderouri (max. 50 / borderou) se face aici, pe server, și doar pentru owner/admin.
+  const borderouri = poateVedeaDateSensibile ? await listeazaBorderouri(orgSlug).catch(() => null) : null;
   const locale = await getLocale();
   const dict = FORMULAR230_DICT[locale];
 
@@ -236,7 +239,7 @@ export default async function Formular230StatsPage({
 
       <BeneficiariPanel orgSlug={orgSlug} beneficiari={beneficiari} />
 
-      {poateVedeaDateSensibile && <BorderouriCard orgSlug={orgSlug} />}
+      {borderouri && <BorderouriCard orgSlug={orgSlug} initial={borderouri} />}
 
       <CampanieEmailCard orgSlug={orgSlug} emailConfigurat={emailConfigurat()} ultimaCampanie={ultimaCampanie} />
 
