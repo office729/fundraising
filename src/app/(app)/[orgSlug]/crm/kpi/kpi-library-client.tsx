@@ -1,8 +1,11 @@
 "use client";
 
-import { Building2, CalendarRange, FileText, History, MessageSquare, ChevronDown, Copy, GitBranch, LayoutGrid, Pencil, Plus, Power, Sparkles, Trash2, TrendingUp, Users } from "lucide-react";
+import { Building2, CalendarRange, FileText, History, ListChecks, MessageSquare, ChevronDown, Copy, GitBranch, LayoutGrid, Pencil, Plus, Power, Sparkles, Trash2, TrendingUp, Users } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
+
+import { TOTAL_PASI_KPI } from "@/lib/kpi-onboarding";
 
 import { Badge } from "../components/ui/badge";
 import { Breadcrumb } from "../components/ui/breadcrumb";
@@ -47,7 +50,9 @@ export function KpiLibraryClient({
   initialCategorii,
   initialDefinitii,
   esteAdmin,
+  pasiFacuti,
 }: {
+  pasiFacuti: number | null;
   orgSlug: string;
   initialCategorii: CategorieRand[];
   initialDefinitii: DefinitieRand[];
@@ -161,6 +166,9 @@ export function KpiLibraryClient({
             <DropdownMenu trigger={<Button variant="secondary">Configurare <ChevronDown className="h-3.5 w-3.5" /></Button>}>
               {(close) => (
                 <>
+                  <DropdownItem onClick={() => { close(); router.push(`/${orgSlug}/crm/kpi/start`); }}>
+                    <ListChecks className="h-3.5 w-3.5" /> Configurare ghidată
+                  </DropdownItem>
                   <DropdownItem onClick={() => { close(); router.push(`/${orgSlug}/crm/kpi/sezoniere`); }}>
                     <CalendarRange className="h-3.5 w-3.5" /> Profiluri sezoniere
                   </DropdownItem>
@@ -186,6 +194,19 @@ export function KpiLibraryClient({
           )}
         </div>
       </div>
+
+      {pasiFacuti !== null && pasiFacuti < TOTAL_PASI_KPI && (
+        <Link
+          prefetch={false}
+          href={`/${orgSlug}/crm/kpi/start`}
+          className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--ci-radius-card)] border border-[var(--ci-primary)] bg-[var(--ci-primary-soft)] px-4 py-3 text-[13px] hover:opacity-90"
+        >
+          <span className="font-semibold text-[var(--ci-text)]">
+            Configurare KPI: {pasiFacuti} din {TOTAL_PASI_KPI} pași făcuți <span className="font-normal text-[var(--ci-text-muted)]">— te ghidăm pas cu pas</span>
+          </span>
+          <span className="font-semibold text-[var(--ci-primary)]">Continuă configurarea →</span>
+        </Link>
+      )}
 
       {eroare && <p className="text-[13px] text-[var(--ci-red)]">{eroare}</p>}
 

@@ -33,6 +33,7 @@ import {
   type MembruDisponibil,
   type RolRand,
 } from "./actions";
+import { importaMembriiInEchipaAction } from "../kpi/onboarding-actions";
 
 const STATUS_TONE = { activ: "green", concediu: "amber", suspendat: "orange", inactiv: "neutral" } as const;
 const STATUS_LABEL_RO: Record<AngajatRand["status"], string> = { activ: "Activ", concediu: "Concediu", suspendat: "Suspendat", inactiv: "Inactiv" };
@@ -463,6 +464,21 @@ function AngajatiTab({
     });
   };
 
+  const [mesajImport, setMesajImport] = useState("");
+  const onImporta = () => {
+    setEroare(null);
+    setMesajImport("");
+    start(async () => {
+      try {
+        const r = await importaMembriiInEchipaAction(orgSlug);
+        setMesajImport(r.adaugati + r.legati === 0 ? (ro ? "Toți membrii platformei sunt deja în echipă." : "All platform members are already in the team.") : ro ? `Adăugați: ${r.adaugati}${r.legati ? ` · legați de profiluri existente: ${r.legati}` : ""}.` : `Added: ${r.adaugati}${r.legati ? ` · linked to existing profiles: ${r.legati}` : ""}.`);
+        await reincarca();
+      } catch (e) {
+        setEroare(e instanceof Error ? e.message : "Eroare.");
+      }
+    });
+  };
+
   const onSterge = (id: string) => {
     setEroare(null);
     start(async () => {
@@ -480,8 +496,18 @@ function AngajatiTab({
       <CardHeader
         title={ro ? "Echipă" : "Team"}
         subtitle={ro ? "Oamenii organizației tale — cu sau fără cont de login pe platformă." : "Your organization's people — with or without a platform login."}
-        action={esteAdmin && <Button size="sm" onClick={deschideNou}><Plus className="h-3.5 w-3.5" /> {ro ? "Adaugă" : "Add"}</Button>}
+        action={
+          esteAdmin && (
+            <div className="flex flex-wrap items-center gap-2">
+              <Button size="sm" variant="secondary" onClick={onImporta} disabled={pending} title={ro ? "Creează un profil pentru fiecare coleg care are cont pe platformă și nu e încă în echipă" : "Create a profile for every platform member who is not in the team yet"}>
+                <Users className="h-3.5 w-3.5" /> {ro ? "Importă membrii platformei" : "Import platform members"}
+              </Button>
+              <Button size="sm" onClick={deschideNou}><Plus className="h-3.5 w-3.5" /> {ro ? "Adaugă" : "Add"}</Button>
+            </div>
+          )
+        }
       />
+      {mesajImport && <p className="mb-2 text-[13px] text-[var(--ci-green)]">{mesajImport}</p>}
       {angajati.length === 0 ? (
         <EmptyState icon={Users} title={ro ? "Niciun membru încă" : "No team members yet"} description={ro ? "Adaugă primul membru al echipei." : "Add your first team member."} action={esteAdmin && <Button size="sm" onClick={deschideNou}>{ro ? "Adaugă membru" : "Add member"}</Button>} />
       ) : (
