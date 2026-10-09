@@ -749,6 +749,13 @@ const POLICIES = [
   `create policy kpi_interactiuni_tenant_isolation on kpi_interactiuni
     using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
     with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  // CRM Persoane fizice: importuri de donații (sursă reversibilă) — izolare pe organizație.
+  `create policy donatori_importuri_tenant_isolation on donatori_importuri
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy donatii_importate_tenant_isolation on donatii_importate
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
   // Panoul voluntarilor: izolare pe organizație.
   `create policy volunteer_visitors_tenant_isolation on volunteer_visitors
     using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
@@ -843,6 +850,8 @@ const FORCE_TABLES = [
   "volunteer_featured",
   "volunteer_campaign_settings",
   "volunteer_panel_links",
+  "donatori_importuri",
+  "donatii_importate",
 ];
 
 try {

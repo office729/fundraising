@@ -20,3 +20,4 @@ export * from "./auth-rate-limits";
 export * from "./rapoarte-companii";
 export * from "./kpi";
 export * from "./voluntari-panou";
+export * from "./donatori-pf";

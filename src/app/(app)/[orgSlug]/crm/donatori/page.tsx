@@ -2,24 +2,16 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { Badge } from "../components/ui/badge";
-import { ImportExportPanel } from "../components/import-export-panel";
 import { Card } from "../components/ui/card";
-import { EmptyState } from "../components/ui/states";
-import { formatDataRelativa } from "../lib/format";
 import { DONATORI } from "../mock";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { DONATORI_REALI_DICT } from "@/lib/i18n/dictionaries/donatori-reali";
 
 import { DemoDatasetSection } from "./demo-dataset-section";
-import { FilterBarReali } from "./filter-bar-reali";
-import { parseFiltruDonatoriReali } from "./lib/filters";
-import { PaginaNavReali } from "./pagina-nav-reali";
-import { getCampaniiOptiuni, getDonatoriRealiLista, getStatisticiDonatoriReali } from "./queries";
+import { ListaPfClient } from "./lista-pf";
+import { PfNav } from "./pf-nav";
+import { getListaPf } from "./queries-pf";
 import { titluAbsolut } from "@/lib/page-titles";
-
-// Data și ora în fusul României — „ultima donație” se arată cu ora, nu doar relativ.
-const dataOra = (d: Date) => d.toLocaleString("ro-RO", { timeZone: "Europe/Bucharest", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
-const dataSimpla = (d: Date) => d.toLocaleDateString("ro-RO", { timeZone: "Europe/Bucharest", day: "2-digit", month: "2-digit", year: "numeric" });
 
 export default function DonatoriPage({
   params,
@@ -50,126 +42,50 @@ async function DonatoriContent({
     if (Array.isArray(v)) v.forEach((val) => sp.append(k, val));
     else sp.set(k, v);
   }
-  const filtru = parseFiltruDonatoriReali(sp);
   const locale = await getLocale();
   const dict = DONATORI_REALI_DICT[locale];
-
-  const [lista, stats, campanii] = await Promise.all([
-    getDonatoriRealiLista(orgSlug, filtru),
-    getStatisticiDonatoriReali(orgSlug),
-    getCampaniiOptiuni(orgSlug),
-  ]);
+  const lista = await getListaPf(orgSlug, sp.toString());
 
   return (
-    <div className="mx-auto max-w-[1400px] space-y-5">
+    <div className="mx-auto max-w-[1500px] space-y-5">
       <div>
         <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">{dict.title}</h1>
         <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">{dict.subtitle}</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Card>
-          <p className="text-[12px] text-[var(--ci-text-muted)]">{dict.stats.donatori}</p>
-          <p className="ci-tabular mt-1 text-xl font-bold text-[var(--ci-text)]">{stats.donatori.toLocaleString("ro-RO")}</p>
-        </Card>
-        <Card>
-          <p className="text-[12px] text-[var(--ci-text-muted)]">{dict.stats.totalDonat}</p>
-          <p className="ci-tabular mt-1 text-xl font-bold text-[var(--ci-primary)]">{stats.totalDonat.toLocaleString("ro-RO")} lei</p>
-        </Card>
-        <Card>
-          <p className="text-[12px] text-[var(--ci-text-muted)]">{dict.stats.numarDonatii}</p>
-          <p className="ci-tabular mt-1 text-xl font-bold text-[var(--ci-text)]">{stats.numarDonatii.toLocaleString("ro-RO")}</p>
-        </Card>
-        <Card>
-          <p className="text-[12px] text-[var(--ci-text-muted)]">{dict.stats.optInWhatsapp}</p>
-          <p className="ci-tabular mt-1 text-xl font-bold text-[var(--ci-text)]">{stats.optInWhatsapp.toLocaleString("ro-RO")}</p>
-        </Card>
-      </div>
+      <PfNav orgSlug={orgSlug} />
 
-      <FilterBarReali campanii={campanii} />
-
-      <Card padded={false}>
-        {lista.rows.length === 0 && stats.donatori === 0 ? (
-          <div>
-            <div className="border-b border-[var(--ci-border)] bg-[var(--ci-surface-2)] px-4 py-2.5 text-[12.5px] text-[var(--ci-text-muted)]">{dict.exempluNota}</div>
-            <div className="divide-y divide-[var(--ci-border)]">
-              {DONATORI.slice(0, 5).map((d) => (
-                <Link
-                  prefetch={false}
-                  key={d.id}
-                  href={`/${orgSlug}/crm/donatori/${d.id}`}
-                  className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 transition-colors hover:bg-[var(--ci-surface-2)]"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-[13px] font-semibold text-[var(--ci-text)]">
-                      {d.nume} <Badge tone="neutral" icon={false}>{dict.exempluBadge}</Badge>
-                    </p>
-                    <p className="mt-0.5 truncate text-[12px] text-[var(--ci-text-muted)]">
-                      {d.email} · {d.telefon} · {d.localitate}
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-1.5">
-                    <span className="ci-tabular ml-2 text-[13px] font-semibold text-[var(--ci-text)]">
-                      {d.totalDonat.toLocaleString("ro-RO")} {d.moneda}
-                    </span>
-                    <span className="ci-tabular text-[12px] text-[var(--ci-text-muted)]">ultima: {dataOra(new Date(d.ultimaDonatieLa))}</span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        ) : lista.rows.length === 0 ? (
-
-          <div className="p-5">
-            <EmptyState title={dict.empty.title} description={dict.empty.description} />
-          </div>
-        ) : (
+      {!lista.areDonatori && (
+        <Card padded={false}>
+          <div className="border-b border-[var(--ci-border)] bg-[var(--ci-surface-2)] px-4 py-2.5 text-[12.5px] text-[var(--ci-text-muted)]">{dict.exempluNota}</div>
           <div className="divide-y divide-[var(--ci-border)]">
-            {lista.rows.map((d) => (
-              <Link prefetch={false}
+            {DONATORI.slice(0, 5).map((d) => (
+              <Link
+                prefetch={false}
                 key={d.id}
-                href={`/${orgSlug}/crm/donatori/reali/${d.id}`}
+                href={`/${orgSlug}/crm/donatori/${d.id}`}
                 className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 transition-colors hover:bg-[var(--ci-surface-2)]"
               >
                 <div className="min-w-0">
-                  <p className="truncate text-[13px] font-semibold text-[var(--ci-text)]">{d.nume}</p>
-                  <p className="mt-0.5 truncate text-[12px] text-[var(--ci-text-muted)]">
-                    {d.email} · {d.telefon || dict.faraTelefon}
-                    {(d.localitate || d.judet) && ` · ${[d.localitate, d.judet].filter(Boolean).join(", ")}`}
+                  <p className="truncate text-[13px] font-semibold text-[var(--ci-text)]">
+                    {d.nume} <Badge tone="neutral" icon={false}>{dict.exempluBadge}</Badge>
                   </p>
                   <p className="mt-0.5 truncate text-[12px] text-[var(--ci-text-muted)]">
-                    {d.pentruCine ? `Pentru: ${d.pentruCine}` : d.sursa}
-                    {d.numarDonatii > 0 ? ` · prima donație ${dataSimpla(d.primaDonatieLa)}` : " · fără donații încă"}
+                    {d.email} · {d.telefon} · {d.localitate}
                   </p>
                 </div>
-                <div className="flex shrink-0 items-center gap-1.5">
-                  {d.consimtamantWhatsapp && (
-                    <Badge tone="green" icon={false}>
-                      {dict.whatsappBadge}
-                    </Badge>
-                  )}
-                  <Badge tone="blue" icon={false}>
-                    {d.numarDonatii}
-                  </Badge>
-                  <span className="ci-tabular ml-2 text-[13px] font-semibold text-[var(--ci-text)]">
-                    {d.totalDonat.toLocaleString("ro-RO")} lei
-                  </span>
-                  <span className="ci-tabular text-[12px] text-[var(--ci-text-muted)]" title={formatDataRelativa(d.ultimaDonatieLa.toISOString())}>
-                    {d.numarDonatii > 0 ? `ultima: ${dataOra(d.ultimaDonatieLa)}` : "—"}
-                  </span>
-                </div>
+                <span className="ci-tabular text-[13px] font-semibold text-[var(--ci-text)]">
+                  {d.totalDonat.toLocaleString("ro-RO")} {d.moneda}
+                </span>
               </Link>
             ))}
           </div>
-        )}
-        <div className="px-4 pb-4">
-          <PaginaNavReali pagina={filtru.pagina} pageCount={lista.pageCount} total={lista.total} />
-        </div>
-      </Card>
+        </Card>
+      )}
 
-      <ImportExportPanel tip="donatori" />
+      <ListaPfClient orgSlug={orgSlug} lista={lista} />
 
-      <DemoDatasetSection />
+      {!lista.areDonatori && <DemoDatasetSection />}
     </div>
   );
 }

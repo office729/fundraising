@@ -208,6 +208,17 @@ export const donatoriReali = pgTable(
     // semnat din email — lib/dezabonare.ts). Campaniile îi sar peste, pentru
     // totdeauna; o donație nouă NU îl resetează (webhook-ul nu atinge coloana).
     dezabonatEmailLa: timestamp("dezabonat_email_la", { withTimezone: true }),
+    // Când a fost adăugat în CRM (primaDonatieLa se poate schimba odată cu donațiile; asta nu).
+    adaugatLa: timestamp("adaugat_la", { withTimezone: true }).defaultNow().notNull(),
+    // Stare de lucru a echipei (CRM Persoane fizice): sunat / mulțumit / a răspuns / nu contactat / reapel / etapă de reactivare.
+    sunatLa: timestamp("sunat_la", { withTimezone: true }),
+    multumitLa: timestamp("multumit_la", { withTimezone: true }),
+    aRaspuns: boolean("a_raspuns").notNull().default(false),
+    nuContactat: boolean("nu_contactat").notNull().default(false),
+    reapelLa: date("reapel_la"),
+    wbStage: text("wb_stage"), // reactivare | reactivat | pierdut
+    // Importul care l-a creat (null = venit din pagini de donații sau adăugat manual).
+    importId: uuid("import_id"),
   },
   (t) => [
     uniqueIndex("donatori_reali_org_email_idx").on(t.orgId, t.email),
