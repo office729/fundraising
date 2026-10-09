@@ -138,8 +138,8 @@ const MAX_BODY = 4 * 1024 * 1024;
 // Decide dacă un apel al instrumentului e permis și cu ce credențiale.
 // Rutele /api/<org>/... apelate efectiv de instrumentele HTML (verificat în
 // *.base.html): crm-kv/<cheie> (starea tool-urilor), crm-companies (listă, count,
-// <id>), voluntari-send, voluntari-activity, newsletter/imgbb-upload.
-const RUTE_TOOL = /^(crm-kv\/[^/]+|crm-companies(\/[^/]+)?|voluntari-send|voluntari-activity|newsletter\/imgbb-upload)\/?$/;
+// <id>), voluntari-send, voluntari-activity, voluntari-panou, voluntari-roster, newsletter/imgbb-upload.
+const RUTE_TOOL = /^(crm-kv\/[^/]+|crm-companies(\/[^/]+)?|voluntari-send|voluntari-activity|voluntari-panou|voluntari-roster|newsletter\/imgbb-upload)\/?$/;
 
 export function politicaFetch(urlStr: string, orgSlug: string, hostOrigin: string): { ok: true; credentials: RequestCredentials } | { ok: false; error: string } {
   let u: URL;

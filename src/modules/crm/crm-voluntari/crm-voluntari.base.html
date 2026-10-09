@@ -326,7 +326,11 @@
     </button>
     <button class="nav-item" data-nav="cazuri" type="button">
       <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.7-4.35-9.3-8.02C.98 10.6 1.4 7.3 3.9 5.9c2.02-1.13 4.3-.5 5.6 1.06L12 9.9l2.5-2.94c1.3-1.56 3.58-2.19 5.6-1.06 2.5 1.4 2.92 4.7 1.2 7.08C18.7 16.65 12 21 12 21Z"/></svg>
-      Cazuri
+      Campanii
+    </button>
+    <button class="nav-item" data-nav="panou" type="button">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+      Panou voluntari
     </button>
     <button class="nav-item" data-nav="tasks" type="button">
       <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
@@ -469,8 +473,9 @@
     raportPeriod: "all",
     tasks: undefined,
     cazuri: undefined,
+    panou: undefined,
     selected: {},
-    filters: { mine:false, stare:"", grup:"", netrimis:false, vechi:0, fMsg:false, fWa:false, fEmail:false, fTel:false, fLinked:false },
+    filters: { mine:false, stare:"", grup:"", netrimis:false, vechi:0, fMsg:false, fWa:false, fEmail:false, fTel:false, fLinked:false, reactivat:false },
     loaded: false
   };
 
@@ -585,16 +590,16 @@
     if(saveTimer) clearTimeout(saveTimer);
     saveTimer=setTimeout(flush, 700);
   }
+  // Salvare pe modificări: trimitem doar voluntarii schimbați/șterși și setările, iar serverul îmbină (vezi /voluntari-roster).
+  // Așa două colege care lucrează în același timp nu-și mai șterg una alteia munca.
   function flush(){
     if(saving){ return; }
     if(!dirty) return;
     saving=true; dirty=false;
-    var payload={ volunteers: reali(), settings: state.settings, updatedBy: loginName, updatedAt: new Date().toISOString() };
-    fetch(API_BASE+"/crm-kv/"+KEY, {
-      method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload)
-    }).then(function(r){
-      if(!r.ok) throw new Error("HTTP "+r.status);
-      saving=false; setFlag(dirty?"saving":"ok");
+    trimiteDiff().then(function(j){
+      saving=false;
+      if(j && j.volunteers && preiaDeLaServer(j)) refreshView();
+      setFlag(dirty?"saving":"ok");
       if(dirty) scheduleSave();
     }).catch(function(){
       saving=false; dirty=true; setFlag("err"); toast("Salvarea a eșuat — reîncerc…", true);
@@ -602,9 +607,8 @@
     });
   }
   function saveNow(){
-    var payload={ volunteers: reali(), settings: state.settings, updatedBy: loginName, updatedAt: new Date().toISOString() };
     dirty=false;
-    return fetch(API_BASE+"/crm-kv/"+KEY, {method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload)});
+    return trimiteDiff().then(function(j){ if(j && j.volunteers && preiaDeLaServer(j)) refreshView(); return j; });
   }
   var sending=false;
   function sendNow(canal, test){
@@ -637,31 +641,25 @@
       else { toast((res.j&&res.j.error)||"Trimiterea a eșuat", true); }
     }).catch(function(){ sending=false; setFlag("ok"); toast("Trimiterea a eșuat", true); });
   }
-  function load(){
-    fetch(API_BASE+"/crm-kv/"+KEY, {cache:"no-store"}).then(function(r){
-      if(!r.ok) throw new Error("HTTP "+r.status);
-      return r.json();
-    }).then(function(data){
-      if(data && typeof data==="object"){
-        if(Array.isArray(data.volunteers)) state.volunteers=data.volunteers.map(normalize);
-        if(data.settings && typeof data.settings==="object"){
-          state.settings.automationEnabled = data.settings.automationEnabled!==false;
-          if(ZILE.indexOf(data.settings.sendDay)>=0) state.settings.sendDay=data.settings.sendDay;
-          if(data.settings.canal==="whatsapp"||data.settings.canal==="email") state.settings.canal=data.settings.canal;
-          if(data.settings.webhooks && typeof data.settings.webhooks==="object"){
+  function aplicaSetari(s){
+    if(!(s && typeof s==="object")) return;
+          state.settings.automationEnabled = s.automationEnabled!==false;
+          if(ZILE.indexOf(s.sendDay)>=0) state.settings.sendDay=s.sendDay;
+          if(s.canal==="whatsapp"||s.canal==="email") state.settings.canal=s.canal;
+          if(s.webhooks && typeof s.webhooks==="object"){
             state.settings.webhooks={
-              email: typeof data.settings.webhooks.email==="string"?data.settings.webhooks.email:"",
-              whatsapp: typeof data.settings.webhooks.whatsapp==="string"?data.settings.webhooks.whatsapp:""
+              email: typeof s.webhooks.email==="string"?s.webhooks.email:"",
+              whatsapp: typeof s.webhooks.whatsapp==="string"?s.webhooks.whatsapp:""
             };
           }
-          if(data.settings.mesaj && typeof data.settings.mesaj==="object"){
+          if(s.mesaj && typeof s.mesaj==="object"){
             state.settings.mesaj={
-              subiect: typeof data.settings.mesaj.subiect==="string"?data.settings.mesaj.subiect:"",
-              continut: typeof data.settings.mesaj.continut==="string"?data.settings.mesaj.continut:"",
-              semnatura: typeof data.settings.mesaj.semnatura==="string"?data.settings.mesaj.semnatura:""
+              subiect: typeof s.mesaj.subiect==="string"?s.mesaj.subiect:"",
+              continut: typeof s.mesaj.continut==="string"?s.mesaj.continut:"",
+              semnatura: typeof s.mesaj.semnatura==="string"?s.mesaj.semnatura:""
             };
           }
-          var a=data.settings.audience;
+          var a=s.audience;
           if(a && typeof a==="object"){
             state.settings.audience={
               mode: a.mode==="manual"?"manual":"criterii",
@@ -672,10 +670,20 @@
               selectedIds: Array.isArray(a.selectedIds)?a.selectedIds:[]
             };
           }
-        }
+  }
+  function load(){
+    fetch(API_BASE+"/crm-kv/"+KEY, {cache:"no-store"}).then(function(r){
+      if(!r.ok) throw new Error("HTTP "+r.status);
+      return r.json();
+    }).then(function(data){
+      if(data && typeof data==="object"){
+        if(Array.isArray(data.volunteers)) state.volunteers=data.volunteers.map(normalize);
+        aplicaSetari(data.settings);
       }
+      snapshot();
       if(!state.volunteers.length) seedDemo();
       state.loaded=true; setFlag("ok"); render();
+      loadPanou(function(){ refreshView(); });
     }).catch(function(){
       state.loaded=true; setFlag("err");
       $("main").innerHTML='<div class="empty"><div class="big">Nu am putut încărca datele</div><div>Verifică conexiunea sau reîmprospătează pagina.</div></div>';
@@ -733,7 +741,7 @@
     state.volunteers.forEach(function(v){ if(v.activ) activi++; if(isEligible(v)) elig++; });
     return {total:total, activi:activi, elig:elig};
   }
-  function anyFilter(){ var f=state.filters; return !!(f.mine||f.stare||f.grup||f.netrimis||f.vechi||f.fMsg||f.fWa||f.fEmail||f.fTel||f.fLinked); }
+  function anyFilter(){ var f=state.filters; return !!(f.mine||f.stare||f.grup||f.netrimis||f.vechi||f.fMsg||f.fWa||f.fEmail||f.fTel||f.fLinked||f.reactivat); }
   function matchFilters(v){
     var f=state.filters;
     if(state.view==="arhiva"){ if(v.activ) return false; } else { if(!v.activ) return false; }
@@ -748,6 +756,7 @@
     if(f.fEmail && !v.email) return false;
     if(f.fTel && !v.telefon) return false;
     if(f.fLinked && !v.linkedin) return false;
+    if(f.reactivat && !deReactivat(v)) return false;
     return true;
   }
   function filteredSorted(){
@@ -803,6 +812,8 @@
         '<div><div class="page-title">'+(state.view==="arhiva"?"Arhivă — voluntari inactivi":"Voluntari")+'</div>'+
         '<div class="page-meta"><b>'+c.total+'</b> voluntari · <b>'+c.activi+'</b> activi · <b>'+c.elig+'</b> primesc email automat</div></div>'+
         '<div style="display:flex;gap:9px;flex-wrap:wrap">'+
+        '<button class="btn" id="linkPanouBtn" type="button">🔗 Link voluntari</button>'+
+        '<button class="btn" id="csvBtn" type="button">Exportă CSV</button>'+
         '<button class="btn" id="importBtn" type="button"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg> Importă fișier</button>'+
         '<button class="btn" id="bulkEmailBtn" type="button"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg> Trimite email</button>'+
         '<button class="btn btn-primary" id="addBtn" type="button"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg> Adaugă voluntar</button>'+
@@ -825,6 +836,7 @@
       fchip(f.fWa,"WhatsApp grup",'data-fk="fWa"')+
       fchip(f.fLinked,"LinkedIn",'data-fk="fLinked"')+
       fchip(f.netrimis,"Netrimiși",'data-fk="netrimis"')+
+      fchip(f.reactivat,"💤 De reactivat",'data-fk="reactivat"')+
       fchip(f.vechi===60,"Necontactați 60+ zile",'data-fk="vechi" data-fv="60"')+
       grupSel+
       (anyFilter()?'<button class="fchip fclear" id="fClear" type="button">✕ Șterge filtrele</button>':'')+
@@ -856,6 +868,7 @@
         '<td><div class="cell-name"><div class="avatar">'+esc(initials(v.nume))+'</div>'+channelIcon(v)+
           '<span class="name-main">'+esc(v.nume||"(fără nume)")+'</span>'+
           '<button class="note-btn'+(v.notite2.length?" has-note":"")+'" data-note="'+esc(v.id)+'" data-stop="1" type="button" title="Notițe rapide">📝'+(v.notite2.length?'<sup>'+v.notite2.length+'</sup>':'')+'</button>'+
+          (state.filters.reactivat && v.telefon ? '<button class="note-btn" data-react="'+esc(v.id)+'" data-stop="1" type="button" title="Deschide WhatsApp cu un mesaj gata scris">💬 Reactivează</button>' : '')+
           '</div></td>'+
         '<td class="'+(v.telefon?"":"muted")+'">'+esc(v.telefon||"—")+'</td>'+
         '<td class="'+(v.email?"":"muted")+'">'+esc(v.email||"—")+'</td>'+
@@ -898,6 +911,8 @@
     $("addBtn").onclick=openModal;
     var beb=$("bulkEmailBtn"); if(beb) beb.onclick=openBulkEmail;
     var ib=$("importBtn"); if(ib) ib.onclick=openImport;
+    var lpb=$("linkPanouBtn"); if(lpb) lpb.onclick=deschidePanou;
+    var csvb=$("csvBtn"); if(csvb) csvb.onclick=exportCsv;
     renderBulkBar();
     var sa=$("selAll");
     if(sa){ sa.onclick=function(ev){ ev.stopPropagation();
@@ -921,7 +936,7 @@
       };
     });
     var fg=$("fGrup"); if(fg) fg.onchange=function(){ state.filters.grup=fg.value; render(); };
-    var fc=$("fClear"); if(fc) fc.onclick=function(){ state.filters={mine:false,stare:"",grup:"",netrimis:false,vechi:0,fMsg:false,fWa:false,fEmail:false,fTel:false,fLinked:false}; render(); };
+    var fc=$("fClear"); if(fc) fc.onclick=function(){ state.filters={mine:false,stare:"",grup:"",netrimis:false,vechi:0,fMsg:false,fWa:false,fEmail:false,fTel:false,fLinked:false,reactivat:false}; render(); };
     bindRows();
   }
   function bindRows(){
@@ -933,6 +948,9 @@
     });
     document.querySelectorAll("#tbody [data-note]").forEach(function(el){
       el.onclick=function(ev){ ev.stopPropagation(); openNote(byId(el.getAttribute("data-note"))); };
+    });
+    document.querySelectorAll("#tbody [data-react]").forEach(function(el){
+      el.onclick=function(ev){ ev.stopPropagation(); reactiveaza(byId(el.getAttribute("data-react"))); };
     });
     document.querySelectorAll("[data-sel]").forEach(function(cb){
       cb.onclick=function(ev){ ev.stopPropagation(); };
@@ -999,6 +1017,7 @@
         '<button class="btn btn-primary" id="sendMsgBtn" type="button" style="margin-left:auto"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg> Trimite mesaj</button>'+
         '<button class="btn" id="callBtn" type="button"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg> Am sunat</button>'+
         '<button class="btn" id="taskBtn" type="button"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> Sarcină</button>'+
+        '<button class="btn" id="adevBtn" type="button">📄 Adeverință</button>'+
         '<button class="btn btn-danger" id="delBtn" type="button"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg> Șterge</button>'+
       '</div>'+
       '<div class="prof-meta">'+
@@ -1007,7 +1026,7 @@
       '</div>'+
       '<div class="grid">'+
         '<div>'+contactCard+'<div style="height:18px"></div>'+togglesCard+'</div>'+
-        '<div>'+behaviorCard+'<div style="height:18px"></div>'+notesCard+'</div>'+
+        '<div>'+behaviorCard+'<div style="height:18px"></div>'+panouCard(v)+'<div style="height:18px"></div>'+notesCard+'</div>'+
       '</div>'+
       '<div style="height:18px"></div>'+timelineCard(v);
   }
@@ -1060,6 +1079,8 @@
   function wireProfile(){
     $("backBtn").onclick=function(){ state.view="list"; state.selectedId=null; render(); };
     $("sendMsgBtn").onclick=function(){ openSendMsg(byId(state.selectedId)); };
+    var adb=$("adevBtn"); if(adb) adb.onclick=function(){ var v=byId(state.selectedId); if(v) deschideAdeverinta(v); };
+    var pfb=$("panouFisaBtn"); if(pfb) pfb.onclick=deschidePanou;
     $("taskBtn").onclick=function(){
       var v=byId(state.selectedId); if(!v) return;
       var txt=prompt("Sarcină pentru "+(v.nume||"voluntar")+":"); if(!txt||!txt.trim()) return;
@@ -1479,7 +1500,7 @@
     var contactCard = contacts.length
       ? '<div class="sec-title">Pe contact ('+contacts.length+')</div><div class="card"><div style="max-height:520px;overflow:auto"><table><thead><tr><th>Contact</th><th>Apeluri</th><th>Emailuri</th><th>WhatsApp</th></tr></thead><tbody>'+contactRows+'</tbody></table></div></div>'
       : '<div class="card"><div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l3-3 3 3 5-6"/></svg><div class="big">Nicio activitate încă</div><div>Apelurile, emailurile și mesajele apar aici pe măsură ce echipa lucrează.</div></div></div>';
-    return head+kpis+persCard+contactCard;
+    return head+kpis+panouRaportHtml()+persCard+contactCard;
   }
   function wireRaport(){
     var r=$("raportReload"); if(r) r.onclick=function(){ loadActivity(); };
@@ -1545,65 +1566,90 @@
     }; });
   }
 
-  // ---- Cazuri (distribuire) ----
+  // ---- Campanii (distribuire) ----
+  // Campaniile vin direct din platformă (Strângere de fonduri): nu mai există o listă separată de „cazuri”.
   function loadCazuri(){
     state.cazuri=undefined; render();
-    fetch(API_BASE+"/crm-kv/"+CAZURI_KEY, {cache:"no-store"}).then(function(r){ return r.ok?r.json():null; })
-      .then(function(data){ state.cazuri=(data && Array.isArray(data.cazuri))?data.cazuri:[]; render(); })
-      .catch(function(){ state.cazuri=[]; render(); });
+    fetch(API_BASE+"/voluntari-panou?ce=campanii", {cache:"no-store"}).then(function(r){ return r.ok?r.json():null; })
+      .then(function(j){ state.cazuri=j||{campanii:[],saptamani:[],link:null,eroare:true}; render(); })
+      .catch(function(){ state.cazuri={campanii:[],saptamani:[],link:null,eroare:true}; render(); });
   }
-  function saveCazuri(){
-    return fetch(API_BASE+"/crm-kv/"+CAZURI_KEY, {method:"PUT", headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({cazuri:state.cazuri||[], updatedBy:loginName, updatedAt:new Date().toISOString()})}).catch(function(){});
+  function linkCampanie(c){
+    var l=state.cazuri&&state.cazuri.link;
+    if(l && l.activ) return String(l.url).replace(/\/$/,"")+"/campanie/"+encodeURIComponent(c.slug);
+    return HOST_ORIGIN+"/strangere-fonduri/__FA_ORG_SLUG__/"+encodeURIComponent(c.slug);
+  }
+  function apiPanouPost(body){
+    return fetch(API_BASE+"/voluntari-panou", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)})
+      .then(function(r){ return r.json().then(function(j){ return {ok:r.ok, j:j}; }); });
   }
   function viewCazuri(){
-    var head='<div class="page-head"><div><div class="page-title">Cazuri</div>'+
-      '<div class="page-meta">Creezi un caz și îl trimiți voluntarilor spre distribuire.</div></div></div>';
+    var head='<div class="page-head"><div><div class="page-title">Campanii</div>'+
+      '<div class="page-meta">Campaniile active din platformă. Le anunți voluntarilor și alegi campania săptămânii.</div></div>'+
+      '<div><button class="btn" id="linkPanouBtn2" type="button">🔗 Link voluntari</button></div></div>';
     if(state.cazuri===undefined) return head+'<div class="loading">Se încarcă…</div>';
-    var addForm='<div class="panel" style="margin-bottom:24px"><h3>Adaugă caz</h3>'+
-      '<div class="field"><label>Nume caz</label><input id="czNume" type="text" placeholder="ex. Andreea Ionescu" /></div>'+
-      '<div class="field"><label>Descriere / mesaj de distribuire</label><textarea id="czDesc" style="min-height:100px" placeholder="Povestea pe scurt + apelul la acțiune…"></textarea></div>'+
-      '<div class="field" style="display:flex;gap:12px"><div style="flex:1"><label>Link caz</label><input id="czLink" type="text" placeholder="https://salveazaoinima.ro/…" /></div>'+
-      '<div style="flex:1"><label>Imagine (URL)</label><input id="czImg" type="text" placeholder="https://…jpg" /></div></div>'+
-      '<div class="modal-actions"><button class="btn btn-primary" id="czAdd" type="button">Adaugă caz</button></div>'+
-    '</div>';
-    var list=(state.cazuri||[]);
-    var cards=list.length ? list.map(function(c){
-      return '<div class="panel caz-card">'+
-        (c.imagine?'<img class="caz-img" src="'+esc(c.imagine)+'" alt="" />':'')+
-        '<div class="caz-body"><div class="caz-nume">'+esc(c.nume||"(fără nume)")+'</div>'+
-        (c.descriere?'<div class="caz-desc">'+esc(c.descriere)+'</div>':'')+
-        (c.link?'<a class="fb-link" href="'+esc(c.link)+'" target="_blank" rel="noopener">'+esc(c.link)+'</a>':'')+
-        '<div class="caz-actions"><button class="btn btn-primary" data-cztrimite="'+esc(c.id)+'" type="button">Trimite către voluntari</button>'+
-        '<button class="btn btn-danger" data-czdel="'+esc(c.id)+'" type="button">Șterge</button></div></div>'+
-      '</div>';
-    }).join("") : '<div class="card"><div class="empty"><div class="big">Niciun caz încă</div><div>Adaugă un caz ca să-l poți trimite voluntarilor.</div></div></div>';
-    return head+addForm+'<div class="caz-list">'+cards+'</div>';
+    var d=state.cazuri;
+    if(d.eroare) return head+'<div class="card"><div class="empty"><div class="big">Nu am putut încărca campaniile</div><div>Reîncarcă pagina.</div></div></div>';
+    var campanii=d.campanii||[], saptamani=d.saptamani||[];
+    var titluDe=function(id){ var c=campanii.filter(function(x){return x.id===id;})[0]; return c?c.titlu:"campanie inactivă"; };
+    var weekOpts=saptamani.map(function(w){ return '<option value="'+esc(w.luni)+'">'+esc(w.eticheta)+(w.campaignId?" — "+esc(titluDe(w.campaignId)):"")+'</option>'; }).join("");
+    var campOpts=campanii.map(function(c){ return '<option value="'+esc(c.id)+'">'+esc(c.titlu)+'</option>'; }).join("");
+    var programate=saptamani.filter(function(w){ return w.campaignId; });
+    var programHtml=programate.length
+      ? '<div style="margin-top:16px"><div class="sec-title" style="margin-bottom:6px">Program</div>'+programate.map(function(w){
+          return '<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--line)"><span class="muted" style="flex:1">'+esc(w.eticheta)+'</span><b>'+esc(titluDe(w.campaignId))+'</b>'+
+            '<button class="btn" data-swdel="'+esc(w.luni)+'" type="button">Scoate</button></div>'; }).join("")+'</div>'
+      : '<div class="muted" style="margin-top:12px">Nicio săptămână programată. Fără alegere, panoul nu are campanie vedetă.</div>';
+    var sapt='<div class="panel" style="margin-bottom:24px"><h3>⭐ Campania săptămânii</h3>'+
+      '<div class="page-meta" style="margin-bottom:12px">Apare prima în panoul voluntarilor și are prioritate în misiunea lor zilnică. O săptămână are o singură campanie; o alegere nouă o înlocuiește.</div>'+
+      (campanii.length
+        ? '<div class="field" style="display:flex;gap:12px;flex-wrap:wrap"><div style="flex:1;min-width:200px"><label>Săptămâna</label><select id="swLuni" class="fsel" style="width:100%">'+weekOpts+'</select></div>'+
+          '<div style="flex:1;min-width:200px"><label>Campania</label><select id="swCamp" class="fsel" style="width:100%">'+campOpts+'</select></div></div>'+
+          '<div class="modal-actions"><button class="btn btn-primary" id="swSet" type="button">Setează</button></div>'
+        : '<div class="muted">Nicio campanie activă în platformă.</div>')+
+      programHtml+'</div>';
+    var banner=(d.link && d.link.activ) ? '' : '<div class="banner" style="margin-bottom:18px">Linkul voluntarilor nu este activ. Pornește-l din „🔗 Link voluntari”; până atunci anunțurile trimit linkul public al campaniei.</div>';
+    var cards=campanii.length ? campanii.map(function(c){
+      return '<div class="panel caz-card"><div class="caz-body"><div class="caz-nume">'+esc(c.titlu)+(c.ascunsa?' <span class="badge badge-gray">Ascunsă voluntarilor</span>':'')+'</div>'+
+        '<div class="caz-desc">'+c.distribuiri+' distribuiri · '+c.distribuiri7+' în ultimele 7 zile</div>'+
+        '<div class="caz-actions"><button class="btn btn-primary" data-cztrimite="'+esc(c.id)+'" type="button">📣 Anunță voluntarii</button>'+
+        '<button class="btn" data-czwa="'+esc(c.id)+'" type="button">WhatsApp</button></div></div></div>';
+    }).join("") : '<div class="card"><div class="empty"><div class="big">Nicio campanie activă</div><div>Campaniile din Strângere de fonduri apar aici.</div></div></div>';
+    return head+banner+sapt+'<div class="caz-list">'+cards+'</div>';
   }
-  function trimiteCaz(c){
-    var html=(c.descriere?'<p>'+esc(c.descriere).replace(/\n/g,"<br>")+'</p>':'')+
-      (c.imagine?'<p><img src="'+esc(c.imagine)+'" style="max-width:100%;border-radius:8px" alt=""></p>':'')+
-      (c.link?'<p><a href="'+esc(c.link)+'">Vezi cazul și distribuie »</a></p>':'');
-    state.settings.mesaj.subiect = c.nume ? ("Cazul „"+c.nume+"” — distribuie") : "Cazul săptămânii";
+  function trimiteCampanie(c){
+    var l=linkCampanie(c);
+    var html='<p>Avem o campanie activă la care ai putea ajuta: <b>'+esc(c.titlu)+'</b>.</p>'+
+      '<p><a href="'+esc(l)+'">Deschide campania și dă-o mai departe »</a></p>'+
+      '<p>Durează un minut: copiezi mesajul gata scris și îl trimiți oamenilor tăi.</p>';
+    state.settings.mesaj.subiect = "Campania „"+c.titlu+"” — dă-o mai departe";
     state.settings.mesaj.continut = html;
     scheduleSave();
     state.view="automation"; render();
-    toast("Cazul e pregătit în Automatizare — alege segmentul și trimite");
+    toast("Campania e pregătită în Automatizare — alege segmentul și trimite");
   }
   function wireCazuri(){
-    var add=$("czAdd");
-    if(add) add.onclick=function(){
-      var nume=($("czNume").value||"").trim(); if(!nume){ toast("Scrie numele cazului", true); return; }
-      if(!state.cazuri) state.cazuri=[];
-      state.cazuri.unshift({ id:uid(), nume:nume, descriere:($("czDesc").value||"").trim(), link:($("czLink").value||"").trim(), imagine:($("czImg").value||"").trim(), createdBy:loginName||"", createdAt:new Date().toISOString() });
-      saveCazuri(); toast("Caz adăugat"); render();
+    var d=state.cazuri||{campanii:[]};
+    var l2=$("linkPanouBtn2"); if(l2) l2.onclick=deschidePanou;
+    var set=$("swSet");
+    if(set) set.onclick=function(){
+      set.disabled=true;
+      apiPanouPost({actiune:"seteaza", luni:$("swLuni").value, campaignId:$("swCamp").value}).then(function(r){
+        if(r.ok){ toast("Campania săptămânii a fost setată"); loadCazuri(); }
+        else { set.disabled=false; toast((r.j&&r.j.eroare)||"Nu am putut seta campania", true); }
+      }).catch(function(){ set.disabled=false; toast("Nu am putut seta campania", true); });
     };
-    document.querySelectorAll("[data-cztrimite]").forEach(function(b){ b.onclick=function(){
-      var c=(state.cazuri||[]).filter(function(x){return x.id===b.getAttribute("data-cztrimite");})[0]; if(c) trimiteCaz(c);
+    document.querySelectorAll("[data-swdel]").forEach(function(b){ b.onclick=function(){
+      apiPanouPost({actiune:"scoate", luni:b.getAttribute("data-swdel")}).then(function(r){
+        if(r.ok){ toast("Săptămâna a fost eliberată"); loadCazuri(); } else toast((r.j&&r.j.eroare)||"Nu am putut scoate campania", true);
+      }).catch(function(){ toast("Nu am putut scoate campania", true); });
     }; });
-    document.querySelectorAll("[data-czdel]").forEach(function(b){ b.onclick=function(){
-      if(!confirm("Ștergi cazul?")) return;
-      state.cazuri=(state.cazuri||[]).filter(function(x){return x.id!==b.getAttribute("data-czdel");}); saveCazuri(); render();
+    document.querySelectorAll("[data-cztrimite]").forEach(function(b){ b.onclick=function(){
+      var c=(d.campanii||[]).filter(function(x){return x.id===b.getAttribute("data-cztrimite");})[0]; if(c) trimiteCampanie(c);
+    }; });
+    document.querySelectorAll("[data-czwa]").forEach(function(b){ b.onclick=function(){
+      var c=(d.campanii||[]).filter(function(x){return x.id===b.getAttribute("data-czwa");})[0]; if(!c) return;
+      try{ window.open("https://wa.me/?text="+encodeURIComponent("Bună! Te rog dă mai departe campania „"+c.titlu+"”: "+linkCampanie(c)), "_blank", "noopener"); }catch(e){}
     }; });
   }
 
@@ -1808,12 +1854,179 @@
     toast("Voluntar adăugat");
   }
 
+  // ---- Panoul voluntarilor (pagina publică) + extensii ----
+  // Unealta rulează într-un iframe izolat: pagina echipei se deschide într-o filă nouă, cu adresa absolută a gazdei.
+  var HOST_ORIGIN=(function(){ try{ return (window.parent && window.parent.location && window.parent.location.origin) || ""; }catch(e){ return ""; } })();
+  function deschidePanou(){ try{ window.open(HOST_ORIGIN+"/__FA_ORG_SLUG__/crm/voluntari-panou", "_blank", "noopener"); }catch(e){} }
+  function deschideAdeverinta(v){
+    if(!v||!v.id) return;
+    try{ window.open(HOST_ORIGIN+"/__FA_ORG_SLUG__/crm-voluntari/adeverinta/"+encodeURIComponent(v.id), "_blank", "noopener"); }catch(e){}
+  }
+  function loadPanou(cb){
+    fetch(API_BASE+"/voluntari-panou?ce=activitate", {cache:"no-store"}).then(function(r){ return r.ok?r.json():null; })
+      .then(function(j){ state.panou=j||{fise:{},link:null,raport:null,error:true}; if(cb) cb(); })
+      .catch(function(){ state.panou={fise:{},link:null,raport:null,error:true}; if(cb) cb(); });
+  }
+  function panouFisa(v){ return (state.panou && state.panou.fise && state.panou.fise[v.id]) || null; }
+  function panouCard(v){
+    var f=panouFisa(v), inner;
+    if(state.panou===undefined) inner='<div class="muted">Se încarcă…</div>';
+    else if(state.panou.error) inner='<div class="muted">Nu am putut încărca activitatea din panou.</div>';
+    else if(f) inner='<div style="font-size:14px"><b>'+f.distribuiri+'</b> '+(f.distribuiri===1?"distribuire":"distribuiri")+' · ultima activitate '+esc(relTime(String(f.ultimaActivitateLa||"").slice(0,10))||"—")+'</div>';
+    else inner='<div class="muted">Nelegat de panou. Apare aici după ce voluntarul intră pe linkul public cu același număr de telefon'+(v.telefon?'.':' (completează telefonul).')+'</div>';
+    return '<div class="panel"><h3>Panoul voluntarilor</h3>'+inner+'<div style="margin-top:12px"><button class="btn" id="panouFisaBtn" type="button">Deschide panoul voluntari</button></div></div>';
+  }
+  function panouRaportHtml(){
+    var p=state.panou; if(!p||!p.raport) return '';
+    var r=p.raport;
+    var kp='<div class="kpis">'+kpi("Voluntari în panou", r.voluntari, "")+kpi("Activi în panou (7 zile)", r.activi7, "green")+kpi("Distribuiri (7 zile)", r.distribuiri7, "red")+kpi("Distribuiri în total", r.distribuiri, "")+'</div>';
+    var top=(r.celeMaiActive||[]).map(function(x){ return '<tr><td>'+esc(x.prenume)+'</td><td>'+x.nr+'</td></tr>'; }).join("");
+    var camp=(r.pecampanii||[]).map(function(x){ return '<tr><td>'+esc(x.titlu)+'</td><td>'+x.distribuiri7+'</td><td>'+x.distribuiri+'</td></tr>'; }).join("");
+    return '<div class="sec-title">Panoul voluntarilor — distribuiri în campanii</div>'+kp+
+      (top?'<div class="card" style="margin-bottom:24px"><table><thead><tr><th>Cei mai activi (7 zile)</th><th>Distribuiri</th></tr></thead><tbody>'+top+'</tbody></table></div>':'')+
+      (camp?'<div class="card" style="margin-bottom:24px"><table><thead><tr><th>Campanie</th><th>7 zile</th><th>Total</th></tr></thead><tbody>'+camp+'</tbody></table></div>':'');
+  }
+
+  // ---- De reactivat: voluntari activi fără nicio activitate în 30 de zile (contact, istoric, emailuri/WhatsApp, panou)
+  function ultimaActivitateIso(v){
+    var best="";
+    function ia(x){ x=String(x||"").slice(0,10); if(x && x>best) best=x; }
+    ia(v.dataContact); ia(v.sentEmail); ia(v.sentWhatsapp);
+    (v.istoric||[]).forEach(function(e){ ia(e.at); });
+    var f=panouFisa(v); if(f) ia(f.ultimaActivitateLa);
+    return best;
+  }
+  function deReactivat(v){
+    if(!v.activ) return false;
+    var u=ultimaActivitateIso(v)||String(v.dataInscriere||"").slice(0,10);
+    var d=u?daysSince(u):null;
+    return d===null || d>=30;
+  }
+  function waNumar(tel){
+    var d=String(tel||"").replace(/\D/g,"");
+    if(!d) return "";
+    if(d.indexOf("00")===0) return d.slice(2);
+    if(d.charAt(0)==="0" && d.length===10) return "40"+d.slice(1);
+    return d;
+  }
+  function reactiveaza(v){
+    if(!v||!v.telefon) return;
+    var nr=waNumar(v.telefon); if(!nr){ toast("Număr de telefon invalid", true); return; }
+    var l=state.panou && state.panou.link && state.panou.link.activ ? state.panou.link.url : "";
+    var msg="Bună! Ne-a fost dor de tine ca voluntar. "+
+      (l ? "Poți da mai departe campaniile noastre dintr-un singur link, în două minute: "+l : "Ne-ar ajuta mult să te avem din nou alături.")+" Mulțumim!";
+    try{ window.open("https://wa.me/"+nr+"?text="+encodeURIComponent(msg), "_blank", "noopener"); }catch(e){}
+    istoricAdd(v,"whatsapp","Mesaj de reactivare"); scheduleSave(); render();
+    toast("Am deschis WhatsApp — trimite mesajul acolo");
+  }
+
+  // ---- Export CSV (lista afișată după filtre/căutare, sau doar cei bifați)
+  function csvCell(x, esteTel){
+    var s=String(x==null?"":x).replace(/\r?\n/g," ");
+    // Protecție față de formule Excel: textul care începe ca o formulă primește un apostrof; numerele de telefon (+40 …) rămân intacte.
+    if(/^[=+\-@\t\r]/.test(s) && !(esteTel && /^\+?[\d\s().\-]+$/.test(s))) s="'"+s;
+    return '"'+s.replace(/"/g,'""')+'"';
+  }
+  function fmtData(iso){ return iso ? fmtDate(String(iso).slice(0,10)) : ""; }
+  function exportCsv(){
+    var vols=selCount()>0 ? selectedVols() : filteredSorted();
+    if(!vols.length){ toast("Nu există voluntari de exportat", true); return; }
+    var cap=["Nume","Telefon","Email","Facebook","LinkedIn","Responsabil","Activ","Grupă","Tip implicare","Canal preferat","Data înscrierii","Ultim contact","Ultima activitate","Distribuiri panou"];
+    var linii=[cap.map(function(c){ return csvCell(c,false); }).join(";")];
+    vols.forEach(function(v){
+      var f=panouFisa(v);
+      var r=[v.nume,v.telefon,v.email,v.facebook,v.linkedin,v.responsabil,v.activ?"Da":"Nu",v.grup,v.tip,v.canal,fmtData(v.dataInscriere),fmtData(v.dataContact),fmtData(ultimaActivitateIso(v)),f?f.distribuiri:""];
+      linii.push(r.map(function(x,i){ return csvCell(x, i===1); }).join(";"));
+    });
+    var blob=new Blob(["﻿"+linii.join("\r\n")], {type:"text/csv;charset=utf-8"});
+    var url=URL.createObjectURL(blob), a=document.createElement("a");
+    a.href=url; a.download="voluntari-"+todayIso()+".csv"; document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 500);
+    toast("Exportat: "+vols.length+" voluntari"+(selCount()>0?" (cei bifați)":""));
+  }
+
+  // ---- Salvare pe modificări: baza de comparație, diferențe, îmbinare cu ce au făcut colegele
+  var baseline={}, baseSettings="";
+  function snapshot(){
+    baseline={}; reali().forEach(function(v){ baseline[v.id]=JSON.stringify(v); });
+    baseSettings=JSON.stringify(state.settings);
+  }
+  function diff(){
+    var changed=[], seen={};
+    reali().forEach(function(v){ seen[v.id]=1; if(baseline[v.id]!==JSON.stringify(v)) changed.push(v); });
+    var deleted=Object.keys(baseline).filter(function(id){ return !seen[id]; });
+    return { changed:changed, deleted:deleted, settings: JSON.stringify(state.settings)!==baseSettings ? state.settings : undefined };
+  }
+  function trimiteDiff(){
+    var d=diff();
+    if(!d.changed.length && !d.deleted.length && d.settings===undefined) return Promise.resolve({noop:true});
+    var sent={}; d.changed.forEach(function(v){ sent[v.id]=JSON.stringify(v); });
+    var sentSettings=d.settings!==undefined ? JSON.stringify(state.settings) : null;
+    return fetch(API_BASE+"/voluntari-roster", {method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({changed:d.changed, deleted:d.deleted, settings:d.settings, updatedBy:loginName})
+    }).then(function(r){
+      if(!r.ok) throw new Error("HTTP "+r.status);
+      return r.json();
+    }).then(function(j){
+      Object.keys(sent).forEach(function(id){ baseline[id]=sent[id]; });
+      d.deleted.forEach(function(id){ delete baseline[id]; });
+      if(sentSettings!==null) baseSettings=sentSettings;
+      return j;
+    });
+  }
+  // Aduce în listă ce au făcut colegele (voluntari noi, modificați, șterși), fără să atingă: voluntarul deschis acum, modificările tale
+  // încă netrimise. Întoarce true dacă s-a schimbat ceva.
+  function preiaDeLaServer(j){
+    if(!j || !Array.isArray(j.volunteers)) return false;
+    var editat=(state.view==="profile")?state.selectedId:null;
+    var local={}, remote={}, schimbat=false;
+    state.volunteers.forEach(function(v){ local[v.id]=v; });
+    j.volunteers.forEach(function(rv){
+      if(!rv || !rv.id) return;
+      remote[rv.id]=1;
+      var nrv=normalize(rv), js=JSON.stringify(nrv), lv=local[rv.id];
+      if(!lv){ state.volunteers.unshift(nrv); baseline[rv.id]=js; schimbat=true; return; }
+      if(rv.id===editat) return;
+      if(baseline[rv.id]!==JSON.stringify(lv)) return; // are modificări locale netrimise
+      if(JSON.stringify(lv)!==js){
+        for(var i=0;i<state.volunteers.length;i++){ if(state.volunteers[i].id===rv.id){ state.volunteers[i]=nrv; break; } }
+        schimbat=true;
+      }
+      baseline[rv.id]=js;
+    });
+    state.volunteers=state.volunteers.filter(function(v){
+      if(String(v.id).indexOf("demo-")===0 || remote[v.id] || baseline[v.id]===undefined) return true;
+      if(baseline[v.id]!==JSON.stringify(v)) return true; // nou/modificat local, încă netrimis
+      delete baseline[v.id]; schimbat=true; return false; // șters de o colegă
+    });
+    if(j.settings && typeof j.settings==="object" && JSON.stringify(state.settings)===baseSettings){
+      var inainte=JSON.stringify(state.settings); aplicaSetari(j.settings);
+      var dupa=JSON.stringify(state.settings); if(inainte!==dupa) schimbat=true; baseSettings=dupa;
+    }
+    return schimbat;
+  }
+  // Redesenează doar dacă nu întrerupe pe cineva care scrie sau o fereastră deschisă.
+  function refreshView(){
+    var a=document.activeElement;
+    if(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return;
+    if(document.querySelector('[id$="Bg"].show')) return;
+    render();
+  }
+  // La fiecare minut preluăm modificările colegelor (dacă nu avem noi ceva de salvat).
+  setInterval(function(){
+    if(document.hidden || saving || dirty || !state.loaded) return;
+    fetch(API_BASE+"/crm-kv/"+KEY, {cache:"no-store"}).then(function(r){ return r.ok?r.json():null; }).then(function(d){
+      if(d && Array.isArray(d.volunteers) && preiaDeLaServer(d)) refreshView();
+    }).catch(function(){});
+  }, 60000);
+
   // ---- Nav ----
   document.querySelectorAll(".nav-item").forEach(function(b){
     b.onclick=function(){
       var d=b.getAttribute("data-nav");
+      if(d==="panou"){ deschidePanou(); return; }
       state.view=(d==="automation"||d==="raport"||d==="tasks"||d==="cazuri"||d==="arhiva")?d:"list"; state.selectedId=null; render();
-      if(state.view==="raport") loadActivity();
+      if(state.view==="raport"){ loadActivity(); loadPanou(function(){ if(state.view==="raport") render(); }); }
       if(state.view==="tasks") loadTasks();
       if(state.view==="cazuri") loadCazuri();
     };
@@ -1860,7 +2073,7 @@
   document.addEventListener("keydown", function(ev){ if(ev.key==="Escape"){ closeModal(); closeSendMsg(); closeImport(); closeNote(); } });
 
   // save on unload if pending
-  window.addEventListener("beforeunload", function(){ if(dirty){ try{ navigator.sendBeacon(API_BASE+"/crm-kv/"+KEY, JSON.stringify({volunteers:state.volunteers, settings:state.settings})); }catch(e){} } });
+  window.addEventListener("beforeunload", function(){ if(dirty){ try{ var d=diff(); navigator.sendBeacon(API_BASE+"/voluntari-roster", new Blob([JSON.stringify({changed:d.changed,deleted:d.deleted,settings:d.settings,updatedBy:loginName})],{type:"application/json"})); }catch(e){} } });
 
   setFlag("ok");
   load();

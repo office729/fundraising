@@ -41,7 +41,9 @@ const ALLOWED_KEYS = new Set([
   "grupuri-stare",
 ]);
 const ALLOWED_GET = ALLOWED_KEYS;
-const ALLOWED_PUT = ALLOWED_KEYS;
+// Lista de voluntari se scrie DOAR prin /api/<org>/voluntari-roster (îmbinare pe modificări): un PUT cu întreaga listă ar suprascrie
+// munca colegelor (și o filă veche, deschisă dinainte, ar putea șterge date).
+const ALLOWED_PUT = new Set([...ALLOWED_KEYS].filter((k) => k !== "voluntari-roster"));
 // Documente de configurare a organizației (date ONG, setări comune ale tool-urilor):
 // citite de toți membrii, scrise doar de owner/admin — la fel ca salveazaDateOng,
 // care modifică același document. Fără asta, orice membru le rescria prin API.
