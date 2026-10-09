@@ -350,7 +350,7 @@ function textIstoric(h: IstoricRezultat, r: RezultatDto): string {
   return "Notă";
 }
 
-function DialogActualizare({ rezultat, ...p }: { orgSlug: string; rezultat: RezultatDto | null; obiectiv: ObiectivDto; onClose: () => void; onSalvat: () => void }) {
+export function DialogActualizare({ rezultat, ...p }: { orgSlug: string; rezultat: RezultatDto | null; obiectiv: ObiectivDto; onClose: () => void; onSalvat: () => void }) {
   if (!rezultat) return null;
   return <FormularActualizare key={rezultat.id} rezultat={rezultat} {...p} />;
 }

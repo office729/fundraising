@@ -8,7 +8,10 @@ import { perioadaVecina, rezolvaPerioada } from "@/lib/performanta-perioada";
 
 const FILE = [
   { sub: "", label: "Prezentare generală" },
+  { sub: "/spatiul-meu", label: "Spațiul meu" },
   { sub: "/obiective", label: "Obiective și rezultate" },
+  { sub: "/saptamana", label: "Planul săptămânii" },
+  { sub: "/echipa", label: "Echipa" },
 ];
 
 // Navigarea modulului Echipă & Performanță. Perioada și filtrele rămân în adresă când treci de la o filă la alta.
@@ -39,6 +42,9 @@ export function PerfNav({ orgSlug }: { orgSlug: string }) {
           </Link>
         );
       })}
+      <Link href={`/${orgSlug}/crm/kpi`} prefetch={false} className="shrink-0 rounded-[calc(var(--ci-radius-card)-4px)] px-3.5 py-1.5 text-[13px] font-semibold text-[var(--ci-text-muted)] transition-colors hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
+        Biblioteca KPI
+      </Link>
     </nav>
   );
 }
