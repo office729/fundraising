@@ -749,6 +749,34 @@ const POLICIES = [
   `create policy kpi_interactiuni_tenant_isolation on kpi_interactiuni
     using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
     with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  // Echipă & Performanță: obiective, rezultate-cheie, activități, blocaje, absențe, notificări — izolare pe organizație.
+  `create policy obiective_tenant_isolation on obiective
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy obiective_colaboratori_tenant_isolation on obiective_colaboratori
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy obiective_legaturi_tenant_isolation on obiective_legaturi
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy rezultate_cheie_tenant_isolation on rezultate_cheie
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy rezultate_actualizari_tenant_isolation on rezultate_actualizari
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy activitati_tenant_isolation on activitati
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy blocaje_tenant_isolation on blocaje
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy angajati_absente_tenant_isolation on angajati_absente
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy performanta_notificari_tenant_isolation on performanta_notificari
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
   // CRM Persoane fizice: importuri de donații (sursă reversibilă) — izolare pe organizație.
   `create policy donatori_importuri_tenant_isolation on donatori_importuri
     using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
@@ -850,6 +878,15 @@ const FORCE_TABLES = [
   "volunteer_featured",
   "volunteer_campaign_settings",
   "volunteer_panel_links",
+  "obiective",
+  "obiective_colaboratori",
+  "obiective_legaturi",
+  "rezultate_cheie",
+  "rezultate_actualizari",
+  "activitati",
+  "blocaje",
+  "angajati_absente",
+  "performanta_notificari",
   "donatori_importuri",
   "donatii_importate",
 ];

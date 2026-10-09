@@ -12,12 +12,15 @@ export function SidePanel({
   title,
   subtitle,
   children,
+  lat = false,
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   subtitle?: string;
   children: ReactNode;
+  /** Panou lat (formulare lungi), în loc de cel îngust implicit. */
+  lat?: boolean;
 }) {
   const panouRef = useRef<HTMLDivElement>(null);
   const titluId = useId();
@@ -41,7 +44,7 @@ export function SidePanel({
         aria-modal="true"
         aria-labelledby={titluId}
         tabIndex={-1}
-        className={`ci-scrollbar absolute top-0 right-0 h-full w-full max-w-md overflow-y-auto border-l border-[var(--ci-border)] bg-[var(--ci-surface)] shadow-[var(--ci-shadow-lg)] transition-transform duration-200 ${
+        className={`ci-scrollbar absolute top-0 right-0 h-full w-full ${lat ? "max-w-2xl" : "max-w-md"} overflow-y-auto border-l border-[var(--ci-border)] bg-[var(--ci-surface)] shadow-[var(--ci-shadow-lg)] transition-transform duration-200 ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
       >

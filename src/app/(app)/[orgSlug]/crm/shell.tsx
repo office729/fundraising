@@ -28,6 +28,7 @@ import {
   Plus,
   ScanFace,
   Settings,
+  Target,
   Sparkles,
   TrendingUp,
   Upload,
@@ -117,6 +118,7 @@ function buildNav(dict: DashboardDict, orgSlug: string): { section: string; item
       items: [
         { href: "kpi/dashboard", label: dict.nav.kpiPerformantaMea, hint: dict.hints.kpiPerformantaMea, icon: TrendingUp },
         { href: "kpi", label: dict.nav.kpiLibrary, hint: dict.hints.kpiLibrary, icon: LibraryBig },
+        { href: "performanta", label: dict.nav.performanta, hint: dict.hints.performanta, icon: Target },
         { href: "organizatie", label: dict.nav.organizatie, hint: dict.hints.organizatie, icon: Network },
         { href: "kpi-echipa", label: dict.nav.kpiEchipa, hint: dict.hints.kpiEchipa, icon: BarChart3 },
       ],

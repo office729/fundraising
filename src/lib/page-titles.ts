@@ -83,6 +83,8 @@ const TITLURI = {
   crmDonatoriAnalize: { ro: "Analize donatori — CRM", en: "Donor analytics — CRM" },
   crmVoluntariPanou: { ro: "Panoul voluntarilor — CRM", en: "Volunteer panel — CRM" },
   crmVoluntari: { ro: "CRM Voluntari", en: "Volunteers CRM" },
+  crmPerformanta: { ro: "Echipă & Performanță — CRM", en: "Team & Performance — CRM" },
+  crmPerformantaObiective: { ro: "Obiective și rezultate — CRM", en: "Objectives and results — CRM" },
   crmProgramLucru: { ro: "Program de lucru — CRM", en: "Work schedule — CRM" },
   crmNewsletterPf: { ro: "Newsletter persoane fizice — CRM", en: "Individuals newsletter — CRM" },
   crmNewsletterPj: { ro: "Newsletter persoane juridice — CRM", en: "Companies newsletter — CRM" },

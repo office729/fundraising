@@ -21,3 +21,4 @@ export * from "./rapoarte-companii";
 export * from "./kpi";
 export * from "./voluntari-panou";
 export * from "./donatori-pf";
+export * from "./performanta";
