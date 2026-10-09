@@ -47,6 +47,7 @@ const GRUPE: { grup: string; titlu: string }[] = [
   { grup: "lucru", titlu: "Contactare" },
   { grup: "recurenta", titlu: "Recurență și risc" },
   { grup: "email", titlu: "Email" },
+  { grup: "radar", titlu: "Radar" },
 ];
 
 export function ListaPfClient({ orgSlug, lista }: { orgSlug: string; lista: ListaPf }) {

@@ -68,6 +68,8 @@ const interval = (luni: number) => sql.raw(`interval '${Math.round(luni)} months
 const zile = (n: number) => sql.raw(`interval '${Math.round(n)} days'`);
 const telefonPrezent = sql`coalesce(b.telefon, '') <> ''`;
 
+const P90_TOTAL = sql`(select coalesce(percentile_cont(0.9) within group (order by total), 0) from base where nr >= 1)`;
+
 const SQL_SEGMENT: Record<string, (c: ContextPf) => SQL> = {
   recurenti: () => sql`b.nr >= 2`,
   unica: () => sql`b.nr = 1`,
@@ -75,6 +77,7 @@ const SQL_SEGMENT: Record<string, (c: ContextPf) => SQL> = {
   aumaidonat: (c) => sql`b.nr >= 2 and b.ultima >= ${c.valDe}::date and b.prima < ${c.valDe}::date`,
   dormanti: () => sql`b.nr >= 1 and b.ultima < now() - ${interval(PRAGURI.dormantLuni)}`,
   desunat: () => sql`${telefonPrezent} and b.sunat_la is null and not b.nu_contactat`,
+  demultumit: () => sql`b.nr >= 1 and b.multumit_la is null and b.ultima >= now() - ${zile(30)}`,
   cutelefon: () => telefonPrezent,
   sunati: () => sql`b.sunat_la is not null`,
   multumiti: () => sql`b.multumit_la is not null`,
@@ -88,6 +91,13 @@ const SQL_SEGMENT: Record<string, (c: ContextPf) => SQL> = {
   consimtemail: () => sql`b.consimtamant_email is true and b.dezabonat_email_la is null`,
   abonati: () => sql`b.consimtamant_email is not false and b.dezabonat_email_la is null`,
   dezabonati: () => sql`b.dezabonat_email_la is not null`,
+  // Radar: segmente „ascunse”. Pragul de 10% se calculează pe toți donatorii cu donații.
+  radarmari: () => sql`b.total >= ${P90_TOTAL} and b.total > 0 and b.ultima < now() - ${interval(6)}`,
+  radaropriti: () =>
+    sql`b.nr >= 2 and not b.lunar and b.ultima < now() - ${interval(6)} and (extract(epoch from (now() - b.ultima)) / 86400.0) > 2 * (extract(epoch from (b.ultima - b.prima)) / 86400.0 / nullif(b.nr - 1, 0))`,
+  radarscadere: () => sql`b.nr >= 3 and b.ultima_suma < 0.6 * ((b.total - b.ultima_suma)::numeric / (b.nr - 1))`,
+  radarbigunica: () => sql`b.nr = 1 and b.total >= ${P90_TOTAL} and b.total > 0`,
+  radarambasadori: () => sql`b.nr_proiecte >= 3 and b.nr >= 4`,
 };
 
 export const SEGMENTE: SegmentDef[] = SEGMENTE_META.map((m) => ({ ...m, sql: SQL_SEGMENT[m.key] ?? null }));
@@ -228,3 +238,10 @@ export function interogareContoare(orgId: string, f: FiltruPf, ctx: ContextPf): 
 }
 
 export const cheieContor = (k: string) => `s_${k}`;
+
+// „Ultimul val” și „importul nou” pentru segmentele „Au mai donat” și „Noi”: de la începutul ultimului import; fără importuri, ultimele N luni.
+export async function contextPf(ctx: { db: { execute: (q: SQL) => PromiseLike<unknown> }; orgId: string }): Promise<ContextPf> {
+  const [imp] = (await ctx.db.execute(sql`select id::text as id, de::text as de from donatori_importuri where org_id = ${ctx.orgId} order by created_at desc limit 1`)) as unknown as { id: string; de: string | null }[];
+  const implicit = new Date(Date.now() - PRAGURI.valLuni * 30.4 * 86400000).toISOString().slice(0, 10);
+  return { valDe: imp?.de ?? implicit, importNouId: imp?.id ?? null };
+}

@@ -15,7 +15,7 @@ export const PRAGURI = {
   pagina: 100,
 } as const;
 
-export type SegmentMeta = { key: string; label: string; hint: string; grup: "donatii" | "lucru" | "recurenta" | "email"; top?: number };
+export type SegmentMeta = { key: string; label: string; hint: string; grup: "donatii" | "lucru" | "recurenta" | "email" | "radar"; top?: number };
 
 export const SEGMENTE_META: SegmentMeta[] = [
   { key: "recurenti", label: "Recurenți", hint: "Au donat de cel puțin 2 ori", grup: "donatii" },
@@ -26,6 +26,7 @@ export const SEGMENTE_META: SegmentMeta[] = [
   { key: "aumaidonat", label: "Au mai donat", hint: "Au donat și în ultimul val, nu doar demult", grup: "donatii" },
   { key: "dormanti", label: "Dormanți", hint: `Nicio donație de peste ${PRAGURI.dormantLuni} luni — de reactivat`, grup: "donatii" },
   { key: "desunat", label: "De sunat", hint: "Au telefon și n-au fost sunați", grup: "lucru" },
+  { key: "demultumit", label: "De mulțumit", hint: "Au donat în ultimele 30 de zile și încă nu li s-a mulțumit", grup: "lucru" },
   { key: "cutelefon", label: "Cu telefon", hint: "Au număr de telefon", grup: "lucru" },
   { key: "sunati", label: "Sunați", hint: "Au fost sunați", grup: "lucru" },
   { key: "multumiti", label: "Mulțumiți", hint: "Li s-a mulțumit", grup: "lucru" },
@@ -37,6 +38,11 @@ export const SEGMENTE_META: SegmentMeta[] = [
   { key: "consimtemail", label: "Consimțământ email", hint: "Au consimțământ pentru email și nu sunt dezabonați", grup: "email" },
   { key: "abonati", label: "Abonați newsletter", hint: "Pot primi emailuri de campanie", grup: "email" },
   { key: "dezabonati", label: "Dezabonați newsletter", hint: "S-au dezabonat de la emailurile de campanie", grup: "email" },
+  { key: "radarmari", label: "Mari la risc", hint: "În top 10% după suma donată, dar nu au mai donat de peste 6 luni", grup: "radar" },
+  { key: "radaropriti", label: "Recurenți opriți", hint: "Donau regulat și s-au oprit: au depășit de 2 ori intervalul lor obișnuit", grup: "radar" },
+  { key: "radarscadere", label: "În scădere", hint: "Ultima donație e sub 60% din media celor dinainte", grup: "radar" },
+  { key: "radarbigunica", label: "Big one-time", hint: "O singură donație, în top 10% ca valoare — de cultivat", grup: "radar" },
+  { key: "radarambasadori", label: "Ambasadori", hint: "Au susținut cel puțin 3 proiecte diferite și au donat de cel puțin 4 ori", grup: "radar" },
 ];
 export const CHEI_SEGMENTE = new Set(SEGMENTE_META.map((s) => s.key));
 
