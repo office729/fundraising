@@ -92,6 +92,15 @@ export const scoateCampaniaSaptamaniiAction = withOrgSession(async (ctx, luni: s
   return { ok: true };
 });
 
+// Ștergerea unui voluntar din panou (GDPR: la cererea persoanei sau când nu mai e nevoie de date). Distribuirile și misiunile lui pleacă în cascadă.
+export const stergeVoluntarPanouAction = withOrgSession(async (ctx, visitorId: string): Promise<{ ok: true } | { ok: false; eroare: string }> => {
+  if (!UUID_REGEX.test(String(visitorId))) return { ok: false, eroare: "Voluntar invalid." };
+  const r = await ctx.db.delete(volunteerVisitors).where(and(eq(volunteerVisitors.id, visitorId), eq(volunteerVisitors.orgId, ctx.orgId))).returning({ id: volunteerVisitors.id });
+  if (!r[0]) return { ok: false, eroare: "Voluntarul nu mai există." };
+  await audit(ctx, "voluntari_panou_voluntar_sters");
+  return { ok: true };
+});
+
 // ===== Setări pe campanie =====
 export const seteazaSetariCampanieAction = withOrgSession(
   async (ctx, campaignId: string, setari: { ascunsa: boolean; mesaj: string }): Promise<{ ok: true } | { ok: false; eroare: string }> => {

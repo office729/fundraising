@@ -20,6 +20,7 @@ import {
   salveazaMesajImplicitAction,
   scoateCampaniaSaptamaniiAction,
   schimbaLinkAction,
+  stergeVoluntarPanouAction,
   seteazaCampaniaSaptamaniiAction,
   seteazaSetariCampanieAction,
   type CampaniePentruEchipa,
@@ -94,7 +95,7 @@ export function VoluntariPanouClient({ orgSlug, date }: { orgSlug: string; date:
           ) : tab === "campanii" ? (
             <CampaniiTab campanii={date.campanii} orgSlug={orgSlug} ruleaza={ruleaza} pending={pending} />
           ) : (
-            <VoluntariTab date={date} />
+            <VoluntariTab date={date} ruleaza={ruleaza} />
           )
         }
       </Tabs>
@@ -320,7 +321,7 @@ function CampanieRand({ c, orgSlug, ruleaza, pending }: { c: CampaniePentruEchip
 }
 
 // ===== Voluntari =====
-function VoluntariTab({ date }: { date: DatePanou }) {
+function VoluntariTab({ date, ruleaza }: { date: DatePanou; ruleaza: Ruleaza }) {
   if (date.voluntari.length === 0) {
     return <EmptyState icon={Link2} title="Niciun voluntar încă" description={date.link ? "Trimite linkul voluntarilor. Cei care intră apar aici." : "Creează linkul, apoi trimite-l voluntarilor."} />;
   }
@@ -335,6 +336,7 @@ function VoluntariTab({ date }: { date: DatePanou }) {
               <th className="px-3 py-2.5 text-right font-medium">Distribuiri</th>
               <th className="px-3 py-2.5 text-right font-medium">7 zile</th>
               <th className="px-4 py-2.5 font-medium">Ultima activitate</th>
+              <th className="px-3 py-2.5"><span className="sr-only">Acțiuni</span></th>
             </tr>
           </thead>
           <tbody>
@@ -348,6 +350,18 @@ function VoluntariTab({ date }: { date: DatePanou }) {
                 <td className="ci-tabular px-3 py-2.5 text-right">{v.distribuiri}</td>
                 <td className="ci-tabular px-3 py-2.5 text-right">{v.distribuiri7}</td>
                 <td className="px-4 py-2.5 text-[var(--ci-text-muted)]">{dataOra(v.ultimaActivitateLa)}</td>
+                <td className="px-3 py-2.5 text-right">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    aria-label={`Șterge ${v.prenume} din panou`}
+                    onClick={() => {
+                      if (window.confirm(`Ștergi ${v.prenume} din panou? Se șterg și distribuirile lui. Nu se poate anula.`)) ruleaza((s) => stergeVoluntarPanouAction(s, v.id), "Voluntarul a fost șters din panou.");
+                    }}
+                  >
+                    <Trash2 className="size-4" aria-hidden />
+                  </Button>
+                </td>
               </tr>
             ))}
           </tbody>

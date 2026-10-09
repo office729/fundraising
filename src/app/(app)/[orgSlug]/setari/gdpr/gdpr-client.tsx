@@ -66,7 +66,7 @@ export function GdprClient({ orgSlug }: { orgSlug: string }) {
       }
       const x = r.rezumat;
       setMesaj(
-        `Gata: ${x.contacteSterse} contacte șterse, ${x.voluntariStersi} voluntari scoși, ${x.paginiAnonimizate} pagini și ${x.mesajeAnonimizate} mesaje anonimizate, ${x.contacteMediaAnonimizate} contacte media anonimizate.`,
+        `Gata: ${x.contacteSterse} contacte șterse, ${x.voluntariStersi} voluntari scoși${x.panouVoluntariSterse ? ` (și ${x.panouVoluntariSterse} din panou)` : ""}, ${x.paginiAnonimizate} pagini și ${x.mesajeAnonimizate} mesaje anonimizate, ${x.contacteMediaAnonimizate} contacte media anonimizate.`,
       );
       const nou = await cautaPersoanaAction(orgSlug, rezultat.email);
       if (nou.rezultat) setRezultat(nou.rezultat);

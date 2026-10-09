@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, or, sql } from "drizzle-orm";
 
 import { inregistreazaAudit } from "@/lib/audit";
 import { withOrgAdmin } from "@/lib/auth/guard";
@@ -16,7 +16,9 @@ import {
   fundraisingMediaContacts,
   fundraisingMessages,
   fundraisingPages,
+  volunteerVisitors,
 } from "@/lib/db/schema";
+import { normalizeazaTelefon } from "@/lib/voluntari-panou";
 import { EroareUtilizator, mesajSigur } from "@/lib/erori";
 import { EMAIL_RE, normalizeazaEmail } from "@/lib/validation";
 
@@ -199,15 +201,27 @@ const sterge = withOrgAdmin(async (ctx, emailBrut: string) => {
     )
     .returning({ id: fundraisingDonations.id });
 
-  // Voluntarii trăiesc într-un blob JSON (crm_kv) — se scot din listă.
+  // Voluntarii trăiesc într-un blob JSON (crm_kv) — se scot din listă. Aceeași blocare ca la salvarea din CRM Voluntari
+  // (îmbinare pe modificări), ca ștergerea să nu fie anulată de o salvare simultană. Se păstrează setările din același document.
+  await ctx.db.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`${ctx.orgId}:${ROSTER_PATH}`}, 0))`);
   const { toti } = await citesteVoluntari(ctx);
+  const stersi = toti.filter((v) => (v.email ?? "").trim().toLowerCase() === email);
   const ramasi = toti.filter((v) => (v.email ?? "").trim().toLowerCase() !== email);
-  const voluntariStersi = toti.length - ramasi.length;
+  const voluntariStersi = stersi.length;
+  let panouVoluntariSterse = 0;
   if (voluntariStersi > 0) {
     await ctx.db
       .update(crmKv)
-      .set({ data: { volunteers: ramasi }, updatedAt: new Date() })
+      .set({ data: sql`jsonb_set(${crmKv.data}, '{volunteers}', ${JSON.stringify(ramasi)}::text::jsonb)`, updatedAt: new Date() })
       .where(and(eq(crmKv.orgId, ctx.orgId), eq(crmKv.path, ROSTER_PATH)));
+    // Panoul public al voluntarilor: se șterg și cei legați de fișa ștearsă sau care au același telefon (distribuirile și misiunile pleacă în cascadă).
+    const ids = stersi.map((v) => (v as { id?: unknown }).id).filter((x): x is string => typeof x === "string");
+    const telefoane = stersi.map((v) => normalizeazaTelefon((v as { telefon?: string }).telefon)).filter((x): x is string => !!x);
+    const conditii = [ids.length ? inArray(volunteerVisitors.voluntarId, ids) : undefined, telefoane.length ? inArray(volunteerVisitors.telefon, telefoane) : undefined].filter((c) => c !== undefined);
+    if (conditii.length > 0) {
+      const sterse = await ctx.db.delete(volunteerVisitors).where(and(eq(volunteerVisitors.orgId, ctx.orgId), or(...conditii))).returning({ id: volunteerVisitors.id });
+      panouVoluntariSterse = sterse.length;
+    }
   }
 
   const rezumat = {
@@ -216,6 +230,7 @@ const sterge = withOrgAdmin(async (ctx, emailBrut: string) => {
     paginiAnonimizate: pagini.length,
     mesajeAnonimizate: mesaje.length,
     voluntariStersi,
+    panouVoluntariSterse,
     jurnalCampaniiSters: destinatari.length,
     invitatiiSterse: invitatiiEchipa.length + invitatiiBeneficiar.length,
     donatiiNeterminateAnonimizate: donatiiNeterminate.length,
