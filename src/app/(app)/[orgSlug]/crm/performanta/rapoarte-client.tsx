@@ -1,6 +1,7 @@
 "use client";
 
 import { Download, Printer } from "lucide-react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import type { DateRapoarte } from "@/lib/performanta-rapoarte";
@@ -92,7 +93,7 @@ export function RapoarteClient({ orgSlug, d, departamente }: { orgSlug: string; 
       </div>
 
       <p className="text-[12px] text-[var(--ci-text-muted)]">
-        Perioada: <strong className="text-[var(--ci-text)]">{d.perioada.eticheta}</strong> ({dataScurta(d.perioada.start)} – {dataScurta(d.perioada.end)}) · calculat la {dataOra(d.actualizatLa)} · conține doar ce ai dreptul să vezi. Evaluările (1:1, review, autoevaluare, feedback) nu intră în rapoarte.
+        Perioada: <strong className="text-[var(--ci-text)]">{d.perioada.eticheta}</strong> ({dataScurta(d.perioada.start)} – {dataScurta(d.perioada.end)}) · calculat la {dataOra(d.actualizatLa)} · conține doar ce ai dreptul să vezi. Evaluările (1:1, review, autoevaluare, feedback) au un raport separat, confidențial: <Link href={`/${orgSlug}/crm/performanta/rapoarte/evaluari?perioada=${d.perioada.cod}`} className="font-medium text-[var(--ci-blue)] hover:underline">Raport de evaluări</Link>.
       </p>
 
       {d.obiective.length === 0 && d.persoane.length === 0 ? (

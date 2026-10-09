@@ -6,7 +6,7 @@ import { rezolvaPerioada } from "@/lib/performanta-perioada";
 import type { ObiectivDto } from "@/lib/performanta-tipuri";
 
 // Rapoartele modulului: obiective și rezultate-cheie, muncă finalizată pe săptămâni și blocaje. Toate pornesc din aceleași încărcări ca paginile,
-// deci arată (și exportă) doar ce poate vedea utilizatorul. Evaluările (1:1, review, autoevaluare, feedback) NU intră în rapoarte și nu se exportă.
+// deci arată (și exportă) doar ce poate vedea utilizatorul. Evaluările (1:1, review, autoevaluare, feedback) au raport și export separate (performanta-rapoarte-evaluari.ts), cu acces restrâns și audit.
 
 const adauga = (iso: string, zile: number) => new Date(Date.parse(`${iso}T12:00:00Z`) + zile * 86400000).toISOString().slice(0, 10);
 

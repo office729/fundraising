@@ -177,3 +177,54 @@ export const SABLOANE_ROLURI: SablonRol[] = [
 ];
 
 export const SABLON_PE_ID = new Map(SABLOANE_ROLURI.map((s) => [s.id, s]));
+
+// ───────── Ținte stabilite de organizație ─────────
+// Organizația poate înlocui țintele-exemplu cu cele agreate cu echipa. Se păstrează doar valorile introduse de ea (per titlu de rezultat-cheie),
+// iar șablonul poate fi marcat „confirmat”: obiectivele create din el nu mai poartă nota de „țintă de exemplu”.
+
+export type TintaOrg = { tinta: number | null; tintaMax: number | null; nivelInitial: number | null };
+export type SetariSablon = { confirmat: boolean; confirmatLa: string | null; tinte: Record<string, TintaOrg> };
+export type SetariSabloane = Record<string, SetariSablon>;
+export type SablonEfectiv = SablonRol & { confirmat: boolean; confirmatLa: string | null; personalizat: boolean; tinteOrg: Record<string, TintaOrg> };
+
+export const NOTA_CONFIRMAT = "Ținte stabilite cu echipa.";
+
+const num = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
+
+// Verifică țintele propuse pentru un șablon; returnează textul erorii sau null.
+export function valideazaTinte(sablon: SablonRol, tinte: Record<string, TintaOrg>): string | null {
+  const krs = sablon.obiective.flatMap((o) => o.rezultate);
+  for (const [titlu, t] of Object.entries(tinte)) {
+    const kr = krs.find((k) => k.titlu === titlu);
+    if (!kr) return `„${titlu}” nu face parte din șablon.`;
+    if (kr.metoda === "binar") continue;
+    if (num(t.tinta) === null) return `Completează ținta pentru „${titlu}”.`;
+    if (Math.abs(t.tinta as number) > 1e9) return `Ținta pentru „${titlu}” e prea mare.`;
+    if (kr.metoda === "interval") {
+      if (num(t.tintaMax) === null) return `Completează ambele limite pentru „${titlu}”.`;
+      if ((t.tintaMax as number) < (t.tinta as number)) return `Pentru „${titlu}”, limita de sus trebuie să fie cel puțin cât cea de jos.`;
+    }
+    if (t.nivelInitial !== null && num(t.nivelInitial) === null) return `Nivelul de pornire pentru „${titlu}” nu e un număr.`;
+  }
+  return null;
+}
+
+// Șablonul cu țintele organizației aplicate peste cele din exemplu.
+export function sablonEfectiv(sablon: SablonRol, setari: SetariSablon | undefined): SablonEfectiv {
+  const tinte = setari?.tinte ?? {};
+  return {
+    ...sablon,
+    confirmat: Boolean(setari?.confirmat),
+    confirmatLa: setari?.confirmatLa ?? null,
+    personalizat: Object.keys(tinte).length > 0,
+    tinteOrg: tinte,
+    obiective: sablon.obiective.map((o) => ({
+      ...o,
+      rezultate: o.rezultate.map((r) => {
+        const t = tinte[r.titlu];
+        if (!t || r.metoda === "binar") return r;
+        return { ...r, tinta: t.tinta, tintaMax: r.metoda === "interval" ? t.tintaMax : (r.tintaMax ?? null), nivelInitial: r.metoda === "interval" ? null : t.nivelInitial };
+      }),
+    })),
+  };
+}

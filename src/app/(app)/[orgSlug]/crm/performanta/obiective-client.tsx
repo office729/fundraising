@@ -12,6 +12,7 @@ import { Input, Select } from "../components/ui/input";
 import { EmptyState } from "../components/ui/states";
 import { DetaliuObiectiv } from "./obiectiv-detaliu";
 import { ObiectivForm } from "./obiectiv-form";
+import type { SablonEfectiv } from "@/lib/performanta-sabloane";
 import { SablonDialog } from "./sablon-dialog";
 import { VedereArbore, VedereCronologie, VedereLista } from "./obiective-vederi";
 import { SelectorPerioada } from "./perf-nav";
@@ -28,7 +29,7 @@ const VEDERI: { id: Vedere; eticheta: string; Icon: typeof ListTree }[] = [
 
 const SEVERITATE: Record<StareRitm, number> = { intarziat: 0, in_risc: 1, fara_date: 2, neinceput: 3, in_grafic: 4, finalizat: 5, anulat: 6 };
 
-export function ObiectiveClient({ orgSlug, obiective, optiuni, perioada, azi }: { orgSlug: string; obiective: ObiectivDto[]; optiuni: OptiuniPerformanta; perioada: { start: string; end: string; cod: string }; azi: string }) {
+export function ObiectiveClient({ orgSlug, sabloane, obiective, optiuni, perioada, azi }: { orgSlug: string; sabloane: SablonEfectiv[]; obiective: ObiectivDto[]; optiuni: OptiuniPerformanta; perioada: { start: string; end: string; cod: string }; azi: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const sp = useSearchParams();
@@ -229,7 +230,7 @@ export function ObiectiveClient({ orgSlug, obiective, optiuni, perioada, azi }: 
           router.refresh();
         }}
       />
-      {sablon && <SablonDialog orgSlug={orgSlug} optiuni={optiuni} perioada={perioada} onClose={() => setSablon(false)} onGata={(t) => { setSablon(false); setMesaj(t); router.refresh(); }} />}
+      {sablon && <SablonDialog orgSlug={orgSlug} sabloane={sabloane} optiuni={optiuni} perioada={perioada} onClose={() => setSablon(false)} onGata={(t) => { setSablon(false); setMesaj(t); router.refresh(); }} />}
       <ObiectivForm
         orgSlug={orgSlug}
         open={formDeschis}

@@ -8,6 +8,7 @@ import type { NivelObiectiv, StatusObiectiv } from "@/lib/performanta-tipuri";
 
 import { PerfNav } from "../perf-nav";
 import { obtineObiective } from "../obiective-actions";
+import { obtineSabloane } from "../sabloane-actions";
 import { ObiectiveClient } from "../obiective-client";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +26,7 @@ export default async function ObiectivePage({ params, searchParams }: { params: 
   const resp = unu(sp.resp);
   const nivel = unu(sp.nivel);
   const status = unu(sp.status);
+  const sabloane = await obtineSabloane(orgSlug);
   const { obiective, optiuni } = await obtineObiective(orgSlug, {
     start: perioada.start,
     end: perioada.end,
@@ -42,7 +44,7 @@ export default async function ObiectivePage({ params, searchParams }: { params: 
       </div>
       <Suspense fallback={null}>
         <PerfNav orgSlug={orgSlug} />
-        <ObiectiveClient orgSlug={orgSlug} obiective={obiective} optiuni={optiuni} perioada={{ start: perioada.start, end: perioada.end, cod: perioada.cod }} azi={aziRo()} />
+        <ObiectiveClient orgSlug={orgSlug} sabloane={sabloane} obiective={obiective} optiuni={optiuni} perioada={{ start: perioada.start, end: perioada.end, cod: perioada.cod }} azi={aziRo()} />
       </Suspense>
     </div>
   );

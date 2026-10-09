@@ -17,6 +17,7 @@ const FILE = [
   { sub: "/echipa", label: "Echipa" },
   { sub: "/discutii", label: "Discuții și evaluări" },
   { sub: "/rapoarte", label: "Rapoarte" },
+  { sub: "/sabloane", label: "Ținte șabloane" },
   { sub: "/automatizari", label: "Automatizări" },
 ];
 

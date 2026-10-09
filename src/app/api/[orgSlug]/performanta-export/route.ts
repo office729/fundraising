@@ -4,7 +4,7 @@ import { withOrgSession } from "@/lib/auth/guard";
 import { incarcaRapoarte } from "@/lib/performanta-rapoarte";
 
 // Export Excel al rapoartelor Echipă & Performanță: „obiective” (rezultate-cheie cu valori, ținte, surse și atribuire) sau „munca” (pe săptămâni și pe persoană).
-// Exportă doar ce vede utilizatorul (aceleași încărcări ca paginile). Evaluările nu se exportă.
+// Exportă doar ce vede utilizatorul (aceleași încărcări ca paginile). Evaluările au rută separată (performanta-evaluari-export), cu audit.
 type Ctx = { params: Promise<{ orgSlug: string }> };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const dataRo = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("ro-RO", { timeZone: "Europe/Bucharest", day: "2-digit", month: "2-digit", year: "numeric" }) : "");

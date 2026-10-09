@@ -4,7 +4,8 @@ import type { OrgContext } from "@/lib/auth/guard";
 import { obiective } from "@/lib/db/schema";
 import { incarcaStructura } from "@/lib/performanta-date";
 import { salveazaObiectiv } from "@/lib/performanta-obiective";
-import { NOTA_EXEMPLU, SABLON_PE_ID } from "@/lib/performanta-sabloane";
+import { NOTA_CONFIRMAT, NOTA_EXEMPLU, SABLON_PE_ID, sablonEfectiv } from "@/lib/performanta-sabloane";
+import { incarcaSetariSabloane } from "@/lib/performanta-sabloane-setari";
 import type { ObiectivInput } from "@/lib/performanta-validare";
 
 // Aplică un șablon de rol pe o persoană: creează obiectivele ei individuale, cu rezultatele-cheie din șablon. Țintele sunt exemple și sunt marcate ca atare.
@@ -14,8 +15,11 @@ type Rez<T extends object = object> = ({ ok: true } & T) | { ok: false; eroare: 
 const DATA = /^\d{4}-\d{2}-\d{2}$/;
 
 export async function aplicaSablon(ctx: OrgContext, p: { sablonId: string; angajatId: string; perioadaStart: string; perioadaEnd: string }): Promise<Rez<{ create: string[]; sarite: string[] }>> {
-  const sablon = SABLON_PE_ID.get(p.sablonId);
-  if (!sablon) return { ok: false, eroare: "Șablonul nu există." };
+  const baza = SABLON_PE_ID.get(p.sablonId);
+  if (!baza) return { ok: false, eroare: "Șablonul nu există." };
+  // Țintele organizației (dacă există) înlocuiesc exemplele; nota „țintă de exemplu” dispare doar pentru șabloanele confirmate cu echipa.
+  const sablon = sablonEfectiv(baza, (await incarcaSetariSabloane(ctx.db, ctx.orgId))[baza.id]);
+  const nota = sablon.confirmat ? NOTA_CONFIRMAT : NOTA_EXEMPLU;
   if (!DATA.test(p.perioadaStart) || !DATA.test(p.perioadaEnd) || p.perioadaEnd < p.perioadaStart) return { ok: false, eroare: "Alege o perioadă validă." };
   const struct = await incarcaStructura(ctx);
   const ang = struct.angajati.find((a) => a.id === p.angajatId);
@@ -35,7 +39,7 @@ export async function aplicaSablon(ctx: OrgContext, p: { sablonId: string; angaj
     const input: ObiectivInput = {
       nivel: "individual",
       titlu: o.titlu,
-      descriere: `${NOTA_EXEMPLU} ${o.descriere}`,
+      descriere: `${nota} ${o.descriere}`,
       responsabilId: ang.id,
       departmentId: ang.departmentId,
       parentId: null,
@@ -46,7 +50,7 @@ export async function aplicaSablon(ctx: OrgContext, p: { sablonId: string; angaj
       legaturi: [],
       rezultate: o.rezultate.map((r) => ({
         titlu: r.titlu,
-        descriere: r.metoda === "binar" ? null : NOTA_EXEMPLU,
+        descriere: r.metoda === "binar" || sablon.confirmat ? null : NOTA_EXEMPLU,
         metoda: r.metoda,
         tipTinta: r.tipTinta,
         unitate: r.unitate ?? null,
