@@ -130,7 +130,7 @@ function FormularObiectiv({ orgSlug, onClose, editat, optiuni, perioada, parentI
   useEffect(() => {
     let anulat = false;
     obiectiveAlegereAction(orgSlug, form.perioadaStart, form.perioadaEnd).then((r) => {
-      if (!anulat) setAlegere(r.filter((x) => x.id !== form.id));
+      if (!anulat) setAlegere(Array.isArray(r) ? r.filter((x) => x.id !== form.id) : []);
     });
     return () => {
       anulat = true;

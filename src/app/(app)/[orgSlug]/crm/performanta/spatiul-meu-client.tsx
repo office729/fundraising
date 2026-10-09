@@ -16,6 +16,7 @@ import { EmptyState } from "../components/ui/states";
 import { CardActivitate } from "./activitate-ui";
 import { ActivitatiProvider, useActivitati } from "./activitati-context";
 import { DialogActualizare } from "./obiectiv-detaliu";
+import { useCalePerf } from "./perf-cale";
 import { ActualitateChip, BaraProgres, StareBadge, dataScurta } from "./ui-comune";
 
 type Date = Awaited<ReturnType<typeof incarcaPaginaMeu>>;
@@ -35,7 +36,7 @@ function Continut({ orgSlug, d, perioada }: { orgSlug: string; d: Date; perioada
   const m = d.meu;
   const router = useRouter();
   const [actualizare, setActualizare] = useState<{ rezultat: RezultatDto; obiectivId: string } | null>(null);
-  const baza = `/${orgSlug}/crm/performanta`;
+  const { baza } = useCalePerf(orgSlug);
 
   if (!m.eu) {
     return (

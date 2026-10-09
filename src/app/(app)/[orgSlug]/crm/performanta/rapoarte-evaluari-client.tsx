@@ -6,6 +6,7 @@ import type { RaportEvaluari } from "@/lib/performanta-rapoarte-evaluari";
 
 import { Card, CardHeader } from "../components/ui/card";
 import { EmptyState } from "../components/ui/states";
+import { useCalePerf } from "./perf-cale";
 import { SelectorPerioada } from "./perf-nav";
 import { dataCompleta, dataOra, dataScurta } from "./ui-comune";
 
@@ -13,6 +14,7 @@ const REVIEW = { niciunul: "niciunul vizibil", privat: "privat", partajat: "part
 
 export function RapoarteEvaluariClient({ orgSlug, d, admin, manager }: { orgSlug: string; d: RaportEvaluari; admin: boolean; manager: boolean }) {
   const t = d.totaluri;
+  const { demo } = useCalePerf(orgSlug);
   const scop = admin ? "toată organizația" : manager ? "tu și echipa ta" : "doar tu";
   const cifre = [
     { e: "cu cel puțin o actualizare săptămânală", n: t.cuCheckin },
@@ -27,9 +29,11 @@ export function RapoarteEvaluariClient({ orgSlug, d, admin, manager }: { orgSlug
         <SelectorPerioada />
         <div className="flex flex-wrap gap-2">
           <a
-            href={`/api/${orgSlug}/performanta-evaluari-export?perioada=${d.perioada.cod}`}
+            href={demo ? "#" : `/api/${orgSlug}/performanta-evaluari-export?perioada=${d.perioada.cod}`}
+            aria-disabled={demo}
+            title={demo ? "Exportul nu e disponibil în modul demonstrativ" : undefined}
             onClick={(e) => {
-              if (!window.confirm("Exportul conține textele evaluărilor pe care ai voie să le vezi și rămâne în jurnalul de audit (cine, când, câte intrări). Documentul e confidențial. Continui?")) e.preventDefault();
+              if (demo || !window.confirm("Exportul conține textele evaluărilor pe care ai voie să le vezi și rămâne în jurnalul de audit (cine, când, câte intrări). Documentul e confidențial. Continui?")) e.preventDefault();
             }}
             className="inline-flex h-9 items-center gap-2 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3.5 text-sm font-medium text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none"
           >

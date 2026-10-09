@@ -233,7 +233,10 @@ function CardRezultat({ orgSlug, r, o, azi, onActualizeaza }: { orgSlug: string;
   function comuta() {
     const nou = !vezi;
     setVezi(nou);
-    if (nou && istoric === null) start(async () => setIstoric(await istoricRezultatAction(orgSlug, r.id)));
+    if (nou && istoric === null) start(async () => {
+      const h = await istoricRezultatAction(orgSlug, r.id);
+      setIstoric(Array.isArray(h) ? h : []);
+    });
   }
 
   return (

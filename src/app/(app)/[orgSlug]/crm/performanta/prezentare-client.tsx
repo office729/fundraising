@@ -5,11 +5,12 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import type { PrezentareDto } from "@/lib/performanta-prezentare";
-import { ETICHETE_STARE, type StareRitm } from "@/lib/performanta-masurare";
+import { ETICHETE_STARE, ritmAsteptat, type StareRitm } from "@/lib/performanta-masurare";
 
 import { Card, CardHeader } from "../components/ui/card";
 import { Select } from "../components/ui/input";
 import { EmptyState } from "../components/ui/states";
+import { useCalePerf } from "./perf-cale";
 import { SelectorPerioada } from "./perf-nav";
 import { BaraProgres, StareBadge, culoareStare, dataCompleta, dataOra, dataScurta, procent } from "./ui-comune";
 
@@ -40,7 +41,7 @@ export function PrezentareClient({ orgSlug, d }: { orgSlug: string; d: Prezentar
   const router = useRouter();
   const pathname = usePathname();
   const sp = useSearchParams();
-  const baza = `/${orgSlug}/crm/performanta`;
+  const { baza } = useCalePerf(orgSlug);
   const coada = (extra: Record<string, string> = {}) => {
     const n = new URLSearchParams();
     n.set("perioada", d.perioada.cod);
@@ -97,9 +98,16 @@ export function PrezentareClient({ orgSlug, d }: { orgSlug: string; d: Prezentar
           title="Niciun obiectiv în această perioadă"
           description="Începe cu un obiectiv pentru organizație sau pentru o echipă; apoi leagă-i rezultate-cheie măsurabile."
           action={
+            <div className="flex flex-col items-center gap-3">
+            {!baza.endsWith("/demo") && (
+              <Link href={`/${orgSlug}/crm/performanta/demo`} className="text-[13px] font-medium text-[var(--ci-purple)] underline underline-offset-2 hover:opacity-80">
+                Vezi cum arată cu date: exemplu demonstrativ (fictiv, nimic din datele tale)
+              </Link>
+            )}
             <Link href={`${baza}/obiective${coada()}`} className="inline-flex h-9 items-center gap-2 rounded-[var(--ci-radius-btn)] bg-[var(--ci-primary)] px-3.5 text-sm font-medium text-white hover:bg-[var(--ci-primary-hover)]">
               Mergi la obiective <ArrowRight className="size-4" aria-hidden />
             </Link>
+            </div>
           }
         />
       ) : (
@@ -111,6 +119,9 @@ export function PrezentareClient({ orgSlug, d }: { orgSlug: string; d: Prezentar
               <Delta curent={d.curenta.progresMediu} anterior={d.anterioara.progresMediu} eticheta={d.anterioara.eticheta} />
               <p className="mt-1.5 text-[11.5px] text-[var(--ci-text-muted)]">
                 Media celor {d.curenta.cuDate} obiective care au date (din {d.curenta.nrObiective}); fiecare plafonat la 100%, cele fără date nu se socotesc ca zero.
+              </p>
+              <p className="mt-1 text-[11.5px] text-[var(--ci-text-muted)]">
+                Au trecut {Math.round(ritmAsteptat(d.perioada.start, d.perioada.end, d.azi) * 100)}% din perioadă. Cifra perioadei anterioare e cea de la final, deci diferența se citește ținând cont de cât din perioada curentă a trecut.
               </p>
             </Card>
             <Card className="!p-4">

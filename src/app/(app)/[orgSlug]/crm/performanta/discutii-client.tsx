@@ -373,8 +373,9 @@ function Intrare({ i, azi, orgSlug, onEdit, onSters }: { i: IntrareDto; azi: str
               onClick={() => {
                 if (!window.confirm("Ștergi această intrare? Nu se poate anula.")) return;
                 start(async () => {
-                  await stergeIntrareAction(orgSlug, i.id);
-                  onSters();
+                  const r = await stergeIntrareAction(orgSlug, i.id);
+                  if (r.ok) onSters();
+                  else window.alert(r.eroare);
                 });
               }}
             >

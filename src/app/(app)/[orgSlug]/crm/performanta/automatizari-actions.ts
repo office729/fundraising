@@ -1,6 +1,6 @@
 "use server";
 
-import { withOrgSession } from "@/lib/auth/guard";
+import { withOrgSessionPerf as withOrgSession } from "@/lib/performanta-sesiune";
 import { incarcaStructura } from "@/lib/performanta-date";
 import { incarcaNotificari, incarcaSetari, marcheazaCitite, numarNecitite, ruleazaAutomatizari, salveazaSetari, type SetariAutomatizari } from "@/lib/performanta-automatizari";
 

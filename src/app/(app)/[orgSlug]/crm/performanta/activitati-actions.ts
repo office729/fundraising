@@ -1,6 +1,6 @@
 "use server";
 
-import { withOrgSession } from "@/lib/auth/guard";
+import { withOrgSessionPerf as withOrgSession } from "@/lib/performanta-sesiune";
 import {
   adaugaAbsenta,
   amanaBlocaj,

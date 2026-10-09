@@ -10,6 +10,7 @@ import { StareBadge, culoareStare, dataOra, dataScurta, procent } from "./ui-com
 import { Card, CardHeader } from "../components/ui/card";
 import { Select } from "../components/ui/input";
 import { EmptyState } from "../components/ui/states";
+import { useCalePerf } from "./perf-cale";
 import { SelectorPerioada } from "./perf-nav";
 
 
@@ -47,6 +48,7 @@ export function RapoarteClient({ orgSlug, d, departamente }: { orgSlug: string; 
   const pathname = usePathname();
   const sp = useSearchParams();
   const dep = sp.get("dep") ?? "";
+  const { demo, baza } = useCalePerf(orgSlug);
   const qs = (tip: string) => {
     const n = new URLSearchParams({ tip, perioada: d.perioada.cod });
     if (dep) n.set("dep", dep);
@@ -80,10 +82,10 @@ export function RapoarteClient({ orgSlug, d, departamente }: { orgSlug: string; 
           </Select>
         </div>
         <div className="flex flex-wrap gap-2">
-          <a href={qs("obiective")} className="inline-flex h-9 items-center gap-2 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3.5 text-sm font-medium text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
+          <a href={demo ? "#" : qs("obiective")} onClick={(e) => demo && e.preventDefault()} aria-disabled={demo} title={demo ? "Exportul nu e disponibil în modul demonstrativ" : undefined} className="inline-flex h-9 items-center gap-2 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3.5 text-sm font-medium text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
             <Download className="size-4" aria-hidden /> Obiective (Excel)
           </a>
-          <a href={qs("munca")} className="inline-flex h-9 items-center gap-2 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3.5 text-sm font-medium text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
+          <a href={demo ? "#" : qs("munca")} onClick={(e) => demo && e.preventDefault()} aria-disabled={demo} title={demo ? "Exportul nu e disponibil în modul demonstrativ" : undefined} className="inline-flex h-9 items-center gap-2 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3.5 text-sm font-medium text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
             <Download className="size-4" aria-hidden /> Muncă (Excel)
           </a>
           <button type="button" onClick={() => window.print()} className="inline-flex h-9 items-center gap-2 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3.5 text-sm font-medium text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
@@ -93,7 +95,7 @@ export function RapoarteClient({ orgSlug, d, departamente }: { orgSlug: string; 
       </div>
 
       <p className="text-[12px] text-[var(--ci-text-muted)]">
-        Perioada: <strong className="text-[var(--ci-text)]">{d.perioada.eticheta}</strong> ({dataScurta(d.perioada.start)} – {dataScurta(d.perioada.end)}) · calculat la {dataOra(d.actualizatLa)} · conține doar ce ai dreptul să vezi. Evaluările (1:1, review, autoevaluare, feedback) au un raport separat, confidențial: <Link href={`/${orgSlug}/crm/performanta/rapoarte/evaluari?perioada=${d.perioada.cod}`} className="font-medium text-[var(--ci-blue)] hover:underline">Raport de evaluări</Link>.
+        Perioada: <strong className="text-[var(--ci-text)]">{d.perioada.eticheta}</strong> ({dataScurta(d.perioada.start)} – {dataScurta(d.perioada.end)}) · calculat la {dataOra(d.actualizatLa)} · conține doar ce ai dreptul să vezi. Evaluările (1:1, review, autoevaluare, feedback) au un raport separat, confidențial: <Link href={`${baza}/rapoarte/evaluari?perioada=${d.perioada.cod}`} className="font-medium text-[var(--ci-blue)] hover:underline">Raport de evaluări</Link>.
       </p>
 
       {d.obiective.length === 0 && d.persoane.length === 0 ? (

@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { perioadaVecina, rezolvaPerioada } from "@/lib/performanta-perioada";
 
 import { numarNotificariNecitite } from "./automatizari-actions";
+import { useCalePerf } from "./perf-cale";
 
 const FILE = [
   { sub: "", label: "Prezentare generală" },
@@ -25,7 +26,7 @@ const FILE = [
 export function PerfNav({ orgSlug }: { orgSlug: string }) {
   const pathname = usePathname() ?? "";
   const sp = useSearchParams();
-  const baza = `/${orgSlug}/crm/performanta`;
+  const { demo, baza } = useCalePerf(orgSlug);
   const pastreaza = new URLSearchParams();
   const perioada = sp.get("perioada");
   if (perioada) pastreaza.set("perioada", perioada);
@@ -33,6 +34,7 @@ export function PerfNav({ orgSlug }: { orgSlug: string }) {
   const [necitite, setNecitite] = useState(0);
   // Numărul de notificări necitite se reîncarcă la fiecare schimbare de pagină din modul.
   useEffect(() => {
+    if (demo) return; // modul demonstrativ nu citește nimic din datele organizației
     let anulat = false;
     numarNotificariNecitite(orgSlug)
       .then((n) => !anulat && setNecitite(n))
@@ -40,8 +42,20 @@ export function PerfNav({ orgSlug }: { orgSlug: string }) {
     return () => {
       anulat = true;
     };
-  }, [orgSlug, pathname]);
+  }, [orgSlug, pathname, demo]);
+  const necititeAfisate = demo ? 2 : necitite;
   return (
+    <>
+    {demo && (
+      <div role="status" className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--ci-radius-card)] border border-[var(--ci-purple)]/30 bg-[var(--ci-purple-soft)] px-4 py-2.5 text-[13px] text-[var(--ci-purple)]">
+        <p>
+          <strong>Mod demonstrativ.</strong> Toate datele sunt fictive și nu vin din organizația ta. Nu se salvează nimic, iar exporturile sunt oprite. Filtrele de pe server (perioadă, departament) nu se aplică aici.
+        </p>
+        <Link href={`/${orgSlug}/crm/performanta`} prefetch={false} className="font-semibold underline underline-offset-2">
+          Ieși din demo
+        </Link>
+      </div>
+    )}
     <nav aria-label="Echipă și performanță" className="ci-scrollbar flex gap-1 overflow-x-auto rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-1">
       {FILE.map((t) => {
         const href = `${baza}${t.sub}`;
@@ -62,12 +76,18 @@ export function PerfNav({ orgSlug }: { orgSlug: string }) {
       })}
       <Link href={`${baza}/notificari`} prefetch={false} aria-current={pathname.startsWith(`${baza}/notificari`) ? "page" : undefined} className={`shrink-0 rounded-[calc(var(--ci-radius-card)-4px)] px-3.5 py-1.5 text-[13px] font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none ${pathname.startsWith(`${baza}/notificari`) ? "bg-[var(--ci-primary)] text-white" : "text-[var(--ci-text-muted)] hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)]"}`}>
         Notificări
-        {necitite > 0 && <span className="ci-tabular ml-1.5 rounded-full bg-[var(--ci-red)] px-1.5 py-px text-[11px] font-semibold text-white"><span className="sr-only">{necitite} necitite</span><span aria-hidden>{necitite > 99 ? "99+" : necitite}</span></span>}
+        {necititeAfisate > 0 && <span className="ci-tabular ml-1.5 rounded-full bg-[var(--ci-red)] px-1.5 py-px text-[11px] font-semibold text-white"><span className="sr-only">{necititeAfisate} necitite</span><span aria-hidden>{necititeAfisate > 99 ? "99+" : necititeAfisate}</span></span>}
       </Link>
       <Link href={`/${orgSlug}/crm/kpi`} prefetch={false} className="shrink-0 rounded-[calc(var(--ci-radius-card)-4px)] px-3.5 py-1.5 text-[13px] font-semibold text-[var(--ci-text-muted)] transition-colors hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
         Biblioteca KPI
       </Link>
+      {!demo && (
+        <Link href={`/${orgSlug}/crm/performanta/demo`} prefetch={false} className="ml-auto shrink-0 rounded-[calc(var(--ci-radius-card)-4px)] border border-dashed border-[var(--ci-border-strong)] px-3.5 py-1.5 text-[13px] font-semibold text-[var(--ci-purple)] transition-colors hover:bg-[var(--ci-purple-soft)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
+          Exemplu demonstrativ
+        </Link>
+      )}
     </nav>
+    </>
   );
 }
 

@@ -1,6 +1,6 @@
 "use server";
 
-import { withOrgSession } from "@/lib/auth/guard";
+import { withOrgSessionPerf as withOrgSession } from "@/lib/performanta-sesiune";
 import { incarcaStructura } from "@/lib/performanta-date";
 import { incarcaPrezentare } from "@/lib/performanta-prezentare";
 import { incarcaRapoarte } from "@/lib/performanta-rapoarte";
