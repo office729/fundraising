@@ -3,8 +3,11 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 import { perioadaVecina, rezolvaPerioada } from "@/lib/performanta-perioada";
+
+import { numarNotificariNecitite } from "./automatizari-actions";
 
 const FILE = [
   { sub: "", label: "Prezentare generală" },
@@ -12,6 +15,9 @@ const FILE = [
   { sub: "/obiective", label: "Obiective și rezultate" },
   { sub: "/saptamana", label: "Planul săptămânii" },
   { sub: "/echipa", label: "Echipa" },
+  { sub: "/discutii", label: "Discuții și evaluări" },
+  { sub: "/rapoarte", label: "Rapoarte" },
+  { sub: "/automatizari", label: "Automatizări" },
 ];
 
 // Navigarea modulului Echipă & Performanță. Perioada și filtrele rămân în adresă când treci de la o filă la alta.
@@ -23,6 +29,17 @@ export function PerfNav({ orgSlug }: { orgSlug: string }) {
   const perioada = sp.get("perioada");
   if (perioada) pastreaza.set("perioada", perioada);
   const coada = pastreaza.toString() ? `?${pastreaza.toString()}` : "";
+  const [necitite, setNecitite] = useState(0);
+  // Numărul de notificări necitite se reîncarcă la fiecare schimbare de pagină din modul.
+  useEffect(() => {
+    let anulat = false;
+    numarNotificariNecitite(orgSlug)
+      .then((n) => !anulat && setNecitite(n))
+      .catch(() => {});
+    return () => {
+      anulat = true;
+    };
+  }, [orgSlug, pathname]);
   return (
     <nav aria-label="Echipă și performanță" className="ci-scrollbar flex gap-1 overflow-x-auto rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-1">
       {FILE.map((t) => {
@@ -42,6 +59,10 @@ export function PerfNav({ orgSlug }: { orgSlug: string }) {
           </Link>
         );
       })}
+      <Link href={`${baza}/notificari`} prefetch={false} aria-current={pathname.startsWith(`${baza}/notificari`) ? "page" : undefined} className={`shrink-0 rounded-[calc(var(--ci-radius-card)-4px)] px-3.5 py-1.5 text-[13px] font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none ${pathname.startsWith(`${baza}/notificari`) ? "bg-[var(--ci-primary)] text-white" : "text-[var(--ci-text-muted)] hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)]"}`}>
+        Notificări
+        {necitite > 0 && <span className="ci-tabular ml-1.5 rounded-full bg-[var(--ci-red)] px-1.5 py-px text-[11px] font-semibold text-white"><span className="sr-only">{necitite} necitite</span><span aria-hidden>{necitite > 99 ? "99+" : necitite}</span></span>}
+      </Link>
       <Link href={`/${orgSlug}/crm/kpi`} prefetch={false} className="shrink-0 rounded-[calc(var(--ci-radius-card)-4px)] px-3.5 py-1.5 text-[13px] font-semibold text-[var(--ci-text-muted)] transition-colors hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
         Biblioteca KPI
       </Link>

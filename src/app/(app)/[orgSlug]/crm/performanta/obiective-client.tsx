@@ -12,6 +12,7 @@ import { Input, Select } from "../components/ui/input";
 import { EmptyState } from "../components/ui/states";
 import { DetaliuObiectiv } from "./obiectiv-detaliu";
 import { ObiectivForm } from "./obiectiv-form";
+import { SablonDialog } from "./sablon-dialog";
 import { VedereArbore, VedereCronologie, VedereLista } from "./obiective-vederi";
 import { SelectorPerioada } from "./perf-nav";
 import { StareBadge } from "./ui-comune";
@@ -38,6 +39,7 @@ export function ObiectiveClient({ orgSlug, obiective, optiuni, perioada, azi }: 
   const [formDeschis, setFormDeschis] = useState(false);
   const [editat, setEditat] = useState<ObiectivDto | null>(null);
   const [mesaj, setMesaj] = useState<string | null>(null);
+  const [sablon, setSablon] = useState(false);
 
   const seteaza = (patch: Record<string, string | null>) => {
     const n = new URLSearchParams(sp.toString());
@@ -90,6 +92,10 @@ export function ObiectiveClient({ orgSlug, obiective, optiuni, perioada, azi }: 
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <SelectorPerioada />
+        <div className="flex flex-wrap gap-2">
+        <Button disabled={!poateCrea} onClick={() => setSablon(true)}>
+          Din șablon de rol
+        </Button>
         <Button
           variant="primary"
           disabled={!poateCrea}
@@ -101,6 +107,7 @@ export function ObiectiveClient({ orgSlug, obiective, optiuni, perioada, azi }: 
         >
           <Plus className="size-4" aria-hidden /> Obiectiv nou
         </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
@@ -222,6 +229,7 @@ export function ObiectiveClient({ orgSlug, obiective, optiuni, perioada, azi }: 
           router.refresh();
         }}
       />
+      {sablon && <SablonDialog orgSlug={orgSlug} optiuni={optiuni} perioada={perioada} onClose={() => setSablon(false)} onGata={(t) => { setSablon(false); setMesaj(t); router.refresh(); }} />}
       <ObiectivForm
         orgSlug={orgSlug}
         open={formDeschis}

@@ -130,7 +130,7 @@ export function PrezentareClient({ orgSlug, d }: { orgSlug: string; d: Prezentar
             </Card>
           </section>
 
-          <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+          <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
             <Card>
               <CardHeader title="Obiectivele strategice" subtitle={`${d.perioada.eticheta} · progres față de ritmul așteptat azi`} />
               {strategice.length === 0 ? (
@@ -255,7 +255,7 @@ export function PrezentareClient({ orgSlug, d }: { orgSlug: string; d: Prezentar
             )}
           </Card>
 
-          <div className="grid gap-5 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
             <Card>
               <CardHeader title="Blocaje care cer o decizie" subtitle="Deschise, marcate „necesită decizie”" />
               {d.blocaje.length === 0 ? (
