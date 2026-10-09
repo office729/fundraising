@@ -18,6 +18,7 @@ export default function robots(): MetadataRoute.Robots {
           "/invite/",
           "/invite-beneficiar/",
           "/f230/",
+          "/voluntar/",
           "/dezabonare",
           "/abonament/",
           "/platform-admin",

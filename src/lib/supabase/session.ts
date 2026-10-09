@@ -97,6 +97,8 @@ export async function updateSession(request: NextRequest, rewriteTo?: URL) {
     // Link-uri scurte (/s/<cod>) — redirecționează spre pagini publice
     // (Formularul 230, deocamdată), deci trebuie să rămână afară din gate.
     path.startsWith("/s/") ||
+    // Panoul voluntarilor (/voluntar/<cod>): pagină publică, fără cont; accesul îl dă codul din link, verificat în server.
+    path.startsWith("/voluntar/") ||
     // Paginile de strângere fonduri create de susținători (peer-to-peer) —
     // creare, vizualizare și donație sunt toate publice, neautentificate.
     path.startsWith("/strangere-fonduri/");

@@ -38,6 +38,7 @@ const RESERVED_SLUGS = new Set([
   "studii-de-caz",
   "termeni",
   "vlad-placinta",
+  "voluntar",
 ]);
 
 export function esteSlugRezervat(slug: string): boolean {

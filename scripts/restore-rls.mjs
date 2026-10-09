@@ -749,6 +749,30 @@ const POLICIES = [
   `create policy kpi_interactiuni_tenant_isolation on kpi_interactiuni
     using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
     with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  // Panoul voluntarilor: izolare pe organizație.
+  `create policy volunteer_visitors_tenant_isolation on volunteer_visitors
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy volunteer_shares_tenant_isolation on volunteer_shares
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy volunteer_missions_tenant_isolation on volunteer_missions
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy volunteer_featured_tenant_isolation on volunteer_featured
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy volunteer_campaign_settings_tenant_isolation on volunteer_campaign_settings
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy volunteer_panel_links_tenant_isolation on volunteer_panel_links
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  // Panoul voluntarilor: ruta publică /voluntar/<cod> rezolvă codul → organizație sub app.public_lookup (doar SELECT);
+  // restul lucrului se face cu app.current_org_id setat de server după verificarea codului.
+  `create policy volunteer_panel_links_public_lookup on volunteer_panel_links for select using (
+    nullif(current_setting('app.public_lookup', true), '') = 'true'
+  )`,
   `create policy kpi_audit_log_member_insert on kpi_audit_log for insert with check (
     org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
   )`,
@@ -813,6 +837,12 @@ const FORCE_TABLES = [
   "kpi_funnel_etape",
   "kpi_audit_log",
   "kpi_interactiuni",
+  "volunteer_visitors",
+  "volunteer_shares",
+  "volunteer_missions",
+  "volunteer_featured",
+  "volunteer_campaign_settings",
+  "volunteer_panel_links",
 ];
 
 try {
