@@ -76,6 +76,7 @@ const TITLURI = {
   crmComunicate: { ro: "Comunicate de presă — CRM", en: "Press releases — CRM" },
   crmGrupuriFacebook: { ro: "Împărțire grupuri Facebook — CRM", en: "Facebook groups split — CRM" },
   crmPj: { ro: "CRM persoane juridice", en: "Company CRM" },
+  crmVoluntariPanou: { ro: "Panoul voluntarilor — CRM", en: "Volunteer panel — CRM" },
   crmVoluntari: { ro: "CRM Voluntari", en: "Volunteers CRM" },
   crmProgramLucru: { ro: "Program de lucru — CRM", en: "Work schedule — CRM" },
   crmNewsletterPf: { ro: "Newsletter persoane fizice — CRM", en: "Individuals newsletter — CRM" },
