@@ -96,7 +96,7 @@ export const getPanouDonator = withOrgSession(async (ctx, id: string): Promise<P
   ]);
   return {
     rand: serializeazaRand(rand),
-    donatii: (donatii as unknown as { proiect: string | null; suma: number; data: Date; recurenta: boolean }[]).map((d) => ({ proiect: d.proiect, suma: d.suma, data: d.data.toISOString(), recurenta: d.recurenta })),
+    donatii: (donatii as unknown as { proiect: string | null; suma: number; data: Date | string; recurenta: boolean }[]).map((d) => ({ proiect: d.proiect, suma: d.suma, data: new Date(d.data).toISOString(), recurenta: d.recurenta })),
     notite: notite.map((n) => ({ id: n.id, text: n.text, createdAt: n.createdAt.toISOString(), autor: n.autor })),
     activitate: activitate.map((a) => ({ actiune: a.actiune, la: a.la.toISOString(), autor: a.autor })),
   };
