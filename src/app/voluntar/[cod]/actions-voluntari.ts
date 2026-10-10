@@ -9,7 +9,8 @@ import { emailConfigurat, trimiteEmail } from "@/lib/email";
 import { emailValid, MAX, normalizeazaLink, sarcinaDeschisa, statusInscriereNoua, textCurat, UUID_REGEX } from "@/lib/voluntari-activitati";
 import { blocheazaTura, locuriOcupate, promoveazaDinRezerva } from "@/lib/voluntari-inscrieri";
 import { ziuaRo } from "@/lib/voluntari-panou";
-import { cuOrg, numeCookieVoluntar, rezolvaCod, vizitatorDinCookie } from "@/lib/voluntari-panou-server";
+import { emailConfirmare } from "@/lib/voluntari-email-template";
+import { cuOrg, numeCookieVoluntar, rezolvaCod, URL_BAZA, vizitatorDinCookie } from "@/lib/voluntari-panou-server";
 
 // Acțiunile PUBLICE ale voluntarului pentru sarcini online și activități pe teren. Fiecare verifică întâi codul linkului, apoi
 // cookie-ul voluntarului; un voluntar poate modifica doar propriile implicări și înscrieri. Mesajele de eroare sunt scurte și generice.
@@ -85,17 +86,11 @@ export async function renuntaSarcinaAction(cod: string, taskId: string): Promise
 }
 
 // ===== Activități pe teren =====
-const dataRo = (d: Date) => d.toLocaleString("ro-RO", { timeZone: "Europe/Bucharest", weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
-const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
-async function trimiteConfirmare(email: string | null, orgNume: string, titlu: string, locatie: string, inceputLa: Date, rol: string) {
+async function trimiteConfirmare(email: string | null, cod: string, orgNume: string, titlu: string, locatie: string, inceputLa: Date, rol: string) {
   if (!email || !emailConfigurat()) return;
   try {
-    await trimiteEmail({
-      to: email,
-      subiect: `Ești confirmat(ă): ${titlu}`,
-      html: `<p>Ești confirmat(ă) la <b>${esc(titlu)}</b>.</p><p>${esc(dataRo(inceputLa))}<br>${esc(locatie)}<br>Rolul tău: ${esc(rol)}</p><p>Dacă nu mai poți veni, anulează din pagina de voluntar, ca să dăm locul mai departe.</p><p>Mulțumim, ${esc(orgNume)}</p>`,
-    });
+    const mail = emailConfirmare({ org: orgNume, titlu, locatie, inceputLa, rol, link: `${URL_BAZA()}/voluntar/${cod}` });
+    await trimiteEmail({ to: email, subiect: mail.subiect, html: mail.html });
   } catch {
     // Un email eșuat nu trebuie să strice înscrierea.
   }
@@ -131,7 +126,7 @@ export async function inscrieAction(cod: string, shiftId: string): Promise<Rez<{
     return { ok: true as const, status, email: vi?.email ?? null, activitate, tInfo };
   });
   if (!rezultat.ok) return rezultat;
-  if (rezultat.status === "confirmata" && rezultat.tInfo) await trimiteConfirmare(rezultat.email, c.org.nume, rezultat.activitate.titlu, rezultat.activitate.locatie, rezultat.tInfo.inceputLa, rezultat.tInfo.nume);
+  if (rezultat.status === "confirmata" && rezultat.tInfo) await trimiteConfirmare(rezultat.email, cod, c.org.nume, rezultat.activitate.titlu, rezultat.activitate.locatie, rezultat.tInfo.inceputLa, rezultat.tInfo.nume);
   return { ok: true, status: rezultat.status };
 }
 
@@ -164,7 +159,7 @@ export async function anuleazaInscriereAction(cod: string, signupId: string): Pr
     return { ok: true as const, notifica };
   });
   if (!promovat.ok) return promovat;
-  if (promovat.notifica) await trimiteConfirmare(promovat.notifica.email, c.org.nume, promovat.notifica.titlu, promovat.notifica.locatie, promovat.notifica.inceputLa, promovat.notifica.rol);
+  if (promovat.notifica) await trimiteConfirmare(promovat.notifica.email, cod, c.org.nume, promovat.notifica.titlu, promovat.notifica.locatie, promovat.notifica.inceputLa, promovat.notifica.rol);
   return { ok: true };
 }
 
