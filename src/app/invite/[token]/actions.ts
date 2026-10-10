@@ -88,13 +88,14 @@ export async function acceptInviteAction(token: string): Promise<{ error: string
       // pachet DUPĂ ce invitația a fost trimisă — createInvite (echipa/actions.ts)
       // rezervă deja un loc la trimitere, deci în mod normal nu se ajunge aici.
       const orgRow = await tx
-        .select({ package: organizations.package, customPlanConfig: organizations.customPlanConfig })
+        .select({ package: organizations.package, customPlanConfig: organizations.customPlanConfig, extraUsers: organizations.extraUsers })
         .from(organizations)
         .where(eq(organizations.id, invite.orgId))
         .limit(1);
       const limite = getLimiteleEfective(
         orgRow[0]?.package ?? "trial",
         (orgRow[0]?.customPlanConfig as CustomPlanConfigSaved | null) ?? null,
+        orgRow[0]?.extraUsers ?? 0,
       );
       if (limite.utilizatori !== null) {
         const [{ membriCount }] = await tx

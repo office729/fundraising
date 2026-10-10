@@ -29,6 +29,10 @@ export const ABONAMENT_DICT = {
       alege: (nume: string) => `Alege ${nume}`,
       seRedirectioneaza: "Se redirecționează...",
       eroarePlata: "Nu am putut porni plata — încearcă din nou sau scrie-ne la vlad.placinta@alexandrit.ro.",
+      utilizatoriSuplimentari: "Utilizatori suplimentari",
+      utilizatoriSuplimentariDesc: (pret: number, max: number) => `${pret} lei/lună fiecare, până la ${max}`,
+      scadeUtilizator: "Un utilizator mai puțin",
+      cresteUtilizator: "Un utilizator în plus",
     },
     facturare: {
       titlu: "Datele de facturare ale organizației",
@@ -128,6 +132,10 @@ export const ABONAMENT_DICT = {
       alege: (nume: string) => `Choose ${nume}`,
       seRedirectioneaza: "Redirecting...",
       eroarePlata: "We couldn't start the payment — try again or write to vlad.placinta@alexandrit.ro.",
+      utilizatoriSuplimentari: "Extra users",
+      utilizatoriSuplimentariDesc: (pret: number, max: number) => `${pret} lei/month each, up to ${max}`,
+      scadeUtilizator: "One user less",
+      cresteUtilizator: "One more user",
     },
     facturare: {
       titlu: "Your organization's billing details",

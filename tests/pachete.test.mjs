@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-const { PACKAGE_LIMITS } = await import("../src/lib/billing/packages.ts");
+const { PACKAGE_LIMITS, PRET_UTILIZATOR_SUPLIMENTAR, MAX_UTILIZATORI_SUPLIMENTARI, pretLunarPachet, utilizatoriSuplimentariValizi, etichetaPachet } = await import("../src/lib/billing/packages.ts");
 const { HUB_DICT } = await import("../src/lib/i18n/dictionaries/hub.ts");
 
 const FIXE = ["start", "crestere", "impact"];
@@ -64,4 +64,35 @@ test("tabelul nu mai promite limite lunare care nu există în cod", () => {
       assert.ok(!plan.items.some((i) => /\/ lună|\/ month/.test(i)), `${limba}: ${plan.nume} are o limită lunară în text`);
     }
   }
+});
+
+test("utilizatorii suplimentari: doar la START, 15 lei fiecare, plafonați, cu preț calculat din cod", () => {
+  assert.equal(PRET_UTILIZATOR_SUPLIMENTAR, 15);
+  assert.equal(pretLunarPachet("start", 0), 49);
+  assert.equal(pretLunarPachet("start", 1), 64);
+  assert.equal(pretLunarPachet("start", MAX_UTILIZATORI_SUPLIMENTARI), 49 + 15 * MAX_UTILIZATORI_SUPLIMENTARI);
+  // valori manipulate din client: negative, uriașe, fracționare, text, NaN
+  assert.equal(utilizatoriSuplimentariValizi("start", -3), 0);
+  assert.equal(utilizatoriSuplimentariValizi("start", 999), MAX_UTILIZATORI_SUPLIMENTARI);
+  assert.equal(utilizatoriSuplimentariValizi("start", 1.6), 2);
+  assert.equal(utilizatoriSuplimentariValizi("start", "abc"), 0);
+  assert.equal(utilizatoriSuplimentariValizi("start", undefined), 0);
+  // celelalte pachete ignoră cererea
+  for (const p of ["crestere", "impact", "trial", "custom"]) assert.equal(utilizatoriSuplimentariValizi(p, 3), 0, p);
+  assert.equal(pretLunarPachet("crestere", 3), PACKAGE_LIMITS.crestere.pretLunar);
+  assert.equal(pretLunarPachet("trial", 2), null);
+});
+
+test("eticheta de pe comandă/factură menționează utilizatorii suplimentari", () => {
+  assert.equal(etichetaPachet("start", 0), "Pachet START");
+  assert.equal(etichetaPachet("start", 1), "Pachet START + 1 utilizator suplimentar");
+  assert.equal(etichetaPachet("start", 3), "Pachet START + 3 utilizatori suplimentari");
+});
+
+test("pagina de prețuri spune același preț pe utilizator suplimentar ca și codul", () => {
+  const ro = HUB_DICT.ro.comparatie.find((x) => x.f === "Utilizator suplimentar (fiecare)");
+  const en = HUB_DICT.en.comparatie.find((x) => x.f === "Extra user (each)");
+  assert.ok(ro && en);
+  assert.ok(ro.v0.startsWith(String(PRET_UTILIZATOR_SUPLIMENTAR)), ro.v0);
+  assert.ok(en.v0.startsWith(String(PRET_UTILIZATOR_SUPLIMENTAR)), en.v0);
 });

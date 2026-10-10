@@ -74,7 +74,7 @@ export const createInvite = withOrgAdmin(
 
     // Cota de utilizatori (membri + invitații încă în așteptare, care ar
     // deveni membri dacă sunt acceptate) — vezi lib/billing/quota.ts.
-    const limite = getLimiteleEfective(ctx.orgPackage, ctx.orgCustomPlanConfig);
+    const limite = getLimiteleEfective(ctx.orgPackage, ctx.orgCustomPlanConfig, ctx.orgExtraUsers);
     if (limite.utilizatori !== null) {
       const [{ membriCount }] = await ctx.db
         .select({ membriCount: sql<number>`count(*)`.mapWith(Number) })

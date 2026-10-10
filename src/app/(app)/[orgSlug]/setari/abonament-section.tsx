@@ -32,6 +32,7 @@ export type FacturaRand = {
 export function AbonamentSection({
   orgSlug,
   pachetCurent,
+  extraUtilizatori = 0,
   statusCurent,
   reinnoireAutomata,
   locale,
@@ -39,6 +40,7 @@ export function AbonamentSection({
 }: {
   orgSlug: string;
   pachetCurent: OrgPackage;
+  extraUtilizatori?: number;
   statusCurent: string;
   reinnoireAutomata: StatusReinnoireAutomata;
   locale: Locale;
@@ -52,7 +54,8 @@ export function AbonamentSection({
     <section id="abonament" className="mt-8 scroll-mt-4 border-t border-line pt-6">
       <h2 className="font-display text-lg font-bold text-ink">{dict.title}</h2>
       <p className="mt-1 text-sm text-muted">
-        {dict.pachetCurent(NUME_PACHET[pachetCurent])} · {statusLabel}
+        {dict.pachetCurent(NUME_PACHET[pachetCurent])}
+        {pachetCurent === "start" && extraUtilizatori > 0 ? ` + ${extraUtilizatori} ${locale === "en" ? "extra users" : extraUtilizatori === 1 ? "utilizator suplimentar" : "utilizatori suplimentari"}` : ""} · {statusLabel}
       </p>
 
       <NetopiaCardSection orgSlug={orgSlug} status={reinnoireAutomata} locale={locale} />
@@ -74,7 +77,7 @@ export function AbonamentSection({
               {dict.ascundeOptiunile}
             </button>
           )}
-          <PackagePicker orgSlug={orgSlug} locale={locale} />
+          <PackagePicker orgSlug={orgSlug} locale={locale} extraInitial={pachetCurent === "start" ? extraUtilizatori : 0} />
         </div>
       )}
 

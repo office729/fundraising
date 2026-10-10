@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { NETOPIA_RENEWAL_MAX_INCERCARI, reiaFacturileNeemise } from "@/lib/billing/netopia-confirm";
 import { taxeazaReinnoireAutomata } from "@/lib/billing/netopia-checkout";
 import { dateFacturareComplete } from "@/lib/billing/date-facturare";
-import { NUME_PACHET_FIX, PACKAGE_LIMITS, type OrgPackage } from "@/lib/billing/packages";
+import { etichetaPachet, pretLunarPachet, type OrgPackage } from "@/lib/billing/packages";
 import type { CustomPlanConfigSaved } from "@/lib/billing/custom-plan";
 import { isAccessBlocked, isPlatformAdmin, trialEndsAt } from "@/lib/billing/trial";
 import { cronAutorizat } from "@/lib/cron-auth";
@@ -48,13 +48,11 @@ function cardExpiratLa(luna: number | null, an: number | null, data: Date): bool
   return anComplet < y || (anComplet === y && luna < m);
 }
 
-function pretSiEticheta(org: { package: string; customPlanConfig: unknown }): { pret: number; eticheta: string } | null {
-  const pret =
-    org.package === "custom"
-      ? (org.customPlanConfig as CustomPlanConfigSaved | null)?.pretLunar
-      : PACKAGE_LIMITS[org.package as Exclude<OrgPackage, "trial" | "custom">]?.pretLunar;
+function pretSiEticheta(org: { package: string; customPlanConfig: unknown; extraUsers: number }): { pret: number; eticheta: string } | null {
+  const fix = org.package as Exclude<OrgPackage, "trial" | "custom">;
+  const pret = org.package === "custom" ? (org.customPlanConfig as CustomPlanConfigSaved | null)?.pretLunar : pretLunarPachet(fix, org.extraUsers);
   if (!pret) return null;
-  const eticheta = org.package === "custom" ? "Plan personalizat" : NUME_PACHET_FIX[org.package as Exclude<OrgPackage, "trial" | "custom">];
+  const eticheta = org.package === "custom" ? "Plan personalizat" : etichetaPachet(fix, org.package === "start" ? org.extraUsers : 0);
   return { pret, eticheta };
 }
 
@@ -204,6 +202,7 @@ async function proceseazaReinnoiri(): Promise<Record<string, unknown>> {
         referredByOrgId: organizations.referredByOrgId,
         package: organizations.package,
         customPlanConfig: organizations.customPlanConfig,
+        extraUsers: organizations.extraUsers,
         netopiaCardTokenEnc: organizations.netopiaCardTokenEnc,
         netopiaRenewalAttempts: organizations.netopiaRenewalAttempts,
         cif: organizations.cif,
@@ -233,6 +232,7 @@ async function proceseazaReinnoiri(): Promise<Record<string, unknown>> {
         name: organizations.name,
         package: organizations.package,
         customPlanConfig: organizations.customPlanConfig,
+        extraUsers: organizations.extraUsers,
         currentPeriodEnd: organizations.currentPeriodEnd,
         netopiaCardMasked: organizations.netopiaCardMasked,
         netopiaCardExpireMonth: organizations.netopiaCardExpireMonth,
@@ -346,12 +346,12 @@ async function proceseazaReinnoiri(): Promise<Record<string, unknown>> {
       const pretLunar =
         org.package === "custom"
           ? (org.customPlanConfig as CustomPlanConfigSaved | null)?.pretLunar
-          : PACKAGE_LIMITS[org.package as Exclude<OrgPackage, "trial" | "custom">].pretLunar;
+          : pretLunarPachet(org.package as Exclude<OrgPackage, "trial" | "custom">, org.extraUsers);
       if (!pretLunar) {
         raporteazaAvertisment("netopia-reinnoire", "prețul lunar lipsește — reînnoire omisă", { orgSlug: org.slug, package: org.package });
         continue;
       }
-      const packageLabel = org.package === "custom" ? "Plan personalizat" : NUME_PACHET_FIX[org.package as Exclude<OrgPackage, "trial" | "custom">];
+      const packageLabel = org.package === "custom" ? "Plan personalizat" : etichetaPachet(org.package as Exclude<OrgPackage, "trial" | "custom">, org.package === "start" ? org.extraUsers : 0);
 
       const rezultat = await taxeazaReinnoireAutomata(
         {
@@ -363,6 +363,7 @@ async function proceseazaReinnoiri(): Promise<Record<string, unknown>> {
           pretLunar,
           packageLabel,
           planConfig: org.package === "custom" ? (org.customPlanConfig as CustomPlanConfigSaved) : null,
+          extraUtilizatori: org.package === "start" ? org.extraUsers : 0,
           netopiaCardTokenEnc: org.netopiaCardTokenEnc,
           facturareEmail,
         },

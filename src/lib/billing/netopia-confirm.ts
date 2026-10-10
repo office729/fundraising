@@ -12,7 +12,7 @@ import { emiteFacturaAbonament, facturareFiscalaPermisa, MARCAJ_NEFACTURAT_SANDB
 import { htmlFacturaEmisa, subiectFacturaEmisa } from "@/lib/oblio-invoice-email-template";
 import { criptareConfigurata, cripteaza } from "@/lib/secret-box";
 
-import { NUME_PACHET_FIX } from "./packages";
+import { etichetaPachet, NUME_PACHET_FIX } from "./packages";
 
 // Confirmarea unei plăți Netopia — SINGURUL loc care schimbă bani/acces, apelat
 // din DOUĂ locuri care ajung aici cu exact aceeași formă de rezultat
@@ -78,6 +78,7 @@ export async function factureazaPlata(orderId: string): Promise<void> {
         orderId: platformPayments.orderId,
         sumaLei: platformPayments.sumaLei,
         pachet: platformPayments.package,
+        extraUsers: platformPayments.extraUsers,
         oblioNumber: platformPayments.oblioNumber,
         ntpId: platformPayments.ntpId,
       })
@@ -105,7 +106,10 @@ export async function factureazaPlata(orderId: string): Promise<void> {
   });
   if (!plata || !org) return;
 
-  const packageLabel = (NUME_PACHET_FIX as Record<string, string>)[plata.pachet] ?? plata.pachet;
+  const packageLabel =
+    plata.pachet === "start" || plata.pachet === "crestere" || plata.pachet === "impact"
+      ? etichetaPachet(plata.pachet, plata.extraUsers)
+      : ((NUME_PACHET_FIX as Record<string, string>)[plata.pachet] ?? plata.pachet);
 
   try {
     const factura = await emiteFacturaAbonament({
@@ -261,6 +265,8 @@ export async function proceseazaRezultatPlataNetopia(orderId: string, rezultat: 
         .set({
           package: plata.package,
           customPlanConfig: plata.package === "custom" ? plata.planConfig : null,
+          // Utilizatorii suplimentari se aplică doar la START; orice alt pachet îi resetează la 0 (cota de bază a pachetului).
+          extraUsers: plata.package === "start" ? plata.extraUsers : 0,
           subscriptionStatus: "active",
           // Aceeași aritmetică GREATEST atomică ca înainte — o plată nouă
           // prelungește accesul existent, nu-l suprapune.

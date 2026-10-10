@@ -4,7 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 
 import { trackEvent } from "@/lib/analytics";
 import { dateFacturareComplete } from "@/lib/billing/date-facturare";
-import { PACKAGE_LIMITS, type OrgPackage } from "@/lib/billing/packages";
+import { MAX_UTILIZATORI_SUPLIMENTARI, PACKAGE_LIMITS, PRET_UTILIZATOR_SUPLIMENTAR, pretLunarPachet, type OrgPackage } from "@/lib/billing/packages";
 import type { Locale } from "@/lib/i18n/config";
 import { ABONAMENT_DICT } from "@/lib/i18n/dictionaries/abonament";
 import { JUDETE } from "@/lib/judete";
@@ -21,12 +21,12 @@ const PACHETE: { key: Exclude<OrgPackage, "trial" | "custom">; nume: string; pop
   { key: "impact", nume: "IMPACT" },
 ];
 
-function limiteText(pkg: Exclude<OrgPackage, "trial" | "custom">, locale: Locale): string[] {
+function limiteText(pkg: Exclude<OrgPackage, "trial" | "custom">, locale: Locale, extra = 0): string[] {
   const l = PACKAGE_LIMITS[pkg];
   const t = ABONAMENT_DICT[locale].picker;
   const loc = locale === "ro" ? "ro-RO" : "en-US";
   return [
-    `${l.utilizatori} ${l.utilizatori === 1 ? t.utilizator : t.utilizatori}`,
+    `${l.utilizatori! + extra} ${l.utilizatori! + extra === 1 ? t.utilizator : t.utilizatori}`,
     `${l.contactePf!.toLocaleString(loc)} ${t.contactePf}`,
     `${l.companiiPj!.toLocaleString(loc)} ${t.companii}`,
     l.contracteSponsorizarePeLuna == null ? t.contracteNelimitate : t.contracte(l.contracteSponsorizarePeLuna),
@@ -116,7 +116,7 @@ function DateFacturareForm({ orgSlug, initial, onSaved, locale }: { orgSlug: str
   );
 }
 
-export function PackagePicker({ orgSlug, locale }: { orgSlug: string; locale: Locale }) {
+export function PackagePicker({ orgSlug, locale, extraInitial = 0 }: { orgSlug: string; locale: Locale; extraInitial?: number }) {
   const t = ABONAMENT_DICT[locale].picker;
   const [date, setDate] = useState<DateFacturare | null>(null);
   useEffect(() => {
@@ -136,6 +136,8 @@ export function PackagePicker({ orgSlug, locale }: { orgSlug: string; locale: Lo
   // Acord explicit pentru taxarea automată lunară (cerut de rețelele de carduri pentru plățile inițiate de comerciant):
   // butoanele de plată (pachete și plan personalizat) rămân blocate până e bifat.
   const [acord, setAcord] = useState(false);
+  // Utilizatori plătiți în plus peste START (15 lei/lună fiecare) — prețul se recalculează oricum pe server.
+  const [extra, setExtra] = useState(Math.min(MAX_UTILIZATORI_SUPLIMENTARI, Math.max(0, extraInitial)));
 
   const [pending, startTransition] = useTransition();
   const [seLncarca, setSeIncarca] = useState<Exclude<OrgPackage, "trial"> | null>(null);
@@ -146,10 +148,10 @@ export function PackagePicker({ orgSlug, locale }: { orgSlug: string; locale: Lo
     setSeIncarca(pkg);
     startTransition(async () => {
       try {
-        const { url } = await startCheckoutAction(orgSlug, pkg, acord);
+        const { url } = await startCheckoutAction(orgSlug, pkg, acord, pkg === "start" ? extra : 0);
         trackEvent("begin_checkout", {
           currency: "RON",
-          value: PACKAGE_LIMITS[pkg].pretLunar ?? undefined,
+          value: pretLunarPachet(pkg, pkg === "start" ? extra : 0) ?? undefined,
           items: [{ item_name: `Pachet ${PACHETE.find((p) => p.key === pkg)?.nume ?? pkg}`, quantity: 1 }],
           transport_type: "beacon",
         });
@@ -183,7 +185,6 @@ export function PackagePicker({ orgSlug, locale }: { orgSlug: string; locale: Lo
       <fieldset disabled={!dateOk || !acord} className={dateOk && acord ? "" : "opacity-50"}>
       <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
         {PACHETE.map((p) => {
-          const l = PACKAGE_LIMITS[p.key];
           const activ = seLncarca === p.key;
           return (
             <div
@@ -199,10 +200,41 @@ export function PackagePicker({ orgSlug, locale }: { orgSlug: string; locale: Lo
               )}
               <h3 className="font-display text-lg font-bold text-ink">{p.nume}</h3>
               <p className="text-2xl font-extrabold text-ink">
-                {l.pretLunar} lei<span className="text-sm font-medium text-muted">{t.pePerLuna}</span>
+                {pretLunarPachet(p.key, p.key === "start" ? extra : 0)} lei<span className="text-sm font-medium text-muted">{t.pePerLuna}</span>
               </p>
+              {p.key === "start" && (
+                <div className="flex items-center justify-between gap-3 rounded-lg border border-line px-3 py-2">
+                  <div className="min-w-0">
+                    <p className="text-[13px] font-semibold text-ink">{t.utilizatoriSuplimentari}</p>
+                    <p className="text-[11.5px] text-muted-2">{t.utilizatoriSuplimentariDesc(PRET_UTILIZATOR_SUPLIMENTAR, MAX_UTILIZATORI_SUPLIMENTARI)}</p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <button
+                      type="button"
+                      aria-label={t.scadeUtilizator}
+                      disabled={extra <= 0}
+                      onClick={() => setExtra((n) => Math.max(0, n - 1))}
+                      className="flex h-7 w-7 items-center justify-center rounded-md border border-line text-base font-bold text-ink transition hover:bg-brand-blue-soft disabled:opacity-40"
+                    >
+                      −
+                    </button>
+                    <span className="w-5 text-center text-sm font-bold tabular-nums text-ink" aria-live="polite">
+                      {extra}
+                    </span>
+                    <button
+                      type="button"
+                      aria-label={t.cresteUtilizator}
+                      disabled={extra >= MAX_UTILIZATORI_SUPLIMENTARI}
+                      onClick={() => setExtra((n) => Math.min(MAX_UTILIZATORI_SUPLIMENTARI, n + 1))}
+                      className="flex h-7 w-7 items-center justify-center rounded-md border border-line text-base font-bold text-ink transition hover:bg-brand-blue-soft disabled:opacity-40"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              )}
               <div className="flex flex-col gap-1.5 border-t border-line pt-3">
-                {limiteText(p.key, locale).map((linie) => (
+                {limiteText(p.key, locale, p.key === "start" ? extra : 0).map((linie) => (
                   <div key={linie} className="flex gap-2 text-[13px] text-body">
                     <span className="text-brand-green">✓</span>
                     {linie}

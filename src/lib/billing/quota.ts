@@ -1,5 +1,5 @@
 import type { CustomPlanConfigSaved } from "./custom-plan";
-import { PACKAGE_LIMITS, type OrgPackage } from "./packages";
+import { PACKAGE_LIMITS, utilizatoriSuplimentariValizi, type OrgPackage } from "./packages";
 
 // Cotele efective ale unei organizații — singurul loc care știe cum se combină
 // PACKAGE_LIMITS (pachete fixe) cu CustomPlanConfigSaved (planul personalizat,
@@ -19,7 +19,8 @@ export type LimiteEfective = {
   domeniuPropriu: boolean;
 };
 
-export function getLimiteleEfective(pkg: OrgPackage, customPlanConfig: CustomPlanConfigSaved | null): LimiteEfective {
+// `extraUtilizatori` = utilizatorii plătiți în plus peste START (organizations.extra_users); contează doar pentru utilizatori.
+export function getLimiteleEfective(pkg: OrgPackage, customPlanConfig: CustomPlanConfigSaved | null, extraUtilizatori = 0): LimiteEfective {
   if (pkg === "custom") {
     // Nu ar trebui să existe un org "custom" fără configurație salvată (se
     // salvează împreună la alegerea planului) — dar dacă totuși lipsește,
@@ -37,7 +38,7 @@ export function getLimiteleEfective(pkg: OrgPackage, customPlanConfig: CustomPla
   }
   const limite = PACKAGE_LIMITS[pkg];
   return {
-    utilizatori: limite.utilizatori,
+    utilizatori: limite.utilizatori === null ? null : limite.utilizatori + utilizatoriSuplimentariValizi(pkg, extraUtilizatori),
     contactePf: limite.contactePf,
     companiiPj: limite.companiiPj,
     campaniiActive: limite.campaniiActive,

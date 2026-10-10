@@ -24,6 +24,7 @@ type ParametriComanda = {
   pachet: Exclude<OrgPackage, "trial">;
   pretLunar: number;
   planConfig: CustomPlanConfigSaved | null;
+  extraUtilizatori: number;
   renewal: boolean;
 };
 
@@ -53,7 +54,7 @@ async function insereazaComandaAbonament(tx: Tx, p: ParametriComanda): Promise<{
   const sumaLei = areDreptulLaReducere ? Math.round((p.pretLunar * (100 - REFERRAL_DISCOUNT_PERCENT)) / 100) : p.pretLunar;
 
   const orderId = `fa_${randomUUID().replace(/-/g, "")}`;
-  await tx.insert(platformPayments).values({ orgId: p.orgId, orderId, package: p.pachet, sumaLei, luni: 1, planConfig: p.planConfig, renewal: p.renewal });
+  await tx.insert(platformPayments).values({ orgId: p.orgId, orderId, package: p.pachet, sumaLei, luni: 1, planConfig: p.planConfig, extraUsers: p.extraUtilizatori, renewal: p.renewal });
   return { orderId, sumaLei };
 }
 
@@ -95,6 +96,8 @@ export async function creeazaPlataAbonament(
     pretLunar: number;
     packageLabel: string;
     planConfig: CustomPlanConfigSaved | null;
+    // Utilizatori plătiți în plus peste START; 0 pentru celelalte pachete. Prețul din `pretLunar` îi include deja.
+    extraUtilizatori?: number;
     origin: string;
   },
 ): Promise<string> {
@@ -116,6 +119,7 @@ export async function creeazaPlataAbonament(
       pachet: params.pachet,
       pretLunar: params.pretLunar,
       planConfig: params.planConfig,
+      extraUtilizatori: params.extraUtilizatori ?? 0,
       renewal: false,
     });
   });
@@ -205,6 +209,7 @@ export async function taxeazaReinnoireAutomata(
     pretLunar: number;
     packageLabel: string;
     planConfig: CustomPlanConfigSaved | null;
+    extraUtilizatori: number;
     netopiaCardTokenEnc: string | null;
     facturareEmail: string;
   },
@@ -263,6 +268,7 @@ export async function taxeazaReinnoireAutomata(
       pachet: org.package,
       pretLunar: org.pretLunar,
       planConfig: org.planConfig,
+      extraUtilizatori: org.extraUtilizatori,
       renewal: true,
     });
   });

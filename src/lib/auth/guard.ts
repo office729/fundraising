@@ -32,6 +32,8 @@ export type OrgContext = {
   // Doar pentru pachetul "custom" — cotele reale (utilizatori/contactePf/
   // companiiPj) diferă de PACKAGE_LIMITS, vezi lib/billing/quota.ts.
   orgCustomPlanConfig: CustomPlanConfigSaved | null;
+  // Utilizatori plătiți în plus peste pachetul START (organizations.extra_users).
+  orgExtraUsers: number;
   orgSubscriptionStatus: string;
   // Sfârșitul perioadei plătite (abonamentul platformei, prin Netopia) — accesul
   // se închide când trece, chiar dacă starea a rămas "active" (vezi
@@ -132,6 +134,7 @@ export function withOrgSession<A extends unknown[], R>(
         orgDomeniuActivitate: found.org.domeniuActivitate,
         orgPackage: found.org.package,
         orgCustomPlanConfig: found.org.customPlanConfig as CustomPlanConfigSaved | null,
+        orgExtraUsers: found.org.extraUsers,
         orgSubscriptionStatus: found.org.subscriptionStatus,
         orgCurrentPeriodEnd: found.org.currentPeriodEnd,
         orgCreatedAt: found.org.createdAt,
@@ -249,6 +252,7 @@ export const requireOrgAccess = cache(function requireOrgAccess(orgSlug: string)
     orgDomeniuActivitate: ctx.orgDomeniuActivitate,
     orgPackage: ctx.orgPackage,
     orgCustomPlanConfig: ctx.orgCustomPlanConfig,
+    orgExtraUsers: ctx.orgExtraUsers,
     orgSubscriptionStatus: ctx.orgSubscriptionStatus,
     orgCurrentPeriodEnd: ctx.orgCurrentPeriodEnd,
     orgCreatedAt: ctx.orgCreatedAt,

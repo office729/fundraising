@@ -7,7 +7,7 @@ import { inregistreazaAudit } from "@/lib/audit";
 import { withOrgAdmin, type OrgContext } from "@/lib/auth/guard";
 import { calculateCustomPlanPrice, normalizeCustomPlanConfig, type CustomPlanConfigSaved } from "@/lib/billing/custom-plan";
 import { creeazaPlataAbonament } from "@/lib/billing/netopia-checkout";
-import { NUME_PACHET_FIX, PACKAGE_LIMITS, type OrgPackage } from "@/lib/billing/packages";
+import { etichetaPachet, pretLunarPachet, utilizatoriSuplimentariValizi, type OrgPackage } from "@/lib/billing/packages";
 import { organizations, platformPayments } from "@/lib/db/schema";
 import { cifFolositDeAltaOrganizatie, MESAJ_CIF_FOLOSIT } from "@/lib/cif";
 import { EroareUtilizator } from "@/lib/erori";
@@ -46,15 +46,19 @@ async function inregistreazaAcordReinnoire(ctx: OrgContext, acord: boolean, pach
 // schimbă abia când IPN-ul verificat confirmă plata (api/netopia/ipn/route.ts),
 // niciodată optimist, înainte de confirmare.
 export const startCheckoutAction = withOrgAdmin(
-  async (ctx, pkg: Exclude<OrgPackage, "trial" | "custom">, acordReinnoire: boolean) => {
+  async (ctx, pkg: Exclude<OrgPackage, "trial" | "custom">, acordReinnoire: boolean, extraUtilizatori: number = 0) => {
     // Tipurile TypeScript nu protejează o Server Action apelată direct: cu „trial" sau „custom" prețul ar fi null/0.
     if (pkg !== "start" && pkg !== "crestere" && pkg !== "impact") throw new EroareUtilizator("Pachet invalid.");
-    await inregistreazaAcordReinnoire(ctx, acordReinnoire, pkg, PACKAGE_LIMITS[pkg].pretLunar!);
+    // Utilizatorii suplimentari există doar la START; numărul și prețul se recalculează AICI, nu se iau de la client.
+    const extra = utilizatoriSuplimentariValizi(pkg, extraUtilizatori);
+    const pretLunar = pretLunarPachet(pkg, extra)!;
+    await inregistreazaAcordReinnoire(ctx, acordReinnoire, pkg, pretLunar);
     const url = await creeazaPlataAbonament(ctx, {
       pachet: pkg,
-      pretLunar: PACKAGE_LIMITS[pkg].pretLunar!,
-      packageLabel: NUME_PACHET_FIX[pkg],
+      pretLunar,
+      packageLabel: etichetaPachet(pkg, extra),
       planConfig: null,
+      extraUtilizatori: extra,
       origin: await origin(),
     });
     return { url };

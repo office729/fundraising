@@ -30,6 +30,8 @@ export const platformPayments = pgTable(
     // ca o plată abandonată să nu-i schimbe pachetul în timp ce accesul curent
     // rămâne plătit.
     planConfig: jsonb("plan_config"),
+    // Utilizatori suplimentari incluși în această comandă (doar pentru package = "start"); se aplică organizației la confirmare.
+    extraUsers: integer("extra_users").notNull().default(0),
     // true = taxată automat de cron (cardul salvat), nu pornită interactiv de un
     // membru — doar informativ (rapoarte/depanare); logica de confirmare e identică.
     renewal: boolean("renewal").notNull().default(false),

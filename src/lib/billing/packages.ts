@@ -148,6 +148,31 @@ export const PACKAGE_LIMITS: Record<Exclude<OrgPackage, "custom">, PackageLimits
   },
 };
 
+// Utilizatori suplimentari, doar peste pachetul START (1 utilizator inclus): 15 lei/lună fiecare, până la 4 în plus (5 în total).
+// Peste asta, CREȘTERE (3 utilizatori + cote mult mai mari) e alegerea potrivită. Prețul se calculează mereu server-side.
+export const PRET_UTILIZATOR_SUPLIMENTAR = 15;
+export const MAX_UTILIZATORI_SUPLIMENTARI = 4;
+
+// Aduce numărul cerut la un întreg valid; pentru alte pachete decât START nu există utilizatori suplimentari.
+export function utilizatoriSuplimentariValizi(pkg: OrgPackage, cerut: unknown): number {
+  if (pkg !== "start") return 0;
+  const n = Math.round(Number(cerut));
+  return Number.isFinite(n) ? Math.min(MAX_UTILIZATORI_SUPLIMENTARI, Math.max(0, n)) : 0;
+}
+
+// Eticheta pachetului pe comandă, pe factură și în emailuri, cu utilizatorii suplimentari menționați.
+export function etichetaPachet(pkg: Exclude<OrgPackage, "trial" | "custom">, extra: number): string {
+  const nume = pkg === "start" ? "Pachet START" : pkg === "crestere" ? "Pachet CREȘTERE" : "Pachet IMPACT";
+  return extra > 0 ? `${nume} + ${extra} ${extra === 1 ? "utilizator suplimentar" : "utilizatori suplimentari"}` : nume;
+}
+
+// Prețul lunar al unui pachet fix, cu utilizatorii suplimentari incluși (null pentru trial).
+export function pretLunarPachet(pkg: Exclude<OrgPackage, "custom">, extraUtilizatori = 0): number | null {
+  const baza = PACKAGE_LIMITS[pkg].pretLunar;
+  if (baza === null) return null;
+  return baza + utilizatoriSuplimentariValizi(pkg, extraUtilizatori) * PRET_UTILIZATOR_SUPLIMENTAR;
+}
+
 // Prețuri anuale — 2 luni gratuite (din pagina de prețuri). Doar informativ
 // azi (Paywall/Setări afișează prețul anual, dar checkout-ul real e
 // lunar-only — vezi lib/billing/netopia-checkout.ts).
