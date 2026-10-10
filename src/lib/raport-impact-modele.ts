@@ -22,6 +22,8 @@ export type ContextRaport = { organizatie: string; azi: string }; // azi: YYYY-M
 
 const SANS = `"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif`;
 const SERIF = `Georgia,"Iowan Old Style","Times New Roman",serif`;
+const SANS_SVG = SANS.replace(/"/g, "'");
+const SERIF_SVG = SERIF.replace(/"/g, "'");
 const LUNI_SCURT = ["ian", "feb", "mar", "apr", "mai", "iun", "iul", "aug", "sep", "oct", "nov", "dec"];
 const lunaScurta = (iso: string) => (/^\d{4}-\d{2}-\d{2}$/.test(iso) ? LUNI_SCURT[Number(iso.slice(5, 7)) - 1] : "");
 
@@ -75,7 +77,7 @@ function inel(d: DateImpact, marime = 170): { svg: string; legenda: { nume: stri
     deplasare += lung;
     return s;
   });
-  return { svg: `<svg viewBox="0 0 140 140" width="${marime}" height="${marime}" role="img" aria-label="Ponderea proiectelor în total"><circle cx="70" cy="70" r="${r}" fill="none" stroke="var(--l)" stroke-width="17"/>${arce.join("")}<text x="70" y="68" text-anchor="middle" font-family="${SERIF}" font-size="17" font-weight="700" fill="var(--t)">${esc(String(ps.length))}</text><text x="70" y="84" text-anchor="middle" font-size="8.5" fill="var(--m)" letter-spacing=".08em">${ps.length === 1 ? "PROIECT" : "PROIECTE"}</text></svg>`, legenda };
+  return { svg: `<svg viewBox="0 0 140 140" width="${marime}" height="${marime}" role="img" aria-label="Ponderea proiectelor în total"><circle cx="70" cy="70" r="${r}" fill="none" stroke="var(--l)" stroke-width="17"/>${arce.join("")}<text x="70" y="68" text-anchor="middle" font-family="${SERIF_SVG}" font-size="17" font-weight="700" fill="var(--t)">${esc(String(ps.length))}</text><text x="70" y="84" text-anchor="middle" font-size="8.5" fill="var(--m)" letter-spacing=".08em">${ps.length === 1 ? "PROIECT" : "PROIECTE"}</text></svg>`, legenda };
 }
 
 const legendaInel = (l: ReturnType<typeof inel>["legenda"]) => `<div class="lg">${l.map((x) => `<div><i style="background:${x.nuanta}"></i><span>${esc(x.nume)}</span><b>${x.procent}%</b></div>`).join("")}</div>`;
@@ -414,7 +416,7 @@ function certificat(d: DateImpact, c: ContextRaport): string {
 .cert .se{font-style:italic;color:var(--m);font-family:${SERIF};font-size:17px}.cert h1{font-family:${SERIF};font-style:italic;font-weight:400;font-size:54px;line-height:1.1;color:var(--b);margin:8px 0 16px}.cert .tx{max-width:620px;margin:0 auto;font-family:${SERIF};font-size:16.5px;line-height:1.7;color:var(--t)}
 .cert .tot{font-family:${SERIF};font-size:46px;font-weight:700;color:var(--a);margin:22px 0 2px;letter-spacing:-.02em}.cert .pj{font-size:13px;color:var(--m);max-width:640px;margin:8px auto 0;line-height:1.7}.cert .sg{display:grid;grid-template-columns:1fr auto 1fr;gap:26px;align-items:end;margin-top:34px}.cert .sg div.l{border-top:1px solid var(--t);padding-top:6px;font-size:13px;color:var(--m)}.cert .sg b{display:block;color:var(--t);font-family:${SERIF};font-style:italic;font-weight:400;font-size:19px}
 @media(max-width:700px){.cert{padding:34px 22px;margin:10px}.cert h1{font-size:36px}.cert .sg{grid-template-columns:1fr}.cert .sg svg{margin:0 auto}}`;
-  const sigiliu = `<svg viewBox="0 0 120 120" width="108" height="108" role="img" aria-label="Sigiliu"><defs><path id="cs" d="M60 60m-44 0a44 44 0 1 1 88 0a44 44 0 1 1-88 0"/><linearGradient id="sg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--a)"/><stop offset="1" stop-color="var(--b)"/></linearGradient></defs><circle cx="60" cy="60" r="57" fill="url(#sg)"/><circle cx="60" cy="60" r="52" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="1"/><circle cx="60" cy="60" r="31" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="1"/><text font-size="9.5" letter-spacing="2.6" fill="#fff" font-family="${SANS}" font-weight="700"><textPath href="#cs" startOffset="0">${esc(c.organizatie.toUpperCase().slice(0, 28))} · RECUNOȘTINȚĂ ·</textPath></text><path d="M60 78 46 64c-5-5-4-13 2-16 5-2 9 0 12 4 3-4 7-6 12-4 6 3 7 11 2 16z" fill="#fff"/></svg>`;
+  const sigiliu = `<svg viewBox="0 0 120 120" width="108" height="108" role="img" aria-label="Sigiliu"><defs><path id="cs" d="M60 60m-44 0a44 44 0 1 1 88 0a44 44 0 1 1-88 0"/><linearGradient id="sg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--a)"/><stop offset="1" stop-color="var(--b)"/></linearGradient></defs><circle cx="60" cy="60" r="57" fill="url(#sg)"/><circle cx="60" cy="60" r="52" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="1"/><circle cx="60" cy="60" r="31" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="1"/><text font-size="9.5" letter-spacing="2.6" fill="#fff" font-family="${SANS_SVG}" font-weight="700"><textPath href="#cs" startOffset="0">${esc(c.organizatie.toUpperCase().slice(0, 28))} · RECUNOȘTINȚĂ ·</textPath></text><path d="M60 78 46 64c-5-5-4-13 2-16 5-2 9 0 12 4 3-4 7-6 12-4 6 3 7 11 2 16z" fill="#fff"/></svg>`;
   const lista = proiecteSortate(d).map(nume).join(" · ");
   return doc(`Certificat de recunoștință — ${d.firma}`, d, css, `<main class="foaie"><section class="cert">${colt("left:10px;top:10px")}${colt("right:10px;top:10px;transform:scaleX(-1)")}${colt("left:10px;bottom:10px;transform:scaleY(-1)")}${colt("right:10px;bottom:10px;transform:scale(-1,-1)")}
 ${cobrand(d, c)}<div class="tt">Certificat de recunoștință</div><div class="div">${ICON.inima}</div><div class="se">se acordă cu mulțumire companiei</div><h1>${esc(d.firma || "—")}</h1>

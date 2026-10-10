@@ -4,6 +4,7 @@ import { ChevronDown, ClipboardCopy, Download, Eye, FileDown, LayoutGrid, Palett
 import Link from "next/link";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
+import { descarcaBlob, htmlInPdf } from "@/lib/html-in-pdf";
 import { incarcaLogo, paletaDinLogo } from "@/lib/logo-incarcare";
 import { paletaDinHex, type PaletaLogo } from "@/lib/raport-impact-culori";
 
@@ -60,6 +61,7 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
   const [paleta, setPaleta] = useState<PaletaLogo | null>(null);
   const [ciorna, setCiorna] = useState<string | null>(null); // data ciornei restaurate
   const [meniu, setMeniu] = useState(false);
+  const [seFacePdf, setSeFacePdf] = useState(false);
   const [seteazaNumar, setSeteazaNumar] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cadru = useRef<HTMLIFrameElement>(null);
@@ -170,11 +172,12 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
     inregistreaza();
     setTimeout(() => setInfo(null), 6000);
   }
+  const numeSigur = () => p.numeFisier(curat).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || p.cheieTool;
   function descarca() {
     setMeniu(false);
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([html], { type: "text/html;charset=utf-8" }));
-    a.download = `${p.numeFisier(curat).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || p.cheieTool}.html`;
+    a.download = `${numeSigur()}.html`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -183,8 +186,26 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
     inregistreaza();
     setTimeout(() => setInfo(null), 6000);
   }
-  function pdf() {
-    const tipareste = () => {
+  // „Salvează ca PDF” descarcă direct un fișier PDF (pagină-imagine de înaltă rezoluție). Dacă browserul nu poate, se deschide tipărirea.
+  async function pdf() {
+    setEroare(null);
+    setSeFacePdf(true);
+    try {
+      const { blob, imaginiOmise } = await htmlInPdf(html);
+      descarcaBlob(blob, `${numeSigur()}.pdf`);
+      inregistreaza();
+      setInfo(imaginiOmise ? `PDF descărcat, dar ${imaginiOmise === 1 ? "un logo nu a putut fi inclus" : `${imaginiOmise} logo-uri nu au putut fi incluse`} (adresa lui nu permite folosirea). Încarcă logoul din calculator.` : "PDF-ul a fost descărcat.");
+      setTimeout(() => setInfo(null), 8000);
+    } catch {
+      setInfo("Nu am putut crea PDF-ul direct în acest browser. Se deschide tipărirea: alege „Salvează ca PDF”.");
+      setTimeout(() => setInfo(null), 8000);
+      tipareste();
+    } finally {
+      setSeFacePdf(false);
+    }
+  }
+  function tipareste() {
+    const ruleaza = () => {
       const w = cadru.current?.contentWindow;
       if (w) {
         w.focus();
@@ -194,8 +215,8 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
     };
     if (vedere === "editez" && window.matchMedia("(max-width: 1023px)").matches) {
       setVedere("previz");
-      setTimeout(tipareste, 250);
-    } else tipareste();
+      setTimeout(ruleaza, 250);
+    } else ruleaza();
   }
   function reseteaza() {
     if (!window.confirm("Ștergi tot ce ai completat și revii la textul de pornire?")) return;
@@ -244,8 +265,8 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
           <span className="text-[12px] text-[var(--ci-text-muted)]" role="status" aria-live="polite">
             {info}
           </span>
-          <Button variant="primary" onClick={pdf} title="Se deschide fereastra de tipărire: alege „Salvează ca PDF”">
-            <FileDown className="size-4" aria-hidden /> Salvează ca PDF
+          <Button variant="primary" onClick={pdf} disabled={seFacePdf} title="Descarcă un fișier PDF (pagină în înaltă rezoluție)">
+            <FileDown className="size-4" aria-hidden /> {seFacePdf ? "Se pregătește PDF-ul…" : "Salvează ca PDF"}
           </Button>
           <div
             className="relative"
@@ -265,6 +286,13 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
                     <span>
                       <span className="font-semibold text-[var(--ci-text)]">Copiază codul HTML</span>
                       <span className="block text-[11.5px] text-[var(--ci-text-muted)]">Pentru a-l lipi într-o platformă sau pe un site.</span>
+                    </span>
+                  </button>
+                  <button type="button" role="menuitem" onClick={() => { setMeniu(false); tipareste(); }} className="flex w-full items-start gap-2.5 rounded-[var(--ci-radius-btn)] px-2.5 py-2 text-left text-[13px] hover:bg-[var(--ci-surface-2)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
+                    <FileDown className="mt-0.5 size-4 shrink-0 text-[var(--ci-primary)]" aria-hidden />
+                    <span>
+                      <span className="font-semibold text-[var(--ci-text)]">Tipărește sau PDF cu text selectabil</span>
+                      <span className="block text-[11.5px] text-[var(--ci-text-muted)]">Deschide tipărirea; în ea alegi „Salvează ca PDF”. Textul și linkurile rămân active.</span>
                     </span>
                   </button>
                   <button type="button" role="menuitem" onClick={descarca} className="flex w-full items-start gap-2.5 rounded-[var(--ci-radius-btn)] px-2.5 py-2 text-left text-[13px] hover:bg-[var(--ci-surface-2)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
@@ -435,16 +463,16 @@ function CampLogo({ eticheta, valoare, onFisier, onSterge, extra }: { eticheta: 
   return (
     <div className="min-w-0">
       <Label htmlFor={id}>{eticheta}</Label>
-      <div className="flex items-center gap-3">
-        <div className="flex h-16 w-28 shrink-0 items-center justify-center overflow-hidden rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)]" style={{ backgroundImage: "conic-gradient(#f1eded 25%, #fff 0 50%, #f1eded 0 75%, #fff 0)", backgroundSize: "12px 12px" }}>
+      <div className="flex flex-col items-start gap-2.5">
+        <div className="flex h-16 w-full max-w-[11rem] items-center justify-center overflow-hidden rounded-lg border border-[var(--ci-border)]" style={{ backgroundImage: "conic-gradient(#f1eded 25%, #fff 0 50%, #f1eded 0 75%, #fff 0)", backgroundSize: "12px 12px" }}>
           {valoare ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={valoare} alt={eticheta} className="max-h-14 max-w-[6.5rem] object-contain" />
+            <img src={valoare} alt={eticheta} className="max-h-14 max-w-[10rem] object-contain" />
           ) : (
             <span className="px-2 text-center text-[11px] text-[var(--ci-text-faint)]">Fără logo</span>
           )}
         </div>
-        <div className="flex min-w-0 flex-wrap gap-1.5">
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
           <label htmlFor={id} className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 text-[13px] font-medium text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)] focus-within:ring-2 focus-within:ring-[var(--ci-primary)]">
             <Upload className="size-3.5" aria-hidden /> {valoare ? "Schimbă" : "Încarcă"}
           </label>

@@ -4,6 +4,7 @@ import { ClipboardCopy, Copy, Download, Eye, FileDown, LayoutGrid, Palette, Penc
 import Link from "next/link";
 import { useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
 
+import { descarcaBlob, htmlInPdf } from "@/lib/html-in-pdf";
 import { aplicaPlaceholdere, CULORI_IMPLICITE, curataDateImpact, MECANISME_IMPACT, MODELE_IMPACT, PROIECT_GOL, STARI_PROIECT, totalImpact, type DateImpact, type ProiectImpact } from "@/lib/raport-impact";
 import type { PaletaLogo } from "@/lib/raport-impact-culori";
 import { randeazaRaportImpact } from "@/lib/raport-impact-modele";
@@ -32,6 +33,7 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
   const [eroareLogo, setEroareLogo] = useState<string | null>(null);
   const [vedere, setVedere] = useState<"editez" | "previz">("editez");
   const [info, setInfo] = useState<string | null>(null);
+  const [seFacePdf, setSeFacePdf] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cadru = useRef<HTMLIFrameElement>(null);
 
@@ -132,10 +134,11 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
   const modelAles = MODELE_IMPACT.find((m) => m.id === date.model)!;
   const nrPlaceholdere = aplicaPlaceholdere(date.narativ, curat).length;
 
+  const numeFirma = () => (curat.firma || "firma").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "firma";
   function exportaHtml() {
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([html], { type: "text/html;charset=utf-8" }));
-    a.download = `raport-impact-${(curat.firma || "firma").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "firma"}.html`;
+    a.download = `raport-impact-${numeFirma()}.html`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -160,9 +163,25 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
     setInfo("Codul HTML a fost copiat. Lipește-l în editorul de cod al platformei.");
     setTimeout(() => setInfo(null), 6000);
   }
-  // PDF-ul se obține din tipărirea documentului („Salvează ca PDF”): rămâne vectorial, cu textul selectabil și grafica nepixelată.
-  function exportaPdf() {
-    const tipareste = () => {
+  // „Export PDF” descarcă direct un fișier PDF (pagini A4 în înaltă rezoluție). Dacă browserul nu poate, se deschide tipărirea.
+  async function exportaPdf() {
+    setMesaj(null);
+    setSeFacePdf(true);
+    try {
+      const { blob, imaginiOmise } = await htmlInPdf(html);
+      descarcaBlob(blob, `raport-impact-${numeFirma()}.pdf`);
+      setInfo(imaginiOmise ? `PDF descărcat, dar ${imaginiOmise === 1 ? "un logo nu a putut fi inclus" : `${imaginiOmise} logo-uri nu au putut fi incluse`} (adresa lui nu permite folosirea). Încarcă logoul din calculator.` : "PDF-ul a fost descărcat.");
+    } catch {
+      setInfo("Nu am putut crea PDF-ul direct în acest browser. Se deschide tipărirea: alege „Salvează ca PDF”.");
+      tipareste();
+    } finally {
+      setSeFacePdf(false);
+      setTimeout(() => setInfo(null), 8000);
+    }
+  }
+  // Tipărirea păstrează textul selectabil și linkurile active; din ea se poate salva și PDF.
+  function tipareste() {
+    const ruleaza = () => {
       const w = cadru.current?.contentWindow;
       if (w) {
         w.focus();
@@ -172,8 +191,8 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
     // Pe telefon, previzualizarea poate fi ascunsă: o afișăm înainte de tipărire.
     if (vedere === "editez" && window.matchMedia("(max-width: 1023px)").matches) {
       setVedere("previz");
-      setTimeout(tipareste, 250);
-    } else tipareste();
+      setTimeout(ruleaza, 250);
+    } else ruleaza();
   }
 
   const lipsaFirma = !curat.firma;
@@ -204,8 +223,11 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
           <Button onClick={() => cuFirma(exportaHtml)}>
             <Download className="size-4" aria-hidden /> Descarcă HTML
           </Button>
-          <Button onClick={() => cuFirma(exportaPdf)} title="Se deschide tipărirea: alege „Salvează ca PDF”">
-            <FileDown className="size-4" aria-hidden /> Export PDF
+          <Button onClick={() => cuFirma(exportaPdf)} disabled={seFacePdf} title="Descarcă un fișier PDF (pagini A4 în înaltă rezoluție)">
+            <FileDown className="size-4" aria-hidden /> {seFacePdf ? "Se pregătește PDF-ul…" : "Export PDF"}
+          </Button>
+          <Button variant="ghost" onClick={() => cuFirma(tipareste)} title="Deschide tipărirea; din ea poți salva PDF cu text selectabil și linkuri active">
+            Tipărește
           </Button>
         </div>
       </div>
@@ -282,13 +304,13 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
               />
             </div>
             {eroareLogo && <p role="alert" className="mt-2 text-[13px] text-[var(--ci-red)]">{eroareLogo}</p>}
-            <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-[var(--ci-border)] pt-3">
+            <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-[var(--ci-border)] pt-3">
               <div className="flex items-center gap-1.5" aria-label="Culorile raportului">
                 {([date.accent, date.accent2, date.accent3] as const).map((culoare, i) => (
                   <span key={i} className="size-7 rounded-full border border-[var(--ci-border)]" style={{ background: culoare }} title={culoare} />
                 ))}
               </div>
-              <p className="min-w-0 flex-1 text-[12.5px] text-[var(--ci-text-muted)]">{paleta ? (paleta.sursa === "logo" ? "Culori preluate din logoul firmei." : "Logoul e alb-negru: am ales nuanțe neutre.") : "Culorile se aleg mai jos sau se preiau din logo."}</p>
+              <p className="order-last basis-full text-[12.5px] text-[var(--ci-text-muted)]">{paleta ? (paleta.sursa === "logo" ? "Culori preluate din logoul firmei." : "Logoul e alb-negru: am ales nuanțe neutre.") : "Culorile se aleg mai jos sau se preiau din logo."}</p>
               <Button size="sm" onClick={preiaCulori} disabled={!date.logoFirma}>
                 <Palette className="size-3.5" aria-hidden /> Preia culorile din logo
               </Button>
@@ -464,19 +486,19 @@ function CampLogo({ eticheta, valoare, alt, onFisier, onSterge, extra }: { etich
   return (
     <div className="min-w-0">
       <Label htmlFor={id}>{eticheta}</Label>
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col items-start gap-2.5">
         <div
-          className="flex h-16 w-28 shrink-0 items-center justify-center overflow-hidden rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)]"
+          className="flex h-16 w-full max-w-[11rem] items-center justify-center overflow-hidden rounded-lg border border-[var(--ci-border)]"
           style={{ backgroundImage: "conic-gradient(#f1eded 25%, #fff 0 50%, #f1eded 0 75%, #fff 0)", backgroundSize: "12px 12px" }}
         >
           {valoare ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={valoare} alt={alt} className="max-h-14 max-w-[6.5rem] object-contain" />
+            <img src={valoare} alt={alt} className="max-h-14 max-w-[10rem] object-contain" />
           ) : (
             <span className="px-2 text-center text-[11px] text-[var(--ci-text-faint)]">Fără logo</span>
           )}
         </div>
-        <div className="flex min-w-0 flex-wrap gap-1.5">
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
           <label htmlFor={id} className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 text-[13px] font-medium text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)] focus-within:ring-2 focus-within:ring-[var(--ci-primary)]">
             <Upload className="size-3.5" aria-hidden /> {valoare ? "Schimbă" : "Încarcă"}
           </label>

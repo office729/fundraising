@@ -117,7 +117,7 @@ export function GeneratorScrisori({ orgSlug, org, azi, model, semnatar, dateIni,
       firmaId={firmaId}
       bannere={bannere}
       avertizare={(d) => (d.corp.length > 2400 ? "Textul e lung: scrisoarea poate depăși o pagină A4. Scurtează-l sau verifică la tipărire." : null)}
-      ajutor="Alegi șablonul și tipul scrisorii, completezi destinatarul și vezi scrisoarea în dreapta, în timp real. Salvezi PDF-ul din fereastra de tipărire („Salvează ca PDF”). Modelele sunt orientative: citește și adaptează textul înainte să-l trimiți."
+      ajutor="Alegi șablonul și tipul scrisorii, completezi destinatarul și vezi scrisoarea în dreapta, în timp real. „Salvează ca PDF” descarcă direct fișierul. Modelele sunt orientative: citește și adaptează textul înainte să-l trimiți."
     />
   );
 }

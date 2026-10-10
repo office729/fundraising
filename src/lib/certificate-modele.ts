@@ -1,6 +1,6 @@
 // Cele 15 modele de certificat. Fiecare întoarce un document HTML complet (A4 peisaj, două modele portret), cu dimensiuni în cqw
 // ca să se micșoreze fără deformare pe orice ecran și la tipărire.
-import { A4_PEISAJ, A4_PORTRET, docShell, esc, inimaPuls, linieEcg, logoImg, SERIF, SANS } from "./documente-comun";
+import { A4_PEISAJ, A4_PORTRET, docShell, esc, inimaPuls, linieEcg, logoImg, SERIF, SANS, SANS_SVG } from "./documente-comun";
 import { linieCertificat, motivCertificat, type DateCertificat, type ModelCertificat } from "./certificate";
 import { dataLunga } from "./raport-impact";
 
@@ -39,7 +39,7 @@ const meta = (b: B) => `<div class="meta">${b.locData}${b.nr ? ` · ${b.nr}` : "
 // Sigiliu rotund cu numele organizației pe cerc și o inimă în mijloc.
 function sigiliu(d: DateCertificat, id: string, marime = "11cqw"): string {
   const t = esc((d.antetNume || "Organizația").toUpperCase().slice(0, 26));
-  return `<svg viewBox="0 0 120 120" role="img" aria-label="Sigiliu" style="width:${marime};height:${marime};display:block"><defs><path id="${id}p" d="M60 60m-44 0a44 44 0 1 1 88 0a44 44 0 1 1-88 0"/><linearGradient id="${id}g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--a)"/><stop offset="1" stop-color="var(--b)"/></linearGradient></defs><circle cx="60" cy="60" r="57" fill="url(#${id}g)"/><circle cx="60" cy="60" r="52" fill="none" stroke="#fff" stroke-opacity=".6"/><circle cx="60" cy="60" r="31" fill="none" stroke="#fff" stroke-opacity=".6"/><text font-size="9.5" letter-spacing="2.4" fill="#fff" font-family="${SANS}" font-weight="700"><textPath href="#${id}p">${t} · ${t.length < 14 ? t + " · " : ""}</textPath></text><path d="M60 78 46 64c-5-5-4-13 2-16 5-2 9 0 12 4 3-4 7-6 12-4 6 3 7 11 2 16z" fill="#fff"/></svg>`;
+  return `<svg viewBox="0 0 120 120" role="img" aria-label="Sigiliu" style="width:${marime};height:${marime};display:block"><defs><path id="${id}p" d="M60 60m-44 0a44 44 0 1 1 88 0a44 44 0 1 1-88 0"/><linearGradient id="${id}g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--a)"/><stop offset="1" stop-color="var(--b)"/></linearGradient></defs><circle cx="60" cy="60" r="57" fill="url(#${id}g)"/><circle cx="60" cy="60" r="52" fill="none" stroke="#fff" stroke-opacity=".6"/><circle cx="60" cy="60" r="31" fill="none" stroke="#fff" stroke-opacity=".6"/><text font-size="9.5" letter-spacing="2.4" fill="#fff" font-family="${SANS_SVG}" font-weight="700"><textPath href="#${id}p">${t} · ${t.length < 14 ? t + " · " : ""}</textPath></text><path d="M60 78 46 64c-5-5-4-13 2-16 5-2 9 0 12 4 3-4 7-6 12-4 6 3 7 11 2 16z" fill="#fff"/></svg>`;
 }
 
 const colt = (stil: string, id: string) => `<svg viewBox="0 0 80 80" style="position:absolute;width:7cqw;height:7cqw;${stil}" aria-hidden="true"><path d="M4 4h46M4 4v46" stroke="var(--a)" stroke-width="3" fill="none"/><path d="M14 14h26M14 14v26" stroke="var(--a)" stroke-width="1.2" fill="none"/><circle cx="24" cy="24" r="4" fill="var(--a)"/><title>${id}</title></svg>`;

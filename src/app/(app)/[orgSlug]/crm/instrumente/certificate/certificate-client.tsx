@@ -28,7 +28,7 @@ export function GalerieCertificate({ orgSlug, org, azi }: { orgSlug: string; org
       modele={modele}
       lat={1123}
       inalt={794}
-      coloane="grid-cols-1 items-start sm:grid-cols-2 lg:grid-cols-3"
+      coloane="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
       recomandate={["clasic", "modern", "gala", "inima", "puls", "diploma"]}
     />
   );
@@ -103,7 +103,7 @@ export function GeneratorCertificate({ orgSlug, org, azi, model, semnatar, dateI
       datePregatite={!!dateIni}
       firmaId={firmaId}
       bannere={bannere}
-      ajutor="Alegi șablonul și tipul certificatului, scrii numele destinatarului și vezi certificatul în dreapta, în timp real. Salvezi PDF-ul din fereastra de tipărire („Salvează ca PDF”). Certificatul e un gest de recunoaștere, nu un document oficial."
+      ajutor="Alegi șablonul și tipul certificatului, scrii numele destinatarului și vezi certificatul în dreapta, în timp real. „Salvează ca PDF” descarcă direct fișierul. Certificatul e un gest de recunoaștere, nu un document oficial."
     />
   );
 }

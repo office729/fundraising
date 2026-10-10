@@ -6,6 +6,9 @@ export { esc, urlLogo };
 
 export const SANS = `"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif`;
 export const SERIF = `Georgia,"Iowan Old Style","Times New Roman",serif`;
+// Aceleași liste, cu ghilimele simple: pentru atributul font-family al elementelor SVG (cele duble ar rupe atributul).
+export const SANS_SVG = SANS.replace(/"/g, "'");
+export const SERIF_SVG = SERIF.replace(/"/g, "'");
 
 export type Accente = { accent: string; accent2: string; accent3: string };
 export const ACCENTE_IMPLICITE: Accente = { accent: "#b3261e", accent2: "#7f1d1d", accent3: "#fdf1ef" };
