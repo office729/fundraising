@@ -102,7 +102,7 @@ export function CampanieClient(p: Props) {
           value={mesaj}
           onFocus={(e) => e.currentTarget.select()}
           aria-label="Mesajul de distribuit"
-          className="w-full resize-none rounded-xl border border-[var(--vp-line)] bg-[#faf6f2] p-3 text-[14.5px] leading-relaxed text-[var(--vp-ink)] focus:ring-2 focus:ring-[var(--vp-brand)]/30 focus:outline-none"
+          className="w-full resize-none rounded-xl border border-[var(--vp-line)] bg-[#f1f5fa] p-3 text-[14.5px] leading-relaxed text-[var(--vp-ink)] focus:ring-2 focus:ring-[var(--vp-brand)]/30 focus:outline-none"
         />
         <div className="mt-3 flex flex-wrap gap-2">
           <button type="button" onClick={() => copiaza(mesaj, "mesaj")} className={`${buton} flex-1 bg-[var(--vp-brand)] text-white`}>

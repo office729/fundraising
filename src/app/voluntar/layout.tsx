@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   referrer: "no-referrer",
 };
 
-export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#be3a2f" };
+export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#154a85" };
 
 export default function VoluntarLayout({ children }: { children: React.ReactNode }) {
   return children;

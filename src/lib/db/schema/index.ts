@@ -20,6 +20,7 @@ export * from "./auth-rate-limits";
 export * from "./rapoarte-companii";
 export * from "./kpi";
 export * from "./voluntari-panou";
+export * from "./voluntari-activitati";
 export * from "./donatori-pf";
 export * from "./performanta";
 export * from "./certificate-verificari";

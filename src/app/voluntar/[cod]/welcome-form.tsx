@@ -6,7 +6,7 @@ import { useState, useTransition } from "react";
 import { adaugaTelefonAction, intraAction } from "./actions";
 
 const camp =
-  "w-full rounded-xl border border-[var(--vp-line)] bg-white px-3.5 py-3 text-[16px] text-[var(--vp-ink)] placeholder:text-[#a79a90] focus:border-[var(--vp-brand)] focus:ring-2 focus:ring-[var(--vp-brand)]/25 focus:outline-none";
+  "w-full rounded-xl border border-[var(--vp-line)] bg-white px-3.5 py-3 text-[16px] text-[var(--vp-ink)] placeholder:text-[#94a3b8] focus:border-[var(--vp-brand)] focus:ring-2 focus:ring-[var(--vp-brand)]/25 focus:outline-none";
 
 export function WelcomeForm({ cod, orgNume }: { cod: string; orgNume: string }) {
   const router = useRouter();
@@ -27,9 +27,9 @@ export function WelcomeForm({ cod, orgNume }: { cod: string; orgNume: string }) 
 
   return (
     <form onSubmit={trimite} className="rounded-2xl border border-[var(--vp-line)] bg-white p-5 shadow-sm" noValidate>
-      <h2 className="font-display text-[20px] font-bold">Bine ai venit, voluntarule!</h2>
+      <h2 className="font-display text-[20px] font-bold">Bine ai venit!</h2>
       <p className="mt-1 text-[14px] text-[var(--vp-muted)]">
-        Alături de {orgNume}, dai mai departe campaniile către oamenii tăi. Durează un minut să începi.
+        Alături de {orgNume}, poți ajuta de acasă, cu sarcini mici, sau poți veni la activități. Durează un minut să începi.
       </p>
 
       <label htmlFor="vp-prenume" className="mt-4 block text-[13px] font-semibold">

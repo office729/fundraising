@@ -812,6 +812,25 @@ const POLICIES = [
   `create policy volunteer_panel_links_tenant_isolation on volunteer_panel_links
     using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
     with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  // Voluntari: sarcini online, activități pe teren, înscrieri, ore și raportări.
+  `create policy volunteer_tasks_tenant_isolation on volunteer_tasks
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy volunteer_task_engagements_tenant_isolation on volunteer_task_engagements
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy volunteer_activities_tenant_isolation on volunteer_activities
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy volunteer_shifts_tenant_isolation on volunteer_shifts
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy volunteer_signups_tenant_isolation on volunteer_signups
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy volunteer_reports_tenant_isolation on volunteer_reports
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
   // Panoul voluntarilor: ruta publică /voluntar/<cod> rezolvă codul → organizație sub app.public_lookup (doar SELECT);
   // restul lucrului se face cu app.current_org_id setat de server după verificarea codului.
   `create policy volunteer_panel_links_public_lookup on volunteer_panel_links for select using (
@@ -888,6 +907,12 @@ const FORCE_TABLES = [
   "volunteer_featured",
   "volunteer_campaign_settings",
   "volunteer_panel_links",
+  "volunteer_tasks",
+  "volunteer_task_engagements",
+  "volunteer_activities",
+  "volunteer_shifts",
+  "volunteer_signups",
+  "volunteer_reports",
   "obiective",
   "obiective_colaboratori",
   "obiective_legaturi",
