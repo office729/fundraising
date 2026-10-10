@@ -69,6 +69,7 @@ export function BorderouriCard({ orgSlug, initial }: { orgSlug: string; initial:
   const btn = "inline-flex min-h-8 items-center gap-1.5 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-2.5 text-[12px] font-semibold text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)] disabled:opacity-50";
 
   return (
+    <div id="borderouri-anaf" className="scroll-mt-20">
     <Card>
       <CardHeader title="Borderouri ANAF" subtitle="Se completează automat, câte 50 de formulare pe borderou; după 50, se trece la borderoul următor." />
       {eroare && <p className="mb-2 text-[13px] text-[var(--ci-red)]">{eroare}</p>}
@@ -203,5 +204,6 @@ export function BorderouriCard({ orgSlug, initial }: { orgSlug: string; initial:
           </div>
         )}
       </Dialog>    </Card>
+    </div>
   );
 }

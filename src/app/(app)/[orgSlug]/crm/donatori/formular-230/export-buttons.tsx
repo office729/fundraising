@@ -70,26 +70,12 @@ export function ExportButtons({
     await descarcaWorkbook(rows, "Formulare 230", `formulare-230-${new Date().toISOString().slice(0, 10)}.xlsx`);
   }
 
-  async function exportaBorderou() {
-    const cnp = await cnpuri();
-    const rows = submisii.map((s, i) => ({
-      "Nr. crt.": i + 1,
-      Nume: s.nume,
-      Prenume: s.prenume,
-      CNP: cnp[s.id] ?? "",
-      "Cont beneficiar": numeCont(beneficiari, s.beneficiarId),
-      "Sumă/Procent": "3,5%",
-      An: s.an ?? s.createdAt.getFullYear(),
-    }));
-    await descarcaWorkbook(rows, "Borderou ANAF", `borderou-anaf-${new Date().toISOString().slice(0, 10)}.xlsx`);
-  }
-
   return (
     <div className="flex items-center gap-2">
       <Button variant="secondary" size="sm" onClick={exportaExcel} disabled={!submisii.length}>
         <FileSpreadsheet className="h-3.5 w-3.5" /> {dict.excel}
       </Button>
-      <Button variant="secondary" size="sm" onClick={exportaBorderou} disabled={!submisii.length}>
+      <Button variant="secondary" size="sm" onClick={() => document.getElementById("borderouri-anaf")?.scrollIntoView({ behavior: "smooth", block: "start" })} disabled={!submisii.length} title="Borderourile ANAF (max. 50 de formulare) cu PDF inteligent, Excel și XML sunt în cardul de mai jos">
         <FileText className="h-3.5 w-3.5" /> {dict.borderouAnaf}
       </Button>
     </div>
