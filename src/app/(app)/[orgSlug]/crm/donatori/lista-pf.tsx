@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowDown, ArrowUp, Bell, BookmarkPlus, Download, Filter, Mail, MailX, Phone, Repeat, Search, ThumbsUp } from "lucide-react";
+import { ArrowDown, ArrowUp, Bell, BookmarkPlus, Download, Filter, Mail, MailX, Phone, Repeat, Search, Settings, ThumbsUp } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 
@@ -58,6 +58,7 @@ export function ListaPfClient({ orgSlug, lista }: { orgSlug: string; lista: List
   const [, start] = useTransition();
   const [q, setQ] = useState(f.q);
   const [extins, setExtins] = useState(numarFiltreActive(f) > 0);
+  const [segDeschis, setSegDeschis] = useState(false);
   const [v, setV] = useState({
     an: f.an ? String(f.an) : "",
     proiect: f.proiect,
@@ -146,26 +147,43 @@ export function ListaPfClient({ orgSlug, lista }: { orgSlug: string; lista: List
 
   return (
     <div className="space-y-4">
-      {/* Segmente */}
+      {/* Segmente: restrânse implicit, se deschid cu rotița; segmentele active rămân vizibile */}
       <Card>
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <h2 className="ci-display text-[14px] font-semibold text-[var(--ci-text)]">Segmente</h2>
-          <p className="text-[12px] text-[var(--ci-text-muted)]">Alege mai multe: se combină cu „ȘI”. Contorul arată câți donatori are fiecare, după filtrele de mai jos.</p>
-        </div>
-        <div className="mt-3 space-y-2.5">
-          <div className="flex flex-wrap gap-1.5">
-            <Chip activ={f.seg.length === 0} onClick={() => push({ seg: null })} eticheta="Toți" contor={lista.toti} titlu="Fără segment" />
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+            {f.seg.length === 0 ? (
+              <span className="text-[12.5px] text-[var(--ci-text-muted)]">
+                Toți donatorii <span className="ci-tabular font-semibold text-[var(--ci-text)]">{nr(lista.toti)}</span>
+              </span>
+            ) : (
+              f.seg.map((cheie) => {
+                const s = SEGMENTE_META.find((x) => x.key === cheie);
+                return <Chip key={cheie} activ onClick={() => comutaSegment(cheie)} eticheta={s?.label ?? cheie} contor={lista.contoare[cheie] ?? 0} titlu="Apasă ca să scoți segmentul" />;
+              })
+            )}
           </div>
-          {GRUPE.map((g) => (
-            <div key={g.grup} className="flex flex-wrap items-center gap-1.5">
-              <span className="w-[118px] shrink-0 text-[11.5px] font-semibold tracking-wide text-[var(--ci-text-faint)] uppercase">{g.titlu}</span>
-              {SEGMENTE_META.filter((s) => s.grup === g.grup).map((s) => (
-                <Chip key={s.key} activ={f.seg.includes(s.key)} onClick={() => comutaSegment(s.key)} eticheta={s.label} contor={lista.contoare[s.key] ?? 0} titlu={s.hint} />
-              ))}
-            </div>
-          ))}
+          <Button type="button" onClick={() => setSegDeschis((x) => !x)} aria-expanded={segDeschis} aria-controls="panou-segmente" title={segDeschis ? "Ascunde segmentele" : "Alege segmente"}>
+            <Settings className="size-4" aria-hidden /> {segDeschis ? "Ascunde" : "Alege"}
+          </Button>
         </div>
-        {lista.importNouId && <p className="mt-3 text-[12px] text-[var(--ci-text-muted)]">„Noi” = donatorii apăruți la ultimul import.</p>}
+        {segDeschis && (
+          <div id="panou-segmente" className="mt-3 space-y-2.5 border-t border-[var(--ci-border)] pt-3">
+            <p className="text-[12px] text-[var(--ci-text-muted)]">Alege mai multe: se combină cu „ȘI”. Contorul arată câți donatori are fiecare, după filtrele de mai jos.</p>
+            <div className="flex flex-wrap gap-1.5">
+              <Chip activ={f.seg.length === 0} onClick={() => push({ seg: null })} eticheta="Toți" contor={lista.toti} titlu="Fără segment" />
+            </div>
+            {GRUPE.map((g) => (
+              <div key={g.grup} className="flex flex-wrap items-center gap-1.5">
+                <span className="w-[118px] shrink-0 text-[11.5px] font-semibold tracking-wide text-[var(--ci-text-faint)] uppercase">{g.titlu}</span>
+                {SEGMENTE_META.filter((s) => s.grup === g.grup).map((s) => (
+                  <Chip key={s.key} activ={f.seg.includes(s.key)} onClick={() => comutaSegment(s.key)} eticheta={s.label} contor={lista.contoare[s.key] ?? 0} titlu={s.hint} />
+                ))}
+              </div>
+            ))}
+            {lista.importNouId && <p className="text-[12px] text-[var(--ci-text-muted)]">„Noi” = donatorii apăruți la ultimul import.</p>}
+          </div>
+        )}
       </Card>
 
       {/* Căutare și filtre */}
