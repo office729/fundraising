@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertTriangle, CalendarClock, CheckCircle2, ListTodo, X } from "lucide-react";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
@@ -110,9 +111,14 @@ export default function TaskuriPage() {
       </div>
 
       <DemoBanner>
-        {locale === "ro"
-          ? "Date demonstrative: taskurile de aici sunt exemple, iar cele create de tine se păstrează doar în acest browser, nu pe server."
-          : "Demo data: the tasks here are examples, and the ones you create are kept only in this browser, not on the server."}
+        {locale === "ro" ? (
+          <>
+            Date demonstrative: taskurile de aici sunt exemple, iar cele create de tine se păstrează doar în acest browser, nu pe server. Pentru activități reale, cu responsabil și termen, folosește{" "}
+            <Link href={`/${orgSlug}/crm/performanta/saptamana`} className="font-semibold underline underline-offset-2">Echipă &amp; Performanță</Link>.
+          </>
+        ) : (
+          "Demo data: the tasks here are examples, and the ones you create are kept only in this browser, not on the server."
+        )}
       </DemoBanner>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

@@ -5,7 +5,6 @@ import { useParams, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 
 import { Badge } from "../components/ui/badge";
-import { Breadcrumb } from "../components/ui/breadcrumb";
 import { Button } from "../components/ui/button";
 import { Card, CardHeader } from "../components/ui/card";
 import { Dialog } from "../components/ui/dialog";
@@ -91,8 +90,6 @@ export function OrganizatieClient({
 
   return (
     <div className="mx-auto max-w-[1100px] space-y-5">
-      <Breadcrumb items={[{ label: ro ? "Instrumente" : "Tools", href: `/${orgSlug}/crm/instrumente` }, { label: ro ? "Organizație & Echipă" : "Organization & Team" }]} />
-
       <div>
         <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">{ro ? "Organizație & Echipă" : "Organization & Team"}</h1>
         <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">

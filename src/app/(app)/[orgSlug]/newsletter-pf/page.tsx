@@ -32,6 +32,7 @@ export default async function NewsletterPfPage({ params }: { params: Promise<{ o
               title={TITLE}
               orgSlug={orgSlug}
               orgName={access.orgName}
+              orgLogoUrl={access.orgLogoUrl}
               domeniuActivitate={access.orgDomeniuActivitate}
               designRecomandat={access.orgDomeniuActivitate ? NEWSLETTER_PF_DESIGN_RECOMANDAT[access.orgDomeniuActivitate] : []}
             />

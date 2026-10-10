@@ -464,7 +464,8 @@ function AddDialog({
         setCompanyOpen(true);
       },
     },
-    { context: "taskuri" as const, label: "Task", icon: ClipboardList, action: () => router.push(`${base}/taskuri`) },
+    // „Task” din această pagină ducea la ea însăși; activitățile reale (salvate pe server, cu responsabil și termen) se adaugă din Echipă & Performanță.
+    { context: "taskuri" as const, label: "Activitate (salvată pe server)", icon: ClipboardList, action: () => router.push(`${base}/performanta/saptamana?nou=activitate`) },
     { context: "donatori" as const, label: "Importă persoane fizice (CSV, Excel, JSON)", icon: Upload, action: () => setImportTip("donatori") },
     { context: "companii" as const, label: "Importă persoane juridice / companii (CSV, Excel, JSON)", icon: Upload, action: () => setImportTip("companii") },
   ].filter((o) => pentru(o.context));

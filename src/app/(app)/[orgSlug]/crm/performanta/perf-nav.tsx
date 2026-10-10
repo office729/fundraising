@@ -3,23 +3,24 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 
 import { perioadaVecina, rezolvaPerioada } from "@/lib/performanta-perioada";
 
 import { numarNotificariNecitite } from "./automatizari-actions";
 import { useCalePerf } from "./perf-cale";
 
-const FILE = [
+// Filele „secundare” (rapoarte, ținte, automatizări) se folosesc rar: stau după un separator, ca lucrul zilnic să iasă în față.
+const FILE: { sub: string; label: string; secundar?: boolean }[] = [
   { sub: "", label: "Prezentare generală" },
   { sub: "/spatiul-meu", label: "Spațiul meu" },
   { sub: "/obiective", label: "Obiective și rezultate" },
   { sub: "/saptamana", label: "Planul săptămânii" },
   { sub: "/echipa", label: "Echipa" },
   { sub: "/discutii", label: "Discuții și evaluări" },
-  { sub: "/rapoarte", label: "Rapoarte" },
-  { sub: "/sabloane", label: "Ținte șabloane" },
-  { sub: "/automatizari", label: "Automatizări" },
+  { sub: "/rapoarte", label: "Rapoarte", secundar: true },
+  { sub: "/sabloane", label: "Ținte șabloane", secundar: true },
+  { sub: "/automatizari", label: "Automatizări", secundar: true },
 ];
 
 // Navigarea modulului Echipă & Performanță. Perioada și filtrele rămân în adresă când treci de la o filă la alta.
@@ -57,12 +58,13 @@ export function PerfNav({ orgSlug }: { orgSlug: string }) {
       </div>
     )}
     <nav aria-label="Echipă și performanță" className="ci-scrollbar flex gap-1 overflow-x-auto rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-1">
-      {FILE.map((t) => {
+      {FILE.map((t, i) => {
         const href = `${baza}${t.sub}`;
         const activ = t.sub === "" ? pathname === baza : pathname.startsWith(href);
         return (
+          <Fragment key={t.sub}>
+          {t.secundar && !FILE[i - 1]?.secundar && <span aria-hidden className="mx-1 my-1 w-px shrink-0 bg-[var(--ci-border)]" />}
           <Link
-            key={t.sub}
             href={`${href}${coada}`}
             prefetch={false}
             aria-current={activ ? "page" : undefined}
@@ -72,6 +74,7 @@ export function PerfNav({ orgSlug }: { orgSlug: string }) {
           >
             {t.label}
           </Link>
+          </Fragment>
         );
       })}
       <Link href={`${baza}/notificari`} prefetch={false} aria-current={pathname.startsWith(`${baza}/notificari`) ? "page" : undefined} className={`shrink-0 rounded-[calc(var(--ci-radius-card)-4px)] px-3.5 py-1.5 text-[13px] font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none ${pathname.startsWith(`${baza}/notificari`) ? "bg-[var(--ci-primary)] text-white" : "text-[var(--ci-text-muted)] hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)]"}`}>

@@ -38,7 +38,8 @@ export function StandaloneToolFrame({
   finalHtml = finalHtml.replaceAll("__FA_DESIGN_RECOMANDAT__", JSON.stringify(designRecomandat ?? []));
   // Sigla și numele organizației (sigla lipsă → imaginea se ascunde, vezi onerror în tool).
   finalHtml = finalHtml.replaceAll("__FA_ORG_NAME__", (orgName ?? "").replace(/[<>&"']/g, ""));
-  finalHtml = finalHtml.replaceAll("__FA_ORG_LOGO__", orgLogoUrl ?? "");
+  // Doar adrese https, fără caractere care ies din atributul HTML.
+  finalHtml = finalHtml.replaceAll("__FA_ORG_LOGO__", orgLogoUrl && /^https:\/\/[^\s"'<>]+$/i.test(orgLogoUrl) ? orgLogoUrl : "");
   // Șabloanele de newsletter au subsolul „Asociația salvează o inimă" scris direct în ele (organizația-pilot). Pentru ORICE
   // altă organizație, identitatea expeditorului trebuie să fie a ei, nu a altcuiva: înlocuim numele la randare.
   // Organizația-pilot rămâne neatinsă (păstrează denumirea ei juridică exactă).

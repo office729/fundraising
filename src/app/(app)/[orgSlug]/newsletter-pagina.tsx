@@ -163,13 +163,11 @@ function Ghid({ tip }: { tip: Tip }) {
   );
 }
 
-// Logoul vine ca pictogramă a site-ului; dacă nu se încarcă, rămâne o literă pe fundal colorat.
+// Logoul e un fișier local (public/logos-platforme): nu se trimit cereri către terți. Dacă nu se încarcă, rămâne litera platformei.
 function Logo({ p }: { p: Platforma }) {
-  // Logoul oficial; dacă nu se încarcă, pictograma site-ului; la urmă, litera platformei.
-  const [pas, setPas] = useState(0);
-  const surse = [p.logo, `https://www.google.com/s2/favicons?domain=${p.domeniu}&sz=256`];
+  const [eroare, setEroare] = useState(false);
   const lat = p.logoTip === "wordmark";
-  if (pas >= surse.length)
+  if (eroare)
     return (
       <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[var(--ci-primary-soft)] text-base font-bold text-[var(--ci-primary)]" aria-hidden>
         {p.nume.slice(0, 1).toUpperCase()}
@@ -178,11 +176,9 @@ function Logo({ p }: { p: Platforma }) {
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      key={pas}
-      src={surse[pas]}
+      src={p.logo}
       alt=""
-      referrerPolicy="no-referrer"
-      onError={() => setPas((x) => x + 1)}
+      onError={() => setEroare(true)}
       className={lat ? "h-11 w-auto max-w-[9.5rem] shrink-0 rounded-lg border border-[var(--ci-border)] bg-white object-contain object-left px-2.5 py-2" : "size-11 shrink-0 rounded-xl border border-[var(--ci-border)] bg-white object-contain p-1.5"}
     />
   );

@@ -14,7 +14,7 @@ export function LogoutForm({ className, children }: { className?: string; childr
       onSubmit={() => {
         try {
           for (const k of Object.keys(window.localStorage)) {
-            if (k.startsWith("ci-") || k.startsWith("soi-") || k.startsWith("soi_")) window.localStorage.removeItem(k);
+            if (k.startsWith("ci-") || k.startsWith("soi-") || k.startsWith("soi_") || k.startsWith("fa-doc-")) window.localStorage.removeItem(k);
           }
         } catch {
           /* stocare blocată — nimic de șters */

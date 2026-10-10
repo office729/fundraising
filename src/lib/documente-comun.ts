@@ -39,7 +39,7 @@ export const logoImg = (src: string, alt: string, inaltime = "1em") => (src ? `<
 // Scheletul comun: foaie pe fundal neutru pe ecran, curată la tipărire. `lat` = lățimea maximă a foii în px; dimensiunile din interior sunt în cqw,
 // deci documentul se micșorează fără deformare pe orice ecran și la tipărire.
 export function docShell(titlu: string, a: Accente, css: string, corp: string, opt: { pagina: "A4" | "A4 landscape"; lat: number; lungimeMm: number; latimeMm: number }): string {
-  return `<!doctype html><html lang="ro"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(titlu)}</title><style>
+  return `<!doctype html><html lang="ro"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data: https:; style-src 'unsafe-inline'"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(titlu)}</title><style>
 :root{--a:${a.accent};--b:${a.accent2};--c:${a.accent3};--t:#231f20;--m:#6a6466;--l:#e7e2e2;--ab:color-mix(in srgb,var(--a) 9%,#fff)}
 *{box-sizing:border-box}html{background:#ebe8e8;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 body{margin:0;color:var(--t);font-family:${SANS};-webkit-font-smoothing:antialiased}

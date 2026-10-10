@@ -205,7 +205,7 @@
       <span class="filename" id="LOGO_IMG_NAME"><span></span><button title="Renunță la fișier">✕</button></span>
     </div>
     <input type="file" id="LOGO_IMG_FILE" accept="image/*">
-    <input type="text" id="LOGO_IMG" value="" placeholder="...sau lipește un URL" style="margin-top:6px;">
+    <input type="text" id="LOGO_IMG" value="__FA_ORG_LOGO__" placeholder="...sau lipește un URL" style="margin-top:6px;">
     <div class="hint">Dacă adaugi un logo, el înlocuiește titlul text din antet. Se redimensionează automat (max. 34px înălțime). La șablonul „Standard", culorile (antet, buton, bară de progres) se adaptează automat după culoarea dominantă din logo — fără logo, rămâne tema portocaliu-cărbune implicită.</div>
     <label>Sloganul vostru (opțional)</label>
     <input type="text" id="SLOGAN" value="" placeholder="ex: Noi punem suflet!">
@@ -2496,6 +2496,9 @@ function tryExtractFromUrl(url){
   document.getElementById('LOGO_IMG').addEventListener('change', function(){
     tryExtractFromUrl(document.getElementById('LOGO_IMG').value.trim());
   });
+  /* Logoul organizației (din Setări) vine precompletat: culorile „Standard” se iau din el de la început. */
+  var logoOrg = document.getElementById('LOGO_IMG').value.trim();
+  if(logoOrg) tryExtractFromUrl(logoOrg);
 })();
 
 function num(id){
