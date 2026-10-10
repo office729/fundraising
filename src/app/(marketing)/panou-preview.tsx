@@ -3,7 +3,7 @@
 // Ilustrații ale panoului de administrare — șapte ecrane desenate în HTML/CSS după designul real al platformei (bară de sus cu
 // „+ Adaugă”, carduri rotunjite, butoane tip pastilă), în culorile Alexandrit. Date DEMONSTRATIVE inventate: nu sunt capturi din
 // contul vreunei organizații, deci nu expun nume de donatori sau firme reale. Layout compact: pe ecran lat, lista de ecrane stă
-// lângă fereastră; pe telefon, devine un rând de butoane care se derulează lateral, iar fereastra are înălțime fixă.
+// lângă fereastră; pe telefon, butoanele se așază pe mai multe rânduri (se văd toate, fără derulare laterală), iar fereastra are înălțime fixă.
 
 import { useState, type ReactNode } from "react";
 
@@ -390,7 +390,7 @@ export function PanouPreview({ locale }: { locale: Locale }) {
           <div
             role="tablist"
             aria-label={L("Ecrane din panou", "Panel screens")}
-            className="-mx-[6%] flex gap-2 overflow-x-auto px-[6%] pb-1 [scrollbar-width:none] lg:mx-0 lg:flex-col lg:gap-1.5 lg:overflow-visible lg:px-0 lg:pb-0 [&::-webkit-scrollbar]:hidden"
+            className="flex flex-wrap justify-center gap-2 lg:flex-col lg:flex-nowrap lg:justify-start lg:gap-1.5"
           >
             {ECRANE.map((e) => {
               const activ = e.id === ecran;
@@ -400,11 +400,11 @@ export function PanouPreview({ locale }: { locale: Locale }) {
                   role="tab"
                   aria-selected={activ}
                   onClick={() => setEcran(e.id)}
-                  className={`shrink-0 rounded-full px-4 py-2 text-left text-[13px] font-semibold transition lg:rounded-2xl lg:px-4 lg:py-2.5 ${
+                  className={`rounded-full px-3.5 py-1.5 text-left text-[12.5px] font-semibold transition lg:rounded-2xl lg:px-4 lg:py-2.5 lg:text-[13px] ${
                     activ ? "bg-brand-blue text-white" : "border border-line bg-panel text-muted hover:text-ink"
                   }`}
                 >
-                  <span className="block whitespace-nowrap lg:whitespace-normal">{locale === "ro" ? e.ro : e.en}</span>
+                  <span className="block lg:whitespace-normal">{locale === "ro" ? e.ro : e.en}</span>
                   <span className={`mt-0.5 hidden text-[11.5px] font-normal lg:block ${activ ? "text-white/80" : "text-muted-2"}`}>{locale === "ro" ? e.roDesc : e.enDesc}</span>
                 </button>
               );
