@@ -30,6 +30,7 @@ export default async function CrmLayout({
       orgName={access.orgName}
       orgLogoUrl={access.orgLogoUrl}
       orgDomeniuActivitate={access.orgDomeniuActivitate}
+      orgPackage={access.orgPackage}
       userName={access.userName ?? access.userEmail}
       role={access.role}
       locale={locale}

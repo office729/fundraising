@@ -3,6 +3,7 @@ import { Suspense } from "react";
 
 import { Badge } from "../components/ui/badge";
 import { ImportExportPanel } from "../components/import-export-panel";
+import { HartaJudeteCard } from "../components/harta-judete-card";
 import { Card } from "../components/ui/card";
 import { EmptyState } from "../components/ui/states";
 import { formatDataRelativa } from "../lib/format";
@@ -45,7 +46,7 @@ async function CompaniiContent({
   const locale = await getLocale();
   const dict = COMPANII_DICT[locale].page;
 
-  const { totalFirme, stats, lista, responsabili } = await getPaginaCompanii(orgSlug, filtru);
+  const { totalFirme, stats, lista, responsabili, dupaJudet } = await getPaginaCompanii(orgSlug, filtru);
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-5">
@@ -53,6 +54,14 @@ async function CompaniiContent({
         <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">{dict.title}</h1>
         <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">{dict.subtitle(totalFirme.toLocaleString("ro-RO"))}</p>
       </div>
+
+      <HartaJudeteCard
+        dupaJudet={dupaJudet}
+        titlu="Harta României"
+        subtitlu="Câte firme din baza ta sunt în fiecare județ. Treci cu mouse-ul peste un județ."
+        unitate="firme"
+        ariaLabel="Harta României cu numărul de firme pe județ"
+      />
 
       <div className="flex flex-wrap gap-2">
         <AddCompanyButton />

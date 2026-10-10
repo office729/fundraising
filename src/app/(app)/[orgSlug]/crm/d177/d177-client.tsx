@@ -7,9 +7,11 @@ import { useMemo, useState, useTransition } from "react";
 
 import { faraDiacritice } from "@/lib/cautare";
 import { segmentFirma } from "@/lib/id-scurt";
+import { codJudetDinTextLiber } from "@/lib/judete";
 import { FAZE_D177, STADII_D177 } from "@/lib/stadii-d177";
 
 import { AddCompanyFormDialog } from "../companii/add-company-form-dialog";
+import { HartaJudeteCard } from "../components/harta-judete-card";
 import { Badge } from "../components/ui/badge";
 import { Breadcrumb } from "../components/ui/breadcrumb";
 import { Button } from "../components/ui/button";
@@ -54,6 +56,15 @@ export function D177Client({ orgSlug, randuri }: { orgSlug: string; randuri: Ran
       }),
     [randuri, q, stadiu, bani, an],
   );
+
+  const dupaJudet = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const r of randuri) {
+      const cod = codJudetDinTextLiber(r.judet);
+      if (cod) m[cod] = (m[cod] ?? 0) + 1;
+    }
+    return m;
+  }, [randuri]);
 
   const deAsteptat = randuri.filter((r) => !r.date.incasat).reduce((s, r) => s + (r.date.suma ?? 0), 0);
   const intrat = randuri.filter((r) => r.date.incasat).reduce((s, r) => s + (r.date.incasatSuma ?? 0), 0);
@@ -113,6 +124,14 @@ export function D177Client({ orgSlug, randuri }: { orgSlug: string; randuri: Ran
           <Plus className="h-3.5 w-3.5" /> Adaugă firmă D177
         </Button>
       </div>
+
+      <HartaJudeteCard
+        dupaJudet={dupaJudet}
+        titlu="Harta României"
+        subtitlu="Câte firme D177 sunt în fiecare județ. Treci cu mouse-ul peste un județ."
+        unitate="firme D177"
+        ariaLabel="Harta României cu numărul de firme D177 pe județ"
+      />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Card>

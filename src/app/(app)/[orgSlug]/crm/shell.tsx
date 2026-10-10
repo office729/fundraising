@@ -147,6 +147,7 @@ export function CrmShell({
   orgName,
   orgLogoUrl,
   orgDomeniuActivitate,
+  orgPackage,
   userName,
   role,
   locale,
@@ -156,6 +157,7 @@ export function CrmShell({
   orgName: string;
   orgLogoUrl: string | null;
   orgDomeniuActivitate: DomeniuActivitate | null;
+  orgPackage: "trial" | "start" | "crestere" | "impact" | "custom";
   userName: string;
   role: string;
   locale: Locale;
@@ -196,7 +198,7 @@ export function CrmShell({
       <aside
         style={mobileOpen ? { transform: "translateX(0)" } : undefined}
         className={cn(
-          "ci-sidebar fixed inset-y-0 left-0 z-50 w-64 overflow-hidden border-r border-[var(--ci-border)] bg-[var(--ci-surface)] duration-200 md:static md:z-auto md:shrink-0 md:transition-[width]",
+          "ci-sidebar fixed inset-y-0 left-0 z-50 w-64 overflow-hidden border-r border-[var(--ci-border)] bg-[var(--ci-surface)] duration-200 md:sticky md:top-0 md:z-auto md:h-[calc(100vh-73px)] md:shrink-0 md:self-start md:transition-[width]",
           collapsed ? "md:w-16" : "md:w-52",
         )}
       >
@@ -229,7 +231,7 @@ export function CrmShell({
             <Suspense fallback={<NavGroups pathname={pathname} base={base} collapsed={collapsed} query="" dict={dict} onNavigate={() => setMobileOpen(false)} />}>
               <NavGroupsWithQuery pathname={pathname} base={base} collapsed={collapsed} dict={dict} onNavigate={() => setMobileOpen(false)} />
             </Suspense>
-            {/* Imediat sub ultimul element din meniu, nu la capătul paginii (bara laterală are înălțimea paginii) */}
+            {/* Imediat sub ultimul element din meniu; planul și utilizatorul stau fixate jos, în afara derulării meniului */}
             <div className="hidden border-t border-[var(--ci-border)] pt-2 md:block">
               <button
                 onClick={() => setSidebarRestrans(!collapsed)}
@@ -244,6 +246,7 @@ export function CrmShell({
               </button>
             </div>
           </nav>
+          <ContSiPlan orgSlug={orgSlug} userName={userName} role={role} orgPackage={orgPackage} collapsed={collapsed} />
         </div>
       </aside>
 
@@ -524,6 +527,46 @@ function AddDialog({
         />
       )}
     </>
+  );
+}
+
+// Jos, în bara laterală: planul activ și cine e autentificat, cu deconectare dintr-un clic.
+const ETICHETA_PLAN: Record<string, string> = { trial: "PROBĂ", start: "START", crestere: "CREȘTERE", impact: "IMPACT", custom: "PERSONALIZAT" };
+const ETICHETA_ROL: Record<string, string> = { owner: "Proprietar", admin: "Administrator", member: "Membru" };
+
+function ContSiPlan({ orgSlug, userName, role, orgPackage, collapsed }: { orgSlug: string; userName: string; role: string; orgPackage: string; collapsed: boolean }) {
+  const admin = role === "owner" || role === "admin";
+  const proba = orgPackage === "trial";
+  const insigna = (
+    <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-bold tracking-wide", proba ? "bg-[var(--ci-amber-soft)] text-[var(--ci-amber)]" : "bg-[var(--ci-primary)] text-white")}>
+      {ETICHETA_PLAN[orgPackage] ?? orgPackage.toUpperCase()}
+    </span>
+  );
+  return (
+    <div className={cn("border-t border-[var(--ci-border)] px-3 pt-3", collapsed && "md:px-1.5")}>
+      <div className={cn("flex items-center justify-between gap-2", collapsed && "md:hidden")}>
+        <span className="text-[10.5px] font-bold tracking-wider text-[var(--ci-text-muted)] uppercase">Plan activ</span>
+        {admin ? (
+          <Link prefetch={false} href={`/${orgSlug}/crm/facturare`} title="Facturare și abonament" className="rounded-full focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
+            {insigna}
+          </Link>
+        ) : (
+          insigna
+        )}
+      </div>
+      <div className={cn("mt-2.5 flex items-center gap-2", collapsed && "md:mt-0 md:flex-col")}>
+        <Avatar name={userName} size="sm" />
+        <div className={cn("min-w-0 flex-1", collapsed && "md:hidden")}>
+          <p className="truncate text-[13px] font-semibold text-[var(--ci-text)]" title={userName}>
+            {userName}
+          </p>
+          <p className="truncate text-[11.5px] text-[var(--ci-text-muted)]">{ETICHETA_ROL[role] ?? role}</p>
+        </div>
+        <LogoutForm className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--ci-radius-btn)] text-[var(--ci-text-muted)] transition-colors hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-red)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
+          <LogOut className="h-4 w-4" aria-label="Deconectare" />
+        </LogoutForm>
+      </div>
+    </div>
   );
 }
 

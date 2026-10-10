@@ -5,6 +5,7 @@ import { appUsers, companies, fundraisingPages, companyNotite, companySponsoriza
 
 import { citesteSegment, hexFaraCratime, LUNGIME_SUFIX, segmentFirma, slugFirma } from "@/lib/id-scurt";
 import { cifreCui, patternLike, sqlFaraDiacritice } from "@/lib/cautare";
+import { codJudetDinTextLiber } from "@/lib/judete";
 import { sectiuneSigura } from "@/lib/sectiune-sigura";
 import { calculeazaInterval, type FiltruCompanii, RECENTE_LIMIT, TOP_LIMIT } from "./lib/filters";
 
@@ -181,6 +182,21 @@ const getTotalFirmeImpl = async (ctx: OrgContext) => {
 };
 export const getTotalFirme = withOrgSession(getTotalFirmeImpl);
 
+// Numărul de firme pe județ (toată baza, nu doar filtrul curent), cu codul auto folosit de harta României.
+const getFirmeDupaJudetImpl = async (ctx: OrgContext) => {
+  const rows = await ctx.db
+    .select({ judet: companies.judet, nr: sql<number>`count(*)::int` })
+    .from(companies)
+    .where(and(eq(companies.orgId, ctx.orgId), sql`${companies.deletedAt} is null`, sql`${companies.judet} is not null`))
+    .groupBy(companies.judet);
+  const dupaJudet: Record<string, number> = {};
+  for (const r of rows) {
+    const cod = codJudetDinTextLiber(r.judet);
+    if (cod) dupaJudet[cod] = (dupaJudet[cod] ?? 0) + r.nr;
+  }
+  return dupaJudet;
+};
+
 const getResponsabiliOrgImpl = async (ctx: OrgContext) => {
   return ctx.db
     .select({ id: appUsers.id, name: appUsers.name, email: appUsers.email })
@@ -280,11 +296,12 @@ export const getCompanieDetaliu = withOrgSession(async (ctx, segment: string) =>
 // Pagina cere toate patru într-o SINGURĂ tranzacție (o conexiune din pool, un singur set de verificări de acces),
 // nu patru tranzacții paralele — pool-ul are doar 5 conexiuni și layout-urile mai folosesc și ele.
 export const getPaginaCompanii = withOrgSession(async (ctx, filtru: FiltruCompanii) => {
-  const [totalFirme, stats, lista, responsabili] = await Promise.all([
+  const [totalFirme, stats, lista, responsabili, dupaJudet] = await Promise.all([
     getTotalFirmeImpl(ctx),
     getStatisticiCompaniiImpl(ctx, filtru),
     getCompaniiListaImpl(ctx, filtru),
     getResponsabiliOrgImpl(ctx),
+    getFirmeDupaJudetImpl(ctx),
   ]);
-  return { totalFirme, stats, lista, responsabili };
+  return { totalFirme, stats, lista, responsabili, dupaJudet };
 });
