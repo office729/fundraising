@@ -2,6 +2,18 @@ import type { Locale } from "../config";
 
 export const AUTOMATIZARE_DICT = {
   ro: {
+    eticheta: "Automatizări pentru ONG-uri",
+    fluxTitlu: "Un flux automat, fără pași manuali",
+    fluxNota: "Exemplu ilustrativ al unui flux construit pentru un ONG.",
+    flux: [
+      { t: "Donație primită", d: "pe pagina de campanie" },
+      { t: "Chitanță trimisă", d: "fără intervenția echipei" },
+      { t: "Donator în CRM", d: "cu istoricul actualizat" },
+      { t: "Mulțumire programată", d: "la momentul potrivit" },
+    ],
+    serviciiTitlu: "Ce construim pentru tine",
+    exempleTitlu: "Exemple de automatizări",
+    exempleSubtitlu: "Lucruri pe care echipa ta nu mai trebuie să le facă de mână.",
     h1: "Automatizări, integrări și platforme construite pentru ONG-ul tău",
     subtitlu: "De la automatizări Make.com și integrarea sistemelor de plată și semnătură digitală, până la o platformă completă de fundraising sau un website nou — construim exact ce are nevoie organizația ta.",
     servicii: [
@@ -72,6 +84,18 @@ export const AUTOMATIZARE_DICT = {
     ctaSecondary: "Discută cu un specialist",
   },
   en: {
+    eticheta: "Automation for NGOs",
+    fluxTitlu: "An automatic flow, with no manual steps",
+    fluxNota: "Illustrative example of a flow built for an NGO.",
+    flux: [
+      { t: "Donation received", d: "on the campaign page" },
+      { t: "Receipt sent", d: "with no work from your team" },
+      { t: "Donor in the CRM", d: "with an updated history" },
+      { t: "Thank-you scheduled", d: "at the right moment" },
+    ],
+    serviciiTitlu: "What we build for you",
+    exempleTitlu: "Automation examples",
+    exempleSubtitlu: "Things your team no longer has to do by hand.",
     h1: "Automation, integrations and platforms built for your NGO",
     subtitlu: "From Make.com automations and payment and digital signature integrations, to a full fundraising platform or a new website — we build exactly what your organization needs.",
     servicii: [
