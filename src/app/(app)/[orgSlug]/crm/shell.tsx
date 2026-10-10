@@ -44,6 +44,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
 import type { DomeniuActivitate } from "@/lib/campaign-templates";
+import { AVATAR_DONATOR_ACTIV } from "@/lib/module-ascunse";
 import { DASHBOARD_DICT, type DashboardDict } from "@/lib/i18n/dictionaries/dashboard";
 import type { Locale } from "@/lib/i18n/config";
 
@@ -89,7 +90,7 @@ function buildNav(dict: DashboardDict, orgSlug: string, role: string): { section
         { href: "companii", label: dict.nav.companii, hint: dict.hints.companii, icon: Building2 },
         { href: "d177", label: dict.nav.companiiD177, hint: dict.hints.companiiD177, icon: Landmark },
         { href: "donatori", label: dict.nav.donatori, hint: dict.hints.donatori, icon: Users },
-        { href: "avatar-donator", label: dict.nav.avatarDonator, hint: dict.hints.avatarDonator, icon: ScanFace },
+        ...(AVATAR_DONATOR_ACTIV ? [{ href: "avatar-donator", label: dict.nav.avatarDonator, hint: dict.hints.avatarDonator, icon: ScanFace }] : []),
         { href: "donatori/formular-230", label: dict.nav.formular230, hint: dict.hints.formular230, icon: FileSignature },
         { href: "voluntari", label: dict.nav.voluntariPanou, hint: dict.hints.voluntariPanou, icon: Link2 },
         { href: "/crm-voluntari", label: dict.nav.voluntari, hint: dict.hints.voluntari, icon: HandHeart },

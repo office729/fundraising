@@ -45,7 +45,6 @@ export const CUM_FUNCTIONEAZA_DICT = {
           "Donatorii apar automat din paginile de donație; îi poți importa și din fișiere",
           "Segmente gata făcute: noi, fideli, lunari, în pauză, cu notițe și mulțumiri urmărite",
           "Harta României cu donatorii pe județe",
-          "Profilul donatorului: îi grupezi după cum donează (prima dată, lunar, în pauză) și vezi ce mesaj merită încercat pentru fiecare grup",
         ],
       },
       {
@@ -171,7 +170,6 @@ export const CUM_FUNCTIONEAZA_DICT = {
           "Donors appear automatically from donation pages; you can also import them from files",
           "Ready-made segments: new, loyal, monthly, paused, with notes and tracked thank-yous",
           "A map of Romania with donors by county",
-          "The donor profile: group donors by how they give (first time, monthly, paused) and see which message is worth trying for each group",
         ],
       },
       {
