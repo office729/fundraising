@@ -188,7 +188,7 @@ Confirmat: **lucrăm cu CRM de 4 ani** (din 2022). Asta împarte istoria asocia�
 
 | | Primii 10 ani, fără CRM (2012–2021) | Ultimii 4 ani, cu CRM (2022–2026) |
 |---|---|---|
-| Donații de la persoane fizice, pe an | ~800.000 lei (2021) | ~6.000.000 lei (azi) — **de 7,5 ori mai mult** |
+| Sponsorizări și donații de la companii (PJ), pe an | ~800.000 lei (2021) | ~6.000.000 lei (azi) — **de 7,5 ori mai mult** |
 | Donații pe an | [DE COMPLETAT] | ~70.000 |
 | Companii sponsor pe an | [DE COMPLETAT] | [DE COMPLETAT] |
 | Formulare 230 pe an | [DE COMPLETAT] | [DE COMPLETAT] |
@@ -199,16 +199,22 @@ Ce se poate spune deja (cifre confirmate): **9 oameni gestionează ~70.000 de do
 mai repede; diferența o acoperă sistemul.
 
 **Mesajul principal (cifre confirmate):**
-> „Înainte de CRM strângeam din donațiile oamenilor în jur de 800.000 de lei pe an. În 4 ani de lucru cu CRM-ul am
-> ajuns la 6 milioane de lei pe an — de 7,5 ori mai mult — din aproximativ 70.000 de donații.”
+> „Înainte de CRM, companiile ne susțineau cu aproximativ 800.000 de lei pe an. În 4 ani de lucru cu CRM-ul pentru
+> firme am ajuns la 6 milioane de lei pe an din sponsorizări și donații de la companii — de 7,5 ori mai mult.”
 
 Calcule derivate, pentru grafice și carusele:
-- donația medie a unei persoane fizice azi: **~86 lei** (6.000.000 lei / 70.000 de donații);
-- creșterea: **+5,2 milioane lei pe an** față de 2021;
-- pe om din echipă (9 oameni): **~667.000 lei din donații PF pe an**.
+- creșterea: **+5,2 milioane lei pe an** de la companii, față de 2021;
+- pe om din echipă (9 oameni): **~667.000 lei pe an de la companii**.
+
+De ce contează pentru lansare: exact partea cu cea mai mare creștere — relația cu firmele — e cea acoperită de
+CRM-ul de companii, contractele de sponsorizare 20% și documentele D177 din Alexandrit. Cifra aceasta e dovada
+directă pentru modulul pe care CRM-urile internaționale nu îl au adaptat pe România.
+
+> Notă: cele ~70.000 de donații pe an și cele 6 mil. lei de la companii sunt două lucruri diferite; nu le împărți
+> una la alta (nu ies „donații medii”) și nu le prezenta ca aceeași cifră.
 
 > Formulare onestă: creșterea vine din munca echipei, din campanii și din comunitatea de donatori; CRM-ul a făcut
-> posibil ca aceeași echipă mică să ducă de 7,5 ori mai mult volum. Spune „cu CRM-ul am reușit să…”, nu „CRM-ul ne-a
+> posibil ca aceeași echipă mică să urmărească de 7,5 ori mai mult sprijin din partea firmelor. Spune „cu CRM-ul am reușit să…”, nu „CRM-ul ne-a
 > adus 7,5 ori mai mulți bani”.
 
 > **De lămurit înainte de publicare — „3 milioane de euro pe an de 10 ani”.** 10 ani × 3 mil. € = 30 mil. €, mai
@@ -343,11 +349,11 @@ tabelul de la Pasul 3.
 > Nu am reușit asta lucrând mai mult. Am reușit lucrând cu un sistem: de 4 ani, totul trece prin CRM.
 > Același sistem îl punem acum la dispoziția oricărui ONG: alexandrit.ro
 
-**P9d · „De la 800.000 la 6.000.000 de lei” — postarea principală a lansării** (grafic cu două bare + video Vlad)
-> În 2021, din donațiile oamenilor strângeam în jur de 800.000 de lei pe an.
-> Azi strângem 6 milioane de lei pe an. De 7,5 ori mai mult, în 4 ani.
-> Ce s-a schimbat? Am încetat să ținem donatorii în tabele și în memorie. De 4 ani, fiecare donație, fiecare donator
-> și fiecare mulțumire trece printr-un CRM.
+**P9d · „De la 800.000 la 6.000.000 de lei de la companii” — postarea principală a lansării** (grafic cu două bare + video Vlad)
+> În 2021, companiile ne susțineau cu aproximativ 800.000 de lei pe an.
+> Azi, sprijinul firmelor a ajuns la 6 milioane de lei pe an. De 7,5 ori mai mult, în 4 ani.
+> Ce s-a schimbat? Am încetat să ținem firmele în tabele și în memorie. De 4 ani, fiecare companie are un istoric,
+> un responsabil și o dată de revenire, iar contractul de sponsorizare 20% și documentele D177 se generează în minute.
 > Nu e magie, e ordine. Și aceeași ordine o poate avea acum orice ONG din România: alexandrit.ro
 
 **P10 · „Sponsorizarea prin 20%, explicată în 60 de secunde”** — conținut util (ce e, ce document trebuie, cum îl
