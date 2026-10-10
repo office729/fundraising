@@ -54,12 +54,15 @@ const inserteazaBeneficiar = withOrgAdmin(
   },
 );
 
+// Denumirea apare pe formularul PDF și în borderou, unde nu se folosesc diacritice (fonturile standard și formularul ANAF le refuză).
+const fara = (s: string) => s.replace(/[\u0218\u015e]/g, "S").replace(/[\u0219\u015f]/g, "s").replace(/[\u021a\u0162]/g, "T").replace(/[\u021b\u0163]/g, "t").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
 export async function adaugaBeneficiarAction(
   orgSlug: string,
   _prevState: BeneficiarState,
   formData: FormData,
 ): Promise<BeneficiarState> {
-  const nume = String(formData.get("nume") ?? "").trim();
+  const nume = fara(String(formData.get("nume") ?? "")).trim();
   if (!nume) return { error: "Denumirea beneficiarului e obligatorie.", ok: false };
   const iban = String(formData.get("iban") ?? "").trim();
   const cif = String(formData.get("cif") ?? "").trim();
@@ -95,7 +98,7 @@ export async function editeazaBeneficiarAction(
   formData: FormData,
 ): Promise<BeneficiarState> {
   const id = String(formData.get("id") ?? "");
-  const nume = String(formData.get("nume") ?? "").trim();
+  const nume = fara(String(formData.get("nume") ?? "")).trim();
   if (!id || !nume) return { error: "Denumirea beneficiarului e obligatorie.", ok: false };
   const iban = String(formData.get("iban") ?? "").trim();
   const cif = String(formData.get("cif") ?? "").trim();

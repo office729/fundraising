@@ -31,6 +31,9 @@ export type BeneficiarRand = {
 
 const SLUG_PRINCIPAL = "principal";
 
+// Denumirea apare pe formularul PDF și în borderou, unde nu se folosesc diacritice (fonturile standard și formularul ANAF le refuză).
+const fara = (s: string) => s.replace(/[\u0218\u015e]/g, "S").replace(/[\u0219\u015f]/g, "s").replace(/[\u021a\u0162]/g, "T").replace(/[\u021b\u0163]/g, "t").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
 export function BeneficiariPanel({ orgSlug, beneficiari }: { orgSlug: string; beneficiari: BeneficiarRand[] }) {
   const locale = useLocale();
   const dict = FORMULAR230_DICT[locale].beneficiari;
@@ -40,7 +43,7 @@ export function BeneficiariPanel({ orgSlug, beneficiari }: { orgSlug: string; be
   // Un cont nou al aceleiași organizații are aceeași denumire, același CIF și același email — se preiau din contul principal,
   // iar la subcont rămâne de completat doar IBAN-ul (câmpurile pot fi schimbate dacă e altă entitate).
   const principal = beneficiari.find((b) => b.slug === SLUG_PRINCIPAL) ?? beneficiari[0] ?? null;
-  const valoriImplicite = principal ? { nume: principal.nume, cif: principal.cif ?? "", emailBeneficiar: principal.emailBeneficiar ?? "" } : undefined;
+  const valoriImplicite = principal ? { nume: fara(principal.nume), cif: principal.cif ?? "", emailBeneficiar: principal.emailBeneficiar ?? "" } : undefined;
 
   return (
     <div className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4">
