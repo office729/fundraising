@@ -110,7 +110,6 @@ function buildNav(dict: DashboardDict, orgSlug: string, role: string): { section
       section: dict.nav.sectionOperare,
       items: [
         { href: "comunicare", label: dict.nav.comunicare, hint: dict.hints.comunicare, icon: MessageSquare },
-        { href: "/program-lucru", label: dict.nav.programLucru, hint: dict.hints.programLucru, icon: CalendarClock },
       ],
     },
     {
@@ -118,6 +117,8 @@ function buildNav(dict: DashboardDict, orgSlug: string, role: string): { section
       items: [
         { href: "performanta", label: dict.nav.performanta, hint: dict.hints.performanta, icon: Target },
         { href: "organizatie", label: dict.nav.organizatie, hint: dict.hints.organizatie, icon: Network },
+        // Programul de lucru stă lângă Echipă și Organizare: e despre cine ce face și când.
+        { href: "/program-lucru", label: dict.nav.programLucru, hint: dict.hints.programLucru, icon: CalendarClock },
       ],
     },
     {
