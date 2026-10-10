@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { Badge } from "../components/ui/badge";
+import { HartaJudeteCard } from "../components/harta-judete-card";
 import { Card } from "../components/ui/card";
 import { DONATORI } from "../mock";
 import { getLocale } from "@/lib/i18n/get-locale";
@@ -54,6 +55,16 @@ async function DonatoriContent({
       </div>
 
       <PfNav orgSlug={orgSlug} />
+
+      {lista.areDonatori && (
+        <HartaJudeteCard
+          dupaJudet={lista.dupaJudet}
+          titlu="Harta României"
+          subtitlu="Câți donatori din baza ta sunt în fiecare județ. Treci cu mouse-ul peste un județ."
+          unitate="donatori"
+          ariaLabel="Harta României cu numărul de donatori pe județ"
+        />
+      )}
 
       {!lista.areDonatori && (
         <Card padded={false}>
