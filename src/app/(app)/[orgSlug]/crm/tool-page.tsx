@@ -25,6 +25,8 @@ export async function CrmToolPage({ orgSlug, access, children }: { orgSlug: stri
       role={access.role}
       locale={locale}
     >
+      {/* Instrumentul ocupă tot ecranul: bara de sus a organizației și bannerul nu se mai afișează aici, iar marginile paginii dispar. */}
+      <style>{"[data-org-chrome]{display:none!important}#continut{padding:0!important}"}</style>
       <FitCrmShell />
       <div className="absolute inset-0">{children}</div>
     </CrmShell>
