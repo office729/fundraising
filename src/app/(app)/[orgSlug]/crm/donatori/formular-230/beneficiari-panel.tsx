@@ -37,6 +37,10 @@ export function BeneficiariPanel({ orgSlug, beneficiari }: { orgSlug: string; be
   const [adaugaOpen, setAdaugaOpen] = useState(false);
   const [editeazaId, setEditeazaId] = useState<string | null>(null);
   const editeaza = beneficiari.find((b) => b.id === editeazaId) ?? null;
+  // Un cont nou al aceleiași organizații are aceeași denumire, același CIF și același email — se preiau din contul principal,
+  // iar la subcont rămâne de completat doar IBAN-ul (câmpurile pot fi schimbate dacă e altă entitate).
+  const principal = beneficiari.find((b) => b.slug === SLUG_PRINCIPAL) ?? beneficiari[0] ?? null;
+  const valoriImplicite = principal ? { nume: principal.nume, cif: principal.cif ?? "", emailBeneficiar: principal.emailBeneficiar ?? "" } : undefined;
 
   return (
     <div className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4">
@@ -104,6 +108,7 @@ export function BeneficiariPanel({ orgSlug, beneficiari }: { orgSlug: string; be
         onClose={() => setAdaugaOpen(false)}
         action={adaugaBeneficiarAction}
         title={dict.dialog.titluAdauga}
+        valoriImplicite={valoriImplicite}
       />
       {editeaza && (
         <BeneficiarDialog
@@ -191,6 +196,7 @@ function BeneficiarDialog({
   action,
   title,
   initial,
+  valoriImplicite,
 }: {
   orgSlug: string;
   open: boolean;
@@ -198,6 +204,7 @@ function BeneficiarDialog({
   action: (orgSlug: string, prevState: BeneficiarState, formData: FormData) => Promise<BeneficiarState>;
   title: string;
   initial?: BeneficiarRand;
+  valoriImplicite?: { nume: string; cif: string; emailBeneficiar: string };
 }) {
   const router = useRouter();
   const locale = useLocale();
@@ -218,20 +225,27 @@ function BeneficiarDialog({
         {initial && <input type="hidden" name="id" value={initial.id} />}
         <div>
           <Label>{dict.numeLabel}</Label>
-          <Input name="nume" defaultValue={initial?.nume} placeholder={dict.numePlaceholder} required autoFocus />
+          <Input name="nume" defaultValue={initial?.nume ?? valoriImplicite?.nume} placeholder={dict.numePlaceholder} required autoFocus={!valoriImplicite} />
         </div>
         <div>
           <Label>{dict.ibanLabel}</Label>
-          <Input name="iban" defaultValue={initial?.iban ?? ""} placeholder="RO.. .... .... .... ...." />
+          <Input name="iban" defaultValue={initial?.iban ?? ""} placeholder="RO.. .... .... .... ...." autoFocus={!!valoriImplicite} />
         </div>
         <div>
           <Label>{dict.cifLabel}</Label>
-          <Input name="cif" defaultValue={initial?.cif ?? ""} />
+          <Input name="cif" defaultValue={initial?.cif ?? valoriImplicite?.cif ?? ""} />
         </div>
         <div>
           <Label>{dict.emailLabel}</Label>
-          <Input type="email" name="emailBeneficiar" defaultValue={initial?.emailBeneficiar ?? ""} />
+          <Input type="email" name="emailBeneficiar" defaultValue={initial?.emailBeneficiar ?? valoriImplicite?.emailBeneficiar ?? ""} />
         </div>
+        {valoriImplicite && (
+          <p className="text-[12px] text-[var(--ci-text-muted)]">
+            {locale === "ro"
+              ? "Denumirea, CIF-ul și emailul sunt preluate din contul principal al organizației — completează doar IBAN-ul subcontului (le poți schimba dacă e o altă entitate)."
+              : "Name, tax ID and email are taken from the organization's main account — just enter the sub-account IBAN (change them only for a different entity)."}
+          </p>
+        )}
         <p className="text-[12px] text-[var(--ci-text-muted)]">{dict.nota}</p>
 
         {state.error && <p className="text-[13px] text-[var(--ci-red)]">{state.error}</p>}
