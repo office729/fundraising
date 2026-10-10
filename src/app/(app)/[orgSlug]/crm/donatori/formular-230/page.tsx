@@ -192,7 +192,14 @@ export default async function Formular230StatsPage({
   };
   const { total, lunaAceasta, beneficiari, ani, submisii, poateVedeaDateSensibile, dupaJudet, cnpDuplicat, tainuit } = await getDate(orgSlug, filtru);
   // Atribuirea formularelor la borderouri (max. 50 / borderou) se face aici, pe server, și doar pentru owner/admin.
-  const borderouri = poateVedeaDateSensibile ? await listeazaBorderouri(orgSlug).catch(() => null) : null;
+  let eroareBorderouri = "";
+  const borderouri = poateVedeaDateSensibile
+    ? await listeazaBorderouri(orgSlug).catch((e: unknown) => {
+        console.error("[formular-230] borderouri:", e);
+        eroareBorderouri = e instanceof Error ? e.message : "eroare necunoscută";
+        return null;
+      })
+    : null;
   const locale = await getLocale();
   const dict = FORMULAR230_DICT[locale];
 
@@ -236,6 +243,11 @@ export default async function Formular230StatsPage({
       <BeneficiariPanel orgSlug={orgSlug} beneficiari={beneficiari} />
 
       {borderouri && <BorderouriCard orgSlug={orgSlug} initial={borderouri} />}
+      {poateVedeaDateSensibile && !borderouri && (
+        <div id="borderouri-anaf" className="scroll-mt-20 rounded-[var(--ci-radius-card)] bg-[var(--ci-amber-soft)] px-3.5 py-2.5 text-[13px] text-[var(--ci-text)]">
+          <strong>Borderouri ANAF:</strong> nu am putut încărca lista borderourilor ({eroareBorderouri}). Reîncarcă pagina; dacă persistă, trimite-ne mesajul de mai sus.
+        </div>
+      )}
 
       <StatsChartCard beneficiari={beneficiari} />
 
