@@ -22,6 +22,7 @@ export type SarcinaPublica = {
   titlu: string;
   descriere: string;
   tip: string;
+  tipPersonalizat: string | null;
   campanieTitlu: string | null;
   textRecomandat: string;
   linkBaza: string | null; // linkul de distribuit (cel ales de echipă sau pagina campaniei)
@@ -43,6 +44,7 @@ export async function sarciniPentruVoluntar(tx: Tx, orgId: string, orgSlug: stri
       titlu: volunteerTasks.titlu,
       descriere: volunteerTasks.descriere,
       tip: volunteerTasks.tip,
+      tipPersonalizat: volunteerTasks.tipPersonalizat,
       stare: volunteerTasks.stare,
       textRecomandat: volunteerTasks.textRecomandat,
       linkBaza: volunteerTasks.linkBaza,
@@ -79,6 +81,7 @@ export async function sarciniPentruVoluntar(tx: Tx, orgId: string, orgSlug: stri
       titlu: s.titlu,
       descriere: s.descriere,
       tip: s.tip,
+      tipPersonalizat: s.tipPersonalizat,
       campanieTitlu: s.campanieTitlu,
       campanieSlug: s.campanieSlug,
       textRecomandat: s.textRecomandat ?? "",

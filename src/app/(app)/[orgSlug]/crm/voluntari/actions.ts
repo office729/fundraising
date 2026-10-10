@@ -14,6 +14,7 @@ import {
   dinOraRo,
   esteTipSarcina,
   MAX,
+  MAX_TIP_PERSONALIZAT,
   normalizeazaLink,
   textCurat,
   UUID_REGEX,
@@ -43,6 +44,7 @@ export type SarcinaInput = {
   titlu: string;
   descriere: string;
   tip: string;
+  tipPersonalizat: string;
   campanieId: string | null;
   textRecomandat: string;
   linkBaza: string;
@@ -91,6 +93,7 @@ export const salveazaSarcinaAction = withOrgSession(async (ctx, i: SarcinaInput)
     titlu,
     descriere,
     tip: i.tip,
+    tipPersonalizat: i.tip === "altceva" ? textCurat(i.tipPersonalizat, MAX_TIP_PERSONALIZAT) || null : null,
     campaignPageId: campanieId,
     textRecomandat: textCurat(i.textRecomandat, MAX.text) || null,
     linkBaza,

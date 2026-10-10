@@ -26,6 +26,7 @@ export type SarcinaEchipa = {
   titlu: string;
   descriere: string;
   tip: string;
+  tipPersonalizat: string;
   campanieId: string | null;
   campanieTitlu: string | null;
   textRecomandat: string;
@@ -155,6 +156,7 @@ export async function citesteDateVoluntari(ctx: { db: OrgContext["db"]; orgId: s
     titlu: s.titlu,
     descriere: s.descriere,
     tip: s.tip,
+    tipPersonalizat: s.tipPersonalizat ?? "",
     campanieId: s.campaignPageId,
     campanieTitlu: s.campaignPageId ? (titluCampanie.get(s.campaignPageId) ?? null) : null,
     textRecomandat: s.textRecomandat ?? "",

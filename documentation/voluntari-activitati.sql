@@ -174,3 +174,6 @@ alter table volunteer_visitors add column if not exists ultima_invitatie_la time
 drop policy if exists volunteer_activities_coordinator_lookup on volunteer_activities;
 create policy volunteer_activities_coordinator_lookup on volunteer_activities for select
   using (nullif(current_setting('app.public_lookup', true), '') = 'true');
+
+-- Etapa 3: la „Altceva”, managerul scrie ce sarcină sau proiect este (apare în loc de „Altceva”).
+alter table volunteer_tasks add column if not exists tip_personalizat text;

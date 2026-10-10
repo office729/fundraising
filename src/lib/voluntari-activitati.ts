@@ -9,7 +9,9 @@ export const TIPURI_SARCINA = [
 ] as const;
 export type TipSarcina = (typeof TIPURI_SARCINA)[number]["id"];
 export const esteTipSarcina = (x: unknown): x is TipSarcina => TIPURI_SARCINA.some((t) => t.id === x);
-export const numeTipSarcina = (id: string) => TIPURI_SARCINA.find((t) => t.id === id)?.nume ?? id;
+// La „Altceva”, dacă managerul a scris un nume (ex. „Proiect: traducere site”), acela apare în loc de „Altceva”.
+export const numeTipSarcina = (id: string, personalizat?: string | null) => (id === "altceva" && personalizat?.trim() ? personalizat.trim() : (TIPURI_SARCINA.find((t) => t.id === id)?.nume ?? id));
+export const MAX_TIP_PERSONALIZAT = 60;
 
 export type StareSarcina = "ciorna" | "publicata" | "inchisa";
 export type StareActivitate = "ciorna" | "publicata" | "incheiata" | "anulata";

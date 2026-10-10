@@ -225,7 +225,7 @@ function CardSarcina({ cod, s, deschisInitial }: { cod: string; s: SarcinaPublic
         <span className="min-w-0 flex-1">
           <span className="block text-[15.5px] leading-snug font-semibold">{s.titlu}</span>
           <span className="mt-0.5 flex flex-wrap gap-x-3 text-[12.5px] text-[var(--vp-muted)]">
-            <span>{numeTipSarcina(s.tip)}</span>
+            <span>{numeTipSarcina(s.tip, s.tipPersonalizat)}</span>
             {s.minuteEstimate ? (
               <span className="inline-flex items-center gap-1">
                 <Clock className="size-3" aria-hidden /> ~{s.minuteEstimate} min

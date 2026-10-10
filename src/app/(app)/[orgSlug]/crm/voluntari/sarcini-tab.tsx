@@ -3,7 +3,7 @@
 import { Clock, Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 
-import { esteTipSarcina, MAX, numeTipSarcina, TIPURI_SARCINA } from "@/lib/voluntari-activitati";
+import { esteTipSarcina, MAX, MAX_TIP_PERSONALIZAT, numeTipSarcina, TIPURI_SARCINA } from "@/lib/voluntari-activitati";
 import { CANALE_VOLUNTAR } from "@/lib/voluntari-panou";
 
 import { Badge } from "../components/ui/badge";
@@ -41,7 +41,7 @@ export function SarciniTab({ orgSlug, date, deschis, inchideFormular }: { orgSlu
                     <Badge tone={activa ? "green" : "neutral"} icon={false}>
                       {s.stare === "ciorna" ? "Ciornă" : s.stare === "inchisa" ? "Închisă" : expirata ? "Expirată" : "Deschisă"}
                     </Badge>
-                    <span className="text-[12px] text-[var(--ci-text-muted)]">{numeTipSarcina(s.tip)}</span>
+                    <span className="text-[12px] text-[var(--ci-text-muted)]">{numeTipSarcina(s.tip, s.tipPersonalizat)}</span>
                   </div>
                   <h3 className="mt-2 text-[14.5px] font-semibold text-[var(--ci-text)]">{s.titlu}</h3>
                   <p className="mt-1 line-clamp-2 text-[13px] text-[var(--ci-text-muted)]">{s.descriere}</p>
@@ -120,6 +120,7 @@ export function SarciniTab({ orgSlug, date, deschis, inchideFormular }: { orgSlu
 function FormularSarcina({ orgSlug, campanii, initial, onClose }: { orgSlug: string; campanii: DateVoluntari["campanii"]; initial: SarcinaEchipa | null; onClose: () => void }) {
   const { pending, mesaj, ruleaza } = useActiune();
   const [tip, setTip] = useState<string>(initial?.tip ?? "distribuie");
+  const [tipPersonalizat, setTipPersonalizat] = useState(initial?.tipPersonalizat ?? "");
   const [titlu, setTitlu] = useState(initial?.titlu ?? "");
   const [descriere, setDescriere] = useState(initial?.descriere ?? "");
   const [termen, setTermen] = useState(initial?.termen ?? "");
@@ -150,6 +151,7 @@ function FormularSarcina({ orgSlug, campanii, initial, onClose }: { orgSlug: str
       titlu,
       descriere,
       tip: esteTipSarcina(tip) ? tip : "altceva",
+      tipPersonalizat,
       campanieId: campanieId || null,
       textRecomandat,
       linkBaza,
@@ -166,8 +168,11 @@ function FormularSarcina({ orgSlug, campanii, initial, onClose }: { orgSlug: str
   }
 
   return (
-    <Dialog open onClose={onClose} title={initial ? "Editează sarcina" : "Sarcină nouă"} width="max-w-xl">
+    <Dialog open onClose={onClose} title={initial ? "Editează sarcina online" : "Sarcină online nouă"} width="max-w-xl">
       <div className="space-y-4">
+        <p className="rounded-lg bg-[var(--ci-surface-2)] px-3 py-2 text-[12.5px] text-[var(--ci-text-muted)]">
+          Sarcinile online se fac de acasă, pe telefon sau calculator. Pentru o colectă, un eveniment sau orice altceva la fața locului, creează o <b className="text-[var(--ci-text)]">activitate pe teren</b> (butonul din dreapta sus).
+        </p>
         <div>
           <Label>Ce fel de sarcină e?</Label>
           <div className="mt-1 grid grid-cols-2 gap-2" role="radiogroup" aria-label="Tipul sarcinii">
@@ -185,6 +190,13 @@ function FormularSarcina({ orgSlug, campanii, initial, onClose }: { orgSlug: str
             ))}
           </div>
         </div>
+        {tip === "altceva" && (
+          <div>
+            <Label htmlFor="vs-tip-personalizat">Ce sarcină sau proiect este?</Label>
+            <Input id="vs-tip-personalizat" value={tipPersonalizat} maxLength={MAX_TIP_PERSONALIZAT} onChange={(e) => setTipPersonalizat(e.target.value)} placeholder="ex. Traducere site, Proiect de cercetare, Suport la telefon" />
+            <p className="mt-1 text-[12px] text-[var(--ci-text-muted)]">Numele apare voluntarilor în loc de „Altceva”.</p>
+          </div>
+        )}
         <div>
           <Label htmlFor="vs-titlu">Titlu</Label>
           <Input id="vs-titlu" value={titlu} maxLength={MAX.titlu} onChange={(e) => setTitlu(e.target.value)} placeholder="ex. Dă mai departe campania pentru Mihai" />

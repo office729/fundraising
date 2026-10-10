@@ -17,6 +17,7 @@ export const volunteerTasks = pgTable(
     titlu: text("titlu").notNull(),
     descriere: text("descriere").notNull(), // „ce trebuie făcut”
     tip: text("tip").notNull().default("distribuie"), // distribuie | text | grafica | altceva
+    tipPersonalizat: text("tip_personalizat"), // doar la „altceva”: numele scris de manager (ex. „Traducere site”)
     campaignPageId: uuid("campaign_page_id").references(() => fundraisingPages.id, { onDelete: "set null" }),
     textRecomandat: text("text_recomandat"),
     linkBaza: text("link_baza"),
