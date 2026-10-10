@@ -24,6 +24,7 @@ import {
   MessageSquare,
   Network,
   Plus,
+  UserPlus,
   ScanFace,
   Settings,
   Target,
@@ -397,7 +398,7 @@ function NavGroups({
 // pe Companii n-are rost să-ți arăt și „Donator"/„Proiect"/„Task". Pe pagini
 // fără o legătură clară (Acasă, Rapoarte, Setări etc.) rămân toate, ca „+
 // Adaugă" să nu devină un buton mort acolo.
-type AddContext = "donatori" | "companii" | "beneficiari" | "taskuri" | null;
+type AddContext = "donatori" | "companii" | "beneficiari" | "taskuri" | "performanta" | null;
 
 function contextDinPathname(pathname: string | null, base: string): AddContext {
   if (!pathname) return null;
@@ -405,6 +406,7 @@ function contextDinPathname(pathname: string | null, base: string): AddContext {
   if (pathname.startsWith(`${base}/companii`)) return "companii";
   if (pathname.startsWith(`${base}/beneficiari`)) return "beneficiari";
   if (pathname.startsWith(`${base}/taskuri`)) return "taskuri";
+  if (pathname.startsWith(`${base}/performanta`) || pathname.startsWith(`${base}/organizatie`)) return "performanta";
   return null;
 }
 
@@ -437,7 +439,15 @@ function AddDialog({
   const context = contextDinPathname(pathname, base);
   const pentru = (c: AddContext) => context === null || context === c;
 
+  // Pe paginile Echipă & Performanță se adaugă lucruri din acest modul; formularul se deschide la destinație, prin ?nou=….
+  // În exemplul demonstrativ rămân pe paginile demo (nu se salvează nimic, iar „Membru” nu are loc acolo).
+  const demoPerf = pathname?.startsWith(`${base}/performanta/demo`) ?? false;
+  const perf = demoPerf ? `${base}/performanta/demo` : `${base}/performanta`;
   const OPTIUNI = [
+    { context: "performanta" as const, label: "Obiectiv", icon: Target, action: () => router.push(`${perf}/obiective?nou=obiectiv`) },
+    { context: "performanta" as const, label: "Activitate", icon: ClipboardList, action: () => router.push(`${perf}/saptamana?nou=activitate`) },
+    { context: "performanta" as const, label: "Discuție sau evaluare", icon: MessageSquare, action: () => router.push(`${perf}/discutii`) },
+    ...(demoPerf ? [] : [{ context: "performanta" as const, label: "Membru în echipă", icon: UserPlus, action: () => router.push(`${base}/organizatie?nou=membru`) }]),
     { context: "donatori" as const, label: "Donator (persoană fizică)", icon: Users, action: () => setDonorOpen(true) },
     { context: "beneficiari" as const, label: "Proiect", icon: HeartHandshake, action: () => setProjectOpen(true) },
     // Companie — server action REALĂ (adaugaFirma), nu mock; vezi
@@ -455,7 +465,7 @@ function AddDialog({
 
   return (
     <>
-      <Dialog open={open} onClose={onClose} title="Ce vrei să adaugi?">
+      <Dialog open={open} onClose={onClose} title={context === "performanta" ? "Ce vrei să adaugi în echipă?" : "Ce vrei să adaugi?"}>
         <div className="space-y-1.5">
           {OPTIUNI.map((o) => (
             <button

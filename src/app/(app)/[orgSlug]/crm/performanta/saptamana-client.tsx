@@ -42,6 +42,16 @@ function Continut({ d }: { d: DateSaptamana }) {
   const [q, setQ] = useState(sp.get("q") ?? "");
   const optiuni = d.context.optiuni;
 
+  // „+ Adaugă” din antet trimite aici cu ?nou=activitate: formularul se deschide direct.
+  useEffect(() => {
+    if (sp.get("nou") !== "activitate") return;
+    deschideForm(null, { termen: d.azi });
+    const n = new URLSearchParams(sp.toString());
+    n.delete("nou");
+    router.replace(n.toString() ? `${pathname}?${n.toString()}` : pathname, { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const seteaza = (patch: Record<string, string | null>) => {
     const n = new URLSearchParams(sp.toString());
     for (const [k, v] of Object.entries(patch)) {

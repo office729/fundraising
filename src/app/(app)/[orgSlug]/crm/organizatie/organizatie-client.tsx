@@ -2,7 +2,7 @@
 
 import { AlertTriangle, Building2, Pencil, Plus, Trash2, Users } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 
 import { Badge } from "../components/ui/badge";
 import { Breadcrumb } from "../components/ui/breadcrumb";
@@ -44,11 +44,14 @@ export function OrganizatieClient({
   initialRoluri,
   initialAngajati,
   esteAdmin,
+  deschideMembruNou = false,
 }: {
   initialDepartamente: DepartamentRand[];
   initialRoluri: RolRand[];
   initialAngajati: AngajatRand[];
   esteAdmin: boolean;
+  // Venit din „+ Adaugă”: pornește pe fila Echipă, cu formularul de membru nou deschis.
+  deschideMembruNou?: boolean;
 }) {
   const { orgSlug } = useParams<{ orgSlug: string }>();
   const locale = useLocale();
@@ -96,6 +99,7 @@ export function OrganizatieClient({
       )}
 
       <Tabs
+        defaultTab={deschideMembruNou && esteAdmin ? "angajati" : undefined}
         tabs={[
           { key: "departamente", label: ro ? `Departamente (${departamente.length})` : `Departments (${departamente.length})` },
           { key: "roluri", label: ro ? `Roluri (${roluriLista.length})` : `Roles (${roluriLista.length})` },
@@ -120,6 +124,7 @@ export function OrganizatieClient({
               start={start}
               setEroare={setEroare}
               reincarca={reincarca}
+              deschideLaStart={deschideMembruNou && esteAdmin}
             />
           )
         }
@@ -411,6 +416,7 @@ function AngajatiTab({
   start,
   setEroare,
   reincarca,
+  deschideLaStart,
 }: {
   orgSlug: string;
   ro: boolean;
@@ -423,8 +429,9 @@ function AngajatiTab({
   start: Start;
   setEroare: (e: string | null) => void;
   reincarca: () => Promise<void>;
+  deschideLaStart: boolean;
 }) {
-  const [editId, setEditId] = useState<string | "nou" | null>(null);
+  const [editId, setEditId] = useState<string | "nou" | null>(deschideLaStart ? "nou" : null);
   const [form, setForm] = useState<AngajatInput>(GOL_ANGAJAT);
   const [membri, setMembri] = useState<MembruDisponibil[] | null>(null);
 
@@ -438,6 +445,14 @@ function AngajatiTab({
       }
     });
   };
+
+  // Formularul deschis la intrare are nevoie de lista de membri; adresa se curăță ca să nu se redeschidă la reîncărcare.
+  useEffect(() => {
+    if (!deschideLaStart) return;
+    asigurareMembri();
+    window.history.replaceState(null, "", window.location.pathname);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const deschideNou = () => {
     setForm(GOL_ANGAJAT);

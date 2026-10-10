@@ -37,7 +37,8 @@ export function ObiectiveClient({ orgSlug, sabloane, obiective, optiuni, perioad
   const sortare = (["risc", "progres", "termen"].includes(sp.get("sortare") ?? "") ? sp.get("sortare") : "implicit") as Sortare;
   const [q, setQ] = useState(sp.get("q") ?? "");
   const [selectatId, setSelectatId] = useState<string | null>(sp.get("ob"));
-  const [formDeschis, setFormDeschis] = useState(false);
+  // „+ Adaugă” din antet trimite aici cu ?nou=obiectiv: formularul se deschide direct.
+  const [formDeschis, setFormDeschis] = useState(sp.get("nou") === "obiectiv");
   const [editat, setEditat] = useState<ObiectivDto | null>(null);
   const [mesaj, setMesaj] = useState<string | null>(null);
   const [sablon, setSablon] = useState(false);
@@ -50,6 +51,11 @@ export function ObiectiveClient({ orgSlug, sabloane, obiective, optiuni, perioad
     }
     router.replace(n.toString() ? `${pathname}?${n.toString()}` : pathname, { scroll: false });
   };
+
+  useEffect(() => {
+    if (sp.get("nou")) seteaza({ nou: null });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Căutarea intră în adresă după o scurtă pauză, ca să nu reîncarcăm la fiecare literă.
   useEffect(() => {
