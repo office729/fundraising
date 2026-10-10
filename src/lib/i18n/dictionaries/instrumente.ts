@@ -47,6 +47,8 @@ export const INSTRUMENTE_DICT = {
         documente: {
           nume: "Documente",
           instrumente: {
+            scrisori: { titlu: "Scrisori cu antet", descriere: "15 modele de scrisoare oficială: mulțumire, sponsorizare, parteneriat, invitație. Cu logo-uri, culori și export HTML sau PDF." },
+            certificate: { titlu: "Certificate", descriere: "15 modele de certificat de recunoștință, mulțumire, voluntariat sau parteneriat, cu sigiliu și export PDF." },
             semnaturaDigitala: { titlu: "Semnătură digitală", descriere: "Trimite contracte și acorduri PDF la semnat electronic, prin BoldSign." },
           },
         },
@@ -188,6 +190,8 @@ export const INSTRUMENTE_DICT = {
         documente: {
           nume: "Documents",
           instrumente: {
+            scrisori: { titlu: "Letterhead letters", descriere: "15 official letter templates: thanks, sponsorship, partnership, invitation. With logos, colors and HTML or PDF export." },
+            certificate: { titlu: "Certificates", descriere: "15 certificate templates for appreciation, thanks, volunteering or partnership, with a seal and PDF export." },
             semnaturaDigitala: { titlu: "Digital signature", descriere: "Send contracts and PDF agreements for e-signature through BoldSign." },
           },
         },

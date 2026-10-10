@@ -15,7 +15,9 @@ export const VOLUME: { id: Volum; eticheta: string; buget: string; sfat: string 
 export type Platforma = {
   id: string;
   nume: string;
-  domeniu: string; // pentru logo
+  domeniu: string; // rezervă: pictograma site-ului
+  logo: string; // adresa logoului oficial (pictogramă sau siglă)
+  logoTip: "icon" | "wordmark"; // pictogramă pătrată sau siglă lată
   url: string;
   origine: "ro" | "intl";
   descriere: string;
@@ -32,6 +34,8 @@ export const PLATFORME: Platforma[] = [
     id: "sendmachine",
     nume: "Sendmachine",
     domeniu: "sendmachine.com",
+    logo: "https://www.sendmachine.com/static/images/logo.png",
+    logoTip: "wordmark",
     url: "https://www.sendmachine.com/",
     origine: "ro",
     descriere: "Platformă românească de email și SMS marketing, cu editor drag & drop și automatizări.",
@@ -46,6 +50,8 @@ export const PLATFORME: Platforma[] = [
     id: "newsman",
     nume: "NewsMan",
     domeniu: "newsman.ro",
+    logo: "https://www.newsman.ro/static/images/2020/logo_newsman.jpg",
+    logoTip: "wordmark",
     url: "https://www.newsman.ro/",
     origine: "ro",
     descriere: "Una dintre cele mai cunoscute platforme românești de email marketing: automatizări drag & drop, segmentare asistată de AI și conversia unui cod HTML în șablon editabil.",
@@ -60,6 +66,8 @@ export const PLATFORME: Platforma[] = [
     id: "themarketer",
     nume: "The Marketer",
     domeniu: "themarketer.com",
+    logo: "https://themarketer.com/build/assets/logo-D0id7z-F.svg",
+    logoTip: "wordmark",
     url: "https://themarketer.com/ro",
     origine: "ro",
     descriere: "Platformă românească (lansată în 2023) de email, SMS și automatizări, gândită pentru magazine online: segmentare, mesaje de bun venit, integrări cu Shopify, WooCommerce, Magento și PrestaShop, plus instrumente GDPR (double opt-in).",
@@ -74,6 +82,8 @@ export const PLATFORME: Platforma[] = [
     id: "brevo",
     nume: "Brevo",
     domeniu: "brevo.com",
+    logo: "https://corp-backend.brevo.com/wp-content/uploads/2025/07/Brevo_logo.svg",
+    logoTip: "icon",
     url: "https://www.brevo.com/",
     origine: "intl",
     descriere: "Fost Sendinblue (Franța). Contacte nelimitate în planul gratuit, iar prețul depinde de câte emailuri trimiți. Are automatizări, SMS și un CRM simplu.",
@@ -88,6 +98,8 @@ export const PLATFORME: Platforma[] = [
     id: "mailerlite",
     nume: "MailerLite",
     domeniu: "mailerlite.com",
+    logo: "https://www.mailerlite.com/site/themes/new/img/favicons/apple-touch-icon.png",
+    logoTip: "icon",
     url: "https://www.mailerlite.com/",
     origine: "intl",
     descriere: "Editor simplu și curat, bun pentru începători. Formularele de înscriere și automatizările de bază sunt incluse.",
@@ -102,6 +114,8 @@ export const PLATFORME: Platforma[] = [
     id: "mailchimp",
     nume: "Mailchimp",
     domeniu: "mailchimp.com",
+    logo: "https://digitalasset.intuit.com/render/content/dam/intuit/mc-fe/en_us/images/mailchimp-favicons/apple-touch-icon.png",
+    logoTip: "icon",
     url: "https://mailchimp.com/",
     origine: "intl",
     descriere: "Cel mai cunoscut: multe șabloane și integrări. Se scumpește repede pe măsură ce lista crește.",
@@ -116,6 +130,8 @@ export const PLATFORME: Platforma[] = [
     id: "sendpulse",
     nume: "SendPulse",
     domeniu: "sendpulse.com",
+    logo: "https://www.spcdn.org/templates/sendpulsev1/img/favicons/favicon.svg",
+    logoTip: "icon",
     url: "https://sendpulse.com/",
     origine: "intl",
     descriere: "Email, SMS, chatbot și notificări web într-un singur loc, cu plan gratuit generos.",
@@ -130,6 +146,8 @@ export const PLATFORME: Platforma[] = [
     id: "mailjet",
     nume: "Mailjet",
     domeniu: "mailjet.com",
+    logo: "https://www.mailjet.com/apple-touch-icon.png",
+    logoTip: "icon",
     url: "https://www.mailjet.com/",
     origine: "intl",
     descriere: "Platformă europeană (Franța), cu editor colaborativ și trimitere tranzacțională (confirmări, chitanțe).",
@@ -144,6 +162,8 @@ export const PLATFORME: Platforma[] = [
     id: "kit",
     nume: "Kit (ConvertKit)",
     domeniu: "kit.com",
+    logo: "https://kit.com/apple-touch-icon.png",
+    logoTip: "icon",
     url: "https://kit.com/",
     origine: "intl",
     descriere: "Gândit pentru creatori: secvențe de emailuri, formulare și pagini de înscriere. Bun când newsletterul e canalul principal.",
@@ -158,6 +178,8 @@ export const PLATFORME: Platforma[] = [
     id: "activecampaign",
     nume: "ActiveCampaign",
     domeniu: "activecampaign.com",
+    logo: "https://www.activecampaign.com/dist/favicon-192x192.png",
+    logoTip: "icon",
     url: "https://www.activecampaign.com/",
     origine: "intl",
     descriere: "Automatizări avansate și CRM, pentru parcursuri complexe ale donatorului (bun venit, a doua donație, reactivare).",
@@ -172,6 +194,8 @@ export const PLATFORME: Platforma[] = [
     id: "beehiiv",
     nume: "beehiiv",
     domeniu: "beehiiv.com",
+    logo: "https://beehiiv-marketing-images.s3.amazonaws.com/Redesign2023/favicon.png",
+    logoTip: "icon",
     url: "https://www.beehiiv.com/",
     origine: "intl",
     descriere: "Platformă pentru newslettere editoriale, cu creștere prin recomandări. Planurile plătite s-au restructurat în octombrie 2026.",
@@ -186,6 +210,8 @@ export const PLATFORME: Platforma[] = [
     id: "substack",
     nume: "Substack",
     domeniu: "substack.com",
+    logo: "https://substackcdn.com/icons/substack/icon.svg",
+    logoTip: "icon",
     url: "https://substack.com/",
     origine: "intl",
     descriere: "Scrii și publici simplu, cu arhivă publică. Gratuit; comision de 10% doar dacă vinzi abonamente plătite.",

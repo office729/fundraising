@@ -70,3 +70,11 @@ export function culoriDinPixeli(data: ArrayLike<number>): PaletaLogo | null {
   const baza: Hsl = { h: m.h, s: Math.min(m.s, 0.12), l: limiteaza(m.l, 0.16, 0.36) };
   return { accent: hslLaHex(baza), accent2: hslLaHex({ ...baza, l: Math.max(0.1, baza.l * 0.6) }), accent3: hslLaHex({ ...baza, l: 0.955 }), sursa: "neutru" };
 }
+
+// Paleta unui raport pornind de la o singură culoare (ex. culoarea organizației), cu aceleași limite de lizibilitate.
+export function paletaDinHex(hex: string): PaletaLogo | null {
+  const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex);
+  if (!m) return null;
+  const c = rgbLaHsl(parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16));
+  return { accent: hslLaHex(principala(c)), accent2: hslLaHex(inchisa(c)), accent3: hslLaHex(deschisa(c)), sursa: "logo" };
+}

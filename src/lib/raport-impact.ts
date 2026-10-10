@@ -74,7 +74,7 @@ export const dateImpactGoale = (): DateImpact => ({
   model: "clasic",
 });
 
-const HEX = /^#[0-9a-f]{6}$/i;
+export const HEX = /^#[0-9a-f]{6}$/i;
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
 const text = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
 const numar = (v: unknown): number | null => {
@@ -87,7 +87,7 @@ const urlHttp = (v: unknown) => {
   return /^https?:\/\/[^\s"'<>]+$/i.test(s) ? s : "";
 };
 // Logoul: adresă https sau imagine încorporată (data:), nimic altceva (fără javascript:, fără alte scheme).
-const urlLogo = (v: unknown) => {
+export const urlLogo = (v: unknown) => {
   const s = typeof v === "string" ? v.trim() : "";
   if (/^https:\/\/[^\s"'<>]+$/i.test(s) && s.length <= 500) return s;
   if (/^data:image\/(png|jpeg|webp);base64,[a-z0-9+/=]+$/i.test(s) && s.length <= 300_000) return s;

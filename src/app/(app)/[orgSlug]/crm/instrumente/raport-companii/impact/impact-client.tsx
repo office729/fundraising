@@ -13,7 +13,7 @@ import { Card, CardHeader } from "../../../components/ui/card";
 import { Input, Label, Select, Textarea } from "../../../components/ui/input";
 import { formatSuma } from "../../../lib/format";
 import { incarcaImpactAction, salveazaImpactAction, type CompanieImpactRand, type IncarcareImpact } from "../impact-actions";
-import { incarcaLogo, paletaDinLogo } from "./logo-util";
+import { incarcaLogo, paletaDinLogo } from "@/lib/logo-incarcare";
 
 type Stare = "idle" | "asteapta" | "salveaza" | "salvat" | "eroare";
 
@@ -155,7 +155,7 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
       } else setMesaj("Previzualizarea nu e încărcată încă. Încearcă din nou.");
     };
     // Pe telefon, previzualizarea poate fi ascunsă: o afișăm înainte de tipărire.
-    if (vedere === "editez" && window.matchMedia("(max-width: 1279px)").matches) {
+    if (vedere === "editez" && window.matchMedia("(max-width: 1023px)").matches) {
       setVedere("previz");
       setTimeout(tipareste, 250);
     } else tipareste();
@@ -190,7 +190,7 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
       <p className="-mt-2 max-w-4xl text-[12.5px] text-[var(--ci-text-muted)]">
         Alegi șablonul, completezi datele și vezi raportul în dreapta. Pentru platformă, copiezi codul HTML și îl lipești în editorul de cod. Unele platforme de email taie o parte din stiluri; pentru trimitere prin email, PDF-ul e varianta sigură.
       </p>
-      <div role="tablist" aria-label="Vedere" className="grid grid-cols-2 gap-1 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-1 xl:hidden">
+      <div role="tablist" aria-label="Vedere" className="grid grid-cols-2 gap-1 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-1 lg:hidden">
         {([["editez", "✏️ Editez"], ["previz", "👁 Previzualizez"]] as const).map(([k, e]) => (
           <button key={k} type="button" role="tab" aria-selected={vedere === k} onClick={() => setVedere(k)} className={`rounded-[calc(var(--ci-radius-btn)-2px)] py-2 text-[13px] font-semibold focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none ${vedere === k ? "bg-[var(--ci-primary)] text-white" : "text-[var(--ci-text-muted)]"}`}>
             {e}
@@ -199,8 +199,8 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
       </div>
       {mesaj && <p role="alert" className="text-[13px] text-[var(--ci-red)]">{mesaj}</p>}
 
-      <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(380px,0.8fr)_minmax(0,1.2fr)]">
-        <div className={`min-w-0 space-y-4 ${vedere === "previz" ? "hidden xl:block" : ""}`}>
+      <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(340px,0.85fr)_minmax(0,1.15fr)]">
+        <div className={`min-w-0 space-y-4 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto lg:pr-2 ${vedere === "previz" ? "hidden lg:block" : ""}`}>
           <Card>
             <CardHeader title="Șablon" subtitle={modelAles.hint} />
             <Label>Tipul de raport</Label>
@@ -371,7 +371,7 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
           </Card>
         </div>
 
-        <div className={`min-w-0 xl:sticky xl:top-4 ${vedere === "editez" ? "hidden xl:block" : ""}`}>
+        <div className={`min-w-0 lg:sticky lg:top-4 ${vedere === "editez" ? "hidden lg:block" : ""}`}>
           <Card className="!p-0 overflow-hidden">
             <div className="flex items-center justify-between border-b border-[var(--ci-border)] px-4 py-2.5">
               <p className="text-[13px] font-semibold text-[var(--ci-text)]">Design · {modelAles.eticheta}</p>
@@ -382,7 +382,7 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
               title="Previzualizarea raportului de impact"
               srcDoc={html}
               sandbox="allow-same-origin allow-modals allow-popups allow-popups-to-escape-sandbox"
-              className="block h-[70vh] w-full bg-white xl:h-[calc(100vh-9rem)]"
+              className="block h-[70vh] w-full bg-white lg:h-[calc(100vh-9rem)]"
             />
           </Card>
         </div>

@@ -164,24 +164,26 @@ function Ghid({ tip }: { tip: Tip }) {
 }
 
 // Logoul vine ca pictogramă a site-ului; dacă nu se încarcă, rămâne o literă pe fundal colorat.
-function Logo({ nume, domeniu }: { nume: string; domeniu: string }) {
-  const [eroare, setEroare] = useState(false);
-  if (eroare)
+function Logo({ p }: { p: Platforma }) {
+  // Logoul oficial; dacă nu se încarcă, pictograma site-ului; la urmă, litera platformei.
+  const [pas, setPas] = useState(0);
+  const surse = [p.logo, `https://www.google.com/s2/favicons?domain=${p.domeniu}&sz=256`];
+  const lat = p.logoTip === "wordmark";
+  if (pas >= surse.length)
     return (
       <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[var(--ci-primary-soft)] text-base font-bold text-[var(--ci-primary)]" aria-hidden>
-        {nume.slice(0, 1).toUpperCase()}
+        {p.nume.slice(0, 1).toUpperCase()}
       </span>
     );
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={`https://www.google.com/s2/favicons?domain=${domeniu}&sz=128`}
+      key={pas}
+      src={surse[pas]}
       alt=""
-      width={44}
-      height={44}
       referrerPolicy="no-referrer"
-      onError={() => setEroare(true)}
-      className="size-11 shrink-0 rounded-xl border border-[var(--ci-border)] bg-white object-contain p-1.5"
+      onError={() => setPas((x) => x + 1)}
+      className={lat ? "h-11 w-auto max-w-[9.5rem] shrink-0 rounded-lg border border-[var(--ci-border)] bg-white object-contain object-left px-2.5 py-2" : "size-11 shrink-0 rounded-xl border border-[var(--ci-border)] bg-white object-contain p-1.5"}
     />
   );
 }
@@ -200,7 +202,7 @@ function Card({ p, potrivit, evidentiat }: { p: Platforma; potrivit: boolean; ev
     <li className={`flex min-w-0 flex-col rounded-[var(--ci-radius-card)] border bg-[var(--ci-surface)] p-4 transition-opacity ${evidentiat ? "border-[var(--ci-primary)] shadow-[var(--ci-card-shadow)]" : "border-[var(--ci-border)]"} ${potrivit ? "" : "opacity-55"}`}>
       <div className="flex items-start gap-3">
         <a href={p.url} target="_blank" rel="noopener noreferrer" aria-label={`Deschide site-ul ${p.nume}`} className="rounded-xl focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
-          <Logo nume={p.nume} domeniu={p.domeniu} />
+          <Logo p={p} />
         </a>
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-[15px] font-bold text-[var(--ci-text)]">{p.nume}</h3>

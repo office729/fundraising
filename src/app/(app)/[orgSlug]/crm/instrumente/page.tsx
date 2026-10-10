@@ -38,7 +38,11 @@ const CATEGORII: { key: CategorieKey; culoare: string; instrumente: InstrumentDe
   {
     key: "documente",
     culoare: "var(--ci-blue)",
-    instrumente: [{ key: "semnaturaDigitala", href: "semnatura-digitala" }],
+    instrumente: [
+      { key: "scrisori", href: "scrisori" },
+      { key: "certificate", href: "certificate" },
+      { key: "semnaturaDigitala", href: "semnatura-digitala" },
+    ],
   },
 ];
 
