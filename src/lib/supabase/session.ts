@@ -47,6 +47,7 @@ export async function updateSession(request: NextRequest, rewriteTo?: URL) {
     "/",
     "/hub",
     "/cine-suntem",
+    "/intrebari-frecvente",
     "/ce-facem",
     "/portofoliu",
     "/portofoliu-clienti",

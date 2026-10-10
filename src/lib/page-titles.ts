@@ -15,6 +15,7 @@ const TITLURI = {
   blog: { ro: "Blog", en: "Blog" },
   "ce-facem": { ro: "Ce facem", en: "What we do" },
   "cine-suntem": { ro: "Cine suntem", en: "Who we are" },
+  "intrebari-frecvente": { ro: "Întrebări frecvente", en: "Frequently asked questions" },
   contact: { ro: "Contact", en: "Contact" },
   cookies: { ro: "Politica de cookies", en: "Cookie policy" },
   gdpr: { ro: "Politica de confidențialitate (GDPR)", en: "Privacy policy (GDPR)" },
@@ -134,6 +135,10 @@ const DESCRIERI: Partial<Record<PaginaCuTitlu, { ro: string; en: string }>> = {
     ro: "Cine suntem: echipa din spatele Alexandrit și experiența noastră în fundraising pentru ONG-uri din România.",
     en: "Who we are: the team behind Alexandrit and our experience in fundraising for NGOs in Romania.",
   },
+  "intrebari-frecvente": {
+    ro: "Întrebări frecvente despre Alexandrit: CRM pentru ONG-uri, costuri, formularele 230 și D177 și cum te ajută un CRM să strângi mai multe fonduri.",
+    en: "Frequently asked questions about Alexandrit: a CRM for NGOs, costs, Form 230 and D177, and how a CRM helps you raise more funds.",
+  },
   contact: {
     ro: "Contactează echipa Alexandrit: întrebări despre platformă, prețuri sau consiliere de fundraising pentru ONG-ul tău.",
     en: "Contact the Alexandrit team: questions about the platform, pricing or fundraising advice for your NGO.",
@@ -178,6 +183,7 @@ const CALE_CANONICA: Partial<Record<PaginaCuTitlu, string>> = {
   automatizari: "/automatizari",
   "ce-facem": "/ce-facem",
   "cine-suntem": "/cine-suntem",
+  "intrebari-frecvente": "/intrebari-frecvente",
   contact: "/contact",
   cookies: "/cookies",
   gdpr: "/gdpr",

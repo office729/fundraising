@@ -21,6 +21,7 @@ export const MARKETING_DICT = {
       { href: "/vlad-placinta", label: "Vlad Plăcintă" },
       { href: "/premii", label: "Premii Vlad Plăcintă" },
       { href: "/portofoliu", label: "Portofoliu" },
+      { href: "/intrebari-frecvente", label: "Întrebări frecvente" },
     ],
     header: {
       consulting: "Consiliere 1 la 1",
@@ -181,6 +182,7 @@ export const MARKETING_DICT = {
       { href: "/vlad-placinta", label: "Vlad Plăcintă" },
       { href: "/premii", label: "Vlad Plăcintă Awards" },
       { href: "/portofoliu", label: "Portfolio" },
+      { href: "/intrebari-frecvente", label: "FAQ" },
     ],
     header: {
       consulting: "1-on-1 Consulting",
