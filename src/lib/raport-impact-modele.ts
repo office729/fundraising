@@ -3,6 +3,7 @@
 // Pe ecran documentul stă ca o foaie pe un fundal neutru; la tipărire rămâne doar foaia. Logoul organizației și al firmei apar împreună (co-branding).
 import {
   aplicaPlaceholdere,
+  DISCLAIMER_IMPLICIT,
   dataLunga,
   esc,
   fraza,
@@ -122,7 +123,7 @@ function bare(d: DateImpact): string {
 // --- Schelet comun ---------------------------------------------------------------------------------------------------------------------
 
 function doc(titlu: string, d: DateImpact, css: string, corp: string, pagina = "A4"): string {
-  return `<!doctype html><html lang="ro"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(titlu)}</title><style>
+  return `<!doctype html><html lang="ro"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data: https:; style-src 'unsafe-inline'"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(titlu)}</title><style>
 :root{--a:${d.accent};--b:${d.accent2};--c:${d.accent3};--t:#231f20;--m:#6a6466;--l:#e9e4e4;--fond:#ece9e9;--ab:color-mix(in srgb,var(--a) 9%,#fff)}
 *{box-sizing:border-box}html{background:var(--fond);-webkit-print-color-adjust:exact;print-color-adjust:exact}
 body{margin:0;color:var(--t);font-family:${SANS};font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
@@ -134,6 +135,10 @@ a{color:var(--a);text-decoration-thickness:1px;text-underline-offset:2px}h1,h2,h
 .mt{display:inline-flex;align-items:center;gap:5px;color:var(--m);font-size:12.5px}.mt svg{color:var(--a);flex:none}.mt+.mt{margin-left:14px}
 .ey{font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;font-weight:700;color:var(--a)}.lead{font-size:18px;line-height:1.55;color:var(--t)}
 .semn{margin-top:30px}.semn b{font-family:${SERIF};font-style:italic;font-size:24px;font-weight:400;color:var(--b);display:block;line-height:1.2}.semn span{color:var(--m);font-size:13px}
+.cit-f{margin:26px 0 0;padding:16px 20px;border-left:4px solid var(--a);background:var(--ab);font-family:${SERIF};font-style:italic;font-size:1.05em;break-inside:avoid}.cit-f cite{display:block;margin-top:6px;font-style:normal;font-size:12.5px;color:var(--m)}
+.cu{margin-top:24px;break-inside:avoid}.cu b{display:block;font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--a);margin-bottom:4px}.cta{margin-top:12px}.cta a,.cta strong{display:inline-block;padding:10px 18px;border-radius:10px;background:var(--a);color:#fff;text-decoration:none;font-weight:700}
+.ctc{margin-top:16px;font-size:13px;color:var(--m)}.ctc a{color:var(--m)}.disc{margin-top:18px;padding-top:10px;border-top:1px solid var(--l);font-size:11.5px;color:var(--m);line-height:1.5}
+.stare{display:inline-block;padding:1px 9px;border-radius:99px;font-size:11.5px;font-weight:700;line-height:1.6;border:1px solid var(--a);color:var(--a)}.stare.finalizat{background:var(--a);color:#fff}.stare.partial{border-style:dashed}
 @media(max-width:640px){.foaie{margin:0;box-shadow:none}.in{padding:24px 20px}}
 @page{size:${pagina};margin:0}@media print{html{background:#fff}.foaie{margin:0;box-shadow:none;max-width:none}body{font-size:14px}}
 ${css}</style></head><body>${corp}</body></html>`;
@@ -148,15 +153,26 @@ function cobrand(d: DateImpact, c: ContextRaport, inchis = false): string {
   return `<div class="cb">${o}${f}</div>`;
 }
 const paragrafe = (d: DateImpact, cuLead = true) => aplicaPlaceholdere(d.narativ, d).map((p, i) => `<p${cuLead && i === 0 ? ' class="lead"' : ""} style="margin-top:${i ? 12 : 0}px">${p}</p>`).join("");
-const semnatura = (d: DateImpact, c: ContextRaport) => `<div class="semn"><b>${esc(d.autor || c.organizatie)}</b><span>${d.autor ? `${esc(c.organizatie)} · ` : ""}${esc(dataLunga(c.azi))}</span></div>`;
-const meta = (p: ProiectImpact) => [p.locatie && `<span class="mt">${ICON.pin}${esc(p.locatie)}</span>`, p.data && `<span class="mt">${ICON.cal}${esc(lunaAn(p.data))}</span>`, p.anDirectionare && `<span class="mt">${ICON.inima}Direcționare ${p.anDirectionare}</span>`].filter(Boolean).join("");
+const semnaturaSimpla = (d: DateImpact, c: ContextRaport) => `<div class="semn"><b>${esc(d.autor || c.organizatie)}</b><span>${d.autor ? `${esc(c.organizatie)} · ` : ""}${esc(dataLunga(c.azi))}</span></div>`;
+// Încheierea raportului, comună tuturor modelelor: citat, ce urmează, apel la acțiune, contact, transparență și avertismentul că nu e document fiscal.
+function blocFinal(d: DateImpact, simplu = false): string {
+  const contact = [d.contactNume && esc(d.contactNume), d.contactTelefon && esc(d.contactTelefon), d.contactEmail && `<a href="mailto:${esc(d.contactEmail)}">${esc(d.contactEmail)}</a>`].filter(Boolean).join(" · ");
+  const cta = d.ctaText ? (d.ctaLink ? `<p class="cta"><a href="${esc(d.ctaLink)}" target="_blank" rel="noopener noreferrer">${esc(d.ctaText)} →</a></p>` : `<p class="cta"><strong>${esc(d.ctaText)}</strong></p>`) : "";
+  const transp = d.transparentaLink ? `<a href="${esc(d.transparentaLink)}" target="_blank" rel="noopener noreferrer">Raportul anual și situațiile financiare</a>` : "";
+  if (simplu) return `<p class="disc">${esc(DISCLAIMER_IMPLICIT)}</p>`;
+  return `${d.citat ? `<blockquote class="cit-f">„${esc(d.citat)}”${d.citatAutor ? `<cite>— ${esc(d.citatAutor)}</cite>` : ""}</blockquote>` : ""}${d.ceUrmeaza ? `<div class="cu"><b>Ce urmează</b><p>${esc(d.ceUrmeaza).replace(/\n/g, "<br>")}</p></div>` : ""}${cta}${contact || transp ? `<p class="ctc">${[contact && `Contact: ${contact}`, transp].filter(Boolean).join(" · ")}</p>` : ""}`;
+}
+const disclaimer = `<p class="disc">${esc(DISCLAIMER_IMPLICIT)}</p>`;
+const semnatura = (d: DateImpact, c: ContextRaport) => `${blocFinal(d)}${semnaturaSimpla(d, c)}${disclaimer}`;
+const ETICHETE_STARE: Record<string, string> = { finalizat: "Finalizat", in_desfasurare: "În desfășurare", partial: "Parțial finanțat" };
+const meta = (p: ProiectImpact) => [p.stare && `<span class="mt"><span class="stare ${p.stare}">${ETICHETE_STARE[p.stare]}</span></span>`, p.locatie && `<span class="mt">${ICON.pin}${esc(p.locatie)}</span>`, p.data && `<span class="mt">${ICON.cal}${esc(lunaAn(p.data))}</span>`, p.anDirectionare && `<span class="mt">${ICON.inima}Direcționare ${p.anDirectionare}</span>`, p.nrBeneficiari && `<span class="mt">${p.nrBeneficiari} ${p.nrBeneficiari === 1 ? "beneficiar" : "beneficiari"}</span>`, p.linkDovada && `<span class="mt"><a href="${esc(p.linkDovada)}" target="_blank" rel="noopener noreferrer">Dovadă</a></span>`].filter(Boolean).join("");
 const obs = (p: ProiectImpact) => (p.observatii ? `<p style="color:var(--m);font-size:13.5px;margin-top:6px">${esc(p.observatii)}</p>` : "");
 const goal = `<p style="color:var(--m);padding:18px 0">Nu sunt proiecte adăugate încă.</p>`;
 const nrProiecte = (d: DateImpact) => proiecteSortate(d).length;
 const textProiecte = (d: DateImpact) => `${nrProiecte(d)} ${nrProiecte(d) === 1 ? "proiect" : "proiecte"}`;
 const parte = (p: ProiectImpact, total: number) => (total > 0 && p.suma ? Math.max(2, Math.round((p.suma / total) * 100)) : 0);
 const procentTxt = (p: ProiectImpact, total: number) => (total > 0 && p.suma ? `${Math.round((p.suma / total) * 100)}% din total` : "");
-const mecanismScurt = (d: DateImpact) => (d.mecanism === "d177" ? "Declarația 177" : "Sponsorizare");
+const mecanismScurt = (d: DateImpact) => (d.mecanism === "d177" ? "Declarația 177" : d.mecanism === "sponsorizare" ? "Sponsorizare" : "Sprijin");
 
 // Fișa unui proiect: data în margine, numele, detaliile, ponderea și suma.
 function fisa(p: ProiectImpact, total: number): string {
@@ -193,7 +209,7 @@ function clasic(d: DateImpact, c: ContextRaport): string {
 <section class="hero"><div><div class="ey">Raport de impact</div><h1>${esc(d.firma || "—")}</h1><p class="sub">Ce a făcut sprijinul dumneavoastră</p></div><div class="art">${inima(150, "h1")}</div></section>
 <section class="tot"><div class="bg">${ecg("currentColor", 0.11)}</div><div><small>Total susținut</small><b class="nr">${lei(total)}</b></div><div class="r"><strong>${textProiecte(d)}</strong>${mecanismScurt(d)}</div></section>
 <div class="in">${paragrafe(d)}<h2>Proiectele susținute</h2>${listaFise(d, total)}${semnatura(d, c)}</div>
-<footer class="pic"><span>${esc(c.organizatie)}</span><b>Vă mulțumim că ați fost alături de noi</b></footer></main>`);
+<footer class="pic"><span>${esc(c.organizatie)}</span><b>Vă mulțumim că sunteți alături de noi</b></footer></main>`);
 }
 
 // --- 2. Executiv ----------------------------------------------------------------------------------------------------------------------
@@ -331,7 +347,7 @@ function corporate(d: DateImpact, c: ContextRaport): string {
   return doc(`Raport de impact — ${d.firma}`, d, css, `<main class="foaie"><header class="ant"><div class="bg">${ecg("#fff", 0.28)}</div><div class="rd">${cobrand(d, c, true)}<span class="ey" style="color:#fff;opacity:.85">${esc(dataLunga(c.azi))}</span></div><h1>Raport de impact</h1></header>
 <div class="ref"><div><span>Către</span><strong>${esc(d.firma || "—")}</strong></div><div><span>Din partea</span>${esc(c.organizatie)}</div><div><span>Temei</span>${esc(fraza(d))}</div><div><span>Perioadă</span>${esc(perioadaImpact(d) || "—")}</div></div>
 <div class="txt">${paragrafe(d)}</div><table class="tb"><thead><tr><th>Proiect</th><th>Alocare</th><th style="text-align:right">Sumă</th></tr></thead><tbody>${corp}</tbody><tfoot><tr><td colspan="2">Total</td><td class="s nr">${lei(total)}</td></tr></tfoot></table>${nrProiecte(d) ? "" : `<div class="in">${goal}</div>`}
-<div class="sg"><div><b>${esc(d.autor || "Reprezentant")}</b>${esc(c.organizatie)}</div><div><b>Primit de</b>${esc(d.firma || "—")}</div></div></main>`);
+<div class="txt">${blocFinal(d)}${disclaimer}</div><div class="sg"><div><b>${esc(d.autor || "Reprezentant")}</b>${esc(c.organizatie)}</div><div><b>Luat la cunoștință</b>${esc(d.firma || "—")}</div></div></main>`);
 }
 
 // --- 10. O pagină ---------------------------------------------------------------------------------------------------------------------
@@ -361,7 +377,7 @@ function afis(d: DateImpact, c: ContextRaport): string {
   return doc(`Mulțumim — ${d.firma}`, d, css, `<main class="foaie"><section class="afs"><div class="fund">${inima(560, "a1")}</div><div class="ecgb">${ecg("#fff", 0.3)}</div>
 <div class="sus">${cobrand(d, c, true)}<span>${esc(perioadaImpact(d))}</span></div><h1>Mulțumim</h1><h2>${esc(d.firma || "—")}</h2>
 <div class="pila"><b class="nr">${lei(total)}</b><span>${textProiecte(d)} · ${mecanismScurt(d).toLowerCase()}</span></div><div class="tag">${etichete}</div>
-<div class="jos"><div><b>${esc(d.autor || c.organizatie)}</b>${d.autor ? esc(c.organizatie) : ""}</div><span>${esc(dataLunga(c.azi))}</span></div></section></main>`);
+<div class="jos"><div><b>${esc(d.autor || c.organizatie)}</b>${d.autor ? esc(c.organizatie) : ""}</div><span>${esc(dataLunga(c.azi))}</span></div><p style="font-size:11px;opacity:.7;margin-top:14px">${esc(DISCLAIMER_IMPLICIT)}</p></section></main>`);
 }
 
 // --- 12. Mozaic -----------------------------------------------------------------------------------------------------------------------
@@ -385,7 +401,7 @@ function mozaic(d: DateImpact, c: ContextRaport): string {
 <section class="t s4"><small>Perioadă</small><div class="mic" style="color:var(--b)">${esc(perioadaImpact(d) || "—")}</div></section>
 <section class="t s4"><small>Temei</small><div class="mic" style="font-size:14px;font-weight:500">${esc(fraza(d))}</div></section>
 <section class="t s12">${paragrafe(d)}</section>${ps.map(placa).join("") || `<section class="t s12">${goal}</section>`}
-<section class="t s12 f">${cobrand(d, c)}${semnatura(d, c)}</section></div></main>`);
+<section class="t s12 f">${cobrand(d, c)}${semnaturaSimpla(d, c)}</section><section class="t s12">${blocFinal(d)}${disclaimer}</section></div></main>`);
 }
 
 // --- 13. Certificat -------------------------------------------------------------------------------------------------------------------
@@ -429,7 +445,7 @@ function prezentare(d: DateImpact, c: ContextRaport): string {
 ${diapo("cop", `<div class="bg">${ecg("#fff", 0.3)}</div><div class="tp">${cobrand(d, c, true)}<span>${esc(perioadaImpact(d))}</span></div><div><div class="ey">Raport de impact</div><h1>${esc(d.firma || "—")}</h1><div class="tt nr">${lei(total)} · ${textProiecte(d)}</div></div><div class="tp"><span>${esc(c.organizatie)}</span><span>${esc(dataLunga(c.azi))}</span></div>`)}
 ${diapo("", `<div class="tp"><span>${esc(c.organizatie)}</span><span>${esc(d.firma)}</span></div><h2>Ce am făcut împreună</h2><div class="kp"><div><small>Total susținut</small><b class="nr">${lei(total)}</b></div><div><small>Proiecte</small><b class="nr">${nrProiecte(d)}</b></div><div><small>Perioadă</small><b class="mic">${esc(perioadaImpact(d) || "—")}</b></div></div><div class="doi"><div>${aplicaPlaceholdere(d.narativ, d).slice(0, 1).map((p) => `<p class="lead">${p}</p>`).join("")}</div>${svg ? `<div class="mix">${svg}${legendaInel(legenda)}</div>` : ""}</div>`)}
 ${slideProiecte}
-${diapo("fin", `<div class="bg">${ecg("#fff", 0.25)}</div><div class="tp">${cobrand(d, c, true)}<span></span></div><h2>Vă mulțumim</h2>${semnatura(d, c)}`)}
+${diapo("fin", `<div class="bg">${ecg("#fff", 0.25)}</div><div class="tp">${cobrand(d, c, true)}<span></span></div><h2>Vă mulțumim</h2>${semnaturaSimpla(d, c)}<p style="font-size:1.1cqw;opacity:.75">${esc(DISCLAIMER_IMPLICIT)}</p>`)}
 </div></main>`, "A4 landscape");
 }
 
@@ -438,7 +454,8 @@ ${diapo("fin", `<div class="bg">${ecg("#fff", 0.25)}</div><div class="tp">${cobr
 function analitic(d: DateImpact, c: ContextRaport): string {
   const total = totalImpact(d);
   const ps = proiecteSortate(d);
-  const medie = ps.length ? Math.round(total / ps.length) : 0;
+  const beneficiari = ps.reduce((t, p) => t + (p.nrBeneficiari ?? 0), 0);
+  const kpi4 = beneficiari > 0 ? { e: "Cost per beneficiar", v: lei(total / beneficiari) } : { e: "Proiecte finalizate", v: `${ps.filter((p) => p.stare === "finalizat").length} din ${ps.length}` };
   const { svg, legenda } = inel(d, 170);
   const graf = cumulativ(d);
   const br = bare(d);
@@ -453,7 +470,7 @@ function analitic(d: DateImpact, c: ContextRaport): string {
   const rand = (p: ProiectImpact) => `<tr class="nopb"><td>${nume(p)}<div>${meta(p)}</div></td><td class="b"><div><i style="width:${Math.max(3, Math.round(((p.suma ?? 0) / maxim) * 100))}%"></i></div></td><td class="s nr">${p.suma !== null ? lei(p.suma) : "—"}</td></tr>`;
   return doc(`Raport de impact — ${d.firma}`, d, css, `<main class="foaie"><div class="cap">${cobrand(d, c)}<span>${esc(perioadaImpact(d))}</span></div>
 <section class="tit"><div class="ey">Raport de impact</div><h1 style="margin-top:6px">${esc(d.firma || "—")}</h1><p>${esc(fraza(d))}</p></section>
-<div class="kp"><div><div class="ic">${ICON.moneda}</div><small>Total susținut</small><b class="nr" style="color:var(--a)">${lei(total)}</b></div><div><div class="ic">${ICON.grup}</div><small>Proiecte</small><b class="nr">${nrProiecte(d)}</b></div><div><div class="ic">${ICON.media}</div><small>Medie pe proiect</small><b class="nr">${lei(medie)}</b></div><div><div class="ic">${ICON.calendar}</div><small>Perioadă</small><b class="mic">${esc(perioadaImpact(d) || "—")}</b></div></div>
+<div class="kp"><div><div class="ic">${ICON.moneda}</div><small>Total susținut</small><b class="nr" style="color:var(--a)">${lei(total)}</b></div><div><div class="ic">${ICON.grup}</div><small>Proiecte</small><b class="nr">${nrProiecte(d)}</b></div><div><div class="ic">${ICON.media}</div><small>${kpi4.e}</small><b class="nr">${kpi4.v}</b></div><div><div class="ic">${ICON.calendar}</div><small>Perioadă</small><b class="mic">${esc(perioadaImpact(d) || "—")}</b></div></div>
 <div class="txt">${paragrafe(d, false)}</div>
 <div class="gr">${graf ? `<section class="pn l"><h2>Evoluția sumelor, cumulat</h2>${graf}</section>` : ""}${br ? `<section class="pn"><h2>${d.gruparePeAn || grupePeAn(d).length > 1 ? "Pe ani" : "Pe proiecte"}</h2>${br}</section>` : ""}${svg ? `<section class="pn"><h2>Ponderea proiectelor</h2><div class="mix">${svg}${legendaInel(legenda)}</div></section>` : ""}
 <section class="pn l"><h2>Proiectele, în detaliu</h2><table class="tb"><thead><tr><th>Proiect</th><th></th><th style="text-align:right">Sumă</th></tr></thead><tbody>${ps.map(rand).join("")}</tbody></table>${ps.length ? "" : goal}</section></div>

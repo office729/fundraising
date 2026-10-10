@@ -34,12 +34,16 @@ function Miniatura({ html, lat, inalt }: { html: string; lat: number; inalt: num
 }
 
 // Galeria de șabloane a unui instrument: miniaturi live; un click deschide generatorul cu modelul ales (?model=…).
-export function GalerieSabloane({ titlu, subtitlu, hrefGenerator, modele, lat, inalt, coloane }: { titlu: string; subtitlu: string; hrefGenerator: string; modele: ModelGalerie[]; lat: number; inalt: number; coloane: string }) {
+// „recomandate”: id-urile arătate la început; restul apar la „Vezi toate modelele”.
+export function GalerieSabloane({ titlu, subtitlu, hrefGenerator, modele, lat, inalt, coloane, recomandate }: { titlu: string; subtitlu: string; hrefGenerator: string; modele: ModelGalerie[]; lat: number; inalt: number; coloane: string; recomandate?: string[] }) {
+  const [toate, setToate] = useState(false);
+  const esteSelectie = !!recomandate && recomandate.length > 0 && recomandate.length < modele.length;
+  const vizibile = esteSelectie && !toate ? modele.filter((m) => recomandate!.includes(m.id)) : modele;
   return (
     <Card>
       <CardHeader title={titlu} subtitle={subtitlu} />
       <ul className={`grid gap-3 ${coloane}`}>
-        {modele.map((m) => (
+        {vizibile.map((m) => (
           <li key={m.id} className="min-w-0">
             <Link href={`${hrefGenerator}?model=${m.id}`} prefetch={false} title={m.hint} className="group block overflow-hidden rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
               <Miniatura html={m.html} lat={m.lat ?? lat} inalt={m.inalt ?? inalt} />
@@ -51,6 +55,13 @@ export function GalerieSabloane({ titlu, subtitlu, hrefGenerator, modele, lat, i
           </li>
         ))}
       </ul>
+      {esteSelectie && (
+        <div className="mt-4 flex justify-center">
+          <button type="button" onClick={() => setToate((v) => !v)} aria-expanded={toate} className="rounded-[var(--ci-radius-btn,8px)] border border-[var(--ci-border)] px-4 py-2 text-[13px] font-medium text-[var(--ci-text)] hover:bg-black/5 focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
+            {toate ? "Arată doar modelele recomandate" : `Vezi toate cele ${modele.length} modele`}
+          </button>
+        </div>
+      )}
     </Card>
   );
 }

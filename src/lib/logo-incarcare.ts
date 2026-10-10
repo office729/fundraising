@@ -9,6 +9,8 @@ const MAXIM_CARACTERE = 280_000; // mai puțin decât limita acceptată la salva
 function incarcaImagine(src: string): Promise<HTMLImageElement> {
   return new Promise((rezolva, respinge) => {
     const img = new Image();
+    // Pentru adrese externe (logoul din Setări) cerem acces CORS, altfel canvas-ul nu poate fi citit pentru culori.
+    if (/^https?:/i.test(src)) img.crossOrigin = "anonymous";
     img.onload = () => rezolva(img);
     img.onerror = () => respinge(new Error("Imaginea nu a putut fi citită. Încearcă un PNG, JPG sau SVG."));
     img.src = src;
@@ -32,7 +34,11 @@ function paletaDinImagine(img: HTMLImageElement): PaletaLogo | null {
   const canvas = deseneaza(img, 96);
   const ctx = canvas.getContext("2d");
   if (!ctx) return null;
-  return culoriDinPixeli(ctx.getImageData(0, 0, canvas.width, canvas.height).data);
+  try {
+    return culoriDinPixeli(ctx.getImageData(0, 0, canvas.width, canvas.height).data);
+  } catch {
+    throw new Error("Nu pot citi culorile din acest logo, pentru că e găzduit în altă parte. Încarcă fișierul logoului sau alege culorile manual.");
+  }
 }
 
 export async function paletaDinLogo(src: string): Promise<PaletaLogo | null> {
@@ -46,6 +52,7 @@ export async function incarcaLogo(fisier: File): Promise<{ dataUrl: string; pale
   const sursa = URL.createObjectURL(fisier);
   try {
     const img = await incarcaImagine(sursa);
+    if (img.naturalWidth > 8000 || img.naturalHeight > 8000) throw new Error("Imaginea e prea mare (peste 8000 px pe o latură). Alege o variantă mai mică.");
     let dataUrl = "";
     for (const latura of [360, 280, 220, 160, 120]) {
       dataUrl = deseneaza(img, latura).toDataURL("image/png");

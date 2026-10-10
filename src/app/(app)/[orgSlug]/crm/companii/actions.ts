@@ -15,7 +15,7 @@ import { amprentePersoana } from "@/lib/gdpr-persoane";
 import { valideazaFacebook, valideazaLinkedin } from "@/lib/pagini-sociale";
 import { normalizeazaTelefonE164 } from "@/lib/telefon";
 import { urlWebSigur } from "@/lib/validation";
-import { apeluri, companies, companyNotite, companySponsorizari, companyStageLog, contacts } from "@/lib/db/schema";
+import { apeluri, companies, companyNotite, companySponsorizari, companyStageLog, contacts, crmKv } from "@/lib/db/schema";
 
 export type ActionState = { error: string | null };
 
@@ -634,6 +634,8 @@ export const stergeFirma = withOrgSession(async (ctx, companyId: string): Promis
     .where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId)))
     .returning({ id: companies.id });
   if (!r[0]) return { error: "Firma nu a fost găsită." };
+  // Raportul de impact salvat pentru firmă (crm_kv) conține date ale ei și ale proiectelor: se șterge odată cu ea.
+  await ctx.db.delete(crmKv).where(and(eq(crmKv.orgId, ctx.orgId), eq(crmKv.path, `raport-impact/${companyId}`)));
   return { error: null };
 });
 

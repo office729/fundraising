@@ -21,19 +21,33 @@ export const MODELE_IMPACT = [
 export type ModelImpact = (typeof MODELE_IMPACT)[number]["id"];
 
 export const MECANISME_IMPACT = [
-  { id: "d177", eticheta: "Direcționarea impozitului pe profit (Declarația 177)", fraza: "direcționarea unei părți din impozitul pe profit către organizație, prin Declarația 177" },
-  { id: "sponsorizare", eticheta: "Sponsorizare", fraza: "sponsorizare, în baza Legii nr. 32/1994" },
+  { id: "nespecificat", eticheta: "Nu specific mecanismul", fraza: "sprijinul acordat" },
+  { id: "d177", eticheta: "Redirecționarea impozitului pe profit (Declarația 177)", fraza: "redirecționarea unei părți din impozitul pe profit, prin Declarația 177" },
+  { id: "sponsorizare", eticheta: "Sponsorizare (Legea nr. 32/1994)", fraza: "sponsorizare, în baza Legii nr. 32/1994" },
 ] as const;
 export type MecanismImpact = (typeof MECANISME_IMPACT)[number]["id"];
+
+export const STARI_PROIECT = [
+  { id: "", eticheta: "Nespecificată" },
+  { id: "finalizat", eticheta: "Finalizat" },
+  { id: "in_desfasurare", eticheta: "În desfășurare" },
+  { id: "partial", eticheta: "Parțial finanțat" },
+] as const;
+export type StareProiect = (typeof STARI_PROIECT)[number]["id"];
 
 export type ProiectImpact = {
   nume: string;
   suma: number | null; // lei
   data: string; // YYYY-MM-DD sau gol
   link: string; // adresa paginii publice a proiectului, sau gol
-  observatii: string;
+  observatii: string; // rezultatul obținut (apare în raport)
   locatie: string; // partener / loc de desfășurare
   anDirectionare: number | null; // pentru Declarația 177
+  stare: StareProiect;
+  nrBeneficiari: number | null;
+  linkDovada: string; // ordin de plată, factură, raport anonimizat (https)
+  titluPublic: string; // dacă e completat, înlocuiește numele intern în raport (ex. fără numele unui copil)
+  acordVerificat: boolean; // acordul pentru publicare a fost verificat
 };
 
 export type DateImpact = {
@@ -50,21 +64,32 @@ export type DateImpact = {
   logoFirma: string; // logoul firmei (încărcat în pagină sau adresă https)
   logoOng: string; // logoul organizației
   model: ModelImpact;
+  ceUrmeaza: string;
+  ctaText: string;
+  ctaLink: string;
+  contactNume: string;
+  contactTelefon: string;
+  contactEmail: string;
+  citat: string;
+  citatAutor: string;
+  transparentaLink: string;
 };
 
 export const CULORI_IMPLICITE = { accent: "#b3261e", accent2: "#7f1d1d", accent3: "#fdf1ef" };
 
-export const NARATIV_IMPLICIT = `Vă mulțumim, {FIRMA}! Prin {MECANISM}, ați susținut {NR_PROIECTE} proiecte, în valoare totală de {TOTAL}.
+export const NARATIV_IMPLICIT = `Vă mulțumim pentru sprijinul acordat{PERIOADA_TXT}. Contribuția dumneavoastră de {TOTAL} a fost direcționată către {PROIECTE_TXT}, prezentate mai jos.
 
-Fiecare sumă a ajuns acolo unde era nevoie de ea, iar rezultatele pot fi urmărite pe paginile publice ale proiectelor. Acest raport vă arată ce s-a făcut cu sprijinul dumneavoastră.`;
+Pentru fiecare proiect vedeți cât a reprezentat contribuția dumneavoastră, ce s-a realizat până la data raportului și unde puteți verifica informațiile. Acolo unde un proiect este încă în desfășurare, o spunem clar. Pentru orice întrebare sau document justificativ, ne puteți scrie oricând.`;
 
-export const PROIECT_GOL: ProiectImpact = { nume: "", suma: null, data: "", link: "", observatii: "", locatie: "", anDirectionare: null };
+export const DISCLAIMER_IMPLICIT = "Document informativ. Nu înlocuiește contractul, extrasele de cont sau documentele fiscale.";
+
+export const PROIECT_GOL: ProiectImpact = { nume: "", suma: null, data: "", link: "", observatii: "", locatie: "", anDirectionare: null, stare: "", nrBeneficiari: null, linkDovada: "", titluPublic: "", acordVerificat: false };
 
 export const dateImpactGoale = (): DateImpact => ({
   firma: "",
   proiecte: [],
   totalManual: null,
-  mecanism: "sponsorizare",
+  mecanism: "nespecificat",
   narativ: NARATIV_IMPLICIT,
   ...CULORI_IMPLICITE,
   gruparePeAn: false,
@@ -72,6 +97,15 @@ export const dateImpactGoale = (): DateImpact => ({
   logoFirma: "",
   logoOng: "",
   model: "clasic",
+  ceUrmeaza: "",
+  ctaText: "",
+  ctaLink: "",
+  contactNume: "",
+  contactTelefon: "",
+  contactEmail: "",
+  citat: "",
+  citatAutor: "",
+  transparentaLink: "",
 });
 
 export const HEX = /^#[0-9a-f]{6}$/i;
@@ -84,7 +118,7 @@ const numar = (v: unknown): number | null => {
 };
 const urlHttp = (v: unknown) => {
   const s = text(v, 500);
-  return /^https?:\/\/[^\s"'<>]+$/i.test(s) ? s : "";
+  return /^https:\/\/[^\s"'<>]+$/i.test(s) ? s : "";
 };
 // Logoul: adresă https sau imagine încorporată (data:), nimic altceva (fără javascript:, fără alte scheme).
 export const urlLogo = (v: unknown) => {
@@ -109,6 +143,11 @@ export function curataDateImpact(brut: unknown): DateImpact {
       observatii: text(p.observatii, 600),
       locatie: text(p.locatie, 200),
       anDirectionare: an !== null && an >= 2000 && an <= 2100 ? an : null,
+      stare: STARI_PROIECT.some((x) => x.id === p.stare) ? (p.stare as StareProiect) : "",
+      nrBeneficiari: numar(p.nrBeneficiari),
+      linkDovada: urlHttp(p.linkDovada),
+      titluPublic: text(p.titluPublic, 200),
+      acordVerificat: p.acordVerificat === true,
     };
   });
   return {
@@ -126,6 +165,15 @@ export function curataDateImpact(brut: unknown): DateImpact {
     // Versiunile vechi aveau un singur logo, al organizației.
     logoOng: urlLogo(b.logoOng ?? b.logoUrl),
     model: MODELE_IMPACT.some((m) => m.id === b.model) ? (b.model as ModelImpact) : gol.model,
+    ceUrmeaza: typeof b.ceUrmeaza === "string" ? b.ceUrmeaza.slice(0, 800) : "",
+    ctaText: text(b.ctaText, 120),
+    ctaLink: urlHttp(b.ctaLink),
+    contactNume: text(b.contactNume, 100),
+    contactTelefon: text(b.contactTelefon, 40),
+    contactEmail: /^[^\s@<>"']+@[^\s@<>"']+\.[^\s@<>"']+$/.test(text(b.contactEmail, 120)) ? text(b.contactEmail, 120) : "",
+    citat: text(b.citat, 300),
+    citatAutor: text(b.citatAutor, 120),
+    transparentaLink: urlHttp(b.transparentaLink),
   };
 }
 
@@ -152,7 +200,10 @@ export function perioadaImpact(d: DateImpact): string {
 export const anProiect = (p: ProiectImpact): number | null => p.anDirectionare ?? (ISO.test(p.data) ? Number(p.data.slice(0, 4)) : null);
 
 export function proiecteSortate(d: DateImpact): ProiectImpact[] {
-  return [...d.proiecte].filter((p) => p.nume).sort((a, b) => (a.data || "9999").localeCompare(b.data || "9999") || a.nume.localeCompare(b.nume, "ro"));
+  return d.proiecte
+    .filter((p) => p.nume || p.titluPublic)
+    .map((p) => (p.titluPublic ? { ...p, nume: p.titluPublic } : p))
+    .sort((a, b) => (a.data || "9999").localeCompare(b.data || "9999") || a.nume.localeCompare(b.nume, "ro"));
 }
 
 export function grupePeAn(d: DateImpact): { an: string; proiecte: ProiectImpact[]; total: number }[] {
@@ -166,8 +217,12 @@ export function grupePeAn(d: DateImpact): { an: string; proiecte: ProiectImpact[
 
 // Placeholderele din narativ ({FIRMA}, {NR_PROIECTE}, {MECANISM}, {TOTAL}, {PERIOADA}; {CAZURI} / {NR_CAZURI} rămân valabile pentru textele vechi).
 // Textul și valorile se escapează, apoi rezultatul e împărțit pe paragrafe (rând liber).
+export const proiecteTxt = (nr: number) => (nr === 0 ? "proiectele susținute" : nr === 1 ? "un proiect" : `${nr} proiecte`);
+
 export function aplicaPlaceholdere(textBrut: string, d: DateImpact): string[] {
-  const nr = d.proiecte.filter((p) => p.nume).length;
+  const nr = d.proiecte.filter((p) => p.nume || p.titluPublic).length;
+  const perioada = perioadaImpact(d);
+  const contact = [d.contactNume, d.contactTelefon, d.contactEmail].filter(Boolean).join(", ");
   const valori: Record<string, string> = {
     FIRMA: d.firma || "compania dumneavoastră",
     PROIECTE: String(nr),
@@ -176,7 +231,10 @@ export function aplicaPlaceholdere(textBrut: string, d: DateImpact): string[] {
     NR_CAZURI: String(nr),
     MECANISM: fraza(d),
     TOTAL: lei(totalImpact(d)),
-    PERIOADA: perioadaImpact(d),
+    PERIOADA: perioada,
+    PERIOADA_TXT: perioada ? ` în ${perioada}` : "",
+    PROIECTE_TXT: proiecteTxt(nr),
+    CONTACT: contact || "echipa noastră",
   };
   return esc(textBrut)
     .replace(/\{([A-Z_]+)\}/g, (m, k: string) => (k in valori ? esc(valori[k]) : m))
@@ -195,10 +253,10 @@ export function dateImpactExemplu(accent?: string): DateImpact {
     autor: "Echipa noastră",
     gruparePeAn: true,
     proiecte: [
-      { nume: "Operație pe cord pentru Maria, 7 ani", suma: 18500, data: "2025-04-14", locatie: "Institutul de Boli Cardiovasculare, Cluj", anDirectionare: 2025, observatii: "Intervenție încheiată cu succes." },
-      { nume: "Monitoare pentru cardiologie pediatrică", suma: 32000, data: "2025-09-30", locatie: "Spitalul Județean de Urgență", anDirectionare: 2025, observatii: "Patru monitoare de supraveghere continuă." },
-      { nume: "Tratament post-operator pentru Andrei, 3 ani", suma: 9800, data: "2026-02-18", anDirectionare: 2026 },
-      { nume: "Ecografe portabile pentru screening în școli", suma: 24000, data: "2026-06-05", locatie: "Rețeaua de cabinete școlare", anDirectionare: 2026, observatii: "Peste 600 de copii verificați în prima lună." },
+      { nume: "Operație pe cord pentru un copil de 7 ani", suma: 18500, data: "2025-04-14", locatie: "Institutul de Boli Cardiovasculare, Cluj", anDirectionare: 2025, observatii: "Intervenția a avut loc; copilul este monitorizat de echipa medicală.", stare: "finalizat" },
+      { nume: "Monitoare pentru cardiologie pediatrică", suma: 32000, data: "2025-09-30", locatie: "Spitalul Județean de Urgență", anDirectionare: 2025, observatii: "Patru monitoare de supraveghere continuă, în uz din noiembrie.", stare: "finalizat", nrBeneficiari: 120 },
+      { nume: "Tratament post-operator pentru un copil de 3 ani", suma: 9800, data: "2026-02-18", anDirectionare: 2026, stare: "in_desfasurare" },
+      { nume: "Ecografe portabile pentru screening în școli", suma: 24000, data: "2026-06-05", locatie: "Rețeaua de cabinete școlare", anDirectionare: 2026, observatii: "Exemplu de rezultat: număr de copii verificați în prima lună.", stare: "in_desfasurare" },
     ],
   });
 }

@@ -1,4 +1,5 @@
-import { Building2 } from "lucide-react";
+import { Award, Building2, FileText, Mail } from "lucide-react";
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { Badge, type StatusTone } from "../../components/ui/badge";
@@ -97,6 +98,18 @@ export default async function CompanieProfilPage({
               </div>
             </div>
           </div>
+          <nav aria-label="Documente pentru această firmă" className="flex flex-wrap items-center gap-2">
+            {[
+              { href: `/${orgSlug}/crm/instrumente/raport-companii/impact?firma=${c.id}`, eticheta: "Raport de impact", Icon: FileText },
+              { href: `/${orgSlug}/crm/instrumente/scrisori/generator?firma=${c.id}`, eticheta: "Scrisoare", Icon: Mail },
+              { href: `/${orgSlug}/crm/instrumente/certificate/generator?firma=${c.id}`, eticheta: "Certificat", Icon: Award },
+            ].map(({ href, eticheta, Icon }) => (
+              <Link key={eticheta} href={href} prefetch={false} className="inline-flex items-center gap-1.5 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-3 py-1.5 text-[12.5px] font-medium text-[var(--ci-text)] hover:bg-black/5 focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
+                <Icon className="h-3.5 w-3.5" aria-hidden />
+                {eticheta}
+              </Link>
+            ))}
+          </nav>
         </div>
 
         <PaginiSociale companyId={c.id} nume={c.nume} linkedin={c.linkedin} facebook={c.facebook} />

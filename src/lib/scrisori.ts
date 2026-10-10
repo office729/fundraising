@@ -29,7 +29,7 @@ export const TIPURI_SCRISOARE: { id: TipScrisoare; eticheta: string; subiect: st
     eticheta: "Scrisoare de mulțumire",
     subiect: "Mulțumiri pentru sprijinul acordat",
     formulaAdresare: "Stimată conducere {FIRMA},",
-    corp: "În numele {ORGANIZATIE}, vă mulțumim pentru sprijinul acordat. Generozitatea dumneavoastră ne-a permis să ajutăm mai mulți oameni, mai repede.\n\nFiecare contribuție se vede în viața celor de lângă noi, iar încrederea dumneavoastră ne dă curajul să mergem mai departe. Vă vom ține la curent cu rezultatele și vă invităm oricând să vedeți pe teren ce am făcut împreună.",
+    corp: "În numele {ORGANIZATIE}, vă mulțumim pentru sprijinul acordat{SUMA_TXT}{PROIECT_TXT}. Contribuția dumneavoastră a fost direcționată către proiectele convenite, iar rezultatele vi le prezentăm în raportul atașat.\n\nVă vom trimite o actualizare la finalul fiecărui proiect și rămânem la dispoziția dumneavoastră pentru orice întrebare sau document justificativ.",
     formulaFinala: "Cu recunoștință,",
   },
   {
@@ -37,38 +37,38 @@ export const TIPURI_SCRISOARE: { id: TipScrisoare; eticheta: string; subiect: st
     eticheta: "Solicitare de sponsorizare",
     subiect: "Propunere de sponsorizare",
     formulaAdresare: "Stimată conducere {FIRMA},",
-    corp: "Vă scriem din partea {ORGANIZATIE} pentru a vă invita să fiți alături de noi într-un proiect care schimbă concret viața unor oameni.\n\nPrin sponsorizare, compania dumneavoastră poate susține proiectul în condițiile Legii nr. 32/1994 și ale Codului fiscal. Vă punem la dispoziție contractul, rapoartele de activitate și toate documentele necesare, iar la final veți primi un raport clar despre ce s-a realizat cu sprijinul dumneavoastră.\n\nNe-ar face plăcere să vă prezentăm proiectul într-o întâlnire scurtă, la o dată potrivită pentru dumneavoastră.",
+    corp: "Vă scriem din partea {ORGANIZATIE} pentru a vă invita să susțineți un proiect pentru oamenii pe care îi sprijinim.\n\nSusținerea se poate face prin contract de sponsorizare, în condițiile Legii nr. 32/1994 și ale Codului fiscal; vă recomandăm să discutați tratamentul fiscal cu contabilul dumneavoastră. Contractul se semnează înainte de plată, iar la final vă transmitem un raport despre ce s-a realizat cu sprijinul dumneavoastră.\n\nVă propunem o întâlnire scurtă, la o dată potrivită pentru dumneavoastră, în care să vă prezentăm proiectul.",
     formulaFinala: "Cu respect,",
   },
   {
     id: "parteneriat",
     eticheta: "Propunere de parteneriat",
     subiect: "Propunere de parteneriat",
-    formulaAdresare: "Stimate {DESTINATAR},",
-    corp: "{ORGANIZATIE} vă propune un parteneriat pe termen lung, în care valorile {FIRMA} și misiunea noastră să se sprijine reciproc.\n\nPutem construi împreună proiecte comune, campanii cu implicarea angajaților și rapoarte de impact transparente, care să arate exact ce s-a schimbat datorită colaborării noastre.\n\nVă rugăm să ne spuneți când vi se potrivește o discuție, pentru a stabili împreună pașii următori.",
+    formulaAdresare: "Stimați reprezentanți ai {FIRMA},",
+    corp: "{ORGANIZATIE} vă propune un parteneriat pe termen lung între {FIRMA} și organizația noastră.\n\nPutem construi împreună proiecte comune, campanii cu implicarea angajaților și rapoarte periodice despre ce s-a realizat.\n\nVă rugăm să ne spuneți când vi se potrivește o discuție, pentru a stabili împreună pașii următori.",
     formulaFinala: "Cu stimă,",
   },
   {
     id: "invitatie",
     eticheta: "Invitație la eveniment",
     subiect: "Invitație la eveniment",
-    formulaAdresare: "Stimate {DESTINATAR},",
+    formulaAdresare: "Stimați reprezentanți ai {FIRMA},",
     corp: "{ORGANIZATIE} are plăcerea de a vă invita la evenimentul nostru, un prilej de a ne cunoaște mai bine și de a vedea împreună rezultatele ultimilor ani.\n\nDetaliile (data, ora și locul) le găsiți mai jos sau le puteți afla de la echipa noastră. Prezența dumneavoastră ar însemna mult pentru noi.\n\nVă rugăm să ne confirmați participarea, pentru a ne pregăti pentru dumneavoastră.",
-    formulaFinala: "Cu drag,",
+    formulaFinala: "Cu stimă,",
   },
   {
     id: "confirmare",
     eticheta: "Confirmare de primire",
     subiect: "Confirmare de primire a sprijinului",
     formulaAdresare: "Stimată conducere {FIRMA},",
-    corp: "Prin prezenta confirmăm că {ORGANIZATIE} a primit sprijinul acordat de {FIRMA} și vă mulțumim pentru încredere.\n\nSumele primite se folosesc exclusiv pentru scopul stabilit și vor fi raportate transparent. Pentru orice documente suplimentare (contract, raport, dovezi), vă stăm la dispoziție.",
+    corp: "Prin prezenta confirmăm că {ORGANIZATIE} a primit sprijinul acordat de {FIRMA}{SUMA_TXT}{PROIECT_TXT} și vă mulțumim pentru încredere.\n\nSprijinul va fi folosit conform destinației convenite prin contract; dacă apar modificări sau un surplus, vă informăm și stabilim împreună cum se folosește. Pentru documente suplimentare (contract, raport, dovezi), vă stăm la dispoziție.\n\nAceastă scrisoare are caracter informativ și nu ține loc de contract sau de document fiscal.",
     formulaFinala: "Cu respect,",
   },
   {
     id: "libera",
     eticheta: "Scrisoare liberă",
     subiect: "",
-    formulaAdresare: "Stimate {DESTINATAR},",
+    formulaAdresare: "Stimată doamnă / Stimate domnule {DESTINATAR},",
     corp: "",
     formulaFinala: "Cu respect,",
   },
@@ -96,6 +96,9 @@ export type DateScrisoare = Accente & {
   semnFunctie: string;
   ps: string;
   anexe: string;
+  suma: string; // pentru {SUMA}, ex. „5.000 lei”
+  proiect: string; // pentru {PROIECT}
+  an: string; // pentru {AN}
 };
 
 export type InfoOrganizatie = { nume: string; cif: string | null; adresa: string | null; judet: string | null; iban: string | null; logo: string; culoare: string | null };
@@ -131,6 +134,9 @@ export function dateScrisoareGoale(o: { nume: string; antetLinii?: string; logo?
     semnFunctie: "",
     ps: "",
     anexe: "",
+    suma: "",
+    proiect: "",
+    an: "",
   };
 }
 
@@ -160,12 +166,28 @@ export function curataDateScrisoare(brut: unknown, azi = ""): DateScrisoare {
     semnFunctie: text(b.semnFunctie, 120),
     ps: textLung(b.ps, 600),
     anexe: textLung(b.anexe, 600),
+    suma: text(b.suma, 40),
+    proiect: text(b.proiect, 160),
+    an: text(b.an, 4),
   };
 }
 
-// {DESTINATAR}, {FIRMA}, {ORGANIZATIE}, {DATA}, {SUBIECT}, {SEMNATAR} se completează la randare.
+// {DESTINATAR}, {FIRMA}, {ORGANIZATIE}, {DATA}, {SUBIECT}, {SEMNATAR}, {SUMA}, {PROIECT}, {AN} se completează la randare.
+// {SUMA_TXT} și {PROIECT_TXT} adaugă fraza „ în valoare de …” / „, pentru proiectul …” doar dacă datele există.
 export function valoriScrisoare(d: DateScrisoare): Record<string, string> {
-  return { DESTINATAR: d.destNume || "destinatar", FIRMA: d.destFirma || "compania dumneavoastră", ORGANIZATIE: d.antetNume || "organizația noastră", DATA: dataLunga(d.data), SUBIECT: d.subiect, SEMNATAR: d.semnNume };
+  return {
+    DESTINATAR: d.destNume || "destinatar",
+    FIRMA: d.destFirma || "compania dumneavoastră",
+    ORGANIZATIE: d.antetNume || "organizația noastră",
+    DATA: dataLunga(d.data),
+    SUBIECT: d.subiect,
+    SEMNATAR: d.semnNume,
+    SUMA: d.suma,
+    PROIECT: d.proiect,
+    AN: d.an,
+    SUMA_TXT: d.suma ? ` în valoare de ${d.suma}` : "",
+    PROIECT_TXT: d.proiect ? `, pentru proiectul „${d.proiect}”` : "",
+  };
 }
 export const corpScrisoare = (d: DateScrisoare) => paragrafeDinText(d.corp, valoriScrisoare(d));
 export const liniiScrisoare = (brut: string, d: DateScrisoare) => linieDinText(brut, valoriScrisoare(d));
@@ -182,5 +204,8 @@ export function dateScrisoareExemplu(o: { nume: string; antetLinii?: string; log
     semnNume: "Vlad Popescu",
     semnFunctie: "Președinte",
     anexe: "Raportul de impact 2025–2026",
+    suma: "84.300 lei",
+    proiect: "Echipament pentru cardiologie pediatrică",
+    an: "2026",
   };
 }

@@ -20,7 +20,11 @@ const CATEGORII: { key: CategorieKey; culoare: string; instrumente: InstrumentDe
   {
     key: "rapoarte",
     culoare: "var(--ci-green)",
-    instrumente: [{ key: "raportCompanii", href: "raport-companii" }],
+    instrumente: [
+      { key: "raportCompanii", href: "raport-companii" },
+      { key: "scrisori", href: "scrisori" },
+      { key: "certificate", href: "certificate" },
+    ],
   },
   {
     key: "campanii",
@@ -38,11 +42,7 @@ const CATEGORII: { key: CategorieKey; culoare: string; instrumente: InstrumentDe
   {
     key: "documente",
     culoare: "var(--ci-blue)",
-    instrumente: [
-      { key: "scrisori", href: "scrisori" },
-      { key: "certificate", href: "certificate" },
-      { key: "semnaturaDigitala", href: "semnatura-digitala" },
-    ],
+    instrumente: [{ key: "semnaturaDigitala", href: "semnatura-digitala" }],
   },
 ];
 
@@ -72,22 +72,21 @@ export default function InstrumentePage() {
               {cat.instrumente.map((inst) => {
                 const instDict = (catDict.instrumente as Record<string, { titlu: string; descriere: string }>)[inst.key];
                 return (
-                  <div key={inst.key} className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4 shadow-[var(--ci-card-shadow)]">
-                    <div className="mb-2 flex items-center justify-between">
-                      <span className="flex items-center gap-1.5 text-[12px] font-medium text-[var(--ci-text-muted)]">
-                        <span className="h-1.5 w-1.5 rounded-full" style={{ background: cat.culoare }} /> {catDict.nume.split(" ")[0]}
-                      </span>
-                      <span className="rounded-full bg-[var(--ci-green-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--ci-green)]">{dict.disponibil}</span>
-                    </div>
+                  <Link
+                    key={inst.key}
+                    prefetch={false}
+                    href={inst.href.startsWith("/") ? `/${orgSlug}${inst.href}` : `/${orgSlug}/crm/instrumente/${inst.href}`}
+                    className="group block rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4 shadow-[var(--ci-card-shadow)] transition-colors hover:border-[var(--ci-primary)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none"
+                  >
+                    <span className="mb-2 flex items-center gap-1.5 text-[12px] font-medium text-[var(--ci-text-muted)]">
+                      <span className="h-1.5 w-1.5 rounded-full" style={{ background: cat.culoare }} /> {catDict.nume.split(" ")[0]}
+                    </span>
                     <p className="text-[14px] font-semibold text-[var(--ci-text)]">{instDict.titlu}</p>
                     <p className="mt-1 text-[12px] text-[var(--ci-text-muted)]">{instDict.descriere}</p>
-                    <Link prefetch={false}
-                      href={inst.href.startsWith("/") ? `/${orgSlug}${inst.href}` : `/${orgSlug}/crm/instrumente/${inst.href}`}
-                      className="mt-3 flex items-center gap-1 text-[13px] font-medium text-[var(--ci-primary)] hover:underline"
-                    >
+                    <span className="mt-3 flex items-center gap-1 text-[13px] font-medium text-[var(--ci-primary)] group-hover:underline">
                       {dict.deschide} <ArrowRight className="h-3.5 w-3.5" />
-                    </Link>
-                  </div>
+                    </span>
+                  </Link>
                 );
               })}
             </div>

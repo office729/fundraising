@@ -7,7 +7,7 @@ import { randeazaScrisoare } from "@/lib/scrisori-modele";
 import { paletaDinHex } from "@/lib/raport-impact-culori";
 
 import { GalerieSabloane } from "../_comun/galerie-sabloane";
-import { GeneratorDocument, type GrupDef } from "../_comun/generator-document";
+import { GeneratorDocument, type Banner, type GrupDef } from "../_comun/generator-document";
 
 const accenteOrg = (o: InfoOrganizatie) => {
   const p = o.culoare ? paletaDinHex(o.culoare) : null;
@@ -28,6 +28,7 @@ export function GalerieScrisori({ orgSlug, org, azi }: { orgSlug: string; org: I
       lat={794}
       inalt={1123}
       coloane="grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
+      recomandate={["clasic", "modern", "minimal", "elegant", "corporate"].filter((id) => MODELE_SCRISORI.some((m) => m.id === id))}
     />
   );
 }
@@ -47,11 +48,20 @@ const GRUPURI: GrupDef[] = [
     campuri: [
       { cheie: "loc", eticheta: "Localitatea", jumatate: true },
       { cheie: "data", eticheta: "Data", tip: "data", jumatate: true },
-      { cheie: "nrInregistrare", eticheta: "Număr de înregistrare", placeholder: "ex. Nr. 125 / 10.10.2026" },
+      { cheie: "nrInregistrare", eticheta: "Număr de înregistrare", placeholder: "ex. Nr. 014/2026" },
       { cheie: "subiect", eticheta: "Subiect" },
       { cheie: "formulaAdresare", eticheta: "Formula de adresare" },
-      { cheie: "corp", eticheta: "Textul scrisorii", tip: "textarea", rows: 11, ajutor: "Paragrafele se despart printr-un rând liber. Se completează automat: {DESTINATAR}, {FIRMA}, {ORGANIZATIE}, {DATA}." },
+      { cheie: "corp", eticheta: "Textul scrisorii", tip: "textarea", rows: 11, ajutor: "Paragrafele se despart printr-un rând liber. Se completează automat: {DESTINATAR}, {FIRMA}, {ORGANIZATIE}, {DATA}, {SUMA}, {PROIECT}, {AN}." },
       { cheie: "formulaFinala", eticheta: "Formula de încheiere" },
+    ],
+  },
+  {
+    titlu: "Date pentru text",
+    subtitlu: "Folosite în {SUMA}, {PROIECT} și {AN}. Se completează singure când pornești din fișa unei firme.",
+    campuri: [
+      { cheie: "suma", eticheta: "Suma", placeholder: "ex. 5.000 lei", jumatate: true },
+      { cheie: "an", eticheta: "Anul", placeholder: "ex. 2026", jumatate: true },
+      { cheie: "proiect", eticheta: "Proiectul" },
     ],
   },
   {
@@ -73,11 +83,16 @@ const GRUPURI: GrupDef[] = [
   },
 ];
 
-export function GeneratorScrisori({ orgSlug, org, azi, model }: { orgSlug: string; org: InfoOrganizatie; azi: string; model?: string }) {
+const PERSONALE = ["destNume", "destFunctie", "destFirma", "destAdresa", "logoDestinatar", "nrInregistrare", "semnNume", "semnFunctie", "ps", "anexe", "suma", "proiect", "an"];
+
+export function GeneratorScrisori({ orgSlug, org, azi, model, semnatar, dateIni, firmaId, bannere }: { orgSlug: string; org: InfoOrganizatie; azi: string; model?: string; semnatar: { nume: string; functie: string }; dateIni?: Record<string, unknown>; firmaId: string | null; bannere: Banner[] }) {
+  const modelValid = MODELE_SCRISORI.some((m) => m.id === model) ? (model as DateScrisoare["model"]) : undefined;
   const initial = useMemo<DateScrisoare>(() => {
     const d = dateScrisoareGoale({ nume: org.nume, antetLinii: antetDinOrganizatie(org), logo: org.logo, acc: accenteOrg(org) }, azi);
-    return MODELE_SCRISORI.some((m) => m.id === model) ? { ...d, model: model as DateScrisoare["model"] } : d;
-  }, [org, azi, model]);
+    const baza = { ...d, semnNume: semnatar.nume, semnFunctie: semnatar.functie, ...(dateIni ?? {}), ...(modelValid ? { model: modelValid } : {}) };
+    // Logoul și antetul vin mereu din Setări (un document redeschis nu poartă logo-uri), iar data e cea de azi.
+    return curataDateScrisoare({ ...baza, logoOng: org.logo || (dateIni?.logoOng as string | undefined) || "", data: dateIni ? (dateIni.data as string | undefined) || azi : azi }, azi);
+  }, [org, azi, modelValid, semnatar, dateIni]);
   return (
     <GeneratorDocument<DateScrisoare>
       orgSlug={orgSlug}
@@ -94,8 +109,15 @@ export function GeneratorScrisori({ orgSlug, org, azi, model }: { orgSlug: strin
       logoDestinatar={{ cheie: "logoDestinatar", eticheta: "Logo destinatar (opțional)" }}
       culoareOrganizatie={org.culoare}
       numeFisier={(d) => `scrisoare-${d.destFirma || d.destNume || "document"}`}
+      titluIstoric={(d) => `${d.subiect || "Scrisoare"} — ${d.destFirma || d.destNume || "fără destinatar"}`}
+      numerotare={{ cheie: "nrInregistrare" }}
+      campuriPersonale={PERSONALE}
+      modelDinUrl={modelValid}
+      datePregatite={!!dateIni}
+      firmaId={firmaId}
+      bannere={bannere}
       avertizare={(d) => (d.corp.length > 2400 ? "Textul e lung: scrisoarea poate depăși o pagină A4. Scurtează-l sau verifică la tipărire." : null)}
-      ajutor="Alegi șablonul și tipul scrisorii, completezi destinatarul și vezi scrisoarea în dreapta, în timp real. Copiezi codul HTML sau exporți PDF (în fereastra de tipărire alegi „Salvează ca PDF”)."
+      ajutor="Alegi șablonul și tipul scrisorii, completezi destinatarul și vezi scrisoarea în dreapta, în timp real. Salvezi PDF-ul din fereastra de tipărire („Salvează ca PDF”). Modelele sunt orientative: citește și adaptează textul înainte să-l trimiți."
     />
   );
 }
