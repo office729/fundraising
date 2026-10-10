@@ -1,5 +1,6 @@
 "use server";
 
+import { esteRutaOrganizatie } from "@/lib/link-campanie";
 import { randomUUID } from "node:crypto";
 
 import { eq, sql } from "drizzle-orm";
@@ -102,6 +103,7 @@ export async function creeazaPaginaAction(
         : templateuriPermise[0];
 
       const slug = await genereazaSlugUnic(baseSlug, async (candidat) => {
+        if (esteRutaOrganizatie(candidat)) return true;
         const existing = await tx
           .select({ id: fundraisingPages.id })
           .from(fundraisingPages)

@@ -1,5 +1,6 @@
 "use client";
 
+import { caleCampanie } from "@/lib/link-campanie";
 import { Check, Copy, HandCoins, ImageUp, Lock, Pencil, Plus, Trash2, Unlock } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useActionState, useEffect, useState } from "react";
@@ -107,7 +108,7 @@ export function CopyPageLinkButton({ orgSlug, pageSlug }: { orgSlug: string; pag
   const [copiat, setCopiat] = useState(false);
 
   async function copiaza() {
-    const link = `${window.location.origin}/strangere-fonduri/${orgSlug}/${pageSlug}`;
+    const link = `${window.location.origin}${caleCampanie(orgSlug, pageSlug)}`;
     try {
       await navigator.clipboard.writeText(link);
       setCopiat(true);

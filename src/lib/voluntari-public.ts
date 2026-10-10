@@ -1,3 +1,4 @@
+import { caleCampanie } from "@/lib/link-campanie";
 import "server-only";
 
 import { and, asc, desc, eq, gte, inArray, sql } from "drizzle-orm";
@@ -85,7 +86,7 @@ export async function sarciniPentruVoluntar(tx: Tx, orgId: string, orgSlug: stri
       campanieTitlu: s.campanieTitlu,
       campanieSlug: s.campanieSlug,
       textRecomandat: s.textRecomandat ?? "",
-      linkBaza: s.linkBaza ?? (s.campanieSlug ? `${URL_BAZA()}/strangere-fonduri/${orgSlug}/${s.campanieSlug}` : null),
+      linkBaza: s.linkBaza ?? (s.campanieSlug ? `${URL_BAZA()}${caleCampanie(orgSlug, s.campanieSlug)}` : null),
       imagineUrl: s.imagineUrl,
       canale: listaCanale(s.canale),
       termen: s.termen,

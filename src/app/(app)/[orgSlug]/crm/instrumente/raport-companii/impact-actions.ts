@@ -1,5 +1,6 @@
 "use server";
 
+import { caleCampanie } from "@/lib/link-campanie";
 import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 
 import { withOrgAdmin, type OrgContext } from "@/lib/auth/guard";
@@ -76,7 +77,7 @@ export const incarcaImpactAction = withOrgAdmin(async (ctx, companyId: string | 
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://alexandrit.ro").replace(/\/$/, "");
   const linkPagina = (id: string | null) => {
     const p = pagini.find((x) => x.id === id);
-    return p ? `${siteUrl}/strangere-fonduri/${ctx.orgSlug}/${p.slug}` : "";
+    return p ? `${siteUrl}${caleCampanie(ctx.orgSlug, p.slug)}` : "";
   };
   const proiecte: ProiectImpact[] = [];
   for (const s of spons) {

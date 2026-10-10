@@ -1,5 +1,6 @@
 "use server";
 
+import { caleCampanie } from "@/lib/link-campanie";
 import { randomUUID } from "node:crypto";
 
 import { and, eq } from "drizzle-orm";
@@ -111,7 +112,7 @@ export const genereazaTextMultumireAIAction = withOrgFaze<
 
     const hdrs = await headers();
     const proto = hdrs.get("x-forwarded-proto") ?? "https";
-    const url = `${proto}://${hdrs.get("host")}/strangere-fonduri/${ctx.orgSlug}/${pagina.slug}`;
+    const url = `${proto}://${hdrs.get("host")}${caleCampanie(ctx.orgSlug, pagina.slug)}`;
     return {
       pregatit: {
         pagina: { titlu: pagina.titlu, poveste: pagina.poveste, sumaStransa: pagina.sumaStransa, sumaTinta: pagina.sumaTinta },

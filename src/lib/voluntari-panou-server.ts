@@ -1,3 +1,4 @@
+import { caleCampanie } from "@/lib/link-campanie";
 import "server-only";
 
 import { and, asc, desc, eq, gte, sql } from "drizzle-orm";
@@ -209,4 +210,4 @@ export async function gasesteVoluntarDupaTelefon(tx: Tx, orgId: string, telefon:
 
 export const URL_BAZA = () => process.env.NEXT_PUBLIC_SITE_URL || "https://alexandrit.ro";
 export const linkCampanie = (orgSlug: string, pageSlug: string, canal?: string) =>
-  `${URL_BAZA()}/strangere-fonduri/${orgSlug}/${pageSlug}?utm_source=voluntari${canal ? `&utm_medium=${canal}` : ""}`;
+  `${URL_BAZA()}${caleCampanie(orgSlug, pageSlug)}?utm_source=voluntari${canal ? `&utm_medium=${canal}` : ""}`;

@@ -1,5 +1,6 @@
 "use server";
 
+import { caleCampanie } from "@/lib/link-campanie";
 import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 
@@ -31,7 +32,7 @@ async function dateCampanie(
   if (!pagina) return null;
   const hdrs = await headers();
   const proto = hdrs.get("x-forwarded-proto") ?? "https";
-  const url = `${proto}://${hdrs.get("host")}/strangere-fonduri/${orgSlug}/${pagina.slug}`;
+  const url = `${proto}://${hdrs.get("host")}${caleCampanie(orgSlug, pagina.slug)}`;
   return { titlu: pagina.titlu, poveste: pagina.poveste, orgName, url, sumaStransa: pagina.sumaStransa, sumaTinta: pagina.sumaTinta };
 }
 

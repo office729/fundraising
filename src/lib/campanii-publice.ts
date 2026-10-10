@@ -1,3 +1,4 @@
+import { caleCampanie } from "@/lib/link-campanie";
 import "server-only";
 
 import { desc, eq, sql } from "drizzle-orm";
@@ -98,7 +99,7 @@ export async function getCampaniiLanding(opt: { ignoraPrag?: boolean } = {}): Pr
     for (const r of rows) {
       const campanie: CampaniePublica = {
         id: r.id,
-        href: `/strangere-fonduri/${r.orgSlug}/${r.slug}`,
+        href: caleCampanie(r.orgSlug, r.slug),
         titlu: r.titlu,
         poveste: scurta(r.poveste),
         imagineUrl: r.imagineUrl,

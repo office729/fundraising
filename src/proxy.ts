@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 
 import { esteHostPlatforma } from "@/lib/platform-domains";
+import { caleReala } from "@/lib/link-campanie";
 import { esteSlugRezervat } from "@/lib/reserved-slugs";
 import { updateSession } from "@/lib/supabase/session";
 import { getSlugPentruDomeniu } from "@/lib/tenant-domain";
@@ -31,8 +32,20 @@ export async function proxy(request: NextRequest) {
       if (orgSlug && primulSegment !== orgSlug) {
         const rewriteTo = request.nextUrl.clone();
         rewriteTo.pathname = `/${orgSlug}${pathname}`;
+        // Pe domeniu propriu, /<campanie> devine întâi /<org>/<campanie>, apoi ruta reală a campaniei.
+        rewriteTo.pathname = caleReala(rewriteTo.pathname, esteSlugRezervat) ?? rewriteTo.pathname;
         return await updateSession(request, rewriteTo);
       }
+    }
+  }
+
+  // Link scurt de campanie: /<org>/<campanie> se servește de pagina publică /strangere-fonduri/<org>/<campanie>.
+  if (!pathname.startsWith("/_next") && !pathname.startsWith("/api")) {
+    const reala = caleReala(pathname, esteSlugRezervat);
+    if (reala) {
+      const rewriteTo = request.nextUrl.clone();
+      rewriteTo.pathname = reala;
+      return await updateSession(request, rewriteTo);
     }
   }
 

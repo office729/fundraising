@@ -1,3 +1,4 @@
+import { caleCampanie } from "@/lib/link-campanie";
 import { and, eq, sql } from "drizzle-orm";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
@@ -50,7 +51,7 @@ export default async function PromovarePage({
   const { org, pagina } = data;
   const hdrs = await headers();
   const proto = hdrs.get("x-forwarded-proto") ?? "https";
-  const url = `${proto}://${hdrs.get("host")}/strangere-fonduri/${orgSlug}/${pageSlug}`;
+  const url = `${proto}://${hdrs.get("host")}${caleCampanie(orgSlug, pageSlug)}`;
 
   const dateCampanie = {
     titlu: pagina.titlu,

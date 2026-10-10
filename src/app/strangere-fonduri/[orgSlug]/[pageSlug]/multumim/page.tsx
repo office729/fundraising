@@ -1,3 +1,4 @@
+import { caleCampanie } from "@/lib/link-campanie";
 import { eq, sql } from "drizzle-orm";
 import Link from "next/link";
 
@@ -77,7 +78,7 @@ export default async function MultumimPage({
         <div className="mt-6 w-full rounded-xl border border-line bg-panel p-4 text-left">
           {!detaliu.recurenta && <p className="text-[13.5px] text-body">{t.thankYou.lunarOferta}</p>}
           <p className={`text-[13px] font-semibold text-ink ${detaliu.recurenta ? "" : "mt-3"}`}>{t.thankYou.spuneMaiDeparte}</p>
-          <ShareLinksClient url={`${(process.env.NEXT_PUBLIC_SITE_URL || "https://alexandrit.ro").replace(/\/$/, "")}/strangere-fonduri/${orgSlug}/${pageSlug}`} titlu={detaliu.pageTitlu} locale={locale} />
+          <ShareLinksClient url={`${(process.env.NEXT_PUBLIC_SITE_URL || "https://alexandrit.ro").replace(/\/$/, "")}${caleCampanie(orgSlug, pageSlug)}`} titlu={detaliu.pageTitlu} locale={locale} />
         </div>
       )}
       <Link

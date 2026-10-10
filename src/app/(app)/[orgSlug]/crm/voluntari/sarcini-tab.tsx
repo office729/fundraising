@@ -1,5 +1,6 @@
 "use client";
 
+import { caleCampanie } from "@/lib/link-campanie";
 import { Clock, Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 
@@ -140,7 +141,7 @@ function FormularSarcina({ orgSlug, campanii, initial, onClose }: { orgSlug: str
     const c = campanii.find((x) => x.id === id);
     if (!c) return;
     // Completăm doar câmpurile goale: nu suprascriem ce a scris deja echipa.
-    if (!linkBaza) setLinkBaza(`${window.location.origin}/strangere-fonduri/${orgSlug}/${c.slug}`);
+    if (!linkBaza) setLinkBaza(`${window.location.origin}${caleCampanie(orgSlug, c.slug)}`);
     if (!textRecomandat) setTextRecomandat(`Susțin „${c.titlu}”. Dacă poți, ajută și tu:`);
     if (!titlu) setTitlu(`Dă mai departe: ${c.titlu}`);
   }

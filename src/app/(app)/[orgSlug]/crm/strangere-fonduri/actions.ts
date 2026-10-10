@@ -1,5 +1,6 @@
 "use server";
 
+import { esteRutaOrganizatie } from "@/lib/link-campanie";
 import { randomUUID } from "node:crypto";
 
 import { and, eq, inArray, sql } from "drizzle-orm";
@@ -126,6 +127,7 @@ export const creeazaPaginaAdminAction = withOrgAdmin(
 
     const baseSlug = slugify(titlu);
     const slug = await genereazaSlugUnic(baseSlug, async (candidat) => {
+      if (esteRutaOrganizatie(candidat)) return true;
       const existing = await ctx.db
         .select({ id: fundraisingPages.id })
         .from(fundraisingPages)

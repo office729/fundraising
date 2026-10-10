@@ -1,5 +1,6 @@
 "use client";
 
+import { caleCampanie } from "@/lib/link-campanie";
 import { AlertTriangle, ArrowLeft, ArrowRight, Check, CheckCircle2, Copy, ExternalLink, ImagePlus, Info, Monitor, Pencil, Save, Smartphone, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -224,7 +225,7 @@ export function CampanieWizard(props: CampanieWizardProps) {
 
   async function copiazaLink(slug: string) {
     try {
-      await navigator.clipboard.writeText(`${window.location.origin}/strangere-fonduri/${orgSlug}/${slug}`);
+      await navigator.clipboard.writeText(`${window.location.origin}${caleCampanie(orgSlug, slug)}`);
       setCopiat(true);
       setTimeout(() => setCopiat(false), 2000);
     } catch {
@@ -235,7 +236,7 @@ export function CampanieWizard(props: CampanieWizardProps) {
   if (!open) return null;
 
   const ultim = pas === NR_PASI - 1;
-  const linkPublic = `alexandrit.ro/strangere-fonduri/${orgSlug}/…`;
+  const linkPublic = `alexandrit.ro/${orgSlug}/…`;
   const a = t.asistent;
 
   return (
@@ -728,7 +729,7 @@ function RandRezumat({ eticheta, valoare, pas, gol, modifica, onModifica }: { et
 // ===== După publicare =====
 function Succes({ t, rezultat, orgSlug, copiat, onCopiaza, onInchide }: { t: Texte; rezultat: Rezultat; orgSlug: string; copiat: boolean; onCopiaza: () => void; onInchide: () => void }) {
   const s = t.succes;
-  const cale = `/strangere-fonduri/${orgSlug}/${rezultat.slug}`;
+  const cale = caleCampanie(orgSlug, rezultat.slug);
   return (
     <div className="min-h-0 flex-1 overflow-y-auto px-4 py-12">
       <div className="mx-auto max-w-[560px] text-center">

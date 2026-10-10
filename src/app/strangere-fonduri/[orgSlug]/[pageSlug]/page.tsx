@@ -11,6 +11,7 @@ import { db } from "@/lib/db";
 import { fundraisingDonations, fundraisingPages, fundraisingUpdates, organizations } from "@/lib/db/schema";
 import { DONATION_DICT } from "@/lib/i18n/dictionaries/donation";
 import { getLocale } from "@/lib/i18n/get-locale";
+import { caleCampanie } from "@/lib/link-campanie";
 import { FARA_METODE_REDIRECT, metodeRedirect } from "@/lib/metode-plata-donatii";
 
 import { aziRo, zileRamase } from "@/app/(app)/[orgSlug]/crm/strangere-fonduri/campanie-validare";
@@ -110,7 +111,7 @@ export async function generateMetadata({
   // Fără rupturi de rând în descriere (apăreau în previzualizări ca text, nu ca spațiu).
   const poveste = pagina.poveste.replace(/\s+/g, " ").trim();
   const descriere = poveste.length > 160 ? `${poveste.slice(0, 157)}...` : poveste;
-  const adresa = `/strangere-fonduri/${orgSlug}/${pageSlug}`;
+  const adresa = caleCampanie(orgSlug, pageSlug);
   // Pagina care se distribuie pe WhatsApp/Facebook: fără `og:image` linkul apărea fără imagine, deși pagina are una.
   const imagini = pagina.imagineUrl ? [{ url: pagina.imagineUrl }] : undefined;
 
@@ -143,7 +144,7 @@ export default async function PaginaStrangereFonduriPage({
   // cross-origin) — construim din host + protocolul reținut de proxy-ul Vercel.
   const hdrs = await headers();
   const proto = hdrs.get("x-forwarded-proto") ?? "https";
-  const url = `${proto}://${hdrs.get("host")}/strangere-fonduri/${orgSlug}/${pageSlug}`;
+  const url = `${proto}://${hdrs.get("host")}${caleCampanie(orgSlug, pageSlug)}`;
 
   // Povestea se citește pe paragrafe (rând liber între ele); rândurile simple din interiorul unui paragraf se păstrează.
   const paragrafe = pagina.poveste.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
