@@ -57,7 +57,7 @@ export type DateBorderou = {
   an: number;
   dataBorderou: string; // dd.mm.yyyy
   luna: number;
-  entitate: { den: string; cui: string; iban: string };
+  entitate: { den: string; cui: string; iban: string; adresa?: string };
   declaratii: DeclaratieBorderou[];
 };
 

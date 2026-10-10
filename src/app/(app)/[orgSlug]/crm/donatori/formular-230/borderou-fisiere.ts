@@ -48,6 +48,17 @@ export function descarcaXmlBorderou(d: DateBorderou) {
   descarca(new Blob([xmlBorderou(d)], { type: "application/xml;charset=utf-8" }), numeFisier(d, "xml"));
 }
 
+// PDF-ul inteligent ANAF (formularul oficial D230 în modul «Entitate nonprofit»), cu borderoul deja completat: organizația doar
+// îl deschide în Adobe Reader/Acrobat, apasă «Validare» și îl semnează. Max. 50 de declarații pe fișier (cât are un borderou).
+export async function descarcaPdfInteligentBorderou(d: DateBorderou) {
+  const raspuns = await fetch("/d230-borderou-template.pdf");
+  if (!raspuns.ok) throw new Error("Nu am putut încărca formularul oficial D230.");
+  const sablon = new Uint8Array(await raspuns.arrayBuffer());
+  const { completeazaBorderouPdf } = await import("@/lib/borderou230-pdf");
+  const pdf = await completeazaBorderouPdf(sablon, d);
+  descarca(new Blob([pdf as BlobPart], { type: "application/pdf" }), `borderou-230-${d.an}-nr-${d.nr}-inteligent.pdf`);
+}
+
 export async function descarcaPdfBorderou(d: DateBorderou) {
   const { PDFDocument, rgb } = await import("pdf-lib");
   const fontkit = (await import("@pdf-lib/fontkit")).default;

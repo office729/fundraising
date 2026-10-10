@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, Eye, FileCode2, FileSpreadsheet, FileText } from "lucide-react";
+import { CheckCircle2, Eye, FileCode2, FileSpreadsheet, FileText, FileSignature } from "lucide-react";
 import { useState } from "react";
 
 import { PROCENT_IMPLICIT, type DateBorderou } from "@/lib/borderou230";
@@ -8,9 +8,9 @@ import { PROCENT_IMPLICIT, type DateBorderou } from "@/lib/borderou230";
 import { Card, CardHeader } from "../../components/ui/card";
 import { Dialog } from "../../components/ui/dialog";
 import { listeazaBorderouri, marcheazaBorderouDepus, obtineDateBorderou, type BorderouSumar } from "./borderouri-actions";
-import { descarcaExcelBorderou, descarcaPdfBorderou, descarcaXmlBorderou } from "./borderou-fisiere";
+import { descarcaExcelBorderou, descarcaPdfBorderou, descarcaPdfInteligentBorderou, descarcaXmlBorderou } from "./borderou-fisiere";
 
-type Format = "xlsx" | "pdf" | "xml";
+type Format = "xlsx" | "pdf" | "xml" | "d230";
 
 // Borderouri ANAF: formularele se grupează automat câte 50 (pe cont beneficiar și an); când un borderou se umple, următoarele
 // formulare intră în borderoul următor. Fiecare borderou se descarcă în Excel, PDF sau XML (formatul borderoului ANAF).
@@ -31,6 +31,7 @@ export function BorderouriCard({ orgSlug, initial }: { orgSlug: string; initial:
       const date = await obtineDateBorderou(orgSlug, b.beneficiarId, b.an, b.nr);
       if (format === "xlsx") await descarcaExcelBorderou(date);
       else if (format === "pdf") await descarcaPdfBorderou(date);
+      else if (format === "d230") await descarcaPdfInteligentBorderou(date);
       else descarcaXmlBorderou(date);
     } catch (e) {
       setEroare(e instanceof Error ? e.message : "Nu am putut genera fișierul.");
@@ -71,6 +72,10 @@ export function BorderouriCard({ orgSlug, initial }: { orgSlug: string; initial:
     <Card>
       <CardHeader title="Borderouri ANAF" subtitle="Se completează automat, câte 50 de formulare pe borderou; după 50, se trece la borderoul următor." />
       {eroare && <p className="mb-2 text-[13px] text-[var(--ci-red)]">{eroare}</p>}
+      <p className="mb-3 rounded-lg bg-[var(--ci-surface-2)] p-2.5 text-[12px] leading-relaxed text-[var(--ci-text-muted)]">
+        <strong className="text-[var(--ci-text)]">PDF inteligent ANAF:</strong> formularul oficial D230 în modul „Entitate nonprofit”, cu entitatea (denumire, CIF, cont/subcont), borderoul și cei max. 50 de contribuabili deja completați.
+        Deschide-l în <strong>Adobe Acrobat Reader</strong> (nu în browser), apasă <strong>Validare</strong>, apoi semnează-l electronic. Când un borderou se umple, următoarele formulare intră automat într-un borderou nou, cu fișierul lui.
+      </p>
       {borderouri === null ? (
         <p className="text-[13px] text-[var(--ci-text-muted)]">Se încarcă…</p>
       ) : borderouri.length === 0 ? (
@@ -102,6 +107,15 @@ export function BorderouriCard({ orgSlug, initial }: { orgSlug: string; initial:
                   <div className="flex flex-wrap items-center gap-1.5">
                     <button type="button" className={`${btn} !border-[var(--ci-primary)] !text-[var(--ci-primary)]`} disabled={lucru !== null} onClick={() => vezi(b)}>
                       <Eye className="h-3.5 w-3.5" /> Vezi borderoul
+                    </button>
+                    <button
+                      type="button"
+                      className={`${btn} !border-[var(--ci-primary)] !bg-[var(--ci-primary)] !text-white hover:opacity-90`}
+                      disabled={lucru !== null}
+                      onClick={() => genereaza(b, "d230")}
+                      title="Formularul oficial D230 (PDF inteligent ANAF), deja completat — rămân doar validarea și semnarea"
+                    >
+                      <FileSignature className="h-3.5 w-3.5" /> {lucru === cheie(b, "d230") ? "Se pregătește…" : "PDF inteligent ANAF"}
                     </button>
                     <button type="button" className={btn} disabled={lucru !== null} onClick={() => genereaza(b, "xlsx")}>
                       <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
@@ -173,6 +187,9 @@ export function BorderouriCard({ orgSlug, initial }: { orgSlug: string; initial:
               </table>
             </div>
             <div className="flex flex-wrap justify-end gap-2">
+              <button type="button" className={`${btn} !border-[var(--ci-primary)] !text-[var(--ci-primary)]`} onClick={() => descarcaPdfInteligentBorderou(previzualizare).catch((e) => setEroare(e instanceof Error ? e.message : "Nu am putut genera PDF-ul inteligent."))}>
+                <FileSignature className="h-3.5 w-3.5" /> PDF inteligent ANAF
+              </button>
               <button type="button" className={btn} onClick={() => descarcaExcelBorderou(previzualizare)}>
                 <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
               </button>

@@ -65,6 +65,8 @@ export const listeazaBorderouri = withOrgAdmin(async (ctx): Promise<BorderouSuma
   return [...grupuri.values()].sort((a, b) => b.an - a.an || a.beneficiarNume.localeCompare(b.beneficiarNume, "ro") || a.nr - b.nr);
 });
 
+const cifreCui = (s: string) => s.replace(/^\s*RO/i, "").replace(/\D/g, "");
+
 const dd = (d: Date) => d.toLocaleDateString("ro-RO", { timeZone: "Europe/Bucharest", day: "2-digit", month: "2-digit", year: "numeric" });
 
 // Datele complete ale unui borderou (cu CNP decriptat), pentru generarea Excel / PDF / XML. Doar owner/admin; accesul se înregistrează.
@@ -78,15 +80,24 @@ export const obtineDateBorderou = withOrgAdmin(async (ctx, beneficiarId: string 
     .limit(MAX_PE_BORDEROU);
   if (randuri.length === 0) throw new EroareUtilizator("Borderoul nu a fost găsit.");
 
-  let entitate = { den: ctx.orgName, cui: "", iban: "" };
+  let entitate: DateBorderou["entitate"] = { den: ctx.orgName, cui: "", iban: "" };
+  let beneficiarCif = "";
   if (beneficiarId) {
     const [b] = await ctx.db.select({ nume: formular230Beneficiari.nume, cif: formular230Beneficiari.cif, iban: formular230Beneficiari.iban }).from(formular230Beneficiari).where(and(eq(formular230Beneficiari.id, beneficiarId), eq(formular230Beneficiari.orgId, ctx.orgId))).limit(1);
-    if (b) entitate = { den: b.nume, cui: b.cif ?? "", iban: b.iban ?? "" };
+    if (b) {
+      entitate = { den: b.nume, cui: b.cif ?? "", iban: b.iban ?? "" };
+      beneficiarCif = b.cif ?? "";
+    }
   }
-  if (!entitate.cui) {
-    const [o] = await ctx.db.select({ cif: organizations.cif }).from(organizations).where(eq(organizations.id, ctx.orgId)).limit(1);
-    entitate.cui = o?.cif ?? "";
+  // Domiciliul fiscal îl avem doar pentru organizația însăși; pentru alt beneficiar (alt CIF) rămâne gol, de completat în formular.
+  const [o] = await ctx.db.select({ cif: organizations.cif, adresaSediu: organizations.adresaSediu, judet: organizations.judet, iban: organizations.iban }).from(organizations).where(eq(organizations.id, ctx.orgId)).limit(1);
+  if (!entitate.cui) entitate.cui = o?.cif ?? "";
+  const esteOrganizatia = !beneficiarCif || cifreCui(beneficiarCif) === cifreCui(o?.cif ?? "");
+  if (esteOrganizatia && o?.adresaSediu) {
+    const sediu = o.adresaSediu.trim();
+    entitate.adresa = o.judet && !sediu.toLowerCase().includes(o.judet.toLowerCase()) ? `${sediu}, jud. ${o.judet}` : sediu;
   }
+  if (!entitate.iban && esteOrganizatia) entitate.iban = o?.iban ?? "";
 
   await inregistreazaAudit(ctx.db, {
     orgId: ctx.orgId,
