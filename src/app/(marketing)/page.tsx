@@ -8,6 +8,7 @@ import { MARKETING_DICT } from "@/lib/i18n/dictionaries/marketing";
 
 import { FinalizeForm } from "./finalize-form";
 import { metadatePagina } from "@/lib/page-titles";
+import { PanouPreview } from "./panou-preview";
 
 export default async function LandingPage({
   searchParams,
@@ -117,6 +118,9 @@ export default async function LandingPage({
         </svg>
       </section>
 
+      {/* Panoul de administrare (ilustrație cu date demonstrative) */}
+      <PanouPreview locale={locale} />
+
       {/* Platforma */}
       <section id="platforma" className="px-[6%] py-16">
         <h2 className="font-display mx-auto max-w-2xl text-center text-[32px] font-bold text-ink">{dict.platforma.title}</h2>
@@ -161,15 +165,15 @@ export default async function LandingPage({
       {/* Întrebări frecvente — <details>/<summary> nativ: accesibil din cutie
           (tastatură, cititoare de ecran), fără stare React necesară. */}
       <section className="bg-panel-2 px-[6%] py-16">
-        <h2 className="font-display mx-auto max-w-2xl text-center text-[32px] font-bold text-ink">{dict.intrebariFrecvente.title}</h2>
-        <div className="mx-auto mt-10 max-w-3xl divide-y divide-line rounded-2xl border border-line bg-panel">
+        <h2 className="font-display mx-auto max-w-2xl text-center text-[26px] font-bold text-ink sm:text-[28px]">{dict.intrebariFrecvente.title}</h2>
+        <div className="mx-auto mt-8 max-w-2xl divide-y divide-line rounded-2xl border border-line bg-panel">
           {dict.intrebariFrecvente.items.map((q) => (
-            <details key={q.intrebare} className="group px-6 py-5 open:pb-5">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-display text-[16px] font-bold text-ink marker:content-none">
+            <details key={q.intrebare} className="group px-5 py-3.5 open:pb-4">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-display text-[14px] leading-snug font-semibold text-ink marker:content-none">
                 {q.intrebare}
                 <span className="shrink-0 text-xl leading-none text-brand-blue transition-transform duration-200 group-open:rotate-45">+</span>
               </summary>
-              <p className="mt-3 text-[14.5px] leading-relaxed text-muted">{q.raspuns}</p>
+              <p className="mt-2.5 text-[13px] leading-relaxed text-muted">{q.raspuns}</p>
             </details>
           ))}
         </div>
