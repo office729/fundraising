@@ -136,6 +136,28 @@ plus pe an, asta înseamnă mii de oameni ajutați în plus. Asta e măsura succ
 Aceasta e cea mai puternică parte a lansării, dar **are nevoie de date reale**. Structura de mai jos e gata; completează
 cifrele din arhiva asociației (extrasele contabile, CRM-ul SOI, rapoartele anuale).
 
+### Volumul: de ce fără CRM nu se mai poate (cifră confirmată)
+
+Salvează o inimă primește **aproximativ 70.000 de donații pe an**. Asta înseamnă:
+
+| | Volum |
+|---|---|
+| Pe lună | ~5.800 de donații |
+| Pe zi | ~190 de donații, în fiecare zi a anului |
+
+Ce înseamnă asta în muncă (calcul ilustrativ): dacă fiecare donație ar cere doar **2 minute** de lucru manual —
+trecut în tabel, verificat, trimis un mulțumesc — ar însemna **~2.300 de ore pe an**, adică mai mult decât **un om cu
+normă întreagă care n-ar face altceva** (o normă are ~1.800 de ore lucrate pe an). Cu 5 minute pe donație, ar fi
+nevoie de trei oameni.
+
+**Mesajul-cheie:**
+> „Primim în jur de 190 de donații în fiecare zi. Fără un CRM, am avea nevoie de cel puțin un om care să nu facă
+> nimic altceva decât să le noteze. Cu CRM-ul, fiecare donație intră automat, cu istoric, iar donatorul primește
+> mulțumirea pe loc. Omul acela lucrează azi pentru copii, nu pentru tabele.”
+
+> Notă: verifică cu echipa cât timp lua realmente o donație procesată manual, înainte de CRM, și înlocuiește cele
+> 2 minute cu cifra reală — e un argument mai puternic dacă e al vostru.
+
 ### Înainte și după
 
 | Activitate | Înainte (fără sistem) | După (cu CRM și instrumente) |
@@ -159,7 +181,14 @@ cifrele din arhiva asociației (extrasele contabile, CRM-ul SOI, rapoartele anua
 
 ## Pasul 6 — Ce creștere am avut folosind aceste instrumente
 
-Ce se poate spune deja, public: **28 de milioane de euro strânși în 14 ani, 700+ campanii, 1.500 de persoane ajutate.**
+Ce se poate spune deja, public: **28 de milioane de euro strânși în 14 ani, 700+ campanii, 1.500 de persoane ajutate,
+~70.000 de donații pe an.**
+
+> **De lămurit înainte de publicare — „3 milioane de euro pe an”.** Ai confirmat 3 mil. € ca medie anuală, dar
+> 28 mil. € în 14 ani înseamnă o medie de **2 mil. € pe an**. Cele două cifre nu pot fi publicate împreună așa.
+> Dacă 3 mil. € e ritmul din ultimii ani, atunci e de fapt cea mai bună dovadă de creștere și se formulează așa:
+> *„În ultimii [N] ani strângem în jur de 3 milioane de euro pe an, față de o medie de 2 milioane pe toată perioada.”*
+> Până la lămurire, folosește doar 28 mil. € în 14 ani.
 
 Ce ar transforma asta într-o poveste de creștere (cifre pe ani, de completat):
 
@@ -281,6 +310,13 @@ tabelul de la Pasul 3.
 > Dacă platforma te ajută să păstrezi doi donatori care dau 25 de lei pe lună, și-a plătit costul.
 > Dacă te ajută să nu ratezi o singură sponsorizare, ai câștigat de câteva ori costul.
 > Restul — orele economisite la contracte, D177 și rapoarte — e timp redat cauzei tale.
+
+**P9b · „190 de donații pe zi”** (Facebook, LinkedIn, Instagram — o imagine cu cifra mare)
+> La Salvează o inimă primim în jur de 70.000 de donații pe an. Adică ~190 în fiecare zi.
+> Fiecare înseamnă un om care a ales să ajute — și care merită un „mulțumesc” la timp.
+> Fără un CRM, doar să le notăm ne-ar lua un om cu normă întreagă. Cu CRM-ul, se înregistrează singure,
+> iar echipa lucrează pentru copii, nu pentru tabele.
+> Același sistem îl poate folosi acum orice ONG: alexandrit.ro
 
 **P10 · „Sponsorizarea prin 20%, explicată în 60 de secunde”** — conținut util (ce e, ce document trebuie, cum îl
 generezi în Alexandrit). Bun pentru distribuire în grupuri de ONG-uri.
