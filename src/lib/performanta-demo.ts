@@ -1,7 +1,7 @@
 import { and, eq, inArray, like, sql } from "drizzle-orm";
 
 import type { OrgContext } from "@/lib/auth/guard";
-import { activitati, angajati, angajatiAbsente, appUsers, blocaje, crmKv, departments, kpiInteractiuni, obiective, performantaNotificari, rezultateActualizari, rezultateCheie, roluri } from "@/lib/db/schema";
+import { activitati, angajati, angajatiAbsente, appUsers, blocaje, crmKv, departments, kpiAtribuiri, kpiCategorii, kpiDefinitii, kpiInteractiuni, kpiSabloane, kpiSabloaneItemi, kpiValori, obiective, performantaNotificari, rezultateActualizari, rezultateCheie, roluri } from "@/lib/db/schema";
 import { executaImport, planifica, stergeImport } from "@/lib/donatori-import-server";
 import { aziRo, luniSaptamanii, ritmAsteptat } from "@/lib/performanta-masurare";
 import { salveazaObiectiv } from "@/lib/performanta-obiective";
@@ -18,7 +18,26 @@ type Rez<T extends object = object> = ({ ok: true } & T) | { ok: false; eroare: 
 const CALE = "performanta/demo";
 const DOMENIU = "demo.invalid"; // domeniu rezervat (RFC 2606): niciun mesaj nu poate ajunge la o adresă reală
 
-type Marcaj = { la: string; departamente: string[]; roluri: string[]; angajati: string[]; profilulMeuCreat: boolean; obiective: string[]; activitati: string[]; blocaje: string[]; interactiuni: string[]; absente: string[]; importId: string | null; donatori: number };
+type Marcaj = {
+  la: string;
+  departamente: string[];
+  roluri: string[];
+  angajati: string[];
+  profilulMeuCreat: boolean;
+  obiective: string[];
+  activitati: string[];
+  blocaje: string[];
+  interactiuni: string[];
+  absente: string[];
+  importId: string | null;
+  donatori: number;
+  // KPI Library (categorii create doar dacă organizația nu avea niciuna, definiții, șabloane) și KPI echipă (varianta veche, în crm_kv:
+  // se păstrează conținutul de dinainte, ca să poată fi restaurat exact la ștergere).
+  categoriiKpi?: string[];
+  definitiiKpi?: string[];
+  sabloaneKpi?: string[];
+  kvAnterior?: Record<string, { existat: boolean; anterior: unknown }>;
+};
 
 export type StareDemo = { incarcat: boolean; la: string | null; persoane: number; obiective: number; activitati: number; donatori: number; areDateDonatori: boolean };
 
@@ -95,11 +114,12 @@ const RITM: Record<string, (number | null)[]> = { eu: [1.0, 1.1, 0.95, 1.0], iri
 const COMENTARII = ["Am încheiat prima rundă; urmează confirmările.", "Un partener a amânat decizia cu două săptămâni.", "Pe drumul bun, fără probleme majore.", "Așteptăm datele de la contabilitate ca să închidem.", "Rezultat verificat cu raportul din platformă."];
 const NUME_ADMIN = "Alexandra Popa";
 
-export async function incarcaDemo(ctx: OrgContext, optiuni: { donatori: boolean }): Promise<Rez<{ rezumat: string }>> {
+export async function incarcaDemo(ctx: OrgContext, optiuni: { donatori: boolean; numeAdmin?: string }): Promise<Rez<{ rezumat: string }>> {
   if (ctx.role !== "owner" && ctx.role !== "admin") return { ok: false, eroare: "Datele demo le încarcă un administrator." };
   const existent = await stareDemo(ctx);
   if (existent.incarcat) return { ok: false, eroare: "Datele demo sunt deja încărcate. Șterge-le întâi, dacă vrei să le reîncarci." };
   const azi = aziRo();
+  const numeAdmin = (optiuni.numeAdmin ?? NUME_ADMIN).trim() || NUME_ADMIN;
   const luni = luniSaptamanii(azi);
   const trim = rezolvaPerioada(null, azi);
   const an = azi.slice(0, 4);
@@ -117,7 +137,7 @@ export async function incarcaDemo(ctx: OrgContext, optiuni: { donatori: boolean 
   let [eu] = await ctx.db.select({ id: angajati.id, nume: angajati.nume }).from(angajati).where(and(eq(angajati.orgId, ctx.orgId), eq(angajati.appUserId, ctx.userId))).limit(1);
   if (!eu) {
     const [u] = await ctx.db.select({ email: appUsers.email }).from(appUsers).where(eq(appUsers.id, ctx.userId)).limit(1);
-    [eu] = await ctx.db.insert(angajati).values({ orgId: ctx.orgId, appUserId: ctx.userId, nume: NUME_ADMIN, email: u?.email ?? null, roleId: rolId.get("Conducere și parteneriate"), departmentId: dep[0].id, status: "activ", nivelAcces: "manager", dataInceperii: `${Number(an) - 3}-01-15` }).returning({ id: angajati.id, nume: angajati.nume });
+    [eu] = await ctx.db.insert(angajati).values({ orgId: ctx.orgId, appUserId: ctx.userId, nume: numeAdmin, email: u?.email ?? null, roleId: rolId.get("Conducere și parteneriate"), departmentId: dep[0].id, status: "activ", nivelAcces: "manager", dataInceperii: `${Number(an) - 3}-01-15` }).returning({ id: angajati.id, nume: angajati.nume });
     m.angajati.push(eu.id);
     m.profilulMeuCreat = true;
   }
@@ -303,7 +323,7 @@ export async function incarcaDemo(ctx: OrgContext, optiuni: { donatori: boolean 
   };
   await intr("eu", "checkin", 0, { realizari: "Am pus la punct calendarul campaniilor și am vorbit cu doi parteneri.", blocaje: "Aștept decizia juridică pentru contractul Alpha.", prioritate: "Raportul către consiliu." }, true);
   for (const [cine, zile, c] of [["irina", 0, { realizari: "Comunicatul e gata de aprobare; am confirmat un interviu.", blocaje: "", prioritate: "Calendarul de mulțumiri." }], ["irina", -7, { realizari: "Am finalizat calendarul T4.", blocaje: "", prioritate: "Comunicatul de presă." }], ["radu", -7, { realizari: "Am avut două întâlniri cu companii.", blocaje: "Contractul Alpha stă la juridic.", prioritate: "Închiderea contractului." }], ["elena", 0, { realizari: "Am sunat 12 donatori dormanți, 4 au promis o nouă donație.", blocaje: "", prioritate: "Curățarea datelor." }], ["ioana", -7, { realizari: "Am predat statisticile lunii.", blocaje: "Exportul de la contabilitate vine târziu.", prioritate: "Raportul pentru sponsorul Alpha." }]] as const) await intr(cine, "checkin", zile, c, false);
-  await intr("irina", "1la1", -20, { subiecte: "Prioritățile T4, încărcarea lunii octombrie", decizii: "Comunicatul pentru presă trece prin aprobare.", actiuni: "Irina: calendar T4. Alexandra: decizie bugete.", urmatoarea: adauga(azi, 10) }, true);
+  await intr("irina", "1la1", -20, { subiecte: "Prioritățile T4, încărcarea lunii octombrie", decizii: "Comunicatul pentru presă trece prin aprobare.", actiuni: `Irina: calendar T4. ${numeAdmin.split(" ")[0]}: decizie bugete.`, urmatoarea: adauga(azi, 10) }, true);
   await intr("radu", "1la1", -62, { subiecte: "Pipeline companii", decizii: "Prioritizăm 5 companii mari.", actiuni: "Radu: întâlniri până la sfârșitul lunii." }, true);
   await intr("elena", "1la1", -12, { subiecte: "Reactivarea donatorilor dormanți", decizii: "Apeluri scurte, cu mulțumire.", actiuni: "Elena: 30 de apeluri pe săptămână.", urmatoarea: adauga(azi, 18) }, true);
   await intr("ioana", "1la1", -31, { subiecte: "Rapoartele de sponsor", decizii: "Format standard pentru toate rapoartele.", actiuni: "Ioana: șablon de raport." }, true);
@@ -324,6 +344,112 @@ export async function incarcaDemo(ctx: OrgContext, optiuni: { donatori: boolean 
     { orgId: ctx.orgId, appUserId: ctx.userId, tip: "risc", titlu: "„Dezvoltăm parteneriatele cu companii” e în urma ritmului", continut: "Responsabil: Radu Matei. Merită o discuție despre ce ar ajuta.", link: `${link}/obiective`, cheieDedup: "demo:n3", citit: true, createdAt: la(adauga(azi, -2), 6) },
     { orgId: ctx.orgId, appUserId: ctx.userId, tip: "rezumat", titlu: "Săptămâna ta în cifre", continut: "Activități cu termen în această săptămână: 7\nRestanțe: 2\nObiective ale echipei tale în risc sau întârziate: 3", link: `${link}/spatiul-meu`, cheieDedup: "demo:n4", citit: true, createdAt: la(luni, 6) },
   ]);
+
+  // 10. KPI Library: categorii (doar dacă lipsesc), definiții, atribuiri cu ținte, valori pe ultimele luni, șabloane pe roluri
+  const categoriiExistente = await ctx.db.select({ id: kpiCategorii.id, nume: kpiCategorii.nume }).from(kpiCategorii).where(eq(kpiCategorii.orgId, ctx.orgId));
+  if (categoriiExistente.length === 0) {
+    const noi = await ctx.db
+      .insert(kpiCategorii)
+      .values(["ACTIVITATE", "REZULTATE", "CALITATE", "FOLLOW-UP", "IMPACT", "FUNDRAISING", "DONATORI", "VOLUNTARI", "PROIECTE", "COMUNICARE", "FINANCIAR", "ADMINISTRATIV", "BENEFICIARI", "PARTENERIATE"].map((nume, i) => ({ orgId: ctx.orgId, nume, ordine: i, esteDefault: true })))
+      .returning({ id: kpiCategorii.id, nume: kpiCategorii.nume });
+    m.categoriiKpi = noi.map((x) => x.id);
+    categoriiExistente.push(...noi);
+  }
+  const cat = (nume: string) => categoriiExistente.find((c) => c.nume === nume)?.id ?? null;
+  type DefKpi = { cheie: string; nume: string; descriere: string; categorie: string; tip: "numeric" | "percentage" | "currency" | "duration"; unitate: string; directie: "mai_mare_mai_bine" | "mai_mic_mai_bine"; min: number; normal: number; stretch: number };
+  const DEFINITII: DefKpi[] = [
+    { cheie: "apeluri", nume: "Apeluri către donatori dormanți", descriere: "Apeluri de reactivare făcute în lună, cu mulțumire și o întrebare deschisă.", categorie: "ACTIVITATE", tip: "numeric", unitate: "apeluri", directie: "mai_mare_mai_bine", min: 40, normal: 60, stretch: 80 },
+    { cheie: "multumiri", nume: "Donatori mulțumiți în 48 de ore", descriere: "Procentul donațiilor de cel puțin 100 de lei pentru care s-a trimis mulțumire în 48 de ore.", categorie: "DONATORI", tip: "percentage", unitate: "%", directie: "mai_mare_mai_bine", min: 80, normal: 90, stretch: 97 },
+    { cheie: "intalniri", nume: "Întâlniri cu companii", descriere: "Întâlniri (online sau față în față) cu reprezentanți ai companiilor.", categorie: "PARTENERIATE", tip: "numeric", unitate: "întâlniri", directie: "mai_mare_mai_bine", min: 8, normal: 12, stretch: 16 },
+    { cheie: "sponsorizari", nume: "Sponsorizări înregistrate", descriere: "Suma sponsorizărilor înregistrate în CRM Companii în lună.", categorie: "FINANCIAR", tip: "currency", unitate: "lei", directie: "mai_mare_mai_bine", min: 40000, normal: 80000, stretch: 120000 },
+    { cheie: "clipuri", nume: "Videoclipuri publicate", descriere: "Videoclipuri publicate pe canalele organizației.", categorie: "COMUNICARE", tip: "numeric", unitate: "clipuri", directie: "mai_mare_mai_bine", min: 6, normal: 10, stretch: 14 },
+    { cheie: "voluntari", nume: "Voluntari activi", descriere: "Voluntari care au făcut cel puțin o activitate în lună.", categorie: "VOLUNTARI", tip: "numeric", unitate: "voluntari", directie: "mai_mare_mai_bine", min: 15, normal: 25, stretch: 35 },
+    { cheie: "raspuns", nume: "Timp mediu de răspuns la mesaje", descriere: "Cât durează, în medie, până la primul răspuns la mesajele donatorilor.", categorie: "CALITATE", tip: "duration", unitate: "ore", directie: "mai_mic_mai_bine", min: 24, normal: 8, stretch: 4 },
+    { cheie: "rapoarte", nume: "Rapoarte de sponsor predate la termen", descriere: "Procentul rapoartelor trimise sponsorilor până la termen.", categorie: "ADMINISTRATIV", tip: "percentage", unitate: "%", directie: "mai_mare_mai_bine", min: 80, normal: 90, stretch: 100 },
+    { cheie: "aparitii", nume: "Apariții în presă", descriere: "Articole sau emisiuni care menționează organizația.", categorie: "COMUNICARE", tip: "numeric", unitate: "apariții", directie: "mai_mare_mai_bine", min: 4, normal: 8, stretch: 12 },
+  ];
+  const defIns = await ctx.db
+    .insert(kpiDefinitii)
+    .values(DEFINITII.map((d) => ({ orgId: ctx.orgId, categorieId: cat(d.categorie), nume: d.nume, descriere: d.descriere, tip: d.tip, unitate: d.unitate, directie: d.directie, frecventa: "lunar" as const, sursaDate: { tip: "manual" }, esteManual: true, esteActiv: true, createdBy: ctx.userId })))
+    .returning({ id: kpiDefinitii.id, nume: kpiDefinitii.nume });
+  m.definitiiKpi = defIns.map((x) => x.id);
+  const defId = new Map(DEFINITII.map((d, i) => [d.cheie, defIns[i].id]));
+  const defPe = new Map(DEFINITII.map((d) => [d.cheie, d]));
+  const ATRIBUIRI: Record<string, [string, number][]> = {
+    eu: [["intalniri", 40], ["sponsorizari", 40], ["rapoarte", 20]],
+    irina: [["aparitii", 40], ["sponsorizari", 30], ["raspuns", 30]],
+    radu: [["intalniri", 40], ["sponsorizari", 35], ["voluntari", 25]],
+    elena: [["apeluri", 40], ["multumiri", 40], ["raspuns", 20]],
+    tudor: [["clipuri", 60], ["raspuns", 40]],
+    ioana: [["rapoarte", 60], ["raspuns", 40]],
+  };
+  const luniKpi = [-3, -2, -1, 0].map((delta) => {
+    const [y, mo] = azi.split("-").map(Number);
+    const d = new Date(Date.UTC(y, mo - 1 + delta, 1));
+    return d.toISOString().slice(0, 10);
+  });
+  const zileLuna = Number(azi.slice(8, 10));
+  const parteLuna = Math.max(0.3, Math.min(1, zileLuna / 30));
+  const FACTORI: Record<string, number[]> = { eu: [0.9, 1.0, 1.05, 0.95], irina: [1.1, 1.05, 1.0, 1.1], radu: [0.7, 0.6, 0.85, 0.7], elena: [0.95, 1.0, 1.1, 1.0], tudor: [1.0, 0.9, 1.15, 1.1], ioana: [1.0, 1.0, 0.95, 1.0] };
+  const atribuiriRand: (typeof kpiAtribuiri.$inferInsert)[] = [];
+  const valoriRand: (typeof kpiValori.$inferInsert)[] = [];
+  for (const [cheiePers, lista] of Object.entries(ATRIBUIRI)) {
+    for (const [cheieDef, pondere] of lista) {
+      const d = defPe.get(cheieDef)!;
+      atribuiriRand.push({ orgId: ctx.orgId, angajatId: id[cheiePers], kpiDefinitieId: defId.get(cheieDef)!, pondere, targetMinim: d.min, targetNormal: d.normal, targetStretch: d.stretch, proRata: true, dataStart: luniKpi[0], status: "activ" });
+      luniKpi.forEach((start, i) => {
+        const f = FACTORI[cheiePers][i];
+        const ultima = i === luniKpi.length - 1;
+        let v: number;
+        if (d.tip === "percentage") v = Math.min(100, Math.round(d.normal * (0.94 + f * 0.07) * 10) / 10);
+        else if (d.tip === "duration") v = Math.round(d.normal * (2 - Math.min(1.4, f)) * 10) / 10;
+        else {
+          const brut = d.normal * f * (ultima ? parteLuna : 1);
+          v = d.tip === "currency" ? Math.round(brut / 100) * 100 : Math.max(0, Math.round(brut));
+        }
+        valoriRand.push({ orgId: ctx.orgId, angajatId: id[cheiePers], kpiDefinitieId: defId.get(cheieDef)!, perioadaStart: start, perioadaTip: "lunar", valoare: v, sursa: "manual", comentariu: ultima ? "Luna în curs" : i === 1 ? "Luna cu campania de vară" : null, inregistratDe: ctx.userId });
+      });
+    }
+  }
+  await ctx.db.insert(kpiAtribuiri).values(atribuiriRand);
+  await ctx.db.insert(kpiValori).values(valoriRand);
+  const sab = await ctx.db
+    .insert(kpiSabloane)
+    .values([
+      { orgId: ctx.orgId, nume: "Donatori persoane fizice", descriere: "KPI de pornire pentru cine lucrează cu donatorii individuali.", roleId: rolId.get("Donatori persoane fizice") },
+      { orgId: ctx.orgId, nume: "Companii și voluntari", descriere: "KPI de pornire pentru relația cu companiile și voluntarii.", roleId: rolId.get("Companii și voluntari") },
+    ])
+    .returning({ id: kpiSabloane.id });
+  m.sabloaneKpi = sab.map((x) => x.id);
+  const itemi = (idx: number, lista: [string, number][]) => lista.map(([c, pondere]) => ({ sablonId: sab[idx].id, kpiDefinitieId: defId.get(c)!, pondere, targetDefault: { targetMinim: defPe.get(c)!.min, targetNormal: defPe.get(c)!.normal, targetStretch: defPe.get(c)!.stretch } }));
+  await ctx.db.insert(kpiSabloaneItemi).values([...itemi(0, [["apeluri", 40], ["multumiri", 40], ["raspuns", 20]]), ...itemi(1, [["intalniri", 40], ["sponsorizari", 35], ["voluntari", 25]])]);
+
+  // 11. KPI echipă (varianta veche, în crm_kv, pe conturile reale ale organizației): ținte lunare și contoare manuale pentru contul care încarcă datele,
+  // plus obiectivele lunare/anuale. Conținutul de dinainte se păstrează în marcaj și se restaurează la ștergere. Valorile automate (companii, apeluri etc.)
+  // rămân cele reale din CRM: nu inventăm activitate în tabelele CRM.
+  m.kvAnterior = {};
+  const kv = async (path: string, scrie: (existent: Record<string, unknown>) => Record<string, unknown>) => {
+    const [r] = await ctx.db.select({ data: crmKv.data }).from(crmKv).where(and(eq(crmKv.orgId, ctx.orgId), eq(crmKv.path, path))).limit(1);
+    m.kvAnterior![path] = { existat: !!r, anterior: r?.data ?? null };
+    const nou = scrie(r?.data && typeof r.data === "object" ? { ...(r.data as Record<string, unknown>) } : {});
+    await ctx.db.insert(crmKv).values({ orgId: ctx.orgId, path, data: nou, updatedAt: new Date() }).onConflictDoUpdate({ target: [crmKv.orgId, crmKv.path], set: { data: nou, updatedAt: new Date() } });
+  };
+  await kv("kpi_tinte", (e) => ({ ...e, [ctx.userId]: { companii: 40, contacte: 30, apeluri: 60, sponsorizari: 4, notite: 40, etape: 20, linkuri: 25, emailuri: 80, intalniri: 12 } }));
+  const logNou: { ts: string; metric: string }[] = [];
+  for (let z = 0; z < Math.min(zileLuna, 28); z++) {
+    const ziIso = adauga(azi, -z);
+    if (!([1, 2, 3, 4, 5] as number[]).includes(new Date(`${ziIso}T12:00:00Z`).getUTCDay())) continue;
+    for (let k = 0; k < 2 + (z % 3); k++) logNou.push({ ts: `${ziIso}T${String(8 + k).padStart(2, "0")}:30:00+03:00`, metric: "emailuri" });
+    if (z % 4 === 0) logNou.push({ ts: `${ziIso}T14:00:00+03:00`, metric: "intalniri" });
+  }
+  await kv("kpi_log", (e) => ({ ...e, [ctx.userId]: logNou }));
+  const lunaIso = (delta: number) => luniKpi[3 + delta]?.slice(0, 7) ?? azi.slice(0, 7);
+  await kv("kpi_obiective", (e) => ({
+    ...e,
+    obiLunar: { d177: { suma: 20000, apeluri: 40, inregistrari: 4 }, mec20: { suma: 15000, apeluri: 30, inregistrari: 3 }, f230: { suma: 8000, inregistrari: 60 } },
+    obiAnual: { financiar: 300000, firme: 40, formulare230: 700 },
+    realManual: { ...((e.realManual as Record<string, unknown>) ?? {}), [lunaIso(-3)]: { f230: { suma: 4200 } }, [lunaIso(-2)]: { f230: { suma: 5100 } }, [lunaIso(-1)]: { f230: { suma: 6300 } }, [lunaIso(0)]: { f230: { suma: 3200 } } },
+  }));
 
   await salveazaMarcaj();
   return { ok: true, rezumat: `${m.angajati.length} persoane, ${m.obiective.length} obiective, ${m.activitati.length} activități, ${m.blocaje.length} blocaje${m.donatori ? `, ${m.donatori} donatori fictivi` : ""}.` };
@@ -361,6 +487,15 @@ export async function stergeDemo(ctx: OrgContext): Promise<Rez<{ rezumat: string
   await sterge(m.interactiuni, (ids) => ctx.db.delete(kpiInteractiuni).where(and(eq(kpiInteractiuni.orgId, ctx.orgId), inArray(kpiInteractiuni.id, ids))).returning({ id: kpiInteractiuni.id }));
   await sterge(m.absente, (ids) => ctx.db.delete(angajatiAbsente).where(and(eq(angajatiAbsente.orgId, ctx.orgId), inArray(angajatiAbsente.id, ids))).returning({ id: angajatiAbsente.id }));
   const nrOb = await sterge(m.obiective, (ids) => ctx.db.delete(obiective).where(and(eq(obiective.orgId, ctx.orgId), inArray(obiective.id, ids))).returning({ id: obiective.id }));
+  // KPI Library: șabloanele și definițiile (atribuirile și valorile pleacă în cascadă), apoi categoriile create de încărcare
+  await sterge(m.sabloaneKpi ?? [], (ids) => ctx.db.delete(kpiSabloane).where(and(eq(kpiSabloane.orgId, ctx.orgId), inArray(kpiSabloane.id, ids))).returning({ id: kpiSabloane.id }));
+  await sterge(m.definitiiKpi ?? [], (ids) => ctx.db.delete(kpiDefinitii).where(and(eq(kpiDefinitii.orgId, ctx.orgId), inArray(kpiDefinitii.id, ids))).returning({ id: kpiDefinitii.id }));
+  await sterge(m.categoriiKpi ?? [], (ids) => ctx.db.delete(kpiCategorii).where(and(eq(kpiCategorii.orgId, ctx.orgId), inArray(kpiCategorii.id, ids))).returning({ id: kpiCategorii.id }));
+  // KPI echipă (varianta veche): se restaurează exact ce exista înainte (sau se șterge cheia, dacă nu exista)
+  for (const [path, v] of Object.entries(m.kvAnterior ?? {})) {
+    if (v.existat) await ctx.db.update(crmKv).set({ data: v.anterior, updatedAt: new Date() }).where(and(eq(crmKv.orgId, ctx.orgId), eq(crmKv.path, path)));
+    else await ctx.db.delete(crmKv).where(and(eq(crmKv.orgId, ctx.orgId), eq(crmKv.path, path)));
+  }
   await sterge(m.angajati, (ids) => ctx.db.delete(angajati).where(and(eq(angajati.orgId, ctx.orgId), inArray(angajati.id, ids))).returning({ id: angajati.id }));
   await sterge(m.roluri, (ids) => ctx.db.delete(roluri).where(and(eq(roluri.orgId, ctx.orgId), inArray(roluri.id, ids))).returning({ id: roluri.id }));
   await sterge(m.departamente, (ids) => ctx.db.delete(departments).where(and(eq(departments.orgId, ctx.orgId), inArray(departments.id, ids))).returning({ id: departments.id }));

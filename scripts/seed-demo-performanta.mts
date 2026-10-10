@@ -2,6 +2,7 @@
  *
  *   NODE_OPTIONS="--conditions=react-server" npx tsx scripts/seed-demo-performanta.mts --org calm-impact-demo
  *   NODE_OPTIONS="--conditions=react-server" npx tsx scripts/seed-demo-performanta.mts --org calm-impact-demo --fara-donatori
+ *   NODE_OPTIONS="--conditions=react-server" npx tsx scripts/seed-demo-performanta.mts --org calm-impact-demo --nume "Numele tău"   (numele profilului creat pentru contul tău)
  *   NODE_OPTIONS="--conditions=react-server" npx tsx scripts/seed-demo-performanta.mts --org calm-impact-demo --sterge
  *
  * Siguranță: refuză organizațiile al căror slug nu conține „demo”, dacă nu adaugi explicit --forteaza. Nu atinge alte organizații și nu modifică ce
@@ -46,7 +47,7 @@ try {
     console.log(r.ok ? r.rezumat : r.eroare);
     if (!r.ok) cod = 1;
   } else {
-    const r = await incarcaDemo(ctx, { donatori: !process.argv.includes("--fara-donatori") });
+    const r = await incarcaDemo(ctx, { donatori: !process.argv.includes("--fara-donatori"), numeAdmin: arg("--nume") ?? undefined });
     console.log(r.ok ? `Încărcat: ${r.rezumat}` : `Nu s-a încărcat: ${r.eroare}`);
     if (!r.ok) cod = 1;
   }
