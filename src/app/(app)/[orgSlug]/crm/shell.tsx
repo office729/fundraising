@@ -44,7 +44,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
 import type { DomeniuActivitate } from "@/lib/campaign-templates";
-import { AVATAR_DONATOR_ACTIV } from "@/lib/module-ascunse";
+import { AVATAR_DONATOR_ACTIV, paginaCrmAscunsa } from "@/lib/module-ascunse";
 import { DASHBOARD_DICT, type DashboardDict } from "@/lib/i18n/dictionaries/dashboard";
 import type { Locale } from "@/lib/i18n/config";
 
@@ -136,14 +136,16 @@ function buildNav(dict: DashboardDict, orgSlug: string, role: string): { section
   // personalizări agreate cu ONG-ul respectiv (vezi lib/org-customizations.ts) — pentru
   // orice alt cont rămâne meniul standard, neschimbat
   const pers = getOrgCustomization(orgSlug);
-  return baza.map((g) => ({
-    ...g,
-    items: [
-      ...g.items
-        .filter((i) => !pers.hiddenNav?.includes(i.href))
-        .map((i) => (pers.navLabels?.[i.href] ? { ...i, label: pers.navLabels[i.href] } : i)),
-    ],
-  }));
+  return baza
+    .map((g) => ({
+      ...g,
+      items: [
+        ...g.items
+          .filter((i) => !pers.hiddenNav?.includes(i.href) && !paginaCrmAscunsa(i.href))
+          .map((i) => (pers.navLabels?.[i.href] ? { ...i, label: pers.navLabels[i.href] } : i)),
+      ],
+    }))
+    .filter((g) => g.items.length > 0);
 }
 
 export function CrmShell({

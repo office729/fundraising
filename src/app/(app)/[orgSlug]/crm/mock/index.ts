@@ -128,7 +128,7 @@ export function dashboardKpis(perioada?: PerioadaKpi, locale: Locale = DEFAULT_L
       variatie: -3,
       spark: [fonduriDisponibile * 0.9, fonduriDisponibile * 0.95, fonduriDisponibile * 0.98, fonduriDisponibile],
       explicatie: dict.kpis.explicatieFonduri,
-      href: "fonduri-plati",
+      href: "strangere-fonduri",
     },
     {
       key: "retentie",
