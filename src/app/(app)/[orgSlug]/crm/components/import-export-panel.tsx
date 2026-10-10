@@ -98,7 +98,7 @@ export function ImportExportPanel({ tip }: { tip: Tip }) {
         <Button variant="secondary" onClick={() => setConfirm("ultimul")} disabled={!importate.length}>
           <Trash2 className="h-3.5 w-3.5" /> Șterge ultimul fișier importat{importate.length ? ` (${ultimulLot})` : ""}
         </Button>
-        <Button variant="danger" onClick={() => setConfirm("tot")} disabled={!importate.length}>
+        <Button variant="primary" onClick={() => setConfirm("tot")} disabled={!importate.length}>
           <Trash2 className="h-3.5 w-3.5" /> Șterge toată baza importată ({importate.length})
         </Button>
       </div>
