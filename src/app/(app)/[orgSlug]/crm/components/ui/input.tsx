@@ -5,7 +5,10 @@ import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTML
 import { cn } from "../../lib/cn";
 
 const FIELD =
-  "h-9 w-full rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 text-sm text-[var(--ci-text)] placeholder:text-[var(--ci-text-faint)] transition-colors focus:border-[var(--ci-blue)] focus:ring-2 focus:ring-[var(--ci-blue)]/25 focus:outline-none";
+  "h-9 w-full border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 text-sm text-[var(--ci-text)] placeholder:text-[var(--ci-text-faint)] transition-colors focus:border-[var(--ci-blue)] focus:ring-2 focus:ring-[var(--ci-blue)]/25 focus:outline-none";
+
+// Câmpurile scurte folosesc raza butoanelor; textarea are raza ei fixă (raza butoanelor poate fi o pastilă, care taie textul din colțuri).
+const RAZA = "rounded-[var(--ci-radius-btn)]";
 
 export function Input({
   className,
@@ -18,18 +21,18 @@ export function Input({
         <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[var(--ci-text-faint)]">
           {icon}
         </span>
-        <input className={cn(FIELD, "pl-9", className)} {...props} />
+        <input className={cn(FIELD, RAZA, "pl-9", className)} {...props} />
       </div>
     );
   }
-  return <input className={cn(FIELD, className)} {...props} />;
+  return <input className={cn(FIELD, RAZA, className)} {...props} />;
 }
 
 export function Textarea({
   className,
   ...props
 }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return <textarea className={cn(FIELD, "h-auto min-h-20 resize-y py-2", className)} {...props} />;
+  return <textarea className={cn(FIELD, "h-auto min-h-20 resize-y rounded-xl py-2", className)} {...props} />;
 }
 
 export function Select({
@@ -38,7 +41,7 @@ export function Select({
   ...props
 }: SelectHTMLAttributes<HTMLSelectElement>) {
   return (
-    <select className={cn(FIELD, "cursor-pointer appearance-none pr-8", className)} {...props}>
+    <select className={cn(FIELD, RAZA, "cursor-pointer appearance-none pr-8", className)} {...props}>
       {children}
     </select>
   );
