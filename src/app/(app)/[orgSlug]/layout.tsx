@@ -133,6 +133,14 @@ export default async function OrgLayout({
                 {dict.header.team}
               </Link>
             )}
+            {(access.role === "owner" || access.role === "admin") && (
+              <Link prefetch={false}
+                href={`/${orgSlug}/crm/facturare`}
+                className="text-[13px] font-medium text-muted transition hover:text-brand-blue"
+              >
+                {dict.header.billing}
+              </Link>
+            )}
             <Link prefetch={false}
               href={`/${orgSlug}/crm/setari`}
               className="text-[13px] font-medium text-muted transition hover:text-brand-blue"
