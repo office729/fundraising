@@ -9,7 +9,7 @@ import { useLocale } from "../lib/locale-context";
 import type { CampaignPageTemplate } from "@/lib/campaign-templates";
 import { STRANGERE_FONDURI_DICT } from "@/lib/i18n/dictionaries/strangere-fonduri";
 import { AddOfflineDonationDialog } from "./add-offline-donation-dialog";
-import { AddPageDialog } from "./add-page-dialog";
+import { CampanieWizard, type CampanieWizardProps } from "./campanie-wizard";
 import { AddUpdateDialog } from "./add-update-dialog";
 import { EditPageDialog, type PaginaEditabila } from "./edit-page-dialog";
 import { EditUpdateDialog, type ActualizareEditabila } from "./edit-update-dialog";
@@ -21,7 +21,7 @@ import {
   type ImaginePaginaState,
 } from "./actions";
 
-export function AddPageButton({ orgSlug }: { orgSlug: string }) {
+export function AddPageButton(props: Omit<CampanieWizardProps, "open" | "onClose">) {
   const locale = useLocale();
   const dict = STRANGERE_FONDURI_DICT[locale].client;
   const [open, setOpen] = useState(false);
@@ -39,7 +39,7 @@ export function AddPageButton({ orgSlug }: { orgSlug: string }) {
       <Button variant="secondary" onClick={() => setOpen(true)}>
         <Plus className="h-3.5 w-3.5" /> {dict.adaugaPagina}
       </Button>
-      <AddPageDialog open={open || cerutDinAntet} onClose={inchide} orgSlug={orgSlug} />
+      {(open || cerutDinAntet) && <CampanieWizard {...props} open onClose={inchide} />}
     </>
   );
 }

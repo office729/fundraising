@@ -77,7 +77,8 @@ export const comutaStatusPaginaStrangereFonduri = withOrgAdmin(async (ctx, id: s
     .where(and(eq(fundraisingPages.id, id), eq(fundraisingPages.orgId, ctx.orgId)));
 });
 
-export type CreeazaPaginaAdminState = { error: string | null };
+// `id` și `slug` vin doar la succes: asistentul de campanie are nevoie de id ca să încarce poza după creare.
+export type CreeazaPaginaAdminState = { error: string | null; id?: string; slug?: string };
 
 // Aceleași validări ca fluxul public (src/app/strangere-fonduri/[orgSlug]/creeaza),
 // dar org_id vine direct din sesiunea autentificată — nu mai e nevoie de
@@ -93,6 +94,7 @@ export const creeazaPaginaAdminAction = withOrgAdmin(
     const sumaTintaRaw = str("sumaTinta");
     const judet = str("judet") || null;
     const localitate = str("localitate") || null;
+    const templateCerut = str("template");
 
     if (!numeCreator || !emailCreator || !titlu || !poveste) {
       return { error: "Completează toate câmpurile obligatorii." };
@@ -106,6 +108,18 @@ export const creeazaPaginaAdminAction = withOrgAdmin(
       sumaTinta = n;
     }
 
+    // Aspectul (domeniul) cerut se acceptă doar dacă e permis organizației — la fel ca la editare; altfel rămâne cel implicit.
+    const [org] = await ctx.db
+      .select({ customPlanConfig: organizations.customPlanConfig })
+      .from(organizations)
+      .where(eq(organizations.id, ctx.orgId))
+      .limit(1);
+    const customPlanConfig = org?.customPlanConfig as CustomPlanConfigSaved | null;
+    const templatePermise = getTemplatesDisponibile(ctx.orgDomeniuActivitate, Boolean(customPlanConfig?.accesDesignToate));
+    const template: CampaignPageTemplate | undefined = templatePermise.includes(templateCerut as CampaignPageTemplate)
+      ? (templateCerut as CampaignPageTemplate)
+      : undefined;
+
     const baseSlug = slugify(titlu);
     const slug = await genereazaSlugUnic(baseSlug, async (candidat) => {
       const existing = await ctx.db
@@ -116,8 +130,9 @@ export const creeazaPaginaAdminAction = withOrgAdmin(
       return Boolean(existing[0]);
     });
 
+    const id = randomUUID();
     await ctx.db.insert(fundraisingPages).values({
-      id: randomUUID(),
+      id,
       orgId: ctx.orgId,
       slug,
       titlu,
@@ -127,13 +142,14 @@ export const creeazaPaginaAdminAction = withOrgAdmin(
       emailCreator,
       judet,
       localitate,
+      ...(template ? { template } : {}),
       // Pagină creată de organizație însăși (nu de un susținător extern) —
       // organizația e proprietara datelor publicate, nu un terț a cărui
       // consimțământ trebuie colectat separat.
       consimtamantGdpr: true,
     });
 
-    return { error: null };
+    return { error: null, id, slug };
   },
 );
 

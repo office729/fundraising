@@ -42,17 +42,18 @@ const getPagini = withOrgSession(async (ctx) => {
       .where(and(eq(fundraisingDonations.orgId, ctx.orgId), eq(fundraisingDonations.status, "reusita")))
       .orderBy(desc(fundraisingDonations.suma))
       .limit(10),
-    ctx.db.select({ customPlanConfig: organizations.customPlanConfig }).from(organizations).where(eq(organizations.id, ctx.orgId)).limit(1),
+    ctx.db.select({ customPlanConfig: organizations.customPlanConfig, logoUrl: organizations.logoUrl }).from(organizations).where(eq(organizations.id, ctx.orgId)).limit(1),
   ]);
   const customPlanConfig = org?.customPlanConfig as CustomPlanConfigSaved | null;
   const templateuriDisponibile = getTemplatesDisponibile(ctx.orgDomeniuActivitate, Boolean(customPlanConfig?.accesDesignToate));
 
-  return { totalStrans, totalDonatii, pagini, topDonatori, templateuriDisponibile };
+  const contact = { nume: ctx.userName ?? "", email: ctx.userEmail };
+  return { totalStrans, totalDonatii, pagini, topDonatori, templateuriDisponibile, contact, orgNume: ctx.orgName, orgLogoUrl: org?.logoUrl ?? null, domeniu: ctx.orgDomeniuActivitate };
 });
 
 export default async function StrangereFonduriPage({ params }: { params: Promise<{ orgSlug: string }> }) {
   const { orgSlug } = await params;
-  const { totalStrans, totalDonatii, pagini, topDonatori, templateuriDisponibile } = await getPagini(orgSlug);
+  const { totalStrans, totalDonatii, pagini, topDonatori, templateuriDisponibile, contact, orgNume, orgLogoUrl, domeniu } = await getPagini(orgSlug);
   const locale = await getLocale();
   const dict = STRANGERE_FONDURI_DICT[locale].page;
 
@@ -66,7 +67,7 @@ export default async function StrangereFonduriPage({ params }: { params: Promise
           <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">{dict.subtitle}</p>
         </div>
         <div className="flex gap-2">
-          <AddPageButton orgSlug={orgSlug} />
+          <AddPageButton orgSlug={orgSlug} orgNume={orgNume} orgLogoUrl={orgLogoUrl} templateuriDisponibile={templateuriDisponibile} domeniuImplicit={domeniu} contactImplicit={contact} />
           <CopyCreateLinkButton orgSlug={orgSlug} />
         </div>
       </div>

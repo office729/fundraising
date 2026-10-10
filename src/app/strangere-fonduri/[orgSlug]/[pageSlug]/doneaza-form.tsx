@@ -4,6 +4,7 @@ import { useRef, useState, useSyncExternalStore, type FormEvent } from "react";
 
 import type { Locale } from "@/lib/i18n/config";
 import { DONATION_DICT } from "@/lib/i18n/dictionaries/donation";
+import { SUME_LUNARE, SUME_RAPIDE } from "@/lib/sume-donatie";
 
 import { doneazaAction, type DoneazaState } from "./actions";
 import { ExpressCheckoutPanel } from "./express-checkout";
@@ -22,9 +23,6 @@ function eticheta(): string {
     .join("|")
     .slice(0, 100);
 }
-const SUME_RAPIDE = [25, 50, 100, 250];
-// Donația lunară pornește de la sume mai mici: un donator care dă 20 de lei pe lună rămâne ani, iar 250 de lei lunar sperie.
-const SUME_LUNARE = [10, 20, 35, 50];
 
 export function DoneazaForm({
   orgSlug,
