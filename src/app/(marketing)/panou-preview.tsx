@@ -378,7 +378,7 @@ export function PanouPreview({ locale }: { locale: Locale }) {
   const curent = ECRANE.find((e) => e.id === ecran)!;
 
   return (
-    <section className="px-[6%] pt-2 pb-12">
+    <section id="platforma" className="scroll-mt-4 px-[6%] pt-2 pb-12">
       <div className="mx-auto max-w-6xl">
         <h2 className="font-display mx-auto max-w-2xl text-center text-[24px] font-bold text-ink sm:text-[28px]">{L("Panoul tău de lucru, într-o privire", "Your workspace at a glance")}</h2>
         <p className="mx-auto mt-2 max-w-xl text-center text-[14px] leading-relaxed text-muted">

@@ -121,20 +121,6 @@ export default async function LandingPage({
       {/* Panoul de administrare (ilustrație cu date demonstrative) */}
       <PanouPreview locale={locale} />
 
-      {/* Platforma */}
-      <section id="platforma" className="px-[6%] py-16">
-        <h2 className="font-display mx-auto max-w-2xl text-center text-[32px] font-bold text-ink">{dict.platforma.title}</h2>
-        <div className="mx-auto mt-10 grid max-w-5xl grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {dict.platforma.items.map((l) => (
-            <div key={l.n} className="rounded-xl border border-line bg-panel p-6">
-              <span className="font-display text-2xl font-extrabold text-brand-green/40">{l.n}</span>
-              <h3 className="font-display mt-2 text-base font-bold text-ink">{l.t}</h3>
-              <p className="mt-1.5 text-[13.5px] leading-relaxed text-muted">{l.d}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* De ce Alexandrit */}
       <section className="bg-panel-2 px-[6%] py-16">
         <h2 className="font-display mx-auto max-w-2xl text-center text-[32px] font-bold text-ink">{dict.valori.title}</h2>
