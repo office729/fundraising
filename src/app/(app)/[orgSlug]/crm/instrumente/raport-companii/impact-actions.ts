@@ -30,6 +30,7 @@ export type IncarcareImpact = {
   organizatie: string;
   date: DateImpact;
   salvat: boolean; // datele vin dintr-o versiune salvată, nu din propunerea automată
+  logoOngImplicit: string; // logoul organizației din Setări (https), pentru „folosește logoul din Setări”
 };
 
 async function numeAutor(ctx: Pick<OrgContext, "db" | "userId">): Promise<string> {
@@ -42,8 +43,8 @@ async function numeAutor(ctx: Pick<OrgContext, "db" | "userId">): Promise<string
 // dacă e o pagină din platformă), iar ce nu e alocat rămâne un rând cu numele proiectului sponsorizării.
 export const incarcaImpactAction = withOrgAdmin(async (ctx, companyId: string | null, ignoraSalvat = false): Promise<IncarcareImpact> => {
   const baza = (ctx.orgBrandColor && HEX.test(ctx.orgBrandColor) ? { accent: ctx.orgBrandColor } : {}) as Partial<DateImpact>;
-  const gol: DateImpact = { ...dateImpactGoale(), ...baza, autor: await numeAutor(ctx), logoUrl: ctx.orgLogoUrl && /^https:\/\//i.test(ctx.orgLogoUrl) ? ctx.orgLogoUrl : "" };
-  const raspuns = (date: DateImpact, salvat: boolean): IncarcareImpact => ({ organizatie: ctx.orgName, date, salvat });
+  const gol: DateImpact = { ...dateImpactGoale(), ...baza, autor: await numeAutor(ctx), logoOng: ctx.orgLogoUrl && /^https:\/\//i.test(ctx.orgLogoUrl) ? ctx.orgLogoUrl : "" };
+  const raspuns = (date: DateImpact, salvat: boolean): IncarcareImpact => ({ organizatie: ctx.orgName, date, salvat, logoOngImplicit: gol.logoOng });
   if (!companyId || !UUID.test(companyId)) return raspuns(gol, false);
 
   const [firma] = await ctx.db.select({ nume: companies.nume }).from(companies).where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId))).limit(1);
@@ -53,7 +54,7 @@ export const incarcaImpactAction = withOrgAdmin(async (ctx, companyId: string | 
   if (kv?.data && !ignoraSalvat) {
     const salvat = curataDateImpact(kv.data);
     // Autorul și logoul rămân cele ale utilizatorului și organizației de acum, dacă versiunea salvată nu le avea.
-    return raspuns({ ...salvat, firma: salvat.firma || firma.nume, autor: salvat.autor || gol.autor, logoUrl: salvat.logoUrl || gol.logoUrl }, true);
+    return raspuns({ ...salvat, firma: salvat.firma || firma.nume, autor: salvat.autor || gol.autor, logoOng: salvat.logoOng || gol.logoOng }, true);
   }
 
   const spons = await ctx.db

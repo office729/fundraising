@@ -2,17 +2,21 @@
 // Fără acces la baza de date și fără React, ca să poată fi folosit și în browser (previzualizare) și în teste.
 
 export const MODELE_IMPACT = [
-  { id: "clasic", eticheta: "Clasic", hint: "Cald, cu tabel elegant și grafică puls → inimă" },
-  { id: "executiv", eticheta: "Executiv", hint: "Alb și sobru, pentru directori financiari și consilii" },
-  { id: "editorial", eticheta: "Editorial", hint: "Copertă tip revistă, accent pe povestea impactului" },
+  { id: "clasic", eticheta: "Clasic", hint: "Cald, cu serif, copertă cu inimă și fișe de proiect" },
+  { id: "executiv", eticheta: "Executiv", hint: "Sobru, cu rezumat lateral și tabel cu bare, pentru directori financiari" },
+  { id: "editorial", eticheta: "Editorial", hint: "Copertă tip revistă și poveste în pagină" },
   { id: "carduri", eticheta: "Carduri", hint: "Fiecare proiect pe un card, vizual" },
-  { id: "fara-logo", eticheta: "Fără logo", hint: "Doar culorile asociației, pentru firme fără logo" },
-  { id: "scrisoare", eticheta: "Scrisoare de mulțumire", hint: "Pentru una sau două donații; arată logoul dacă există" },
-  { id: "minimal", eticheta: "Minimal", hint: "Curat și modern, mult spațiu alb" },
+  { id: "scrisoare", eticheta: "Scrisoare de mulțumire", hint: "Hârtie cu antet, pentru una sau două donații" },
+  { id: "minimal", eticheta: "Minimal", hint: "Mult spațiu alb și o cifră mare" },
   { id: "cronologic", eticheta: "Cronologic", hint: "Proiectele pe linia timpului" },
-  { id: "infografic", eticheta: "Infografic", hint: "Cifre mari în prim-plan și o listă compactă" },
-  { id: "corporate", eticheta: "Corporate", hint: "Antet închis și tabel formal, pentru parteneri mari" },
-  { id: "o-pagina", eticheta: "O pagină", hint: "Sumar condensat pe două coloane, pentru print rapid" },
+  { id: "infografic", eticheta: "Infografic", hint: "Cifre mari, inel cu ponderea proiectelor" },
+  { id: "corporate", eticheta: "Corporate", hint: "Antet închis, tabel formal și zone de semnătură" },
+  { id: "o-pagina", eticheta: "O pagină", hint: "Sumar condensat, pentru print rapid" },
+  { id: "afis", eticheta: "Afiș", hint: "Un singur mesaj mare: „Mulțumim”" },
+  { id: "mozaic", eticheta: "Mozaic", hint: "Plăci de mărimi diferite, modern" },
+  { id: "certificat", eticheta: "Certificat", hint: "Certificat de recunoștință, cu ramă și sigiliu" },
+  { id: "prezentare", eticheta: "Prezentare", hint: "Diapozitive 16:9, pentru ecran sau PDF" },
+  { id: "analitic", eticheta: "Analitic", hint: "Tablou de bord cu grafice, pentru cine vrea cifrele" },
 ] as const;
 export type ModelImpact = (typeof MODELE_IMPACT)[number]["id"];
 
@@ -43,7 +47,8 @@ export type DateImpact = {
   accent3: string;
   gruparePeAn: boolean;
   autor: string;
-  logoUrl: string;
+  logoFirma: string; // logoul firmei (încărcat în pagină sau adresă https)
+  logoOng: string; // logoul organizației
   model: ModelImpact;
 };
 
@@ -64,7 +69,8 @@ export const dateImpactGoale = (): DateImpact => ({
   ...CULORI_IMPLICITE,
   gruparePeAn: false,
   autor: "",
-  logoUrl: "",
+  logoFirma: "",
+  logoOng: "",
   model: "clasic",
 });
 
@@ -84,7 +90,7 @@ const urlHttp = (v: unknown) => {
 const urlLogo = (v: unknown) => {
   const s = typeof v === "string" ? v.trim() : "";
   if (/^https:\/\/[^\s"'<>]+$/i.test(s) && s.length <= 500) return s;
-  if (/^data:image\/(png|jpeg|webp|gif|svg\+xml);base64,[a-z0-9+/=]+$/i.test(s) && s.length <= 300_000) return s;
+  if (/^data:image\/(png|jpeg|webp);base64,[a-z0-9+/=]+$/i.test(s) && s.length <= 300_000) return s;
   return "";
 };
 
@@ -116,7 +122,9 @@ export function curataDateImpact(brut: unknown): DateImpact {
     accent3: HEX.test(String(b.accent3)) ? String(b.accent3) : gol.accent3,
     gruparePeAn: b.gruparePeAn === true,
     autor: text(b.autor, 100),
-    logoUrl: urlLogo(b.logoUrl),
+    logoFirma: urlLogo(b.logoFirma),
+    // Versiunile vechi aveau un singur logo, al organizației.
+    logoOng: urlLogo(b.logoOng ?? b.logoUrl),
     model: MODELE_IMPACT.some((m) => m.id === b.model) ? (b.model as ModelImpact) : gol.model,
   };
 }

@@ -1,9 +1,10 @@
 "use client";
 
-import { Copy, Download, FileDown, Plus, RotateCcw, Trash2 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { Copy, Download, FileDown, Palette, Plus, RotateCcw, Trash2, Upload } from "lucide-react";
+import { useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
 
 import { aplicaPlaceholdere, CULORI_IMPLICITE, curataDateImpact, MECANISME_IMPACT, MODELE_IMPACT, PROIECT_GOL, totalImpact, type DateImpact, type ProiectImpact } from "@/lib/raport-impact";
+import type { PaletaLogo } from "@/lib/raport-impact-culori";
 import { randeazaRaportImpact } from "@/lib/raport-impact-modele";
 
 import { Breadcrumb } from "../../../components/ui/breadcrumb";
@@ -12,6 +13,7 @@ import { Card, CardHeader } from "../../../components/ui/card";
 import { Input, Label, Select, Textarea } from "../../../components/ui/input";
 import { formatSuma } from "../../../lib/format";
 import { incarcaImpactAction, salveazaImpactAction, type CompanieImpactRand, type IncarcareImpact } from "../impact-actions";
+import { incarcaLogo, paletaDinLogo } from "./logo-util";
 
 type Stare = "idle" | "asteapta" | "salveaza" | "salvat" | "eroare";
 
@@ -24,6 +26,8 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
   const [stare, setStare] = useState<Stare>("idle");
   const [mesaj, setMesaj] = useState<string | null>(null);
   const [ocupat, start] = useTransition();
+  const [paleta, setPaleta] = useState<PaletaLogo | null>(null);
+  const [eroareLogo, setEroareLogo] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cadru = useRef<HTMLIFrameElement>(null);
 
@@ -49,6 +53,40 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
   }
   const actualizeazaProiect = (i: number, patch: Partial<ProiectImpact>) => actualizeaza({ proiecte: date.proiecte.map((p, j) => (j === i ? { ...p, ...patch } : p)) });
 
+  const culoriDin = (p: PaletaLogo): Partial<DateImpact> => ({ accent: p.accent, accent2: p.accent2, accent3: p.accent3 });
+  // Logoul firmei: se citește local, se micșorează, iar culorile raportului se iau din el (se pot ajusta apoi).
+  async function alegeLogoFirma(fisier?: File) {
+    if (!fisier) return;
+    setEroareLogo(null);
+    try {
+      const r = await incarcaLogo(fisier);
+      if (r.paleta) setPaleta(r.paleta);
+      actualizeaza({ logoFirma: r.dataUrl, ...(r.paleta ? culoriDin(r.paleta) : {}) });
+    } catch (e) {
+      setEroareLogo(e instanceof Error ? e.message : "Logoul nu a putut fi încărcat.");
+    }
+  }
+  async function alegeLogoOng(fisier?: File) {
+    if (!fisier) return;
+    setEroareLogo(null);
+    try {
+      actualizeaza({ logoOng: (await incarcaLogo(fisier)).dataUrl });
+    } catch (e) {
+      setEroareLogo(e instanceof Error ? e.message : "Logoul nu a putut fi încărcat.");
+    }
+  }
+  async function preiaCulori() {
+    setEroareLogo(null);
+    try {
+      const p = await paletaDinLogo(date.logoFirma);
+      if (!p) return setEroareLogo("Nu am găsit culori în logo. Alege-le manual mai jos.");
+      setPaleta(p);
+      actualizeaza(culoriDin(p));
+    } catch (e) {
+      setEroareLogo(e instanceof Error ? e.message : "Culorile nu au putut fi citite.");
+    }
+  }
+
   function schimbaFirma(id: string) {
     if (timer.current) clearTimeout(timer.current);
     start(async () => {
@@ -56,6 +94,8 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
       setCompanyId(id || null);
       setDate(r.date);
       setSalvat(r.salvat);
+      setPaleta(null);
+      setEroareLogo(null);
       setStare("idle");
       setMesaj(null);
     });
@@ -156,6 +196,33 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
           </Card>
 
           <Card>
+            <CardHeader title="Logo-uri și culori" subtitle="Apar împreună în antet. Culorile raportului se iau din logoul firmei." />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <CampLogo eticheta="Logo firmă" valoare={date.logoFirma} alt={date.firma} onFisier={alegeLogoFirma} onSterge={() => actualizeaza({ logoFirma: "" })} />
+              <CampLogo
+                eticheta="Logo organizație"
+                valoare={date.logoOng}
+                alt="Logo organizație"
+                onFisier={alegeLogoOng}
+                onSterge={() => actualizeaza({ logoOng: "" })}
+                extra={initial.logoOngImplicit && date.logoOng !== initial.logoOngImplicit ? <Button size="sm" variant="ghost" onClick={() => actualizeaza({ logoOng: initial.logoOngImplicit })}>Folosește logoul din Setări</Button> : null}
+              />
+            </div>
+            {eroareLogo && <p role="alert" className="mt-2 text-[13px] text-[var(--ci-red)]">{eroareLogo}</p>}
+            <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-[var(--ci-border)] pt-3">
+              <div className="flex items-center gap-1.5" aria-label="Culorile raportului">
+                {([date.accent, date.accent2, date.accent3] as const).map((culoare, i) => (
+                  <span key={i} className="size-7 rounded-full border border-[var(--ci-border)]" style={{ background: culoare }} title={culoare} />
+                ))}
+              </div>
+              <p className="min-w-0 flex-1 text-[12.5px] text-[var(--ci-text-muted)]">{paleta ? (paleta.sursa === "logo" ? "Culori preluate din logoul firmei." : "Logoul e alb-negru: am ales nuanțe neutre.") : "Culorile se aleg mai jos sau se preiau din logo."}</p>
+              <Button size="sm" onClick={preiaCulori} disabled={!date.logoFirma}>
+                <Palette className="size-3.5" aria-hidden /> Preia culorile din logo
+              </Button>
+            </div>
+          </Card>
+
+          <Card>
             <CardHeader title="Proiecte susținute" subtitle={`${nrNumite} ${nrNumite === 1 ? "proiect" : "proiecte"} · ${formatSuma(total)}`} />
             <div className="space-y-3">
               {date.proiecte.length === 0 && <p className="text-[13px] text-[var(--ci-text-muted)]">Niciun proiect încă. Adaugă unul sau {companyId ? "reia-le din sponsorizări." : "alege o firmă din CRM."}</p>}
@@ -247,14 +314,10 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
                 </div>
               ))}
             </div>
-            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="mt-3 grid grid-cols-1 gap-3">
               <div className="min-w-0">
                 <Label>Semnează</Label>
                 <Input value={date.autor} onChange={(e) => actualizeaza({ autor: e.target.value })} maxLength={100} placeholder="Prenume" />
-              </div>
-              <div className="min-w-0">
-                <Label>Logo (adresă https, opțional)</Label>
-                <Input type="url" value={date.logoUrl} onChange={(e) => actualizeaza({ logoUrl: e.target.value })} placeholder="https://…" />
               </div>
             </div>
             <label className="mt-3 flex items-center gap-2 text-[13px] text-[var(--ci-text)]">
@@ -283,6 +346,49 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
               className="block h-[70vh] w-full bg-white xl:h-[calc(100vh-9rem)]"
             />
           </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CampLogo({ eticheta, valoare, alt, onFisier, onSterge, extra }: { eticheta: string; valoare: string; alt: string; onFisier: (f?: File) => void; onSterge: () => void; extra?: React.ReactNode }) {
+  const id = useId();
+  return (
+    <div className="min-w-0">
+      <Label htmlFor={id}>{eticheta}</Label>
+      <div className="flex items-center gap-3">
+        <div
+          className="flex h-16 w-28 shrink-0 items-center justify-center overflow-hidden rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)]"
+          style={{ backgroundImage: "conic-gradient(#f1eded 25%, #fff 0 50%, #f1eded 0 75%, #fff 0)", backgroundSize: "12px 12px" }}
+        >
+          {valoare ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={valoare} alt={alt} className="max-h-14 max-w-[6.5rem] object-contain" />
+          ) : (
+            <span className="px-2 text-center text-[11px] text-[var(--ci-text-faint)]">Fără logo</span>
+          )}
+        </div>
+        <div className="flex min-w-0 flex-wrap gap-1.5">
+          <label htmlFor={id} className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 text-[13px] font-medium text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)] focus-within:ring-2 focus-within:ring-[var(--ci-primary)]">
+            <Upload className="size-3.5" aria-hidden /> {valoare ? "Schimbă" : "Încarcă"}
+          </label>
+          <input
+            id={id}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
+            className="sr-only"
+            onChange={(e) => {
+              onFisier(e.target.files?.[0]);
+              e.target.value = "";
+            }}
+          />
+          {valoare && (
+            <Button size="sm" variant="ghost" onClick={onSterge}>
+              <Trash2 className="size-3.5" aria-hidden /> Șterge
+            </Button>
+          )}
+          {extra}
         </div>
       </div>
     </div>
