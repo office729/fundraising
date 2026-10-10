@@ -89,9 +89,6 @@ export default function InstrumentePage() {
                     href={inst.href.startsWith("/") ? `/${orgSlug}${inst.href}` : `/${orgSlug}/crm/instrumente/${inst.href}`}
                     className="group block rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4 shadow-[var(--ci-card-shadow)] transition-colors hover:border-[var(--ci-primary)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none"
                   >
-                    <span className="mb-2 flex items-center gap-1.5 text-[12px] font-medium text-[var(--ci-text-muted)]">
-                      <span className="h-1.5 w-1.5 rounded-full" style={{ background: cat.culoare }} /> {catDict.nume}
-                    </span>
                     <p className="text-[14px] font-semibold text-[var(--ci-text)]">{instDict.titlu}</p>
                     <p className="mt-1 text-[12px] text-[var(--ci-text-muted)]">{instDict.descriere}</p>
                     <span className="mt-3 flex items-center gap-1 text-[13px] font-medium text-[var(--ci-primary)] group-hover:underline">

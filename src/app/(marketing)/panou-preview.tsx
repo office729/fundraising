@@ -9,7 +9,7 @@ import { useState, type ReactNode } from "react";
 
 type Locale = "ro" | "en";
 type L = (ro: string, en: string) => string;
-type Ecran = "acasa" | "companii" | "d177" | "donatori" | "fonduri" | "formular" | "echipa";
+type Ecran = "acasa" | "companii" | "d177" | "donatori" | "fonduri" | "formular" | "instrumente" | "echipa";
 
 const ECRANE: { id: Ecran; ro: string; en: string; roDesc: string; enDesc: string; url: string }[] = [
   { id: "acasa", ro: "Acasă", en: "Home", roDesc: "Ziua ta, pe scurt", enDesc: "Your day at a glance", url: "crm" },
@@ -18,6 +18,7 @@ const ECRANE: { id: Ecran; ro: string; en: string; roDesc: string; enDesc: strin
   { id: "donatori", ro: "Persoane fizice", en: "Individual donors", roDesc: "Donatori, segmente, apeluri", enDesc: "Donors, segments, calls", url: "crm/donatori" },
   { id: "fonduri", ro: "Strângere de fonduri", en: "Fundraising", roDesc: "Pagini publice de campanie", enDesc: "Public campaign pages", url: "crm/strangere-fonduri" },
   { id: "formular", ro: "Formular 230", en: "Form 230", roDesc: "Borderouri ANAF automate", enDesc: "Automated ANAF batches", url: "crm/donatori/formular-230" },
+  { id: "instrumente", ro: "Instrumente digitale", en: "Digital tools", roDesc: "Rapoarte, scrisori, certificate", enDesc: "Reports, letters, certificates", url: "crm/instrumente" },
   { id: "echipa", ro: "Echipă și performanță", en: "Team & performance", roDesc: "Obiective și progres", enDesc: "Goals and progress", url: "crm/performanta" },
 ];
 
@@ -308,6 +309,34 @@ function Formular({ L }: { L: L }) {
   );
 }
 
+function Instrumente({ L }: { L: L }) {
+  const unelte: [string, string, string][] = [
+    [L("Rapoarte de impact", "Impact reports"), L("15 modele, logo-ul firmei, export PDF", "15 templates, company logo, PDF export"), "#3fa85c"],
+    [L("Scrisori cu antet", "Letterhead letters"), L("Mulțumire, sponsorizare, parteneriat", "Thank-you, sponsorship, partnership"), "#3fa85c"],
+    [L("Certificate", "Certificates"), L("Recunoștință, voluntariat, cu cod QR", "Recognition, volunteering, with QR code"), "#3fa85c"],
+    [L("Newsletter", "Newsletters"), L("Pentru donatori și pentru companii", "For donors and for companies"), "#7c3aed"],
+    [L("Generator one-pager", "One-pager generator"), L("O pagină editabilă cu cifre și contact", "An editable page with figures and contact"), "#dc2626"],
+    [L("Semnătură digitală", "Email signature"), L("Semnătură de email unitară pentru echipă", "One email signature for the whole team"), "#154a85"],
+  ];
+  return (
+    <div className="space-y-3">
+      <Antet t={L("Instrumente digitale", "Digital tools")} s={L("Documente și materiale gata de trimis, cu identitatea organizației tale", "Ready-to-send documents and materials in your organization's identity")} />
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+        {unelte.map(([n, d, c], i) => (
+          <Card key={n} className={`p-3 ${i > 3 ? "hidden sm:block" : ""}`}>
+            <p className="flex items-center gap-1.5 text-[12px] font-bold text-ink">
+              <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: c }} />
+              <span className="truncate">{n}</span>
+            </p>
+            <p className="mt-1 text-[11px] leading-snug text-muted-2">{d}</p>
+            <p className="mt-2 text-[11.5px] font-semibold text-brand-blue">{L("Deschide →", "Open →")}</p>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function Echipa({ L }: { L: L }) {
   const ob: [string, number, "green" | "amber" | "red", string][] = [
     [L("Donatori recurenți noi", "New recurring donors"), 78, "green", L("În grafic", "On track")],
@@ -414,6 +443,7 @@ export function PanouPreview({ locale }: { locale: Locale }) {
               {ecran === "donatori" && <Donatori L={L} />}
               {ecran === "fonduri" && <Fonduri L={L} />}
               {ecran === "formular" && <Formular L={L} />}
+              {ecran === "instrumente" && <Instrumente L={L} />}
               {ecran === "echipa" && <Echipa L={L} />}
             </div>
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-canvas to-transparent" aria-hidden="true" />
