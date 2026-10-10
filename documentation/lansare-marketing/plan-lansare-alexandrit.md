@@ -192,7 +192,11 @@ Confirmat: **lucrăm cu CRM de 4 ani** (din 2022). Asta împarte istoria asocia�
 | Donații pe an | [DE COMPLETAT] | ~70.000 |
 | Companii sponsor pe an | [DE COMPLETAT] | [DE COMPLETAT] |
 | Formulare 230 pe an | [DE COMPLETAT] | [DE COMPLETAT] |
-| Oameni în echipă | [DE COMPLETAT] | [DE COMPLETAT] |
+| Oameni în echipă | 3 la înființare (2012) → [DE COMPLETAT: câți în 2021] | 9 (azi) |
+
+Ce se poate spune deja (cifre confirmate): **9 oameni gestionează ~70.000 de donații pe an** — în medie
+**~7.800 de donații de om pe an, ~650 pe lună.** Echipa a crescut de 3 ori (de la 3 la 9), dar munca a crescut mult
+mai repede; diferența o acoperă sistemul.
 
 Cel mai puternic mesaj ar fi: *„Cu aceeași echipă (sau aproape), în ultimii 4 ani gestionăm de [X] ori mai multe
 donații decât înainte de CRM.”* — dacă cifrele o confirmă.
@@ -321,6 +325,13 @@ tabelul de la Pasul 3.
 > Fără un CRM, doar să le notăm ne-ar lua un om cu normă întreagă. Cu CRM-ul, se înregistrează singure,
 > iar echipa lucrează pentru copii, nu pentru tabele.
 > Același sistem îl poate folosi acum orice ONG: alexandrit.ro
+
+**P9c · „Am început 3. Azi suntem 9.”** (carusel Instagram / postare Facebook-LinkedIn)
+> În 2012 eram 3 oameni, cu un telefon și o pagină de Facebook.
+> Azi suntem 9 — și primim în jur de 70.000 de donații pe an.
+> Adică aproape 7.800 de donații pentru fiecare om din echipă.
+> Nu am reușit asta lucrând mai mult. Am reușit lucrând cu un sistem: de 4 ani, totul trece prin CRM.
+> Același sistem îl punem acum la dispoziția oricărui ONG: alexandrit.ro
 
 **P10 · „Sponsorizarea prin 20%, explicată în 60 de secunde”** — conținut util (ce e, ce document trebuie, cum îl
 generezi în Alexandrit). Bun pentru distribuire în grupuri de ONG-uri.
