@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { and, eq, ne } from "drizzle-orm";
 
 import { withOrgAdmin } from "@/lib/auth/guard";
+import { getLimiteleEfective, mesajeCote } from "@/lib/billing/quota";
 import { cifFolositDeAltaOrganizatie, MESAJ_CIF_FOLOSIT } from "@/lib/cif";
 import { TOATE_DOMENIILE, type DomeniuActivitate } from "@/lib/campaign-templates";
 import { EroareUtilizator, mesajSigur } from "@/lib/erori";
@@ -204,6 +205,11 @@ const DOMAIN_RE = /^(?!-)[a-z0-9-]+(\.[a-z0-9-]+)+$/;
 
 const updateCustomDomainRow = withOrgAdmin(async (ctx, domain: string | null) => {
   if (domain) {
+    // Domeniul propriu e inclus în IMPACT; cine îl are deja (de dinainte) îl poate păstra.
+    const [curent] = await ctx.db.select({ d: organizations.customDomain }).from(organizations).where(eq(organizations.id, ctx.orgId)).limit(1);
+    if (curent?.d !== domain && !getLimiteleEfective(ctx.orgPackage, ctx.orgCustomPlanConfig).domeniuPropriu) {
+      throw new EroareUtilizator(mesajeCote.domeniuPropriu(ctx.orgPackage));
+    }
     const [conflict] = await ctx.db
       .select({ id: organizations.id })
       .from(organizations)

@@ -63,6 +63,16 @@ export type PackageLimits = {
   documenteD177PeLuna: number | null;
   newsletterBiblioteca: "standard" | "completa" | "completa-personalizabila";
   programLucru: "individual" | "echipa" | "echipa-cu-roluri";
+  // Cote pe ce aduce organizația: câte campanii pot fi active în același timp și câte conturi de Formular 230 (beneficiari) are.
+  // Se aplică la creare / redeschidere; ce există deja nu se închide singur.
+  campaniiActive: number | null;
+  conturi230: number | null;
+  // Activități pe teren la Voluntari (tură, cod QR, remindere, adeverință). Sarcinile online și pagina publică rămân în toate pachetele.
+  voluntariActivitati: boolean;
+  // Avatar donator complet (fișa ta, buget, sinteză, chestionar, profiluri). Avatarele din date sunt în toate pachetele.
+  avatarComplet: boolean;
+  // Domeniu propriu al organizației (ex. susinima.ro).
+  domeniuPropriu: boolean;
 };
 
 // "custom" nu are cote fixe — vezi organizations.custom_plan_config și
@@ -79,6 +89,11 @@ export const PACKAGE_LIMITS: Record<Exclude<OrgPackage, "custom">, PackageLimits
     documenteD177PeLuna: null,
     newsletterBiblioteca: "completa-personalizabila",
     programLucru: "echipa-cu-roluri",
+    campaniiActive: null,
+    conturi230: null,
+    voluntariActivitati: true,
+    avatarComplet: true,
+    domeniuPropriu: true,
   },
   start: {
     pretLunar: 49,
@@ -91,6 +106,11 @@ export const PACKAGE_LIMITS: Record<Exclude<OrgPackage, "custom">, PackageLimits
     documenteD177PeLuna: null,
     newsletterBiblioteca: "standard",
     programLucru: "individual",
+    campaniiActive: 1,
+    conturi230: 1,
+    voluntariActivitati: false,
+    avatarComplet: false,
+    domeniuPropriu: false,
   },
   crestere: {
     pretLunar: 149,
@@ -103,6 +123,11 @@ export const PACKAGE_LIMITS: Record<Exclude<OrgPackage, "custom">, PackageLimits
     documenteD177PeLuna: null,
     newsletterBiblioteca: "completa",
     programLucru: "echipa",
+    campaniiActive: 5,
+    conturi230: 3,
+    voluntariActivitati: true,
+    avatarComplet: true,
+    domeniuPropriu: false,
   },
   impact: {
     pretLunar: 299,
@@ -115,6 +140,11 @@ export const PACKAGE_LIMITS: Record<Exclude<OrgPackage, "custom">, PackageLimits
     documenteD177PeLuna: null,
     newsletterBiblioteca: "completa-personalizabila",
     programLucru: "echipa-cu-roluri",
+    campaniiActive: null,
+    conturi230: null,
+    voluntariActivitati: true,
+    avatarComplet: true,
+    domeniuPropriu: true,
   },
 };
 

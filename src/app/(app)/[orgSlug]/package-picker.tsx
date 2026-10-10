@@ -30,6 +30,17 @@ function limiteText(pkg: Exclude<OrgPackage, "trial" | "custom">, locale: Locale
     `${l.contactePf!.toLocaleString(loc)} ${t.contactePf}`,
     `${l.companiiPj!.toLocaleString(loc)} ${t.companii}`,
     l.contracteSponsorizarePeLuna == null ? t.contracteNelimitate : t.contracte(l.contracteSponsorizarePeLuna),
+    ...(locale === "ro"
+      ? [
+          l.campaniiActive == null ? "Campanii active nelimitate" : `${l.campaniiActive} ${l.campaniiActive === 1 ? "campanie activă" : "campanii active"}`,
+          l.conturi230 == null ? "Conturi Formular 230 nelimitate" : `${l.conturi230} ${l.conturi230 === 1 ? "cont" : "conturi"} Formular 230`,
+          l.voluntariActivitati ? "Voluntari: sarcini online și activități pe teren" : "Voluntari: sarcini online",
+        ]
+      : [
+          l.campaniiActive == null ? "Unlimited active campaigns" : `${l.campaniiActive} active ${l.campaniiActive === 1 ? "campaign" : "campaigns"}`,
+          l.conturi230 == null ? "Unlimited Form 230 accounts" : `${l.conturi230} Form 230 ${l.conturi230 === 1 ? "account" : "accounts"}`,
+          l.voluntariActivitati ? "Volunteers: online tasks and on-site activities" : "Volunteers: online tasks",
+        ]),
   ];
 }
 

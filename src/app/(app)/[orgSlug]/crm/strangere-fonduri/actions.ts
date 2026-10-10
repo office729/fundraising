@@ -7,7 +7,7 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 
 import { withOrgAdmin } from "@/lib/auth/guard";
 import type { CustomPlanConfigSaved } from "@/lib/billing/custom-plan";
-import { getLimiteleEfective, subCota } from "@/lib/billing/quota";
+import { getLimiteleEfective, mesajeCote, subCota } from "@/lib/billing/quota";
 import { getTemplatesDisponibile, type CampaignPageTemplate } from "@/lib/campaign-templates";
 import {
   donatoriReali,
@@ -73,11 +73,23 @@ export const stergePaginaStrangereFonduri = withOrgAdmin(async (ctx, id: string)
 // Comută o pagină între "activa" și "inchisa" — nedistructiv, păstrează
 // istoricul donațiilor. O pagină închisă nu mai apare public ca activă și nu
 // mai acceptă donații noi (vezi pagina publică + doneazaAction).
-export const comutaStatusPaginaStrangereFonduri = withOrgAdmin(async (ctx, id: string, statusNou: "activa" | "inchisa") => {
+export const comutaStatusPaginaStrangereFonduri = withOrgAdmin(async (ctx, id: string, statusNou: "activa" | "inchisa"): Promise<{ error: string | null }> => {
+  // Redeschiderea unei campanii cere loc în cota pachetului (închiderea e mereu permisă).
+  if (statusNou === "activa") {
+    const limite = getLimiteleEfective(ctx.orgPackage, ctx.orgCustomPlanConfig);
+    if (limite.campaniiActive !== null) {
+      const [{ n }] = await ctx.db
+        .select({ n: sql<number>`count(*)::int` })
+        .from(fundraisingPages)
+        .where(and(eq(fundraisingPages.orgId, ctx.orgId), eq(fundraisingPages.status, "activa"), sql`${fundraisingPages.id} <> ${id}`));
+      if (!subCota(n, limite.campaniiActive)) return { error: mesajeCote.campanii(ctx.orgPackage, limite.campaniiActive) };
+    }
+  }
   await ctx.db
     .update(fundraisingPages)
     .set({ status: statusNou })
     .where(and(eq(fundraisingPages.id, id), eq(fundraisingPages.orgId, ctx.orgId)));
+  return { error: null };
 });
 
 // `id` și `slug` vin doar la succes: asistentul de campanie are nevoie de id ca să încarce poza după creare.
@@ -124,6 +136,16 @@ export const creeazaPaginaAdminAction = withOrgAdmin(
     const template: CampaignPageTemplate | undefined = templatePermise.includes(templateCerut as CampaignPageTemplate)
       ? (templateCerut as CampaignPageTemplate)
       : undefined;
+
+    // Cota pachetului: câte campanii pot fi active în același timp (se aplică la creare; ce există deja rămâne).
+    const limite = getLimiteleEfective(ctx.orgPackage, ctx.orgCustomPlanConfig);
+    if (limite.campaniiActive !== null) {
+      const [{ n }] = await ctx.db
+        .select({ n: sql<number>`count(*)::int` })
+        .from(fundraisingPages)
+        .where(and(eq(fundraisingPages.orgId, ctx.orgId), eq(fundraisingPages.status, "activa")));
+      if (!subCota(n, limite.campaniiActive)) return { error: mesajeCote.campanii(ctx.orgPackage, limite.campaniiActive) };
+    }
 
     const baseSlug = slugify(titlu);
     const slug = await genereazaSlugUnic(baseSlug, async (candidat) => {

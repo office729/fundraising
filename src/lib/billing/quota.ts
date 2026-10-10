@@ -11,6 +11,11 @@ export type LimiteEfective = {
   utilizatori: number | null;
   contactePf: number | null;
   companiiPj: number | null;
+  campaniiActive: number | null;
+  conturi230: number | null;
+  voluntariActivitati: boolean;
+  avatarComplet: boolean;
+  domeniuPropriu: boolean;
 };
 
 export function getLimiteleEfective(pkg: OrgPackage, customPlanConfig: CustomPlanConfigSaved | null): LimiteEfective {
@@ -19,18 +24,44 @@ export function getLimiteleEfective(pkg: OrgPackage, customPlanConfig: CustomPla
     // salvează împreună la alegerea planului) — dar dacă totuși lipsește,
     // cădem pe cote minime în loc de nelimitat, ca să nu deschidem accidental
     // acces gratuit total.
-    if (!customPlanConfig) return { utilizatori: 1, contactePf: 0, companiiPj: 0 };
+    // Planul personalizat nu are cote pe campanii și funcții noi (nu se pot alege în constructor): rămân deschise.
+    const deschise = { campaniiActive: null, conturi230: null, voluntariActivitati: true, avatarComplet: true, domeniuPropriu: true };
+    if (!customPlanConfig) return { utilizatori: 1, contactePf: 0, companiiPj: 0, ...deschise };
     return {
       utilizatori: customPlanConfig.utilizatori,
       contactePf: customPlanConfig.contactePf,
       companiiPj: customPlanConfig.companiiPj,
+      ...deschise,
     };
   }
   const limite = PACKAGE_LIMITS[pkg];
-  return { utilizatori: limite.utilizatori, contactePf: limite.contactePf, companiiPj: limite.companiiPj };
+  return {
+    utilizatori: limite.utilizatori,
+    contactePf: limite.contactePf,
+    companiiPj: limite.companiiPj,
+    campaniiActive: limite.campaniiActive,
+    conturi230: limite.conturi230,
+    voluntariActivitati: limite.voluntariActivitati,
+    avatarComplet: limite.avatarComplet,
+    domeniuPropriu: limite.domeniuPropriu,
+  };
 }
 
 // `null` = nelimitat (convenția deja folosită în PackageLimits).
 export function subCota(curent: number, limita: number | null): boolean {
   return limita === null || curent < limita;
 }
+
+// Numele pachetului în mesajele către utilizator.
+const NUME_PACHET: Record<OrgPackage, string> = { trial: "de probă", start: "START", crestere: "CREȘTERE", impact: "IMPACT", custom: "personalizat" };
+
+// Mesajele de limită: spun ce include pachetul și ce poate face utilizatorul (nu doar „eroare”).
+export const mesajeCote = {
+  campanii: (pkg: OrgPackage, limita: number) =>
+    `Pachetul ${NUME_PACHET[pkg]} include ${limita} ${limita === 1 ? "campanie activă" : "campanii active"} în același timp. Închide o campanie sau treci la un pachet mai mare din Facturare.`,
+  conturi230: (pkg: OrgPackage, limita: number) =>
+    `Pachetul ${NUME_PACHET[pkg]} include ${limita} ${limita === 1 ? "cont" : "conturi"} de Formular 230. Treci la un pachet mai mare din Facturare ca să adaugi altele.`,
+  voluntariActivitati: (pkg: OrgPackage) =>
+    `Activitățile pe teren (ture, cod QR, remindere, adeverințe) sunt incluse începând cu pachetul CREȘTERE. Acum ai pachetul ${NUME_PACHET[pkg]}; sarcinile online rămân disponibile.`,
+  domeniuPropriu: (pkg: OrgPackage) => `Domeniul propriu e inclus în pachetul IMPACT. Acum ai pachetul ${NUME_PACHET[pkg]}.`,
+};

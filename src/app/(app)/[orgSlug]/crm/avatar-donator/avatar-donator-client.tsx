@@ -30,7 +30,7 @@ const TABURI: { id: TabId; label: string }[] = [
 export type Actualizeaza = (fn: (d: AvatarData) => AvatarData) => void;
 type Stare = "salvat" | "modificat" | "se-salveaza" | "eroare";
 
-export function AvatarDonatorClient({ initial, stat, segmente, avatare }: { initial: AvatarData; stat: StatisticiPlatforma | null; segmente: SegmentStat[] | null; avatare: RezultatAvatare | null }) {
+export function AvatarDonatorClient({ initial, stat, segmente, avatare, avatarComplet }: { initial: AvatarData; stat: StatisticiPlatforma | null; segmente: SegmentStat[] | null; avatare: RezultatAvatare | null; avatarComplet: boolean }) {
   const { orgSlug } = useParams<{ orgSlug: string }>();
   const [data, setData] = useState<AvatarData>(initial);
   // Se deschide mereu pe ce arată datele reale; instrumentele manuale sunt în celelalte secțiuni.
@@ -205,11 +205,18 @@ export function AvatarDonatorClient({ initial, stat, segmente, avatare }: { init
 
       <div role="tabpanel" id={`panou-${tab}`} aria-labelledby={`tab-${tab}`}>
         {tab === "avatare" && <TabAvatare rezultat={avatare} mergiLa={setTab} />}
-        {tab === "simplu" && <TabSimplu data={data} actualizeaza={actualizeaza} mergiLa={setTab} segmente={segmente} stat={stat} />}
-        {tab === "buget" && <TabBuget data={data} actualizeaza={actualizeaza} alocare={alocare} stat={stat} continua={() => setTab("sinteza")} />}
-        {tab === "sinteza" && <TabSinteza data={data} actualizeaza={actualizeaza} alocare={alocare} sfaturi={sfaturi} mergiLa={setTab} />}
-        {tab === "chestionar" && <TabChestionar data={data} actualizeaza={actualizeaza} progres={progres} />}
-        {tab === "profile" && <TabProfile data={data} actualizeaza={actualizeaza} />}
+        {tab !== "avatare" && !avatarComplet && (
+          <div className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-6 text-[13.5px] leading-relaxed">
+            <p className="font-semibold text-[var(--ci-text)]">Instrumentele manuale sunt incluse începând cu pachetul CREȘTERE</p>
+            <p className="mt-1 text-[var(--ci-text-muted)]">Fișa ta, bugetul și canalele, sinteza, chestionarul și profilurile se deblochează la CREȘTERE. Avatarele din datele donatorilor rămân disponibile în toate pachetele, iar ce ai completat deja se păstrează.</p>
+            <a href={`/${orgSlug}/crm/facturare`} className="mt-3 inline-block font-semibold text-[var(--ci-primary)] hover:underline">Vezi pachetele din Facturare →</a>
+          </div>
+        )}
+        {tab === "simplu" && avatarComplet && <TabSimplu data={data} actualizeaza={actualizeaza} mergiLa={setTab} segmente={segmente} stat={stat} />}
+        {tab === "buget" && avatarComplet && <TabBuget data={data} actualizeaza={actualizeaza} alocare={alocare} stat={stat} continua={() => setTab("sinteza")} />}
+        {tab === "sinteza" && avatarComplet && <TabSinteza data={data} actualizeaza={actualizeaza} alocare={alocare} sfaturi={sfaturi} mergiLa={setTab} />}
+        {tab === "chestionar" && avatarComplet && <TabChestionar data={data} actualizeaza={actualizeaza} progres={progres} />}
+        {tab === "profile" && avatarComplet && <TabProfile data={data} actualizeaza={actualizeaza} />}
       </div>
     </div>
   );

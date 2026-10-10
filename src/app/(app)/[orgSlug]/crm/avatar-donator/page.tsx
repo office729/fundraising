@@ -1,4 +1,5 @@
 import { requireOrgAccess } from "@/lib/auth/guard";
+import { getLimiteleEfective } from "@/lib/billing/quota";
 
 import { getAvatar } from "./actions";
 import { AvatarDonatorClient } from "./avatar-donator-client";
@@ -10,9 +11,10 @@ export const dynamic = "force-dynamic";
 // alocare de buget pe platforme, platforma pe care să insiști și sfaturi de marketing.
 export default async function AvatarDonatorPage({ params }: { params: Promise<{ orgSlug: string }> }) {
   const { orgSlug } = await params;
-  await requireOrgAccess(orgSlug);
+  const access = await requireOrgAccess(orgSlug);
+  const avatarComplet = getLimiteleEfective(access.orgPackage, access.orgCustomPlanConfig).avatarComplet;
   const { data, stat, segmente, avatare } = await getAvatar(orgSlug);
-  return <AvatarDonatorClient initial={data} stat={stat} segmente={segmente} avatare={avatare} />;
+  return <AvatarDonatorClient initial={data} stat={stat} segmente={segmente} avatare={avatare} avatarComplet={avatarComplet} />;
 }
 
 export async function generateMetadata() {

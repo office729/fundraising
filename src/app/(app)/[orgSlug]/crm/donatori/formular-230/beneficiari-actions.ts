@@ -2,11 +2,12 @@
 
 import { randomUUID } from "node:crypto";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 
 import { withOrgAdmin } from "@/lib/auth/guard";
+import { getLimiteleEfective, mesajeCote, subCota } from "@/lib/billing/quota";
 import { formular230Beneficiari } from "@/lib/db/schema";
-import { mesajSigur } from "@/lib/erori";
+import { EroareUtilizator, mesajSigur } from "@/lib/erori";
 import { SLUG_PRINCIPAL } from "@/lib/formular230-constants";
 import { cifValidFormat, ibanValid } from "@/lib/iban";
 import { genereazaCodScurtUnic } from "@/lib/short-code";
@@ -23,6 +24,12 @@ export type BeneficiarState = { error: string | null; ok: boolean; slug?: string
 
 const inserteazaBeneficiar = withOrgAdmin(
   async (ctx, values: { nume: string; iban: string; cif: string; emailBeneficiar: string }) => {
+    // Cota pachetului: câte conturi de Formular 230 poate avea organizația (contul „principal” se creează automat și se numără).
+    const limite = getLimiteleEfective(ctx.orgPackage, ctx.orgCustomPlanConfig);
+    if (limite.conturi230 !== null) {
+      const [{ n }] = await ctx.db.select({ n: sql<number>`count(*)::int` }).from(formular230Beneficiari).where(eq(formular230Beneficiari.orgId, ctx.orgId));
+      if (!subCota(n, limite.conturi230)) throw new EroareUtilizator(mesajeCote.conturi230(ctx.orgPackage, limite.conturi230));
+    }
     const baseSlug = slugify(values.nume);
     const slug = await genereazaSlugUnic(baseSlug === SLUG_PRINCIPAL ? `${baseSlug}-cont` : baseSlug, async (s) => {
       const [row] = await ctx.db

@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useActionState, useEffect, useState } from "react";
 
 import { Button } from "../components/ui/button";
+import { Dialog } from "../components/ui/dialog";
 import { useLocale } from "../lib/locale-context";
 import type { CampaignPageTemplate } from "@/lib/campaign-templates";
 import { STRANGERE_FONDURI_DICT } from "@/lib/i18n/dictionaries/strangere-fonduri";
@@ -212,12 +213,15 @@ export function ToggleStatusButton({ orgSlug, id, status }: { orgSlug: string; i
   const locale = useLocale();
   const dict = STRANGERE_FONDURI_DICT[locale].client;
   const [seSchimba, setSeSchimba] = useState(false);
+  const [eroare, setEroare] = useState("");
   const inchide = status === "activa";
 
   async function comuta() {
     setSeSchimba(true);
+    setEroare("");
     try {
-      await comutaStatusPaginaStrangereFonduri(orgSlug, id, inchide ? "inchisa" : "activa");
+      const r = await comutaStatusPaginaStrangereFonduri(orgSlug, id, inchide ? "inchisa" : "activa");
+      if (r?.error) setEroare(r.error);
       router.refresh();
     } finally {
       setSeSchimba(false);
@@ -225,14 +229,24 @@ export function ToggleStatusButton({ orgSlug, id, status }: { orgSlug: string; i
   }
 
   return (
-    <button
-      onClick={comuta}
-      disabled={seSchimba}
-      title={inchide ? dict.inchidePagina : dict.redeschidePagina}
-      className="flex h-7 w-7 items-center justify-center rounded-[var(--ci-radius-btn)] text-[var(--ci-text-faint)] hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)] disabled:opacity-50"
-    >
-      {inchide ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
-    </button>
+    <>
+      <button
+        onClick={comuta}
+        disabled={seSchimba}
+        title={inchide ? dict.inchidePagina : dict.redeschidePagina}
+        className="flex h-7 w-7 items-center justify-center rounded-[var(--ci-radius-btn)] text-[var(--ci-text-faint)] hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)] disabled:opacity-50"
+      >
+        {inchide ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
+      </button>
+      {eroare && (
+        <Dialog open onClose={() => setEroare("")} title="Limita pachetului" width="max-w-md">
+          <p role="alert" className="text-[14px] leading-relaxed text-[var(--ci-text)]">{eroare}</p>
+          <div className="mt-4 flex justify-end">
+            <Button variant="primary" onClick={() => setEroare("")}>Am înțeles</Button>
+          </div>
+        </Dialog>
+      )}
+    </>
   );
 }
 

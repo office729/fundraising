@@ -3,6 +3,7 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
 
 import { withOrgSession, type OrgContext } from "@/lib/auth/guard";
+import { getLimiteleEfective, mesajeCote } from "@/lib/billing/quota";
 import type { Tx } from "@/lib/db";
 import { fundraisingAuditLog, fundraisingPages, volunteerActivities, volunteerPanelLinks, volunteerReports, volunteerShifts, volunteerSignups, volunteerTasks, volunteerVisitors } from "@/lib/db/schema";
 import { emailConfigurat, trimiteEmail } from "@/lib/email";
@@ -156,6 +157,8 @@ export type ActivitateInput = {
 };
 
 export const salveazaActivitateAction = withOrgSession(async (ctx, i: ActivitateInput): Promise<Rez<{ id: string }>> => {
+  // Activitățile pe teren noi sunt incluse de la pachetul CREȘTERE; cele deja create se pot edita în continuare.
+  if (!i.id && !getLimiteleEfective(ctx.orgPackage, ctx.orgCustomPlanConfig).voluntariActivitati) return eroare(mesajeCote.voluntariActivitati(ctx.orgPackage));
   const titlu = textCurat(i.titlu, MAX.titlu);
   const locatie = textCurat(i.locatie, MAX.locatie);
   if (titlu.length < 3) return eroare("Scrie un titlu (cel puțin 3 caractere).");
