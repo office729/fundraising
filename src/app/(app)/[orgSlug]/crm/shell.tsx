@@ -40,7 +40,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
 import type { DomeniuActivitate } from "@/lib/campaign-templates";
@@ -185,8 +185,28 @@ export function CrmShell({
 
   const salut = useSalut(dict.greeting);
 
+  // Bara laterală e lipită sus și are înălțimea părții VIZIBILE a ferestrei: cât antetul platformei încă se vede deasupra,
+  // scade din înălțime, iar după ce a ieșit din ecran umple toată fereastra (fără gol sub planul și contul din josul barei).
+  const radacina = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = radacina.current;
+    if (!el) return;
+    const calculeaza = () => {
+      const sus = Math.max(0, el.getBoundingClientRect().top);
+      el.style.setProperty("--ci-inaltime-bara", `${Math.round(window.innerHeight - sus)}px`);
+    };
+    calculeaza();
+    window.addEventListener("scroll", calculeaza, { passive: true });
+    window.addEventListener("resize", calculeaza);
+    return () => {
+      window.removeEventListener("scroll", calculeaza);
+      window.removeEventListener("resize", calculeaza);
+    };
+  }, []);
+
   return (
     <div
+      ref={radacina}
       className="ci-root flex min-h-[calc(100vh-73px)]"
       data-brand
       data-forma={orgDomeniuActivitate ?? undefined}
@@ -201,7 +221,7 @@ export function CrmShell({
       <aside
         style={mobileOpen ? { transform: "translateX(0)" } : undefined}
         className={cn(
-          "ci-sidebar fixed inset-y-0 left-0 z-50 w-64 overflow-hidden border-r border-[var(--ci-border)] bg-[var(--ci-surface)] duration-200 md:sticky md:top-0 md:z-auto md:h-[calc(100vh-73px)] md:shrink-0 md:self-start md:transition-[width]",
+          "ci-sidebar fixed inset-y-0 left-0 z-50 w-64 overflow-hidden border-r border-[var(--ci-border)] bg-[var(--ci-surface)] duration-200 md:sticky md:top-0 md:z-auto md:h-[var(--ci-inaltime-bara,calc(100vh-73px))] md:shrink-0 md:self-start md:transition-[width]",
           collapsed ? "md:w-16" : "md:w-52",
         )}
       >
