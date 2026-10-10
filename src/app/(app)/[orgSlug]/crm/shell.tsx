@@ -26,6 +26,7 @@ import {
   MessageSquare,
   Network,
   Plus,
+  Receipt,
   UserPlus,
   ScanFace,
   Settings,
@@ -556,6 +557,15 @@ function AvatarMenu({ userName, orgSlug, role }: { userName: string; orgSlug: st
               className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13px] text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]"
             >
               <Users className="h-3.5 w-3.5 text-[var(--ci-text-muted)]" /> Echipă
+            </Link>
+          )}
+          {(role === "owner" || role === "admin") && (
+            <Link prefetch={false}
+              href={`/${orgSlug}/crm/facturare`}
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13px] text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]"
+            >
+              <Receipt className="h-3.5 w-3.5 text-[var(--ci-text-muted)]" /> Facturare
             </Link>
           )}
           <Link prefetch={false}
