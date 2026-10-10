@@ -120,7 +120,7 @@ export function DoneazaModal({
           setMetoda(undefined);
           setOpen(true);
         }}
-        className="w-full rounded-lg bg-brand-green px-5 py-2.5 text-center text-[13.5px] font-bold text-white shadow-sm transition hover:bg-brand-green-hover hover:shadow-md"
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-green px-5 py-4 text-center text-[17px] font-bold text-white shadow-md transition hover:bg-brand-green-hover hover:shadow-lg focus-visible:ring-2 focus-visible:ring-brand-green focus-visible:ring-offset-2 focus-visible:outline-none"
       >
         {t.donezaAcum}
       </button>

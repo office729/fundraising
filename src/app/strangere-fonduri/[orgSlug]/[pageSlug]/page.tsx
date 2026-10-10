@@ -1,5 +1,5 @@
 import { and, desc, eq, sql } from "drizzle-orm";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, CalendarDays, Heart, Lock, MapPin } from "lucide-react";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import Link from "next/link";
@@ -18,7 +18,6 @@ import { aziRo, zileRamase } from "@/app/(app)/[orgSlug]/crm/strangere-fonduri/c
 import { CampaignFooter } from "../campaign-footer";
 import { BaraDoneazaMobil } from "./bara-doneaza-mobil";
 import { DoneazaModal } from "./doneaza-modal";
-import { ProgressRing } from "./progress-ring";
 import { RecentDonationsList } from "./recent-donations-list";
 import { ShareLinksClient } from "./share-links";
 
@@ -134,181 +133,212 @@ export default async function PaginaStrangereFonduriPage({
   const [data, locale, metode] = await Promise.all([getPaginaPublica(orgSlug, pageSlug), getLocale(), metodeRedirect(orgSlug)]);
   if (!data) notFound();
   const t = DONATION_DICT[locale];
+  const c = t.campaignPage;
 
   const { org, pagina, recente, topDonatori, actualizari, totalDonatii, alteCampanii } = data;
   const procent = pagina.sumaTinta ? Math.min(100, Math.round((pagina.sumaStransa / pagina.sumaTinta) * 100)) : null;
   const tpl = CAMPAIGN_TEMPLATES[pagina.template];
+  const activa = pagina.status === "activa";
   // Header "origin" nu e trimis pe navigare GET simplă (doar pe fetch/POST
   // cross-origin) — construim din host + protocolul reținut de proxy-ul Vercel.
   const hdrs = await headers();
   const proto = hdrs.get("x-forwarded-proto") ?? "https";
   const url = `${proto}://${hdrs.get("host")}/strangere-fonduri/${orgSlug}/${pageSlug}`;
 
-  // eslint-disable-next-line @next/next/no-img-element -- domeniu Supabase Storage dinamic
-  const fotoCampanie = pagina.imagineUrl ? <img src={pagina.imagineUrl} alt={pagina.titlu} className="h-full w-full object-cover" /> : null;
-  const heroFallback = <div className="h-full w-full bg-gradient-to-br from-brand-blue to-brand-green" />;
-  const eyebrow = (
-    <Link href={`/strangere-fonduri/${orgSlug}`} className="text-xs font-bold tracking-wide text-brand-green uppercase hover:underline">
-      {t.campaignPage.verificataDe(org.name)}
-    </Link>
+  // Povestea se citește pe paragrafe (rând liber între ele); rândurile simple din interiorul unui paragraf se păstrează.
+  const paragrafe = pagina.poveste.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+  // „Suceava, Suceava” (localitate = județ) se afișează o singură dată.
+  const loc = [...new Set([pagina.localitate?.trim(), pagina.judet?.trim()].filter(Boolean))].join(", ");
+  const termenText = pagina.termen
+    ? c.termen(new Date(`${pagina.termen}T12:00:00`).toLocaleDateString(t.numeLocale, { day: "numeric", month: "long", year: "numeric" }), zileRamase(pagina.termen, aziRo()))
+    : null;
+  const sumaText = c.leiSuma(pagina.sumaStransa.toLocaleString(t.numeLocale));
+  const donatiiText = `${totalDonatii.toLocaleString(t.numeLocale)} ${totalDonatii === 1 ? c.donatie : c.donatii}`;
+
+  const logoOrg = org.logoUrl ? (
+    // eslint-disable-next-line @next/next/no-img-element -- domeniu Supabase Storage dinamic
+    <img src={org.logoUrl} alt="" className="h-full w-full object-contain" />
+  ) : null;
+
+  // Copertă: poza campaniei, sau — dacă organizația nu a încărcat una — un fundal în culorile domeniului cu sigla organizației.
+  const coperta = pagina.imagineUrl ? (
+    // eslint-disable-next-line @next/next/no-img-element -- domeniu Supabase Storage dinamic
+    <img src={pagina.imagineUrl} alt={pagina.titlu} className="h-full w-full object-cover" fetchPriority="high" />
+  ) : (
+    <div className="relative flex h-full w-full items-center justify-center overflow-hidden bg-gradient-to-br from-brand-blue to-brand-green" aria-hidden="true">
+      <span className="absolute -top-16 -right-16 h-64 w-64 rounded-full bg-white/10" />
+      <span className="absolute -bottom-20 -left-10 h-56 w-56 rounded-full bg-black/10" />
+      <span className="relative flex h-24 w-24 items-center justify-center rounded-full bg-white p-4 shadow-lg sm:h-28 sm:w-28">
+        {logoOrg ?? <Heart className="h-10 w-10 text-brand-green" />}
+      </span>
+    </div>
   );
-  const titlu = <h1 className="font-display mt-1.5 text-[30px] leading-tight font-bold text-ink">{pagina.titlu}</h1>;
+
+  const cardDonatie = (
+    <div id="sustine-campania" className="scroll-mt-6 rounded-2xl border border-line bg-panel p-5 shadow-[0_18px_40px_-24px_rgba(21,74,133,0.45)] sm:p-6">
+      <p className="font-display text-[34px] leading-none font-extrabold text-ink">{sumaText}</p>
+      <p className="mt-1.5 text-[14px] text-muted-2">
+        {pagina.sumaTinta ? c.stransDin(pagina.sumaTinta.toLocaleString(t.numeLocale)) : c.stransPanaAcum}
+      </p>
+
+      {procent != null && (
+        <div className="mt-4">
+          <div className="h-3 overflow-hidden rounded-full bg-line" role="progressbar" aria-valuenow={procent} aria-valuemin={0} aria-valuemax={100} aria-label={c.procentDinTinta(procent)}>
+            <div className="h-full rounded-full bg-brand-green transition-[width] duration-700" style={{ width: `${Math.max(procent, procent > 0 ? 2 : 0)}%` }} />
+          </div>
+          <div className="mt-2 flex items-center justify-between text-[13px] text-muted-2">
+            <span className="font-bold text-ink">{c.procentDinTinta(procent)}</span>
+            <span>{donatiiText}</span>
+          </div>
+        </div>
+      )}
+      {procent == null && <p className="mt-3 text-[13px] text-muted-2">{donatiiText}</p>}
+      {termenText && (
+        <p className="mt-3 flex items-center gap-2 text-[13px] font-semibold text-brand-blue">
+          <CalendarDays className="h-4 w-4 shrink-0" aria-hidden="true" /> {termenText}
+        </p>
+      )}
+
+      <div className="mt-5">
+        {activa ? (
+          <>
+            <DoneazaModal
+              orgSlug={orgSlug}
+              pageSlug={pageSlug}
+              titlu={pagina.titlu}
+              locale={locale}
+              publishableKey={org.donationStripePublishableKey}
+              metode={org.donationStripePublishableKey ? metode : FARA_METODE_REDIRECT}
+              orgName={org.name}
+              orgCif={org.cif}
+            />
+            <p className="mt-3 flex items-start gap-2 text-[12.5px] leading-relaxed text-muted-2">
+              <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              <span>{c.sustineDescriere}</span>
+            </p>
+          </>
+        ) : (
+          <p className="rounded-lg bg-panel-2 px-4 py-3 text-[14px] leading-relaxed text-muted-2">{c.campanieInchisa}</p>
+        )}
+      </div>
+
+      {recente.length > 0 ? (
+        <RecentDonationsList donatii={recente} locale={locale} total={totalDonatii} />
+      ) : (
+        activa && <p className="mt-5 border-t border-line pt-4 text-[13px] leading-relaxed text-muted-2">{t.recentList.nicioDonatie}</p>
+      )}
+
+      <div className="mt-5 border-t border-line pt-4">
+        <p className="text-xs font-semibold tracking-wide text-muted-2 uppercase">{c.distribuie}</p>
+        <ShareLinksClient url={url} titlu={pagina.titlu} locale={locale} />
+        <Link href={`/strangere-fonduri/${orgSlug}/${pageSlug}/promovare`} className="mt-3 inline-block text-[13px] font-medium text-brand-green hover:underline">
+          {c.instrumentePromovare}
+        </Link>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-brand-blue-soft/70 via-panel-2 to-panel-2" data-domeniu={pagina.template}>
-      <main className="mx-auto max-w-3xl px-6 py-12 sm:py-16">
-        <Link
-          href={`/strangere-fonduri/${orgSlug}`}
-          className="mb-5 inline-flex items-center gap-1.5 text-[13px] font-semibold text-muted-2 transition hover:text-brand-blue"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" /> {t.campaignPage.acasaLa(org.name)}
+      <a href="#sustine-campania" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:rounded-md focus:bg-panel focus:px-3 focus:py-2 focus:text-sm focus:font-semibold focus:text-ink focus:shadow-lg">
+        {c.sariLaDonatie}
+      </a>
+      <main className="mx-auto max-w-6xl px-4 pt-5 pb-16 sm:px-6 sm:pt-8">
+        <Link href={`/strangere-fonduri/${orgSlug}`} className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-muted-2 transition hover:text-brand-blue">
+          <ArrowLeft className="h-3.5 w-3.5" /> {c.acasaLa(org.name)}
         </Link>
 
-        <div className="overflow-hidden rounded-[var(--radius-hero)] border border-line bg-panel shadow-[0_20px_50px_-25px_rgba(21,74,133,0.35)]">
-          {tpl.familie === "natural-ancorat" ? (
-            <div className="flex flex-col gap-5 p-6 pb-0 sm:flex-row sm:items-end sm:pb-0 sm:p-8">
-              <div className="aspect-square w-full shrink-0 overflow-hidden rounded-[var(--radius-card)] sm:w-40">
-                {fotoCampanie ?? heroFallback}
-              </div>
-              <div className="min-w-0 pb-1">
-                {eyebrow}
-                {titlu}
-              </div>
+        <div className="mt-4 grid gap-x-10 gap-y-8 lg:grid-cols-[minmax(0,1fr)_380px]">
+          {/* Copertă + titlu */}
+          <div className="min-w-0 lg:col-start-1">
+            <div className="relative aspect-[16/10] w-full overflow-hidden rounded-2xl border border-line bg-panel shadow-sm sm:aspect-[16/9]">
+              {coperta}
+              {(tpl.familie !== "neutru" || !activa) && (
+                <div className="absolute top-3 left-3 flex flex-wrap gap-2">
+                  {tpl.familie !== "neutru" && <span className="rounded-full bg-white/95 px-3 py-1 text-[12px] font-bold text-ink shadow-sm">{tpl.nume}</span>}
+                  {!activa && <span className="rounded-full bg-ink/90 px-3 py-1 text-[12px] font-bold text-white shadow-sm">{c.campaniaInchisa}</span>}
+                </div>
+              )}
             </div>
-          ) : tpl.familie === "indraznet-dinamic" ? (
-            <div className="relative aspect-[16/9] w-full overflow-hidden">
-              {fotoCampanie ?? heroFallback}
-              <div className="absolute inset-x-0 top-0 h-14 origin-top-left -skew-y-3 bg-brand-green/90" />
-              {/* Voal întărit (era from-black/80 via-black/30 to-transparent):
-                  div-ul se dimensionează după conținut, ancorat jos — textul
-                  (mai ales eyebrow-ul, primul rând) ajunge lângă capătul
-                  "to-transparent"/"via" de sus, unde fundalul de dedesubt
-                  (poză reală SAU heroFallback — pt. Educație, gradient navy→auriu)
-                  răzbătea aproape neschimbat, ilizibil cu text alb (~2.3:1
-                  contrast măsurat pe auriu). Minim 20% negru chiar și sus. */}
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/65 to-black/20 px-6 pt-14 pb-5 sm:px-10">
-                <Link
-                  href={`/strangere-fonduri/${orgSlug}`}
-                  className="text-xs font-bold tracking-wide text-white uppercase hover:underline [text-shadow:0_1px_4px_rgba(0,0,0,0.85)]"
-                >
-                  {t.campaignPage.verificataDe(org.name)}
-                </Link>
-                <h1 className="font-display mt-1.5 text-[28px] leading-tight font-bold text-white [text-shadow:0_1px_4px_rgba(0,0,0,0.85)] sm:text-[32px]">
-                  {pagina.titlu}
-                </h1>
-              </div>
-            </div>
-          ) : tpl.familie === "elegant-editorial" ? (
-            <div className="grid gap-0 sm:grid-cols-[0.85fr_1.15fr]">
-              <div className="aspect-[4/3] w-full overflow-hidden sm:aspect-auto sm:h-full">{fotoCampanie ?? heroFallback}</div>
-              <div className="flex flex-col justify-center px-6 py-7 sm:px-9 sm:py-9">
-                {eyebrow}
-                {titlu}
-              </div>
-            </div>
-          ) : tpl.familie === "cald-protector" ? (
-            <div className="p-4 pb-0 sm:p-5">
-              <div className="aspect-[16/9] w-full overflow-hidden rounded-[var(--radius-card)]">{fotoCampanie ?? heroFallback}</div>
-            </div>
-          ) : (
-            <div className="aspect-[21/9] w-full overflow-hidden">{fotoCampanie ?? heroFallback}</div>
-          )}
 
-          <div className="px-6 py-7 sm:px-10 sm:py-9">
-            {tpl.familie !== "natural-ancorat" && tpl.familie !== "indraznet-dinamic" && tpl.familie !== "elegant-editorial" && (
-              <>
-                {eyebrow}
-                {titlu}
-              </>
-            )}
-
-            <div className="mt-5">
-              <p className="text-xs font-semibold tracking-wide text-muted-2 uppercase">{t.campaignPage.distribuie}</p>
-              <ShareLinksClient url={url} titlu={pagina.titlu} locale={locale} />
-              <Link
-                href={`/strangere-fonduri/${orgSlug}/${pageSlug}/promovare`}
-                className="mt-2 inline-block text-[13px] font-medium text-brand-green hover:underline"
-              >
-                {t.campaignPage.instrumentePromovare}
+            <div className="mt-6">
+              <Link href={`/strangere-fonduri/${orgSlug}`} className="inline-flex items-center gap-2.5 text-[13.5px] text-muted-2 hover:text-brand-blue">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-line bg-white p-0.5">{logoOrg ?? <Heart className="h-3.5 w-3.5 text-brand-green" />}</span>
+                <span>
+                  {c.organizator}: <b className="font-semibold text-ink">{org.name}</b>
+                </span>
               </Link>
+              <h1 className="font-display mt-3 text-[30px] leading-[1.15] font-extrabold text-balance text-ink sm:text-[40px]">{pagina.titlu}</h1>
+              {loc && (
+                <p className="mt-3 flex items-center gap-1.5 text-[14px] text-muted-2">
+                  <MapPin className="h-4 w-4 shrink-0" aria-hidden="true" /> {loc}
+                </p>
+              )}
             </div>
+          </div>
 
-            <div className="mt-7 flex flex-col items-start gap-4 rounded-2xl border border-line bg-panel-2 p-6 sm:flex-row sm:items-center sm:gap-5">
-              {procent != null && <ProgressRing procent={procent} />}
-              <div className="min-w-0">
-                <span className="font-display block text-2xl font-extrabold text-brand-blue sm:text-3xl">
-                  {t.campaignPage.leiSuma(pagina.sumaStransa.toLocaleString(t.numeLocale))}
-                </span>
-                <span className="text-sm text-muted-2">
-                  {pagina.sumaTinta && t.campaignPage.dinTinta(pagina.sumaTinta.toLocaleString(t.numeLocale))}
-                  {totalDonatii.toLocaleString(t.numeLocale)} {totalDonatii === 1 ? t.campaignPage.donatie : t.campaignPage.donatii}
-                </span>
-                {pagina.termen && (
-                  <span className="mt-1 block text-sm font-semibold text-brand-blue">
-                    {t.campaignPage.termen(
-                      new Date(`${pagina.termen}T12:00:00`).toLocaleDateString(t.numeLocale, { day: "numeric", month: "long", year: "numeric" }),
-                      zileRamase(pagina.termen, aziRo()),
-                    )}
-                  </span>
-                )}
+          {/* Donație: pe telefon vine imediat după titlu, pe calculator stă fixată în dreapta */}
+          <aside className="lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-start lg:sticky lg:top-6" aria-label={c.sustineCampania}>
+            {cardDonatie}
+          </aside>
+
+          {/* Poveste, actualizări, organizator */}
+          <div className="min-w-0 space-y-8 lg:col-start-1">
+            <section className="rounded-2xl border border-line bg-panel p-6 shadow-sm sm:p-9">
+              <h2 className="font-display text-[22px] font-extrabold text-ink">{c.povestea}</h2>
+              <div className="mt-5 max-w-[68ch] space-y-5 text-[17px] leading-[1.8] text-body">
+                {paragrafe.map((p, i) => (
+                  <p key={i} className="whitespace-pre-line">
+                    {p}
+                  </p>
+                ))}
               </div>
-            </div>
+            </section>
 
             {actualizari.length > 0 && (
-              <div className="mt-7">
-                <h2 className="font-display text-base font-bold text-ink">{t.campaignPage.actualizari}</h2>
-                <div className="mt-4 flex flex-col">
+              <section className="rounded-2xl border border-line bg-panel p-6 shadow-sm sm:p-9">
+                <h2 className="font-display text-[22px] font-extrabold text-ink">{c.actualizari}</h2>
+                <div className="mt-6 flex flex-col">
                   {actualizari.map((a, i) => (
                     <div key={a.id} className="flex gap-4">
                       <div className="flex flex-col items-center">
                         <div className="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-full bg-brand-green text-white">
                           <span className="text-lg leading-none font-extrabold">{a.data.toLocaleDateString(t.numeLocale, { day: "2-digit" })}</span>
-                          <span className="mt-0.5 text-[10px] leading-none font-bold uppercase">
-                            {a.data.toLocaleDateString(t.numeLocale, { month: "short" }).replace(".", "")}
-                          </span>
+                          <span className="mt-0.5 text-[10px] leading-none font-bold uppercase">{a.data.toLocaleDateString(t.numeLocale, { month: "short" }).replace(".", "")}</span>
                         </div>
                         {i < actualizari.length - 1 && <div className="my-1 w-0.5 flex-1 bg-brand-green-soft" />}
                       </div>
                       <div className="mb-5 min-w-0 flex-1 rounded-2xl border border-line bg-panel-2 p-5">
                         <div className="flex items-start justify-between gap-3">
-                          <p className="font-display text-sm font-bold text-ink">{a.titlu}</p>
-                          <span className="shrink-0 text-xs text-muted-2">
-                            {a.data.toLocaleDateString(t.numeLocale, { day: "numeric", month: "long", year: "numeric" })}
-                          </span>
+                          <p className="font-display text-[15px] font-bold text-ink">{a.titlu}</p>
+                          <span className="shrink-0 text-xs text-muted-2">{a.data.toLocaleDateString(t.numeLocale, { day: "numeric", month: "long", year: "numeric" })}</span>
                         </div>
-                        <p className="mt-1.5 whitespace-pre-wrap text-[14px] leading-relaxed text-body">{a.continut}</p>
+                        <p className="mt-1.5 whitespace-pre-wrap text-[14.5px] leading-relaxed text-body">{a.continut}</p>
                       </div>
                     </div>
                   ))}
                 </div>
-              </div>
+              </section>
             )}
 
-            <div className="mt-6 grid gap-6 sm:grid-cols-[260px_minmax(0,1fr)]">
-              <div id="sustine-campania" className="h-fit scroll-mt-6 rounded-2xl border border-brand-green-soft bg-brand-green-soft/60 p-5">
-                <p className="font-display text-sm font-bold text-ink">{t.campaignPage.sustineCampania}</p>
-                <p className="mt-1 text-[12.5px] leading-relaxed text-muted-2">{t.campaignPage.sustineDescriere}</p>
-                <div className="mt-4">
-                  {pagina.status === "activa" ? (
-                    <DoneazaModal
-                      orgSlug={orgSlug}
-                      pageSlug={pageSlug}
-                      titlu={pagina.titlu}
-                      locale={locale}
-                      publishableKey={org.donationStripePublishableKey}
-                      metode={org.donationStripePublishableKey ? metode : FARA_METODE_REDIRECT}
-                      orgName={org.name}
-                      orgCif={org.cif}
-                    />
-                  ) : (
-                    <p className="text-[13px] leading-relaxed text-muted-2">{t.campaignPage.campanieInchisa}</p>
+            <section className="rounded-2xl border border-line bg-panel p-6 shadow-sm sm:p-8">
+              <h2 className="font-display text-[22px] font-extrabold text-ink">{c.despreOrganizator}</h2>
+              <div className="mt-5 flex items-start gap-4">
+                <span className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-line bg-white p-1.5">{logoOrg ?? <Heart className="h-6 w-6 text-brand-green" />}</span>
+                <div className="min-w-0">
+                  <p className="font-display text-[18px] font-bold text-ink">{org.name}</p>
+                  {org.slogan && <p className="mt-0.5 text-[14.5px] text-body">{org.slogan}</p>}
+                  {org.cif && (
+                    <p className="mt-1 text-[13px] text-muted-2">
+                      {c.cif} {org.cif}
+                    </p>
                   )}
+                  <Link href={`/strangere-fonduri/${orgSlug}`} className="mt-3 inline-block text-[13.5px] font-semibold text-brand-green hover:underline">
+                    {c.toateCampaniile}
+                  </Link>
                 </div>
-                <RecentDonationsList donatii={recente} locale={locale} total={totalDonatii} />
               </div>
-
-              <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-body">{pagina.poveste}</p>
-            </div>
+            </section>
           </div>
         </div>
 
@@ -316,19 +346,15 @@ export default async function PaginaStrangereFonduriPage({
           <section id="toate-donatiile" className="mt-8 grid scroll-mt-6 gap-6 rounded-3xl border border-line bg-panel p-6 shadow-sm sm:grid-cols-2 sm:p-8">
             {topDonatori.length > 0 && (
               <div>
-                <h2 className="font-display text-base font-bold text-ink">{t.campaignPage.topDonatori}</h2>
+                <h2 className="font-display text-base font-bold text-ink">{c.topDonatori}</h2>
                 <div className="mt-4 flex flex-col gap-2">
                   {topDonatori.map((d, i) => (
                     <div key={d.id} className="flex items-center justify-between rounded-lg border border-line bg-panel-2 px-4 py-2.5">
                       <div className="flex items-center gap-2.5">
                         <span className="font-display text-sm font-extrabold text-brand-green">#{i + 1}</span>
-                        <span className="text-sm font-medium text-ink">
-                          {d.anonim || !d.numeDonator ? t.campaignPage.susinatorAnonim : d.numeDonator}
-                        </span>
+                        <span className="text-sm font-medium text-ink">{d.anonim || !d.numeDonator ? c.susinatorAnonim : d.numeDonator}</span>
                       </div>
-                      <span className="ci-tabular text-sm font-bold text-brand-blue">
-                        {t.campaignPage.leiSuma(d.suma.toLocaleString(t.numeLocale))}
-                      </span>
+                      <span className="ci-tabular text-sm font-bold text-brand-blue">{c.leiSuma(d.suma.toLocaleString(t.numeLocale))}</span>
                     </div>
                   ))}
                 </div>
@@ -337,17 +363,13 @@ export default async function PaginaStrangereFonduriPage({
 
             {recente.length > 0 && (
               <div>
-                <h2 className="font-display text-base font-bold text-ink">{t.campaignPage.donatiiRecente}</h2>
+                <h2 className="font-display text-base font-bold text-ink">{c.donatiiRecente}</h2>
                 <div className="mt-4 flex flex-col gap-3">
                   {recente.map((d) => (
                     <div key={d.id} className="rounded-lg border border-line bg-panel-2 p-4">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-ink">
-                          {d.anonim || !d.numeDonator ? t.campaignPage.susinatorAnonim : d.numeDonator}
-                        </span>
-                        <span className="ci-tabular text-sm font-bold text-brand-blue">
-                          {t.campaignPage.leiSuma(d.suma.toLocaleString(t.numeLocale))}
-                        </span>
+                        <span className="text-sm font-medium text-ink">{d.anonim || !d.numeDonator ? c.susinatorAnonim : d.numeDonator}</span>
+                        <span className="ci-tabular text-sm font-bold text-brand-blue">{c.leiSuma(d.suma.toLocaleString(t.numeLocale))}</span>
                       </div>
                       {d.mesaj && <p className="mt-1.5 text-[13px] leading-relaxed text-muted">{d.mesaj}</p>}
                     </div>
@@ -359,14 +381,14 @@ export default async function PaginaStrangereFonduriPage({
         )}
 
         {alteCampanii.length > 0 && (
-          <section className="mt-8">
+          <section className="mt-10">
             <div className="flex items-baseline justify-between gap-3">
-              <h2 className="font-display text-base font-bold text-ink">{t.campaignPage.alteCampanii(org.name)}</h2>
+              <h2 className="font-display text-[20px] font-extrabold text-ink">{c.alteCampanii(org.name)}</h2>
               <Link href={`/strangere-fonduri/${orgSlug}`} className="shrink-0 text-[13px] font-medium text-brand-green hover:underline">
-                {t.campaignPage.vezToate}
+                {c.vezToate}
               </Link>
             </div>
-            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {alteCampanii.map((p) => {
                 const procentAlta = p.sumaTinta ? Math.min(100, Math.round((p.sumaStransa / p.sumaTinta) * 100)) : null;
                 return (
@@ -385,8 +407,8 @@ export default async function PaginaStrangereFonduriPage({
                     <div className="min-w-0 flex-1">
                       <p className="font-display truncate text-[14px] font-bold text-ink">{p.titlu}</p>
                       <p className="mt-0.5 text-[12.5px] text-muted-2">
-                        {t.campaignPage.leiSuma(p.sumaStransa.toLocaleString(t.numeLocale))}
-                        {p.sumaTinta && ` ${t.campaignPage.dinTintaScurt(p.sumaTinta.toLocaleString(t.numeLocale))}`}
+                        {c.leiSuma(p.sumaStransa.toLocaleString(t.numeLocale))}
+                        {p.sumaTinta && ` ${c.dinTintaScurt(p.sumaTinta.toLocaleString(t.numeLocale))}`}
                         {procentAlta != null && ` · ${procentAlta}%`}
                       </p>
                     </div>
@@ -398,7 +420,14 @@ export default async function PaginaStrangereFonduriPage({
         )}
       </main>
 
-      {pagina.status === "activa" && <BaraDoneazaMobil tintaId="sustine-campania" eticheta={t.donateModal.donezaAcum} />}
+      {activa && (
+        <BaraDoneazaMobil
+          tintaId="sustine-campania"
+          eticheta={t.donateModal.donezaAcum}
+          rezumat={pagina.sumaTinta ? `${sumaText} · ${c.stransDin(pagina.sumaTinta.toLocaleString(t.numeLocale))}` : `${sumaText} ${c.stransPanaAcum}`}
+          procent={procent}
+        />
+      )}
 
       <CampaignFooter orgSlug={orgSlug} orgName={org.name} orgLogoUrl={org.logoUrl} orgSlogan={org.slogan} orgCif={org.cif} locale={locale} />
     </div>
