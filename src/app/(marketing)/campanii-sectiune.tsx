@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Baby, FileText, GraduationCap, Heart, HeartHandshake, LayoutTemplate, Leaf, Link2, MapPin, Palette, PawPrint, Search, ShieldCheck, Sparkles, Stethoscope, Trophy, Wallet, type LucideIcon } from "lucide-react";
+import { ArrowRight, Baby, FileText, GraduationCap, Heart, HeartHandshake, LayoutTemplate, Leaf, MapPin, Palette, PawPrint, Search, ShieldCheck, Sparkles, Stethoscope, Trophy, type LucideIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -342,13 +342,11 @@ function RandCampanie({ c }: { c: CampaniePublica }) {
 const PASI = [
   { t: "Creezi campania", d: "Un asistent în 5 pași: povestea, suma-țintă, sumele sugerate, poza, termenul. Vezi previzualizarea pe telefon și pe calculator." },
   { t: "Distribui linkul", d: "Fiecare campanie are adresa ei scurtă, ușor de pus pe rețele, în mesaje sau pe afișe." },
-  { t: "Primești donațiile", d: "Plata cu cardul intră direct în contul Stripe al asociației. Urmărești totul din CRM-ul tău." },
+  { t: "Primești donațiile", d: "Plata cu cardul intră direct în contul Stripe al asociației. Vezi fiecare donație în CRM, baza ta de donatori." },
 ];
 
 const AVANTAJE: { icon: LucideIcon; t: string; d: string }[] = [
-  { icon: LayoutTemplate, t: "O pagină pentru fiecare proiect", d: "Povestea, poza, progresul și butonul de donație, într-o pagină făcută să convingă." },
-  { icon: Link2, t: "Link scurt, pe numele tău", d: "alexandrit.ro/asociatia-ta/campania-ta, ușor de ținut minte și de distribuit." },
-  { icon: Wallet, t: "Banii ajung la tine", d: "Fiecare asociație își conectează propriul cont Stripe: donațiile nu trec prin conturile noastre." },
+  { icon: LayoutTemplate, t: "O pagină pentru fiecare proiect", d: "Povestea, poza, progresul și butonul de donație, într-o singură pagină, ușor de citit pe telefon." },
   { icon: FileText, t: "Formular 230 în aceeași platformă", d: "Pagina publică pentru redirecționarea de 3,5% e în aceeași platformă, lângă campaniile tale." },
 ];
 
@@ -364,7 +362,7 @@ function InCurand() {
           </span>
           <h2 className="font-display mt-3 text-[26px] leading-[1.15] font-bold text-balance text-ink sm:text-[32px]">Deschide campaniile asociației tale în câteva minute</h2>
           <p className="mt-3 text-[15.5px] leading-relaxed text-muted">
-            Strângi fonduri online pentru fiecare proiect, cu o pagină profesionistă și un link propriu. Începi gratuit, fără card.
+            Strângi fonduri online pentru fiecare proiect, cu o pagină proprie și un link scurt de distribuit. Începi gratuit, fără card.
           </p>
         </div>
 
@@ -385,28 +383,37 @@ function InCurand() {
             </ol>
 
             <div className="mt-7 flex flex-wrap items-center gap-3">
-              <Link href="/signup" className="inline-flex items-center gap-2 rounded-lg bg-brand-green px-6 py-3.5 text-[15px] font-bold text-white shadow-sm transition hover:bg-brand-green-hover">
-                Începe gratuit <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              <Link href="/signup" className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-brand-green px-6 py-3.5 text-[15px] font-bold text-white shadow-sm transition hover:bg-brand-green-hover sm:w-auto">
+                Începe {TRIAL_DAYS} de zile gratuit <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
-              <Link href="/hub" className="inline-flex items-center gap-2 rounded-lg border border-line bg-panel px-6 py-3.5 text-[15px] font-semibold text-ink transition hover:border-brand-blue hover:text-brand-blue">
-                Vezi pachetele
+              <Link href="/hub" className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-line bg-panel px-6 py-3.5 text-[15px] font-semibold text-ink transition hover:border-brand-blue hover:text-brand-blue sm:w-auto">
+                Vezi abonamentele
               </Link>
             </div>
-            <p className="mt-3 text-[13px] leading-relaxed text-muted">
-              {TRIAL_DAYS} de zile de probă, fără card. Apoi de la {start.pretLunar} lei/lună: {start.campaniiActive} campanie activă la START, până la {crestere.campaniiActive} la CREȘTERE, nelimitate la IMPACT.
-            </p>
+            <p className="mt-4 text-[13.5px] text-muted">{TRIAL_DAYS} de zile de probă, fără card. Apoi, campanii active simultan:</p>
+            <ul className="mt-2 flex flex-wrap gap-2">
+              {[
+                { n: "START", v: String(start.campaniiActive), p: `${start.pretLunar} lei/lună` },
+                { n: "CREȘTERE", v: String(crestere.campaniiActive), p: `${crestere.pretLunar} lei/lună` },
+                { n: "IMPACT", v: "nelimitate", p: `${PACKAGE_LIMITS.impact.pretLunar} lei/lună` },
+              ].map((x) => (
+                <li key={x.n} className="rounded-lg border border-line bg-panel px-3 py-2 text-[13px]">
+                  <b className="font-bold text-ink">{x.n}</b> · {x.v} · <span className="text-muted">{x.p}</span>
+                </li>
+              ))}
+            </ul>
           </div>
 
           {/* Cum arată pagina unei campanii: schemă, fără sume sau organizații inventate */}
-          <div>
-            <div className="overflow-hidden rounded-3xl border border-line bg-panel shadow-lg">
+          <figure>
+            <div className="overflow-hidden rounded-3xl border border-line bg-panel shadow-lg" aria-hidden="true">
               <div className="flex items-center gap-2 border-b border-line bg-panel-2 px-4 py-2.5" aria-hidden="true">
                 <span className="h-2.5 w-2.5 rounded-full bg-line" />
                 <span className="h-2.5 w-2.5 rounded-full bg-line" />
                 <span className="h-2.5 w-2.5 rounded-full bg-line" />
-                <span className="ml-2 truncate rounded-full bg-panel px-3 py-1 text-[11.5px] text-muted ring-1 ring-line">alexandrit.ro/asociatia-ta/campania-ta</span>
+                <span className="ml-2 truncate rounded-full bg-panel px-3 py-1 text-[13px] text-muted ring-1 ring-line">alexandrit.ro/asociatia-ta/campania-ta</span>
               </div>
-              <div className="relative h-36" style={{ background: "linear-gradient(135deg, #10b981, #0f766e)" }} aria-hidden="true">
+              <div className="relative h-36 bg-gradient-to-br from-brand-green to-brand-solid" aria-hidden="true">
                 <Heart className="absolute top-1/2 left-1/2 h-14 w-14 -translate-x-1/2 -translate-y-1/2 text-white/80" strokeWidth={1.4} />
               </div>
               <div className="px-5 pb-5">
@@ -423,19 +430,19 @@ function InCurand() {
                     </span>
                   ))}
                 </div>
-                <span className="mt-4 flex items-center justify-center gap-2 rounded-lg bg-brand-green py-3 text-[14.5px] font-bold text-white" aria-hidden="true">
+                <span className="mt-4 flex cursor-default items-center justify-center gap-2 rounded-lg bg-brand-green py-3 text-[14.5px] font-bold text-white">
                   <Heart className="h-4 w-4" /> Donează
                 </span>
-                <p className="mt-3 flex items-center justify-center gap-1.5 text-[11.5px] text-muted-2">
+                <p className="mt-3 flex items-center justify-center gap-1.5 text-[13px] text-muted">
                   <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" /> Plată securizată cu cardul
                 </p>
               </div>
             </div>
-            <p className="mt-3 text-center text-[12px] text-muted-2">Așa se structurează pagina fiecărei campanii. Textele, culorile și sumele sunt ale asociației tale.</p>
-          </div>
+            <figcaption className="mt-3 text-center text-[13px] text-muted">Schemă: așa se structurează pagina fiecărei campanii. Textele, culorile și sumele sunt ale asociației tale.</figcaption>
+          </figure>
         </div>
 
-        <ul className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <ul className="mx-auto mt-14 grid max-w-4xl gap-5 sm:grid-cols-2">
           {AVANTAJE.map((a) => (
             <li key={a.t} className="rounded-2xl border border-line bg-panel p-5">
               <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-green-soft text-brand-green">

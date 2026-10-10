@@ -38,7 +38,7 @@ export const MARKETING_DICT = {
       ctaPrimary: "Începe trial gratuit",
       ctaSecondary: "Vezi platforma →",
       stats: [
-        { n: "28M€+", l: "strânși pentru cauze umanitare" },
+        { n: "28M€+", l: "strânși de fondator pentru cauze umanitare" },
         { n: "9", l: "instrumente incluse în platformă" },
         { n: "30 zile", l: "trial gratuit, fără card" },
       ],
@@ -200,7 +200,7 @@ export const MARKETING_DICT = {
       ctaPrimary: "Start free trial",
       ctaSecondary: "See the platform →",
       stats: [
-        { n: "€28M+", l: "raised for humanitarian causes" },
+        { n: "€28M+", l: "raised by the founder for humanitarian causes" },
         { n: "9", l: "tools included in the platform" },
         { n: "30 days", l: "free trial, no card" },
       ],

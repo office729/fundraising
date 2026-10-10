@@ -365,24 +365,20 @@ body {
   filter: hue-rotate(55deg) saturate(1.15) brightness(2.1);
 }
 
-/* Pagina Automatizări: fluxul din antet (un punct parcurge cei patru pași, fiecare nod se aprinde la rândul lui). */
-@keyframes fa-flux-punct {
-  0% { top: 0; opacity: 0; }
-  4% { opacity: 1; }
-  72% { top: 100%; opacity: 1; }
-  78%, 100% { top: 100%; opacity: 0; }
-}
+/* Paginile de marketing (Automatizări, Cum funcționează): fluxul din antet se construiește O SINGURĂ DATĂ, pas cu pas, și rămâne în starea
+   finală (toate nodurile aprinse). Stilurile de bază SUNT starea finală, deci fără animație (reduce motion) pagina arată complet. */
 @keyframes fa-flux-nod {
-  0%, 22% { background-color: var(--brand-green); border-color: var(--brand-green); transform: scale(1.12); box-shadow: 0 0 0 7px color-mix(in srgb, var(--brand-green) 28%, transparent); }
-  30%, 100% { background-color: transparent; border-color: rgb(255 255 255 / 0.4); transform: scale(1); box-shadow: 0 0 0 0 transparent; }
+  from { background-color: transparent; border-color: rgb(255 255 255 / 0.4); transform: scale(1); box-shadow: 0 0 0 0 transparent; }
+  55% { transform: scale(1.14); box-shadow: 0 0 0 7px color-mix(in srgb, var(--brand-green) 30%, transparent); }
+  to { background-color: var(--brand-green); border-color: var(--brand-green); transform: scale(1); box-shadow: 0 0 0 0 transparent; }
 }
 @keyframes fa-flux-text {
-  0%, 22% { opacity: 1; }
-  30%, 100% { opacity: 0.55; }
+  from { opacity: 0.55; }
+  to { opacity: 1; }
 }
-@keyframes fa-plutire {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-7px); }
+@keyframes fa-flux-seg {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
 }
 @keyframes fa-aparitie {
   from { opacity: 0; transform: translateY(18px); }
@@ -392,14 +388,16 @@ body {
   0%, 100% { opacity: 0.35; transform: scale(1); }
   50% { opacity: 0.6; transform: scale(1.12); }
 }
-.fa-flux-punct { animation: fa-flux-punct 4.8s linear infinite; }
-.fa-flux-nod { animation: fa-flux-nod 4.8s ease-in-out infinite; }
-.fa-flux-text { animation: fa-flux-text 4.8s ease-in-out infinite; }
-.fa-plutire { animation: fa-plutire 6s ease-in-out infinite; }
+.fa-flux-nod { background-color: var(--brand-green); border-color: var(--brand-green); animation: fa-flux-nod 0.7s ease-out both; }
+.fa-flux-text { animation: fa-flux-text 0.7s ease-out both; }
+.fa-flux-seg { transform-origin: top; animation: fa-flux-seg 0.6s ease-out both; }
 .fa-aparitie { animation: fa-aparitie 0.8s ease-out both; }
-.fa-lumina { animation: fa-lumina 7s ease-in-out infinite; }
+/* Luminile din fundal pulsează de trei ori, apoi rămân fixe. */
+.fa-lumina { animation: fa-lumina 7s ease-in-out 3; }
 @media (prefers-reduced-motion: reduce) {
-  .fa-flux-punct, .fa-flux-nod, .fa-flux-text, .fa-plutire, .fa-aparitie, .fa-lumina { animation: none; }
-  .fa-flux-text { opacity: 1; }
-  .fa-flux-punct { display: none; }
+  .fa-flux-nod, .fa-flux-text, .fa-flux-seg, .fa-aparitie, .fa-lumina { animation: none; }
 }
+
+/* Focus vizibil în paginile de marketing; pe fundalul albastru al antetelor și blocurilor finale, contur alb. */
+main a:focus-visible, main button:focus-visible { outline: 2px solid var(--brand-blue); outline-offset: 3px; }
+.fa-pe-albastru a:focus-visible { outline-color: #fff; }

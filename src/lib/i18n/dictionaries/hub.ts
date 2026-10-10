@@ -3,9 +3,9 @@ import type { Locale } from "../config";
 export const HUB_DICT = {
   ro: {
     heroStats: [
-      { v: "28M €", l: "strânși pentru cauze umanitare" },
+      { v: "28M €", l: "strânși de fondator pentru cauze umanitare" },
       { v: "14+ ani", l: "experiență în fundraising" },
-      { v: "100", l: "ONG-uri — obiectivul pe 2 ani" },
+      { v: "Obiectiv: 100", l: "de ONG-uri în 2 ani" },
       { v: "700+", l: "campanii coordonate" },
     ],
     heroBadge: "Nou · Instrumente contra cost",
@@ -20,7 +20,7 @@ export const HUB_DICT = {
         pret: "49 lei",
         citat: "Pune ordine în activitatea de fundraising și începe să construiești relații cu donatorii și companiile.",
         desc: "Include CRM pentru persoane fizice și juridice, organizarea activității, șabloane de newsletter și generarea documentelor de sponsorizare.",
-        cta: "Începe acum",
+        cta: "Începe 30 de zile gratuit",
         items: [
           "1 utilizator",
           "CRM persoane fizice — 1.000 contacte",
@@ -93,7 +93,7 @@ export const HUB_DICT = {
         ],
       },
     ],
-    popularBadge: "CEL MAI POPULAR",
+    popularBadge: "RECOMANDAT",
     perLuna: "/lună",
     abonamenteTitlu: "Abonamente Alexandrit",
     abonamenteDesc1: "Instrumentele esențiale sunt incluse în toate pachetele. Diferența se face prin numărul de utilizatori, dimensiunea bazelor de date și nivelul de automatizare — niciun ONG nu cumpără un abonament „incomplet”.",
@@ -177,9 +177,9 @@ export const HUB_DICT = {
   },
   en: {
     heroStats: [
-      { v: "€28M", l: "raised for humanitarian causes" },
+      { v: "€28M", l: "raised by the founder for humanitarian causes" },
       { v: "14+ yrs", l: "fundraising experience" },
-      { v: "100", l: "NGOs — the 2-year goal" },
+      { v: "Goal: 100", l: "NGOs in 2 years" },
       { v: "700+", l: "campaigns coordinated" },
     ],
     heroBadge: "New · Paid tools",
@@ -194,7 +194,7 @@ export const HUB_DICT = {
         pret: "49 lei",
         citat: "Bring order to your fundraising activity and start building relationships with donors and companies.",
         desc: "Includes CRM for individuals and companies, activity organization, newsletter templates and sponsorship document generation.",
-        cta: "Start now",
+        cta: "Start 30 days free",
         items: [
           "1 user",
           "Individual CRM — 1,000 contacts",
@@ -267,7 +267,7 @@ export const HUB_DICT = {
         ],
       },
     ],
-    popularBadge: "MOST POPULAR",
+    popularBadge: "RECOMMENDED",
     perLuna: "/month",
     abonamenteTitlu: "Alexandrit subscriptions",
     abonamenteDesc1: "The essential tools are included in every plan. The difference comes from the number of users, database size, and automation level — no NGO ever buys an \"incomplete\" subscription.",

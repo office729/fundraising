@@ -8,11 +8,11 @@ export const CUM_FUNCTIONEAZA_DICT = {
     fluxNota: "Cele patru etape prin care trece o organizație nouă.",
     fluxPasi: [
       { t: "Îți creezi contul", d: "30 de zile, fără card" },
-      { t: "Îți aduci oamenii", d: "donatori, firme, colegi" },
+      { t: "Adaugi donatorii, firmele și colegii", d: "imporți ce ai deja" },
       { t: "Deschizi campanii", d: "pagină și plată cu cardul" },
       { t: "Lucrezi și măsori", d: "sarcini, segmente, rapoarte" },
     ],
-    h1: "Cum funcționează Alexandrit pentru ONG-ul tău",
+    h1: "De la cont la prima donație: cum lucrezi cu Alexandrit",
     subtitlu:
       "Un singur loc în care îți ții donatorii, companiile partenere, campaniile și echipa. Platforma face munca repetitivă în locul tău, ca să rămână timp pentru oameni și pentru cauză.",
     ctaPrimar: "Începe 30 de zile gratuit",
@@ -20,7 +20,7 @@ export const CUM_FUNCTIONEAZA_DICT = {
     pasiTitlu: "De la cont la primele donații, în patru pași",
     pasi: [
       { t: "Îți creezi contul", d: "Ai 30 de zile gratuite, fără card. Adaugi numele organizației, logo-ul, CIF-ul și domeniul de activitate; platforma își ia culorile și aspectul din ele." },
-      { t: "Îți aduci oamenii", d: "Importi donatorii și donațiile deja existente, adaugi firmele cu care lucrezi și îți inviți colegii, fiecare cu rolul lui." },
+      { t: "Adaugi donatorii, firmele și colegii", d: "Importi donatorii și donațiile deja existente, adaugi firmele cu care lucrezi și îți inviți colegii, fiecare cu rolul lui." },
       { t: "Deschizi campanii", d: "Creezi pagina unei campanii în cinci pași ghidați, o publici și o distribui. Donatorii plătesc cu cardul, iar tu vezi donațiile în timp real." },
       { t: "Lucrezi și măsori", d: "Echipa își vede sarcinile, donatorii se grupează automat după comportament, iar rapoartele se generează din datele tale, nu din tabele scrise de mână." },
     ],
@@ -44,7 +44,7 @@ export const CUM_FUNCTIONEAZA_DICT = {
           "Donatorii apar automat din paginile de donație; îi poți importa și din fișiere",
           "Segmente gata făcute: noi, fideli, lunari, în pauză, cu notițe și mulțumiri urmărite",
           "Harta României cu donatorii pe județe",
-          "Avatarul donatorului: grupuri după comportament real, cu recomandări de comunicare",
+          "Profilul donatorului: îi grupezi după cum donează (prima dată, lunar, în pauză) și vezi ce mesaj merită încercat pentru fiecare grup",
         ],
       },
       {
@@ -73,7 +73,7 @@ export const CUM_FUNCTIONEAZA_DICT = {
         puncte: [
           "Pagină publică unde voluntarii aleg o sarcină sau o tură",
           "Check-in cu cod QR la activitățile pe teren și link pentru coordonator",
-          "Remindere înainte de activitate și mulțumire după",
+          "Mesaj de reamintire înainte de activitate și mulțumire după",
           "Adeverință de voluntariat generată din orele validate",
         ],
       },
@@ -103,7 +103,7 @@ export const CUM_FUNCTIONEAZA_DICT = {
         puncte: [
           "Pachet potrivit mărimii echipei, sau configurat după nevoile tale",
           "Plata cu cardul, cu reînnoire automată dacă o alegi",
-          "Facturile emise sunt în pagina de facturare, de unde le descarci",
+          "Îți descarci facturile din pagina de facturare",
         ],
       },
     ],
@@ -133,11 +133,11 @@ export const CUM_FUNCTIONEAZA_DICT = {
     fluxNota: "The four stages a new organization goes through.",
     fluxPasi: [
       { t: "Create your account", d: "30 days, no card" },
-      { t: "Bring your people", d: "donors, companies, colleagues" },
+      { t: "Add your donors, companies and colleagues", d: "import what you already have" },
       { t: "Open campaigns", d: "page and card payment" },
       { t: "Work and measure", d: "tasks, segments, reports" },
     ],
-    h1: "How Alexandrit works for your NGO",
+    h1: "From account to first donation: working with Alexandrit",
     subtitlu:
       "One place for your donors, partner companies, campaigns and team. The platform does the repetitive work for you, so time is left for people and for the cause.",
     ctaPrimar: "Start 30 days free",
@@ -145,7 +145,7 @@ export const CUM_FUNCTIONEAZA_DICT = {
     pasiTitlu: "From account to first donations, in four steps",
     pasi: [
       { t: "Create your account", d: "You get 30 free days, no card needed. Add your organisation's name, logo, tax ID and field of activity; the platform takes its colours and look from them." },
-      { t: "Bring your people in", d: "Import the donors and donations you already have, add the companies you work with and invite colleagues, each with their own role." },
+      { t: "Add your donors, companies and colleagues", d: "Import the donors and donations you already have, add the companies you work with and invite colleagues, each with their own role." },
       { t: "Open campaigns", d: "Create a campaign page in five guided steps, publish it and share it. Donors pay by card and you see donations in real time." },
       { t: "Work and measure", d: "Your team sees its tasks, donors are grouped automatically by behaviour, and reports are generated from your own data, not from hand-typed spreadsheets." },
     ],
@@ -169,7 +169,7 @@ export const CUM_FUNCTIONEAZA_DICT = {
           "Donors appear automatically from donation pages; you can also import them from files",
           "Ready-made segments: new, loyal, monthly, paused, with notes and tracked thank-yous",
           "A map of Romania with donors by county",
-          "The donor avatar: groups based on real behaviour, with communication recommendations",
+          "The donor profile: group donors by how they give (first time, monthly, paused) and see which message is worth trying for each group",
         ],
       },
       {
@@ -228,7 +228,7 @@ export const CUM_FUNCTIONEAZA_DICT = {
         puncte: [
           "A plan sized for your team, or configured to your needs",
           "Card payment, with automatic renewal if you choose it",
-          "Issued invoices are on the billing page, where you can download them",
+          "You download your invoices from the billing page",
         ],
       },
     ],

@@ -195,7 +195,7 @@ export function PackagePicker({ orgSlug, locale, extraInitial = 0 }: { orgSlug: 
             >
               {p.popular && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-brand-green px-3.5 py-1 text-[11px] font-extrabold tracking-wide whitespace-nowrap text-white">
-                  CEL MAI POPULAR
+                  RECOMANDAT
                 </div>
               )}
               <h3 className="font-display text-lg font-bold text-ink">{p.nume}</h3>
