@@ -11,6 +11,7 @@ import { Card, CardHeader } from "../../components/ui/card";
 import { formatSuma } from "../../lib/format";
 import { useLocale } from "../../lib/locale-context";
 import { INSTRUMENTE_DICT } from "@/lib/i18n/dictionaries/instrumente";
+import { GalerieModele } from "./galerie-modele";
 import { listeazaRaportCompaniiAction, type CompanieRaportRand } from "./raport-actions";
 
 const ANUL_CURENT = new Date().getFullYear();
@@ -22,10 +23,12 @@ export function RaportCompaniiClient({
   orgSlug,
   initialAn,
   initial,
+  galerie,
 }: {
   orgSlug: string;
   initialAn: number;
   initial: CompanieRaportRand[];
+  galerie: { organizatie: string; logoOng: string; culoare: string | null; azi: string };
 }) {
   const router = useRouter();
   const locale = useLocale();
@@ -75,6 +78,8 @@ export function RaportCompaniiClient({
           </Button>
         </div>
       </div>
+
+      <GalerieModele orgSlug={orgSlug} organizatie={galerie.organizatie} logoOng={galerie.logoOng} culoare={galerie.culoare} azi={galerie.azi} />
 
       <div className="grid grid-cols-2 gap-3">
         <Card>

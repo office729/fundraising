@@ -184,3 +184,21 @@ export function aplicaPlaceholdere(textBrut: string, d: DateImpact): string[] {
     .map((p) => p.trim().replace(/\n/g, "<br>"))
     .filter(Boolean);
 }
+
+// Date fictive pentru galeria de modele: arată cum arată fiecare model înainte să alegi o firmă.
+export function dateImpactExemplu(accent?: string): DateImpact {
+  return curataDateImpact({
+    ...dateImpactGoale(),
+    ...(accent && /^#[0-9a-f]{6}$/i.test(accent) ? { accent } : {}),
+    firma: "Exemplu Construct SRL",
+    mecanism: "d177",
+    autor: "Echipa noastră",
+    gruparePeAn: true,
+    proiecte: [
+      { nume: "Operație pe cord pentru Maria, 7 ani", suma: 18500, data: "2025-04-14", locatie: "Institutul de Boli Cardiovasculare, Cluj", anDirectionare: 2025, observatii: "Intervenție încheiată cu succes." },
+      { nume: "Monitoare pentru cardiologie pediatrică", suma: 32000, data: "2025-09-30", locatie: "Spitalul Județean de Urgență", anDirectionare: 2025, observatii: "Patru monitoare de supraveghere continuă." },
+      { nume: "Tratament post-operator pentru Andrei, 3 ani", suma: 9800, data: "2026-02-18", anDirectionare: 2026 },
+      { nume: "Ecografe portabile pentru screening în școli", suma: 24000, data: "2026-06-05", locatie: "Rețeaua de cabinete școlare", anDirectionare: 2026, observatii: "Peste 600 de copii verificați în prima lună." },
+    ],
+  });
+}
