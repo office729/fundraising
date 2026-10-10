@@ -78,12 +78,6 @@ function gala(d: DateCertificat): string {
   return P(d, css, `<div class="pag g1"><div class="in">${b.logoOng("5cqw")}<div class="tit">${b.titlu}</div><div class="intro">${b.intro}</div><div class="nume">${b.nume}</div><div class="mot">${b.motiv}</div>${b.detaliu}${b.citat}<div class="jos">${semnaturi(b)}${sigiliu(d, "s3")}</div>${meta(b)}</div></div>`);
 }
 
-function geometric(d: DateCertificat): string {
-  const b = bucati(d);
-  const css = `.ge{background:#fff;font-family:${SANS}}.ge .t1{position:absolute;left:0;top:0;width:24cqw;height:24cqw;background:var(--a);clip-path:polygon(0 0,100% 0,0 100%)}.ge .t2{position:absolute;left:0;top:0;width:14cqw;height:14cqw;background:var(--b);clip-path:polygon(0 0,100% 0,0 100%)}.ge .t3{position:absolute;right:0;bottom:0;width:24cqw;height:24cqw;background:var(--a);clip-path:polygon(100% 0,100% 100%,0 100%)}.ge .t4{position:absolute;right:0;bottom:0;width:14cqw;height:14cqw;background:var(--b);clip-path:polygon(100% 0,100% 100%,0 100%)}.ge .t5{position:absolute;right:0;top:0;width:10cqw;height:10cqw;background:var(--c);clip-path:polygon(0 0,100% 0,100% 100%)}.ge .t6{position:absolute;left:0;bottom:0;width:10cqw;height:10cqw;background:var(--c);clip-path:polygon(0 0,0 100%,100% 100%)}.ge .cn{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;padding:4cqw 14cqw 3.4cqw;gap:.8cqw}.ge .tit{color:var(--a);font-size:1.15em}.ge .intro{color:var(--m)}.ge .nume{font-family:${SANS};font-style:normal;font-weight:800;letter-spacing:-.025em;color:var(--b)}.ge .jos{margin-top:auto;width:100%;display:flex;justify-content:center;align-items:flex-end;gap:4cqw}`;
-  return P(d, css, `<div class="pag ge"><span class="t1"></span><span class="t2"></span><span class="t3"></span><span class="t4"></span><span class="t5"></span><span class="t6"></span><div class="cn">${b.logoOng("5cqw")}<div class="tit">${b.titlu}</div><div class="intro">${b.intro}</div><div class="nume" style="font-size:${b.marimeNume(3.8)}">${b.nume}</div><div class="mot">${b.motiv}</div>${b.detaliu}<div class="jos">${semnaturi(b)}</div>${meta(b)}</div></div>`);
-}
-
 function inima(d: DateCertificat): string {
   const b = bucati(d);
   const css = `.i1{font-family:${SERIF};background:#fff}.i1 .wm{position:absolute;right:-6cqw;top:50%;transform:translateY(-50%);width:50cqw;opacity:.08}.i1 .cn{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;padding:3.6cqw 8cqw 3cqw;gap:.7cqw}.i1 .tit{color:var(--b);font-size:1.1em}.i1 .intro{font-style:italic;color:var(--m)}.i1 .nume{color:var(--a)}.i1 .ecg{width:46cqw;height:5cqw;color:var(--a);margin:-.2cqw 0 .4cqw}.i1 .jos{margin-top:auto;width:100%;display:flex;justify-content:space-between;align-items:flex-end;gap:3cqw}.i1 .ic{width:6cqw}`;
@@ -100,12 +94,6 @@ function diploma(d: DateCertificat): string {
   const b = bucati(d);
   const css = `.pag{aspect-ratio:210/297}.dp{font-family:${SERIF};padding:3cqw}.dp .ram{flex:1;border:.5cqw solid var(--a);outline:.15cqw solid var(--a);outline-offset:-1.3cqw;display:flex;flex-direction:column;align-items:center;text-align:center;padding:0 7cqw 5cqw;position:relative;background:radial-gradient(circle at 50% 0,var(--ab),#fff 55%)}.dp .pnz{margin:0 0 5cqw;background:linear-gradient(135deg,var(--a),var(--b));color:#fff;padding:3cqw 9cqw 4.2cqw;clip-path:polygon(0 0,100% 0,100% 100%,50% 86%,0 100%)}.dp .pnz .tit{font-size:1.1em;color:#fff}.dp .intro{font-style:italic;color:var(--m);font-size:1.15em}.dp .nume{color:var(--b);margin:2cqw 0 3cqw}.dp .mot p{max-width:none}.dp .jos{margin-top:auto;width:100%;display:flex;flex-direction:column;align-items:center;gap:4cqw}.dp .sgn{gap:5cqw}`;
   return P(d, css, `<div class="pag dp"><div class="ram"><div class="pnz"><div class="tit">${b.titlu}</div></div>${b.logoOng("7cqw")}<div class="intro" style="margin-top:3cqw">${b.intro}</div><div class="nume" style="font-size:${b.marimeNume(5)}">${b.nume}</div><div class="mot" style="font-size:1.05em">${b.motiv}</div>${b.detaliu}${b.citat}<div class="jos">${sigiliu(d, "s7", "17cqw")}${semnaturi(b)}${meta(b)}</div></div></div>`, true);
-}
-
-function panglica(d: DateCertificat): string {
-  const b = bucati(d);
-  const css = `.pn{font-family:${SERIF};background:var(--ab);padding:3cqw}.pn .cd{flex:1;background:#fff;border-radius:1cqw;box-shadow:0 0 0 .2cqw var(--a);display:flex;flex-direction:column;align-items:center;text-align:center;padding:3cqw 7cqw 2.6cqw;gap:.7cqw}.pn .rb{position:relative;background:linear-gradient(90deg,var(--b),var(--a),var(--b));color:#fff;padding:1.4cqw 7cqw;margin:1cqw -12cqw 1cqw}.pn .rb:before,.pn .rb:after{content:"";position:absolute;top:1.4cqw;width:3cqw;height:100%;background:var(--b);z-index:-1}.pn .rb:before{left:-2cqw;clip-path:polygon(0 0,100% 0,100% 100%,0 100%,30% 50%)}.pn .rb:after{right:-2cqw;clip-path:polygon(0 0,100% 0,70% 50%,100% 100%,0 100%)}.pn .rb .tit{font-size:1.15em;color:#fff}.pn .intro{font-style:italic;color:var(--m);margin-top:1cqw}.pn .nume{color:var(--b)}.pn .jos{margin-top:auto;display:flex;align-items:flex-end;justify-content:center;gap:5cqw;width:100%}`;
-  return P(d, css, `<div class="pag pn"><div class="cd">${b.logoOng("5cqw")}<div class="rb"><div class="tit">${b.titlu}</div></div><div class="intro">${b.intro}</div><div class="nume" style="font-size:${b.marimeNume(3.8)}">${b.nume}</div><div class="mot">${b.motiv}</div>${b.detaliu}<div class="jos">${semnaturi(b)}${sigiliu(d, "s8", "10cqw")}</div>${meta(b)}</div></div>`);
 }
 
 function acuarela(d: DateCertificat): string {
@@ -126,18 +114,6 @@ function medalion(d: DateCertificat): string {
   return P(d, css, `<div class="pag md"><div class="rz">${sigiliu(d, "s11", "26cqw")}</div><div class="cn"><div style="display:flex;justify-content:space-between;align-items:center">${b.logoOng("4.4cqw") || `<b>${b.ong}</b>`}${meta(b)}</div><div class="tit" style="margin-top:3cqw">${b.titlu}</div><div class="intro">${b.intro}</div><div class="nume" style="font-size:${b.marimeNume(3.6)}">${b.nume}</div><div class="mot">${b.motiv}</div>${b.detaliu}${b.citat}<div class="jos">${semnaturi(b)}</div></div></div>`);
 }
 
-function puls(d: DateCertificat): string {
-  const b = bucati(d);
-  const css = `.pu{font-family:${SANS};background:#fff;padding:4cqw 8cqw 3.4cqw;align-items:center;text-align:center;gap:.8cqw}.pu .tit{color:var(--a);font-size:1em}.pu .intro{color:var(--m)}.pu .nume{font-family:${SERIF};color:var(--b)}.pu .ecg{width:100%;height:7cqw;color:var(--a);margin:.2cqw 0 .6cqw}.pu .jos{margin-top:auto;width:100%;display:flex;justify-content:space-between;align-items:flex-end}.pu .sgn{justify-content:flex-start;gap:5cqw}`;
-  return P(d, css, `<div class="pag pu">${b.logoOng("4.6cqw")}<div class="tit">${b.titlu}</div><div class="intro">${b.intro}</div><div class="nume" style="font-size:${b.marimeNume(4.2)}">${b.nume}</div><div class="ecg">${linieEcg("currentColor", 0.8)}</div><div class="mot">${b.motiv}</div>${b.detaliu}${b.citat}<div class="jos">${semnaturi(b)}${meta(b)}</div></div>`);
-}
-
-function cadruDublu(d: DateCertificat): string {
-  const b = bucati(d);
-  const css = `.cb{font-family:${SERIF};background:#fff;padding:2.6cqw}.cb .r1{flex:1;border:.25cqw solid var(--b);padding:.9cqw;display:flex}.cb .r2{flex:1;border:.1cqw solid var(--b);display:flex;flex-direction:column;align-items:center;text-align:center;overflow:hidden}.cb .gil{width:100%;height:5cqw;background:repeating-linear-gradient(135deg,var(--b) 0 .35cqw,transparent .35cqw .9cqw),repeating-linear-gradient(45deg,var(--a) 0 .2cqw,transparent .2cqw .9cqw);opacity:.85;border-bottom:.2cqw solid var(--b)}.cb .cn{flex:1;width:100%;display:flex;flex-direction:column;align-items:center;gap:.7cqw;padding:2.2cqw 8cqw 2.4cqw}.cb .tit{color:var(--b);font-size:1.05em}.cb .intro{font-style:italic;color:var(--m)}.cb .nume{color:var(--a)}.cb .jos{margin-top:auto;width:100%;display:flex;justify-content:center;align-items:flex-end;gap:5cqw}`;
-  return P(d, css, `<div class="pag cb"><div class="r1"><div class="r2"><div class="gil"></div><div class="cn">${b.logoOng("4.6cqw")}<div class="tit">${b.titlu}</div><div class="intro">${b.intro}</div><div class="nume" style="font-size:${b.marimeNume(3.6)}">${b.nume}</div><div class="mot">${b.motiv}</div>${b.detaliu}<div class="jos">${semnaturi(b)}${sigiliu(d, "s13", "9.5cqw")}</div>${meta(b)}</div></div></div></div>`);
-}
-
 function intunecat(d: DateCertificat): string {
   const b = bucati(d);
   const css = `.in2{font-family:${SERIF};background:radial-gradient(circle at 50% 0,color-mix(in srgb,var(--b) 70%,#000),color-mix(in srgb,var(--b) 40%,#000) 80%);color:#f7efe9;padding:3cqw}.in2 .r{flex:1;border:.2cqw solid var(--a);outline:.1cqw solid color-mix(in srgb,var(--a) 50%,transparent);outline-offset:.8cqw;display:flex;flex-direction:column;align-items:center;text-align:center;padding:3cqw 8cqw 2.6cqw;gap:.7cqw}.in2 .tit{color:color-mix(in srgb,var(--a) 55%,#fff);font-size:1.1em}.in2 .intro{font-style:italic;opacity:.8}.in2 .nume{color:#fff}.in2 .det{color:color-mix(in srgb,var(--a) 55%,#fff)}.in2 .cit,.in2 .meta,.in2 .sgn span{color:#d8cdc6}.in2 .sgn .ln{background:#f7efe9}.in2 .sgn b{color:#fff}.in2 .jos{margin-top:auto;width:100%;display:flex;justify-content:center;align-items:flex-end;gap:5cqw}.in2 .lg{background:#fff;border-radius:.8cqw;padding:.8cqw 1.4cqw}`;
@@ -150,21 +126,49 @@ function poster(d: DateCertificat): string {
   return P(d, css, `<div class="pag ps"><div class="top">${d.logoOng ? `<div class="lg">${b.logoOng("6cqw")}</div>` : `<b style="font-size:1.4em">${b.ong}</b>`}<div class="tit">${b.titlu}</div><div class="seal">${sigiliu(d, "s15", "18cqw")}</div></div><div class="cn"><div class="intro">${b.intro}</div><div class="nume" style="font-size:${b.marimeNume(5)}">${b.nume}</div><div class="mot">${b.motiv}</div>${b.detaliu}${b.citat}<div class="jos">${semnaturi(b)}${meta(b)}</div></div></div>`, true);
 }
 
+// --- Modele cu schelet propriu: grilă tipografică, diagonală, numeral mare, ziar -----------------------------------------------------
+
+function swiss(d: DateCertificat): string {
+  const b = bucati(d);
+  const css = `.sw1{flex-direction:row;font-family:${SANS};padding:4.5cqw 5cqw}.sw1 .st{width:22cqw;display:flex;flex-direction:column;justify-content:space-between;border-right:.14cqw solid var(--t);padding-right:2.4cqw}.sw1 .st small{display:block;font-size:.72em;letter-spacing:.16em;text-transform:uppercase;color:var(--m)}.sw1 .st b{display:block;font-size:.95em;font-weight:700;margin-top:.2cqw}.sw1 .dr{flex:1;padding-left:4cqw;display:flex;flex-direction:column;min-width:0}.sw1 .kk{width:2.2cqw;height:2.2cqw;background:var(--a);margin-bottom:2.2cqw}.sw1 .tit{letter-spacing:.2em;color:var(--a);font-size:.9em}.sw1 .intro{color:var(--m);margin-top:.8cqw}.sw1 .nume{font-family:${SANS};font-style:normal;font-weight:800;letter-spacing:-.035em;line-height:1;margin:1.6cqw 0 2cqw;color:var(--t)}.sw1 .mot p{max-width:52cqw;margin:0 0 .5em}.sw1 .sgn{justify-content:flex-start;gap:5cqw;margin-top:auto}`;
+  const stanga = `<div>${b.logoOng("4.5cqw")}</div><div><small>Data</small><b>${b.locData}</b>${b.nr ? `<small style="margin-top:1.4cqw">Număr</small><b>${b.nr}</b>` : ""}</div>${sigiliu(d, "s7", "9cqw")}`;
+  return P(d, css, `<div class="pag sw1"><div class="st">${stanga}</div><div class="dr"><div class="kk"></div><div class="tit">${b.titlu}</div><div class="intro">${b.intro}</div><div class="nume" style="font-size:${b.marimeNume(4.4)}">${b.nume}</div><div class="mot">${b.motiv}</div>${b.detaliu}${semnaturi(b)}</div></div>`);
+}
+
+function diagonala(d: DateCertificat): string {
+  const b = bucati(d);
+  const css = `.dg{font-family:${SERIF};padding:0}.dg .f1{position:absolute;inset:0;background:linear-gradient(135deg,var(--a),var(--b));clip-path:polygon(0 0,34% 0,17% 100%,0 100%)}.dg .f2{position:absolute;inset:0;background:var(--c);clip-path:polygon(34% 0,36.5% 0,19.5% 100%,17% 100%)}.dg .sg{position:absolute;left:6cqw;top:50%;transform:translateY(-50%)}.dg .cn{position:relative;margin-left:32cqw;padding:5cqw 7cqw 4cqw 4cqw;display:flex;flex-direction:column;flex:1}.dg .cap{display:flex;justify-content:space-between;align-items:center}.dg .tit{color:var(--a);font-family:${SANS};margin-top:4cqw;font-size:.95em}.dg .intro{color:var(--m);margin-top:1cqw}.dg .nume{margin:.8cqw 0 1.6cqw;color:var(--b)}.dg .mot p{margin:0 0 .45em;max-width:50cqw}.dg .jos{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;gap:3cqw}.dg .sgn{justify-content:flex-start;gap:5cqw}`;
+  return P(d, css, `<div class="pag dg"><div class="f1"></div><div class="f2"></div><div class="sg">${sigiliu(d, "s8", "13cqw")}</div><div class="cn"><div class="cap">${b.logoOng("5cqw")}${meta(b)}</div><div class="tit">${b.titlu}</div><div class="intro">${b.intro}</div><div class="nume" style="font-size:${b.marimeNume(4)}">${b.nume}</div><div class="mot">${b.motiv}</div>${b.detaliu}<div class="jos">${semnaturi(b)}</div></div></div>`);
+}
+
+function numeral(d: DateCertificat): string {
+  const b = bucati(d);
+  const an = esc(d.data.slice(0, 4));
+  const css = `.nu{font-family:${SERIF};padding:5cqw 7cqw 4cqw;overflow:hidden}.nu .an{position:absolute;right:-1cqw;bottom:-9cqw;font-family:${SANS};font-weight:800;font-size:44cqw;line-height:1;color:var(--a);opacity:.09;letter-spacing:-.04em}.nu .cap{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:.14cqw solid var(--t);padding-bottom:1.6cqw;position:relative}.nu .tit{font-family:${SANS};color:var(--a);letter-spacing:.3em}.nu .intro{color:var(--m);margin-top:3.4cqw;position:relative}.nu .nume{margin:.6cqw 0 1.6cqw;color:var(--t);position:relative}.nu .mot{position:relative}.nu .mot p{margin:0 0 .45em;max-width:56cqw}.nu .jos{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;position:relative}.nu .sgn{justify-content:flex-start;gap:5cqw}`;
+  return P(d, css, `<div class="pag nu"><div class="an">${an}</div><div class="cap"><div class="tit">${b.titlu}</div>${b.logoOng("5cqw")}</div><div class="intro">${b.intro}</div><div class="nume" style="font-size:${b.marimeNume(4.6)}">${b.nume}</div><div class="mot">${b.motiv}</div>${b.detaliu}<div class="jos">${semnaturi(b)}<div style="text-align:right">${meta(b)}</div></div></div>`);
+}
+
+function ziar(d: DateCertificat): string {
+  const b = bucati(d);
+  const css = `.zr{font-family:${SERIF};padding:4cqw 6cqw 3.4cqw}.zr .mh{display:flex;align-items:center;justify-content:center;gap:2.5cqw;border-top:.5cqw solid var(--t);border-bottom:.14cqw solid var(--t);padding:1.2cqw 0;text-align:center;position:relative}.zr .mh:after{content:"";position:absolute;left:0;right:0;bottom:-.7cqw;border-bottom:.14cqw solid var(--t)}.zr .mh b{font-size:2.7em;letter-spacing:.06em;text-transform:uppercase;font-weight:700;color:var(--b)}.zr .ed{display:flex;justify-content:space-between;font-family:${SANS};font-size:.72em;letter-spacing:.14em;text-transform:uppercase;color:var(--m);padding:1.6cqw 0 1cqw}.zr .tit{text-align:center;font-family:${SANS};color:var(--a);font-size:.95em;margin-top:.8cqw}.zr .nume{text-align:center;margin:1cqw 0 1.4cqw;color:var(--t)}.zr .col{column-count:2;column-gap:4cqw;column-rule:.1cqw solid var(--l);text-align:justify;hyphens:auto}.zr .col p{margin:0 0 .5em}.zr .jos{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;border-top:.14cqw solid var(--t);padding-top:1.4cqw}.zr .sgn{justify-content:flex-start;gap:5cqw}`;
+  return P(d, css, `<div class="pag zr"><div class="mh">${d.logoOng ? logoImg(d.logoOng, d.antetNume, "4cqw") : ""}<b>${b.ong}</b></div><div class="ed"><span>${b.locData}</span><span>${b.nr || "Ediție specială"}</span></div><div class="tit">${b.titlu}</div><div class="nume" style="font-size:${b.marimeNume(3.8)}">${b.nume}</div><div class="col">${b.intro ? `<p><em>${b.intro}</em></p>` : ""}${b.motiv}${b.detaliu ? `<p><b>${esc(d.detaliu)}</b></p>` : ""}</div><div class="jos">${semnaturi(b)}${sigiliu(d, "s9", "9cqw")}</div></div>`);
+}
+
 export function randeazaCertificat(d: DateCertificat, model: ModelCertificat = d.model): string {
   seteazaMotiv(d.motivGrafic, d.antetNume);
   switch (model) {
     case "modern": return modern(d);
     case "gala": return gala(d);
-    case "geometric": return geometric(d);
+    case "swiss": return swiss(d);
     case "inima": return inima(d);
     case "banda": return banda(d);
     case "diploma": return diploma(d);
-    case "panglica": return panglica(d);
+    case "numeral": return numeral(d);
     case "acuarela": return acuarela(d);
     case "tipografic": return tipografic(d);
     case "medalion": return medalion(d);
-    case "puls": return puls(d);
-    case "cadru-dublu": return cadruDublu(d);
+    case "diagonala": return diagonala(d);
+    case "ziar": return ziar(d);
     case "intunecat": return intunecat(d);
     case "poster": return poster(d);
     default: return clasic(d);

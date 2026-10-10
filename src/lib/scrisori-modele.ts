@@ -88,22 +88,10 @@ function minimal(d: DateScrisoare): string {
   return S(d, css, `<div class="pag mn"><div class="cap"><span>${d.logoOng ? b.logoOng("3.6cqw") : b.ongNume}</span><span>${b.locData}</span></div><div class="ft">${trupul(b, false)}</div><div class="pie">${b.ongNume}${b.detalii.length ? ` · ${detaliiSir(b)}` : ""}</div></div>`);
 }
 
-function corporate(d: DateScrisoare): string {
-  const b = bucati(d);
-  const css = `.co .top{background:var(--b);color:#fff;padding:4.6cqw 9cqw;display:flex;justify-content:space-between;align-items:center;gap:3cqw;border-bottom:.8cqw solid var(--a)}.co .top .lg{background:#fff;border-radius:.8cqw;padding:.9cqw 1.4cqw}.co .nm{font-size:1.7em;font-weight:700;letter-spacing:.02em}.co .in{padding:6cqw 9cqw 3cqw;flex:1;font-family:${SANS}}.co .bot{background:var(--b);color:#fff;padding:2.2cqw 9cqw;font-size:.76em;display:flex;justify-content:space-between;gap:2cqw;flex-wrap:wrap}`;
-  return S(d, css, `<div class="pag co"><div class="top">${d.logoOng ? `<div class="lg">${b.logoOng("4.4cqw")}</div>` : `<div class="nm">${b.ongNume}</div>`}<div class="nm" style="font-size:1em;font-weight:500;opacity:.9">${d.logoOng ? b.ongNume : ""}</div></div><div class="in">${trupul(b)}</div><div class="bot">${b.detalii.map((x) => `<span>${x}</span>`).join("")}</div></div>`);
-}
-
 function inima(d: DateScrisoare): string {
   const b = bucati(d);
   const css = `.im{padding:7cqw 9cqw 5cqw;font-family:${SERIF}}.im .wm{position:absolute;right:-8cqw;bottom:-4cqw;width:56cqw;opacity:.07}.im .cap{display:flex;align-items:center;gap:2.4cqw}.im .ic{width:6cqw;flex:none}.im .nm{font-size:2em;font-weight:700;color:var(--b);line-height:1.1}.im .ecg{height:5cqw;color:var(--a);margin:1.4cqw 0 4cqw}.im .ft,.im .cap,.im .ecg,.im .pie{position:relative}.im .pie{font-size:.78em;color:var(--m);margin-top:3cqw}`;
   return S(d, css, `<div class="pag im"><div class="wm">${inimaPuls("w1")}</div><div class="cap">${d.logoOng ? b.logoOng("6cqw") : `<div class="ic">${inimaPuls("w2")}</div>`}<div class="nm">${b.ongNume}</div></div><div class="ecg">${linieEcg("currentColor", 0.55)}</div><div class="ft">${trupul(b)}</div><div class="pie">${detaliiSir(b)}</div></div>`);
-}
-
-function colt(d: DateScrisoare): string {
-  const b = bucati(d);
-  const css = `.ct{padding:8cqw 9cqw 6cqw;font-family:${SANS};overflow:hidden}.ct .c1{position:absolute;right:-14cqw;top:-14cqw;width:40cqw;height:40cqw;border-radius:50%;background:var(--a)}.ct .c2{position:absolute;right:-7cqw;top:-20cqw;width:34cqw;height:34cqw;border-radius:50%;background:var(--b);opacity:.9}.ct .c3{position:absolute;left:-12cqw;bottom:-14cqw;width:30cqw;height:30cqw;border-radius:50%;background:var(--c)}.ct>*{position:relative}.ct>.c1,.ct>.c2,.ct>.c3{position:absolute}.ct .cap{margin-bottom:11cqw}.ct .nm{font-size:2.3em;font-weight:800;letter-spacing:-.02em;color:var(--b);line-height:1}.ct .det{margin-top:1.2cqw}.ct .corp p{text-align:left}`;
-  return S(d, css, `<div class="pag ct"><div class="c1"></div><div class="c2"></div><div class="c3"></div><div class="cap">${d.logoOng ? b.logoOng("6cqw") : `<div class="nm">${b.ongNume}</div>`}<div class="det">${b.detalii.join("<br>")}</div></div><div class="ft">${trupul(b)}</div></div>`);
 }
 
 function dubluLogo(d: DateScrisoare): string {
@@ -134,10 +122,25 @@ function postal(d: DateScrisoare): string {
   return S(d, css, `<div class="pag po"><span class="tick" style="top:47.1cqw"></span><span class="tick" style="top:70.7cqw;width:2cqw"></span><div class="cap"><div>${d.logoOng ? b.logoOng("4.8cqw") : `<div class="nm">${b.ongNume}</div>`}</div><div class="det" style="text-align:right">${b.detalii.join("<br>")}</div></div><div class="win"><small>${b.ongNume}${b.detalii[0] ? ` · ${b.detalii[0]}` : ""}</small>${b.dest}</div><div class="ldata">${b.locData}<br>${b.nr}</div><div class="cont">${trupul(b, false)}</div><div class="pie">${b.ongNume}</div></div>`);
 }
 
-function cald(d: DateScrisoare): string {
+// --- Modele cu schelet propriu: tipografic, margine de notițe, cadru fin ---------------------------------------------------------------
+
+function tipografic(d: DateScrisoare): string {
   const b = bucati(d);
-  const css = `.cd{background:var(--c);padding:3.4cqw;font-family:${SERIF}}.cd .card{background:#fff;border-radius:2.6cqw;padding:6cqw 8cqw 5cqw;flex:1;display:flex;flex-direction:column;box-shadow:0 .4cqw 2cqw rgba(35,31,32,.07)}.cd .cap{display:flex;align-items:center;gap:2.4cqw;margin-bottom:1cqw}.cd .ic{width:5cqw;flex:none}.cd .nm{font-size:1.8em;font-weight:700;color:var(--b)}.cd .ecg{height:3.6cqw;color:var(--a);margin:1cqw 0 4cqw}.cd .semn b{font-size:2.2em;color:var(--a)}.cd .pie{font-size:.78em;color:var(--m);margin-top:2.4cqw;text-align:center}`;
-  return S(d, css, `<div class="pag cd"><div class="card"><div class="cap">${d.logoOng ? b.logoOng("5.4cqw") : `<div class="ic">${inimaPuls("c1")}</div>`}<div class="nm">${b.ongNume}</div></div><div class="ecg">${linieEcg("currentColor", 0.5)}</div><div class="ft">${trupul(b)}</div><div class="pie">${detaliiSir(b)}</div></div></div>`);
+  const css = `.tp{font-family:${SERIF};padding:7cqw 9cqw 5cqw}.tp .cap{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3cqw;align-items:end;padding-bottom:2.2cqw;border-bottom:.16cqw solid var(--t);margin-bottom:3.6cqw}.tp .nm{font-size:2.5em;line-height:1.02;font-weight:700;color:var(--b);letter-spacing:-.02em;margin-top:.8cqw}.tp .dt{font-family:${SANS};font-size:.72em;text-align:right;color:var(--m);line-height:1.7;text-transform:uppercase;letter-spacing:.08em}`;
+  return S(d, css, `<div class="pag tp"><div class="cap"><div>${b.logoOng("5cqw")}<div class="nm">${b.ongNume}</div></div><div class="dt">${b.detalii.map((x) => `<div>${x}</div>`).join("")}</div></div>${trupul(b)}<div class="ft"></div></div>`);
+}
+
+function margine(d: DateScrisoare): string {
+  const b = bucati(d);
+  const css = `.mg{font-family:${SANS};padding:6cqw 8cqw 5cqw}.mg .cap{display:flex;justify-content:space-between;align-items:center;gap:3cqw;padding-bottom:2cqw;border-bottom:.3cqw solid var(--a);margin-bottom:3.4cqw}.mg .g{display:grid;grid-template-columns:23cqw minmax(0,1fr);gap:4cqw;flex:1}.mg .lat{font-size:.82em;color:var(--m);line-height:1.5}.mg .lat b{color:var(--t)}.mg .lat .it{margin-bottom:1.7em}.mg .lat small{display:block;font-size:.8em;letter-spacing:.14em;text-transform:uppercase;color:var(--a);margin-bottom:.3em}.mg .sub{margin-top:0}`;
+  const stanga = `${b.locData ? `<div class="it"><small>Data</small>${b.locData}</div>` : ""}${b.nr ? `<div class="it"><small>Număr</small>${b.nr}</div>` : ""}${b.dest ? `<div class="it"><small>Către</small>${b.dest}</div>` : ""}${d.subiect ? `<div class="it"><small>Subiect</small><b>${liniiScrisoare(d.subiect, d)}</b></div>` : ""}`;
+  return S(d, css, `<div class="pag mg"><div class="cap">${b.logoOng("5cqw") || `<b class="onm">${b.ongNume}</b>`}<span class="det">${detaliiSir(b)}</span></div><div class="g"><div class="lat">${stanga}</div><div>${b.sal}${b.corp}${b.fin}${b.semn}${b.ps}${b.anexe}</div></div></div>`);
+}
+
+function cadru(d: DateScrisoare): string {
+  const b = bucati(d);
+  const css = `.cd{font-family:${SERIF};padding:8cqw 10cqw 6cqw}.cd .rm{position:absolute;inset:3cqw;border:.16cqw solid var(--a);pointer-events:none}.cd .rm:before{content:"";position:absolute;inset:.7cqw;border:.07cqw solid var(--a);opacity:.5}.cd .cap{text-align:center;padding-bottom:3cqw}.cd .nm{font-size:1.4em;letter-spacing:.3em;text-transform:uppercase;color:var(--b);margin-top:1cqw}.cd .cap img{margin:0 auto}.cd .orn{width:11cqw;height:.16cqw;background:var(--a);margin:1.8cqw auto 0}.cd .det{text-align:center;font-family:${SANS};border-top:.1cqw solid var(--l);padding-top:1.4cqw;margin-top:2cqw}`;
+  return S(d, css, `<div class="pag cd"><div class="rm"></div><div class="cap">${b.logoOng("5cqw")}<div class="nm">${b.ongNume}</div><div class="orn"></div></div>${trupul(b)}<div class="ft"></div><div class="det">${detaliiSir(b)}</div></div>`);
 }
 
 export function randeazaScrisoare(d: DateScrisoare, model: ModelScrisoare = d.model): string {
@@ -149,14 +152,14 @@ export function randeazaScrisoare(d: DateScrisoare, model: ModelScrisoare = d.mo
     case "executiv": return executiv(d);
     case "lateral": return lateral(d);
     case "minimal": return minimal(d);
-    case "corporate": return corporate(d);
+    case "tipografic": return tipografic(d);
     case "inima": return inima(d);
-    case "colt": return colt(d);
+    case "margine": return margine(d);
     case "dublu-logo": return dubluLogo(d);
     case "memo": return memo(d);
     case "registru": return registru(d);
     case "postal": return postal(d);
-    case "cald": return cald(d);
+    case "cadru": return cadru(d);
     default: return clasic(d);
   }
 }

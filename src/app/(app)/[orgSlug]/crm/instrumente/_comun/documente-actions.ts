@@ -6,7 +6,7 @@ import { and, desc, eq, isNull, sql } from "drizzle-orm";
 
 import { withOrgSession, type OrgContext } from "@/lib/auth/guard";
 import { angajati, appUsers, companies, companySponsorizari, crmKv, roluri } from "@/lib/db/schema";
-import { caleDoc, TIPURI_DOC, type Intrare, type Stare, type TipDoc } from "@/lib/documente-istoric";
+import { caleDoc, multumiriRestante, TIPURI_DOC, type Intrare, type Restanta, type Stare, type TipDoc } from "@/lib/documente-istoric";
 
 // Scrisori, certificate și rapoarte: numerotare automată pe an, istoricul documentelor exportate și date preluate din CRM (semnatar, firmă).
 // Totul stă în crm_kv, pe organizație: o intrare pe tip de document (documente/scrisori, documente/certificate, documente/rapoarte).
@@ -131,3 +131,6 @@ export const dateFirmaAction = withOrgSession(async (ctx, companyId: string): Pr
     dataSponsorizare: s?.data ?? "",
   };
 });
+
+// Mulțumiri de trimis: sponsorizări mai vechi de 14 zile fără nicio scrisoare bifată ca „trimisă” (cele mai întârziate primele).
+export const multumiriRestanteAction = withOrgSession(async (ctx): Promise<Restanta[]> => multumiriRestante(ctx.db, ctx.orgId, new Date().toISOString().slice(0, 10)));

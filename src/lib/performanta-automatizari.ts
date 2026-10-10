@@ -1,5 +1,7 @@
 import { and, eq, gte, inArray, isNotNull, ne, sql } from "drizzle-orm";
 
+import { multumiriRestante } from "@/lib/documente-istoric";
+
 import type { OrgContext } from "@/lib/auth/guard";
 import { activitati, angajati, blocaje, companies, companySponsorizari, crmKv, performantaNotificari } from "@/lib/db/schema";
 import { STATUSURI_DESCHISE } from "@/lib/performanta-activitati-reguli";
@@ -319,6 +321,40 @@ export async function ruleazaAutomatizari(db: Db, orgId: string, orgSlug: string
         .onConflictDoNothing()
         .returning({ id: activitati.id });
       rezultat.multumiri += m.length;
+    }
+  }
+
+  // 8. Reînnoire: la ~10 luni de la ultima sponsorizare a unei firme, sarcină „Propune reînnoirea” (o dată pe an și firmă); o sugestie, nu un mesaj trimis.
+  if (setari.raportSponsor && setari.responsabilRaportId) {
+    const ultimele = await db
+      .select({ companyId: companySponsorizari.companyId, firma: companies.nume, ultima: sql<string>`max(${companySponsorizari.data})::text` })
+      .from(companySponsorizari)
+      .innerJoin(companies, eq(companies.id, companySponsorizari.companyId))
+      .where(and(eq(companySponsorizari.orgId, orgId), ne(companySponsorizari.suma, 0), sql`${companies.deletedAt} is null`))
+      .groupBy(companySponsorizari.companyId, companies.nume)
+      .having(sql`max(${companySponsorizari.data}) <= ${adauga(azi, -300)}::date and max(${companySponsorizari.data}) >= ${adauga(azi, -330)}::date`);
+    for (const f of ultimele) {
+      const r = await db
+        .insert(activitati)
+        .values({ orgId, titlu: `Propune reînnoirea sprijinului către ${f.firma}`, descriere: `Ultima sponsorizare: ${f.ultima}. Scrisoare de reînnoire: /${orgSlug}/crm/instrumente/scrisori/generator?firma=${f.companyId}. Creată automat; e o sugestie de moment, nu o regulă.`, responsabilId: setari.responsabilRaportId, prioritate: "medie", termen: adauga(azi, 14), efortOre: 1, sursa: "automatizare", cheieAutomatizare: `reinnoire:${f.companyId}:${f.ultima.slice(0, 4)}`, criteriuFinalizare: "Propunerea de reînnoire a fost trimisă sau s-a hotărât să nu se reînnoiască." })
+        .onConflictDoNothing()
+        .returning({ id: activitati.id });
+      rezultat.rapoarte += r.length;
+    }
+  }
+
+  // 9. Digest săptămânal pentru firme (în ziua rezumatului): mulțumiri netrimise și reînnoiri apropiate, în aplicație, fără date personale.
+  if (setari.raportSponsor && setari.responsabilRaportId && zi(azi) === setari.ziRezumat) {
+    const destinatar = user.get(setari.responsabilRaportId) ?? null;
+    const restante = await multumiriRestante(db, orgId, azi, 50);
+    if (destinatar && restante.length) {
+      rezultat.rezumat += await notifica(db, orgId, destinatar, {
+        tip: "rezumat",
+        titlu: `${restante.length} ${restante.length === 1 ? "firmă așteaptă" : "firme așteaptă"} o mulțumire`,
+        continut: lista(restante.map((r) => `${r.firma} (${r.zile} de zile)`)),
+        link: `/${orgSlug}/crm/instrumente/scrisori`,
+        cheie: `digest-firme:${luni}`,
+      });
     }
   }
 

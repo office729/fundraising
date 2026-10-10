@@ -6,6 +6,8 @@ import { fundraisingDonations, fundraisingPages } from "@/lib/db/schema";
 import { DONATION_DICT } from "@/lib/i18n/dictionaries/donation";
 import { getLocale } from "@/lib/i18n/get-locale";
 
+import { ShareLinksClient } from "../share-links";
+
 // Stripe redirecționează aici imediat după plată — confirmarea REALĂ (marcarea
 // donației ca "reusita" și actualizarea sumei strânse) o face webhook-ul
 // asincron (/api/stripe/webhook), care poate ajunge la câteva secunde după
@@ -70,6 +72,13 @@ export default async function MultumimPage({
         </p>
       ) : (
         <p className="mt-2 text-[14.5px] leading-relaxed text-muted">{t.thankYou.faraDetaliu}</p>
+      )}
+      {!nefinalizata && detaliu && (
+        <div className="mt-6 w-full rounded-xl border border-line bg-panel p-4 text-left">
+          {!detaliu.recurenta && <p className="text-[13.5px] text-body">{t.thankYou.lunarOferta}</p>}
+          <p className={`text-[13px] font-semibold text-ink ${detaliu.recurenta ? "" : "mt-3"}`}>{t.thankYou.spuneMaiDeparte}</p>
+          <ShareLinksClient url={`${(process.env.NEXT_PUBLIC_SITE_URL || "https://alexandrit.ro").replace(/\/$/, "")}/strangere-fonduri/${orgSlug}/${pageSlug}`} titlu={detaliu.pageTitlu} locale={locale} />
+        </div>
       )}
       <Link
         href={`/strangere-fonduri/${orgSlug}/${pageSlug}`}

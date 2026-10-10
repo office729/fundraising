@@ -8,7 +8,7 @@ import { descarcaBlob, htmlInPdf } from "@/lib/html-in-pdf";
 import { incarcaLogo, paletaDinLogo } from "@/lib/logo-incarcare";
 import { MOTIVE } from "@/lib/motiv";
 import { raporteazaEroare } from "@/lib/monitoring";
-import { aplicaPlaceholdere, CULORI_IMPLICITE, curataDateImpact, MECANISME_IMPACT, MODELE_IMPACT, PROIECT_GOL, STARI_PROIECT, totalImpact, type DateImpact, type ProiectImpact } from "@/lib/raport-impact";
+import { aplicaPlaceholdere, CULORI_IMPLICITE, curataDateImpact, MECANISME_IMPACT, MECANISME_PROIECT, MODELE_IMPACT, PROIECT_GOL, STARI_PROIECT, totalImpact, type DateImpact, type ProiectImpact } from "@/lib/raport-impact";
 import type { PaletaLogo } from "@/lib/raport-impact-culori";
 import { randeazaRaportImpact } from "@/lib/raport-impact-modele";
 
@@ -287,7 +287,15 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
   }
 
   return (
-    <div className="mx-auto max-w-[1400px] space-y-5">
+    <div className="mx-auto max-w-[1400px] space-y-5 pb-20 lg:pb-0">
+      <div className="fixed inset-x-0 bottom-0 z-30 flex gap-2 border-t border-[var(--ci-border)] bg-[var(--ci-surface)] p-2 lg:hidden">
+        <Button className="min-h-11 flex-1" onClick={() => setVedere((v) => (v === "editez" ? "previz" : "editez"))}>
+          {vedere === "editez" ? "Previzualizează" : "Înapoi la editare"}
+        </Button>
+        <Button variant="primary" className="min-h-11 flex-1" onClick={() => cuVerificari(exportaPdf)} disabled={seFacePdf}>
+          {seFacePdf ? "Se pregătește…" : "Export PDF"}
+        </Button>
+      </div>
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2.5">
         <div className="flex min-w-0 flex-wrap items-center gap-3">
           <Link href={`/${orgSlug}/crm/instrumente/raport-companii`} prefetch={false} className="inline-flex h-9 items-center gap-1.5 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-3 text-[13px] font-medium text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
@@ -369,6 +377,9 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
                   ))}
                 </Select>
               </Camp>
+              <Camp eticheta="Total anul anterior (opțional)" ajutor="Dacă îl completezi, raportul arată comparația procentuală.">
+                <Input inputMode="numeric" value={date.totalAnterior ?? ""} onChange={(e) => actualizeaza({ totalAnterior: e.target.value === "" ? null : Number(e.target.value.replace(/\D/g, "")) })} />
+              </Camp>
               <Camp eticheta="Total (lasă gol ca să se adune)" ajutor={totalDiferit ? `Atenție: totalul scris (${formatSuma(date.totalManual ?? 0)}) diferă de suma proiectelor (${formatSuma(sumaProiecte)}). Raportul îl afișează pe cel scris și notează diferența.` : undefined}>
                 <Input inputMode="numeric" value={date.totalManual ?? ""} onChange={(e) => actualizeaza({ totalManual: e.target.value === "" ? null : Number(e.target.value.replace(/\D/g, "")) })} placeholder={String(sumaProiecte)} />
               </Camp>
@@ -437,6 +448,18 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
                               <Input type="number" min={2000} max={2100} value={p.anDirectionare ?? ""} onChange={(e) => actualizeazaProiect(i, { anDirectionare: e.target.value === "" ? null : Number(e.target.value) })} />
                             </Camp>
                           )}
+                          <Camp className="sm:col-span-3" eticheta="Mecanism pentru acest proiect" ajutor="Dacă firma a folosit mecanisme diferite, alege-l aici.">
+                            <Select value={p.mecanism} onChange={(e) => actualizeazaProiect(i, { mecanism: e.target.value as ProiectImpact["mecanism"] })}>
+                              {MECANISME_PROIECT.map((m) => (
+                                <option key={m.id} value={m.id}>
+                                  {m.eticheta}
+                                </option>
+                              ))}
+                            </Select>
+                          </Camp>
+                          <Camp className="sm:col-span-3" eticheta="Contract sau recipisă (opțional)" ajutor="Număr și dată, ca raportul să se potrivească cu documentele.">
+                            <Input value={p.referintaContract} onChange={(e) => actualizeazaProiect(i, { referintaContract: e.target.value })} maxLength={120} placeholder="ex. contract nr. 12 / 03.04.2025" />
+                          </Camp>
                           <Camp className="sm:col-span-3" eticheta="Beneficiari (număr, opțional)" ajutor="Doar beneficiari unici, fără dublări între proiecte.">
                             <Input type="number" min={0} inputMode="numeric" value={p.nrBeneficiari ?? ""} onChange={(e) => actualizeazaProiect(i, { nrBeneficiari: e.target.value === "" ? null : Number(e.target.value) })} />
                           </Camp>

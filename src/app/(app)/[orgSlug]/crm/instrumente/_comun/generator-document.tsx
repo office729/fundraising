@@ -11,6 +11,7 @@ import { paletaDinHex, type PaletaLogo } from "@/lib/raport-impact-culori";
 
 import { Button } from "../../components/ui/button";
 import { Card, CardHeader } from "../../components/ui/card";
+import { Dialog } from "../../components/ui/dialog";
 import { Input, Label, Select, Textarea } from "../../components/ui/input";
 import { Camp } from "./camp";
 import { MeniuExport } from "./meniu-export";
@@ -74,6 +75,15 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cadru = useRef<HTMLIFrameElement>(null);
   const ultimaInregistrare = useRef<string>("");
+  // Confirmări în dialog propriu (nu fereastra standard a browserului) și avertizarea la ieșire cât timp există modificări neexportate.
+  const [conf, setConf] = useState<{ titlu: string; text: string; actiune: () => void } | null>(null);
+  const [modificat, setModificat] = useState(false);
+  useEffect(() => {
+    if (!modificat) return;
+    const avertizeaza = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener("beforeunload", avertizeaza);
+    return () => window.removeEventListener("beforeunload", avertizeaza);
+  }, [modificat]);
   const cheieCiorna = `fa-doc-${p.cheieTool}-${p.orgSlug}`;
 
   // Ciorna se păstrează în browserul acesta, fără numele persoanelor, și expiră după 14 zile. La deconectare se șterge.
@@ -111,6 +121,7 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
     }, 500);
   }
   function actualizeaza(patch: Partial<D>) {
+    setModificat(true);
     setDate((prev) => {
       const urmator = { ...prev, ...patch };
       salveazaCiorna(urmator);
@@ -159,7 +170,10 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
     const faraLogo = { ...curat, logoOng: "", logoDestinatar: "", logoFirma: "" };
     inregistreazaDocumentAction(p.orgSlug, p.cheieTool, { titlu: p.titluIstoric(curat), firmaId: p.firmaId ?? null, numar: p.numerotare ? val(p.numerotare.cheie) : "", date: faraLogo })
       .then((r) => {
-        if (r.ok) setInfo((x) => (x ? `${x} Salvat în istoric.` : "Salvat în istoric."));
+        if (r.ok) {
+          setModificat(false);
+          setInfo((x) => (x ? `${x} Salvat în istoric.` : "Salvat în istoric."));
+        }
         else {
           ultimaInregistrare.current = "";
           setInfo((x) => (x ? `${x} Nu s-a putut salva în istoric.` : "Nu s-a putut salva în istoric."));
@@ -238,15 +252,21 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
     } else ruleaza();
   }
   function reseteaza() {
-    if (!window.confirm("Ștergi tot ce ai completat și revii la textul de pornire?")) return;
-    try {
-      window.localStorage.removeItem(cheieCiorna);
-    } catch {
-      /* nimic de șters */
-    }
-    setDate(p.date);
-    setPaleta(null);
-    setCiorna(null);
+    setConf({
+      titlu: "Începi de la capăt?",
+      text: "Se șterge tot ce ai completat și revii la textul de pornire. Documentele deja exportate rămân în istoric.",
+      actiune: () => {
+        try {
+          window.localStorage.removeItem(cheieCiorna);
+        } catch {
+          /* nimic de șters */
+        }
+        setDate(p.date);
+        setPaleta(null);
+        setCiorna(null);
+        setModificat(false);
+      },
+    });
   }
 
   async function numarAutomat() {
@@ -267,12 +287,37 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
     const curentTip = p.tipuri?.optiuni.find((x) => x.id === val(p.tipuri!.cheie));
     if (!nou || !p.tipuri) return;
     const editat = curentTip ? Object.entries(curentTip.patch).some(([k, v]) => val(k) !== v) : Object.keys(nou.patch).some((k) => val(k).trim() !== "");
-    if (editat && !window.confirm("Ai modificat textul. Îl înlocuiești cu textul de pornire al noului tip?")) return;
-    actualizeaza({ [p.tipuri.cheie]: nou.id, ...nou.patch } as Partial<D>);
+    const aplica = () => actualizeaza({ [p.tipuri!.cheie]: nou.id, ...nou.patch } as Partial<D>);
+    if (editat) setConf({ titlu: "Înlocuiești textul?", text: "Ai modificat textul. Noul tip are alt text de pornire: dacă continui, textul tău se înlocuiește.", actiune: aplica });
+    else aplica();
   }
 
   return (
-    <div className="mx-auto max-w-[1500px] space-y-4">
+    <div className="mx-auto max-w-[1500px] space-y-4 pb-20 lg:pb-0">
+      <Dialog open={!!conf} onClose={() => setConf(null)} title={conf?.titlu ?? ""}>
+        <p className="text-[13.5px] text-[var(--ci-text-muted)]">{conf?.text}</p>
+        <div className="mt-4 flex justify-end gap-2">
+          <Button onClick={() => setConf(null)}>Anulează</Button>
+          <Button
+            variant="primary"
+            onClick={() => {
+              const a = conf?.actiune;
+              setConf(null);
+              a?.();
+            }}
+          >
+            Continuă
+          </Button>
+        </div>
+      </Dialog>
+      <div className="fixed inset-x-0 bottom-0 z-30 flex gap-2 border-t border-[var(--ci-border)] bg-[var(--ci-surface)] p-2 lg:hidden">
+        <Button className="min-h-11 flex-1" onClick={() => setVedere((v) => (v === "editez" ? "previz" : "editez"))}>
+          {vedere === "editez" ? "Previzualizează" : "Înapoi la editare"}
+        </Button>
+        <Button variant="primary" className="min-h-11 flex-1" onClick={pdf} disabled={seFacePdf}>
+          {seFacePdf ? "Se pregătește…" : "Salvează ca PDF"}
+        </Button>
+      </div>
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2.5">
         <div className="flex min-w-0 flex-wrap items-center gap-3">
           <Link href={p.galerieHref} prefetch={false} className="inline-flex h-9 items-center gap-1.5 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-3 text-[13px] font-medium text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">

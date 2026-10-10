@@ -90,7 +90,7 @@ const GRUPURI: GrupDef[] = [
     campuri: [
       { cheie: "antetNume", eticheta: "Numele organizației" },
       { cheie: "motivGrafic", eticheta: "Motiv grafic", tip: "select", optiuni: MOTIVE, ajutor: "Apare discret în unele modele (filigran, linie sub antet)." },
-      { cheie: "antetLinii", eticheta: "Adresă, CIF, IBAN, contact", tip: "textarea", rows: 3, ajutor: "Câte un rând pentru fiecare informație." },
+      { cheie: "antetLinii", eticheta: "Adresă, CIF, IBAN, contact", tip: "textarea", rows: 3, ajutor: "Câte un rând pentru fiecare informație. Poți adăuga și mențiuni utile firmelor: statutul de utilitate publică sau numărul din registrul entităților pentru care se acordă deduceri fiscale, dacă organizația îl are." },
     ],
   },
 ];

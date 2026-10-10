@@ -13,6 +13,8 @@ import { useActionStatePastrat } from "@/lib/use-action-state-pastrat";
 
 const INITIAL: DoneazaState = { error: null };
 const SUME_RAPIDE = [25, 50, 100, 250];
+// Donația lunară pornește de la sume mai mici: un donator care dă 20 de lei pe lună rămâne ani, iar 250 de lei lunar sperie.
+const SUME_LUNARE = [10, 20, 35, 50];
 
 export function DoneazaForm({
   orgSlug,
@@ -109,7 +111,10 @@ export function DoneazaForm({
         <button
           type="button"
           aria-pressed={!recurenta}
-          onClick={() => setRecurenta(false)}
+          onClick={() => {
+            setRecurenta(false);
+            if (!SUME_RAPIDE.includes(suma)) setSuma(50);
+          }}
           className={`px-4 py-2 transition ${!recurenta ? "bg-brand-green text-white" : "bg-panel text-ink"}`}
         >
           {t.oSingurataData}
@@ -117,7 +122,10 @@ export function DoneazaForm({
         <button
           type="button"
           aria-pressed={recurenta}
-          onClick={() => setRecurenta(true)}
+          onClick={() => {
+            setRecurenta(true);
+            if (!SUME_LUNARE.includes(suma)) setSuma(20);
+          }}
           className={`px-4 py-2 transition ${recurenta ? "bg-brand-green text-white" : "bg-panel text-ink"}`}
         >
           {t.lunar}
@@ -163,7 +171,7 @@ export function DoneazaForm({
       ) : (
         <>
       <div role="group" aria-label={t.sumeRapideLabel} className="flex flex-wrap gap-2">
-        {SUME_RAPIDE.map((s) => (
+        {(recurenta ? SUME_LUNARE : SUME_RAPIDE).map((s) => (
           <button
             key={s}
             type="button"
@@ -221,6 +229,9 @@ export function DoneazaForm({
         {t.email}
         <input type="email" name="emailDonator" required autoComplete="email" defaultValue={valori.emailDonator} className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink" />
       </label>
+      <details className="rounded-lg border border-line px-3 py-2">
+        <summary className="cursor-pointer text-sm font-medium text-ink">{t.optiuniSuplimentare}</summary>
+        <div className="mt-3 flex flex-col gap-3">
       <label className="text-sm font-medium text-ink">
         {t.telefonOptional}
         <input type="tel" name="telefonDonator" autoComplete="tel" defaultValue={valori.telefonDonator} className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink" />
@@ -235,6 +246,13 @@ export function DoneazaForm({
         <input type="checkbox" name="anonim" defaultChecked={valori.anonim !== undefined} className="h-4 w-4 rounded border-line" />
         {t.nuAfisaNume}
       </label>
+      <label className="flex items-start gap-2 text-[13px] text-body">
+        <input type="checkbox" name="consimtamantWhatsapp" className="mt-0.5 h-4 w-4 rounded border-line" />
+        <span>{t.acordWhatsapp}</span>
+      </label>
+      {bifaEmail}
+        </div>
+      </details>
 
       <div className="mt-1 flex flex-col gap-2 border-t border-line pt-3">
         <NotaInformareDonatie locale={locale} orgName={orgName} orgCif={orgCif} />
@@ -249,11 +267,6 @@ export function DoneazaForm({
           <input type="checkbox" name="consimtamantTermeni" required className="mt-0.5 h-4 w-4 rounded border-line" />
           <span>{t.acordTermeniPre}</span>
         </label>
-        <label className="flex items-start gap-2 text-[13px] text-body">
-          <input type="checkbox" name="consimtamantWhatsapp" className="mt-0.5 h-4 w-4 rounded border-line" />
-          <span>{t.acordWhatsapp}</span>
-        </label>
-        {bifaEmail}
       </div>
 
       {(redirect ? revolutEroare : state.error) && (
@@ -275,6 +288,7 @@ export function DoneazaForm({
                 ? `${t.donezaVerb} ${suma} ${t.donezaLunaSufix}`
                 : `${t.donezaVerb} ${suma} ${t.donezaSufix}`}
       </button>
+      <p className="text-center text-[11.5px] font-medium text-body">{t.incredere(orgName, orgCif)}</p>
       <p className="text-center text-[11px] text-muted-2">{t.notaPlataSecurizata}</p>
         </>
       )}

@@ -9,7 +9,7 @@ import { randeazaRaportImpact } from "@/lib/raport-impact-modele";
 import { Card, CardHeader } from "../../components/ui/card";
 
 // Lățimea la care se desenează modelul înainte de micșorare (certificatul și prezentarea sunt pe orizontală).
-const LATIME: Partial<Record<ModelImpact, number>> = { certificat: 1000, prezentare: 1040, analitic: 940, "o-pagina": 900 };
+const LATIME: Partial<Record<ModelImpact, number>> = { prezentare: 1040, analitic: 940, "o-pagina": 900 };
 
 // Miniatura se încarcă abia când ajunge în ecran, ca 15 documente să nu se deseneze deodată.
 function Miniatura({ html, latime }: { html: string; latime: number }) {

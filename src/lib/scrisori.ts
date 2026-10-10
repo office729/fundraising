@@ -11,14 +11,14 @@ export const MODELE_SCRISORI = [
   { id: "executiv", eticheta: "Executiv", hint: "Antet aliniat la dreapta, sobru, pentru scrisori oficiale" },
   { id: "lateral", eticheta: "Lateral", hint: "Coloană laterală cu datele organizației, scrisoarea în dreapta" },
   { id: "minimal", eticheta: "Minimal", hint: "Foarte mult spațiu alb, doar esențialul" },
-  { id: "corporate", eticheta: "Corporate", hint: "Bară închisă sus și jos, pentru parteneri mari" },
+  { id: "tipografic", eticheta: "Tipografic", hint: "Numele organizației mare, în serif, cu datele într-o coloană la dreapta" },
   { id: "inima", eticheta: "Inimă", hint: "Inimă cu puls ca filigran, identitatea organizației" },
-  { id: "colt", eticheta: "Colț", hint: "Formă colorată în colț, aspect modern" },
+  { id: "margine", eticheta: "Margine de notițe", hint: "Data, destinatarul și subiectul în marginea din stânga, textul în dreapta" },
   { id: "dublu-logo", eticheta: "Dublu logo", hint: "Logo-ul organizației și al destinatarului, unul lângă altul" },
   { id: "memo", eticheta: "Memo", hint: "Antet compact: De la, Către, Subiect" },
   { id: "registru", eticheta: "Registru", hint: "Număr de înregistrare în casetă, aspect de instituție" },
   { id: "postal", eticheta: "Poștal", hint: "Adresa destinatarului la poziția ferestrei de plic" },
-  { id: "cald", eticheta: "Cald", hint: "Hârtie ușor colorată, colțuri rotunjite, semnătură cursivă" },
+  { id: "cadru", eticheta: "Cadru fin", hint: "Ramă dublă subțire, antet centrat, pentru scrisori solemne" },
 ] as const;
 export type ModelScrisoare = (typeof MODELE_SCRISORI)[number]["id"];
 

@@ -8,7 +8,7 @@ export const MODELE_IMPACT = [
   { id: "executiv", eticheta: "Executiv", hint: "Sobru, cu rezumat lateral și tabel cu bare, pentru directori financiari" },
   { id: "editorial", eticheta: "Editorial", hint: "Copertă tip revistă și poveste în pagină" },
   { id: "carduri", eticheta: "Carduri", hint: "Fiecare proiect pe un card, vizual" },
-  { id: "scrisoare", eticheta: "Scrisoare de mulțumire", hint: "Hârtie cu antet, pentru una sau două donații" },
+  { id: "o-cifra", eticheta: "O cifră pe pagină", hint: "Totalul uriaș pe copertă, apoi fiecare proiect cu suma lui mare" },
   { id: "minimal", eticheta: "Minimal", hint: "Mult spațiu alb și o cifră mare" },
   { id: "cronologic", eticheta: "Cronologic", hint: "Proiectele pe linia timpului" },
   { id: "infografic", eticheta: "Infografic", hint: "Cifre mari, inel cu ponderea proiectelor" },
@@ -16,7 +16,7 @@ export const MODELE_IMPACT = [
   { id: "o-pagina", eticheta: "O pagină", hint: "Sumar condensat, pentru print rapid" },
   { id: "afis", eticheta: "Afiș", hint: "Un singur mesaj mare: „Mulțumim”" },
   { id: "mozaic", eticheta: "Mozaic", hint: "Plăci de mărimi diferite, modern" },
-  { id: "certificat", eticheta: "Certificat", hint: "Certificat de recunoștință, cu ramă și sigiliu" },
+  { id: "gazeta", eticheta: "Gazetă", hint: "Antet de ziar, titlu mare, text pe două coloane și proiectele ca știri" },
   { id: "prezentare", eticheta: "Prezentare", hint: "Diapozitive 16:9, pentru ecran sau PDF" },
   { id: "analitic", eticheta: "Analitic", hint: "Tablou de bord cu grafice, pentru cine vrea cifrele" },
 ] as const;
@@ -28,6 +28,15 @@ export const MECANISME_IMPACT = [
   { id: "sponsorizare", eticheta: "Sponsorizare (Legea nr. 32/1994)", fraza: "sponsorizare, în baza Legii nr. 32/1994" },
 ] as const;
 export type MecanismImpact = (typeof MECANISME_IMPACT)[number]["id"];
+
+// Mecanismul unui proiect poate diferi de cel al raportului (o firmă poate avea și Declarația 177, și sponsorizare, cu regimuri diferite). Gol = cel al raportului.
+export const MECANISME_PROIECT = [
+  { id: "", eticheta: "Ca în raport" },
+  { id: "d177", eticheta: "Declarația 177" },
+  { id: "sponsorizare", eticheta: "Sponsorizare" },
+  { id: "donatie", eticheta: "Donație" },
+] as const;
+export type MecanismProiect = (typeof MECANISME_PROIECT)[number]["id"];
 
 export const STARI_PROIECT = [
   { id: "", eticheta: "Nespecificată" },
@@ -50,6 +59,8 @@ export type ProiectImpact = {
   linkDovada: string; // ordin de plată, factură, raport anonimizat (https)
   titluPublic: string; // dacă e completat, înlocuiește numele intern în raport (ex. fără numele unui copil)
   acordVerificat: boolean; // acordul pentru publicare a fost verificat
+  mecanism: MecanismProiect;
+  referintaContract: string; // număr și dată contract sau recipisă, ca raportul să se poată reconcilia cu documentele
   nealocat: boolean; // sumă primită și încă neafectată unui proiect: apare în listă, dar nu se numără ca proiect
 };
 
@@ -69,6 +80,7 @@ export type DateImpact = {
   model: ModelImpact;
   motivGrafic: Motiv; // inimă cu puls, monogramă sau fără motiv grafic
   ceUrmeaza: string;
+  totalAnterior: number | null; // total din anul anterior, pentru comparație (opțional)
   optiuniViitor: string; // variante pentru anul următor: câte una pe rând, ex. „12.000 lei — 40 de copii examinați”
   ctaText: string;
   ctaLink: string;
@@ -88,7 +100,7 @@ Pentru fiecare proiect vedeți cât a reprezentat contribuția dumneavoastră, c
 
 export const DISCLAIMER_IMPLICIT = "Document informativ, întocmit pe baza evidenței organizației la data raportului. Nu înlocuiește contractul, extrasele de cont sau documentele fiscale și nu constituie recomandare fiscală.";
 
-export const PROIECT_GOL: ProiectImpact = { nume: "", suma: null, data: "", link: "", observatii: "", locatie: "", anDirectionare: null, stare: "", nrBeneficiari: null, linkDovada: "", titluPublic: "", acordVerificat: false, nealocat: false };
+export const PROIECT_GOL: ProiectImpact = { nume: "", suma: null, data: "", link: "", observatii: "", locatie: "", anDirectionare: null, stare: "", nrBeneficiari: null, linkDovada: "", titluPublic: "", acordVerificat: false, mecanism: "", referintaContract: "", nealocat: false };
 
 export const dateImpactGoale = (): DateImpact => ({
   firma: "",
@@ -104,6 +116,7 @@ export const dateImpactGoale = (): DateImpact => ({
   model: "clasic",
   motivGrafic: "inima",
   ceUrmeaza: "",
+  totalAnterior: null,
   optiuniViitor: "",
   ctaText: "",
   ctaLink: "",
@@ -155,6 +168,8 @@ export function curataDateImpact(brut: unknown): DateImpact {
       linkDovada: urlHttp(p.linkDovada),
       titluPublic: text(p.titluPublic, 200),
       acordVerificat: p.acordVerificat === true,
+      mecanism: MECANISME_PROIECT.some((m) => m.id === p.mecanism) ? (p.mecanism as MecanismProiect) : "",
+      referintaContract: text(p.referintaContract, 120),
       nealocat: p.nealocat === true,
     };
   });
@@ -175,6 +190,7 @@ export function curataDateImpact(brut: unknown): DateImpact {
     model: MODELE_IMPACT.some((m) => m.id === b.model) ? (b.model as ModelImpact) : gol.model,
     motivGrafic: curataMotiv(b.motivGrafic),
     ceUrmeaza: typeof b.ceUrmeaza === "string" ? b.ceUrmeaza.slice(0, 800) : "",
+    totalAnterior: numar(b.totalAnterior),
     optiuniViitor: typeof b.optiuniViitor === "string" ? b.optiuniViitor.slice(0, 800) : "",
     ctaText: text(b.ctaText, 120),
     ctaLink: urlHttp(b.ctaLink),

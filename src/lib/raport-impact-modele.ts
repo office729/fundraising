@@ -24,7 +24,8 @@ export type ContextRaport = { organizatie: string; azi: string; identificare?: s
 
 const SANS = `"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif`;
 const SERIF = `Georgia,"Iowan Old Style","Times New Roman",serif`;
-const SANS_SVG = SANS.replace(/"/g, "'");
+// Lista de fonturi fără ghilimele duble, pentru atribute HTML/SVG (cele duble ar închide atributul).
+const SANS_ATR = SANS.replace(/"/g, "'");
 const SERIF_SVG = SERIF.replace(/"/g, "'");
 const LUNI_SCURT = ["ian", "feb", "mar", "apr", "mai", "iun", "iul", "aug", "sep", "oct", "nov", "dec"];
 const lunaScurta = (iso: string) => (/^\d{4}-\d{2}-\d{2}$/.test(iso) ? LUNI_SCURT[Number(iso.slice(5, 7)) - 1] : "");
@@ -169,12 +170,14 @@ function blocFinal(d: DateImpact, simplu = false): string {
   if (simplu) return `<p class="disc">${esc(DISCLAIMER_IMPLICIT)}</p>`;
   const sumaProiecte = d.proiecte.reduce((t, p) => t + (p.suma ?? 0), 0);
   const diferenta = d.totalManual !== null && d.totalManual > sumaProiecte ? `<p class="disc" style="border-top:0;margin-top:14px;padding-top:0">Din totalul de ${esc(lei(d.totalManual))}, ${esc(lei(d.totalManual - sumaProiecte))} nu sunt încă detaliați pe proiecte în lista de mai sus.</p>` : "";
-  return `${diferenta}${d.citat ? `<blockquote class="cit-f">„${esc(d.citat)}”${d.citatAutor ? `<cite>— ${esc(d.citatAutor)}</cite>` : ""}</blockquote>` : ""}${d.ceUrmeaza ? `<div class="cu"><b>Ce urmează</b><p>${esc(d.ceUrmeaza).replace(/\n/g, "<br>")}</p></div>` : ""}${d.optiuniViitor.trim() ? `<div class="cu"><b>Variante pentru anul următor</b><ul style="margin:6px 0 0;padding-left:20px">${d.optiuniViitor.split(/\n/).map((r) => r.trim()).filter(Boolean).map((r) => `<li>${esc(r)}</li>`).join("")}</ul></div>` : ""}${cta}${contact || transp ? `<p class="ctc">${[contact && `Contact: ${contact}`, transp].filter(Boolean).join(" · ")}</p>` : ""}`;
+  const comparatie = d.totalAnterior && d.totalAnterior > 0 ? `<p class="disc" style="border-top:0;margin-top:14px;padding-top:0">Anul anterior: ${esc(lei(d.totalAnterior))}. ${(() => { const t = d.totalManual ?? sumaProiecte; const dif = Math.round(((t - d.totalAnterior) / d.totalAnterior) * 100); return dif === 0 ? "Nivel egal cu anul anterior." : `${dif > 0 ? "Creștere" : "Scădere"} de ${Math.abs(dif)}% față de anul anterior.`; })()}</p>` : "";
+  return `${diferenta}${comparatie}${d.citat ? `<blockquote class="cit-f">„${esc(d.citat)}”${d.citatAutor ? `<cite>— ${esc(d.citatAutor)}</cite>` : ""}</blockquote>` : ""}${d.ceUrmeaza ? `<div class="cu"><b>Ce urmează</b><p>${esc(d.ceUrmeaza).replace(/\n/g, "<br>")}</p></div>` : ""}${d.optiuniViitor.trim() ? `<div class="cu"><b>Variante pentru anul următor</b><ul style="margin:6px 0 0;padding-left:20px">${d.optiuniViitor.split(/\n/).map((r) => r.trim()).filter(Boolean).map((r) => `<li>${esc(r)}</li>`).join("")}</ul></div>` : ""}${cta}${contact || transp ? `<p class="ctc">${[contact && `Contact: ${contact}`, transp].filter(Boolean).join(" · ")}</p>` : ""}`;
 }
 const disclaimer = `<p class="disc">${esc(DISCLAIMER_IMPLICIT)}</p>`;
 const semnatura = (d: DateImpact, c: ContextRaport) => `${blocFinal(d)}${semnaturaSimpla(d, c)}${disclaimer}`;
+const ETICHETE_MECANISM: Record<string, string> = { d177: "Declarația 177", sponsorizare: "Sponsorizare", donatie: "Donație" };
 const ETICHETE_STARE: Record<string, string> = { finalizat: "Finalizat", in_desfasurare: "În desfășurare", partial: "Parțial finanțat" };
-const meta = (p: ProiectImpact) => [p.stare && `<span class="mt"><span class="stare ${p.stare}">${ETICHETE_STARE[p.stare]}</span></span>`, p.locatie && `<span class="mt">${ICON.pin}${esc(p.locatie)}</span>`, p.data && `<span class="mt">${ICON.cal}${esc(lunaAn(p.data))}</span>`, p.anDirectionare && `<span class="mt">${ICON.inima}Direcționare ${p.anDirectionare}</span>`, p.nrBeneficiari && `<span class="mt">${p.nrBeneficiari} ${p.nrBeneficiari === 1 ? "beneficiar" : "beneficiari"}</span>`, p.linkDovada && `<span class="mt"><a href="${esc(p.linkDovada)}" target="_blank" rel="noopener noreferrer">Dovadă</a></span>`].filter(Boolean).join("");
+const meta = (p: ProiectImpact) => [p.stare && `<span class="mt"><span class="stare ${p.stare}">${ETICHETE_STARE[p.stare]}</span></span>`, p.locatie && `<span class="mt">${ICON.pin}${esc(p.locatie)}</span>`, p.data && `<span class="mt">${ICON.cal}${esc(lunaAn(p.data))}</span>`, p.anDirectionare && `<span class="mt">${ICON.inima}Direcționare ${p.anDirectionare}</span>`, p.nrBeneficiari && `<span class="mt">${p.nrBeneficiari} ${p.nrBeneficiari === 1 ? "beneficiar" : "beneficiari"}</span>`, p.mecanism && `<span class="mt">${ETICHETE_MECANISM[p.mecanism]}</span>`, p.referintaContract && `<span class="mt">${esc(p.referintaContract)}</span>`, p.linkDovada && `<span class="mt"><a href="${esc(p.linkDovada)}" target="_blank" rel="noopener noreferrer">Dovadă</a></span>`].filter(Boolean).join("");
 const obs = (p: ProiectImpact) => (p.observatii ? `<p style="color:var(--m);font-size:13.5px;margin-top:6px">${esc(p.observatii)}</p>` : "");
 const goal = `<p style="color:var(--m);padding:18px 0">Nu sunt proiecte adăugate încă.</p>`;
 const nrProiecte = (d: DateImpact) => proiecteSortate(d).filter((p) => !p.nealocat).length;
@@ -281,21 +284,6 @@ function carduri(d: DateImpact, c: ContextRaport): string {
 }
 
 // --- 5. Scrisoare de mulțumire --------------------------------------------------------------------------------------------------------
-
-function scrisoare(d: DateImpact, c: ContextRaport): string {
-  const css = `.foaie{max-width:760px}.banda{height:8px;background:linear-gradient(90deg,var(--a),var(--b))}.hartie{padding:44px 64px 56px;font-family:${SERIF};font-size:17px;line-height:1.75}
-.ant{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding-bottom:20px;border-bottom:1px solid var(--l);margin-bottom:34px;font-family:${SANS}}.ant .dr{text-align:right;color:var(--m);font-size:13px}.ant .dr .lgo{margin-bottom:6px;display:block}.ant .dr .lgo img{margin-left:auto}
-.hartie p{margin:0 0 14px}.hartie .lead{font-size:17px}
-.lst{margin:22px 0 24px;padding:0;list-style:none;font-family:${SANS}}.lst li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:baseline;padding:8px 0;font-size:15px}.lst li:before{content:"";width:8px;height:8px;border-radius:50%;background:var(--a);display:block;align-self:center}.lst .pct{border-bottom:1px dotted #b9b2b3;transform:translateY(-4px);min-width:16px}.lst .su{font-weight:700;color:var(--b)}.lst small{display:block;color:var(--m);font-size:12.5px}
-.tot{background:var(--c);border-radius:12px;padding:16px 22px;font-family:${SANS};display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:8px 0 28px}.tot b{font-family:${SERIF};font-size:32px;color:var(--a)}
-.semn b{font-size:30px}.puls{margin-top:22px;color:var(--a);width:200px;height:36px}@media(max-width:640px){.hartie{padding:28px 22px 36px;font-size:16px}}`;
-  const li = proiecteSortate(d).map((p) => `<li><span>${nume(p)}${p.data || p.locatie ? `<small>${[p.locatie && esc(p.locatie), p.data && esc(lunaAn(p.data))].filter(Boolean).join(" · ")}</small>` : ""}</span><span class="pct"></span><span class="su nr">${p.suma !== null ? lei(p.suma) : ""}</span></li>`).join("");
-  const firma = d.logoFirma ? `<span class="lgo"><img src="${esc(d.logoFirma)}" alt="${esc(d.firma)}"></span>` : "";
-  return doc(`Mulțumire — ${d.firma}`, d, css, `<main class="foaie"><div class="banda"></div><div class="hartie"><div class="ant"><div>${d.logoOng ? `<span class="lgo"><img src="${esc(d.logoOng)}" alt="${esc(c.organizatie)}"></span>` : `<span class="onm" style="color:var(--b)">${esc(c.organizatie)}</span>`}</div><div class="dr">${firma}${esc(dataLunga(c.azi))}</div></div>
-<p>Stimată conducere ${esc(d.firma || "a companiei")},</p>${paragrafe(d)}${li ? `<ul class="lst">${li}</ul>` : ""}<div class="tot"><span>Total susținut</span><b class="nr">${lei(totalImpact(d))}</b></div><p>Cu recunoștință și respect,</p>${semnatura(d, c)}<div class="puls">${ecg("currentColor", 0.9)}</div></div></main>`);
-}
-
-// --- 6. Minimal -----------------------------------------------------------------------------------------------------------------------
 
 function minimal(d: DateImpact, c: ContextRaport): string {
   const total = totalImpact(d);
@@ -415,24 +403,6 @@ function mozaic(d: DateImpact, c: ContextRaport): string {
 
 // --- 13. Certificat -------------------------------------------------------------------------------------------------------------------
 
-function certificat(d: DateImpact, c: ContextRaport): string {
-  const total = totalImpact(d);
-  const colt = (transf: string) => `<svg viewBox="0 0 80 80" width="64" height="64" style="position:absolute;${transf}" aria-hidden="true"><path d="M4 4h46M4 4v46" stroke="var(--a)" stroke-width="3" fill="none"/><path d="M14 14h26M14 14v26" stroke="var(--a)" stroke-width="1.2" fill="none"/><circle cx="24" cy="24" r="4" fill="var(--a)"/></svg>`;
-  const css = `.foaie{max-width:1000px}.cert{position:relative;margin:22px;padding:46px 70px 44px;border:2px solid var(--a);min-height:640px;text-align:center;background:radial-gradient(circle at 50% 0,var(--ab),#fff 55%)}.cert:before{content:"";position:absolute;inset:8px;border:1px solid color-mix(in srgb,var(--a) 40%,#fff);pointer-events:none}
-.cert .cb{justify-content:center}.cert .tt{font-family:${SERIF};font-size:15px;letter-spacing:.42em;text-transform:uppercase;color:var(--b);margin-top:26px}.cert .div{display:flex;align-items:center;justify-content:center;gap:14px;color:var(--a);margin:10px 0}.cert .div:before,.cert .div:after{content:"";width:90px;height:1px;background:var(--a);opacity:.5}
-.cert .se{font-style:italic;color:var(--m);font-family:${SERIF};font-size:17px}.cert h1{font-family:${SERIF};font-style:italic;font-weight:400;font-size:54px;line-height:1.1;color:var(--b);margin:8px 0 16px}.cert .tx{max-width:620px;margin:0 auto;font-family:${SERIF};font-size:16.5px;line-height:1.7;color:var(--t)}
-.cert .tot{font-family:${SERIF};font-size:46px;font-weight:700;color:var(--a);margin:22px 0 2px;letter-spacing:-.02em}.cert .pj{font-size:13px;color:var(--m);max-width:640px;margin:8px auto 0;line-height:1.7}.cert .sg{display:grid;grid-template-columns:1fr auto 1fr;gap:26px;align-items:end;margin-top:34px}.cert .sg div.l{border-top:1px solid var(--t);padding-top:6px;font-size:13px;color:var(--m)}.cert .sg b{display:block;color:var(--t);font-family:${SERIF};font-style:italic;font-weight:400;font-size:19px}
-@media(max-width:700px){.cert{padding:34px 22px;margin:10px}.cert h1{font-size:36px}.cert .sg{grid-template-columns:1fr}.cert .sg svg{margin:0 auto}}`;
-  const sigiliu = `<svg viewBox="0 0 120 120" width="108" height="108" role="img" aria-label="Sigiliu"><defs><path id="cs" d="M60 60m-44 0a44 44 0 1 1 88 0a44 44 0 1 1-88 0"/><linearGradient id="sg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--a)"/><stop offset="1" stop-color="var(--b)"/></linearGradient></defs><circle cx="60" cy="60" r="57" fill="url(#sg)"/><circle cx="60" cy="60" r="52" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="1"/><circle cx="60" cy="60" r="31" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="1"/><text font-size="9.5" letter-spacing="2.6" fill="#fff" font-family="${SANS_SVG}" font-weight="700"><textPath href="#cs" startOffset="0">${esc(c.organizatie.toUpperCase().slice(0, 28))} · RECUNOȘTINȚĂ ·</textPath></text><path d="M60 78 46 64c-5-5-4-13 2-16 5-2 9 0 12 4 3-4 7-6 12-4 6 3 7 11 2 16z" fill="#fff"/></svg>`;
-  const lista = proiecteSortate(d).map(nume).join(" · ");
-  return doc(`Certificat de recunoștință — ${d.firma}`, d, css, `<main class="foaie"><section class="cert">${colt("left:10px;top:10px")}${colt("right:10px;top:10px;transform:scaleX(-1)")}${colt("left:10px;bottom:10px;transform:scaleY(-1)")}${colt("right:10px;bottom:10px;transform:scale(-1,-1)")}
-${cobrand(d, c)}<div class="tt">Certificat de recunoștință</div><div class="div">${ICON.inima}</div><div class="se">se acordă cu mulțumire companiei</div><h1>${esc(d.firma || "—")}</h1>
-<div class="tx">${paragrafe(d, false)}</div><div class="tot nr">${lei(total)}</div><div style="font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--m)">${textProiecte(d)}${perioadaImpact(d) ? ` · ${esc(perioadaImpact(d))}` : ""}</div>${lista ? `<div class="pj">${lista}</div>` : ""}
-<div class="sg"><div class="l"><b>${esc(d.autor || c.organizatie)}</b>${esc(c.organizatie)}</div>${sigiliu}<div class="l"><b>${esc(dataLunga(c.azi))}</b>Data acordării</div></div></section></main>`, "A4 landscape");
-}
-
-// --- 14. Prezentare (diapozitive 16:9) ------------------------------------------------------------------------------------------------
-
 function prezentare(d: DateImpact, c: ContextRaport): string {
   const total = totalImpact(d);
   const ps = proiecteSortate(d);
@@ -488,6 +458,37 @@ function analitic(d: DateImpact, c: ContextRaport): string {
 <div class="pie">${semnatura(d, c)}${inima(54, "n1")}</div></main>`);
 }
 
+// --- O cifră pe pagină ----------------------------------------------------------------------------------------------------------------
+
+function oCifra(d: DateImpact, c: ContextRaport): string {
+  const total = totalImpact(d);
+  const css = `.cv{padding:60px 64px 52px;background:linear-gradient(165deg,var(--c),#fff 70%)}.cv .sus{display:flex;justify-content:space-between;align-items:center;gap:14px;font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--m)}
+.cv h1{font-size:28px;line-height:1.15;margin-top:54px;color:var(--b)}.cv .t{font-family:${SERIF};font-size:124px;line-height:.95;font-weight:700;color:var(--a);letter-spacing:-.045em;margin:26px 0 8px}.cv .mic{color:var(--m);font-size:11.5px;letter-spacing:.2em;text-transform:uppercase}.cv .txt{margin-top:38px;max-width:560px}
+.bx{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:36px;align-items:center;padding:46px 64px;border-top:1px solid var(--l)}.bx:nth-of-type(even){background:var(--ab)}.bx .s{font-family:${SERIF};font-size:52px;font-weight:700;color:var(--b);letter-spacing:-.03em;line-height:1}.bx .s small{display:block;font-family:${SANS};font-size:11.5px;font-weight:400;letter-spacing:.16em;text-transform:uppercase;color:var(--m);margin-top:10px}.bx h3{font-family:${SERIF};font-size:21px;line-height:1.3}.bx .mm{margin-top:6px}
+.cf{padding:34px 64px 44px}@media(max-width:640px){.cv{padding:30px 22px}.cv .t{font-size:70px}.bx{grid-template-columns:1fr;gap:12px;padding:30px 22px}.cf{padding:26px 22px}}`;
+  const fise = proiecteSortate(d)
+    .map((p) => `<section class="bx nopb"><div class="s nr">${p.suma !== null ? lei(p.suma) : "—"}<small>${esc(procentTxt(p, total))}</small></div><div><h3>${nume(p)}</h3><div class="mm">${meta(p)}</div>${obs(p)}</div></section>`)
+    .join("");
+  return doc(`Raport de impact — ${d.firma}`, d, css, `<main class="foaie"><section class="cv"><div class="sus">${cobrand(d, c)}<span>${esc(perioadaImpact(d))}</span></div><h1>${esc(d.firma || "—")}</h1><div class="t nr">${lei(total)}</div><div class="mic">${textProiecte(d)} susținute</div><div class="txt">${paragrafe(d)}</div></section>${fise || `<div class="cf">${goal}</div>`}<div class="cf">${semnatura(d, c)}</div></main>`);
+}
+
+// --- Gazetă ---------------------------------------------------------------------------------------------------------------------------
+
+function gazeta(d: DateImpact, c: ContextRaport): string {
+  const total = totalImpact(d);
+  const css = `.gz{padding:34px 48px 44px;font-family:${SERIF}}.gz .mh{border-top:6px solid var(--t);border-bottom:1px solid var(--t);padding:12px 0;display:flex;justify-content:space-between;align-items:center;gap:14px;position:relative}.gz .mh:after{content:"";position:absolute;left:0;right:0;bottom:-5px;border-bottom:1px solid var(--t)}.gz .ed{display:flex;justify-content:space-between;gap:14px;font-family:${SANS};font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--m);padding:14px 0 8px}
+.gz h1{font-size:50px;line-height:1.02;font-weight:700;letter-spacing:-.025em;color:var(--b);margin:6px 0 8px}.gz .dec{font-style:italic;font-size:18px;color:var(--m);border-bottom:1px solid var(--l);padding-bottom:16px}.gz .col{column-count:2;column-gap:34px;column-rule:1px solid var(--l);margin-top:18px;text-align:justify;hyphens:auto}.gz .col p{margin:0 0 10px}.gz .cifre{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin:22px 0;border-top:2px solid var(--t);border-bottom:2px solid var(--t)}.gz .cifre div{padding:14px 16px;border-left:1px solid var(--l)}.gz .cifre div:first-child{border-left:0;padding-left:0}.gz .cifre b{display:block;font-size:34px;line-height:1.05;color:var(--a)}.gz .cifre small{font-family:${SANS};font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--m)}
+.gz .st{column-count:2;column-gap:34px;column-rule:1px solid var(--l)}.gz .st article{break-inside:avoid;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--l)}.gz .st h3{font-size:19px;line-height:1.25}.gz .st .sm{font-family:${SANS};font-size:12px;font-weight:700;color:var(--a);margin-top:3px}.gz .st .mm{margin-top:4px}@media(max-width:640px){.gz{padding:22px 20px}.gz h1{font-size:34px}.gz .col,.gz .st{column-count:1}}`;
+  const stiri = proiecteSortate(d)
+    .map((p) => `<article class="nopb"><h3>${nume(p)}</h3><div class="sm nr">${p.suma !== null ? lei(p.suma) : ""}</div><div class="mm">${meta(p)}</div>${obs(p)}</article>`)
+    .join("");
+  return doc(`Raport de impact — ${d.firma}`, d, css, `<main class="foaie"><div class="gz"><div class="mh">${cobrand(d, c)}<span style="font-family:${SANS_ATR};font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--m)">Raport de impact</span></div><div class="ed"><span>${esc(dataLunga(c.azi))}</span><span>${esc(perioadaImpact(d))}</span></div>
+<h1>${esc(d.firma || "—")}</h1><div class="dec">Ce a făcut sprijinul dumneavoastră: ${esc(textProiecte(d))}, ${esc(lei(total))}.</div>
+<div class="col">${aplicaPlaceholdere(d.narativ, d).map((p) => `<p>${p}</p>`).join("")}</div>
+<div class="cifre"><div><b class="nr">${lei(total)}</b><small>Total susținut</small></div><div><b class="nr">${nrProiecte(d)}</b><small>${nrProiecte(d) === 1 ? "Proiect" : "Proiecte"}</small></div><div><b style="font-size:20px;line-height:1.25">${esc(perioadaImpact(d) || "—")}</b><small>Perioadă</small></div></div>
+<div class="st">${stiri || goal}</div>${semnatura(d, c)}</div></main>`);
+}
+
 export function randeazaRaportImpact(d: DateImpact, c: ContextRaport, model: ModelImpact = d.model): string {
   seteazaMotiv(d.motivGrafic, c.organizatie);
   const html = randeazaModel(d, c, model);
@@ -501,7 +502,7 @@ function randeazaModel(d: DateImpact, c: ContextRaport, model: ModelImpact): str
     case "executiv": return executiv(d, c);
     case "editorial": return editorial(d, c);
     case "carduri": return carduri(d, c);
-    case "scrisoare": return scrisoare(d, c);
+    case "o-cifra": return oCifra(d, c);
     case "minimal": return minimal(d, c);
     case "cronologic": return cronologic(d, c);
     case "infografic": return infografic(d, c);
@@ -509,7 +510,7 @@ function randeazaModel(d: DateImpact, c: ContextRaport, model: ModelImpact): str
     case "o-pagina": return oPagina(d, c);
     case "afis": return afis(d, c);
     case "mozaic": return mozaic(d, c);
-    case "certificat": return certificat(d, c);
+    case "gazeta": return gazeta(d, c);
     case "prezentare": return prezentare(d, c);
     case "analitic": return analitic(d, c);
     default: return clasic(d, c);
