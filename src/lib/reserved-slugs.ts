@@ -13,6 +13,7 @@ const RESERVED_SLUGS = new Set([
   "ce-facem",
   "cine-suntem",
   "intrebari-frecvente",
+  "previzualizare-campanii",
   "contact",
   "coordonator",
   "cookies",
