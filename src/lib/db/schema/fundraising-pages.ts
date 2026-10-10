@@ -69,6 +69,8 @@ export const fundraisingDonations = pgTable(
       .notNull()
       .references(() => organizations.id, { onDelete: "cascade" }),
     numeDonator: text("nume_donator"),
+    // Etichetă de marketing din utm_* (ex. „newsletter|email|campanie”); nu e dată personală. Vezi documentation/verificari-surse.sql.
+    sursaMarketing: text("sursa_marketing"),
     emailDonator: text("email_donator"),
     telefonDonator: text("telefon_donator"),
     suma: integer("suma").notNull(), // lei

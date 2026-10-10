@@ -9,6 +9,7 @@ import { paletaDinHex } from "@/lib/raport-impact-culori";
 import type { InfoOrganizatie } from "@/lib/scrisori";
 
 import { GalerieSabloane } from "../_comun/galerie-sabloane";
+import { asiguraVerificareAction } from "../_comun/documente-actions";
 import { GeneratorDocument, type Banner, type GrupDef } from "../_comun/generator-document";
 
 const accenteOrg = (o: InfoOrganizatie) => {
@@ -69,12 +70,17 @@ const GRUPURI: GrupDef[] = [
       { cheie: "semn2Functie", eticheta: "Funcția", jumatate: true },
     ],
   },
+  {
+    titlu: "Verificare online",
+    subtitlu: "Pe certificat apar un cod QR și adresa unei pagini publice care confirmă că a fost emis de organizație.",
+    campuri: [{ cheie: "verificareOnline", eticheta: "Verificare online", tip: "bifa", placeholder: "Cod de verificare și pagină publică (arată numele destinatarului, titlul, data, numărul și emitentul)", ajutor: "Debifează dacă numele destinatarului nu trebuie să fie public, de exemplu la un voluntar. Pagina oferă și butoane de distribuire pe LinkedIn." }],
+  },
   { titlu: "Organizația", campuri: [{ cheie: "antetNume", eticheta: "Numele organizației (apare în sigiliu)" }, { cheie: "motivGrafic", eticheta: "Motiv grafic", tip: "select", optiuni: MOTIVE, ajutor: "Ce apare în centrul sigiliului și în decor." }] },
 ];
 
 const PERSONALE = ["destinatar", "detaliu", "citat", "logoDestinatar", "nrCertificat", "semn1Nume", "semn1Functie", "semn2Nume", "semn2Functie"];
 
-export function GeneratorCertificate({ orgSlug, org, azi, model, semnatar, dateIni, firmaId, bannere }: { orgSlug: string; org: InfoOrganizatie; azi: string; model?: string; semnatar: { nume: string; functie: string }; dateIni?: Record<string, unknown>; firmaId: string | null; bannere: Banner[] }) {
+export function GeneratorCertificate({ orgSlug, org, azi, model, semnatar, dateIni, firmaId, bannere, siteUrl }: { siteUrl: string; orgSlug: string; org: InfoOrganizatie; azi: string; model?: string; semnatar: { nume: string; functie: string }; dateIni?: Record<string, unknown>; firmaId: string | null; bannere: Banner[] }) {
   const modelValid = MODELE_CERTIFICATE.some((m) => m.id === model) ? (model as DateCertificat["model"]) : undefined;
   const initial = useMemo<DateCertificat>(() => {
     const d = dateCertificatGoale({ nume: org.nume, logo: org.logo, acc: accenteOrg(org) }, azi);
@@ -104,7 +110,13 @@ export function GeneratorCertificate({ orgSlug, org, azi, model, semnatar, dateI
       datePregatite={!!dateIni}
       firmaId={firmaId}
       bannere={bannere}
-      ajutor="Alegi șablonul și tipul certificatului, scrii numele destinatarului și vezi certificatul în dreapta, în timp real. „Salvează ca PDF” descarcă direct fișierul. Certificatul e un gest de recunoaștere, nu un document oficial."
+      pregatesteExport={async (d) => {
+        if (!d.verificareOnline) return d;
+        const r = await asiguraVerificareAction(orgSlug, { cod: d.codVerificare, destinatar: d.destinatar, titlu: d.titlu, data: d.data, numar: d.nrCertificat });
+        if (!r.ok) throw new Error(r.eroare);
+        return { ...d, codVerificare: r.cod, urlVerificare: `${siteUrl}/v/${r.cod}` };
+      }}
+      ajutor="Alegi șablonul și tipul certificatului, scrii numele destinatarului și vezi certificatul în dreapta, în timp real. „Salvează ca PDF” descarcă direct fișierul. Certificatul e un gest de recunoaștere, nu un document oficial. La export primește un cod QR și o pagină publică de verificare."
     />
   );
 }

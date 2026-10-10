@@ -137,6 +137,15 @@ const POLICIES = [
   `create policy crm_kv_tenant_isolation on crm_kv
     using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
     with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  // certificate_verificari: certificatele emise de organizație (izolare pe org) + citirea publică a unui certificat după cod.
+  // ⚠️ Politica publică deschide SELECT pe tot tabelul cât timp GUC-ul e activ: interogarea paginii /v/<cod> are mereu `where cod = …`
+  // și selectează doar coloanele afișate pe certificat.
+  `create policy certificate_verificari_tenant_isolation on certificate_verificari
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy certificate_verificari_public_lookup on certificate_verificari for select using (
+    nullif(current_setting('app.public_lookup', true), '') = 'true'
+  )`,
   // company_sponsorizari / company_notite — modulul CRM Companii (Calm Impact),
   // orgId denormalizat direct pe rând (ca la contacts) — izolare simplă.
   `create policy company_sponsorizari_tenant_isolation on company_sponsorizari
@@ -814,6 +823,7 @@ const POLICIES = [
 ];
 
 const FORCE_TABLES = [
+  "certificate_verificari",
   "organizations",
   "platform_payments",
   "memberships",

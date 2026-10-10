@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useRef, useState, useSyncExternalStore, type FormEvent } from "react";
 
 import type { Locale } from "@/lib/i18n/config";
 import { DONATION_DICT } from "@/lib/i18n/dictionaries/donation";
@@ -12,6 +12,16 @@ import { NotaInformareDonatie } from "./nota-informare-donatie";
 import { useActionStatePastrat } from "@/lib/use-action-state-pastrat";
 
 const INITIAL: DoneazaState = { error: null };
+
+const abonareNula = () => () => {};
+function eticheta(): string {
+  const q = new URLSearchParams(window.location.search);
+  return ["utm_source", "utm_medium", "utm_campaign"]
+    .map((k) => (q.get(k) ?? "").trim().toLowerCase().replace(/[^a-z0-9_.:+ -]/g, ""))
+    .filter(Boolean)
+    .join("|")
+    .slice(0, 100);
+}
 const SUME_RAPIDE = [25, 50, 100, 250];
 // Donația lunară pornește de la sume mai mici: un donator care dă 20 de lei pe lună rămâne ani, iar 250 de lei lunar sperie.
 const SUME_LUNARE = [10, 20, 35, 50];
@@ -46,6 +56,9 @@ export function DoneazaForm({
   const [state, formAction, pending, valori] = useActionStatePastrat(action, INITIAL);
   const [suma, setSuma] = useState(50);
   const [recurenta, setRecurenta] = useState(false);
+  // De unde a venit donatorul: eticheta din parametrii utm_* ai linkului (newsletter, rețele sociale, one-pager). Se citește din adresa paginii la
+  // trimitere, nu se păstrează nimic pe dispozitiv, iar eticheta nu identifică persoana.
+  const sursaMarketing = useSyncExternalStore(abonareNula, eticheta, () => "");
   const t = DONATION_DICT[locale].donateForm;
   const formRef = useRef<HTMLFormElement>(null);
   const revolut = metoda === "revolut";
@@ -132,6 +145,7 @@ export function DoneazaForm({
         </button>
       </div>
       <input type="hidden" name="recurenta" value={recurenta ? "1" : ""} />
+      <input type="hidden" name="sursaMarketing" value={sursaMarketing} />
 
       {paypal ? (
         <>

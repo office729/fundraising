@@ -54,6 +54,9 @@ export type DateCertificat = Accente & {
   semn2Nume: string;
   semn2Functie: string;
   motivGrafic: Motiv;
+  verificareOnline: boolean; // certificatul primește un cod și o pagină publică de verificare
+  codVerificare: string; // atribuit la export
+  urlVerificare: string; // adresa paginii publice (https)
 };
 
 export function dateCertificatGoale(o: { nume: string; logo?: string; acc?: Accente }, azi: string): DateCertificat {
@@ -79,6 +82,9 @@ export function dateCertificatGoale(o: { nume: string; logo?: string; acc?: Acce
     semn2Nume: "",
     semn2Functie: "",
     motivGrafic: motivImplicit(o.nume),
+    verificareOnline: true,
+    codVerificare: "",
+    urlVerificare: "",
   };
 }
 
@@ -105,6 +111,9 @@ export function curataDateCertificat(brut: unknown, azi = ""): DateCertificat {
     semn2Nume: text(b.semn2Nume, 100),
     semn2Functie: text(b.semn2Functie, 100),
     motivGrafic: curataMotiv(b.motivGrafic),
+    verificareOnline: b.verificareOnline !== false,
+    codVerificare: /^[A-Z0-9]{5}-[A-Z0-9]{5}$/.test(String(b.codVerificare)) ? String(b.codVerificare) : "",
+    urlVerificare: /^https:\/\/[^\s"'<>]{1,200}$/.test(String(b.urlVerificare)) ? String(b.urlVerificare) : "",
   };
 }
 

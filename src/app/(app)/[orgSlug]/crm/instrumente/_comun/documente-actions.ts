@@ -1,11 +1,11 @@
 "use server";
 
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 
 import { and, desc, eq, isNull, sql } from "drizzle-orm";
 
 import { withOrgSession, type OrgContext } from "@/lib/auth/guard";
-import { angajati, appUsers, companies, companySponsorizari, crmKv, roluri } from "@/lib/db/schema";
+import { angajati, appUsers, certificateVerificari, companies, companySponsorizari, crmKv, roluri } from "@/lib/db/schema";
 import { caleDoc, multumiriRestante, TIPURI_DOC, type Intrare, type Restanta, type Stare, type TipDoc } from "@/lib/documente-istoric";
 
 // Scrisori, certificate și rapoarte: numerotare automată pe an, istoricul documentelor exportate și date preluate din CRM (semnatar, firmă).
@@ -134,3 +134,43 @@ export const dateFirmaAction = withOrgSession(async (ctx, companyId: string): Pr
 
 // Mulțumiri de trimis: sponsorizări mai vechi de 14 zile fără nicio scrisoare bifată ca „trimisă” (cele mai întârziate primele).
 export const multumiriRestanteAction = withOrgSession(async (ctx): Promise<Restanta[]> => multumiriRestante(ctx.db, ctx.orgId, new Date().toISOString().slice(0, 10)));
+
+// ───────── Verificarea publică a certificatelor ─────────
+// Alfabet fără caractere ușor de confundat (0/O, 1/I/L): codul se poate citi la telefon sau scrie de mână. 10 caractere ≈ 50 de biți: nu se ghicește.
+const ALFABET_COD = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
+function codNou(): string {
+  const b = randomBytes(10);
+  const c = Array.from(b, (x) => ALFABET_COD[x % ALFABET_COD.length]).join("");
+  return `${c.slice(0, 5)}-${c.slice(5)}`;
+}
+
+// Prima dată creează înregistrarea (cu codul), apoi, la fiecare export, o actualizează cu datele curente ale certificatului:
+// pagina publică arată mereu ce scrie pe certificatul emis.
+export const asiguraVerificareAction = withOrgSession(
+  async (ctx, intrare: { cod: string; destinatar: string; titlu: string; data: string; numar: string }): Promise<{ ok: true; cod: string } | { ok: false; eroare: string }> => {
+    const destinatar = String(intrare.destinatar ?? "").trim().slice(0, 160);
+    const titlu = String(intrare.titlu ?? "").trim().slice(0, 120);
+    const data = /^\d{4}-\d{2}-\d{2}$/.test(String(intrare.data)) ? String(intrare.data) : new Date().toISOString().slice(0, 10);
+    const numar = String(intrare.numar ?? "").trim().slice(0, 60) || null;
+    if (!destinatar) return { ok: false, eroare: "Completează numele destinatarului ca să poți emite codul de verificare." };
+    const cod = String(intrare.cod ?? "");
+    if (/^[A-Z0-9]{5}-[A-Z0-9]{5}$/.test(cod)) {
+      const r = await ctx.db
+        .update(certificateVerificari)
+        .set({ destinatar, titlu: titlu || "Certificat", dataEmitere: data, numar, orgNume: ctx.orgName, updatedAt: new Date() })
+        .where(and(eq(certificateVerificari.orgId, ctx.orgId), eq(certificateVerificari.cod, cod)))
+        .returning({ id: certificateVerificari.id });
+      if (r[0]) return { ok: true, cod };
+    }
+    for (let i = 0; i < 5; i++) {
+      const nou = codNou();
+      const r = await ctx.db
+        .insert(certificateVerificari)
+        .values({ orgId: ctx.orgId, cod: nou, destinatar, titlu: titlu || "Certificat", dataEmitere: data, numar, orgNume: ctx.orgName, orgSlug: ctx.orgSlug, creatDe: ctx.userId })
+        .onConflictDoNothing()
+        .returning({ id: certificateVerificari.id });
+      if (r[0]) return { ok: true, cod: nou };
+    }
+    return { ok: false, eroare: "Nu am putut crea codul de verificare. Încearcă din nou." };
+  },
+);

@@ -22,3 +22,4 @@ export * from "./kpi";
 export * from "./voluntari-panou";
 export * from "./donatori-pf";
 export * from "./performanta";
+export * from "./certificate-verificari";

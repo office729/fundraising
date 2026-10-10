@@ -2,7 +2,7 @@
 
 import { ClipboardCopy, Download, Eye, FileDown, LayoutGrid, Palette, Pencil, RotateCcw, Trash2, Upload } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { descarcaBlob, htmlInPdf } from "@/lib/html-in-pdf";
 import { raporteazaEroare } from "@/lib/monitoring";
@@ -17,7 +17,7 @@ import { Camp } from "./camp";
 import { MeniuExport } from "./meniu-export";
 import { inregistreazaDocumentAction, urmatorulNumarAction, type TipDoc } from "./documente-actions";
 
-export type CampDef = { cheie: string; eticheta: string; tip?: "text" | "textarea" | "data" | "select"; optiuni?: readonly { id: string; eticheta: string }[]; ajutor?: string; placeholder?: string; rows?: number; jumatate?: boolean };
+export type CampDef = { cheie: string; eticheta: string; tip?: "text" | "textarea" | "data" | "select" | "bifa"; optiuni?: readonly { id: string; eticheta: string }[]; ajutor?: string; placeholder?: string; rows?: number; jumatate?: boolean };
 export type GrupDef = { titlu: string; subtitlu?: string; campuri: CampDef[] };
 export type TipDef = { id: string; eticheta: string; patch: Record<string, string> };
 export type ModelDef = { id: string; eticheta: string; hint: string };
@@ -48,6 +48,8 @@ export type GeneratorProps<D extends Date_> = {
   firmaId?: string | null;
   bannere?: Banner[];
   avertizare?: (d: D) => string | null;
+  // Pregătirea documentului înainte de export (ex. emiterea codului de verificare): întoarce datele finale sau aruncă o eroare cu mesaj pentru utilizator.
+  pregatesteExport?: (curat: D) => Promise<D>;
   ajutor: string;
 };
 
@@ -60,6 +62,33 @@ function semnatura(t: string): string {
 
 const ZILE_CIORNA = 14;
 const MS_ZI = 86_400_000;
+
+// Banda cu miniaturi: modelele văzute cu datele curente, ca să alegi după aspect, nu după nume. Se desenează doar cât timp e deschisă
+// (cu o mică întârziere față de tastare), iar miniaturile se încarcă pe măsură ce intră în ecran.
+function MiniaturaModel({ html, activ, eticheta, onAlege }: { html: string; activ: boolean; eticheta: string; onAlege: () => void }) {
+  const cutie = useRef<HTMLButtonElement>(null);
+  const [vizibil, setVizibil] = useState(false);
+  useEffect(() => {
+    const el = cutie.current;
+    if (!el) return;
+    const io = new IntersectionObserver((e) => e.some((x) => x.isIntersecting) && (setVizibil(true), io.disconnect()), { rootMargin: "120px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  // Lățimea documentului (px) se citește din CSS-ul lui: 794 = portret, 1123 = peisaj.
+  const lat = Number(/max-width:(\d+)px/.exec(html)?.[1] ?? 794);
+  const cadruLat = 118;
+  const scara = cadruLat / lat;
+  const inalt = lat <= 800 ? Math.round(lat * 1.414) : Math.round(lat * 0.707);
+  return (
+    <button ref={cutie} type="button" onClick={onAlege} aria-pressed={activ} title={eticheta} className={`shrink-0 rounded-lg border p-1 text-left focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none ${activ ? "border-[var(--ci-primary)] ring-2 ring-[var(--ci-primary)]" : "border-[var(--ci-border)] hover:border-[var(--ci-primary)]"}`}>
+      <span className="relative block overflow-hidden rounded bg-[#ebe8e8]" style={{ width: cadruLat, height: Math.round(inalt * scara) }} aria-hidden>
+        {vizibil && <iframe title="" tabIndex={-1} srcDoc={html} sandbox="" className="pointer-events-none absolute top-0 left-0 border-0" style={{ width: lat, height: inalt + 60, transform: `scale(${scara})`, transformOrigin: "0 0" }} />}
+      </span>
+      <span className="mt-1 block max-w-[118px] truncate text-[11.5px] font-medium text-[var(--ci-text)]">{eticheta}</span>
+    </button>
+  );
+}
 
 // Generator de documente: formularul în stânga, designul în dreapta, în timp real (de la 1024 px lățime; pe ecran mic, filele Editez / Previzualizez).
 export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
@@ -134,6 +163,9 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
   const curat = useMemo(() => curata(date), [date, curata]);
   const html = useMemo(() => randeaza(curat), [curat, randeaza]);
   const modelAles = p.modele.find((m) => m.id === date.model) ?? p.modele[0];
+  const [bandaDeschisa, setBandaDeschisa] = useState(false);
+  const curatAmanat = useDeferredValue(curat);
+  const miniaturi = useMemo(() => (bandaDeschisa ? p.modele.map((m) => ({ id: m.id, eticheta: m.eticheta, html: randeaza({ ...curatAmanat, model: m.id }) })) : []), [bandaDeschisa, curatAmanat, p.modele, randeaza]);
   const avertisment = p.avertizare?.(curat) ?? null;
   const val = (k: string) => (typeof date[k] === "string" ? (date[k] as string) : "");
 
@@ -162,13 +194,13 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
   }
 
   // Fiecare export se înregistrează în istoricul organizației (cu datele, ca să poată fi redeschis).
-  function inregistreaza() {
-    const semn = semnatura(html);
+  function inregistreaza(htmlX: string = html, curatX: D = curat) {
+    const semn = semnatura(htmlX);
     if (semn === ultimaInregistrare.current) return;
     ultimaInregistrare.current = semn;
     // Logo-urile (date de imagine mari) nu se trimit: se iau din Setări la redeschidere.
-    const faraLogo = { ...curat, logoOng: "", logoDestinatar: "", logoFirma: "" };
-    inregistreazaDocumentAction(p.orgSlug, p.cheieTool, { titlu: p.titluIstoric(curat), firmaId: p.firmaId ?? null, numar: p.numerotare ? val(p.numerotare.cheie) : "", date: faraLogo })
+    const faraLogo = { ...curatX, logoOng: "", logoDestinatar: "", logoFirma: "" };
+    inregistreazaDocumentAction(p.orgSlug, p.cheieTool, { titlu: p.titluIstoric(curatX), firmaId: p.firmaId ?? null, numar: p.numerotare ? String(curatX[p.numerotare.cheie] ?? "") : "", date: faraLogo })
       .then((r) => {
         if (r.ok) {
           setModificat(false);
@@ -186,13 +218,28 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
       });
   }
 
+  // Documentul final pentru export: dacă generatorul cere o pregătire (cod de verificare), se face întâi; datele noi intră și în formular.
+  async function pregateste(): Promise<{ html: string; curatFinal: D } | null> {
+    if (!p.pregatesteExport) return { html, curatFinal: curat };
+    try {
+      const nou = p.curata(await p.pregatesteExport(curat));
+      setDate((prev) => ({ ...prev, ...nou }));
+      return { html: randeaza(nou), curatFinal: nou };
+    } catch (e) {
+      setEroare(e instanceof Error ? e.message : "Nu am putut pregăti documentul pentru export.");
+      return null;
+    }
+  }
+
   async function copiaza() {
     setEroare(null);
+    const f = await pregateste();
+    if (!f) return;
     try {
-      await navigator.clipboard.writeText(html);
+      await navigator.clipboard.writeText(f.html);
     } catch {
       const t = document.createElement("textarea");
-      t.value = html;
+      t.value = f.html;
       t.setAttribute("readonly", "");
       t.style.cssText = "position:fixed;opacity:0;top:0;left:0";
       document.body.appendChild(t);
@@ -202,34 +249,39 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
       if (!ok) return setEroare("Nu am putut copia codul. Folosește „Descarcă HTML”.");
     }
     setInfo("Codul HTML a fost copiat.");
-    inregistreaza();
+    inregistreaza(f.html, f.curatFinal);
     setTimeout(() => setInfo(null), 6000);
   }
   const numeSigur = () => p.numeFisier(curat).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || p.cheieTool;
-  function descarca() {
+  async function descarca() {
+    const f = await pregateste();
+    if (!f) return;
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([html], { type: "text/html;charset=utf-8" }));
+    a.href = URL.createObjectURL(new Blob([f.html], { type: "text/html;charset=utf-8" }));
     a.download = `${numeSigur()}.html`;
     document.body.appendChild(a);
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 4000);
     setInfo("Fișierul a fost descărcat.");
-    inregistreaza();
+    inregistreaza(f.html, f.curatFinal);
     setTimeout(() => setInfo(null), 6000);
   }
   // „Salvează ca PDF” descarcă direct un fișier PDF (pagină-imagine de înaltă rezoluție). Dacă browserul nu poate, se deschide tipărirea.
   async function pdf() {
     setEroare(null);
     setSeFacePdf(true);
+    let f: { html: string; curatFinal: D } | null = null;
     try {
-      const { blob, imaginiOmise } = await htmlInPdf(html);
+      f = await pregateste();
+      if (!f) return;
+      const { blob, imaginiOmise } = await htmlInPdf(f.html);
       descarcaBlob(blob, `${numeSigur()}.pdf`);
-      inregistreaza();
+      inregistreaza(f.html, f.curatFinal);
       setInfo(imaginiOmise ? `PDF descărcat, dar ${imaginiOmise === 1 ? "un logo nu a putut fi inclus" : `${imaginiOmise} logo-uri nu au putut fi incluse`} (adresa lui nu e permisă sau nu a răspuns). Încarcă logoul din calculator, ca fișier.` : "PDF-ul a fost descărcat.");
       setTimeout(() => setInfo(null), 8000);
     } catch (e) {
-      raporteazaEroare("pdf-direct", e, { tip: p.cheieTool, ua: navigator.userAgent.slice(0, 160), lungime: html.length });
+      raporteazaEroare("pdf-direct", e, { tip: p.cheieTool, ua: navigator.userAgent.slice(0, 160), lungime: (f?.html ?? html).length });
       setInfo("Nu am putut crea PDF-ul direct în acest browser. Se deschide tipărirea: alege „Salvează ca PDF”.");
       setTimeout(() => setInfo(null), 8000);
       tipareste();
@@ -237,19 +289,24 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
       setSeFacePdf(false);
     }
   }
-  function tipareste() {
+  async function tipareste() {
+    const f = await pregateste();
+    if (!f) return;
     const ruleaza = () => {
       const w = cadru.current?.contentWindow;
       if (w) {
         w.focus();
         w.print();
-        inregistreaza();
+        inregistreaza(f.html, f.curatFinal);
       } else setEroare("Previzualizarea nu e încărcată încă. Încearcă din nou.");
     };
+    // Dacă documentul s-a schimbat la pregătire (cod nou), previzualizarea are nevoie de un moment ca să se redeseneze înainte de tipărire.
+    const asteapta = f.html !== html ? 450 : 0;
     if (vedere === "editez" && window.matchMedia("(max-width: 1023px)").matches) {
       setVedere("previz");
-      setTimeout(ruleaza, 250);
-    } else ruleaza();
+      setTimeout(ruleaza, 250 + asteapta);
+    } else if (asteapta) setTimeout(ruleaza, asteapta);
+    else ruleaza();
   }
   function reseteaza() {
     setConf({
@@ -383,6 +440,16 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
                 ))}
               </Select>
             </Camp>
+            <button type="button" onClick={() => setBandaDeschisa((v) => !v)} aria-expanded={bandaDeschisa} className="mt-2 text-[12.5px] font-semibold text-[var(--ci-primary)] underline focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
+              {bandaDeschisa ? "Ascunde miniaturile" : "Alege după aspect, cu miniaturi"}
+            </button>
+            {bandaDeschisa && (
+              <div className="ci-scrollbar mt-2 flex gap-2 overflow-x-auto pb-2" role="group" aria-label="Modele, cu miniaturi">
+                {miniaturi.map((m) => (
+                  <MiniaturaModel key={m.id} html={m.html} activ={m.id === date.model} eticheta={m.eticheta} onAlege={() => actualizeaza({ model: m.id } as Partial<D>)} />
+                ))}
+              </div>
+            )}
             {p.tipuri && (
               <Camp className="mt-3" eticheta={p.tipuri.eticheta} ajutor="Alegerea completează textul de pornire; îl poți schimba liber.">
                 <Select value={val(p.tipuri.cheie)} onChange={(e) => schimbaTip(e.target.value)}>
@@ -457,7 +524,12 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
                       ) : undefined
                     }
                   >
-                    {c.tip === "select" ? (
+                    {c.tip === "bifa" ? (
+                      <label className="flex items-start gap-2 text-[13px] text-[var(--ci-text)]">
+                        <input type="checkbox" checked={date[c.cheie] === true} onChange={(e) => actualizeaza({ [c.cheie]: e.target.checked } as Partial<D>)} className="mt-0.5 size-4" />
+                        <span>{c.placeholder}</span>
+                      </label>
+                    ) : c.tip === "select" ? (
                       <Select value={val(c.cheie)} onChange={(e) => actualizeaza({ [c.cheie]: e.target.value } as Partial<D>)}>
                         {c.optiuni?.map((o) => (
                           <option key={o.id} value={o.id}>

@@ -3,6 +3,7 @@
 import { A4_PEISAJ, A4_PORTRET, docShell, esc, inimaPuls, linieEcg, logoImg, SERIF, SANS, SANS_SVG, SERIF_SVG } from "./documente-comun";
 import { linieCertificat, motivCertificat, type DateCertificat, type ModelCertificat } from "./certificate";
 import { literaCurenta, motivCurent, seteazaMotiv } from "./motiv";
+import { qrSvg } from "./qr";
 import { dataLunga } from "./raport-impact";
 
 function mareaNume(n: string, baza = 3.8): string {
@@ -55,8 +56,13 @@ const COMUN = `.pag{aspect-ratio:297/210;display:flex;flex-direction:column}
 
 // Mențiunea „document simbolic” stă pe orice certificat: „certificat” poate fi citit ca act oficial sau fiscal, iar nu e.
 const SIMB = '<div class="simb">Document simbolic de recunoaștere, fără valoare fiscală sau oficială.</div>';
+// Verificarea online: un cod QR mic în colț și adresa paginii, în rândul de mențiuni; apare doar după ce certificatul a primit codul (la export).
+const verificare = (d: DateCertificat) =>
+  d.verificareOnline && d.codVerificare && d.urlVerificare
+    ? `<div class="vfq">${qrSvg(d.urlVerificare, "5.2cqw")}</div><div class="vft">Verifică autenticitatea: ${esc(d.urlVerificare.replace(/^https:\/\//, ""))}</div>`
+    : "";
 const P = (d: DateCertificat, css: string, corp: string, portret = false) =>
-  docShell(`Certificat — ${d.destinatar || "document"}`, d, COMUN + css + ".simb{position:absolute;left:0;right:0;bottom:.8cqw;text-align:center;font:.7em/1.2 sans-serif;letter-spacing:.04em;opacity:.55;color:inherit;z-index:5;pointer-events:none}", corp.replace(/(<div class="pag[^"]*">)/, "$1" + SIMB), portret ? A4_PORTRET : A4_PEISAJ);
+  docShell(`Certificat — ${d.destinatar || "document"}`, d, COMUN + css + ".vfq{position:absolute;right:1.6cqw;bottom:1.4cqw;z-index:6;border-radius:.4cqw;overflow:hidden;box-shadow:0 0 0 .25cqw #fff}.vft{position:absolute;left:0;right:0;bottom:2.1cqw;text-align:center;font:.66em/1.2 sans-serif;letter-spacing:.03em;opacity:.7;color:inherit;z-index:5;pointer-events:none}.simb{position:absolute;left:0;right:0;bottom:.8cqw;text-align:center;font:.7em/1.2 sans-serif;letter-spacing:.04em;opacity:.55;color:inherit;z-index:5;pointer-events:none}", corp.replace(/(<div class="pag[^"]*">)/, "$1" + SIMB + verificare(d)), portret ? A4_PORTRET : A4_PEISAJ);
 
 function clasic(d: DateCertificat): string {
   const b = bucati(d);

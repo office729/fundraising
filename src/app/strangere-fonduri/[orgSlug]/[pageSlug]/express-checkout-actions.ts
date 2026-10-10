@@ -235,6 +235,7 @@ async function creeazaAbonamentRedirect(
     consimtamantTermeni: date.consimtamantTermeni,
     consimtamantWhatsapp: date.consimtamantWhatsapp,
     consimtamantEmail: date.consimtamantEmail,
+    sursaMarketing: date.sursaMarketing,
     stripeSessionId: paymentIntentId,
     stripeSubscriptionId: subscription.id,
     recurenta: true,
@@ -302,6 +303,7 @@ async function creeazaPlataUnicaExpress(
     consimtamantTermeni: date.consimtamantTermeni,
     consimtamantWhatsapp: date.consimtamantWhatsapp,
     consimtamantEmail: date.consimtamantEmail,
+    sursaMarketing: date.sursaMarketing,
     // Aceeași coloană generică ca la Checkout Session (id de sesiune) și ca
     // la reînnoirile de abonament ("invoice_..."): "orice identificator
     // Stripe unic al acestei încercări de plată".
@@ -399,6 +401,7 @@ async function creeazaAbonamentExpress(date: DateComuneDonatie, eroareGenerica: 
     consimtamantTermeni: date.consimtamantTermeni,
     consimtamantWhatsapp: date.consimtamantWhatsapp,
     consimtamantEmail: date.consimtamantEmail,
+    sursaMarketing: date.sursaMarketing,
     // stripeSessionId = id-ul PaymentIntent-ului primei facturi, la fel ca la
     // donația unică express — payment_intent.succeeded (stripe-donation-events.ts)
     // caută după exact această coloană, indiferent unic/recurent.

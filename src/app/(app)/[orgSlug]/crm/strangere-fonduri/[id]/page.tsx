@@ -21,7 +21,7 @@ const getDetaliuCampanie = withOrgSession(async (ctx, id: string) => {
   if (ctx.role !== "owner" && ctx.role !== "admin") {
     throw new EroareUtilizator("Necesită rol de admin sau owner în organizație.");
   }
-  const [pagina, [{ donatiiReusite }], actualizari, [org]] = await Promise.all([
+  const [pagina, [{ donatiiReusite }], actualizari, [org], surse] = await Promise.all([
     ctx.db
       .select()
       .from(fundraisingPages)
@@ -33,15 +33,23 @@ const getDetaliuCampanie = withOrgSession(async (ctx, id: string) => {
       .where(and(eq(fundraisingDonations.pageId, id), eq(fundraisingDonations.status, "reusita"))),
     ctx.db.select().from(fundraisingUpdates).where(eq(fundraisingUpdates.pageId, id)).orderBy(desc(fundraisingUpdates.data)),
     ctx.db.select({ customPlanConfig: organizations.customPlanConfig }).from(organizations).where(eq(organizations.id, ctx.orgId)).limit(1),
+    // Sursele donațiilor reușite, după eticheta utm_* a linkului (fără etichetă = direct).
+    ctx.db
+      .select({ sursa: sql<string>`coalesce(${fundraisingDonations.sursaMarketing}, 'direct')`, donatii: sql<number>`count(*)::int`, suma: sql<number>`coalesce(sum(${fundraisingDonations.suma}), 0)::int` })
+      .from(fundraisingDonations)
+      .where(and(eq(fundraisingDonations.pageId, id), eq(fundraisingDonations.orgId, ctx.orgId), eq(fundraisingDonations.status, "reusita")))
+      .groupBy(sql`coalesce(${fundraisingDonations.sursaMarketing}, 'direct')`)
+      .orderBy(desc(sql`coalesce(sum(${fundraisingDonations.suma}), 0)`))
+      .limit(8),
   ]);
   const customPlanConfig = org?.customPlanConfig as CustomPlanConfigSaved | null;
   const templateuriDisponibile = getTemplatesDisponibile(ctx.orgDomeniuActivitate, Boolean(customPlanConfig?.accesDesignToate));
-  return { pagina: pagina[0] ?? null, donatiiReusite, actualizari, templateuriDisponibile };
+  return { pagina: pagina[0] ?? null, donatiiReusite, actualizari, templateuriDisponibile, surse };
 });
 
 export default async function PaginaDetaliuPage({ params }: { params: Promise<{ orgSlug: string; id: string }> }) {
   const { orgSlug, id } = await params;
-  const { pagina, donatiiReusite, actualizari, templateuriDisponibile } = await getDetaliuCampanie(orgSlug, id);
+  const { pagina, donatiiReusite, actualizari, templateuriDisponibile, surse } = await getDetaliuCampanie(orgSlug, id);
   if (!pagina) notFound();
 
   const locale = await getLocale();
@@ -88,6 +96,27 @@ export default async function PaginaDetaliuPage({ params }: { params: Promise<{ 
         </Card>
       </div>
 
+      {locale === "ro" && (
+        <Card>
+          <CardHeader title="De unde vin donațiile" subtitle="După eticheta linkului (utm_source, utm_medium, utm_campaign). Fără etichetă, donația apare ca „direct”." />
+          {surse.length === 0 ? (
+            <p className="text-[13px] text-[var(--ci-text-muted)]">Nicio donație reușită încă.</p>
+          ) : (
+            <ul className="divide-y divide-[var(--ci-border)]">
+              {surse.map((r) => (
+                <li key={r.sursa} className="flex items-center justify-between gap-3 py-2 text-[13px]">
+                  <span className="min-w-0 truncate font-medium text-[var(--ci-text)]">{r.sursa}</span>
+                  <span className="ci-tabular shrink-0 text-[var(--ci-text-muted)]">
+                    {r.donatii} {r.donatii === 1 ? "donație" : "donații"} · {r.suma.toLocaleString("ro-RO")} lei
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="mt-3 text-[12px] text-[var(--ci-text-muted)]">Ca să vezi sursa, adaugă la linkul din newsletter sau de pe rețele, de exemplu: <span className="font-mono">?utm_source=newsletter&amp;utm_medium=email&amp;utm_campaign=numele-campaniei</span></p>
+        </Card>
+      )}
+
       <Card>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <CardHeader title="Povestea campaniei" subtitle="Textul afișat pe pagina publică." />
@@ -95,6 +124,27 @@ export default async function PaginaDetaliuPage({ params }: { params: Promise<{ 
         </div>
         <p className="text-[13px] leading-relaxed whitespace-pre-wrap text-[var(--ci-text)]">{pagina.poveste}</p>
       </Card>
+
+      {locale === "ro" && (
+        <Card>
+          <CardHeader title="De unde vin donațiile" subtitle="După eticheta linkului (utm_source, utm_medium, utm_campaign). Fără etichetă, donația apare ca „direct”." />
+          {surse.length === 0 ? (
+            <p className="text-[13px] text-[var(--ci-text-muted)]">Nicio donație reușită încă.</p>
+          ) : (
+            <ul className="divide-y divide-[var(--ci-border)]">
+              {surse.map((r) => (
+                <li key={r.sursa} className="flex items-center justify-between gap-3 py-2 text-[13px]">
+                  <span className="min-w-0 truncate font-medium text-[var(--ci-text)]">{r.sursa}</span>
+                  <span className="ci-tabular shrink-0 text-[var(--ci-text-muted)]">
+                    {r.donatii} {r.donatii === 1 ? "donație" : "donații"} · {r.suma.toLocaleString("ro-RO")} lei
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="mt-3 text-[12px] text-[var(--ci-text-muted)]">Ca să vezi sursa, adaugă la linkul din newsletter sau de pe rețele, de exemplu: <span className="font-mono">?utm_source=newsletter&amp;utm_medium=email&amp;utm_campaign=numele-campaniei</span></p>
+        </Card>
+      )}
 
       <Card>
         <div className="flex flex-wrap items-center justify-between gap-2">

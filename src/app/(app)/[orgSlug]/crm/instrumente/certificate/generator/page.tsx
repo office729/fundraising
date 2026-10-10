@@ -12,7 +12,7 @@ export default async function GeneratorPagina({ params, searchParams }: { params
   const sp = await searchParams;
   const access = await requireOrgAccess(orgSlug);
   const { org, semnatar, dateIni, firmaId, bannere } = await pregatesteGenerator(orgSlug, access, sp, "certificate");
-  return <GeneratorCertificate orgSlug={orgSlug} org={org} azi={new Date().toISOString().slice(0, 10)} model={typeof sp.model === "string" ? sp.model : undefined} semnatar={semnatar} dateIni={dateIni} firmaId={firmaId} bannere={bannere} />;
+  return <GeneratorCertificate orgSlug={orgSlug} org={org} azi={new Date().toISOString().slice(0, 10)} model={typeof sp.model === "string" ? sp.model : undefined} semnatar={semnatar} dateIni={dateIni} firmaId={firmaId} bannere={bannere} siteUrl={(process.env.NEXT_PUBLIC_SITE_URL || "https://alexandrit.ro").replace(/\/$/, "")} />;
 }
 
 export async function generateMetadata() {

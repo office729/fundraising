@@ -17,6 +17,7 @@ const RESERVED_SLUGS = new Set([
   "dezabonare",
   ".well-known",
   "f230",
+  "v",
   "favicon.ico",
   "forgot-password",
   "dpa",

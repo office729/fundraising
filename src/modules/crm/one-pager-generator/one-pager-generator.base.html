@@ -11,7 +11,6 @@
   .top h1 { margin:0; font-size:17px; font-weight:800; }
   .top .btns button { border:0; border-radius:50px; padding:10px 18px; font-size:13px; font-weight:800; cursor:pointer; margin-left:8px; }
   #copyBtn { background:#fff; color:#C41D33; }
-  #printBtn { background:rgba(255,255,255,.15); color:#fff; border:1.5px solid rgba(255,255,255,.6) !important; }
   .wrap { display:flex; height:calc(100vh - 62px); }
   select#TEMPLATE { width:100%; padding:9px 10px; border:1.5px solid #E4DFD7; border-radius:8px; font-size:13px; font-family:inherit; background:#fff; cursor:pointer; }
   select#TEMPLATE:focus { outline:none; border-color:#E0263C; }
@@ -94,7 +93,7 @@
   .top .btns > button, .top .more > summary { margin:0; display:inline-flex; align-items:center; gap:8px; border:1px solid #D9D3C9; background:#fff; color:#3A352F; border-radius:8px; padding:8px 13px; font-size:13px; font-weight:600; cursor:pointer; line-height:1.2; transition:background .15s, border-color .15s; font-family:inherit; }
   .top .btns > button:hover, .top .more > summary:hover { background:#F6F3EE; border-color:#C9C2B6; }
   .top .btns svg { width:16px; height:16px; flex:none; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
-  .top .btns > #copyBtn, .top .btns > #printBtn { }
+  .top .btns > #printBtn { background:#fff; color:#3A352F; border-color:#D9D3C9; }
   .top .btns > #copyBtn { background:#C41D33; border-color:#C41D33; color:#fff; font-weight:700; padding:9px 16px; box-shadow:0 1px 2px rgba(196,29,51,.25); }
   .top .btns > #copyBtn:hover { background:#A9172B; border-color:#A9172B; }
   .top .more { position:relative; }
@@ -120,6 +119,7 @@
   @media (max-width:640px){ .top .btns .menu { right:auto; left:0; min-width:min(300px, 86vw); } .top .btns { margin-left:0; } }
 </style>
 <script src="/vendor/jspdf.umd.min.js"></script>
+<script src="/vendor/qrcode.js"></script>
 <script>(function(){function d(){return document.querySelector('.top .more');}document.addEventListener('click',function(e){var m=d();if(m&&m.open&&(!m.contains(e.target)||(e.target.closest&&e.target.closest('.menu button'))))m.open=false;});document.addEventListener('keydown',function(e){var m=d();if(e.key==='Escape'&&m&&m.open){m.open=false;var s=m.querySelector('summary');if(s)s.focus();}});})();</script>
 </head>
 <body>
@@ -195,6 +195,9 @@
     <input type="text" id="IMPLICA_CTA" value="Devino partener">
     <label>Link (site / pagină de contact)</label>
     <input type="text" id="LINK" value="https://salveazaoinima.ro">
+    <label>Cod QR către (opțional)</label>
+    <input type="text" id="QR_LINK" value="" placeholder="https://… (ex. pagina de donație)">
+    <div class="hint">Dacă completezi, jos apare un cod QR care duce la acest link. Linkurile primesc automat etichete utm (sursa „onepager”), ca să vezi în statistici ce a adus documentul.</div>
 
     <h2>Hai să vorbim</h2>
     <div class="grid2">
@@ -3813,10 +3816,40 @@ function toast(msg){
 
 function esc(s){ return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
+/* Etichete utm pe un link https: sursa „onepager”, mediul (onepager/qr) și campania (organizația + luna). Un link care are deja utm_ rămâne neschimbat. */
+function cuUtm(u, mediu){
+  u = (u || '').trim();
+  if(!/^https?:\/\//i.test(u) || /[?&]utm_/i.test(u)) return u;
+  var org = (document.getElementById('ORG_NUME').value || 'organizatie').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'organizatie';
+  var luna = new Date().toISOString().slice(0, 7);
+  var hash = '';
+  var i = u.indexOf('#'); if(i >= 0){ hash = u.slice(i); u = u.slice(0, i); }
+  return u + (u.indexOf('?') < 0 ? '?' : '&') + 'utm_source=onepager&utm_medium=' + mediu + '&utm_campaign=' + org + '-' + luna + hash;
+}
+/* Codul QR din josul paginii: SVG inline (un singur path), adăugat ca ultim element din pagină; documentul rămâne autonom. */
+function cuQr(html){
+  var link = cuUtm(document.getElementById('QR_LINK').value, 'qr');
+  if(!link || typeof qrcode !== 'function') return html;
+  var qr = qrcode(0, 'M'); qr.addData(link); qr.make();
+  var n = qr.getModuleCount(), m = 2, cale = '';
+  for(var r = 0; r < n; r++) for(var c = 0; c < n; c++) if(qr.isDark(r, c)) cale += 'M' + (c + m) + ' ' + (r + m) + 'h1v1h-1z';
+  var lat = n + m * 2;
+  var svg = '<svg viewBox="0 0 ' + lat + ' ' + lat + '" style="display:block;width:84px;height:84px;flex:none" shape-rendering="crispEdges" role="img" aria-label="Cod QR"><rect width="' + lat + '" height="' + lat + '" fill="#fff"/><path d="' + cale + '" fill="#111"/></svg>';
+  var d = new DOMParser().parseFromString(html, 'text/html');
+  var pag = d.querySelector('.page');
+  if(!pag) return html;
+  var cutie = d.createElement('div');
+  cutie.setAttribute('style', 'display:flex;align-items:center;gap:16px;padding:14px 28px;background:#fff;border-top:1px solid #e5e5e5;color:#222;font:600 12.5px/1.45 Arial,sans-serif');
+  cutie.innerHTML = svg + '<div>Scanează codul ca să ajungi direct la pagină<br><span style="font-weight:400;color:#666;word-break:break-all">' + esc(link.replace(/^https?:\/\//i, '').replace(/[?#].*$/, '')) + '</span></div>';
+  pag.appendChild(cutie);
+  return '<!DOCTYPE html>\n' + d.documentElement.outerHTML;
+}
+
 function build(){
   var out = tplCurent();
   ['ORG_NUME','TAGLINE','INTRO_TITLU','PROBLEMA_TITLU','CEFACEM_TITLU','IMPLICA_CTA','LINK','CONTACT_TEL','CONTACT_EMAIL','CONTACT_WEB','CONTACT_ADRESA','N1','L1','N2','L2','N3','L3','N4','L4'].forEach(function(id){
     var v = document.getElementById(id).value;
+    if(id === 'LINK') v = cuUtm(v, 'onepager');
     out = out.split('{{' + id + '}}').join(esc(v));
   });
   ['INTRO_TEXT','MISIUNE_TEXT','PROBLEMA_TEXT','CEFACEM_TEXT','IMPLICA_TEXT'].forEach(function(id){
@@ -3833,7 +3866,7 @@ function build(){
   out = out.split('{{BR_PRIMARY}}').join(br.primary);
   out = out.split('{{BR_DARK}}').join(br.dark);
   out = out.split('{{BR_LIGHT}}').join(br.light);
-  return out;
+  return cuQr(out);
 }
 
 function refresh(){

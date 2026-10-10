@@ -2193,6 +2193,14 @@ var VARIANT = 'pj';
 var tpl = document.getElementById('tpl').textContent;
 document.getElementById('SCRISOARE').value = document.getElementById('letterDefault').textContent.trim();
 
+/* Etichete utm pe linkul de donație: sursa „newsletter”, mediul „email” și campania (organizația + luna); un link care are deja utm_ rămâne neschimbat.
+   Pagina de campanie citește etichetele la donație și arată în CRM de unde au venit donațiile. */
+function cuUtm(u){
+  u = (u || '').trim();
+  if(!/^https?:\/\//i.test(u) || /[?&]utm_/i.test(u)) return u;
+  var hash = '', i = u.indexOf('#'); if(i >= 0){ hash = u.slice(i); u = u.slice(0, i); }
+  return u + (u.indexOf('?') < 0 ? '?' : '&') + 'utm_source=newsletter&utm_medium=email&utm_campaign=__FA_ORG_SLUG__-' + new Date().toISOString().slice(0, 7) + hash;
+}
 function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 var PSTYLE = 'margin:0 0 16px 0; font-size:17px; line-height:28px; color:#55504A;';
 function letterHtml(txt){
@@ -2231,12 +2239,13 @@ function build(forExport, letterOverride){
   var _d=isDesign();
   if(_d){
     var dout=document.getElementById(_d).textContent;
-    ['LINK','PREHEADER','PERIOADA','HERO','D_HEADLINE','D_LEAD','D_STATBIG','D_STATLABEL','D_QUOTE','D_QAUTHOR','D_N1','D_L1','D_N2','D_L2','D_N3','D_L3','D_CTA','TERMEN'].forEach(function(id){var e=document.getElementById(id);if(e){dout=dout.split('{{'+id+'}}').join(esc(e.value));}});
+    ['LINK','PREHEADER','PERIOADA','HERO','D_HEADLINE','D_LEAD','D_STATBIG','D_STATLABEL','D_QUOTE','D_QAUTHOR','D_N1','D_L1','D_N2','D_L2','D_N3','D_L3','D_CTA','TERMEN'].forEach(function(id){var e=document.getElementById(id);if(e){dout=dout.split('{{'+id+'}}').join(esc(id==='LINK'?cuUtm(e.value):e.value));}});
     return dout;
   }
   var out = tpl;
   ['TITLU','HERO_TITLU','PREHEADER','PERIOADA','LINK','S1','S2','S3','S4','S5','HERO','LOGO_IMG','SLOGAN'].forEach(function(id){
-    out = out.split('{{' + id + '}}').join(esc(document.getElementById(id).value));
+    var vl = document.getElementById(id).value;
+    out = out.split('{{' + id + '}}').join(esc(id === 'LINK' ? cuUtm(vl) : vl));
   });
   var hasLogo = !!document.getElementById('LOGO_IMG').value.trim();
   out = out.replace(hasLogo ? /<!--LOGOTXT_START-->[\s\S]*?<!--LOGOTXT_END-->/ : /<!--LOGO_START-->[\s\S]*?<!--LOGO_END-->/, '');

@@ -99,6 +99,8 @@ export async function updateSession(request: NextRequest, rewriteTo?: URL) {
     path.startsWith("/s/") ||
     // Panoul voluntarilor (/voluntar/<cod>): pagină publică, fără cont; accesul îl dă codul din link, verificat în server.
     path.startsWith("/voluntar/") ||
+    // Verificarea publică a unui certificat (/v/<cod>): oricine primește linkul sau scanează codul QR, fără cont.
+    path.startsWith("/v/") ||
     // Paginile de strângere fonduri create de susținători (peer-to-peer) —
     // creare, vizualizare și donație sunt toate publice, neautentificate.
     path.startsWith("/strangere-fonduri/");

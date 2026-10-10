@@ -32,6 +32,8 @@ export type DateComuneDonatie = {
   consimtamantTermeni: boolean;
   consimtamantWhatsapp: boolean;
   consimtamantEmail: boolean;
+  // Eticheta de marketing din utm_* (ex. „newsletter|email|campanie”), curățată; nu e dată personală.
+  sursaMarketing: string | null;
   orgId: string;
   pageId: string;
   titlu: string;
@@ -43,6 +45,12 @@ export type DateComuneDonatie = {
 // Session, mai jos) cât și de fluxul express (Apple Pay/Google Pay/PayPal,
 // vezi express-checkout-actions.ts), ca să nu se dubleze regulile în două
 // locuri care ar putea diverge silențios.
+// Doar litere mici, cifre și separatori simpli, cel mult 100 de caractere: o etichetă de campanie, nu text liber.
+function curataSursa(v: FormDataEntryValue | null): string | null {
+  const t = String(v ?? "").trim().toLowerCase().slice(0, 100);
+  return /^[a-z0-9_.:|+ -]+$/.test(t) ? t : null;
+}
+
 export async function pregatesteDonatie(
   orgSlug: string,
   pageSlug: string,
@@ -146,6 +154,7 @@ export async function pregatesteDonatie(
       consimtamantTermeni,
       consimtamantWhatsapp,
       consimtamantEmail,
+      sursaMarketing: curataSursa(formData.get("sursaMarketing")),
       orgId: rezolvat.orgId,
       pageId: rezolvat.pageId,
       titlu: rezolvat.titlu,
@@ -181,6 +190,7 @@ export async function doneazaAction(
     consimtamantTermeni,
     consimtamantWhatsapp,
     consimtamantEmail,
+    sursaMarketing,
     orgId,
     pageId,
     titlu,
@@ -259,6 +269,7 @@ export async function doneazaAction(
       consimtamantTermeni,
       consimtamantWhatsapp,
       consimtamantEmail,
+      sursaMarketing,
       stripeSessionId: session.id,
       recurenta,
     });
