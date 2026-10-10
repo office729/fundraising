@@ -26,6 +26,8 @@ export const fundraisingPages = pgTable(
     // sub prefix "<orgSlug>/campanie-*" — nu mai trebuie un bucket separat.
     imagineUrl: text("imagine_url"),
     sumaTinta: integer("suma_tinta"), // lei; null = fără țintă afișată
+    // Termenul campaniei (opțional, doar informativ: nu închide singur campania și nu oprește donațiile). „YYYY-MM-DD”.
+    termen: date("termen", { mode: "string" }),
     sumaStransa: integer("suma_stransa").notNull().default(0), // lei, cache
     numeCreator: text("nume_creator").notNull(),
     emailCreator: text("email_creator").notNull(),

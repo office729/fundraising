@@ -5,7 +5,7 @@ import type { CampanieForm } from "./campanie-validare";
 
 const VERSIUNE = 1;
 const cheie = (orgSlug: string) => `campanie-draft:${orgSlug}`;
-const CAMPURI: (keyof CampanieForm)[] = ["titlu", "template", "sumaTinta", "judet", "localitate", "poveste", "numeCreator", "emailCreator"];
+const CAMPURI: (keyof CampanieForm)[] = ["titlu", "template", "sumaTinta", "termen", "judet", "localitate", "poveste", "numeCreator", "emailCreator"];
 
 export type DraftCampanie = { v: number; form: CampanieForm; pas: number; salvatLa: string };
 
@@ -15,8 +15,10 @@ export function citesteDraft(orgSlug: string): DraftCampanie | null {
     if (!brut) return null;
     const d = JSON.parse(brut) as DraftCampanie;
     if (d?.v !== VERSIUNE || typeof d.form !== "object" || d.form === null) return null;
-    if (CAMPURI.some((c) => typeof d.form[c] !== "string")) return null;
-    return { v: VERSIUNE, form: d.form, pas: Number.isInteger(d.pas) ? Math.min(4, Math.max(0, d.pas)) : 0, salvatLa: String(d.salvatLa ?? "") };
+    // Draftul salvat înainte de câmpul „termen” nu îl are: se completează gol.
+    const form: CampanieForm = { ...d.form, termen: typeof d.form.termen === "string" ? d.form.termen : "" };
+    if (CAMPURI.some((c) => typeof form[c] !== "string")) return null;
+    return { v: VERSIUNE, form, pas: Number.isInteger(d.pas) ? Math.min(4, Math.max(0, d.pas)) : 0, salvatLa: String(d.salvatLa ?? "") };
   } catch {
     return null;
   }

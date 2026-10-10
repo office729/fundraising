@@ -21,6 +21,8 @@ import {
 import { htmlEmailMultumireDonatie, subiectEmailMultumireDonatie } from "@/lib/donation-email-template";
 import { emailConfigurat, trimiteEmail } from "@/lib/email";
 import { stergeFisierePrivate } from "@/lib/fisiere-private";
+import { TEXTE_CAMPANIE } from "./campanie-texte";
+import { aziRo, parseazaTermen } from "./campanie-validare";
 import { crediteazaPaginaSiDonator } from "@/lib/fundraising-credit";
 import { slugify } from "@/lib/slugify";
 import { createClient } from "@/lib/supabase/server";
@@ -107,6 +109,8 @@ export const creeazaPaginaAdminAction = withOrgAdmin(
       }
       sumaTinta = n;
     }
+    const termen = parseazaTermen(str("termen"), aziRo());
+    if (termen.eroare) return { error: TEXTE_CAMPANIE.ro.erori[termen.eroare] };
 
     // Aspectul (domeniul) cerut se acceptă doar dacă e permis organizației — la fel ca la editare; altfel rămâne cel implicit.
     const [org] = await ctx.db
@@ -138,6 +142,7 @@ export const creeazaPaginaAdminAction = withOrgAdmin(
       titlu,
       poveste,
       sumaTinta,
+      termen: termen.valoare,
       numeCreator,
       emailCreator,
       judet,
@@ -180,6 +185,9 @@ export const editeazaPaginaAdminAction = withOrgAdmin(
       }
       sumaTinta = n;
     }
+    // La editare un termen deja depășit se acceptă (campanie veche); doar valoarea trebuie să fie o dată validă.
+    const termen = parseazaTermen(str("termen"), aziRo(), true);
+    if (termen.eroare) return { error: TEXTE_CAMPANIE.ro.erori[termen.eroare] };
 
     // Nu avem încredere în ce trimite clientul — recalculăm lista de
     // template-uri permise din org-ul real, ca la creare (creeaza/actions.ts).
@@ -200,6 +208,7 @@ export const editeazaPaginaAdminAction = withOrgAdmin(
         titlu,
         poveste,
         sumaTinta,
+        termen: termen.valoare,
         numeCreator,
         emailCreator,
         judet,

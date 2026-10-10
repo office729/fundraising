@@ -13,6 +13,8 @@ import { DONATION_DICT } from "@/lib/i18n/dictionaries/donation";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { FARA_METODE_REDIRECT, metodeRedirect } from "@/lib/metode-plata-donatii";
 
+import { aziRo, zileRamase } from "@/app/(app)/[orgSlug]/crm/strangere-fonduri/campanie-validare";
+
 import { CampaignFooter } from "../campaign-footer";
 import { BaraDoneazaMobil } from "./bara-doneaza-mobil";
 import { DoneazaModal } from "./doneaza-modal";
@@ -241,6 +243,14 @@ export default async function PaginaStrangereFonduriPage({
                   {pagina.sumaTinta && t.campaignPage.dinTinta(pagina.sumaTinta.toLocaleString(t.numeLocale))}
                   {totalDonatii.toLocaleString(t.numeLocale)} {totalDonatii === 1 ? t.campaignPage.donatie : t.campaignPage.donatii}
                 </span>
+                {pagina.termen && (
+                  <span className="mt-1 block text-sm font-semibold text-brand-blue">
+                    {t.campaignPage.termen(
+                      new Date(`${pagina.termen}T12:00:00`).toLocaleDateString(t.numeLocale, { day: "numeric", month: "long", year: "numeric" }),
+                      zileRamase(pagina.termen, aziRo()),
+                    )}
+                  </span>
+                )}
               </div>
             </div>
 

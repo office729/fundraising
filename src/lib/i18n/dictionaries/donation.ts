@@ -17,6 +17,8 @@ export const DONATION_DICT = {
       leiSuma: (suma: string) => `${suma} lei`,
       dinTinta: (suma: string) => `din ${suma} lei · `,
       dinTintaScurt: (suma: string) => `din ${suma} lei`,
+      termen: (data: string, zile: number) =>
+        zile > 1 ? `Termen: ${data} · ${zile} zile rămase` : zile === 1 ? `Termen: ${data} · mâine e ultima zi` : zile === 0 ? "Termen: azi · ultima zi" : `Termenul campaniei a fost ${data}`,
       donatie: "donație",
       donatii: "donații",
       actualizari: "Actualizări",
@@ -137,6 +139,8 @@ export const DONATION_DICT = {
       leiSuma: (suma: string) => `${suma} lei`,
       dinTinta: (suma: string) => `of ${suma} lei · `,
       dinTintaScurt: (suma: string) => `of ${suma} lei`,
+      termen: (data: string, zile: number) =>
+        zile > 1 ? `Deadline: ${data} · ${zile} days left` : zile === 1 ? `Deadline: ${data} · tomorrow is the last day` : zile === 0 ? "Deadline: today · last day" : `The campaign deadline was ${data}`,
       donatie: "donation",
       donatii: "donations",
       actualizari: "Updates",

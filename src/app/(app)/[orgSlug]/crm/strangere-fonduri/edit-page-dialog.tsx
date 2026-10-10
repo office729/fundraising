@@ -16,6 +16,7 @@ export type PaginaEditabila = {
   titlu: string;
   poveste: string;
   sumaTinta: number | null;
+  termen: string | null;
   numeCreator: string;
   emailCreator: string;
   imagineUrl: string | null;
@@ -114,6 +115,10 @@ export function EditPageDialog({
           <div>
             <Label>{dict.sumaTinta}</Label>
             <Input type="number" name="sumaTinta" min={1} step={1} defaultValue={pagina.sumaTinta ?? ""} />
+          </div>
+          <div>
+            <Label>{dict.termen}</Label>
+            <Input type="date" name="termen" defaultValue={pagina.termen ?? ""} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>

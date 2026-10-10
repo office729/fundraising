@@ -5,9 +5,10 @@ export const MAX_INTRARE_MB = 25;
 const LATIME_MAX = 1600;
 export const RAPORT = 16 / 9;
 
-export function valideazaFisier(f: { type: string; size: number }): string | null {
-  if (!TIPURI_ACCEPTATE.includes(f.type)) return "Folosește o poză JPG, PNG sau WebP.";
-  if (f.size > MAX_INTRARE_MB * 1024 * 1024) return `Poza are peste ${MAX_INTRARE_MB} MB. Alege una mai mică.`;
+// Întoarce un cod („tip” sau „marime”); textul, în limba platformei, e în campanie-texte.ts.
+export function valideazaFisier(f: { type: string; size: number }): "tip" | "marime" | null {
+  if (!TIPURI_ACCEPTATE.includes(f.type)) return "tip";
+  if (f.size > MAX_INTRARE_MB * 1024 * 1024) return "marime";
   return null;
 }
 
@@ -20,7 +21,7 @@ export function citestePoza(fisier: File): Promise<PozaCitita> {
     img.onload = () => rezolva({ url, latime: img.naturalWidth, inaltime: img.naturalHeight });
     img.onerror = () => {
       URL.revokeObjectURL(url);
-      respinge(new Error("Nu am putut citi poza. Încearcă alt fișier."));
+      respinge(new Error("poza"));
     };
     img.src = url;
   });
