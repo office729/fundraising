@@ -184,21 +184,25 @@ nevoie de trei oameni.
 Ce se poate spune deja, public: **28 de milioane de euro strânși în 14 ani, 700+ campanii, 1.500 de persoane ajutate,
 ~70.000 de donații pe an.**
 
-> **De lămurit înainte de publicare — „3 milioane de euro pe an”.** Ai confirmat 3 mil. € ca medie anuală, dar
-> 28 mil. € în 14 ani înseamnă o medie de **2 mil. € pe an**. Cele două cifre nu pot fi publicate împreună așa.
-> Dacă 3 mil. € e ritmul din ultimii ani, atunci e de fapt cea mai bună dovadă de creștere și se formulează așa:
-> *„În ultimii [N] ani strângem în jur de 3 milioane de euro pe an, față de o medie de 2 milioane pe toată perioada.”*
-> Până la lămurire, folosește doar 28 mil. € în 14 ani.
+Confirmat: **lucrăm cu CRM de 4 ani** (din 2022). Asta împarte istoria asociației în două perioade comparabile:
 
-Ce ar transforma asta într-o poveste de creștere (cifre pe ani, de completat):
+| | Primii 10 ani, fără CRM (2012–2021) | Ultimii 4 ani, cu CRM (2022–2026) |
+|---|---|---|
+| Sume strânse, în medie pe an | [DE COMPLETAT] | [DE COMPLETAT] |
+| Donații pe an | [DE COMPLETAT] | ~70.000 |
+| Companii sponsor pe an | [DE COMPLETAT] | [DE COMPLETAT] |
+| Formulare 230 pe an | [DE COMPLETAT] | [DE COMPLETAT] |
+| Oameni în echipă | [DE COMPLETAT] | [DE COMPLETAT] |
 
-| An | Sume strânse | Donatori unici | Donatori care au revenit | Companii sponsor | Formulare 230 | Moment-cheie (instrument introdus) |
-|---|---|---|---|---|---|---|
-| [an] | | | | | | ex. primul tabel centralizat |
-| [an] | | | | | | ex. CRM persoane fizice |
-| [an] | | | | | | ex. CRM companii + contracte automate |
-| [an] | | | | | | ex. pagini de donație online |
-| 2025 | | | | | | |
+Cel mai puternic mesaj ar fi: *„Cu aceeași echipă (sau aproape), în ultimii 4 ani gestionăm de [X] ori mai multe
+donații decât înainte de CRM.”* — dacă cifrele o confirmă.
+
+> **De lămurit înainte de publicare — „3 milioane de euro pe an de 10 ani”.** 10 ani × 3 mil. € = 30 mil. €, mai
+> mult decât totalul publicat de 28 mil. € în 14 ani. Una dintre cifre trebuie corectată:
+> - fie totalul real e mai mare de 28 mil. € (și atunci actualizăm și site-ul);
+> - fie ~3 mil. €/an e ritmul doar din ultimii ani (de ex. de când lucrați cu CRM-ul — ar fi chiar dovada de creștere);
+> - fie 3 mil. € e o estimare rotunjită pentru anii buni.
+> Până la lămurire, în postări folosim doar **28 mil. € în 14 ani** și **~70.000 de donații pe an**.
 
 Un grafic simplu „sume pe ani, cu momentele în care am introdus fiecare instrument” e cea mai convingătoare imagine
 pentru un carusel sau pentru pagina „Studii de caz”.
