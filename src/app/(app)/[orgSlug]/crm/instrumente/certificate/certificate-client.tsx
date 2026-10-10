@@ -4,6 +4,7 @@ import { useMemo } from "react";
 
 import { curataDateCertificat, dateCertificatExemplu, dateCertificatGoale, MODELE_CERTIFICATE, MODELE_PORTRET, TIPURI_CERTIFICAT, type DateCertificat } from "@/lib/certificate";
 import { randeazaCertificat } from "@/lib/certificate-modele";
+import { MOTIVE } from "@/lib/motiv";
 import { paletaDinHex } from "@/lib/raport-impact-culori";
 import type { InfoOrganizatie } from "@/lib/scrisori";
 
@@ -68,7 +69,7 @@ const GRUPURI: GrupDef[] = [
       { cheie: "semn2Functie", eticheta: "Funcția", jumatate: true },
     ],
   },
-  { titlu: "Organizația", campuri: [{ cheie: "antetNume", eticheta: "Numele organizației (apare în sigiliu)" }] },
+  { titlu: "Organizația", campuri: [{ cheie: "antetNume", eticheta: "Numele organizației (apare în sigiliu)" }, { cheie: "motivGrafic", eticheta: "Motiv grafic", tip: "select", optiuni: MOTIVE, ajutor: "Ce apare în centrul sigiliului și în decor." }] },
 ];
 
 const PERSONALE = ["destinatar", "detaliu", "citat", "logoDestinatar", "nrCertificat", "semn1Nume", "semn1Functie", "semn2Nume", "semn2Functie"];

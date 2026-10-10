@@ -11,6 +11,7 @@ import { gasesteJudet } from "@/lib/judete";
 import { getLimiteleEfective, subCota } from "@/lib/billing/quota";
 import { ETAPE_PATH_KEYS, bifeDinEtapa, etapaCurenta } from "@/lib/etape-companie";
 import { valideazaAlocari } from "@/lib/alocari-sponsorizare";
+import { stergeDocumenteFirma } from "@/lib/documente-istoric";
 import { amprentePersoana } from "@/lib/gdpr-persoane";
 import { valideazaFacebook, valideazaLinkedin } from "@/lib/pagini-sociale";
 import { normalizeazaTelefonE164 } from "@/lib/telefon";
@@ -636,6 +637,8 @@ export const stergeFirma = withOrgSession(async (ctx, companyId: string): Promis
   if (!r[0]) return { error: "Firma nu a fost găsită." };
   // Raportul de impact salvat pentru firmă (crm_kv) conține date ale ei și ale proiectelor: se șterge odată cu ea.
   await ctx.db.delete(crmKv).where(and(eq(crmKv.orgId, ctx.orgId), eq(crmKv.path, `raport-impact/${companyId}`)));
+  // La fel documentele din istoric (scrisori, certificate, rapoarte): conțin numele administratorului și adresa firmei.
+  await stergeDocumenteFirma(ctx.db, ctx.orgId, companyId);
   return { error: null };
 });
 

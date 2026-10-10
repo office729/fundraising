@@ -27,11 +27,13 @@ export async function pregatesteGenerator(orgSlug: string, access: Access, sp: S
     if (d && typeof d === "object") dateIni = d as Record<string, unknown>;
   }
 
+  const bannere: Banner[] = [];
   const firmaParam = unu(sp.firma);
-  if (!dateIni && firmaParam && UUID.test(firmaParam)) {
+  if (firmaParam && UUID.test(firmaParam)) {
     const f = await dateFirmaAction(orgSlug, firmaParam);
-    if (f) {
-      firmaId = firmaParam;
+    if (f) firmaId = firmaParam;
+    if (f && !dateIni) {
+      if (f.suma) bannere.push({ text: `Suma, proiectul și anul sunt din ultima sponsorizare înregistrată${f.dataSponsorizare ? ` (${f.dataSponsorizare.split("-").reverse().join(".")})` : ""}: ${f.suma}. Dacă documentul se referă la altă sponsorizare, corectează-le.` });
       dateIni =
         tip === "scrisori"
           ? { destFirma: f.nume, destNume: f.administrator, destAdresa: f.adresa, suma: f.suma, proiect: f.proiect, an: f.an }
@@ -39,7 +41,6 @@ export async function pregatesteGenerator(orgSlug: string, access: Access, sp: S
     }
   }
 
-  const bannere: Banner[] = [];
   if (access.orgLogoUrl && !org.logo) {
     bannere.push({ text: "Logoul din Setări nu e o adresă https, așa că nu apare în document. Încarcă-l din nou în Setări sau adaugă-l aici.", href: `/${orgSlug}/setari`, eticheta: "Deschide Setări" });
   }

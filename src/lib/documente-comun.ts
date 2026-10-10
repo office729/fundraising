@@ -1,5 +1,6 @@
 // Piese comune pentru scrisori și certificate: curățarea câmpurilor, culorile, logo-urile și scheletul documentului HTML.
 // Documentele rezultate sunt HTML autonom (CSS inline, fără scripturi sau fonturi externe), la fel ca rapoartele de impact.
+import { monograma, motivCurent } from "./motiv";
 import { esc, HEX, urlLogo } from "./raport-impact";
 
 export { esc, urlLogo };
@@ -36,8 +37,8 @@ export function paragrafeDinText(brut: string, valori: Record<string, string> = 
 export const linieDinText = (brut: string, valori: Record<string, string> = {}) =>
   esc(brut).replace(/\{([A-Z_]+)\}/g, (m, k: string) => (k in valori ? esc(valori[k]) : m));
 
-// Imagine de logo, cu înălțime fixă (ca să nu depindă de dimensiunile intrinseci).
-export const logoImg = (src: string, alt: string, inaltime = "1em") => (src ? `<img src="${esc(src)}" alt="${esc(alt)}" style="display:block;height:${inaltime};width:auto;max-width:100%;object-fit:contain">` : "");
+// Imagine de logo, într-o cutie cu înălțime fixă și lățime cel mult 3,2 × înălțimea: un logo lat nu mai iese uriaș, iar unul pătrat rămâne curat.
+export const logoImg = (src: string, alt: string, inaltime = "1em") => (src ? `<img src="${esc(src)}" alt="${esc(alt)}" style="display:block;height:${inaltime};width:auto;max-width:min(100%,calc(${inaltime} * 3.2));object-fit:contain">` : "");
 
 // Scheletul comun: foaie pe fundal neutru pe ecran, curată la tipărire. `lat` = lățimea maximă a foii în px; dimensiunile din interior sunt în cqw,
 // deci documentul se micșorează fără deformare pe orice ecran și la tipărire.
@@ -61,11 +62,14 @@ export const A4_PEISAJ = { pagina: "A4 landscape" as const, lat: 1123, latimeMm:
 
 // Inimă cu puls, desenată (aceeași ca în rapoarte), pentru modelele cu identitatea organizației.
 export function inimaPuls(id = "hp"): string {
+  if (motivCurent() === "niciunul") return "";
+  if (motivCurent() === "monograma") return monograma("100%", id);
   return `<svg viewBox="0 0 120 112" role="img" aria-label="Inimă străbătută de o linie de puls" style="display:block;width:100%;height:auto"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--a)"/><stop offset="1" stop-color="var(--b)"/></linearGradient><radialGradient id="${id}s" cx=".3" cy=".25" r=".6"><stop offset="0" stop-color="#fff" stop-opacity=".38"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs><path d="M60 104 14 58C-2 42 2 16 24 8c14-5 29 1 36 14 7-13 22-19 36-14 22 8 26 34 10 50z" fill="url(#${id})"/><path d="M60 104 14 58C-2 42 2 16 24 8c14-5 29 1 36 14 7-13 22-19 36-14 22 8 26 34 10 50z" fill="url(#${id}s)"/><path d="M6 54h30l8-16 12 36 10-28 7 8h41" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 }
 
 // Linie de puls pe toată lățimea.
 export function linieEcg(culoare = "currentColor", opacitate = 0.25): string {
+  if (motivCurent() !== "inima") return "";
   let cale = "M0 40";
   for (let x = 40; x < 1200; x += 190) cale += ` L${x} 40 L${x + 20} 40 L${x + 30} 14 L${x + 44} 66 L${x + 56} 28 L${x + 66} 40`;
   cale += " L1200 40";

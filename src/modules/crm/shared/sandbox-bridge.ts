@@ -186,6 +186,8 @@ export async function handeazaFetch(m: FetchMsg, orgSlug: string, hostOrigin: st
     });
     // Fonturile (ex. cele Google, înglobate la exportul PDF) sunt binare: se trimit în base64, nu ca text.
     if (/^(font\/|application\/(font|octet-stream))/i.test(r.headers.get("content-type") ?? "")) {
+      // Dimensiunea declarată se verifică înainte să citim tot răspunsul în memorie.
+      if (Number(r.headers.get("content-length") ?? 0) > MAX_BINAR) return { ...base, error: "Răspuns binar prea mare" };
       const buf = new Uint8Array(await r.arrayBuffer());
       if (buf.length > MAX_BINAR) return { ...base, error: "Răspuns binar prea mare" };
       let bin = "";

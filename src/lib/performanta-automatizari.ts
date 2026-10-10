@@ -289,7 +289,7 @@ export async function ruleazaAutomatizari(db: Db, orgId: string, orgSlug: string
   // 7. Raport pentru sponsor: sarcină la înregistrarea unei sponsorizări în CRM Companii.
   if (setari.raportSponsor && setari.responsabilRaportId) {
     const noi = await db
-      .select({ id: companySponsorizari.id, suma: companySponsorizari.suma, data: companySponsorizari.data, firma: companies.nume })
+      .select({ id: companySponsorizari.id, firmaId: companySponsorizari.companyId, suma: companySponsorizari.suma, data: companySponsorizari.data, firma: companies.nume })
       .from(companySponsorizari)
       .innerJoin(companies, eq(companies.id, companySponsorizari.companyId))
       .where(and(eq(companySponsorizari.orgId, orgId), gte(companySponsorizari.createdAt, new Date(Date.now() - 48 * 3600 * 1000)), ne(companySponsorizari.suma, 0)));
@@ -297,10 +297,28 @@ export async function ruleazaAutomatizari(db: Db, orgId: string, orgSlug: string
       const termen = adauga(s.data, 30) < adauga(azi, 7) ? adauga(azi, 7) : adauga(s.data, 30);
       const r = await db
         .insert(activitati)
-        .values({ orgId, titlu: `Pregătește raportul pentru ${s.firma} (${s.suma.toLocaleString("ro-RO")} lei)`, descriere: "Creată automat la înregistrarea sponsorizării. Termenul e o propunere (30 de zile de la dată): ajustează-l după contract.", responsabilId: setari.responsabilRaportId, prioritate: "mare", termen, efortOre: 3, sursa: "automatizare", cheieAutomatizare: `raport-sponsor:${s.id}`, criteriuFinalizare: "Raportul a fost trimis sponsorului." })
+        .values({ orgId, titlu: `Pregătește raportul pentru ${s.firma} (${s.suma.toLocaleString("ro-RO")} lei)`, descriere: `Creată automat la înregistrarea sponsorizării. Termenul e o propunere (30 de zile de la dată): ajustează-l după contract. Raport precompletat: /${orgSlug}/crm/instrumente/raport-companii/impact?firma=${s.firmaId}`, responsabilId: setari.responsabilRaportId, prioritate: "mare", termen, efortOre: 3, sursa: "automatizare", cheieAutomatizare: `raport-sponsor:${s.id}`, criteriuFinalizare: "Raportul a fost trimis sponsorului." })
         .onConflictDoNothing()
         .returning({ id: activitati.id });
       rezultat.rapoarte += r.length;
+      // Mulțumirea pentru firmă: sarcină cu termen de 3 zile, cu linkuri către scrisoarea și certificatul precompletate. Nu se trimite nimic automat.
+      const m = await db
+        .insert(activitati)
+        .values({
+          orgId,
+          titlu: `Mulțumește ${s.firma}`,
+          descriere: `Creată automat la înregistrarea sponsorizării (${s.suma.toLocaleString("ro-RO")} lei). Scrisoare de mulțumire precompletată: /${orgSlug}/crm/instrumente/scrisori/generator?firma=${s.firmaId} · Certificat: /${orgSlug}/crm/instrumente/certificate/generator?firma=${s.firmaId}. Citește textul înainte să-l trimiți, apoi bifează documentul ca „trimis” în fișa firmei.`,
+          responsabilId: setari.responsabilRaportId,
+          prioritate: "medie",
+          termen: adauga(azi, 3),
+          efortOre: 0.5,
+          sursa: "automatizare",
+          cheieAutomatizare: `multumire-pj:${s.id}`,
+          criteriuFinalizare: "Mulțumirea a fost trimisă firmei (documentul e bifat ca trimis în fișa firmei).",
+        })
+        .onConflictDoNothing()
+        .returning({ id: activitati.id });
+      rezultat.multumiri += m.length;
     }
   }
 

@@ -65,6 +65,7 @@ const nextConfig: NextConfig = {
       { source: "/:path*", headers: securityHeaders },
       { source: "/vendor/:path*", headers: cacheStatic },
       { source: "/fonts/:path*", headers: cacheStatic },
+      { source: "/logos-platforme/:path*", headers: cacheStatic },
     ];
   },
 };

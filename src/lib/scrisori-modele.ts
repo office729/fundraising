@@ -1,6 +1,7 @@
 // Cele 15 modele de scrisoare. Fiecare întoarce un document HTML complet (A4 portret), cu dimensiuni în cqw ca să se micșoreze fără deformare.
 import { A4_PORTRET, docShell, esc, inimaPuls, linieEcg, logoImg, SANS, SERIF } from "./documente-comun";
 import { corpScrisoare, liniiScrisoare, type DateScrisoare, type ModelScrisoare } from "./scrisori";
+import { seteazaMotiv } from "./motiv";
 import { dataLunga } from "./raport-impact";
 
 // Bucățile scrisorii, deja escapate, pe care modelele le aranjează după nevoie.
@@ -34,7 +35,7 @@ const COMUN = `.pag{display:flex;flex-direction:column;min-height:141.4cqw}.ft{f
 .dr{display:flex;justify-content:space-between;gap:2cqw;color:var(--m);font-size:.92em;margin-bottom:2.4em}
 .dest{margin-bottom:1.7em;line-height:1.5}.dest b{display:block;font-size:1.04em}
 .sub{font-weight:700;margin:0 0 1.2em;font-size:1.04em}.sal{margin-bottom:1em}
-.corp p{margin:0 0 .95em;text-align:justify;hyphens:auto}.fin{margin-top:1.3em}
+.corp p{margin:0 0 .95em;text-align:left;hyphens:auto}.fin{margin-top:1.3em}
 .semn{margin-top:2.4em}.semn b{display:block;font-family:${SERIF};font-style:italic;font-weight:400;font-size:1.75em;color:var(--b);line-height:1.15}.semn span{display:block;font-size:.92em;color:var(--m)}
 .ps{margin-top:1.8em;font-size:.92em}.anx{margin-top:1.1em;font-size:.88em;color:var(--m)}
 .onm{font-weight:700;letter-spacing:.04em}.det{font-size:.8em;color:var(--m);line-height:1.5}`;
@@ -83,7 +84,7 @@ function lateral(d: DateScrisoare): string {
 
 function minimal(d: DateScrisoare): string {
   const b = bucati(d);
-  const css = `.mn{padding:8cqw 12cqw 6cqw;font-family:${SANS};font-weight:300}.mn .cap{display:flex;justify-content:space-between;align-items:center;font-size:.8em;letter-spacing:.22em;text-transform:uppercase;color:var(--m);margin-bottom:12cqw}.mn .sub{font-weight:500}.mn .semn b{font-family:${SANS};font-style:normal;font-weight:300;font-size:1.5em;color:var(--t)}.mn .pie{font-size:.74em;letter-spacing:.1em;color:var(--m);text-transform:uppercase}.mn .corp p{text-align:left}`;
+  const css = `.mn{padding:8cqw 12cqw 6cqw;font-family:${SANS};font-weight:400}.mn .cap{display:flex;justify-content:space-between;align-items:center;font-size:.8em;letter-spacing:.22em;text-transform:uppercase;color:var(--m);margin-bottom:12cqw}.mn .sub{font-weight:500}.mn .semn b{font-family:${SANS};font-style:normal;font-weight:300;font-size:1.5em;color:var(--t)}.mn .pie{font-size:.74em;letter-spacing:.1em;color:var(--m);text-transform:uppercase}.mn .corp p{text-align:left}`;
   return S(d, css, `<div class="pag mn"><div class="cap"><span>${d.logoOng ? b.logoOng("3.6cqw") : b.ongNume}</span><span>${b.locData}</span></div><div class="ft">${trupul(b, false)}</div><div class="pie">${b.ongNume}${b.detalii.length ? ` · ${detaliiSir(b)}` : ""}</div></div>`);
 }
 
@@ -140,6 +141,7 @@ function cald(d: DateScrisoare): string {
 }
 
 export function randeazaScrisoare(d: DateScrisoare, model: ModelScrisoare = d.model): string {
+  seteazaMotiv(d.motivGrafic, d.antetNume);
   switch (model) {
     case "modern": return modern(d);
     case "banda": return banda(d);

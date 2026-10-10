@@ -18,7 +18,9 @@ import {
   type ProiectImpact,
 } from "./raport-impact";
 
-export type ContextRaport = { organizatie: string; azi: string }; // azi: YYYY-MM-DD
+import { monograma, motivCurent, seteazaMotiv } from "./motiv";
+
+export type ContextRaport = { organizatie: string; azi: string; identificare?: string }; // azi: YYYY-MM-DD; identificare: denumire, CIF și sediu, sub avertismentul de la final
 
 const SANS = `"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif`;
 const SERIF = `Georgia,"Iowan Old Style","Times New Roman",serif`;
@@ -43,6 +45,8 @@ const ICON = {
 
 // Inima cu linia de puls care o străbate: gradient din culorile organizației, strălucire discretă, ECG alb peste.
 function inima(marime: number, id = "g"): string {
+  if (motivCurent() === "niciunul") return "";
+  if (motivCurent() === "monograma") return monograma(marime, id);
   return `<svg viewBox="0 0 120 112" width="${marime}" height="${Math.round((marime * 112) / 120)}" role="img" aria-label="Inimă străbătută de o linie de puls"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--a)"/><stop offset="1" stop-color="var(--b)"/></linearGradient><radialGradient id="${id}s" cx=".3" cy=".25" r=".6"><stop offset="0" stop-color="#fff" stop-opacity=".38"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>
 <path d="M60 104 14 58C-2 42 2 16 24 8c14-5 29 1 36 14 7-13 22-19 36-14 22 8 26 34 10 50z" fill="url(#${id})"/><path d="M60 104 14 58C-2 42 2 16 24 8c14-5 29 1 36 14 7-13 22-19 36-14 22 8 26 34 10 50z" fill="url(#${id}s)"/>
 <path d="M6 54h30l8-16 12 36 10-28 7 8h41" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
@@ -50,6 +54,7 @@ function inima(marime: number, id = "g"): string {
 
 // Bandă de ECG pentru fundaluri: o linie de bază cu bătăi regulate, pe toată lățimea.
 function ecg(culoare = "currentColor", opacitate = 0.22): string {
+  if (motivCurent() !== "inima") return "";
   const bataie = (x: number) => `L${x + 20} 40 L${x + 30} 14 L${x + 44} 66 L${x + 56} 28 L${x + 66} 40`;
   let cale = "M0 40";
   for (let x = 40; x < 1200; x += 190) cale += ` L${x} 40 ${bataie(x)}`;
@@ -162,7 +167,9 @@ function blocFinal(d: DateImpact, simplu = false): string {
   const cta = d.ctaText ? (d.ctaLink ? `<p class="cta"><a href="${esc(d.ctaLink)}" target="_blank" rel="noopener noreferrer">${esc(d.ctaText)} →</a></p>` : `<p class="cta"><strong>${esc(d.ctaText)}</strong></p>`) : "";
   const transp = d.transparentaLink ? `<a href="${esc(d.transparentaLink)}" target="_blank" rel="noopener noreferrer">Raportul anual și situațiile financiare</a>` : "";
   if (simplu) return `<p class="disc">${esc(DISCLAIMER_IMPLICIT)}</p>`;
-  return `${d.citat ? `<blockquote class="cit-f">„${esc(d.citat)}”${d.citatAutor ? `<cite>— ${esc(d.citatAutor)}</cite>` : ""}</blockquote>` : ""}${d.ceUrmeaza ? `<div class="cu"><b>Ce urmează</b><p>${esc(d.ceUrmeaza).replace(/\n/g, "<br>")}</p></div>` : ""}${cta}${contact || transp ? `<p class="ctc">${[contact && `Contact: ${contact}`, transp].filter(Boolean).join(" · ")}</p>` : ""}`;
+  const sumaProiecte = d.proiecte.reduce((t, p) => t + (p.suma ?? 0), 0);
+  const diferenta = d.totalManual !== null && d.totalManual > sumaProiecte ? `<p class="disc" style="border-top:0;margin-top:14px;padding-top:0">Din totalul de ${esc(lei(d.totalManual))}, ${esc(lei(d.totalManual - sumaProiecte))} nu sunt încă detaliați pe proiecte în lista de mai sus.</p>` : "";
+  return `${diferenta}${d.citat ? `<blockquote class="cit-f">„${esc(d.citat)}”${d.citatAutor ? `<cite>— ${esc(d.citatAutor)}</cite>` : ""}</blockquote>` : ""}${d.ceUrmeaza ? `<div class="cu"><b>Ce urmează</b><p>${esc(d.ceUrmeaza).replace(/\n/g, "<br>")}</p></div>` : ""}${d.optiuniViitor.trim() ? `<div class="cu"><b>Variante pentru anul următor</b><ul style="margin:6px 0 0;padding-left:20px">${d.optiuniViitor.split(/\n/).map((r) => r.trim()).filter(Boolean).map((r) => `<li>${esc(r)}</li>`).join("")}</ul></div>` : ""}${cta}${contact || transp ? `<p class="ctc">${[contact && `Contact: ${contact}`, transp].filter(Boolean).join(" · ")}</p>` : ""}`;
 }
 const disclaimer = `<p class="disc">${esc(DISCLAIMER_IMPLICIT)}</p>`;
 const semnatura = (d: DateImpact, c: ContextRaport) => `${blocFinal(d)}${semnaturaSimpla(d, c)}${disclaimer}`;
@@ -170,7 +177,7 @@ const ETICHETE_STARE: Record<string, string> = { finalizat: "Finalizat", in_desf
 const meta = (p: ProiectImpact) => [p.stare && `<span class="mt"><span class="stare ${p.stare}">${ETICHETE_STARE[p.stare]}</span></span>`, p.locatie && `<span class="mt">${ICON.pin}${esc(p.locatie)}</span>`, p.data && `<span class="mt">${ICON.cal}${esc(lunaAn(p.data))}</span>`, p.anDirectionare && `<span class="mt">${ICON.inima}Direcționare ${p.anDirectionare}</span>`, p.nrBeneficiari && `<span class="mt">${p.nrBeneficiari} ${p.nrBeneficiari === 1 ? "beneficiar" : "beneficiari"}</span>`, p.linkDovada && `<span class="mt"><a href="${esc(p.linkDovada)}" target="_blank" rel="noopener noreferrer">Dovadă</a></span>`].filter(Boolean).join("");
 const obs = (p: ProiectImpact) => (p.observatii ? `<p style="color:var(--m);font-size:13.5px;margin-top:6px">${esc(p.observatii)}</p>` : "");
 const goal = `<p style="color:var(--m);padding:18px 0">Nu sunt proiecte adăugate încă.</p>`;
-const nrProiecte = (d: DateImpact) => proiecteSortate(d).length;
+const nrProiecte = (d: DateImpact) => proiecteSortate(d).filter((p) => !p.nealocat).length;
 const textProiecte = (d: DateImpact) => `${nrProiecte(d)} ${nrProiecte(d) === 1 ? "proiect" : "proiecte"}`;
 const parte = (p: ProiectImpact, total: number) => (total > 0 && p.suma ? Math.max(2, Math.round((p.suma / total) * 100)) : 0);
 const procentTxt = (p: ProiectImpact, total: number) => (total > 0 && p.suma ? `${Math.round((p.suma / total) * 100)}% din total` : "");
@@ -293,8 +300,8 @@ function scrisoare(d: DateImpact, c: ContextRaport): string {
 function minimal(d: DateImpact, c: ContextRaport): string {
   const total = totalImpact(d);
   const css = `.in{padding:56px 64px 60px}.sus{display:flex;justify-content:space-between;align-items:center;gap:14px;font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--m)}
-h1{font-size:46px;line-height:1.05;font-weight:300;letter-spacing:-.035em;margin:64px 0 6px}.sub{color:var(--m)}.t{font-size:96px;line-height:1;font-weight:200;color:var(--a);letter-spacing:-.05em;margin:44px 0 6px}.mic{color:var(--m);font-size:11.5px;letter-spacing:.2em;text-transform:uppercase}
-.txt{margin:46px 0 34px;max-width:560px;font-weight:300;font-size:16px}.txt .lead{font-size:17px}.r{display:grid;grid-template-columns:1fr auto;gap:20px;padding:18px 0;border-top:1px solid var(--l)}.r:last-child{border-bottom:1px solid var(--l)}.r b{font-weight:400;font-size:17px}.r .nr{font-weight:300;font-size:22px}
+h1{font-size:46px;line-height:1.05;font-weight:400;letter-spacing:-.035em;margin:64px 0 6px}.sub{color:var(--m)}.t{font-size:96px;line-height:1;font-weight:200;color:var(--a);letter-spacing:-.05em;margin:44px 0 6px}.mic{color:var(--m);font-size:11.5px;letter-spacing:.2em;text-transform:uppercase}
+.txt{margin:46px 0 34px;max-width:560px;font-weight:400;font-size:16px}.txt .lead{font-size:17px}.r{display:grid;grid-template-columns:1fr auto;gap:20px;padding:18px 0;border-top:1px solid var(--l)}.r:last-child{border-bottom:1px solid var(--l)}.r b{font-weight:400;font-size:17px}.r .nr{font-weight:400;font-size:22px}
 .an{margin:36px 0 6px;color:var(--a);font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;display:flex;justify-content:space-between}.semn b{font-family:${SANS};font-style:normal;font-weight:300;font-size:22px;color:var(--t)}@media(max-width:640px){.in{padding:30px 22px}.t{font-size:58px}h1{font-size:32px;margin-top:40px}}`;
   const rand = (p: ProiectImpact) => `<div class="r nopb"><div><b>${nume(p)}</b><div style="margin-top:3px">${meta(p)}</div>${obs(p)}</div><span class="nr">${p.suma !== null ? lei(p.suma) : ""}</span></div>`;
   const corp = d.gruparePeAn ? grupePeAn(d).map((g) => `<div class="an"><span>${esc(g.an)}</span><span class="nr">${lei(g.total)}</span></div>${g.proiecte.map(rand).join("")}`).join("") : proiecteSortate(d).map(rand).join("");
@@ -457,7 +464,9 @@ function analitic(d: DateImpact, c: ContextRaport): string {
   const total = totalImpact(d);
   const ps = proiecteSortate(d);
   const beneficiari = ps.reduce((t, p) => t + (p.nrBeneficiari ?? 0), 0);
-  const kpi4 = beneficiari > 0 ? { e: "Cost per beneficiar", v: lei(total / beneficiari) } : { e: "Proiecte finalizate", v: `${ps.filter((p) => p.stare === "finalizat").length} din ${ps.length}` };
+  const cuBen = ps.filter((p) => (p.nrBeneficiari ?? 0) > 0 && (p.suma ?? 0) > 0);
+  const sumaCuBen = cuBen.reduce((t, p) => t + (p.suma ?? 0), 0);
+  const kpi4 = beneficiari > 0 && sumaCuBen > 0 ? { e: `Contribuție per beneficiar (${cuBen.length} din ${nrProiecte(d)} proiecte)`, v: lei(sumaCuBen / beneficiari) } : { e: "Proiecte finalizate", v: `${ps.filter((p) => p.stare === "finalizat").length} din ${ps.length}` };
   const { svg, legenda } = inel(d, 170);
   const graf = cumulativ(d);
   const br = bare(d);
@@ -480,6 +489,14 @@ function analitic(d: DateImpact, c: ContextRaport): string {
 }
 
 export function randeazaRaportImpact(d: DateImpact, c: ContextRaport, model: ModelImpact = d.model): string {
+  seteazaMotiv(d.motivGrafic, c.organizatie);
+  const html = randeazaModel(d, c, model);
+  if (!c.identificare) return html;
+  const disc = esc(DISCLAIMER_IMPLICIT);
+  return html.split(disc).join(`${disc}<br>${esc(c.identificare)}`);
+}
+
+function randeazaModel(d: DateImpact, c: ContextRaport, model: ModelImpact): string {
   switch (model) {
     case "executiv": return executiv(d, c);
     case "editorial": return editorial(d, c);

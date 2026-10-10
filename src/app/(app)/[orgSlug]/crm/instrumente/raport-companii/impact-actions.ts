@@ -6,6 +6,7 @@ import { withOrgAdmin, type OrgContext } from "@/lib/auth/guard";
 import { orgHasToolAccess } from "@/lib/billing/packages";
 import { appUsers, companies, companySponsorizari, crmKv, fundraisingPages } from "@/lib/db/schema";
 import { EroareUtilizator } from "@/lib/erori";
+import { motivImplicit } from "@/lib/motiv";
 import { curataDateImpact, dateImpactGoale, type DateImpact, type ProiectImpact, PROIECT_GOL } from "@/lib/raport-impact";
 
 // Raportul de impact se lucrează pe fișa unei firme: lista firmelor cu sponsorizări, datele propuse din sponsorizările înregistrate
@@ -38,6 +39,7 @@ export type IncarcareImpact = {
   date: DateImpact;
   salvat: boolean; // datele vin dintr-o versiune salvată, nu din propunerea automată
   logoOngImplicit: string; // logoul organizației din Setări (https), pentru „folosește logoul din Setări”
+  identificare: string; // denumire, CIF și sediu, pentru subsolul raportului
 };
 
 async function numeAutor(ctx: Pick<OrgContext, "db" | "userId">): Promise<string> {
@@ -50,8 +52,8 @@ async function numeAutor(ctx: Pick<OrgContext, "db" | "userId">): Promise<string
 export const incarcaImpactAction = withOrgAdmin(async (ctx, companyId: string | null, ignoraSalvat = false): Promise<IncarcareImpact> => {
   verificaAcces(ctx);
   const baza = (ctx.orgBrandColor && HEX.test(ctx.orgBrandColor) ? { accent: ctx.orgBrandColor } : {}) as Partial<DateImpact>;
-  const gol: DateImpact = { ...dateImpactGoale(), ...baza, autor: await numeAutor(ctx), logoOng: ctx.orgLogoUrl && /^https:\/\//i.test(ctx.orgLogoUrl) ? ctx.orgLogoUrl : "" };
-  const raspuns = (date: DateImpact, salvat: boolean): IncarcareImpact => ({ organizatie: ctx.orgName, date, salvat, logoOngImplicit: gol.logoOng });
+  const gol: DateImpact = { ...dateImpactGoale(), motivGrafic: motivImplicit(ctx.orgName), ...baza, autor: await numeAutor(ctx), logoOng: ctx.orgLogoUrl && /^https:\/\//i.test(ctx.orgLogoUrl) ? ctx.orgLogoUrl : "" };
+  const raspuns = (date: DateImpact, salvat: boolean): IncarcareImpact => ({ organizatie: ctx.orgName, date, salvat, logoOngImplicit: gol.logoOng, identificare: [ctx.orgName, ctx.orgCif && `CIF ${ctx.orgCif}`, [ctx.orgAdresaSediu, ctx.orgJudet].filter(Boolean).join(", ")].filter(Boolean).join(" · ") });
   if (!companyId || !UUID.test(companyId)) return raspuns(gol, false);
 
   const [firma] = await ctx.db.select({ nume: companies.nume }).from(companies).where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId), isNull(companies.deletedAt))).limit(1);
@@ -80,7 +82,7 @@ export const incarcaImpactAction = withOrgAdmin(async (ctx, companyId: string | 
   for (const s of spons) {
     const alocate = (s.alocari ?? []).reduce((t, a) => t + a.suma, 0);
     for (const a of s.alocari ?? []) proiecte.push({ ...PROIECT_GOL, nume: a.nume, suma: a.suma, data: s.data, link: linkPagina(a.pageId) });
-    if (s.suma - alocate > 0) proiecte.push({ ...PROIECT_GOL, nume: s.proiect?.trim() || "Sprijin general (nealocat unui proiect)", suma: s.suma - alocate, data: s.data });
+    if (s.suma - alocate > 0) proiecte.push({ ...PROIECT_GOL, nume: s.proiect?.trim() ? `${s.proiect.trim()} (încă neafectat)` : "Sumă încă neafectată unui proiect", suma: s.suma - alocate, data: s.data, nealocat: true });
   }
   return raspuns(curataDateImpact({ ...gol, firma: firma.nume, proiecte }), false);
 });

@@ -27,7 +27,22 @@ export function hslLaHex({ h, s, l }: Hsl): string {
 const limiteaza = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
 
 // Culoarea principală apare pe alb (cifre, titluri) și sub text alb (gradiente): rămâne în intervalul în care ambele se citesc.
-const principala = (c: Hsl): Hsl => ({ h: c.h, s: limiteaza(c.s, 0.35, 0.9), l: limiteaza(c.l, 0.28, 0.44) });
+// Luminanța relativă (WCAG) a unei culori hex: cu ea se măsoară contrastul față de alb.
+function luminanta(hex: string): number {
+  const canal = (i: number) => {
+    const v = parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16) / 255;
+    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  };
+  return 0.2126 * canal(0) + 0.7152 * canal(1) + 0.0722 * canal(2);
+}
+// Contrastul cu albul trebuie să fie cel puțin 4,5:1 (text alb pe culoare și culoare pe alb). Nuanțele deschise (galben, verde, turcoaz)
+// au nevoie de o luminozitate mult mai mică decât limita fixă: se închid treptat până se citesc.
+const CONTRAST_ALB = 4.5;
+const principala = (c: Hsl): Hsl => {
+  const p: Hsl = { h: c.h, s: limiteaza(c.s, 0.35, 0.9), l: limiteaza(c.l, 0.28, 0.44) };
+  while (p.l > 0.08 && 1.05 / (luminanta(hslLaHex(p)) + 0.05) < CONTRAST_ALB) p.l -= 0.01;
+  return p;
+};
 const inchisa = (c: Hsl): Hsl => ({ h: c.h, s: limiteaza(c.s * 0.95, 0.3, 0.85), l: limiteaza(c.l * 0.58, 0.12, 0.24) });
 const deschisa = (c: Hsl): Hsl => ({ h: c.h, s: limiteaza(c.s * 0.65, 0.2, 0.7), l: 0.955 });
 
@@ -78,3 +93,6 @@ export function paletaDinHex(hex: string): PaletaLogo | null {
   const c = rgbLaHsl(parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16));
   return { accent: hslLaHex(principala(c)), accent2: hslLaHex(inchisa(c)), accent3: hslLaHex(deschisa(c)), sursa: "logo" };
 }
+
+// Contrastul unei culori cu albul (1–21): sub 4,5 textul alb pe ea sau ea ca text pe alb se citește greu.
+export const contrastCuAlb = (hex: string): number => (/^#[0-9a-f]{6}$/i.test(hex) ? 1.05 / (luminanta(hex) + 0.05) : 21);

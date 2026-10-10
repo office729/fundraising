@@ -106,7 +106,6 @@ function buildNav(dict: DashboardDict, orgSlug: string): { section: string; item
     {
       section: dict.nav.sectionOperare,
       items: [
-        { href: "taskuri", label: dict.nav.taskuri, hint: dict.hints.taskuri, icon: ClipboardList },
         { href: "comunicare", label: dict.nav.comunicare, hint: dict.hints.comunicare, icon: MessageSquare },
         { href: "/program-lucru", label: dict.nav.programLucru, hint: dict.hints.programLucru, icon: CalendarClock },
       ],

@@ -2,7 +2,8 @@
 
 import { useMemo } from "react";
 
-import { antetDinOrganizatie, curataDateScrisoare, dateScrisoareExemplu, dateScrisoareGoale, MODELE_SCRISORI, TIPURI_SCRISOARE, type DateScrisoare, type InfoOrganizatie } from "@/lib/scrisori";
+import { antetDinOrganizatie, campuriNecompletate, curataDateScrisoare, dateScrisoareExemplu, dateScrisoareGoale, MECANISME_SCRISOARE, MODELE_SCRISORI, TIPURI_SCRISOARE, type DateScrisoare, type InfoOrganizatie } from "@/lib/scrisori";
+import { MOTIVE } from "@/lib/motiv";
 import { randeazaScrisoare } from "@/lib/scrisori-modele";
 import { paletaDinHex } from "@/lib/raport-impact-culori";
 
@@ -56,6 +57,16 @@ const GRUPURI: GrupDef[] = [
     ],
   },
   {
+    titlu: "Cerere și termen",
+    subtitlu: "Folosite în {SUMA_CERUTA}, {REZULTAT}, {TERMEN} și {PARAGRAF_FISCAL}, în scrisorile de solicitare, ofertă, follow-up și reînnoire.",
+    campuri: [
+      { cheie: "sumaCeruta", eticheta: "Suma propusă", placeholder: "ex. 12.000 lei", jumatate: true },
+      { cheie: "termen", eticheta: "Termen sau moment", placeholder: "ex. marți, între 10 și 12", jumatate: true },
+      { cheie: "rezultat", eticheta: "Ce se obține cu suma", placeholder: "ex. examinarea la timp a 40 de copii" },
+      { cheie: "mecanism", eticheta: "Mecanism fiscal (opțional)", tip: "select", optiuni: MECANISME_SCRISOARE, ajutor: "Adaugă un paragraf prudent despre mecanism, fără cifre sau termene. Verific-o cu contabilul înainte să trimiți." },
+    ],
+  },
+  {
     titlu: "Date pentru text",
     subtitlu: "Folosite în {SUMA}, {PROIECT} și {AN}. Se completează singure când pornești din fișa unei firme.",
     campuri: [
@@ -78,12 +89,13 @@ const GRUPURI: GrupDef[] = [
     subtitlu: "Datele organizației din antet și din subsol",
     campuri: [
       { cheie: "antetNume", eticheta: "Numele organizației" },
+      { cheie: "motivGrafic", eticheta: "Motiv grafic", tip: "select", optiuni: MOTIVE, ajutor: "Apare discret în unele modele (filigran, linie sub antet)." },
       { cheie: "antetLinii", eticheta: "Adresă, CIF, IBAN, contact", tip: "textarea", rows: 3, ajutor: "Câte un rând pentru fiecare informație." },
     ],
   },
 ];
 
-const PERSONALE = ["destNume", "destFunctie", "destFirma", "destAdresa", "logoDestinatar", "nrInregistrare", "semnNume", "semnFunctie", "ps", "anexe", "suma", "proiect", "an"];
+const PERSONALE = ["sumaCeruta", "rezultat", "termen", "destNume", "destFunctie", "destFirma", "destAdresa", "logoDestinatar", "nrInregistrare", "semnNume", "semnFunctie", "ps", "anexe", "suma", "proiect", "an"];
 
 export function GeneratorScrisori({ orgSlug, org, azi, model, semnatar, dateIni, firmaId, bannere }: { orgSlug: string; org: InfoOrganizatie; azi: string; model?: string; semnatar: { nume: string; functie: string }; dateIni?: Record<string, unknown>; firmaId: string | null; bannere: Banner[] }) {
   const modelValid = MODELE_SCRISORI.some((m) => m.id === model) ? (model as DateScrisoare["model"]) : undefined;
@@ -116,7 +128,11 @@ export function GeneratorScrisori({ orgSlug, org, azi, model, semnatar, dateIni,
       datePregatite={!!dateIni}
       firmaId={firmaId}
       bannere={bannere}
-      avertizare={(d) => (d.corp.length > 2400 ? "Textul e lung: scrisoarea poate depăși o pagină A4. Scurtează-l sau verifică la tipărire." : null)}
+      avertizare={(d) => {
+        const lipsa = campuriNecompletate(d);
+        if (lipsa.length) return `Completează în text: ${lipsa.join(", ")}. Altfel rămân vizibile în scrisoare.`;
+        return d.corp.length > 2400 ? "Textul e lung: scrisoarea se întinde pe mai multe pagini A4." : null;
+      }}
       ajutor="Alegi șablonul și tipul scrisorii, completezi destinatarul și vezi scrisoarea în dreapta, în timp real. „Salvează ca PDF” descarcă direct fișierul. Modelele sunt orientative: citește și adaptează textul înainte să-l trimiți."
     />
   );

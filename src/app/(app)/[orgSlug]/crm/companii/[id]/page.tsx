@@ -16,6 +16,7 @@ import { bifeDinEtapa } from "@/lib/etape-companie";
 import { urlsSemnate } from "@/lib/fisiere-private";
 import { stadiuD177Valid } from "@/lib/stadii-d177";
 import type { PersoanaDeAprobat } from "../actions";
+import { DocumenteFirma } from "../../instrumente/_comun/documente-firma";
 import { PaginiSociale } from "./pagini-sociale";
 import { PipelineCard } from "./pipeline-card";
 import { ScorCard } from "./scor-card";
@@ -121,6 +122,8 @@ export default async function CompanieProfilPage({
           <Stat label={dict.stats.ultimaActivitate} value={activitate[0] ? formatDataRelativa(activitate[0].la) : "—"} />
         </div>
       </Card>
+
+      <DocumenteFirma orgSlug={orgSlug} firmaId={c.id} />
 
       <ScorCard
         base={`/${orgSlug}/crm`}

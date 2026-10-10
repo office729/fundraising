@@ -1,7 +1,8 @@
 // Cele 15 modele de certificat. Fiecare întoarce un document HTML complet (A4 peisaj, două modele portret), cu dimensiuni în cqw
 // ca să se micșoreze fără deformare pe orice ecran și la tipărire.
-import { A4_PEISAJ, A4_PORTRET, docShell, esc, inimaPuls, linieEcg, logoImg, SERIF, SANS, SANS_SVG } from "./documente-comun";
+import { A4_PEISAJ, A4_PORTRET, docShell, esc, inimaPuls, linieEcg, logoImg, SERIF, SANS, SANS_SVG, SERIF_SVG } from "./documente-comun";
 import { linieCertificat, motivCertificat, type DateCertificat, type ModelCertificat } from "./certificate";
+import { literaCurenta, motivCurent, seteazaMotiv } from "./motiv";
 import { dataLunga } from "./raport-impact";
 
 function mareaNume(n: string, baza = 3.8): string {
@@ -27,7 +28,7 @@ function bucati(d: DateCertificat) {
     nr: d.nrCertificat ? esc(d.nrCertificat) : "",
     ong: esc(d.antetNume || "Organizația"),
     sem: sem.map((s) => ({ nume: esc(s.nume), functie: esc(s.functie) })),
-    logoOng: (h: string) => logoImg(d.logoOng, d.antetNume, h),
+    logoOng: (h: string) => (d.logoOng ? logoImg(d.logoOng, d.antetNume, h) : `<div style="font:700 .82em/1.2 ${SANS};letter-spacing:.2em;text-transform:uppercase;color:var(--a);text-align:center">${esc(d.antetNume || "")}</div>`),
     logoDest: (h: string) => logoImg(d.logoDestinatar, d.destinatar, h),
   };
 }
@@ -38,8 +39,11 @@ const meta = (b: B) => `<div class="meta">${b.locData}${b.nr ? ` · ${b.nr}` : "
 
 // Sigiliu rotund cu numele organizației pe cerc și o inimă în mijloc.
 function sigiliu(d: DateCertificat, id: string, marime = "11cqw"): string {
-  const t = esc((d.antetNume || "Organizația").toUpperCase().slice(0, 26));
-  return `<svg viewBox="0 0 120 120" role="img" aria-label="Sigiliu" style="width:${marime};height:${marime};display:block"><defs><path id="${id}p" d="M60 60m-44 0a44 44 0 1 1 88 0a44 44 0 1 1-88 0"/><linearGradient id="${id}g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--a)"/><stop offset="1" stop-color="var(--b)"/></linearGradient></defs><circle cx="60" cy="60" r="57" fill="url(#${id}g)"/><circle cx="60" cy="60" r="52" fill="none" stroke="#fff" stroke-opacity=".6"/><circle cx="60" cy="60" r="31" fill="none" stroke="#fff" stroke-opacity=".6"/><text font-size="9.5" letter-spacing="2.4" fill="#fff" font-family="${SANS_SVG}" font-weight="700"><textPath href="#${id}p">${t} · ${t.length < 14 ? t + " · " : ""}</textPath></text><path d="M60 78 46 64c-5-5-4-13 2-16 5-2 9 0 12 4 3-4 7-6 12-4 6 3 7 11 2 16z" fill="#fff"/></svg>`;
+  const nume = (d.antetNume || "Organizația").toUpperCase().slice(0, 26);
+  // Numele se repetă (cu • între repetări) cât să încapă pe cerc; textLength îl întinde exact pe tot cercul.
+  const repetari = Math.max(1, Math.floor(272 / ((nume.length + 3) * 8.6)));
+  const t = esc(Array(repetari).fill(nume).join(" • ") + " • ");
+  return `<svg viewBox="0 0 120 120" role="img" aria-label="Sigiliu" style="width:${marime};height:${marime};display:block"><defs><path id="${id}p" d="M60 60m-44 0a44 44 0 1 1 88 0a44 44 0 1 1-88 0"/><linearGradient id="${id}g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--a)"/><stop offset="1" stop-color="var(--b)"/></linearGradient></defs><circle cx="60" cy="60" r="57" fill="url(#${id}g)"/><circle cx="60" cy="60" r="52" fill="none" stroke="#fff" stroke-opacity=".6"/><circle cx="60" cy="60" r="31" fill="none" stroke="#fff" stroke-opacity=".6"/><text font-size="9.5" fill="#fff" font-family="${SANS_SVG}" font-weight="700"><textPath href="#${id}p" textLength="270" lengthAdjust="spacing">${t}</textPath></text>${motivCurent() === "inima" ? '<path d="M60 78 46 64c-5-5-4-13 2-16 5-2 9 0 12 4 3-4 7-6 12-4 6 3 7 11 2 16z" fill="#fff"/>' : motivCurent() === "monograma" ? `<text x="60" y="73" text-anchor="middle" font-size="34" font-weight="700" fill="#fff" font-family="${SERIF_SVG}">${esc(literaCurenta())}</text>` : ""}</svg>`;
 }
 
 const colt = (stil: string, id: string) => `<svg viewBox="0 0 80 80" style="position:absolute;width:7cqw;height:7cqw;${stil}" aria-hidden="true"><path d="M4 4h46M4 4v46" stroke="var(--a)" stroke-width="3" fill="none"/><path d="M14 14h26M14 14v26" stroke="var(--a)" stroke-width="1.2" fill="none"/><circle cx="24" cy="24" r="4" fill="var(--a)"/><title>${id}</title></svg>`;
@@ -49,7 +53,10 @@ const COMUN = `.pag{aspect-ratio:297/210;display:flex;flex-direction:column}
 .mot p{margin:0 auto .45em;max-width:56cqw}.det{font-size:.95em;font-weight:700;color:var(--a);letter-spacing:.05em}.cit{font-style:italic;color:var(--m);font-size:.95em}.meta{font-size:.76em;color:var(--m);letter-spacing:.06em}
 .tit{text-transform:uppercase;letter-spacing:.34em;font-weight:700}.nume{font-family:${SERIF};font-style:italic;font-weight:400;line-height:1.1;overflow-wrap:anywhere;text-wrap:balance}`;
 
-const P = (d: DateCertificat, css: string, corp: string, portret = false) => docShell(`Certificat — ${d.destinatar || "document"}`, d, COMUN + css, corp, portret ? A4_PORTRET : A4_PEISAJ);
+// Mențiunea „document simbolic” stă pe orice certificat: „certificat” poate fi citit ca act oficial sau fiscal, iar nu e.
+const SIMB = '<div class="simb">Document simbolic de recunoaștere, fără valoare fiscală sau oficială.</div>';
+const P = (d: DateCertificat, css: string, corp: string, portret = false) =>
+  docShell(`Certificat — ${d.destinatar || "document"}`, d, COMUN + css + ".simb{position:absolute;left:0;right:0;bottom:.8cqw;text-align:center;font:.7em/1.2 sans-serif;letter-spacing:.04em;opacity:.55;color:inherit;z-index:5;pointer-events:none}", corp.replace(/(<div class="pag[^"]*">)/, "$1" + SIMB), portret ? A4_PORTRET : A4_PEISAJ);
 
 function clasic(d: DateCertificat): string {
   const b = bucati(d);
@@ -144,6 +151,7 @@ function poster(d: DateCertificat): string {
 }
 
 export function randeazaCertificat(d: DateCertificat, model: ModelCertificat = d.model): string {
+  seteazaMotiv(d.motivGrafic, d.antetNume);
   switch (model) {
     case "modern": return modern(d);
     case "gala": return gala(d);

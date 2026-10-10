@@ -1,6 +1,8 @@
 // Raport de impact pentru companii: datele de intrare, curățarea lor și textele derivate (total, perioadă, narativ cu placeholdere).
 // Fără acces la baza de date și fără React, ca să poată fi folosit și în browser (previzualizare) și în teste.
 
+import { curataMotiv, type Motiv } from "./motiv";
+
 export const MODELE_IMPACT = [
   { id: "clasic", eticheta: "Clasic", hint: "Cald, cu serif, copertă cu inimă și fișe de proiect" },
   { id: "executiv", eticheta: "Executiv", hint: "Sobru, cu rezumat lateral și tabel cu bare, pentru directori financiari" },
@@ -48,6 +50,7 @@ export type ProiectImpact = {
   linkDovada: string; // ordin de plată, factură, raport anonimizat (https)
   titluPublic: string; // dacă e completat, înlocuiește numele intern în raport (ex. fără numele unui copil)
   acordVerificat: boolean; // acordul pentru publicare a fost verificat
+  nealocat: boolean; // sumă primită și încă neafectată unui proiect: apare în listă, dar nu se numără ca proiect
 };
 
 export type DateImpact = {
@@ -64,7 +67,9 @@ export type DateImpact = {
   logoFirma: string; // logoul firmei (încărcat în pagină sau adresă https)
   logoOng: string; // logoul organizației
   model: ModelImpact;
+  motivGrafic: Motiv; // inimă cu puls, monogramă sau fără motiv grafic
   ceUrmeaza: string;
+  optiuniViitor: string; // variante pentru anul următor: câte una pe rând, ex. „12.000 lei — 40 de copii examinați”
   ctaText: string;
   ctaLink: string;
   contactNume: string;
@@ -77,13 +82,13 @@ export type DateImpact = {
 
 export const CULORI_IMPLICITE = { accent: "#b3261e", accent2: "#7f1d1d", accent3: "#fdf1ef" };
 
-export const NARATIV_IMPLICIT = `Vă mulțumim pentru sprijinul acordat{PERIOADA_TXT}. Contribuția dumneavoastră de {TOTAL} a fost direcționată către {PROIECTE_TXT}, prezentate mai jos.
+export const NARATIV_IMPLICIT = `Vă mulțumim pentru sprijinul acordat{PERIOADA_TXT}. Contribuția dumneavoastră de {TOTAL} a susținut {PROIECTE_TXT}, prezentate mai jos.
 
-Pentru fiecare proiect vedeți cât a reprezentat contribuția dumneavoastră, ce s-a realizat până la data raportului și unde puteți verifica informațiile. Acolo unde un proiect este încă în desfășurare, o spunem clar. Pentru orice întrebare sau document justificativ, ne puteți scrie oricând.`;
+Pentru fiecare proiect vedeți cât a reprezentat contribuția dumneavoastră, ce s-a realizat până la data raportului și unde puteți verifica informațiile. Acolo unde un proiect este încă în desfășurare, o spunem clar. Pentru orice întrebare sau pentru documente privind utilizarea sprijinului, ne puteți scrie oricând.`;
 
-export const DISCLAIMER_IMPLICIT = "Document informativ. Nu înlocuiește contractul, extrasele de cont sau documentele fiscale.";
+export const DISCLAIMER_IMPLICIT = "Document informativ, întocmit pe baza evidenței organizației la data raportului. Nu înlocuiește contractul, extrasele de cont sau documentele fiscale și nu constituie recomandare fiscală.";
 
-export const PROIECT_GOL: ProiectImpact = { nume: "", suma: null, data: "", link: "", observatii: "", locatie: "", anDirectionare: null, stare: "", nrBeneficiari: null, linkDovada: "", titluPublic: "", acordVerificat: false };
+export const PROIECT_GOL: ProiectImpact = { nume: "", suma: null, data: "", link: "", observatii: "", locatie: "", anDirectionare: null, stare: "", nrBeneficiari: null, linkDovada: "", titluPublic: "", acordVerificat: false, nealocat: false };
 
 export const dateImpactGoale = (): DateImpact => ({
   firma: "",
@@ -97,7 +102,9 @@ export const dateImpactGoale = (): DateImpact => ({
   logoFirma: "",
   logoOng: "",
   model: "clasic",
+  motivGrafic: "inima",
   ceUrmeaza: "",
+  optiuniViitor: "",
   ctaText: "",
   ctaLink: "",
   contactNume: "",
@@ -148,6 +155,7 @@ export function curataDateImpact(brut: unknown): DateImpact {
       linkDovada: urlHttp(p.linkDovada),
       titluPublic: text(p.titluPublic, 200),
       acordVerificat: p.acordVerificat === true,
+      nealocat: p.nealocat === true,
     };
   });
   return {
@@ -165,7 +173,9 @@ export function curataDateImpact(brut: unknown): DateImpact {
     // Versiunile vechi aveau un singur logo, al organizației.
     logoOng: urlLogo(b.logoOng ?? b.logoUrl),
     model: MODELE_IMPACT.some((m) => m.id === b.model) ? (b.model as ModelImpact) : gol.model,
+    motivGrafic: curataMotiv(b.motivGrafic),
     ceUrmeaza: typeof b.ceUrmeaza === "string" ? b.ceUrmeaza.slice(0, 800) : "",
+    optiuniViitor: typeof b.optiuniViitor === "string" ? b.optiuniViitor.slice(0, 800) : "",
     ctaText: text(b.ctaText, 120),
     ctaLink: urlHttp(b.ctaLink),
     contactNume: text(b.contactNume, 100),
@@ -197,7 +207,11 @@ export function perioadaImpact(d: DateImpact): string {
 }
 
 // Anul după care se grupează un proiect: anul direcționării (Declarația 177), altfel anul datei.
-export const anProiect = (p: ProiectImpact): number | null => p.anDirectionare ?? (ISO.test(p.data) ? Number(p.data.slice(0, 4)) : null);
+// Anul din care se grupează un proiect: data încasării sau a alocării (ce se vede pe extras); anul fiscal al direcționării e doar etichetă.
+export const anProiect = (p: ProiectImpact): number | null => (ISO.test(p.data) ? Number(p.data.slice(0, 4)) : p.anDirectionare);
+
+// Proiectele reale (fără suma încă neafectată), pentru numărătoare și pentru fraze de tipul „N proiecte”.
+export const proiecteReale = (d: DateImpact): ProiectImpact[] => d.proiecte.filter((p) => (p.nume || p.titluPublic) && !p.nealocat);
 
 export function proiecteSortate(d: DateImpact): ProiectImpact[] {
   return d.proiecte
@@ -220,7 +234,7 @@ export function grupePeAn(d: DateImpact): { an: string; proiecte: ProiectImpact[
 export const proiecteTxt = (nr: number) => (nr === 0 ? "proiectele susținute" : nr === 1 ? "un proiect" : `${nr} proiecte`);
 
 export function aplicaPlaceholdere(textBrut: string, d: DateImpact): string[] {
-  const nr = d.proiecte.filter((p) => p.nume || p.titluPublic).length;
+  const nr = proiecteReale(d).length;
   const perioada = perioadaImpact(d);
   const contact = [d.contactNume, d.contactTelefon, d.contactEmail].filter(Boolean).join(", ");
   const valori: Record<string, string> = {

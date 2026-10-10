@@ -1,5 +1,6 @@
 // Certificate (recunoștință, mulțumire, voluntariat, parteneriat...): datele de intrare, curățarea lor și tipurile de certificat.
 import { ACCENTE_IMPLICITE, curataAccente, iso, linieDinText, paragrafeDinText, text, textLung, urlLogo, type Accente } from "./documente-comun";
+import { curataMotiv, motivImplicit, type Motiv } from "./motiv";
 import { dataLunga } from "./raport-impact";
 
 export const MODELE_CERTIFICATE = [
@@ -28,8 +29,8 @@ export const TIPURI_CERTIFICAT: { id: TipCertificat; eticheta: string; titlu: st
   { id: "recunostinta", eticheta: "Certificat de recunoștință", titlu: "Certificat de recunoștință", introducere: "se acordă cu mulțumire", motiv: "pentru sprijinul acordat și pentru încrederea cu care ne-a fost alături în misiunea noastră." },
   { id: "multumire", eticheta: "Certificat de mulțumire pentru donator", titlu: "Certificat de mulțumire", introducere: "se acordă cu mulțumire", motiv: "pentru generozitatea cu care a ales să facă o schimbare în viața oamenilor pe care îi sprijinim." },
   { id: "voluntar", eticheta: "Certificat de voluntariat", titlu: "Certificat de voluntariat", introducere: "se acordă", motiv: "pentru timpul, energia și implicarea din activitatea de voluntariat desfășurată alături de {ORGANIZATIE}." },
-  { id: "partener", eticheta: "Certificat de parteneriat", titlu: "Certificat de parteneriat", introducere: "se acordă partenerului", motiv: "pentru colaborarea constantă și pentru proiectele realizate împreună cu {ORGANIZATIE}." },
-  { id: "sponsor", eticheta: "Certificat de sponsor", titlu: "Certificat de sponsor", introducere: "se acordă sponsorului", motiv: "pentru sponsorizarea acordată, care a contribuit la realizarea proiectelor noastre." },
+  { id: "partener", eticheta: "Certificat de parteneriat", titlu: "Certificat de parteneriat", introducere: "se acordă partenerului", motiv: "pentru colaborarea din {AN} și pentru proiectele realizate împreună cu {ORGANIZATIE}." },
+  { id: "sponsor", eticheta: "Certificat de sponsor", titlu: "Certificat de sponsor", introducere: "se acordă sponsorului", motiv: "pentru sprijinul acordat în {AN}, care a contribuit la realizarea proiectelor noastre." },
   { id: "participare", eticheta: "Certificat de participare", titlu: "Certificat de participare", introducere: "se acordă", motiv: "pentru participarea la evenimentul organizat de {ORGANIZATIE}." },
 ];
 
@@ -52,6 +53,7 @@ export type DateCertificat = Accente & {
   semn1Functie: string;
   semn2Nume: string;
   semn2Functie: string;
+  motivGrafic: Motiv;
 };
 
 export function dateCertificatGoale(o: { nume: string; logo?: string; acc?: Accente }, azi: string): DateCertificat {
@@ -76,6 +78,7 @@ export function dateCertificatGoale(o: { nume: string; logo?: string; acc?: Acce
     semn1Functie: "",
     semn2Nume: "",
     semn2Functie: "",
+    motivGrafic: motivImplicit(o.nume),
   };
 }
 
@@ -101,11 +104,12 @@ export function curataDateCertificat(brut: unknown, azi = ""): DateCertificat {
     semn1Functie: text(b.semn1Functie, 100),
     semn2Nume: text(b.semn2Nume, 100),
     semn2Functie: text(b.semn2Functie, 100),
+    motivGrafic: curataMotiv(b.motivGrafic),
   };
 }
 
 export function valoriCertificat(d: DateCertificat): Record<string, string> {
-  return { DESTINATAR: d.destinatar || "destinatar", ORGANIZATIE: d.antetNume || "organizația noastră", DATA: dataLunga(d.data) };
+  return { DESTINATAR: d.destinatar || "destinatar", ORGANIZATIE: d.antetNume || "organizația noastră", DATA: dataLunga(d.data), AN: d.data.slice(0, 4) };
 }
 export const motivCertificat = (d: DateCertificat) => paragrafeDinText(d.motiv, valoriCertificat(d));
 export const linieCertificat = (brut: string, d: DateCertificat) => linieDinText(brut, valoriCertificat(d));

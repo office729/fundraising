@@ -1,10 +1,11 @@
 "use client";
 
-import { ChevronDown, ClipboardCopy, Download, Eye, FileDown, LayoutGrid, Palette, Pencil, RotateCcw, Trash2, Upload } from "lucide-react";
+import { ClipboardCopy, Download, Eye, FileDown, LayoutGrid, Palette, Pencil, RotateCcw, Trash2, Upload } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { descarcaBlob, htmlInPdf } from "@/lib/html-in-pdf";
+import { raporteazaEroare } from "@/lib/monitoring";
 import { incarcaLogo, paletaDinLogo } from "@/lib/logo-incarcare";
 import { paletaDinHex, type PaletaLogo } from "@/lib/raport-impact-culori";
 
@@ -12,9 +13,10 @@ import { Button } from "../../components/ui/button";
 import { Card, CardHeader } from "../../components/ui/card";
 import { Input, Label, Select, Textarea } from "../../components/ui/input";
 import { Camp } from "./camp";
+import { MeniuExport } from "./meniu-export";
 import { inregistreazaDocumentAction, urmatorulNumarAction, type TipDoc } from "./documente-actions";
 
-export type CampDef = { cheie: string; eticheta: string; tip?: "text" | "textarea" | "data"; ajutor?: string; placeholder?: string; rows?: number; jumatate?: boolean };
+export type CampDef = { cheie: string; eticheta: string; tip?: "text" | "textarea" | "data" | "select"; optiuni?: readonly { id: string; eticheta: string }[]; ajutor?: string; placeholder?: string; rows?: number; jumatate?: boolean };
 export type GrupDef = { titlu: string; subtitlu?: string; campuri: CampDef[] };
 export type TipDef = { id: string; eticheta: string; patch: Record<string, string> };
 export type ModelDef = { id: string; eticheta: string; hint: string };
@@ -48,6 +50,13 @@ export type GeneratorProps<D extends Date_> = {
   ajutor: string;
 };
 
+// Amprentă scurtă a unui text (hash FNV-1a pe tot conținutul): două documente diferite nu mai pot părea la fel.
+function semnatura(t: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < t.length; i++) h = Math.imul(h ^ t.charCodeAt(i), 0x01000193);
+  return `${t.length}:${(h >>> 0).toString(36)}`;
+}
+
 const ZILE_CIORNA = 14;
 const MS_ZI = 86_400_000;
 
@@ -60,7 +69,6 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
   const [eroareLogo, setEroareLogo] = useState<string | null>(null);
   const [paleta, setPaleta] = useState<PaletaLogo | null>(null);
   const [ciorna, setCiorna] = useState<string | null>(null); // data ciornei restaurate
-  const [meniu, setMeniu] = useState(false);
   const [seFacePdf, setSeFacePdf] = useState(false);
   const [seteazaNumar, setSeteazaNumar] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -144,17 +152,28 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
 
   // Fiecare export se înregistrează în istoricul organizației (cu datele, ca să poată fi redeschis).
   function inregistreaza() {
-    const semn = `${html.length}:${html.slice(0, 200)}:${curat.model}`;
+    const semn = semnatura(html);
     if (semn === ultimaInregistrare.current) return;
     ultimaInregistrare.current = semn;
-    inregistreazaDocumentAction(p.orgSlug, p.cheieTool, { titlu: p.titluIstoric(curat), firmaId: p.firmaId ?? null, numar: p.numerotare ? val(p.numerotare.cheie) : "", date: curat })
-      .then((r) => r.ok && setInfo((x) => (x ? `${x} Salvat în istoric.` : "Salvat în istoric.")))
-      .catch(() => {});
+    // Logo-urile (date de imagine mari) nu se trimit: se iau din Setări la redeschidere.
+    const faraLogo = { ...curat, logoOng: "", logoDestinatar: "", logoFirma: "" };
+    inregistreazaDocumentAction(p.orgSlug, p.cheieTool, { titlu: p.titluIstoric(curat), firmaId: p.firmaId ?? null, numar: p.numerotare ? val(p.numerotare.cheie) : "", date: faraLogo })
+      .then((r) => {
+        if (r.ok) setInfo((x) => (x ? `${x} Salvat în istoric.` : "Salvat în istoric."));
+        else {
+          ultimaInregistrare.current = "";
+          setInfo((x) => (x ? `${x} Nu s-a putut salva în istoric.` : "Nu s-a putut salva în istoric."));
+        }
+      })
+      .catch((e) => {
+        ultimaInregistrare.current = "";
+        raporteazaEroare("documente-istoric", e, { tip: p.cheieTool });
+        setInfo((x) => (x ? `${x} Nu s-a putut salva în istoric.` : "Nu s-a putut salva în istoric."));
+      });
   }
 
   async function copiaza() {
     setEroare(null);
-    setMeniu(false);
     try {
       await navigator.clipboard.writeText(html);
     } catch {
@@ -174,7 +193,6 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
   }
   const numeSigur = () => p.numeFisier(curat).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || p.cheieTool;
   function descarca() {
-    setMeniu(false);
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([html], { type: "text/html;charset=utf-8" }));
     a.download = `${numeSigur()}.html`;
@@ -194,9 +212,10 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
       const { blob, imaginiOmise } = await htmlInPdf(html);
       descarcaBlob(blob, `${numeSigur()}.pdf`);
       inregistreaza();
-      setInfo(imaginiOmise ? `PDF descărcat, dar ${imaginiOmise === 1 ? "un logo nu a putut fi inclus" : `${imaginiOmise} logo-uri nu au putut fi incluse`} (adresa lui nu permite folosirea). Încarcă logoul din calculator.` : "PDF-ul a fost descărcat.");
+      setInfo(imaginiOmise ? `PDF descărcat, dar ${imaginiOmise === 1 ? "un logo nu a putut fi inclus" : `${imaginiOmise} logo-uri nu au putut fi incluse`} (adresa lui nu e permisă sau nu a răspuns). Încarcă logoul din calculator, ca fișier.` : "PDF-ul a fost descărcat.");
       setTimeout(() => setInfo(null), 8000);
-    } catch {
+    } catch (e) {
+      raporteazaEroare("pdf-direct", e, { tip: p.cheieTool, ua: navigator.userAgent.slice(0, 160), lungime: html.length });
       setInfo("Nu am putut crea PDF-ul direct în acest browser. Se deschide tipărirea: alege „Salvează ca PDF”.");
       setTimeout(() => setInfo(null), 8000);
       tipareste();
@@ -268,44 +287,13 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
           <Button variant="primary" onClick={pdf} disabled={seFacePdf} title="Descarcă un fișier PDF (pagină în înaltă rezoluție)">
             <FileDown className="size-4" aria-hidden /> {seFacePdf ? "Se pregătește PDF-ul…" : "Salvează ca PDF"}
           </Button>
-          <div
-            className="relative"
-            onKeyDown={(e) => {
-              if (e.key === "Escape") setMeniu(false);
-            }}
-          >
-            <Button onClick={() => setMeniu((x) => !x)} aria-expanded={meniu} aria-haspopup="menu">
-              Alte formate <ChevronDown className="size-4" aria-hidden />
-            </Button>
-            {meniu && (
-              <>
-                <button type="button" aria-label="Închide meniul" className="fixed inset-0 z-10 cursor-default" onClick={() => setMeniu(false)} />
-                <div role="menu" className="absolute right-0 z-20 mt-1.5 w-64 rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-1.5 shadow-lg">
-                  <button type="button" role="menuitem" onClick={copiaza} className="flex w-full items-start gap-2.5 rounded-[var(--ci-radius-btn)] px-2.5 py-2 text-left text-[13px] hover:bg-[var(--ci-surface-2)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
-                    <ClipboardCopy className="mt-0.5 size-4 shrink-0 text-[var(--ci-primary)]" aria-hidden />
-                    <span>
-                      <span className="font-semibold text-[var(--ci-text)]">Copiază codul HTML</span>
-                      <span className="block text-[11.5px] text-[var(--ci-text-muted)]">Pentru a-l lipi într-o platformă sau pe un site.</span>
-                    </span>
-                  </button>
-                  <button type="button" role="menuitem" onClick={() => { setMeniu(false); tipareste(); }} className="flex w-full items-start gap-2.5 rounded-[var(--ci-radius-btn)] px-2.5 py-2 text-left text-[13px] hover:bg-[var(--ci-surface-2)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
-                    <FileDown className="mt-0.5 size-4 shrink-0 text-[var(--ci-primary)]" aria-hidden />
-                    <span>
-                      <span className="font-semibold text-[var(--ci-text)]">Tipărește sau PDF cu text selectabil</span>
-                      <span className="block text-[11.5px] text-[var(--ci-text-muted)]">Deschide tipărirea; în ea alegi „Salvează ca PDF”. Textul și linkurile rămân active.</span>
-                    </span>
-                  </button>
-                  <button type="button" role="menuitem" onClick={descarca} className="flex w-full items-start gap-2.5 rounded-[var(--ci-radius-btn)] px-2.5 py-2 text-left text-[13px] hover:bg-[var(--ci-surface-2)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
-                    <Download className="mt-0.5 size-4 shrink-0 text-[var(--ci-primary)]" aria-hidden />
-                    <span>
-                      <span className="font-semibold text-[var(--ci-text)]">Descarcă HTML</span>
-                      <span className="block text-[11.5px] text-[var(--ci-text-muted)]">Un fișier pe care îl deschizi în browser.</span>
-                    </span>
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
+          <MeniuExport
+            elemente={[
+              { eticheta: "Copiază codul HTML", descriere: "Pentru a-l lipi într-o platformă sau pe un site.", icon: <ClipboardCopy className="size-4" aria-hidden />, onClick: copiaza },
+              { eticheta: "Descarcă HTML", descriere: "Un fișier pe care îl deschizi în browser.", icon: <Download className="size-4" aria-hidden />, onClick: descarca },
+              { eticheta: "Tipărește sau PDF cu text selectabil", descriere: "Deschide tipărirea; în ea alegi „Salvează ca PDF”. Textul și linkurile rămân active.", icon: <FileDown className="size-4" aria-hidden />, onClick: tipareste },
+            ]}
+          />
         </div>
       </div>
       <p className="max-w-4xl text-[12.5px] text-[var(--ci-text-muted)]">{p.ajutor}</p>
@@ -424,7 +412,15 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
                       ) : undefined
                     }
                   >
-                    {c.tip === "textarea" ? (
+                    {c.tip === "select" ? (
+                      <Select value={val(c.cheie)} onChange={(e) => actualizeaza({ [c.cheie]: e.target.value } as Partial<D>)}>
+                        {c.optiuni?.map((o) => (
+                          <option key={o.id} value={o.id}>
+                            {o.eticheta}
+                          </option>
+                        ))}
+                      </Select>
+                    ) : c.tip === "textarea" ? (
                       <Textarea rows={c.rows ?? 4} value={val(c.cheie)} placeholder={c.placeholder} onChange={(e) => actualizeaza({ [c.cheie]: e.target.value } as Partial<D>)} />
                     ) : (
                       <Input type={c.tip === "data" ? "date" : "text"} value={val(c.cheie)} placeholder={c.placeholder} onChange={(e) => actualizeaza({ [c.cheie]: e.target.value } as Partial<D>)} />

@@ -1,6 +1,7 @@
 import { requireOrgAccess } from "@/lib/auth/guard";
 import { titluAbsolut } from "@/lib/page-titles";
 
+import { IstoricDocumente } from "../_comun/istoric-documente";
 import { GalerieModele } from "./galerie-modele";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +17,7 @@ export default async function RaportCompaniiPage({ params }: { params: Promise<{
         <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">Rapoarte de impact pentru companii</h1>
         <p className="mt-0.5 max-w-3xl text-[13px] text-[var(--ci-text-muted)]">Alegi un șablon. În generator încarci logo-urile, completezi proiectele și copiezi codul HTML sau exporți PDF.</p>
       </div>
+      <IstoricDocumente orgSlug={orgSlug} tip="rapoarte" hrefGenerator={`/${orgSlug}/crm/instrumente/raport-companii/impact`} />
       <GalerieModele orgSlug={orgSlug} organizatie={access.orgName} logoOng={logo} culoare={access.orgBrandColor} azi={new Date().toISOString().slice(0, 10)} />
     </div>
   );
