@@ -57,6 +57,7 @@ export async function updateSession(request: NextRequest, rewriteTo?: URL) {
     "/contact",
     "/automatizare",
     "/automatizari",
+    "/cum-functioneaza",
     "/studii-de-caz",
     "/blog",
     "/termeni",

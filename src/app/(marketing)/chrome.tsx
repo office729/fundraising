@@ -64,7 +64,7 @@ export function SiteHeader({ dict }: { dict: MarketingDict }) {
 
   return (
     <header className="border-b border-line bg-panel">
-      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-6 px-6">
+      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-4 px-6 2xl:gap-6">
         <Link prefetch={false} href="/" className="flex shrink-0 items-center" onClick={() => setDeschis(false)} aria-label="Alexandrit">
           <Image
             src="/alexandrit-logo.webp"
@@ -77,7 +77,7 @@ export function SiteHeader({ dict }: { dict: MarketingDict }) {
           />
         </Link>
 
-        <nav aria-label="Principal" className="hidden items-center gap-4 lg:flex xl:gap-6">
+        <nav aria-label="Principal" className="hidden items-center gap-4 min-[1140px]:flex 2xl:gap-6">
           {/* „Acasă" lipsește de aici: logo-ul duce deja la prima pagină (rămâne în meniul de mobil). */}
           {dict.nav.filter((item) => item.href !== "/").map((item) => {
             const subPaginiActive = dict.navCineSuntem.some((x) => pathname === x.href);
@@ -133,21 +133,21 @@ export function SiteHeader({ dict }: { dict: MarketingDict }) {
           <Link
             prefetch={false}
             href="/hub#consultanta"
-            className="hidden rounded-md bg-brand-green px-4 py-2 text-sm font-bold whitespace-nowrap text-white transition hover:bg-brand-green-hover sm:inline-block lg:hidden xl:inline-block"
+            className="hidden rounded-md bg-brand-green px-4 py-2 text-sm font-bold whitespace-nowrap text-white transition hover:bg-brand-green-hover sm:max-[1139px]:inline-block xl:inline-block xl:px-3 2xl:px-4"
           >
             {dict.header.consulting}
           </Link>
           <Link
             prefetch={false}
             href="/login"
-            className="hidden text-sm font-bold whitespace-nowrap text-ink transition hover:text-brand-blue lg:inline-block"
+            className="hidden text-sm font-bold whitespace-nowrap text-ink transition hover:text-brand-blue min-[1140px]:inline-block"
           >
             {dict.header.login}
           </Link>
           <Link
             prefetch={false}
             href="/signup"
-            className="hidden rounded-md bg-brand-blue px-4 py-2 text-sm font-bold whitespace-nowrap text-white transition hover:bg-brand-blue-hover lg:inline-block"
+            className="hidden rounded-md bg-brand-blue px-4 py-2 text-sm font-bold whitespace-nowrap text-white transition hover:bg-brand-blue-hover min-[1140px]:inline-block"
           >
             {dict.header.signup}
           </Link>
@@ -157,7 +157,7 @@ export function SiteHeader({ dict }: { dict: MarketingDict }) {
             aria-label={deschis ? dict.header.closeMenu : dict.header.openMenu}
             aria-expanded={deschis}
             aria-controls="meniu-mobil"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-ink lg:hidden"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-ink min-[1140px]:hidden"
           >
             {deschis ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
@@ -165,7 +165,7 @@ export function SiteHeader({ dict }: { dict: MarketingDict }) {
       </div>
 
       {deschis && (
-        <nav id="meniu-mobil" aria-label="Meniu mobil" className="flex flex-col gap-1 border-t border-line px-6 py-3 lg:hidden">
+        <nav id="meniu-mobil" aria-label="Meniu mobil" className="flex flex-col gap-1 border-t border-line px-6 py-3 min-[1140px]:hidden">
           {dict.nav.map((item) => (
             <div key={item.href} className="flex flex-col gap-1">
               <Link

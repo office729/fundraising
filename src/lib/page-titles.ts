@@ -12,6 +12,7 @@ const TITLURI = {
   acasa: { ro: "Alexandrit: platformă de fundraising pentru ONG-uri", en: "Alexandrit: fundraising platform for NGOs" },
   hub: { ro: "Hub Fundraising: prețuri și consiliere", en: "Fundraising Hub: pricing and advisory" },
   automatizari: { ro: "Automatizări", en: "Automations" },
+  "cum-functioneaza": { ro: "Cum funcționează", en: "How it works" },
   blog: { ro: "Blog", en: "Blog" },
   "ce-facem": { ro: "Ce facem", en: "What we do" },
   "cine-suntem": { ro: "Cine suntem", en: "Who we are" },
@@ -124,6 +125,10 @@ const DESCRIERI: Partial<Record<PaginaCuTitlu, { ro: string; en: string }>> = {
     ro: "Alege pachetul Alexandrit potrivit ONG-ului tău: prețuri clare, 30 de zile de probă gratuită și consiliere de fundraising 1 la 1.",
     en: "Choose the Alexandrit plan that fits your NGO: clear pricing, a 30-day free trial and 1-to-1 fundraising advice.",
   },
+  "cum-functioneaza": {
+    ro: "Cum funcționează Alexandrit pentru ONG-uri: campanii de donații, CRM pentru donatori și companii, Formularul 230, voluntari și echipă, într-un singur loc.",
+    en: "How Alexandrit works for NGOs: donation campaigns, CRM for donors and companies, Form 230, volunteers and team, in one place.",
+  },
   automatizari: {
     ro: "Automatizări pentru fundraising: mesaje de mulțumire, reamintiri pentru Formularul 230 și fluxuri care economisesc timp echipei ONG-ului tău.",
     en: "Fundraising automations: thank-you messages, Form 230 reminders and workflows that save your NGO team time.",
@@ -182,6 +187,7 @@ const CALE_CANONICA: Partial<Record<PaginaCuTitlu, string>> = {
   acasa: "/",
   hub: "/hub",
   automatizari: "/automatizari",
+  "cum-functioneaza": "/cum-functioneaza",
   "ce-facem": "/ce-facem",
   "cine-suntem": "/cine-suntem",
   "intrebari-frecvente": "/intrebari-frecvente",
