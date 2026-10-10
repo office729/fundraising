@@ -167,16 +167,16 @@ export default function CrmDashboardPage() {
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-6">
-      <PrimiiPasiCard orgSlug={orgSlug} ro={locale === "ro"} pasi={primiiPasi} />
-
-      {primiiPasi === null && <div className="h-72 animate-pulse rounded-xl bg-black/5" aria-hidden />}
+      {arataDashboard && (
+        <DomainWelcomeBanner salut={salut} nume={prenume} subtitle={dict.summary(actiuni.length, blocate)} />
+      )}
 
       {faraDateReale && !exemple && (
         <>
           <DomainWelcomeBanner
             salut={salut}
             nume={prenume}
-            subtitle={locale === "ro" ? "Bine ai venit! Începe cu pașii de mai sus — durează doar câteva minute." : "Welcome! Start with the steps above — it only takes a few minutes."}
+            subtitle={locale === "ro" ? "Bine ai venit! Începe cu pașii de mai jos — durează doar câteva minute." : "Welcome! Start with the steps below — it only takes a few minutes."}
           />
           <div className="rounded-[var(--ci-radius-card)] border border-dashed border-[var(--ci-border-strong)] bg-[var(--ci-surface)] p-5 text-center">
             <p className="text-[14px] font-semibold text-[var(--ci-text)]">
@@ -205,8 +205,6 @@ export default function CrmDashboardPage() {
       </DemoBanner>
 
       <TaskuriCard taskuri={taskuriLive} base={base} locale={locale} />
-
-      <DomainWelcomeBanner salut={salut} nume={prenume} subtitle={dict.summary(actiuni.length, blocate)} />
 
       {/* Filtrul de perioadă rămâne identic pentru orice familie — e un
           control, nu un widget de conținut, deci nu face parte din
@@ -249,6 +247,10 @@ export default function CrmDashboardPage() {
           )}
         </>
       )}
+
+      <PrimiiPasiCard orgSlug={orgSlug} ro={locale === "ro"} pasi={primiiPasi} />
+
+      {primiiPasi === null && <div className="h-72 animate-pulse rounded-xl bg-black/5" aria-hidden />}
     </div>
   );
 }
