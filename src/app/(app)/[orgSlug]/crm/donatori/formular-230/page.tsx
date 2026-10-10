@@ -21,6 +21,7 @@ import { BeneficiariPanel } from "./beneficiari-panel";
 import { BorderouriCard } from "./borderouri-card";
 import { listeazaBorderouri } from "./borderouri-actions";
 import { CopyLinkButton, DeleteButton, PdfButton, ProcesatAnafCheckbox } from "./client";
+import { LinkPublicCard } from "./link-public-card";
 import { ExportButtons } from "./export-buttons";
 import { FilterBar } from "./filter-bar";
 import { RomaniaMapCard } from "./romania-map-card";
@@ -239,6 +240,9 @@ export default async function Formular230StatsPage({
         <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
         <span>{dict.memento}</span>
       </p>
+
+      {/* Linkul scurt (/s/<cod>) dacă există; altfel adresa lungă, pentru conturile create înainte de codurile scurte. */}
+      <LinkPublicCard cale={beneficiari.find((b) => b.slug === SLUG_PRINCIPAL)?.shortCode ? `/s/${beneficiari.find((b) => b.slug === SLUG_PRINCIPAL)!.shortCode}` : `/f230/${orgSlug}/${SLUG_PRINCIPAL}`} />
 
       <BeneficiariPanel orgSlug={orgSlug} beneficiari={beneficiari} />
 
