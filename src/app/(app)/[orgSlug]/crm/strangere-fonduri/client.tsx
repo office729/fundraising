@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, Copy, HandCoins, ImageUp, Lock, Pencil, Plus, Trash2, Unlock } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useActionState, useEffect, useState } from "react";
 
 import { Button } from "../components/ui/button";
@@ -25,13 +25,21 @@ export function AddPageButton({ orgSlug }: { orgSlug: string }) {
   const locale = useLocale();
   const dict = STRANGERE_FONDURI_DICT[locale].client;
   const [open, setOpen] = useState(false);
+  // „+ Adaugă” din antetul CRM trimite aici cu ?nou=pagina: se deschide formularul, iar la închidere parametrul se scoate din adresă.
+  const router = useRouter();
+  const pathname = usePathname();
+  const cerutDinAntet = useSearchParams().get("nou") === "pagina";
+  const inchide = () => {
+    setOpen(false);
+    if (cerutDinAntet) router.replace(pathname);
+  };
 
   return (
     <>
       <Button variant="secondary" onClick={() => setOpen(true)}>
         <Plus className="h-3.5 w-3.5" /> {dict.adaugaPagina}
       </Button>
-      <AddPageDialog open={open} onClose={() => setOpen(false)} orgSlug={orgSlug} />
+      <AddPageDialog open={open || cerutDinAntet} onClose={inchide} orgSlug={orgSlug} />
     </>
   );
 }

@@ -400,7 +400,7 @@ function NavGroups({
 // pe Companii n-are rost să-ți arăt și „Donator"/„Proiect"/„Task". Pe pagini
 // fără o legătură clară (Acasă, Rapoarte, Setări etc.) rămân toate, ca „+
 // Adaugă" să nu devină un buton mort acolo.
-type AddContext = "donatori" | "companii" | "beneficiari" | "taskuri" | "performanta" | "organizatie" | null;
+type AddContext = "donatori" | "companii" | "beneficiari" | "taskuri" | "performanta" | "organizatie" | "fonduri" | null;
 
 function contextDinPathname(pathname: string | null, base: string): AddContext {
   if (!pathname) return null;
@@ -410,6 +410,8 @@ function contextDinPathname(pathname: string | null, base: string): AddContext {
   if (pathname.startsWith(`${base}/taskuri`)) return "taskuri";
   if (pathname.startsWith(`${base}/performanta`)) return "performanta";
   if (pathname.startsWith(`${base}/organizatie`)) return "organizatie";
+  // Donații, pagini de strângere de fonduri și alocări/plăți: aici se adaugă o pagină de campanie sau un proiect.
+  if (pathname.startsWith(`${base}/donatii`) || pathname.startsWith(`${base}/strangere-fonduri`) || pathname.startsWith(`${base}/fonduri-plati`)) return "fonduri";
   return null;
 }
 
@@ -453,6 +455,8 @@ function AddDialog({
     { context: "organizatie" as const, label: "Departament", icon: Network, action: () => router.push(`${base}/organizatie?nou=departament`) },
     { context: "organizatie" as const, label: "Rol", icon: ClipboardList, action: () => router.push(`${base}/organizatie?nou=rol`) },
     { context: "organizatie" as const, label: "Membru în echipă", icon: UserPlus, action: () => router.push(`${base}/organizatie?nou=membru`) },
+    { context: "fonduri" as const, label: "Pagină de strângere de fonduri (campanie)", icon: HandCoins, action: () => router.push(`${base}/strangere-fonduri?nou=pagina`) },
+    { context: "fonduri" as const, label: "Proiect (beneficiar al fondurilor)", icon: HeartHandshake, action: () => setProjectOpen(true) },
     { context: "donatori" as const, label: "Donator (persoană fizică)", icon: Users, action: () => setDonorOpen(true) },
     { context: "beneficiari" as const, label: "Proiect", icon: HeartHandshake, action: () => setProjectOpen(true) },
     // Companie — server action REALĂ (adaugaFirma), nu mock; vezi
@@ -471,7 +475,7 @@ function AddDialog({
 
   return (
     <>
-      <Dialog open={open} onClose={onClose} title={context === "performanta" ? "Ce vrei să adaugi în echipă?" : context === "organizatie" ? "Ce vrei să adaugi în organizație?" : "Ce vrei să adaugi?"}>
+      <Dialog open={open} onClose={onClose} title={context === "performanta" ? "Ce vrei să adaugi în echipă?" : context === "organizatie" ? "Ce vrei să adaugi în organizație?" : context === "fonduri" ? "Ce vrei să adaugi la strângerea de fonduri?" : "Ce vrei să adaugi?"}>
         <div className="space-y-1.5">
           {OPTIUNI.map((o) => (
             <button
