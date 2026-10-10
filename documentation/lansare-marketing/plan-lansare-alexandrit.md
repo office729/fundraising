@@ -188,7 +188,7 @@ Confirmat: **lucrăm cu CRM de 4 ani** (din 2022). Asta împarte istoria asocia�
 
 | | Primii 10 ani, fără CRM (2012–2021) | Ultimii 4 ani, cu CRM (2022–2026) |
 |---|---|---|
-| Sume strânse, în medie pe an | [DE COMPLETAT] | [DE COMPLETAT] |
+| Donații de la persoane fizice, pe an | ~800.000 lei (2021) | ~6.000.000 lei (azi) — **de 7,5 ori mai mult** |
 | Donații pe an | [DE COMPLETAT] | ~70.000 |
 | Companii sponsor pe an | [DE COMPLETAT] | [DE COMPLETAT] |
 | Formulare 230 pe an | [DE COMPLETAT] | [DE COMPLETAT] |
@@ -198,8 +198,18 @@ Ce se poate spune deja (cifre confirmate): **9 oameni gestionează ~70.000 de do
 **~7.800 de donații de om pe an, ~650 pe lună.** Echipa a crescut de 3 ori (de la 3 la 9), dar munca a crescut mult
 mai repede; diferența o acoperă sistemul.
 
-Cel mai puternic mesaj ar fi: *„Cu aceeași echipă (sau aproape), în ultimii 4 ani gestionăm de [X] ori mai multe
-donații decât înainte de CRM.”* — dacă cifrele o confirmă.
+**Mesajul principal (cifre confirmate):**
+> „Înainte de CRM strângeam din donațiile oamenilor în jur de 800.000 de lei pe an. În 4 ani de lucru cu CRM-ul am
+> ajuns la 6 milioane de lei pe an — de 7,5 ori mai mult — din aproximativ 70.000 de donații.”
+
+Calcule derivate, pentru grafice și carusele:
+- donația medie a unei persoane fizice azi: **~86 lei** (6.000.000 lei / 70.000 de donații);
+- creșterea: **+5,2 milioane lei pe an** față de 2021;
+- pe om din echipă (9 oameni): **~667.000 lei din donații PF pe an**.
+
+> Formulare onestă: creșterea vine din munca echipei, din campanii și din comunitatea de donatori; CRM-ul a făcut
+> posibil ca aceeași echipă mică să ducă de 7,5 ori mai mult volum. Spune „cu CRM-ul am reușit să…”, nu „CRM-ul ne-a
+> adus 7,5 ori mai mulți bani”.
 
 > **De lămurit înainte de publicare — „3 milioane de euro pe an de 10 ani”.** 10 ani × 3 mil. € = 30 mil. €, mai
 > mult decât totalul publicat de 28 mil. € în 14 ani. Una dintre cifre trebuie corectată:
@@ -332,6 +342,13 @@ tabelul de la Pasul 3.
 > Adică aproape 7.800 de donații pentru fiecare om din echipă.
 > Nu am reușit asta lucrând mai mult. Am reușit lucrând cu un sistem: de 4 ani, totul trece prin CRM.
 > Același sistem îl punem acum la dispoziția oricărui ONG: alexandrit.ro
+
+**P9d · „De la 800.000 la 6.000.000 de lei” — postarea principală a lansării** (grafic cu două bare + video Vlad)
+> În 2021, din donațiile oamenilor strângeam în jur de 800.000 de lei pe an.
+> Azi strângem 6 milioane de lei pe an. De 7,5 ori mai mult, în 4 ani.
+> Ce s-a schimbat? Am încetat să ținem donatorii în tabele și în memorie. De 4 ani, fiecare donație, fiecare donator
+> și fiecare mulțumire trece printr-un CRM.
+> Nu e magie, e ordine. Și aceeași ordine o poate avea acum orice ONG din România: alexandrit.ro
 
 **P10 · „Sponsorizarea prin 20%, explicată în 60 de secunde”** — conținut util (ce e, ce document trebuie, cum îl
 generezi în Alexandrit). Bun pentru distribuire în grupuri de ONG-uri.
