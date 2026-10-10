@@ -1,11 +1,23 @@
 "use client";
 
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Award, Building2, FileBarChart, FileText, Mail, Newspaper, PenLine, Users, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
 import { useLocale } from "../lib/locale-context";
 import { INSTRUMENTE_DICT } from "@/lib/i18n/dictionaries/instrumente";
+
+// Pictograma fiecărui instrument, în culoarea categoriei (verde rapoarte, mov campanii, roșu generatoare, albastru documente).
+const PICTOGRAME: Record<string, LucideIcon> = {
+  raportCompanii: FileBarChart,
+  scrisori: Mail,
+  certificate: Award,
+  newsletterPf: Users,
+  newsletterPj: Building2,
+  onePagerGenerator: FileText,
+  semnaturaDigitala: PenLine,
+};
+const PictogramaDefault = Newspaper;
 
 type CategorieKey = "rapoarte" | "campanii" | "generatoare" | "documente";
 type InstrumentDef = { key: string; href: string };
@@ -81,6 +93,7 @@ export default function InstrumentePage() {
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {cat.instrumente.map((inst) => {
+                const Pictograma = PICTOGRAME[inst.key] ?? PictogramaDefault;
                 const instDict = (catDict.instrumente as Record<string, { titlu: string; descriere: string }>)[inst.key];
                 return (
                   <Link
@@ -89,8 +102,19 @@ export default function InstrumentePage() {
                     href={inst.href.startsWith("/") ? `/${orgSlug}${inst.href}` : `/${orgSlug}/crm/instrumente/${inst.href}`}
                     className="group block rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4 shadow-[var(--ci-card-shadow)] transition-colors hover:border-[var(--ci-primary)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none"
                   >
-                    <p className="text-[14px] font-semibold text-[var(--ci-text)]">{instDict.titlu}</p>
-                    <p className="mt-1 text-[12px] text-[var(--ci-text-muted)]">{instDict.descriere}</p>
+                    <div className="flex items-start gap-3">
+                      <span
+                        aria-hidden="true"
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--ci-radius-btn)]"
+                        style={{ background: `color-mix(in srgb, ${cat.culoare} 12%, white)`, color: cat.culoare }}
+                      >
+                        <Pictograma className="h-5 w-5" strokeWidth={1.9} />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[14px] font-semibold text-[var(--ci-text)]">{instDict.titlu}</p>
+                        <p className="mt-1 text-[12px] text-[var(--ci-text-muted)]">{instDict.descriere}</p>
+                      </div>
+                    </div>
                     <span className="mt-3 flex items-center gap-1 text-[13px] font-medium text-[var(--ci-primary)] group-hover:underline">
                       {dict.deschide} <ArrowRight className="h-3.5 w-3.5" />
                     </span>

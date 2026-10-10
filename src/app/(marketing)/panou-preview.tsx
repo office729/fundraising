@@ -5,6 +5,7 @@
 // contul vreunei organizații, deci nu expun nume de donatori sau firme reale. Layout compact: pe ecran lat, lista de ecrane stă
 // lângă fereastră; pe telefon, butoanele se așază pe mai multe rânduri (se văd toate, fără derulare laterală), iar fereastra are înălțime fixă.
 
+import { Award, FileBarChart, FileText, Mail, PenLine, Users, type LucideIcon } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
 type Locale = "ro" | "en";
@@ -322,20 +323,28 @@ function Instrumente({ L }: { L: L }) {
     <div className="space-y-3">
       <Antet t={L("Instrumente digitale", "Digital tools")} s={L("Documente și materiale gata de trimis, cu identitatea organizației tale", "Ready-to-send documents and materials in your organization's identity")} />
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-        {unelte.map(([n, d, c], i) => (
+        {unelte.map(([n, d, c], i) => {
+          const Icon = PICTOGRAME_UNELTE[i] ?? FileText;
+          return (
           <Card key={n} className={`p-3 ${i > 3 ? "hidden sm:block" : ""}`}>
-            <p className="flex items-center gap-1.5 text-[12px] font-bold text-ink">
-              <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: c }} />
+            <p className="flex items-center gap-2 text-[12px] font-bold text-ink">
+              <span aria-hidden="true" className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md" style={{ background: `${c}1f`, color: c }}>
+                <Icon className="h-3.5 w-3.5" strokeWidth={2} />
+              </span>
               <span className="truncate">{n}</span>
             </p>
             <p className="mt-1 text-[11px] leading-snug text-muted-2">{d}</p>
             <p className="mt-2 text-[11.5px] font-semibold text-brand-blue">{L("Deschide →", "Open →")}</p>
           </Card>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
 }
+
+// Pictogramele celor șase instrumente din ilustrație, în ordinea listei.
+const PICTOGRAME_UNELTE: LucideIcon[] = [FileBarChart, Mail, Award, Users, FileText, PenLine];
 
 function Echipa({ L }: { L: L }) {
   const ob: [string, number, "green" | "amber" | "red", string][] = [
