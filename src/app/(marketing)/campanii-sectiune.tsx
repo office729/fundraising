@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Baby, FileText, GraduationCap, Heart, HeartHandshake, LayoutTemplate, Leaf, MapPin, Palette, PawPrint, Search, ShieldCheck, Sparkles, Stethoscope, Trophy, type LucideIcon } from "lucide-react";
+import { ArrowRight, Baby, FileText, GraduationCap, Heart, HeartHandshake, LayoutTemplate, Leaf, MapPin, Palette, PawPrint, Search, ShieldCheck, Sparkles, Stethoscope, Trophy, Wallet, type LucideIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -347,6 +347,7 @@ const PASI = [
 
 const AVANTAJE: { icon: LucideIcon; t: string; d: string }[] = [
   { icon: LayoutTemplate, t: "O pagină pentru fiecare proiect", d: "Povestea, poza, progresul și butonul de donație, într-o singură pagină, ușor de citit pe telefon." },
+  { icon: Wallet, t: "Fără comision din donații", d: "Alexandrit nu reține niciun comision din donații. Se aplică doar comisionul procesatorului de plăți, Stripe." },
   { icon: FileText, t: "Formular 230 în aceeași platformă", d: "Pagina publică pentru redirecționarea de 3,5% e în aceeași platformă, lângă campaniile tale." },
 ];
 
@@ -442,7 +443,7 @@ function InCurand() {
           </figure>
         </div>
 
-        <ul className="mx-auto mt-14 grid max-w-4xl gap-5 sm:grid-cols-2">
+        <ul className="mx-auto mt-14 grid max-w-5xl gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {AVANTAJE.map((a) => (
             <li key={a.t} className="rounded-2xl border border-line bg-panel p-5">
               <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-green-soft text-brand-green">
