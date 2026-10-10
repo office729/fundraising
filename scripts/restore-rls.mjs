@@ -831,6 +831,9 @@ const POLICIES = [
   `create policy volunteer_reports_tenant_isolation on volunteer_reports
     using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
     with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy volunteer_activities_coordinator_lookup on volunteer_activities for select using (
+    nullif(current_setting('app.public_lookup', true), '') = 'true'
+  )`,
   // Panoul voluntarilor: ruta publică /voluntar/<cod> rezolvă codul → organizație sub app.public_lookup (doar SELECT);
   // restul lucrului se face cu app.current_org_id setat de server după verificarea codului.
   `create policy volunteer_panel_links_public_lookup on volunteer_panel_links for select using (

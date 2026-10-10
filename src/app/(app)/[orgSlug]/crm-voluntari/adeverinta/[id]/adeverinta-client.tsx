@@ -12,9 +12,12 @@ const camp = "w-full rounded-lg border border-[#d4cdc6] bg-white px-3 py-2 text-
 
 // Adeverința de voluntariat: pagină A4 de tipărit sau salvat ca PDF. Activitatea din platformă e completată automat (distribuiri în
 // campanii, sarcini îndeplinite); numărul, adresa, orele, scopul și semnatarul se scriu aici, înainte de tipărire.
-export function AdeverintaClient({ orgSlug, date }: { orgSlug: string; date: DateAdeverinta }) {
-  const prima = date.panou.prima ?? date.voluntar.dataInscriere ?? "";
+export function AdeverintaClient({ orgSlug, date, inapoi }: { orgSlug: string; date: DateAdeverinta; inapoi?: { href: string; eticheta: string } }) {
+  const prima = date.teren.prima ?? date.panou.prima ?? date.voluntar.dataInscriere ?? "";
+  const roIso = (iso: string) => (iso ? `${iso.slice(8, 10)}.${iso.slice(5, 7)}.${iso.slice(0, 4)}` : "");
+  const oreTeren = date.teren.ore;
   const activitatiImplicite = [
+    date.teren.activitati.length > 0 ? `a participat la activități pe teren: ${date.teren.activitati.map((a) => `${a.titlu} (${roIso(a.data)}, ${a.ore.toLocaleString("ro-RO")} ore)`).join("; ")}` : "",
     date.panou.distribuiri > 0 ? `a dat mai departe campaniile organizației (${date.panou.distribuiri} ${date.panou.distribuiri === 1 ? "distribuire" : "distribuiri"}${date.panou.campanii.length ? `, campanii: ${date.panou.campanii.join(", ")}` : ""})` : "",
     date.sarcini.finalizate > 0 ? `a îndeplinit ${date.sarcini.finalizate} ${date.sarcini.finalizate === 1 ? "sarcină" : "sarcini"}${date.sarcini.texte.length ? `: ${date.sarcini.texte.join("; ")}` : ""}` : "",
   ]
@@ -25,8 +28,9 @@ export function AdeverintaClient({ orgSlug, date }: { orgSlug: string; date: Dat
   const [dataEmitere, setDataEmitere] = useState(azi());
   const [adresa, setAdresa] = useState("");
   const [de, setDe] = useState(prima.slice(0, 10));
-  const [pana, setPana] = useState(date.panou.ultima ?? azi());
-  const [ore, setOre] = useState("");
+  const [pana, setPana] = useState(date.teren.ultima ?? date.panou.ultima ?? azi());
+  const [ore, setOre] = useState(oreTeren > 0 ? String(oreTeren).replace(".", ",") : "");
+  const [nume, setNume] = useState(date.numeComplet ? date.voluntar.nume : "");
   const [scop, setScop] = useState("");
   const [activitati, setActivitati] = useState(activitatiImplicite);
   const [semnatar, setSemnatar] = useState("");
@@ -51,15 +55,23 @@ export function AdeverintaClient({ orgSlug, date }: { orgSlug: string; date: Dat
           <div className="flex items-start justify-between gap-3">
             <div>
               <h1 className="text-[17px] font-bold">Adeverință de voluntariat</h1>
-              <a href={`/${orgSlug}/crm-voluntari`} className="text-[12.5px] font-medium text-[#1c4f8a] hover:underline">
-                ← CRM Voluntari
+              <a href={inapoi?.href ?? `/${orgSlug}/crm-voluntari`} className="text-[12.5px] font-medium text-[#1c4f8a] hover:underline">
+                ← {inapoi?.eticheta ?? "CRM Voluntari"}
               </a>
             </div>
             <button type="button" onClick={() => window.print()} className="inline-flex items-center gap-1.5 rounded-lg bg-[#1c4f8a] px-3.5 py-2 text-[14px] font-semibold text-white hover:bg-[#163f6f] focus-visible:ring-2 focus-visible:ring-[#1c4f8a] focus-visible:ring-offset-2 focus-visible:outline-none">
               <Printer className="size-4" aria-hidden /> Tipărește
             </button>
           </div>
-          <p className="text-[12.5px] text-[#6a6159]">Activitatea din platformă e completată automat. Verifică și completează restul, apoi tipărește sau salvează ca PDF.</p>
+          <p className="text-[12.5px] text-[#6a6159]">Activitatea din platformă e completată automat, iar orele sunt cele validate de organizație la activitățile pe teren. Verifică și completează restul, apoi tipărește sau salvează ca PDF.</p>
+          {oreTeren === 0 && date.teren.activitati.length === 0 && (
+            <p className="rounded-lg bg-[#fdf1da] px-3 py-2 text-[12.5px] text-[#7a5200]">Nu există încă ore validate la activități pe teren pentru acest voluntar. Orele se completează manual sau se validează întâi activitatea.</p>
+          )}
+          <p className="text-[12px] text-[#6a6159]">Conținutul certificatului de voluntariat este reglementat de Legea 78/2014 (art. 10, cu raport de activitate anexat). Verifică modelul cu juristul organizației înainte să-l folosești.</p>
+          <label className="block">
+            {eticheta("Numele complet al voluntarului")}
+            <input className={camp} value={nume} onChange={(e) => setNume(e.target.value)} placeholder="Prenume și nume" />
+          </label>
 
           <label className="block">
             {eticheta("Număr adeverință")}
@@ -124,7 +136,7 @@ export function AdeverintaClient({ orgSlug, date }: { orgSlug: string; date: Dat
           <h2 className="mt-4 text-center text-[17pt] font-bold tracking-wide">ADEVERINȚĂ DE VOLUNTARIAT</h2>
 
           <p className="mt-8 text-justify">
-            Se adeverește prin prezenta că <strong>{date.voluntar.nume || "……………"}</strong>
+            Se adeverește prin prezenta că <strong>{nume || "……………"}</strong>
             {adresa ? `, domiciliat(ă) în ${adresa},` : ""} a desfășurat activitate de voluntariat în cadrul organizației {date.org.nume}, în perioada {ro(de)} – {ro(pana)}
             {ore ? `, însumând ${ore} ${ore === "1" ? "oră" : "ore"} de voluntariat` : ""}.
           </p>

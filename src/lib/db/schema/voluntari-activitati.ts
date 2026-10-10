@@ -72,6 +72,7 @@ export const volunteerActivities = pgTable(
     rezultatEticheta: text("rezultat_eticheta"),
     rezultatValoare: numeric("rezultat_valoare", { precision: 12, scale: 2 }),
     campaignPageId: uuid("campaign_page_id").references(() => fundraisingPages.id, { onDelete: "set null" }),
+    coordinatorToken: text("coordinator_token"), // codul secret al linkului de coordonator (unic, parțial în SQL)
     stare: text("stare").notNull().default("publicata"), // ciorna | publicata | incheiata | anulata
     createdBy: uuid("created_by").references(() => appUsers.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -109,6 +110,9 @@ export const volunteerSignups = pgTable(
     validatLa: timestamp("validat_la", { withTimezone: true }),
     validatDe: uuid("validat_de").references(() => appUsers.id, { onDelete: "set null" }),
     observatii: text("observatii"),
+    reminderTrimisLa: timestamp("reminder_trimis_la", { withTimezone: true }),
+    multumireTrimisaLa: timestamp("multumire_trimisa_la", { withTimezone: true }),
+    checkinLa: timestamp("checkin_la", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },

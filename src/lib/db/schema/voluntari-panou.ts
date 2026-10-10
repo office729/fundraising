@@ -39,6 +39,8 @@ export const volunteerVisitors = pgTable(
     prenume: text("prenume").notNull(),
     telefon: text("telefon"), // doar cifre, ultimele 9 (pentru potrivirea cu fișa din CRM)
     email: text("email"), // opțional; folosit doar pentru confirmările de înscriere
+    acordInvitatii: boolean("acord_invitatii").notNull().default(false), // a bifat explicit că vrea invitații la activități
+    ultimaInvitatieLa: timestamp("ultima_invitatie_la", { withTimezone: true }),
     // Fișa din CRM Voluntari (id-ul din lista voluntarilor) dacă telefonul se potrivește cu un singur voluntar activ.
     voluntarId: text("voluntar_id"),
     legatLa: timestamp("legat_la", { withTimezone: true }),

@@ -156,3 +156,21 @@ drop policy if exists volunteer_reports_tenant_isolation on volunteer_reports;
 create policy volunteer_reports_tenant_isolation on volunteer_reports
   using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
   with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid);
+
+-- Etapa 2: remindere și mulțumiri (trimise o singură dată), check-in, link de coordonator, invitații cu acord.
+alter table volunteer_signups add column if not exists reminder_trimis_la timestamptz;
+alter table volunteer_signups add column if not exists multumire_trimisa_la timestamptz;
+alter table volunteer_signups add column if not exists checkin_la timestamptz;
+
+-- Linkul coordonatorului: un cod secret pe activitate, valabil până la câteva zile după încheierea activității.
+alter table volunteer_activities add column if not exists coordinator_token text;
+create unique index if not exists volunteer_activities_coordinator_token_idx on volunteer_activities (coordinator_token) where coordinator_token is not null;
+
+-- Invitațiile la activități se trimit doar celor care au bifat explicit; cel mult una pe săptămână.
+alter table volunteer_visitors add column if not exists acord_invitatii boolean not null default false;
+alter table volunteer_visitors add column if not exists ultima_invitatie_la timestamptz;
+
+-- Pagina coordonatorului (/coordonator/<cod>) găsește activitatea după codul secret, înainte să știe organizația: citire sub app.public_lookup.
+drop policy if exists volunteer_activities_coordinator_lookup on volunteer_activities;
+create policy volunteer_activities_coordinator_lookup on volunteer_activities for select
+  using (nullif(current_setting('app.public_lookup', true), '') = 'true');

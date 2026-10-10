@@ -311,7 +311,16 @@ function VoluntariTab({ orgSlug, date }: { orgSlug: string; date: DateVoluntari 
                     <td className="ci-tabular px-3 py-2 text-right">{v.activitatiPrezent}</td>
                     <td className="ci-tabular px-3 py-2 text-right">{formateazaOre(v.oreValidate)}</td>
                     <td className="px-3 py-2 text-[var(--ci-text-muted)]">{v.ultimaActiuneLa ? dataScurta(v.ultimaActiuneLa) : "—"}</td>
-                    <td className="px-3 py-2 text-right">
+                    <td className="px-3 py-2 text-right whitespace-nowrap">
+                      {v.oreValidate > 0 || v.sarciniFinalizate > 0 ? (
+                        <Link href={`/${orgSlug}/crm/voluntari/adeverinta/${v.id}`} className="mr-1.5 inline-flex h-8 items-center rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-3 text-[13px] font-medium text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]">
+                          Adeverință
+                        </Link>
+                      ) : (
+                        <span className="mr-1.5 inline-flex h-8 cursor-not-allowed items-center rounded-[var(--ci-radius-btn)] border border-dashed border-[var(--ci-border)] px-3 text-[13px] text-[var(--ci-text-muted)]" title="Adeverința se poate emite după ce există ore validate sau sarcini finalizate">
+                          Adeverință
+                        </span>
+                      )}
                       {deSters === v.id ? (
                         <span className="inline-flex items-center gap-1.5">
                           <Button size="sm" onClick={() => setDeSters(null)}>
