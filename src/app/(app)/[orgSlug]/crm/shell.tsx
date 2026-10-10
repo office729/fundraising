@@ -230,18 +230,21 @@ export function CrmShell({
             <Suspense fallback={<NavGroups pathname={pathname} base={base} collapsed={collapsed} query="" dict={dict} onNavigate={() => setMobileOpen(false)} />}>
               <NavGroupsWithQuery pathname={pathname} base={base} collapsed={collapsed} dict={dict} onNavigate={() => setMobileOpen(false)} />
             </Suspense>
+            {/* Imediat sub ultimul element din meniu, nu la capătul paginii (bara laterală are înălțimea paginii) */}
+            <div className="hidden border-t border-[var(--ci-border)] pt-2 md:block">
+              <button
+                onClick={() => setSidebarRestrans(!collapsed)}
+                title={collapsed ? dict.sidebar.extinde : dict.sidebar.restrange}
+                className={cn(
+                  "flex w-full items-center gap-2 rounded-[var(--ci-radius-btn)] px-2.5 py-2 text-[13px] font-medium text-[var(--ci-text-muted)] transition-colors hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)]",
+                  collapsed ? "justify-center" : "justify-start",
+                )}
+              >
+                {collapsed ? <ChevronsRight className="h-4 w-4 shrink-0" /> : <ChevronsLeft className="h-4 w-4 shrink-0" />}
+                {!collapsed && <span className="truncate">{dict.sidebar.restrange}</span>}
+              </button>
+            </div>
           </nav>
-          <button
-            onClick={() => setSidebarRestrans(!collapsed)}
-            title={collapsed ? dict.sidebar.extinde : dict.sidebar.restrange}
-            className={cn(
-              "mx-2 mt-2 hidden items-center gap-2 rounded-[var(--ci-radius-btn)] px-2.5 py-2 text-[13px] font-medium text-[var(--ci-text-muted)] transition-colors hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)] md:flex",
-              collapsed ? "justify-center" : "justify-start",
-            )}
-          >
-            {collapsed ? <ChevronsRight className="h-4 w-4 shrink-0" /> : <ChevronsLeft className="h-4 w-4 shrink-0" />}
-            {!collapsed && <span className="truncate">{dict.sidebar.restrange}</span>}
-          </button>
         </div>
       </aside>
 
