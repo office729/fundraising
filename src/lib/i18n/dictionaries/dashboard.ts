@@ -38,6 +38,7 @@ export const DASHBOARD_DICT = {
       rapoarte: "Rapoarte",
       instrumente: "Instrumente",
       consultanta: "Consultanță cu Vlad",
+      facturare: "Facturare",
       setari: "Setări",
     },
     hints: {
@@ -63,6 +64,7 @@ export const DASHBOARD_DICT = {
       performanta: "Obiective, rezultate-cheie, planul săptămânii și discuții cu echipa",
       instrumente: "Generatoare de newslettere, rapoarte, documente și alte unelte",
       consultanta: "Programează o discuție cu un consultant în fundraising",
+      facturare: "Planul activ, metoda de plată și facturile emise de Alexandrit",
       setari: "Datele organizației, echipa, plățile și abonamentul",
     },
     sidebar: {
@@ -135,6 +137,7 @@ export const DASHBOARD_DICT = {
       rapoarte: "Reports",
       instrumente: "Tools",
       consultanta: "Consultation with Vlad",
+      facturare: "Billing",
       setari: "Settings",
     },
     hints: {
@@ -160,6 +163,7 @@ export const DASHBOARD_DICT = {
       performanta: "Objectives, key results, the weekly plan and team conversations",
       instrumente: "Newsletter, report and document generators and other tools",
       consultanta: "Book a session with a fundraising consultant",
+      facturare: "Your plan, payment method and invoices issued by Alexandrit",
       setari: "Organization details, team, payments and subscription",
     },
     sidebar: {

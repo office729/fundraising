@@ -80,7 +80,7 @@ const EMPTY_VAZUTE_MAP: Record<string, boolean> = {};
 
 // Etichetele vin din dicționarul RO/EN (vezi lib/i18n/dictionaries/dashboard.ts)
 // — restul (href/icon) rămâne fix, doar textul se traduce.
-function buildNav(dict: DashboardDict, orgSlug: string): { section: string; items: { href: string; label: string; hint?: string; icon: typeof Gauge }[] }[] {
+function buildNav(dict: DashboardDict, orgSlug: string, role: string): { section: string; items: { href: string; label: string; hint?: string; icon: typeof Gauge }[] }[] {
   const baza = [
     { section: "", items: [{ href: "", label: dict.nav.home, hint: dict.hints.home, icon: Gauge }] },
     {
@@ -125,6 +125,8 @@ function buildNav(dict: DashboardDict, orgSlug: string): { section: string; item
       items: [
         { href: "instrumente", label: dict.nav.instrumente, hint: dict.hints.instrumente, icon: Wrench },
         { href: "consultanta", label: dict.nav.consultanta, hint: dict.hints.consultanta, icon: GraduationCap },
+        // Facturarea (plan, metodă de plată, facturi) o văd doar proprietarul și administratorii; stă chiar deasupra Setărilor.
+        ...(role === "owner" || role === "admin" ? [{ href: "facturare", label: dict.nav.facturare, hint: dict.hints.facturare, icon: Receipt }] : []),
         { href: "setari", label: dict.nav.setari, hint: dict.hints.setari, icon: Settings },
       ],
     },
@@ -228,8 +230,8 @@ export function CrmShell({
             </button>
           </div>
           <nav className="ci-scrollbar flex-1 space-y-3 overflow-y-auto px-2">
-            <Suspense fallback={<NavGroups pathname={pathname} base={base} collapsed={collapsed} query="" dict={dict} onNavigate={() => setMobileOpen(false)} />}>
-              <NavGroupsWithQuery pathname={pathname} base={base} collapsed={collapsed} dict={dict} onNavigate={() => setMobileOpen(false)} />
+            <Suspense fallback={<NavGroups pathname={pathname} base={base} collapsed={collapsed} query="" dict={dict} role={role} onNavigate={() => setMobileOpen(false)} />}>
+              <NavGroupsWithQuery pathname={pathname} base={base} collapsed={collapsed} dict={dict} role={role} onNavigate={() => setMobileOpen(false)} />
             </Suspense>
             {/* Imediat sub ultimul element din meniu; planul și utilizatorul stau fixate jos, în afara derulării meniului */}
             <div className="hidden border-t border-[var(--ci-border)] pt-2 md:block">
@@ -301,7 +303,7 @@ export function CrmShell({
 
 // Citește query-ul curent — separat de NavGroups ca boundary-ul de Suspense
 // cerut de useSearchParams() să nu blocheze randarea restului shell-ului.
-function NavGroupsWithQuery(props: { pathname: string | null; base: string; collapsed: boolean; dict: DashboardDict; onNavigate: () => void }) {
+function NavGroupsWithQuery(props: { pathname: string | null; base: string; collapsed: boolean; dict: DashboardDict; role: string; onNavigate: () => void }) {
   const searchParams = useSearchParams();
   return <NavGroups {...props} query={searchParams.toString()} />;
 }
@@ -316,6 +318,7 @@ function NavGroups({
   collapsed,
   query,
   dict,
+  role,
   onNavigate,
 }: {
   pathname: string | null;
@@ -323,9 +326,10 @@ function NavGroups({
   collapsed: boolean;
   query: string;
   dict: DashboardDict;
+  role: string;
   onNavigate: () => void;
 }) {
-  const nav = buildNav(dict, base.split("/")[1] ?? "");
+  const nav = buildNav(dict, base.split("/")[1] ?? "", role);
   // Nav-ul e o listă plată, nu o ierarhie reală — dar unele rute (ex.
   // „Formularul 230" la donatori/formular-230) sunt sub-căi ale altui item
   // (donatori), și altele (ex. „Companii D177") au ACELAȘI path, doar alt
