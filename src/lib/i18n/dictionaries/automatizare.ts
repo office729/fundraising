@@ -7,7 +7,7 @@ export const AUTOMATIZARE_DICT = {
     fluxNota: "Exemplu ilustrativ al unui flux construit pentru un ONG.",
     flux: [
       { t: "Donație primită", d: "pe pagina de campanie" },
-      { t: "Chitanță trimisă", d: "fără intervenția echipei" },
+      { t: "Confirmare trimisă", d: "fără intervenția echipei" },
       { t: "Donator în CRM", d: "cu istoricul actualizat" },
       { t: "Mulțumire programată", d: "la momentul potrivit" },
     ],
@@ -29,7 +29,7 @@ export const AUTOMATIZARE_DICT = {
       { titlu: "Platformă de fundraising la comandă", desc: "Un sistem construit special pentru organizația ta: CRM, campanii, rapoarte și automatizări, adaptate exact la modul tău de lucru." },
       {
         titlu: "Website pentru ONG-ul tău",
-        desc: "O prezență profesionistă, cu formular de donații integrat, gata în 10–15 zile lucrătoare. Pornim de la identitatea organizației și de la ce vrei să comunici, iar tu primești un site pe care îl poți actualiza singur.",
+        desc: "O prezență profesionistă, cu formular de donații integrat, gata în 45 de zile lucrătoare. Pornim de la identitatea organizației și de la ce vrei să comunici, iar tu primești un site pe care îl poți actualiza singur.",
         puncte: [
           "Pagini de prezentare: despre organizație, proiecte și campanii, echipă, contact",
           "Formular de donații integrat, cu plata online securizată",
@@ -46,7 +46,7 @@ export const AUTOMATIZARE_DICT = {
         items: [
           "Reactivare donatori inactivi — mesaj automat de reconectare când cineva nu mai donează de câteva luni",
           "Mulțumiri pe praguri — mesaj sau certificat special când un donator trece de un total cumulat",
-          "Chitanțe fiscale automate la fiecare donație",
+          "Confirmare de donație trimisă automat la fiecare donație",
         ],
       },
       {
@@ -95,7 +95,7 @@ export const AUTOMATIZARE_DICT = {
     fluxNota: "Illustrative example of a flow built for an NGO.",
     flux: [
       { t: "Donation received", d: "on the campaign page" },
-      { t: "Receipt sent", d: "with no work from your team" },
+      { t: "Confirmation sent", d: "with no work from your team" },
       { t: "Donor in the CRM", d: "with an updated history" },
       { t: "Thank-you scheduled", d: "at the right moment" },
     ],
@@ -117,7 +117,7 @@ export const AUTOMATIZARE_DICT = {
       { titlu: "Custom fundraising platform", desc: "A system built specifically for your organization: CRM, campaigns, reports and automations, tailored exactly to how you work." },
       {
         titlu: "A website for your NGO",
-        desc: "A professional presence with an integrated donation form, ready in 10–15 business days. We start from your organization's identity and what you want to say, and you get a site you can update yourself.",
+        desc: "A professional presence with an integrated donation form, ready in 45 business days. We start from your organization's identity and what you want to say, and you get a site you can update yourself.",
         puncte: [
           "Presentation pages: about the organization, projects and campaigns, team, contact",
           "Integrated donation form with secure online payment",
@@ -134,7 +134,7 @@ export const AUTOMATIZARE_DICT = {
         items: [
           "Inactive donor reactivation — automatic reconnection message when someone hasn't donated in a few months",
           "Threshold thank-yous — a special message or certificate when a donor crosses a cumulative total",
-          "Automatic tax receipts on every donation",
+          "A donation confirmation sent automatically for every donation",
         ],
       },
       {

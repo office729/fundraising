@@ -35,7 +35,7 @@ export const CUM_FUNCTIONEAZA_DICT = {
           "Donații cu cardul, unice sau lunare, cu mulțumire trimisă automat donatorului",
           "Link scurt de distribuit, bară de progres, termen și actualizări pentru susținători",
           "Mai multe campanii pentru proiecte diferite, adunate sub numele asociației",
-          "Alexandrit nu reține niciun comision din donații; se aplică doar comisionul procesatorului de plăți, Stripe",
+          "Alexandrit nu reține niciun comision din donații; se aplică doar comisionul procesatorului de plăți, Stripe. Contul Stripe se conectează după ce verificăm organizația",
         ],
       },
       {
@@ -161,7 +161,7 @@ export const CUM_FUNCTIONEAZA_DICT = {
           "Card donations, one-time or monthly, with an automatic thank-you to the donor",
           "A short link to share, a progress bar, a deadline and updates for supporters",
           "Several campaigns for different projects, gathered under the association's name",
-          "Alexandrit takes no commission on donations; only the payment processor's fee (Stripe) applies",
+          "Alexandrit takes no commission on donations; only the payment processor's fee (Stripe) applies. The Stripe account is connected after we verify the organisation",
         ],
       },
       {

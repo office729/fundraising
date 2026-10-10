@@ -342,7 +342,7 @@ function RandCampanie({ c }: { c: CampaniePublica }) {
 const PASI = [
   { t: "Creezi campania", d: "Un asistent în 5 pași: povestea, suma-țintă, sumele sugerate, poza, termenul. Vezi previzualizarea pe telefon și pe calculator." },
   { t: "Distribui linkul", d: "Fiecare campanie are adresa ei scurtă, ușor de pus pe rețele, în mesaje sau pe afișe." },
-  { t: "Primești donațiile", d: "Plata cu cardul intră direct în contul Stripe al asociației. Vezi fiecare donație în CRM, baza ta de donatori." },
+  { t: "Primești donațiile", d: "Plata cu cardul intră direct în contul Stripe al asociației, conectat după ce îți verificăm organizația. Vezi fiecare donație în CRM, baza ta de donatori." },
 ];
 
 const AVANTAJE: { icon: LucideIcon; t: string; d: string }[] = [
