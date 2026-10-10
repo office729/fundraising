@@ -23,9 +23,9 @@ export const AUTOMATIZARE_DICT = {
     h1: "Mai puține sarcini repetitive, mai mult timp pentru donatori",
     subtitlu: "Conectăm donațiile, mulțumirile, contractele și rapoartele, ca echipa ta să nu mai facă de mână lucrurile care se repetă. Pornim de la modul în care lucrezi acum și mergem de la o automatizare simplă până la o platformă sau un website construite pe măsura organizației.",
     servicii: [
-      { titlu: "Automatizări între aplicațiile pe care le folosești deja", desc: "Lucrăm cu Make.com, o unealtă care leagă aplicațiile între ele. Când se întâmplă ceva într-una (o donație, un contract), se întâmplă automat și în celelalte: mesaje, notificări și sarcini care se creează singure." },
+      { titlu: "Automatizări între aplicațiile pe care le folosești deja", desc: "Lucrăm cu Make.com, o unealtă care leagă aplicațiile între ele. Când se întâmplă ceva într-una (o donație, un contract), se întâmplă automat și în celelalte: mesaje, notificări și sarcini care se creează singure. Licența Make.com se plătește separat, direct către Make.com." },
       { titlu: "Integrare sisteme de plată", desc: "Conectăm procesatorul de plăți potrivit pentru ONG-ul tău, cu donații unice și recurente direct pe pagina de campanie." },
-      { titlu: "Integrare semnătură digitală", desc: "Contracte de sponsorizare semnate electronic, cu flux de aprobare — fără drumuri și fără hârtii." },
+      { titlu: "Integrare semnătură digitală", desc: "Contracte de sponsorizare semnate electronic, cu flux de aprobare — fără drumuri și fără hârtii. Semnătura digitală este valabilă juridic." },
       { titlu: "Platformă de fundraising la comandă", desc: "Un sistem construit special pentru organizația ta: CRM, campanii, rapoarte și automatizări, adaptate exact la modul tău de lucru." },
       {
         titlu: "Website pentru ONG-ul tău",
@@ -111,9 +111,9 @@ export const AUTOMATIZARE_DICT = {
     h1: "Fewer repetitive tasks, more time for donors",
     subtitlu: "We connect donations, thank-yous, contracts and reports, so your team stops doing by hand the things that repeat. We start from how you work today and range from a simple automation to a platform or website built around your organization.",
     servicii: [
-      { titlu: "Automations between the apps you already use", desc: "We work with Make.com, a tool that connects apps to each other. When something happens in one (a donation, a contract), it happens automatically in the others: messages, notifications and tasks that create themselves." },
+      { titlu: "Automations between the apps you already use", desc: "We work with Make.com, a tool that connects apps to each other. When something happens in one (a donation, a contract), it happens automatically in the others: messages, notifications and tasks that create themselves. The Make.com licence is paid separately, directly to Make.com." },
       { titlu: "Payment system integration", desc: "We connect the right payment processor for your NGO, with one-time and recurring donations directly on the campaign page." },
-      { titlu: "Digital signature integration", desc: "Sponsorship contracts signed electronically, with an approval flow — no trips, no paperwork." },
+      { titlu: "Digital signature integration", desc: "Sponsorship contracts signed electronically, with an approval flow — no trips, no paperwork. The digital signature is legally valid." },
       { titlu: "Custom fundraising platform", desc: "A system built specifically for your organization: CRM, campaigns, reports and automations, tailored exactly to how you work." },
       {
         titlu: "A website for your NGO",
