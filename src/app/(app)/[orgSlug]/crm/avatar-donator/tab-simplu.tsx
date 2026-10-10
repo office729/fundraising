@@ -99,9 +99,9 @@ const INTREBARI: Intrebare[] = [
     camp: "date",
     eticheta: "Persoana",
     titlu: "Descrie-l ca pe o persoană reală",
-    ajutor: "Alege un om concret: un prenume, vârsta, meseria, orașul, situația de familie, venitul aproximativ. Cu cât e mai precis, cu atât scrii mai ușor pentru el.",
-    exemplu: "ex. Elena, 38 de ani, manager de proiect în Cluj, mamă a doi copii, venit mediu",
-    sugestii: ["18–24 ani", "25–34 ani", "35–44 ani", "45–54 ani", "55+ ani", "Oraș mare", "Oraș mic", "Rural", "Are copii", "Pensionar", "Venit mediu", "Venit ridicat"],
+    ajutor: "Descrie un grup de donatori, nu o persoană anume: vârsta tipică, orașul sau zona, contextul (de exemplu „părinți”). Nu deduce venitul, sănătatea sau convingerile cuiva; scrie doar ce știi din datele sau conversațiile tale.",
+    exemplu: "ex. Femei de 35–44 de ani din orașe mari, părinți, care au donat prin Facebook",
+    sugestii: ["18–24 ani", "25–34 ani", "35–44 ani", "45–54 ani", "55+ ani", "Oraș mare", "Oraș mic", "Rural", "Are copii", "Pensionar"],
   },
   {
     id: "marime",

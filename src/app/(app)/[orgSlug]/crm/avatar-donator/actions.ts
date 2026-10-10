@@ -3,6 +3,8 @@
 import { and, eq, sql } from "drizzle-orm";
 
 import { withOrgSession } from "@/lib/auth/guard";
+import { construiesteAvatare, type RezultatAvatare } from "@/lib/avatar-donator/avatare-reale";
+import { obtineDateAvatare } from "@/lib/avatar-donator/avatare-reale-db";
 import { normalizeaza, type AvatarData, type StatisticiPlatforma } from "@/lib/avatar-donator/tipuri";
 import { crmKv } from "@/lib/db/schema";
 import { sectiuneSigura } from "@/lib/sectiune-sigura";
@@ -11,7 +13,7 @@ import { obtineSegmenteReale, type SegmentStat } from "@/lib/segmente-donatori";
 // Documentul „Avatar donator" al organizației: un singur rând în crm_kv (izolat pe organizație prin RLS).
 const CHEIE = "avatar_donator";
 
-export const getAvatar = withOrgSession(async (ctx): Promise<{ data: AvatarData; stat: StatisticiPlatforma | null; segmente: SegmentStat[] | null }> => {
+export const getAvatar = withOrgSession(async (ctx): Promise<{ data: AvatarData; stat: StatisticiPlatforma | null; segmente: SegmentStat[] | null; avatare: RezultatAvatare | null }> => {
   const [row] = await ctx.db.select({ data: crmKv.data }).from(crmKv).where(and(eq(crmKv.orgId, ctx.orgId), eq(crmKv.path, CHEIE))).limit(1);
 
   // Reper real din platformă: donațiile online reușite ale organizației. Sumele sunt NETE de rambursări, iar donațiile
@@ -55,7 +57,11 @@ export const getAvatar = withOrgSession(async (ctx): Promise<{ data: AvatarData;
       : null;
   // Segmentele reale ale donatorilor (secțiune secundară: dacă pică, fișa merge și fără ele).
   const segmente = await sectiuneSigura(ctx, "avatar-segmente", (db) => obtineSegmenteReale(db, ctx.orgId), null as SegmentStat[] | null);
-  return { data: normalizeaza(row?.data), stat, segmente };
+  const data = normalizeaza(row?.data);
+  // Avatarele din date reale (doar cifre agregate; secțiune secundară: dacă pică, pagina merge și fără ele).
+  const canaleIntroduse = Object.values(data.canale).some((c) => c.urmaritori.trim() || c.reach30.trim() || c.engagement.trim());
+  const avatare = await sectiuneSigura(ctx, "avatare-reale", async (db) => construiesteAvatare(await obtineDateAvatare(db, ctx.orgId, canaleIntroduse)), null as RezultatAvatare | null);
+  return { data, stat, segmente, avatare };
 });
 
 export const salveazaAvatar = withOrgSession(async (ctx, data: AvatarData): Promise<{ ok: true; actualizat: string }> => {

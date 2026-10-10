@@ -11,8 +11,8 @@ export const dynamic = "force-dynamic";
 export default async function AvatarDonatorPage({ params }: { params: Promise<{ orgSlug: string }> }) {
   const { orgSlug } = await params;
   await requireOrgAccess(orgSlug);
-  const { data, stat, segmente } = await getAvatar(orgSlug);
-  return <AvatarDonatorClient initial={data} stat={stat} segmente={segmente} />;
+  const { data, stat, segmente, avatare } = await getAvatar(orgSlug);
+  return <AvatarDonatorClient initial={data} stat={stat} segmente={segmente} avatare={avatare} />;
 }
 
 export async function generateMetadata() {

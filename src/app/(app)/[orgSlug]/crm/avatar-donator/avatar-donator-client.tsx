@@ -3,21 +3,24 @@
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { calculeazaAlocare, genereazaSfaturi, parseNum, parseazaExport, progresChestionar } from "@/lib/avatar-donator/motor";
+import { calculeazaAlocare, genereazaSfaturi, parseazaExport, progresChestionar } from "@/lib/avatar-donator/motor";
 import { fiseDeRevizuit, type AvatarData, type StatisticiPlatforma } from "@/lib/avatar-donator/tipuri";
+import type { RezultatAvatare } from "@/lib/avatar-donator/avatare-reale";
 import type { SegmentStat } from "@/lib/segmente-donatori";
 
 import { salveazaAvatar } from "./actions";
+import { TabAvatare } from "./tab-avatare";
 import { TabBuget } from "./tab-buget";
 import { TabChestionar } from "./tab-chestionar";
 import { TabProfile } from "./tab-profile";
 import { TabSimplu } from "./tab-simplu";
 import { TabSinteza } from "./tab-sinteza";
 
-type TabId = "simplu" | "buget" | "sinteza" | "chestionar" | "profile";
-// Intrările (Buget) înaintea rezultatului (Sinteză): altfel omul nou ajunge pe o pagină goală.
+type TabId = "avatare" | "simplu" | "buget" | "sinteza" | "chestionar" | "profile";
+// Întâi ce arată datele reale (Avatare), apoi instrumentele manuale: fișa ta, intrările (Buget) înaintea rezultatului (Sinteză).
 const TABURI: { id: TabId; label: string }[] = [
-  { id: "simplu", label: "Varianta simplă" },
+  { id: "avatare", label: "Avatare din date" },
+  { id: "simplu", label: "Fișa ta (ghid)" },
   { id: "buget", label: "1. Buget & canale" },
   { id: "sinteza", label: "2. Sinteză & recomandări" },
   { id: "chestionar", label: "Chestionar (100 întrebări)" },
@@ -27,11 +30,11 @@ const TABURI: { id: TabId; label: string }[] = [
 export type Actualizeaza = (fn: (d: AvatarData) => AvatarData) => void;
 type Stare = "salvat" | "modificat" | "se-salveaza" | "eroare";
 
-export function AvatarDonatorClient({ initial, stat, segmente }: { initial: AvatarData; stat: StatisticiPlatforma | null; segmente: SegmentStat[] | null }) {
+export function AvatarDonatorClient({ initial, stat, segmente, avatare }: { initial: AvatarData; stat: StatisticiPlatforma | null; segmente: SegmentStat[] | null; avatare: RezultatAvatare | null }) {
   const { orgSlug } = useParams<{ orgSlug: string }>();
   const [data, setData] = useState<AvatarData>(initial);
-  // Organizație nouă (nimic completat) → ghidul simplu; fără buget → intrările; altfel rezultatul.
-  const [tab, setTabState] = useState<TabId>(parseNum(initial.buget.lunar) ? "sinteza" : Object.values(initial.rezumat).some((v) => v) || initial.conversie ? "buget" : "simplu");
+  // Se deschide mereu pe ce arată datele reale; instrumentele manuale sunt în celelalte secțiuni.
+  const [tab, setTabState] = useState<TabId>("avatare");
   const [stare, setStare] = useState<Stare>("salvat");
   const [mesaj, setMesaj] = useState("");
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -115,7 +118,7 @@ export function AvatarDonatorClient({ initial, stat, segmente }: { initial: Avat
         <div>
           <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">Avatar donator</h1>
           <p className="mt-0.5 max-w-2xl text-[13px] text-[var(--ci-text-muted)]">
-            Cine este donatorul tău ideal și unde îl găsești. Din cifrele tale aflii cum să-ți împarți bugetul de promovare, pe ce platformă să insiști și ce să faci concret.
+            Cine sunt grupurile de donatori care susțin organizația, după comportamentul lor real, și ce poți testa pentru fiecare. Concluziile din date sunt separate de ipoteze; fișa ta, bugetul și chestionarul rămân disponibile ca instrumente manuale.
           </p>
         </div>
         <div className="flex flex-col items-end gap-1.5">
@@ -201,6 +204,7 @@ export function AvatarDonatorClient({ initial, stat, segmente }: { initial: Avat
       </div>
 
       <div role="tabpanel" id={`panou-${tab}`} aria-labelledby={`tab-${tab}`}>
+        {tab === "avatare" && <TabAvatare rezultat={avatare} mergiLa={setTab} />}
         {tab === "simplu" && <TabSimplu data={data} actualizeaza={actualizeaza} mergiLa={setTab} segmente={segmente} stat={stat} />}
         {tab === "buget" && <TabBuget data={data} actualizeaza={actualizeaza} alocare={alocare} stat={stat} continua={() => setTab("sinteza")} />}
         {tab === "sinteza" && <TabSinteza data={data} actualizeaza={actualizeaza} alocare={alocare} sfaturi={sfaturi} mergiLa={setTab} />}
