@@ -18,7 +18,7 @@ export const INSTRUMENTE_DICT = {
         rapoarte: {
           nume: "Rapoarte și prezentări",
           instrumente: {
-            raportCompanii: { titlu: "Raport activitate companii", descriere: "Situația lunară a colaborărilor: întâlniri, oferte, contracte și sume încasate." },
+            raportCompanii: { titlu: "Rapoarte de impact pentru companii", descriere: "Alegi un șablon, încarci logo-ul firmei și copiezi codul HTML sau exporți PDF." },
             onePager: { titlu: "One pager companii", descriere: "Prezentarea de o pagină trimisă potențialilor parteneri corporate." },
           },
         },
@@ -159,7 +159,7 @@ export const INSTRUMENTE_DICT = {
         rapoarte: {
           nume: "Reports & presentations",
           instrumente: {
-            raportCompanii: { titlu: "Company activity report", descriere: "Monthly status of collaborations: meetings, offers, contracts and amounts received." },
+            raportCompanii: { titlu: "Impact reports for companies", descriere: "Pick a template, upload the company logo, then copy the HTML code or export a PDF." },
             onePager: { titlu: "Corporate one-pager", descriere: "The one-page pitch sent to potential corporate partners." },
           },
         },

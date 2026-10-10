@@ -1,13 +1,13 @@
 "use client";
 
-import { Copy, Download, FileDown, Palette, Plus, RotateCcw, Trash2, Upload } from "lucide-react";
+import { ClipboardCopy, Copy, Download, FileDown, LayoutGrid, Palette, Plus, RotateCcw, Trash2, Upload } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
 
 import { aplicaPlaceholdere, CULORI_IMPLICITE, curataDateImpact, MECANISME_IMPACT, MODELE_IMPACT, PROIECT_GOL, totalImpact, type DateImpact, type ProiectImpact } from "@/lib/raport-impact";
 import type { PaletaLogo } from "@/lib/raport-impact-culori";
 import { randeazaRaportImpact } from "@/lib/raport-impact-modele";
 
-import { Breadcrumb } from "../../../components/ui/breadcrumb";
 import { Button } from "../../../components/ui/button";
 import { Card, CardHeader } from "../../../components/ui/card";
 import { Input, Label, Select, Textarea } from "../../../components/ui/input";
@@ -28,6 +28,8 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
   const [ocupat, start] = useTransition();
   const [paleta, setPaleta] = useState<PaletaLogo | null>(null);
   const [eroareLogo, setEroareLogo] = useState<string | null>(null);
+  const [vedere, setVedere] = useState<"editez" | "previz">("editez");
+  const [info, setInfo] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cadru = useRef<HTMLIFrameElement>(null);
 
@@ -124,42 +126,93 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
     a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 4000);
   }
+  // Codul complet al raportului, gata de lipit în editorul HTML al unei platforme.
+  async function copiaza() {
+    setMesaj(null);
+    try {
+      await navigator.clipboard.writeText(html);
+    } catch {
+      const t = document.createElement("textarea");
+      t.value = html;
+      t.setAttribute("readonly", "");
+      t.style.cssText = "position:fixed;opacity:0;top:0;left:0";
+      document.body.appendChild(t);
+      t.select();
+      const ok = document.execCommand("copy");
+      t.remove();
+      if (!ok) return setMesaj("Nu am putut copia codul. Folosește „Descarcă HTML” și deschide fișierul într-un editor.");
+    }
+    setInfo("Codul HTML a fost copiat. Lipește-l în editorul de cod al platformei.");
+    setTimeout(() => setInfo(null), 6000);
+  }
   // PDF-ul se obține din tipărirea documentului („Salvează ca PDF”): rămâne vectorial, cu textul selectabil și grafica nepixelată.
   function exportaPdf() {
-    const w = cadru.current?.contentWindow;
-    if (w) {
-      w.focus();
-      w.print();
-    } else setMesaj("Previzualizarea nu e încărcată încă. Încearcă din nou.");
+    const tipareste = () => {
+      const w = cadru.current?.contentWindow;
+      if (w) {
+        w.focus();
+        w.print();
+      } else setMesaj("Previzualizarea nu e încărcată încă. Încearcă din nou.");
+    };
+    // Pe telefon, previzualizarea poate fi ascunsă: o afișăm înainte de tipărire.
+    if (vedere === "editez" && window.matchMedia("(max-width: 1279px)").matches) {
+      setVedere("previz");
+      setTimeout(tipareste, 250);
+    } else tipareste();
   }
 
   const lipsaFirma = !curat.firma;
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-5">
-      <Breadcrumb items={[{ label: "Instrumente", href: `/${orgSlug}/crm/instrumente` }, { label: "Raport activitate companii", href: `/${orgSlug}/crm/instrumente/raport-companii` }, { label: "Raport de impact" }]} />
-
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">Raport de impact pentru companii</h1>
-          <p className="mt-0.5 max-w-2xl text-[13px] text-[var(--ci-text-muted)]">Arăți unei firme ce proiecte a susținut și cu ce sume. Aceleași date, mai multe modele; îl descarci ca HTML sau PDF și îl trimiți.</p>
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2.5">
+        <div className="flex min-w-0 flex-wrap items-center gap-3">
+          <Link href={`/${orgSlug}/crm/instrumente/raport-companii`} prefetch={false} className="inline-flex h-9 items-center gap-1.5 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-3 text-[13px] font-medium text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
+            <LayoutGrid className="size-4" aria-hidden /> Galerie de șabloane
+          </Link>
+          <h1 className="ci-display text-[15px] font-bold text-[var(--ci-text)]">Raport de impact pentru companii</h1>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-[12px] text-[var(--ci-text-muted)]" role="status" aria-live="polite">
-            {etichetaStare[stare]}
+            {info ?? etichetaStare[stare]}
           </span>
-          <Button onClick={exportaHtml} disabled={lipsaFirma} title={lipsaFirma ? "Completează numele firmei" : undefined}>
-            <Download className="size-4" aria-hidden /> Export HTML
+          <Button variant="primary" onClick={copiaza} disabled={lipsaFirma} title={lipsaFirma ? "Completează numele firmei" : "Copiază tot codul HTML al raportului"}>
+            <ClipboardCopy className="size-4" aria-hidden /> Copiază codul HTML
           </Button>
-          <Button variant="primary" onClick={exportaPdf} disabled={lipsaFirma} title={lipsaFirma ? "Completează numele firmei" : "Se deschide tipărirea: alege „Salvează ca PDF”"}>
+          <Button onClick={exportaHtml} disabled={lipsaFirma} title={lipsaFirma ? "Completează numele firmei" : undefined}>
+            <Download className="size-4" aria-hidden /> Descarcă HTML
+          </Button>
+          <Button onClick={exportaPdf} disabled={lipsaFirma} title={lipsaFirma ? "Completează numele firmei" : "Se deschide tipărirea: alege „Salvează ca PDF”"}>
             <FileDown className="size-4" aria-hidden /> Export PDF
           </Button>
         </div>
       </div>
+      <p className="-mt-2 max-w-4xl text-[12.5px] text-[var(--ci-text-muted)]">
+        Alegi șablonul, completezi datele și vezi raportul în dreapta. Pentru platformă, copiezi codul HTML și îl lipești în editorul de cod. Unele platforme de email taie o parte din stiluri; pentru trimitere prin email, PDF-ul e varianta sigură.
+      </p>
+      <div role="tablist" aria-label="Vedere" className="grid grid-cols-2 gap-1 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-1 xl:hidden">
+        {([["editez", "✏️ Editez"], ["previz", "👁 Previzualizez"]] as const).map(([k, e]) => (
+          <button key={k} type="button" role="tab" aria-selected={vedere === k} onClick={() => setVedere(k)} className={`rounded-[calc(var(--ci-radius-btn)-2px)] py-2 text-[13px] font-semibold focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none ${vedere === k ? "bg-[var(--ci-primary)] text-white" : "text-[var(--ci-text-muted)]"}`}>
+            {e}
+          </button>
+        ))}
+      </div>
       {mesaj && <p role="alert" className="text-[13px] text-[var(--ci-red)]">{mesaj}</p>}
 
-      <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
-        <div className="min-w-0 space-y-4">
+      <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(380px,0.8fr)_minmax(0,1.2fr)]">
+        <div className={`min-w-0 space-y-4 ${vedere === "previz" ? "hidden xl:block" : ""}`}>
+          <Card>
+            <CardHeader title="Șablon" subtitle={modelAles.hint} />
+            <Label>Tipul de raport</Label>
+            <Select value={date.model} onChange={(e) => actualizeaza({ model: e.target.value as DateImpact["model"] })}>
+              {MODELE_IMPACT.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.eticheta}
+                </option>
+              ))}
+            </Select>
+          </Card>
+
           <Card>
             <CardHeader title="Firma" subtitle={companyId ? (salvat ? "Se păstrează ce ai salvat data trecută" : "Propunere din sponsorizările înregistrate") : "Fără firmă din listă, nu se salvează nimic"} />
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -291,22 +344,8 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
           </Card>
 
           <Card>
-            <CardHeader title="Aspect" subtitle={modelAles.hint} />
-            <div role="group" aria-label="Model de raport" className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {MODELE_IMPACT.map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  aria-pressed={date.model === m.id}
-                  title={m.hint}
-                  onClick={() => actualizeaza({ model: m.id })}
-                  className={`min-w-0 rounded-[var(--ci-radius-btn)] border px-3 py-2 text-left text-[13px] font-medium transition-colors focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none ${date.model === m.id ? "border-[var(--ci-primary)] bg-[var(--ci-primary-soft)] text-[var(--ci-text)]" : "border-[var(--ci-border)] text-[var(--ci-text-muted)] hover:bg-[var(--ci-surface-2)]"}`}
-                >
-                  {m.eticheta}
-                </button>
-              ))}
-            </div>
-            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <CardHeader title="Culori și semnătură" subtitle="Culorile se pot lua din logoul firmei, mai sus." />
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               {([["accent", "Culoare principală"], ["accent2", "Culoare închisă"], ["accent3", "Fundal deschis"]] as const).map(([k, eticheta]) => (
                 <div key={k} className="min-w-0">
                   <Label>{eticheta}</Label>
@@ -332,11 +371,11 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
           </Card>
         </div>
 
-        <div className="min-w-0 xl:sticky xl:top-4">
+        <div className={`min-w-0 xl:sticky xl:top-4 ${vedere === "editez" ? "hidden xl:block" : ""}`}>
           <Card className="!p-0 overflow-hidden">
             <div className="flex items-center justify-between border-b border-[var(--ci-border)] px-4 py-2.5">
-              <p className="text-[13px] font-semibold text-[var(--ci-text)]">Previzualizare · {modelAles.eticheta}</p>
-              <p className="text-[12px] text-[var(--ci-text-muted)]">Exact ce se exportă</p>
+              <p className="text-[13px] font-semibold text-[var(--ci-text)]">Design · {modelAles.eticheta}</p>
+              <p className="text-[12px] text-[var(--ci-text-muted)]">Exact ce se copiază și se exportă</p>
             </div>
             <iframe
               ref={cadru}

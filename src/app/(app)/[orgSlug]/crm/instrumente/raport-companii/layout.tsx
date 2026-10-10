@@ -13,7 +13,7 @@ export default async function RaportCompaniiLayout({
   const access = await requireOrgAccess(orgSlug);
 
   if (!orgHasToolAccess(access.orgPackage, access.orgCustomPlanConfig, "raport-companii")) {
-    return <ToolLocked orgSlug={orgSlug} toolName="Raport activitate companii" compact />;
+    return <ToolLocked orgSlug={orgSlug} toolName="Rapoarte de impact pentru companii" compact />;
   }
 
   return children;
