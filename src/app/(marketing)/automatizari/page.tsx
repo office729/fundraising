@@ -4,7 +4,7 @@ import { getLocale } from "@/lib/i18n/get-locale";
 import { AUTOMATIZARE_DICT } from "@/lib/i18n/dictionaries/automatizare";
 import { metadatePagina } from "@/lib/page-titles";
 
-import { Reveal } from "./reveal";
+import { Reveal } from "../reveal";
 
 const EMAIL = "mailto:vlad.placinta@alexandrit.ro";
 

@@ -4,6 +4,14 @@ import type { Locale } from "../config";
 export const CUM_FUNCTIONEAZA_DICT = {
   ro: {
     breadcrumb: "Cum funcționează",
+    fluxTitlu: "De la cont la donații",
+    fluxNota: "Cele patru etape prin care trece o organizație nouă.",
+    fluxPasi: [
+      { t: "Îți creezi contul", d: "30 de zile, fără card" },
+      { t: "Îți aduci oamenii", d: "donatori, firme, colegi" },
+      { t: "Deschizi campanii", d: "pagină și plată cu cardul" },
+      { t: "Lucrezi și măsori", d: "sarcini, segmente, rapoarte" },
+    ],
     h1: "Cum funcționează Alexandrit pentru ONG-ul tău",
     subtitlu:
       "Un singur loc în care îți ții donatorii, companiile partenere, campaniile și echipa. Platforma face munca repetitivă în locul tău, ca să rămână timp pentru oameni și pentru cauză.",
@@ -121,6 +129,14 @@ export const CUM_FUNCTIONEAZA_DICT = {
   },
   en: {
     breadcrumb: "How it works",
+    fluxTitlu: "From account to donations",
+    fluxNota: "The four stages a new organization goes through.",
+    fluxPasi: [
+      { t: "Create your account", d: "30 days, no card" },
+      { t: "Bring your people", d: "donors, companies, colleagues" },
+      { t: "Open campaigns", d: "page and card payment" },
+      { t: "Work and measure", d: "tasks, segments, reports" },
+    ],
     h1: "How Alexandrit works for your NGO",
     subtitlu:
       "One place for your donors, partner companies, campaigns and team. The platform does the repetitive work for you, so time is left for people and for the cause.",
