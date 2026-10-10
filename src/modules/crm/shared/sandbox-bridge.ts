@@ -105,6 +105,7 @@ window.fetch=function(input,init){
     pend[id]=function(m){
       if(m.error){reject(new TypeError(m.error));return;}
       var nb=(m.status===204||m.status===205||m.status===304)?null:m.body;
+      if(nb!==null&&m.b64!=null){var bin=atob(m.b64),u=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);nb=u;}
       resolve(new Response(nb,{status:m.status,statusText:m.statusText||'',headers:m.headers||[]}));
     };
     post({t:'fetch',id:id,url:abs,method:(init.method||'GET').toUpperCase(),headers:hdr,body:body,cache:init.cache});
@@ -132,6 +133,7 @@ type Raspuns = Record<string, unknown>;
 
 export type FetchMsg = { fa: 1; t: "fetch"; id: number; url: string; method: string; headers: Record<string, string>; body?: string; cache?: string };
 
+const MAX_BINAR = 2_000_000;
 const METODE = new Set(["GET", "POST", "PUT", "PATCH", "DELETE"]);
 const MAX_BODY = 4 * 1024 * 1024;
 
@@ -182,6 +184,14 @@ export async function handeazaFetch(m: FetchMsg, orgSlug: string, hostOrigin: st
       cache: m.cache === "no-store" ? "no-store" : undefined,
       signal: ctrl.signal,
     });
+    // Fonturile (ex. cele Google, înglobate la exportul PDF) sunt binare: se trimit în base64, nu ca text.
+    if (/^(font\/|application\/(font|octet-stream))/i.test(r.headers.get("content-type") ?? "")) {
+      const buf = new Uint8Array(await r.arrayBuffer());
+      if (buf.length > MAX_BINAR) return { ...base, error: "Răspuns binar prea mare" };
+      let bin = "";
+      for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode(...buf.subarray(i, i + 0x8000));
+      return { ...base, status: r.status, statusText: r.statusText, headers: Array.from(r.headers.entries()), body: "", b64: btoa(bin) };
+    }
     const body = await r.text();
     return { ...base, status: r.status, statusText: r.statusText, headers: Array.from(r.headers.entries()), body };
   } catch (e) {

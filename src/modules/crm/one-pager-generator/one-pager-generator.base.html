@@ -119,13 +119,14 @@
   #galleryView .ghead h1 { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; font-size:22px; font-weight:700; letter-spacing:-.01em; }
   @media (max-width:640px){ .top .btns .menu { right:auto; left:0; min-width:min(300px, 86vw); } .top .btns { margin-left:0; } }
 </style>
+<script src="/vendor/jspdf.umd.min.js"></script>
 <script>(function(){function d(){return document.querySelector('.top .more');}document.addEventListener('click',function(e){var m=d();if(m&&m.open&&(!m.contains(e.target)||(e.target.closest&&e.target.closest('.menu button'))))m.open=false;});document.addEventListener('keydown',function(e){var m=d();if(e.key==='Escape'&&m&&m.open){m.open=false;var s=m.querySelector('summary');if(s)s.focus();}});})();</script>
 </head>
 <body>
 <div class="top">
   <h1><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg> Generator one-pager</h1>
   <div class="btns">
-    <button id="printBtn" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V3h10v6M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/><rect x="7" y="14" width="10" height="7" rx="1"/></svg> Printează / descarcă PDF</button>
+    <button id="printBtn" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V3h10v6M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/><rect x="7" y="14" width="10" height="7" rx="1"/></svg> Descarcă PDF</button>
     <button id="copyBtn" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg> Copiază codul HTML</button>
   </div>
 </div>
@@ -3862,11 +3863,126 @@ restoreDraft();
 draftFields().forEach(function(el){ el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', refresh); });
 refresh();
 
-document.getElementById('printBtn').onclick = function(){
-  var w = document.getElementById('frame').contentWindow;
-  w.focus();
-  w.print();
-};
+/* ===== PDF direct =====
+   Documentul se desenează în browser (SVG foreignObject → canvas), cu fonturile Google înglobate, apoi se așază pe pagini A4 (jsPDF).
+   Rezultatul e o imagine de înaltă rezoluție: textul nu se poate selecta. Dacă browserul nu poate, se deschide tipărirea. */
+var PDF_A4W = 595.28, PDF_A4H = 841.89;
+function pdfDinBlob(b){ return new Promise(function(ok){ var r = new FileReader(); r.onload = function(){ ok(r.result); }; r.readAsDataURL(b); }); }
+async function pdfInglobeazaFonturi(html){
+  var linkuri = html.match(/<link[^>]+href="https:\/\/fonts\.googleapis\.com[^"]+"[^>]*>/g) || [];
+  var esecuri = 0;
+  for (var i = 0; i < linkuri.length; i++){
+    var l = linkuri[i], css = '';
+    try {
+      var href = l.match(/href="([^"]+)"/)[1].replace(/&amp;/g, '&');
+      var rez = await fetch(href);
+      if(!rez.ok) throw new Error('css');
+      var text = await rez.text();
+      var re = /\/\*\s*([a-z-]+)\s*\*\/\s*(@font-face\s*\{[^}]*\})/g, m, blocuri = [];
+      while((m = re.exec(text))){ if(m[1] === 'latin' || m[1] === 'latin-ext') blocuri.push(m[2]); }
+      var gata = await Promise.all(blocuri.map(async function(b){
+        var u = b.match(/url\((https:[^)]+)\)/);
+        if(!u) return '';
+        var fr = await fetch(u[1]);
+        if(!fr.ok) throw new Error('font');
+        var data = await pdfDinBlob(await fr.blob());
+        return b.split(u[1]).join(data);
+      }));
+      css = gata.join('\n');
+    } catch(e){ esecuri++; }
+    html = html.split(l).join(css ? '<style>' + css + '</style>' : '');
+  }
+  return { html: html, esecuri: esecuri };
+}
+function pdfTaiePagini(radacina, total, inalt){
+  var r0 = radacina.getBoundingClientRect(), blocuri = [];
+  radacina.querySelectorAll('*').forEach(function(el){
+    var r = el.getBoundingClientRect();
+    if(r.height > 2 && r.height < inalt * 0.45) blocuri.push([r.top - r0.top, r.bottom - r0.top]);
+  });
+  function ok(y){ for(var i = 0; i < blocuri.length; i++){ if(blocuri[i][0] < y - 0.5 && blocuri[i][1] > y + 0.5) return false; } return true; }
+  var pagini = [], sus = 0;
+  while(sus < total - 1){
+    var jos = Math.min(total, sus + inalt);
+    if(jos < total){
+      var y = jos;
+      while(y > sus + inalt * 0.55 && !ok(y)) y -= 2;
+      if(y > sus + inalt * 0.55) jos = y;
+    }
+    pagini.push([sus, jos]);
+    sus = jos;
+  }
+  return pagini.length ? pagini : [[0, total]];
+}
+async function descarcaPdf(){
+  var btn = document.getElementById('printBtn'), eticheta = btn.innerHTML, cadru = null;
+  btn.disabled = true;
+  btn.lastChild.textContent = ' Se pregătește PDF-ul…';
+  try {
+    if(!window.jspdf) throw new Error('jspdf');
+    var h = await pdfInglobeazaFonturi(build());
+    cadru = document.createElement('iframe');
+    cadru.setAttribute('aria-hidden', 'true');
+    cadru.tabIndex = -1;
+    cadru.style.cssText = 'position:fixed;left:-10000px;top:0;width:1000px;height:800px;border:0;visibility:hidden';
+    cadru.srcdoc = h.html;
+    var incarcat = new Promise(function(ok){ cadru.addEventListener('load', ok, { once: true }); });
+    document.body.appendChild(cadru);
+    await incarcat;
+    var doc = cadru.contentDocument, pag = doc && doc.querySelector('.page');
+    if(!pag) throw new Error('pagina');
+    var W = Math.round(parseFloat(cadru.contentWindow.getComputedStyle(pag).maxWidth) || 850);
+    var st = doc.createElement('style');
+    st.textContent = 'html,body{background:#fff!important;margin:0!important}.page{margin:0!important;max-width:none!important;width:' + W + 'px!important;box-shadow:none!important;border-radius:0!important}';
+    doc.head.appendChild(st);
+    await doc.fonts.ready;
+    await Promise.all(Array.from(doc.fonts).map(function(f){ return f.load().catch(function(){}); }));
+    var H = Math.ceil(pag.getBoundingClientRect().height);
+    if(!W || !H) throw new Error('dimensiuni');
+    var inaltPag = Math.round(W * PDF_A4H / PDF_A4W);
+    /* o pagină puțin mai înaltă decât A4 se micșorează ca să încapă pe una singură */
+    var zone = H <= inaltPag * 1.06 ? [[0, H]] : pdfTaiePagini(pag, H, inaltPag);
+    var xhtml = new XMLSerializer().serializeToString(doc.documentElement);
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '"><foreignObject x="0" y="0" width="' + W + '" height="' + H + '">' + xhtml + '</foreignObject></svg>';
+    var img = new Image();
+    var imgGata = new Promise(function(ok, nu){ img.onload = ok; img.onerror = function(){ nu(new Error('svg')); }; });
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    await imgGata;
+    var scara = Math.min(3, 16000 / H, 16000 / W);
+    var mare = document.createElement('canvas');
+    mare.width = Math.round(W * scara); mare.height = Math.round(H * scara);
+    var ctx = mare.getContext('2d');
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, mare.width, mare.height);
+    ctx.drawImage(img, 0, 0, mare.width, mare.height);
+    var pdf = new window.jspdf.jsPDF({ unit: 'pt', format: 'a4', orientation: 'portrait', compress: true });
+    for(var i = 0; i < zone.length; i++){
+      var z = zone[i], hz = Math.max(1, Math.round((z[1] - z[0]) * scara));
+      var bucata = document.createElement('canvas');
+      bucata.width = mare.width; bucata.height = hz;
+      var c2 = bucata.getContext('2d');
+      c2.fillStyle = '#fff'; c2.fillRect(0, 0, bucata.width, hz);
+      c2.drawImage(mare, 0, Math.round(z[0] * scara), mare.width, hz, 0, 0, mare.width, hz);
+      var jpg = bucata.toDataURL('image/jpeg', 0.92);
+      var hPt = (z[1] - z[0]) * PDF_A4W / W;
+      var fit = Math.min(1, PDF_A4H / hPt);
+      if(i) pdf.addPage();
+      pdf.addImage(jpg, 'JPEG', 0, 0, PDF_A4W * fit, hPt * fit);
+    }
+    var nume = (document.getElementById('ORG_NUME').value || 'organizatie').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'organizatie';
+    pdf.save('one-pager-' + nume + '.pdf');
+    toast(h.esecuri ? 'PDF descărcat, dar unele fonturi nu au putut fi incluse.' : 'PDF-ul a fost descărcat.');
+  } catch(e){
+    toast('Nu am putut crea PDF-ul direct în acest browser. Se deschide tipărirea: alege „Salvează ca PDF”.');
+    var w = document.getElementById('frame').contentWindow;
+    w.focus();
+    w.print();
+  } finally {
+    if(cadru) cadru.remove();
+    btn.disabled = false;
+    btn.innerHTML = eticheta;
+  }
+}
+document.getElementById('printBtn').onclick = descarcaPdf;
 
 function copyToClipboard(text, cb){
   if(navigator.clipboard && navigator.clipboard.writeText){
