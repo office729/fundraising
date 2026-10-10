@@ -29,7 +29,6 @@ export default async function CrmLayout({
       orgSlug={orgSlug}
       orgName={access.orgName}
       orgLogoUrl={access.orgLogoUrl}
-      orgBrandColor={access.orgBrandColor}
       orgDomeniuActivitate={access.orgDomeniuActivitate}
       userName={access.userName ?? access.userEmail}
       role={access.role}

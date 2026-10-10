@@ -1,9 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
-import type { CSSProperties } from "react";
 
 import { requireOrgAccess } from "@/lib/auth/guard";
-import { culoareTextPeFundal } from "@/lib/culoare-text";
 import { isAccessBlocked, isPlatformAdmin, trialDaysRemaining } from "@/lib/billing/trial";
 import { DPA_ACTIV, DPA_VERSIUNE, TERMENI_VERSIUNE } from "@/lib/legal-version";
 import { TermeniGate } from "@/components/termeni-gate";
@@ -29,7 +27,6 @@ export default async function OrgLayout({
   // Gate de acces — aruncă 404 (nu 403) dacă userul nu e membru, ca să nu
   // scurgem existența unor organizații străine. Vezi lib/auth/guard.ts.
   const access = await requireOrgAccess(orgSlug);
-  const accent = access.orgBrandColor || undefined;
   const locale = await getLocale();
   const dict = DASHBOARD_DICT[locale];
 
@@ -65,8 +62,6 @@ export default async function OrgLayout({
   return (
     <div
       className="min-h-screen bg-canvas"
-      data-domeniu={access.orgDomeniuActivitate ?? undefined}
-      style={accent ? ({ "--ci-brand-override": accent } as CSSProperties) : undefined}
     >
       <OnboardingBrandingGate
         show={showOnboarding}
@@ -106,14 +101,13 @@ export default async function OrgLayout({
               ) : (
                 <span
                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg font-display text-sm font-bold text-white"
-                  style={{ backgroundColor: accent || "var(--brand-solid)", color: accent ? culoareTextPeFundal(accent) : undefined }}
+                  style={{ backgroundColor: "var(--brand-solid)" }}
                 >
                   {initiale}
                 </span>
               )}
               <p
-                className={`truncate font-display text-base leading-none font-semibold ${accent ? "org-nume-brand" : "text-brand-blue"}`}
-                style={accent ? ({ "--org-accent": accent } as CSSProperties) : undefined}
+                className="truncate font-display text-base leading-none font-semibold text-brand-blue"
               >
                 {access.orgName}
               </p>
@@ -156,7 +150,6 @@ export default async function OrgLayout({
             )}
             <span
               className="rounded-full border px-2.5 py-1 text-xs font-medium text-muted"
-              style={accent ? { borderColor: accent } : undefined}
             >
               {dict.header.roles[access.role as keyof typeof dict.header.roles] ?? access.role}
             </span>

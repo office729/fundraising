@@ -19,7 +19,6 @@ export async function CrmToolPage({ orgSlug, access, children }: { orgSlug: stri
       orgSlug={orgSlug}
       orgName={access.orgName}
       orgLogoUrl={access.orgLogoUrl}
-      orgBrandColor={access.orgBrandColor}
       orgDomeniuActivitate={access.orgDomeniuActivitate}
       userName={access.userName ?? access.userEmail}
       role={access.role}

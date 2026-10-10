@@ -38,7 +38,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 
 import type { DomeniuActivitate } from "@/lib/campaign-templates";
 import { DASHBOARD_DICT, type DashboardDict } from "@/lib/i18n/dictionaries/dashboard";
@@ -143,7 +143,6 @@ export function CrmShell({
   orgSlug,
   orgName,
   orgLogoUrl,
-  orgBrandColor,
   orgDomeniuActivitate,
   userName,
   role,
@@ -153,7 +152,6 @@ export function CrmShell({
   orgSlug: string;
   orgName: string;
   orgLogoUrl: string | null;
-  orgBrandColor: string | null;
   orgDomeniuActivitate: DomeniuActivitate | null;
   userName: string;
   role: string;
@@ -183,8 +181,7 @@ export function CrmShell({
     <div
       className="ci-root flex min-h-[calc(100vh-73px)]"
       data-brand
-      data-domeniu={orgDomeniuActivitate ?? undefined}
-      style={orgBrandColor ? ({ "--ci-brand-override": orgBrandColor } as CSSProperties) : undefined}
+      data-forma={orgDomeniuActivitate ?? undefined}
     >
       {mobileOpen && (
         <button
