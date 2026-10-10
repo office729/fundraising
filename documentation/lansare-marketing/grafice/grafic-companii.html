@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue: #154a85;
+    --green: #2a7d44;
+    --green-soft: #e9f6ec;
+    --before: #7c8a9c;
+    --ink: #154a85;
+    --body: #374151;
+    --muted: #4a5a6e;
+    --line: #e6e9ee;
+    --bg: #ffffff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #ddd; font-family: Inter, sans-serif; color: var(--body); }
+  .card {
+    width: 1080px; height: var(--h, 1350px); background: var(--bg);
+    padding: 72px 80px 64px; display: flex; flex-direction: column; position: relative; overflow: hidden;
+  }
+  .card::before { /* banda de brand sus */
+    content: ""; position: absolute; left: 0; top: 0; right: 0; height: 12px;
+    background: linear-gradient(90deg, var(--blue), var(--green));
+  }
+  .top { display: flex; justify-content: space-between; align-items: center; }
+  .top img { height: 46px; }
+  .tag { font: 600 22px Inter; color: var(--muted); letter-spacing: .02em; }
+  h1 { font: 800 var(--h1, 76px)/1.06 Sora; color: var(--ink); margin-top: var(--gap1, 64px); letter-spacing: -0.02em; }
+  h1 em { font-style: normal; color: var(--green); }
+  .sub { font: 500 30px/1.4 Inter; color: var(--muted); margin-top: 22px; max-width: 880px; }
+
+  .chart { flex: 1; display: flex; align-items: flex-end; gap: 0; margin-top: 40px; position: relative;
+           border-bottom: 2px solid #c5ccd6; }
+  .col { width: 300px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }
+  .col + .mid { width: 320px; }
+  .val { font: 700 44px Sora; color: var(--ink); margin-bottom: 16px; letter-spacing: -0.01em; }
+  .val small { font: 600 26px Inter; color: var(--muted); margin-left: 6px; }
+  .bar { width: 220px; border-radius: 4px 4px 0 0; }
+  .b0 { background: var(--before); }
+  .b1 { background: var(--green); }
+  .mid { display: flex; align-items: center; justify-content: center; height: 100%; padding-bottom: 120px; }
+  .mult { text-align: center; }
+  .mult .x { font: 800 var(--xsize, 116px)/1 Sora; color: var(--green); letter-spacing: -0.03em; }
+  .mult .xl { font: 600 26px/1.35 Inter; color: var(--muted); margin-top: 10px; }
+  .arrow { margin: 18px auto 0; width: 160px; height: 24px; }
+
+  .labels { display: flex; margin-top: 18px; }
+  .labels div { width: 300px; text-align: center; font: 600 26px/1.35 Inter; color: var(--body); }
+  .labels div span { display: block; font: 500 22px Inter; color: var(--muted); }
+  .labels .sp { width: 320px; }
+
+  .foot { margin-top: 44px; display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; }
+  .msg { font: 700 34px/1.25 Sora; color: var(--ink); max-width: 640px; }
+  .url { font: 700 30px Sora; color: #fff; background: var(--blue); padding: 18px 28px; border-radius: 14px; white-space: nowrap; }
+  .src { font: 400 19px/1.4 Inter; color: #647285; margin-top: 26px; }
+</style>
+</head>
+<body>
+<div class="card" id="card">
+  <div class="top">
+    <img src="../../../public/alexandrit-logo.webp" alt="Alexandrit">
+    <div class="tag">Rezultate reale · Salvează o inimă</div>
+  </div>
+
+  <h1>De la 800.000 la<br><em>6.000.000 de lei</em> pe an</h1>
+  <p class="sub">Sprijinul companiilor pentru Asociația „Salvează o inimă”, înainte și după ce am început să lucrăm cu un CRM.</p>
+
+  <div class="chart" id="chart">
+    <div class="col">
+      <div class="val">800.000<small>lei</small></div>
+      <div class="bar b0" id="b0"></div>
+    </div>
+    <div class="mid">
+      <div class="mult">
+        <div class="x">×7,5</div>
+        <div class="xl">în 4 ani</div>
+        <svg class="arrow" viewBox="0 0 160 24" aria-hidden="true">
+          <line x1="4" y1="12" x2="146" y2="12" stroke="#2a7d44" stroke-width="4" stroke-linecap="round"/>
+          <polyline points="136,3 152,12 136,21" fill="none" stroke="#2a7d44" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </div>
+    <div class="col">
+      <div class="val">6.000.000<small>lei</small></div>
+      <div class="bar b1" id="b1"></div>
+    </div>
+  </div>
+  <div class="labels">
+    <div>2021<span>înainte de CRM</span></div>
+    <div class="sp"></div>
+    <div>Azi<span>după 4 ani cu CRM</span></div>
+  </div>
+
+  <div class="foot">
+    <div class="msg">Același sistem îl poate folosi acum orice ONG din România.</div>
+    <div class="url">alexandrit.ro</div>
+  </div>
+  <div class="src">Sponsorizări și donații de la companii (persoane juridice), pe an. Sursa: datele interne ale Asociației „Salvează o inimă”.</div>
+</div>
+<script>
+  // Înălțimi proporționale cu valorile reale (800.000 / 6.000.000), pe aceeași axă.
+  const p = new URLSearchParams(location.search);
+  const card = document.getElementById('card');
+  if (p.get('h')) {
+    card.style.setProperty('--h', p.get('h') + 'px');
+    card.style.setProperty('--h1', '62px');
+    card.style.setProperty('--gap1', '40px');
+    card.style.setProperty('--xsize', '92px');
+  }
+  function layout() {
+    const chart = document.getElementById('chart');
+    const max = chart.clientHeight - 80; // loc pentru eticheta de valoare
+    document.getElementById('b1').style.height = max + 'px';
+    document.getElementById('b0').style.height = Math.round(max * 800000 / 6000000) + 'px';
+  }
+  document.fonts.ready.then(layout);
+  layout();
+</script>
+</body>
+</html>
