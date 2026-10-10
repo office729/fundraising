@@ -58,6 +58,7 @@ const TITLURI = {
   crmAvatarDonator: { ro: "Avatar donator — CRM", en: "Donor avatar — CRM" },
   crmD177: { ro: "Companii D177 — CRM", en: "D177 companies — CRM" },
   crmOrganizatie: { ro: "Organizație & Echipă — CRM", en: "Organization & Team — CRM" },
+  crmRaportImpact: { ro: "Raport de impact — CRM", en: "Impact report — CRM" },
   crmProspectare: { ro: "CRM prospectare companii", en: "Company prospecting CRM" },
   crmComunicate: { ro: "Comunicate de presă — CRM", en: "Press releases — CRM" },
   crmGrupuriFacebook: { ro: "Împărțire grupuri Facebook — CRM", en: "Facebook groups split — CRM" },

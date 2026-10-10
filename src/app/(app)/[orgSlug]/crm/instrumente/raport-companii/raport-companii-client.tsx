@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink, FileText, Sparkles } from "lucide-react";
+import { ExternalLink, FileText, HeartHandshake, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 
@@ -67,6 +67,9 @@ export function RaportCompaniiClient({
               </option>
             ))}
           </select>
+          <Button variant="primary" onClick={() => router.push(`/${orgSlug}/crm/instrumente/raport-companii/impact`)}>
+            <HeartHandshake className="h-3.5 w-3.5" /> {ro ? "Raport de impact" : "Impact report"}
+          </Button>
           <Button variant="secondary" onClick={() => router.push(`/${orgSlug}/crm/instrumente/raport-companii/documente-financiare`)}>
             <FileText className="h-3.5 w-3.5" /> {ro ? "Documente financiare" : "Financial documents"}
           </Button>
@@ -117,6 +120,9 @@ export function RaportCompaniiClient({
                       )}
                     </>
                   ) : null}
+                  <Button variant="ghost" size="sm" onClick={() => router.push(`/${orgSlug}/crm/instrumente/raport-companii/impact?firma=${r.companyId}`)}>
+                    <HeartHandshake className="h-3.5 w-3.5" /> {ro ? "Impact" : "Impact"}
+                  </Button>
                   <Button
                     variant="secondary"
                     size="sm"
