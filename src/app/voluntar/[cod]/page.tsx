@@ -40,9 +40,9 @@ export default async function PaginaVoluntar({ params }: { params: Promise<{ cod
       istoricPentruVoluntar(tx, org.id, v.id),
       campaniiVizibile(tx, org.id),
       campaniaSaptamanii(tx, org.id),
-      tx.select({ email: volunteerVisitors.email }).from(volunteerVisitors).where(eq(volunteerVisitors.id, v.id)).limit(1),
+      tx.select({ email: volunteerVisitors.email, acord: volunteerVisitors.acordInvitatii }).from(volunteerVisitors).where(eq(volunteerVisitors.id, v.id)).limit(1),
     ]);
-    return { v, sarcini, activitati, istoric, campanii, vedetaId, email: vizitator?.email ?? null, acum };
+    return { v, sarcini, activitati, istoric, campanii, vedetaId, email: vizitator?.email ?? null, acord: vizitator?.acord ?? false, acum };
   });
 
   if (!date) {
@@ -61,7 +61,7 @@ export default async function PaginaVoluntar({ params }: { params: Promise<{ cod
     );
   }
 
-  const { v, sarcini, activitati, istoric, campanii, vedetaId, email, acum } = date;
+  const { v, sarcini, activitati, istoric, campanii, vedetaId, email, acord, acum } = date;
 
   // Următoarea acțiune, în ordinea utilității: o înscriere care urmează, o sarcină începută, o sarcină nouă, o activitate cu locuri.
   let urmatoarea: Urmatoarea = null;
@@ -106,6 +106,7 @@ export default async function PaginaVoluntar({ params }: { params: Promise<{ cod
         istoric={istoric}
         campanii={listaCampanii}
         emailMeu={email}
+        acordInvitatii={acord}
         urmatoarea={urmatoarea}
         legatCrm={!!v.voluntarId}
       />

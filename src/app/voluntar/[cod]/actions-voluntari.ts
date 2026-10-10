@@ -6,8 +6,9 @@ import { cookies } from "next/headers";
 import { obtineIpClient, verificaLimitaRata } from "@/lib/auth/rate-limit";
 import { volunteerActivities, volunteerReports, volunteerShifts, volunteerSignups, volunteerTaskEngagements, volunteerTasks, volunteerVisitors } from "@/lib/db/schema";
 import { emailConfigurat, trimiteEmail } from "@/lib/email";
-import { emailValid, MAX, normalizeazaLink, sarcinaDeschisa, statusInscriereNoua, textCurat, UUID_REGEX } from "@/lib/voluntari-activitati";
+import { calculeazaOre, emailValid, MAX, normalizeazaLink, sarcinaDeschisa, statusInscriereNoua, textCurat, UUID_REGEX } from "@/lib/voluntari-activitati";
 import { blocheazaTura, locuriOcupate, promoveazaDinRezerva } from "@/lib/voluntari-inscrieri";
+import { inFereastraCheckin, tokenPrezentaValid } from "@/lib/voluntari-prezenta";
 import { ziuaRo } from "@/lib/voluntari-panou";
 import { emailConfirmare } from "@/lib/voluntari-email-template";
 import { cuOrg, numeCookieVoluntar, rezolvaCod, URL_BAZA, vizitatorDinCookie } from "@/lib/voluntari-panou-server";
@@ -164,12 +165,18 @@ export async function anuleazaInscriereAction(cod: string, signupId: string): Pr
 }
 
 // ===== Contact, raportare, ștergerea datelor =====
-export async function salveazaEmailAction(cod: string, emailBrut: string): Promise<Rez> {
+export async function salveazaEmailAction(cod: string, emailBrut: string, acordInvitatii: boolean): Promise<Rez> {
   const email = textCurat(emailBrut, 120).toLowerCase();
   if (email && !emailValid(email)) return { ok: false, eroare: "Adresa de email nu pare completă." };
   const c = await contextVoluntar(cod);
   if (!c.ok) return c;
-  await cuOrg(c.org.id, (tx) => tx.update(volunteerVisitors).set({ email: email || null }).where(and(eq(volunteerVisitors.id, c.v.id), eq(volunteerVisitors.orgId, c.org.id))));
+  // Fără email nu are sens acordul pentru invitații: se șterg împreună.
+  await cuOrg(c.org.id, (tx) =>
+    tx
+      .update(volunteerVisitors)
+      .set({ email: email || null, acordInvitatii: !!email && !!acordInvitatii })
+      .where(and(eq(volunteerVisitors.id, c.v.id), eq(volunteerVisitors.orgId, c.org.id))),
+  );
   return { ok: true };
 }
 
@@ -200,3 +207,26 @@ export async function stergeDateleMeleAction(cod: string): Promise<Rez> {
   return { ok: true };
 }
 
+
+// Check-in prin cod QR: valid doar cu tokenul curent al turei (se schimbă la 5 minute), în fereastra turei, pentru un voluntar confirmat.
+export async function checkInAction(cod: string, shiftId: string, token: string): Promise<Rez> {
+  if (!UUID_REGEX.test(String(shiftId)) || !tokenPrezentaValid(shiftId, token)) return { ok: false, eroare: "Codul a expirat. Scanează din nou codul curent." };
+  const c = await contextVoluntar(cod);
+  if (!c.ok) return c;
+  return cuOrg(c.org.id, async (tx) => {
+    const [t] = await tx
+      .select({ inceputLa: volunteerShifts.inceputLa, seTerminaLa: volunteerShifts.seTerminaLa, stare: volunteerActivities.stare })
+      .from(volunteerShifts)
+      .innerJoin(volunteerActivities, eq(volunteerActivities.id, volunteerShifts.activityId))
+      .where(and(eq(volunteerShifts.id, shiftId), eq(volunteerShifts.orgId, c.org.id)))
+      .limit(1);
+    if (!t || t.stare === "anulata") return { ok: false as const, eroare: "Activitatea nu mai este disponibilă." };
+    if (!inFereastraCheckin(t.inceputLa, t.seTerminaLa)) return { ok: false as const, eroare: "Prezența se poate confirma doar în jurul turei." };
+    const r = await tx
+      .update(volunteerSignups)
+      .set({ status: "prezent", oreCalculate: String(calculeazaOre(t.inceputLa, t.seTerminaLa)), checkinLa: new Date(), updatedAt: new Date() })
+      .where(and(eq(volunteerSignups.shiftId, shiftId), eq(volunteerSignups.visitorId, c.v.id), eq(volunteerSignups.orgId, c.org.id), eq(volunteerSignups.status, "confirmata")))
+      .returning({ id: volunteerSignups.id });
+    return r[0] ? { ok: true as const } : { ok: false as const, eroare: "Nu ești confirmat(ă) la această tură." };
+  });
+}

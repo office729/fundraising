@@ -72,6 +72,7 @@ export type ActivitateEchipa = {
   rezultatEticheta: string;
   rezultatValoare: number | null;
   stare: string;
+  linkCoordonator: string | null;
   ture: TuraEchipa[];
   inscrisi: InscrisEchipa[];
 };
@@ -212,6 +213,7 @@ export async function citesteDateVoluntari(ctx: { db: OrgContext["db"]; orgId: s
     rezultatEticheta: a.rezultatEticheta ?? "",
     rezultatValoare: num(a.rezultatValoare),
     stare: a.stare,
+    linkCoordonator: a.coordinatorToken ? `${URL_BAZA()}/coordonator/${a.coordinatorToken}` : null,
     ture: ture
       .filter((t) => t.activityId === a.id)
       .map((t) => ({ id: t.id, nume: t.nume, inceputLa: t.inceputLa.toISOString(), seTerminaLa: t.seTerminaLa.toISOString(), locuri: t.locuri, ocupate: ocupatePeTura.get(t.id) ?? 0 })),

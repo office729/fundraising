@@ -4,7 +4,11 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 
 import { withOrgSession, type OrgContext } from "@/lib/auth/guard";
 import type { Tx } from "@/lib/db";
-import { fundraisingAuditLog, fundraisingPages, volunteerActivities, volunteerReports, volunteerShifts, volunteerSignups, volunteerTasks } from "@/lib/db/schema";
+import { fundraisingAuditLog, fundraisingPages, volunteerActivities, volunteerPanelLinks, volunteerReports, volunteerShifts, volunteerSignups, volunteerTasks, volunteerVisitors } from "@/lib/db/schema";
+import { emailConfigurat, trimiteEmail } from "@/lib/email";
+import { emailInvitatie } from "@/lib/voluntari-email-template";
+import { candidatiPentru, MAX_INVITATII, type CandidatInvitatie } from "@/lib/voluntari-invitatii";
+export type { CandidatInvitatie } from "@/lib/voluntari-invitatii";
 import {
   calculeazaOre,
   dinOraRo,
@@ -14,7 +18,9 @@ import {
   textCurat,
   UUID_REGEX,
 } from "@/lib/voluntari-activitati";
+import { genereazaCodScurt } from "@/lib/short-code";
 import { CANAL_IDS } from "@/lib/voluntari-panou";
+import { URL_BAZA } from "@/lib/voluntari-panou-server";
 import { blocheazaTura, locuriOcupate, promoveazaDinRezerva } from "@/lib/voluntari-inscrieri";
 import { citesteDateVoluntari, type DateVoluntari } from "@/lib/voluntari-echipa";
 export type { ActivitateEchipa, DateVoluntari, InscrisEchipa, RaportareEchipa, SarcinaEchipa, TuraEchipa, VoluntarEchipa } from "@/lib/voluntari-echipa";
@@ -331,4 +337,84 @@ export const rezolvaRaportareAction = withOrgSession(async (ctx, id: string): Pr
   if (!UUID_REGEX.test(String(id))) return eroare("Cerere invalidă.");
   const r = await ctx.db.update(volunteerReports).set({ stare: "rezolvata" }).where(and(eq(volunteerReports.id, id), eq(volunteerReports.orgId, ctx.orgId))).returning({ id: volunteerReports.id });
   return r[0] ? { ok: true } : eroare("Raportarea nu mai există.");
+});
+
+// ===== Linkul coordonatorului =====
+// Un cod secret pe activitate (24 de caractere). Un cod nou îl înlocuiește pe cel vechi; valabil până la 3 zile după încheiere.
+export const genereazaLinkCoordonatorAction = withOrgSession(async (ctx, activityId: string): Promise<Rez<{ link: string }>> => {
+  if (!UUID_REGEX.test(String(activityId))) return eroare("Cerere invalidă.");
+  const cod = genereazaCodScurt(24);
+  const r = await ctx.db
+    .update(volunteerActivities)
+    .set({ coordinatorToken: cod, updatedAt: new Date() })
+    .where(and(eq(volunteerActivities.id, activityId), eq(volunteerActivities.orgId, ctx.orgId)))
+    .returning({ id: volunteerActivities.id });
+  if (!r[0]) return eroare("Activitatea nu mai există.");
+  await audit(ctx, "voluntari_link_coordonator_generat", activityId);
+  return { ok: true, link: `${URL_BAZA()}/coordonator/${cod}` };
+});
+
+export const opresteLinkCoordonatorAction = withOrgSession(async (ctx, activityId: string): Promise<Rez> => {
+  if (!UUID_REGEX.test(String(activityId))) return eroare("Cerere invalidă.");
+  const r = await ctx.db
+    .update(volunteerActivities)
+    .set({ coordinatorToken: null, updatedAt: new Date() })
+    .where(and(eq(volunteerActivities.id, activityId), eq(volunteerActivities.orgId, ctx.orgId)))
+    .returning({ id: volunteerActivities.id });
+  if (!r[0]) return eroare("Activitatea nu mai există.");
+  await audit(ctx, "voluntari_link_coordonator_oprit", activityId);
+  return { ok: true };
+});
+
+// ===== Invitații la activități =====
+// Doar voluntarilor care au bifat explicit că vor invitații, au un email, au mai făcut ceva cu organizația (au fost prezenți, au
+// terminat o sarcină sau au distribuit) și nu au primit o invitație în ultimele 7 zile. Cei deja înscriși la activitate nu apar.
+export const candidatiInvitatiiAction = withOrgSession(
+  async (ctx, activityId: string): Promise<Rez<{ candidati: CandidatInvitatie[]; emailActiv: boolean; linkActiv: boolean }>> => {
+    if (!UUID_REGEX.test(String(activityId))) return eroare("Cerere invalidă.");
+    const [link] = await ctx.db.select({ activ: volunteerPanelLinks.activ }).from(volunteerPanelLinks).where(eq(volunteerPanelLinks.orgId, ctx.orgId)).limit(1);
+    return { ok: true, candidati: await candidatiPentru(ctx, activityId), emailActiv: emailConfigurat(), linkActiv: !!link?.activ };
+  },
+);
+
+export const trimiteInvitatiiAction = withOrgSession(async (ctx, activityId: string, ids: string[]): Promise<Rez<{ trimise: number; esuate: number }>> => {
+  if (!UUID_REGEX.test(String(activityId))) return eroare("Cerere invalidă.");
+  if (!emailConfigurat()) return eroare("Emailul nu e configurat pe acest server, deci nu putem trimite invitații.");
+  const alesi = new Set((Array.isArray(ids) ? ids : []).filter((x) => UUID_REGEX.test(String(x))).slice(0, MAX_INVITATII));
+  if (alesi.size === 0) return eroare("Alege cel puțin un voluntar.");
+  const [a] = await ctx.db
+    .select({ titlu: volunteerActivities.titlu, locatie: volunteerActivities.locatie, inceputLa: volunteerActivities.inceputLa, seTerminaLa: volunteerActivities.seTerminaLa, stare: volunteerActivities.stare })
+    .from(volunteerActivities)
+    .where(and(eq(volunteerActivities.id, activityId), eq(volunteerActivities.orgId, ctx.orgId)))
+    .limit(1);
+  if (!a) return eroare("Activitatea nu mai există.");
+  if (a.stare !== "publicata" || a.seTerminaLa.getTime() < Date.now()) return eroare("Invitațiile se trimit doar pentru activități publicate care nu s-au încheiat.");
+  const [link] = await ctx.db.select({ cod: volunteerPanelLinks.cod, activ: volunteerPanelLinks.activ }).from(volunteerPanelLinks).where(eq(volunteerPanelLinks.orgId, ctx.orgId)).limit(1);
+  if (!link?.activ) return eroare("Pornește linkul voluntarilor înainte să trimiți invitații.");
+
+  // Se reia verificarea de eligibilitate pe server: nu ne bazăm pe lista primită de la browser.
+  const eligibili = new Set((await candidatiPentru(ctx, activityId)).map((c) => c.id));
+  const tinte = [...alesi].filter((id) => eligibili.has(id));
+  if (tinte.length === 0) return eroare("Nimeni dintre cei aleși nu mai poate primi invitația (au primit una recent sau s-au înscris deja).");
+  const adrese = await ctx.db
+    .select({ id: volunteerVisitors.id, prenume: volunteerVisitors.prenume, email: volunteerVisitors.email })
+    .from(volunteerVisitors)
+    .where(and(eq(volunteerVisitors.orgId, ctx.orgId), inArray(volunteerVisitors.id, tinte)));
+
+  let trimise = 0;
+  let esuate = 0;
+  const pagina = `${URL_BAZA()}/voluntar/${link.cod}`;
+  for (const v of adrese) {
+    if (!v.email) continue;
+    const mail = emailInvitatie({ org: ctx.orgName, prenume: v.prenume, titlu: a.titlu, locatie: a.locatie, inceputLa: a.inceputLa, link: pagina });
+    try {
+      await trimiteEmail({ to: v.email, subiect: mail.subiect, html: mail.html });
+      await ctx.db.update(volunteerVisitors).set({ ultimaInvitatieLa: new Date() }).where(and(eq(volunteerVisitors.id, v.id), eq(volunteerVisitors.orgId, ctx.orgId)));
+      trimise += 1;
+    } catch {
+      esuate += 1;
+    }
+  }
+  await audit(ctx, "voluntari_invitatii_trimise", activityId, { trimise, esuate });
+  return { ok: true, trimise, esuate };
 });

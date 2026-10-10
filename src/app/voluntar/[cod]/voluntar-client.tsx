@@ -41,6 +41,7 @@ type Props = {
   istoric: IstoricVoluntar;
   campanii: CampaniePentruLista[];
   emailMeu: string | null;
+  acordInvitatii: boolean;
   urmatoarea: Urmatoarea;
   legatCrm: boolean;
 };
@@ -314,7 +315,7 @@ function CardSarcina({ cod, s, deschisInitial }: { cod: string; s: SarcinaPublic
 }
 
 // ===== Pe teren =====
-function PeTeren({ cod, activitati, emailMeu, deschis }: Props & { deschis: string | null }) {
+function PeTeren({ cod, activitati, emailMeu, acordInvitatii, deschis }: Props & { deschis: string | null }) {
   return (
     <div className="space-y-4">
       {activitati.length === 0 ? (
@@ -325,7 +326,7 @@ function PeTeren({ cod, activitati, emailMeu, deschis }: Props & { deschis: stri
         </section>
       ) : (
         <>
-          {!emailMeu && <EmailForm cod={cod} mesaj="Vrei confirmarea înscrierii pe email? Adaugă adresa (opțional)." />}
+          {!emailMeu && <EmailForm cod={cod} mesaj="Vrei confirmarea înscrierii pe email? Adaugă adresa (opțional)." acordInitial={acordInvitatii} />}
           <ul className="space-y-3">
             {activitati.map((a) => (
               <li key={a.id}>
@@ -428,15 +429,16 @@ function CardActivitate({ cod, a, deschisInitial }: { cod: string; a: Activitate
   );
 }
 
-function EmailForm({ cod, mesaj }: { cod: string; mesaj: string }) {
+function EmailForm({ cod, mesaj, acordInitial }: { cod: string; mesaj: string; acordInitial: boolean }) {
   const [email, setEmail] = useState("");
+  const [acord, setAcord] = useState(acordInitial);
   const { pending, eroare, info, ruleaza } = useRula();
   return (
     <form
       className="rounded-2xl border border-[var(--vp-line)] bg-white p-4"
       onSubmit={(e) => {
         e.preventDefault();
-        ruleaza(() => salveazaEmailAction(cod, email), "Email salvat.");
+        ruleaza(() => salveazaEmailAction(cod, email, acord), email.trim() ? "Salvat." : "Adresa a fost ștearsă.");
       }}
     >
       <label htmlFor="vp-email" className="text-[14px] font-semibold">
@@ -444,18 +446,22 @@ function EmailForm({ cod, mesaj }: { cod: string; mesaj: string }) {
       </label>
       <div className="mt-2 flex gap-2">
         <input id="vp-email" type="email" autoComplete="email" className={camp} value={email} onChange={(e) => setEmail(e.target.value)} placeholder="adresa@exemplu.ro" />
-        <button type="submit" className={butonSecundar} disabled={pending || email.trim().length < 5}>
+        <button type="submit" className={butonSecundar} disabled={pending || (email.trim() !== "" && email.trim().length < 5)}>
           Salvează
         </button>
       </div>
-      <p className="mt-1.5 text-[12.5px] text-[var(--vp-muted)]">O folosim doar pentru confirmările de la activități. O poți șterge oricând din „Ale mele”.</p>
+      <label className="mt-2.5 flex items-start gap-2 text-[13.5px]">
+        <input type="checkbox" className="mt-1 size-4" checked={acord} onChange={(e) => setAcord(e.target.checked)} />
+        <span>Vreau și invitații la activități care mi se potrivesc (cel mult una pe săptămână).</span>
+      </label>
+      <p className="mt-1.5 text-[12.5px] text-[var(--vp-muted)]">Adresa e folosită pentru confirmări și remindere. Poți bifa sau debifa invitațiile oricând, sau poți șterge adresa lăsând câmpul gol și apăsând „Salvează”.</p>
       <Mesaje eroare={eroare} info={info} />
     </form>
   );
 }
 
 // ===== Ale mele =====
-function AleMele({ cod, istoric, emailMeu }: Props) {
+function AleMele({ cod, istoric, emailMeu, acordInvitatii }: Props) {
   const router = useRouter();
   const { pending, eroare, info, ruleaza } = useRula();
   const [problema, setProblema] = useState("");
@@ -501,7 +507,7 @@ function AleMele({ cod, istoric, emailMeu }: Props) {
         <p className="mt-2 text-[12.5px] text-[var(--vp-muted)]">Orele devin „confirmate” după ce echipa validează activitatea. Pentru o adeverință de voluntariat, scrie-le celor de la organizație.</p>
       </section>
 
-      <EmailForm cod={cod} mesaj={emailMeu ? `Email pentru confirmări: ${emailMeu}. Îl poți schimba:` : "Email pentru confirmări (opțional)"} />
+      <EmailForm key={`${emailMeu ?? ""}|${acordInvitatii}`} cod={cod} mesaj={emailMeu ? `Email pentru confirmări: ${emailMeu}. Îl poți schimba:` : "Email pentru confirmări (opțional)"} acordInitial={acordInvitatii} />
 
       <section className="rounded-2xl border border-[var(--vp-line)] bg-white p-4">
         <h2 className="text-[15px] font-bold">Ceva nu e în regulă?</h2>

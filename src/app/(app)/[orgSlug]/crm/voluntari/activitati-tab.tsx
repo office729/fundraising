@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, Download, MapPin, Pencil, Plus, Trash2, Users } from "lucide-react";
+import { CalendarDays, Check, Copy, Download, Link2, MapPin, Pencil, Plus, Trash2, Users } from "lucide-react";
 import { useState } from "react";
 
 import { ETICHETE_INSCRIERE, laOraRo, MAX } from "@/lib/voluntari-activitati";
@@ -13,15 +13,20 @@ import { Input, Label, Select, Textarea } from "../components/ui/input";
 import { EmptyState } from "../components/ui/states";
 
 import {
+  candidatiInvitatiiAction,
   decideInscriereAction,
+  genereazaLinkCoordonatorAction,
+  opresteLinkCoordonatorAction,
   marcheazaPrezentaAction,
   salveazaActivitateAction,
   seteazaOreAction,
   seteazaStareActivitateAction,
   stergeActivitateAction,
+  trimiteInvitatiiAction,
   valideazaOreActivitateAction,
   type ActivitateEchipa,
   type ActivitateInput,
+  type CandidatInvitatie,
   type DateVoluntari,
 } from "./actions";
 import { dataOra, descarcaCsv, MesajActiune, ora, PastilaStatus, Sectiune, useActiune } from "./ui";
@@ -169,6 +174,9 @@ function DetaliuActivitate({ orgSlug, a, acumIso, onClose, onEdit }: { orgSlug: 
           </table>
         </div>
 
+        <LinkCoordonator orgSlug={orgSlug} a={a} />
+        {a.stare === "publicata" && !trecuta && <Invitatii orgSlug={orgSlug} activityId={a.id} />}
+
         <div>
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
             <h3 className="text-[14px] font-semibold text-[var(--ci-text)]">Înscriși ({a.inscrisi.filter((i) => i.status !== "anulata").length})</h3>
@@ -287,6 +295,150 @@ function DetaliuActivitate({ orgSlug, a, acumIso, onClose, onEdit }: { orgSlug: 
         )}
       </div>
     </Dialog>
+  );
+}
+
+// Invitații către voluntari care au bifat că vor invitații: cei care au mai făcut ceva cu organizația și nu s-au înscris încă.
+function Invitatii({ orgSlug, activityId }: { orgSlug: string; activityId: string }) {
+  const { pending, mesaj, ruleaza, setMesaj } = useActiune();
+  const [stare, setStare] = useState<{ candidati: CandidatInvitatie[]; emailActiv: boolean; linkActiv: boolean } | null>(null);
+  const [alesi, setAlesi] = useState<Set<string>>(new Set());
+
+  function incarca() {
+    ruleaza(
+      async () => {
+        const r = await candidatiInvitatiiAction(orgSlug, activityId);
+        if (r.ok) {
+          setStare({ candidati: r.candidati, emailActiv: r.emailActiv, linkActiv: r.linkActiv });
+          setAlesi(new Set(r.candidati.map((c) => c.id)));
+        }
+        return r;
+      },
+      "Lista a fost încărcată.",
+    );
+  }
+
+  return (
+    <div className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] p-3.5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="min-w-0">
+          <h3 className="text-[14px] font-semibold text-[var(--ci-text)]">Invită voluntari</h3>
+          <p className="mt-0.5 text-[12.5px] text-[var(--ci-text-muted)]">Doar cei care au bifat că vor invitații, au mai făcut ceva cu organizația și nu au primit o invitație în ultimele 7 zile.</p>
+        </div>
+        {!stare && (
+          <Button size="sm" disabled={pending} onClick={incarca}>
+            Vezi cui poți trimite
+          </Button>
+        )}
+      </div>
+      {stare && (
+        <div className="mt-3 space-y-2">
+          {!stare.emailActiv && <p className="rounded-lg bg-[var(--ci-amber-soft)] px-3 py-2 text-[12.5px] text-[var(--ci-text)]">Emailul nu e configurat pe acest server, deci invitațiile nu pot pleca.</p>}
+          {!stare.linkActiv && <p className="rounded-lg bg-[var(--ci-amber-soft)] px-3 py-2 text-[12.5px] text-[var(--ci-text)]">Linkul voluntarilor nu e pornit; invitația trimite voluntarii acolo.</p>}
+          {stare.candidati.length === 0 ? (
+            <p className="text-[13px] text-[var(--ci-text-muted)]">Nu există voluntari de invitat acum.</p>
+          ) : (
+            <>
+              <ul className="max-h-48 divide-y divide-[var(--ci-border)] overflow-auto rounded-lg border border-[var(--ci-border)]">
+                {stare.candidati.map((c) => (
+                  <li key={c.id}>
+                    <label className="flex cursor-pointer items-center gap-2.5 px-3 py-2 text-[13px]">
+                      <input
+                        type="checkbox"
+                        checked={alesi.has(c.id)}
+                        onChange={(e) =>
+                          setAlesi((x) => {
+                            const n = new Set(x);
+                            if (e.target.checked) n.add(c.id);
+                            else n.delete(c.id);
+                            return n;
+                          })
+                        }
+                      />
+                      <span className="font-medium text-[var(--ci-text)]">{c.prenume}</span>
+                      <span className="text-[12px] text-[var(--ci-text-muted)]">
+                        {c.activitati > 0 ? `${c.activitati} ${c.activitati === 1 ? "activitate" : "activități"}` : ""}
+                        {c.activitati > 0 && c.sarcini > 0 ? " · " : ""}
+                        {c.sarcini > 0 ? `${c.sarcini} ${c.sarcini === 1 ? "sarcină" : "sarcini"}` : ""}
+                      </span>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+              <Button
+                variant="primary"
+                disabled={pending || alesi.size === 0 || !stare.emailActiv || !stare.linkActiv}
+                onClick={() =>
+                  ruleaza(
+                    async () => {
+                      const r = await trimiteInvitatiiAction(orgSlug, activityId, [...alesi]);
+                      if (r.ok) {
+                        setMesaj({ tip: r.esuate > 0 ? "eroare" : "ok", text: `Trimise: ${r.trimise}${r.esuate > 0 ? `; ${r.esuate} nu au putut pleca` : ""}.` });
+                        setStare(null);
+                      }
+                      return r;
+                    },
+                    "Invitațiile au fost trimise.",
+                  )
+                }
+              >
+                Trimite invitația ({alesi.size})
+              </Button>
+            </>
+          )}
+        </div>
+      )}
+      <MesajActiune mesaj={mesaj} />
+    </div>
+  );
+}
+
+// Linkul coordonatorului: fără cont, valabil până la 3 zile după activitate; arată lista tură cu tură, prezența dintr-un clic și codul QR.
+function LinkCoordonator({ orgSlug, a }: { orgSlug: string; a: ActivitateEchipa }) {
+  const { pending, mesaj, ruleaza } = useActiune();
+  const [copiat, setCopiat] = useState(false);
+  const [nou, setNou] = useState<string | null>(null);
+  const link = nou ?? a.linkCoordonator;
+  async function copiaza() {
+    if (!link) return;
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopiat(true);
+      setTimeout(() => setCopiat(false), 2000);
+    } catch {
+      // clipboard indisponibil: linkul rămâne selectabil
+    }
+  }
+  return (
+    <div className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] p-3.5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="min-w-0">
+          <h3 className="flex items-center gap-1.5 text-[14px] font-semibold text-[var(--ci-text)]">
+            <Link2 className="h-4 w-4 text-[var(--ci-primary)]" aria-hidden /> Link pentru coordonator
+          </h3>
+          <p className="mt-0.5 text-[12.5px] text-[var(--ci-text-muted)]">Fără cont. Coordonatorul marchează prezența și arată codul QR de check-in. Valabil până la 3 zile după activitate.</p>
+        </div>
+        {!link ? (
+          <Button size="sm" variant="primary" disabled={pending} onClick={() => ruleaza(async () => { const r = await genereazaLinkCoordonatorAction(orgSlug, a.id); if (r.ok) setNou(r.link); return r; }, "Linkul a fost creat.")}>
+            Creează linkul
+          </Button>
+        ) : (
+          <div className="flex flex-wrap gap-1.5">
+            <Button size="sm" onClick={copiaza}>
+              {copiat ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />} {copiat ? "Copiat" : "Copiază"}
+            </Button>
+            <Button size="sm" disabled={pending} onClick={() => ruleaza(async () => { const r = await genereazaLinkCoordonatorAction(orgSlug, a.id); if (r.ok) setNou(r.link); return r; }, "Link nou creat; cel vechi nu mai funcționează.")}>
+              Link nou
+            </Button>
+            <Button size="sm" variant="ghost" disabled={pending} onClick={() => ruleaza(async () => { const r = await opresteLinkCoordonatorAction(orgSlug, a.id); if (r.ok) setNou(""); return r; }, "Linkul a fost oprit.")}>
+              Oprește
+            </Button>
+          </div>
+        )}
+      </div>
+      {link && <p className="mt-2 truncate rounded-lg bg-[var(--ci-surface-2)] px-2.5 py-1.5 text-[12.5px] select-all text-[var(--ci-text)]">{link}</p>}
+      <MesajActiune mesaj={mesaj} />
+    </div>
   );
 }
 
