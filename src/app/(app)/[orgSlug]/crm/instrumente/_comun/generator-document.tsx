@@ -15,7 +15,7 @@ import { Dialog } from "../../components/ui/dialog";
 import { Input, Label, Select, Textarea } from "../../components/ui/input";
 import { Camp } from "./camp";
 import { MeniuExport } from "./meniu-export";
-import { inregistreazaDocumentAction, urmatorulNumarAction, type TipDoc } from "./documente-actions";
+import { inregistreazaDocumentAction, urmatorulNumarAction, verificaCotaDocumentAction, type TipDoc } from "./documente-actions";
 
 export type CampDef = { cheie: string; eticheta: string; tip?: "text" | "textarea" | "data" | "select" | "bifa"; optiuni?: readonly { id: string; eticheta: string }[]; ajutor?: string; placeholder?: string; rows?: number; jumatate?: boolean };
 export type GrupDef = { titlu: string; subtitlu?: string; campuri: CampDef[] };
@@ -220,6 +220,18 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
 
   // Documentul final pentru export: dacă generatorul cere o pregătire (cod de verificare), se face întâi; datele noi intră și în formular.
   async function pregateste(): Promise<{ html: string; curatFinal: D } | null> {
+    // Cota lunară a pachetului (rapoarte de impact): se verifică înainte de orice export, cu excepția documentului deja înregistrat în această sesiune.
+    if (p.cheieTool === "rapoarte" && ultimaInregistrare.current !== semnatura(html)) {
+      try {
+        const cota = await verificaCotaDocumentAction(p.orgSlug, p.cheieTool);
+        if (!cota.ok) {
+          setEroare(cota.mesaj);
+          return null;
+        }
+      } catch (e) {
+        raporteazaEroare("documente-cota", e, { tip: p.cheieTool });
+      }
+    }
     if (!p.pregatesteExport) return { html, curatFinal: curat };
     try {
       const nou = p.curata(await p.pregatesteExport(curat));

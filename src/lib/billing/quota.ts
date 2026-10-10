@@ -13,6 +13,7 @@ export type LimiteEfective = {
   companiiPj: number | null;
   campaniiActive: number | null;
   conturi230: number | null;
+  rapoartePeLuna: number | null;
   voluntariActivitati: boolean;
   avatarComplet: boolean;
   domeniuPropriu: boolean;
@@ -25,7 +26,7 @@ export function getLimiteleEfective(pkg: OrgPackage, customPlanConfig: CustomPla
     // cădem pe cote minime în loc de nelimitat, ca să nu deschidem accidental
     // acces gratuit total.
     // Planul personalizat nu are cote pe campanii și funcții noi (nu se pot alege în constructor): rămân deschise.
-    const deschise = { campaniiActive: null, conturi230: null, voluntariActivitati: true, avatarComplet: true, domeniuPropriu: true };
+    const deschise = { campaniiActive: null, conturi230: null, rapoartePeLuna: null, voluntariActivitati: true, avatarComplet: true, domeniuPropriu: true };
     if (!customPlanConfig) return { utilizatori: 1, contactePf: 0, companiiPj: 0, ...deschise };
     return {
       utilizatori: customPlanConfig.utilizatori,
@@ -41,6 +42,7 @@ export function getLimiteleEfective(pkg: OrgPackage, customPlanConfig: CustomPla
     companiiPj: limite.companiiPj,
     campaniiActive: limite.campaniiActive,
     conturi230: limite.conturi230,
+    rapoartePeLuna: limite.rapoarteCompaniiPeLuna,
     voluntariActivitati: limite.voluntariActivitati,
     avatarComplet: limite.avatarComplet,
     domeniuPropriu: limite.domeniuPropriu,
@@ -61,6 +63,8 @@ export const mesajeCote = {
     `Pachetul ${NUME_PACHET[pkg]} include ${limita} ${limita === 1 ? "campanie activă" : "campanii active"} în același timp. Închide o campanie sau treci la un pachet mai mare din Facturare.`,
   conturi230: (pkg: OrgPackage, limita: number) =>
     `Pachetul ${NUME_PACHET[pkg]} include ${limita} ${limita === 1 ? "cont" : "conturi"} de Formular 230. Treci la un pachet mai mare din Facturare ca să adaugi altele.`,
+  rapoarte: (pkg: OrgPackage, limita: number) =>
+    `Pachetul ${NUME_PACHET[pkg]} include ${limita} ${limita === 1 ? "raport" : "rapoarte"} de impact pe lună și le-ai folosit pe toate luna aceasta. Se reia din prima zi a lunii următoare, sau poți trece la un pachet mai mare din Facturare.`,
   voluntariActivitati: (pkg: OrgPackage) =>
     `Activitățile pe teren (ture, cod QR, remindere, adeverințe) sunt incluse începând cu pachetul CREȘTERE. Acum ai pachetul ${NUME_PACHET[pkg]}; sarcinile online rămân disponibile.`,
   domeniuPropriu: (pkg: OrgPackage) => `Domeniul propriu e inclus în pachetul IMPACT. Acum ai pachetul ${NUME_PACHET[pkg]}.`,

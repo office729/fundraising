@@ -8,7 +8,7 @@ const FIXE = ["start", "crestere", "impact"];
 const inf = (n) => (n === null ? Infinity : n);
 
 test("fiecare cotă crește (sau rămâne) de la START la CREȘTERE la IMPACT", () => {
-  for (const camp of ["utilizatori", "contactePf", "companiiPj", "campaniiActive", "conturi230"]) {
+  for (const camp of ["utilizatori", "contactePf", "companiiPj", "campaniiActive", "conturi230", "rapoarteCompaniiPeLuna"]) {
     const v = FIXE.map((p) => inf(PACKAGE_LIMITS[p][camp]));
     assert.ok(v[0] <= v[1] && v[1] <= v[2], `${camp}: ${v.join(" ≤ ")}`);
   }
@@ -51,6 +51,8 @@ test("pagina de prețuri spune exact ce impune codul (tabelul de comparare, în 
   verifica("ro", "Conturi Formular 230", "conturi230");
   verifica("en", "Active fundraising campaigns", "campaniiActive");
   verifica("en", "Form 230 accounts", "conturi230");
+  verifica("ro", "Rapoarte de impact pe lună", "rapoarteCompaniiPeLuna");
+  verifica("en", "Impact reports per month", "rapoarteCompaniiPeLuna");
 });
 
 test("tabelul nu mai promite limite lunare care nu există în cod", () => {

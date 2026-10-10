@@ -34,11 +34,13 @@ function limiteText(pkg: Exclude<OrgPackage, "trial" | "custom">, locale: Locale
       ? [
           l.campaniiActive == null ? "Campanii active nelimitate" : `${l.campaniiActive} ${l.campaniiActive === 1 ? "campanie activă" : "campanii active"}`,
           l.conturi230 == null ? "Conturi Formular 230 nelimitate" : `${l.conturi230} ${l.conturi230 === 1 ? "cont" : "conturi"} Formular 230`,
+          l.rapoarteCompaniiPeLuna == null ? "Rapoarte de impact nelimitate" : `${l.rapoarteCompaniiPeLuna} ${l.rapoarteCompaniiPeLuna === 1 ? "raport" : "rapoarte"} de impact pe lună`,
           l.voluntariActivitati ? "Voluntari: sarcini online și activități pe teren" : "Voluntari: sarcini online",
         ]
       : [
           l.campaniiActive == null ? "Unlimited active campaigns" : `${l.campaniiActive} active ${l.campaniiActive === 1 ? "campaign" : "campaigns"}`,
           l.conturi230 == null ? "Unlimited Form 230 accounts" : `${l.conturi230} Form 230 ${l.conturi230 === 1 ? "account" : "accounts"}`,
+          l.rapoarteCompaniiPeLuna == null ? "Unlimited impact reports" : `${l.rapoarteCompaniiPeLuna} impact ${l.rapoarteCompaniiPeLuna === 1 ? "report" : "reports"} per month`,
           l.voluntariActivitati ? "Volunteers: online tasks and on-site activities" : "Volunteers: online tasks",
         ]),
   ];

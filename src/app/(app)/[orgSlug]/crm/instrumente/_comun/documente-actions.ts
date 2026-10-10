@@ -5,6 +5,7 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { and, desc, eq, isNull, sql } from "drizzle-orm";
 
 import { withOrgSession, type OrgContext } from "@/lib/auth/guard";
+import { getLimiteleEfective, mesajeCote } from "@/lib/billing/quota";
 import { angajati, appUsers, certificateVerificari, companies, companySponsorizari, crmKv, roluri } from "@/lib/db/schema";
 import { caleDoc, multumiriRestante, TIPURI_DOC, type Intrare, type Restanta, type Stare, type TipDoc } from "@/lib/documente-istoric";
 
@@ -40,6 +41,23 @@ export const urmatorulNumarAction = withOrgSession(async (ctx, tip: TipDoc): Pro
   st.numere[an] = nr;
   await salveaza(ctx, tip, st);
   return `Nr. ${String(nr).padStart(3, "0")}/${an}`;
+});
+
+// Rapoartele de impact pe lună (cota pachetului): se numără rapoartele exportate în luna curentă (ora României), din istoric.
+// Se verifică ÎNAINTE de export; un export deja înregistrat nu se numără a doua oară (vezi generator-document.tsx).
+export const verificaCotaDocumentAction = withOrgSession(async (ctx, tip: TipDoc): Promise<{ ok: true } | { ok: false; mesaj: string }> => {
+  if (tip !== "rapoarte") return { ok: true };
+  const limita = getLimiteleEfective(ctx.orgPackage, ctx.orgCustomPlanConfig).rapoartePeLuna;
+  if (limita === null) return { ok: true };
+  const luna = (d: Date) => new Intl.DateTimeFormat("en-CA", { year: "numeric", month: "2-digit", timeZone: "Europe/Bucharest" }).format(d);
+  const acum = luna(new Date());
+  const [r] = await ctx.db.select({ data: crmKv.data }).from(crmKv).where(and(eq(crmKv.orgId, ctx.orgId), eq(crmKv.path, caleDoc("rapoarte")))).limit(1);
+  const intrari = ((r?.data as Partial<Stare> | undefined)?.intrari ?? []) as Intrare[];
+  const folosite = intrari.filter((i) => {
+    const d = new Date(i.la);
+    return !Number.isNaN(d.getTime()) && luna(d) === acum;
+  }).length;
+  return folosite < limita ? { ok: true } : { ok: false, mesaj: mesajeCote.rapoarte(ctx.orgPackage, limita) };
 });
 
 export type IntrareIstoric = { id: string; la: string; autor: string; titlu: string; firmaId: string | null; numar: string; stare: "exportat" | "trimis"; trimisLa: string | null };
