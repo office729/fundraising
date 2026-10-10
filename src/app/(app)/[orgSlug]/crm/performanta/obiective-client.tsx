@@ -37,8 +37,7 @@ export function ObiectiveClient({ orgSlug, sabloane, obiective, optiuni, perioad
   const sortare = (["risc", "progres", "termen"].includes(sp.get("sortare") ?? "") ? sp.get("sortare") : "implicit") as Sortare;
   const [q, setQ] = useState(sp.get("q") ?? "");
   const [selectatId, setSelectatId] = useState<string | null>(sp.get("ob"));
-  // „+ Adaugă” din antet trimite aici cu ?nou=obiectiv: formularul se deschide direct.
-  const [formDeschis, setFormDeschis] = useState(sp.get("nou") === "obiectiv");
+  const [formDeschis, setFormDeschis] = useState(false);
   const [editat, setEditat] = useState<ObiectivDto | null>(null);
   const [mesaj, setMesaj] = useState<string | null>(null);
   const [sablon, setSablon] = useState(false);
@@ -52,10 +51,18 @@ export function ObiectiveClient({ orgSlug, sabloane, obiective, optiuni, perioad
     router.replace(n.toString() ? `${pathname}?${n.toString()}` : pathname, { scroll: false });
   };
 
+  // „+ Adaugă” din antet trimite aici cu ?nou=obiectiv (și când ești deja pe pagină): formularul se deschide, apoi adresa se curăță.
+  const cerut = sp.get("nou");
   useEffect(() => {
-    if (sp.get("nou")) seteaza({ nou: null });
+    if (!cerut) return;
+    if (cerut === "obiectiv") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setEditat(null);
+      setFormDeschis(true);
+    }
+    seteaza({ nou: null });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [cerut]);
 
   // Căutarea intră în adresă după o scurtă pauză, ca să nu reîncarcăm la fiecare literă.
   useEffect(() => {

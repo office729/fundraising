@@ -1,7 +1,7 @@
 "use client";
 
 import { AlertTriangle, Building2, Pencil, Plus, Trash2, Users } from "lucide-react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 
 import { Badge } from "../components/ui/badge";
@@ -44,14 +44,11 @@ export function OrganizatieClient({
   initialRoluri,
   initialAngajati,
   esteAdmin,
-  deschideMembruNou = false,
 }: {
   initialDepartamente: DepartamentRand[];
   initialRoluri: RolRand[];
   initialAngajati: AngajatRand[];
   esteAdmin: boolean;
-  // Venit din „+ Adaugă”: pornește pe fila Echipă, cu formularul de membru nou deschis.
-  deschideMembruNou?: boolean;
 }) {
   const { orgSlug } = useParams<{ orgSlug: string }>();
   const locale = useLocale();
@@ -62,6 +59,19 @@ export function OrganizatieClient({
   const [angajatiLista, setAngajatiLista] = useState(initialAngajati);
   const [eroare, setEroare] = useState<string | null>(null);
   const [pending, start] = useTransition();
+
+  // „+ Adaugă” din antet trimite aici cu ?nou=departament|rol|membru: se alege fila potrivită și se deschide formularul nou.
+  // Fiecare cerere remontează filele (cheie nouă), chiar dacă ești deja pe pagină; adresa se curăță după.
+  const sp = useSearchParams();
+  const [deschidere, setDeschidere] = useState<{ tip: "departament" | "rol" | "membru"; n: number } | null>(null);
+  const cerut = sp.get("nou");
+  useEffect(() => {
+    if (cerut !== "departament" && cerut !== "rol" && cerut !== "membru") return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (esteAdmin) setDeschidere((p) => ({ tip: cerut, n: (p?.n ?? 0) + 1 }));
+    window.history.replaceState(null, "", window.location.pathname);
+  }, [cerut, esteAdmin]);
+  const deschideNou = deschidere?.tip;
 
   const reincarca = async () => {
     const [d, r, a] = await Promise.all([listeazaDepartamenteAction(orgSlug), listeazaRoluriAction(orgSlug), listeazaAngajatiAction(orgSlug)]);
@@ -99,7 +109,8 @@ export function OrganizatieClient({
       )}
 
       <Tabs
-        defaultTab={deschideMembruNou && esteAdmin ? "angajati" : undefined}
+        key={deschidere?.n ?? 0}
+        defaultTab={!deschideNou ? undefined : deschideNou === "departament" ? "departamente" : deschideNou === "rol" ? "roluri" : "angajati"}
         tabs={[
           { key: "departamente", label: ro ? `Departamente (${departamente.length})` : `Departments (${departamente.length})` },
           { key: "roluri", label: ro ? `Roluri (${roluriLista.length})` : `Roles (${roluriLista.length})` },
@@ -108,9 +119,9 @@ export function OrganizatieClient({
       >
         {(activ) =>
           activ === "departamente" ? (
-            <DepartamenteTab orgSlug={orgSlug} ro={ro} esteAdmin={esteAdmin} departamente={departamente} pending={pending} start={start} setEroare={setEroare} reincarca={reincarca} />
+            <DepartamenteTab orgSlug={orgSlug} ro={ro} esteAdmin={esteAdmin} departamente={departamente} pending={pending} start={start} setEroare={setEroare} reincarca={reincarca} deschideLaStart={esteAdmin && deschideNou === "departament"} />
           ) : activ === "roluri" ? (
-            <RoluriTab orgSlug={orgSlug} ro={ro} esteAdmin={esteAdmin} roluri={roluriLista} departamente={departamente} harta={harta} pending={pending} start={start} setEroare={setEroare} reincarca={reincarca} />
+            <RoluriTab orgSlug={orgSlug} ro={ro} esteAdmin={esteAdmin} roluri={roluriLista} departamente={departamente} harta={harta} pending={pending} start={start} setEroare={setEroare} reincarca={reincarca} deschideLaStart={esteAdmin && deschideNou === "rol"} />
           ) : (
             <AngajatiTab
               orgSlug={orgSlug}
@@ -124,7 +135,7 @@ export function OrganizatieClient({
               start={start}
               setEroare={setEroare}
               reincarca={reincarca}
-              deschideLaStart={deschideMembruNou && esteAdmin}
+              deschideLaStart={esteAdmin && deschideNou === "membru"}
             />
           )
         }
@@ -146,6 +157,7 @@ function DepartamenteTab({
   start,
   setEroare,
   reincarca,
+  deschideLaStart,
 }: {
   orgSlug: string;
   ro: boolean;
@@ -155,8 +167,9 @@ function DepartamenteTab({
   start: Start;
   setEroare: (e: string | null) => void;
   reincarca: () => Promise<void>;
+  deschideLaStart: boolean;
 }) {
-  const [editDeschis, setEditDeschis] = useState<DepartamentRand | null | "nou">(null);
+  const [editDeschis, setEditDeschis] = useState<DepartamentRand | null | "nou">(deschideLaStart ? "nou" : null);
   const [nume, setNume] = useState("");
   const [descriere, setDescriere] = useState("");
   const [functiePrincipala, setFunctiePrincipala] = useState("");
@@ -266,6 +279,7 @@ function RoluriTab({
   start,
   setEroare,
   reincarca,
+  deschideLaStart,
 }: {
   orgSlug: string;
   ro: boolean;
@@ -277,8 +291,9 @@ function RoluriTab({
   start: Start;
   setEroare: (e: string | null) => void;
   reincarca: () => Promise<void>;
+  deschideLaStart: boolean;
 }) {
-  const [editDeschis, setEditDeschis] = useState<RolRand | null | "nou">(null);
+  const [editDeschis, setEditDeschis] = useState<RolRand | null | "nou">(deschideLaStart ? "nou" : null);
   const [nume, setNume] = useState("");
   const [descriere, setDescriere] = useState("");
   const [responsabilitati, setResponsabilitati] = useState("");
@@ -446,11 +461,10 @@ function AngajatiTab({
     });
   };
 
-  // Formularul deschis la intrare are nevoie de lista de membri; adresa se curăță ca să nu se redeschidă la reîncărcare.
+  // Formularul deschis la intrare are nevoie de lista de membri.
   useEffect(() => {
     if (!deschideLaStart) return;
     asigurareMembri();
-    window.history.replaceState(null, "", window.location.pathname);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

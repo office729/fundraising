@@ -50,7 +50,7 @@ function Continut({ d }: { d: DateSaptamana }) {
     n.delete("nou");
     router.replace(n.toString() ? `${pathname}?${n.toString()}` : pathname, { scroll: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [sp.get("nou")]);
 
   const seteaza = (patch: Record<string, string | null>) => {
     const n = new URLSearchParams(sp.toString());

@@ -4,9 +4,8 @@ import { listeazaAngajatiAction, listeazaDepartamenteAction, listeazaRoluriActio
 import { OrganizatieClient } from "./organizatie-client";
 import { titluAbsolut } from "@/lib/page-titles";
 
-export default async function OrganizatiePage({ params, searchParams }: { params: Promise<{ orgSlug: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+export default async function OrganizatiePage({ params }: { params: Promise<{ orgSlug: string }> }) {
   const { orgSlug } = await params;
-  const { nou } = await searchParams;
   const access = await requireOrgAccess(orgSlug);
   const [departamente, roluri, angajati] = await Promise.all([
     listeazaDepartamenteAction(orgSlug),
@@ -20,7 +19,6 @@ export default async function OrganizatiePage({ params, searchParams }: { params
       initialRoluri={roluri}
       initialAngajati={angajati}
       esteAdmin={access.role === "owner" || access.role === "admin"}
-      deschideMembruNou={nou === "membru"}
     />
   );
 }
