@@ -111,7 +111,7 @@ function Activ({ stare }: { stare: StareCampanii }) {
             <span className="inline-flex items-center gap-1.5 text-[12px] font-bold tracking-[0.12em] text-brand-green uppercase">
               <Heart className="h-3.5 w-3.5" aria-hidden="true" /> Donează online
             </span>
-            <h2 className="font-display mt-3 text-[34px] leading-[1.1] font-extrabold text-balance text-ink sm:text-[40px]">Descoperă campanii și susține o cauză</h2>
+            <h2 className="font-display mt-3 text-[26px] leading-[1.15] font-bold text-balance text-ink sm:text-[32px]">Descoperă campanii și susține o cauză</h2>
             <p className="mt-3 text-[15.5px] leading-relaxed text-muted">Asociații din toată țara, cu mai multe campanii pentru proiecte diferite. Donezi în câteva secunde și vezi exact cât s-a strâns.</p>
           </div>
           <dl className="grid shrink-0 grid-cols-3 divide-x divide-line rounded-2xl border border-line bg-panel shadow-sm">
@@ -362,7 +362,7 @@ function InCurand() {
           <span className="inline-flex items-center gap-1.5 text-[12px] font-bold tracking-[0.12em] text-brand-green uppercase">
             <Heart className="h-3.5 w-3.5" aria-hidden="true" /> Pentru organizații
           </span>
-          <h2 className="font-display mt-3 text-[34px] leading-[1.1] font-extrabold text-balance text-ink sm:text-[40px]">Deschide campaniile asociației tale în câteva minute</h2>
+          <h2 className="font-display mt-3 text-[26px] leading-[1.15] font-bold text-balance text-ink sm:text-[32px]">Deschide campaniile asociației tale în câteva minute</h2>
           <p className="mt-3 text-[15.5px] leading-relaxed text-muted">
             Strângi fonduri online pentru fiecare proiect, cu o pagină profesionistă și un link propriu. Începi gratuit, fără card.
           </p>
