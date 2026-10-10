@@ -133,6 +133,49 @@
   --ci-card-shadow: none;
 }
 
+/* Doar pentru INSTRUMENTE (instrumente/layout.tsx): acolo accentul se personalizează după organizație — culoarea de brand
+   (stil inline pe învelitoare) sau, dacă nu are una, nuanța domeniului. Restul panoului rămâne pe culorile Alexandrit. */
+[data-culoare-domeniu="copii"] {
+  --ci-primary: hsl(8 60% 42%);
+  --ci-primary-hover: hsl(8 60% 33%);
+  --ci-primary-soft: hsl(8 55% 95%);
+}
+[data-culoare-domeniu="sanatate"] {
+  --ci-primary: hsl(174 55% 32%);
+  --ci-primary-hover: hsl(174 55% 24%);
+  --ci-primary-soft: hsl(174 45% 94%);
+}
+[data-culoare-domeniu="social_incluziune"] {
+  --ci-primary: hsl(280 45% 42%);
+  --ci-primary-hover: hsl(280 45% 33%);
+  --ci-primary-soft: hsl(280 40% 95%);
+}
+[data-culoare-domeniu="animale"] {
+  --ci-primary: hsl(95 35% 32%);
+  --ci-primary-hover: hsl(95 35% 24%);
+  --ci-primary-soft: hsl(95 30% 94%);
+}
+[data-culoare-domeniu="mediu"] {
+  --ci-primary: hsl(150 45% 28%);
+  --ci-primary-hover: hsl(150 45% 20%);
+  --ci-primary-soft: hsl(150 40% 94%);
+}
+[data-culoare-domeniu="sport"] {
+  --ci-primary: hsl(355 70% 45%);
+  --ci-primary-hover: hsl(355 70% 36%);
+  --ci-primary-soft: hsl(355 60% 95%);
+}
+[data-culoare-domeniu="educatie"] {
+  --ci-primary: hsl(222 55% 32%);
+  --ci-primary-hover: hsl(222 55% 24%);
+  --ci-primary-soft: hsl(222 45% 94%);
+}
+[data-culoare-domeniu="cultura"] {
+  --ci-primary: hsl(300 40% 32%);
+  --ci-primary-hover: hsl(300 40% 24%);
+  --ci-primary-soft: hsl(300 35% 95%);
+}
+
 .ci-root .ci-display {
   font-family: var(--ci-font-display);
   letter-spacing: var(--ci-letter-spacing-display);
