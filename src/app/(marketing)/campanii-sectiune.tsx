@@ -346,7 +346,7 @@ function InCurand({ organizatii, prag }: { organizatii: number; prag: number }) 
           <Heart className="h-3.5 w-3.5" aria-hidden="true" /> Donează online
         </span>
         <h2 className="font-display mx-auto mt-3 max-w-2xl text-[34px] leading-[1.1] font-extrabold text-balance text-ink">Campaniile ONG{"‑"}urilor, într{"‑"}un singur loc</h2>
-        <p className="mx-auto mt-3 max-w-xl text-[15.5px] leading-relaxed text-muted">Pe măsură ce organizațiile își deschid campaniile, le găsești aici. Secțiunea se activează după primele {prag} organizații înscrise.</p>
+        <p className="mx-auto mt-3 max-w-xl text-[15.5px] leading-relaxed text-muted">Pe măsură ce organizațiile își deschid campaniile, le găsești aici. Secțiunea se activează după primele {prag} de organizații înscrise.</p>
       </div>
 
       <div className="mx-auto mt-10 grid max-w-5xl items-center gap-8 overflow-hidden rounded-3xl border border-line bg-panel p-6 shadow-sm sm:p-8 md:grid-cols-[1.15fr_1fr]">
@@ -354,19 +354,19 @@ function InCurand({ organizatii, prag }: { organizatii: number; prag: number }) 
           <span className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-blue-soft text-brand-blue">
             <Lock className="h-5 w-5" aria-hidden="true" />
           </span>
-          <h3 className="font-display mt-4 text-[22px] leading-snug font-bold text-ink">Se deschid după primele {prag} organizații</h3>
+          <h3 className="font-display mt-4 text-[22px] leading-snug font-bold text-ink">Se deschid după primele {prag} de organizații</h3>
           <p className="mt-2 text-[14.5px] leading-relaxed text-muted">
             Odată atins pragul, asociațiile apar pe prima pagină cu campaniile lor active, suma strânsă și buton de donație.
             {ramase > 0 ? ` Mai e nevoie de ${ramase} ${ramase === 1 ? "organizație" : "organizații"}.` : ""}
           </p>
-          <div className="mt-5" role="progressbar" aria-valuenow={nr} aria-valuemin={0} aria-valuemax={prag} aria-label={`${nr} din ${prag} organizații înscrise`}>
+          <div className="mt-5" role="progressbar" aria-valuenow={nr} aria-valuemin={0} aria-valuemax={prag} aria-label={`${nr} din ${prag} de organizații înscrise`}>
             <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${prag}, minmax(0, 1fr))` }}>
               {Array.from({ length: prag }, (_, i) => (
                 <span key={i} className={`h-2.5 rounded-sm ${i < nr ? "bg-brand-green" : "bg-panel-2 ring-1 ring-line ring-inset"}`} />
               ))}
             </div>
             <p className="mt-2 flex items-baseline justify-between text-[13px]">
-              <span className="font-bold text-ink">{nr} din {prag} organizații înscrise</span>
+              <span className="font-bold text-ink">{nr} din {prag} de organizații înscrise</span>
               <span className="text-muted">{Math.round((nr / prag) * 100)}%</span>
             </p>
           </div>

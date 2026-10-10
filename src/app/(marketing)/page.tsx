@@ -9,6 +9,8 @@ import { MARKETING_DICT } from "@/lib/i18n/dictionaries/marketing";
 import { FinalizeForm } from "./finalize-form";
 import { metadatePagina } from "@/lib/page-titles";
 import { PanouPreview } from "./panou-preview";
+import { CampaniiSectiune } from "./campanii-sectiune";
+import { getCampaniiLanding, PRAG_ORGANIZATII } from "@/lib/campanii-publice";
 
 export default async function LandingPage({
   searchParams,
@@ -63,6 +65,8 @@ export default async function LandingPage({
 
   const locale = await getLocale();
   const dict = MARKETING_DICT[locale];
+  // Dacă baza nu răspunde, pagina de marketing merge mai departe fără secțiunea de campanii.
+  const campanii = await getCampaniiLanding().catch(() => null);
 
   return (
     <main>
@@ -120,6 +124,9 @@ export default async function LandingPage({
 
       {/* Panoul de administrare (ilustrație cu date demonstrative) */}
       <PanouPreview locale={locale} />
+
+      {/* Campanii de strângere de fonduri — se activează după primele PRAG_ORGANIZATII organizații */}
+      {campanii && <CampaniiSectiune stare={{ ...campanii, prag: PRAG_ORGANIZATII }} />}
 
       {/* De ce Alexandrit */}
       <section className="bg-panel-2 px-[6%] py-16">
