@@ -18,6 +18,8 @@ import {
   HelpCircle,
   Landmark,
   LayoutGrid,
+  Laptop,
+  MapPin,
   LogOut,
   Link2,
   Menu,
@@ -397,7 +399,7 @@ function NavGroups({
 // pe Companii n-are rost să-ți arăt și „Donator"/„Proiect"/„Task". Pe pagini
 // fără o legătură clară (Acasă, Rapoarte, Setări etc.) rămân toate, ca „+
 // Adaugă" să nu devină un buton mort acolo.
-type AddContext = "donatori" | "companii" | "beneficiari" | "taskuri" | "performanta" | "organizatie" | "fonduri" | null;
+type AddContext = "donatori" | "companii" | "beneficiari" | "taskuri" | "performanta" | "organizatie" | "fonduri" | "voluntari" | null;
 
 function contextDinPathname(pathname: string | null, base: string): AddContext {
   if (!pathname) return null;
@@ -407,6 +409,8 @@ function contextDinPathname(pathname: string | null, base: string): AddContext {
   if (pathname.startsWith(`${base}/taskuri`)) return "taskuri";
   if (pathname.startsWith(`${base}/performanta`)) return "performanta";
   if (pathname.startsWith(`${base}/organizatie`)) return "organizatie";
+  // Pagina „Voluntari” (și „Link și campanii”), plus CRM Voluntari, care stă lângă /crm: aici se adaugă sarcini online sau activități pe teren.
+  if (pathname.startsWith(`${base}/voluntari`) || pathname.startsWith(`${base}-voluntari`)) return "voluntari";
   // Donații, pagini de strângere de fonduri și alocări/plăți: aici se adaugă o pagină de campanie sau un proiect.
   if (pathname.startsWith(`${base}/donatii`) || pathname.startsWith(`${base}/strangere-fonduri`) || pathname.startsWith(`${base}/fonduri-plati`)) return "fonduri";
   return null;
@@ -452,6 +456,8 @@ function AddDialog({
     { context: "organizatie" as const, label: "Departament", icon: Network, action: () => router.push(`${base}/organizatie?nou=departament`) },
     { context: "organizatie" as const, label: "Rol", icon: ClipboardList, action: () => router.push(`${base}/organizatie?nou=rol`) },
     { context: "organizatie" as const, label: "Membru în echipă", icon: UserPlus, action: () => router.push(`${base}/organizatie?nou=membru`) },
+    { context: "voluntari" as const, label: "Sarcină online pentru voluntari", icon: Laptop, action: () => router.push(`${base}/voluntari?nou=sarcina`) },
+    { context: "voluntari" as const, label: "Activitate pe teren", icon: MapPin, action: () => router.push(`${base}/voluntari?nou=activitate`) },
     { context: "fonduri" as const, label: "Pagină de strângere de fonduri (campanie)", icon: HandCoins, action: () => router.push(`${base}/strangere-fonduri?nou=pagina`) },
     { context: "fonduri" as const, label: "Proiect (beneficiar al fondurilor)", icon: HeartHandshake, action: () => setProjectOpen(true) },
     { context: "donatori" as const, label: "Donator (persoană fizică)", icon: Users, action: () => setDonorOpen(true) },
@@ -472,7 +478,7 @@ function AddDialog({
 
   return (
     <>
-      <Dialog open={open} onClose={onClose} title={context === "performanta" ? "Ce vrei să adaugi în echipă?" : context === "organizatie" ? "Ce vrei să adaugi în organizație?" : context === "fonduri" ? "Ce vrei să adaugi la strângerea de fonduri?" : "Ce vrei să adaugi?"}>
+      <Dialog open={open} onClose={onClose} title={context === "performanta" ? "Ce vrei să adaugi în echipă?" : context === "organizatie" ? "Ce vrei să adaugi în organizație?" : context === "fonduri" ? "Ce vrei să adaugi la strângerea de fonduri?" : context === "voluntari" ? "Ce vrei să adaugi pentru voluntari?" : "Ce vrei să adaugi?"}>
         <div className="space-y-1.5">
           {OPTIUNI.map((o) => (
             <button
@@ -541,13 +547,13 @@ function AvatarMenu({ userName, orgSlug, role }: { userName: string; orgSlug: st
         <Avatar name={userName} size="sm" />
       </button>
       {open && (
-        <div className="absolute top-full right-0 z-50 mt-1.5 w-56 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-1.5 shadow-[var(--ci-shadow-md)]">
+        <div className="absolute top-full right-0 z-50 mt-1.5 w-56 rounded-xl border border-[var(--ci-border)] bg-[var(--ci-surface)] p-1.5 shadow-[var(--ci-shadow-md)]">
           <p className="truncate px-2.5 py-1.5 text-[12.5px] font-semibold text-[var(--ci-text)]">{userName}</p>
           {(role === "owner" || role === "admin") && (
             <Link prefetch={false}
               href={`/${orgSlug}/echipa`}
               onClick={() => setOpen(false)}
-              className="flex items-center gap-2 rounded-[var(--ci-radius-btn)] px-2.5 py-1.5 text-[13px] text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]"
+              className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13px] text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]"
             >
               <Users className="h-3.5 w-3.5 text-[var(--ci-text-muted)]" /> Echipă
             </Link>
@@ -555,12 +561,12 @@ function AvatarMenu({ userName, orgSlug, role }: { userName: string; orgSlug: st
           <Link prefetch={false}
             href={`/${orgSlug}/crm/setari`}
             onClick={() => setOpen(false)}
-            className="flex items-center gap-2 rounded-[var(--ci-radius-btn)] px-2.5 py-1.5 text-[13px] text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]"
+            className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13px] text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]"
           >
             <Settings className="h-3.5 w-3.5 text-[var(--ci-text-muted)]" /> Setări
           </Link>
           <div className="my-1 border-t border-[var(--ci-border)]" />
-          <LogoutForm className="flex w-full items-center gap-2 rounded-[var(--ci-radius-btn)] px-2.5 py-1.5 text-left text-[13px] font-medium text-[var(--ci-red)] hover:bg-[var(--ci-surface-2)]">
+          <LogoutForm className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[13px] font-medium text-[var(--ci-red)] hover:bg-[var(--ci-surface-2)]">
             <LogOut className="h-3.5 w-3.5" /> Deconectare
           </LogoutForm>
         </div>
@@ -627,7 +633,7 @@ function NotificationsButton({ base, orgSlug }: { base: string; orgSlug: string 
         )}
       </button>
       {open && (
-        <div className="absolute top-full right-0 z-50 mt-1.5 w-80 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-2 shadow-[var(--ci-shadow-md)]">
+        <div className="absolute top-full right-0 z-50 mt-1.5 w-80 rounded-xl border border-[var(--ci-border)] bg-[var(--ci-surface)] p-2 shadow-[var(--ci-shadow-md)]">
           <p className="px-2 py-1.5 text-[12px] font-semibold text-[var(--ci-text)]">
             {intarziate.length > 0 ? `${intarziate.length} task-uri întârziate` : "Nicio notificare"}
           </p>

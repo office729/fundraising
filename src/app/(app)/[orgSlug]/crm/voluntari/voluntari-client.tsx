@@ -2,6 +2,7 @@
 
 import { AlertTriangle, CalendarDays, Check, Copy, Download, ExternalLink, Laptop, Link2, MapPin, Plus, Settings2, Trash2 } from "lucide-react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import { ETICHETE_STATUS_VOLUNTAR, formateazaOre } from "@/lib/voluntari-activitati";
@@ -21,9 +22,20 @@ import { dataOra, dataScurta, descarcaCsv, MesajActiune, Sectiune, useActiune } 
 type Tab = "prezentare" | "online" | "teren" | "voluntari" | "raportari";
 
 export function VoluntariClient({ orgSlug, date }: { orgSlug: string; date: DateVoluntari }) {
-  const [tab, setTab] = useState<Tab>("prezentare");
-  const [formSarcina, setFormSarcina] = useState(false);
-  const [formActivitate, setFormActivitate] = useState(false);
+  // „+ Adaugă” din antetul CRM trimite aici cu ?nou=sarcina sau ?nou=activitate: se deschide formularul potrivit; la închidere,
+  // parametrul se scoate din adresă.
+  const router = useRouter();
+  const pathname = usePathname();
+  const nou = useSearchParams().get("nou");
+  const [tabAles, setTab] = useState<Tab>("prezentare");
+  const [formSarcinaManual, setFormSarcina] = useState(false);
+  const [formActivitateManual, setFormActivitate] = useState(false);
+  const formSarcina = formSarcinaManual || nou === "sarcina";
+  const formActivitate = formActivitateManual || nou === "activitate";
+  const tab: Tab = nou === "sarcina" ? "online" : nou === "activitate" ? "teren" : tabAles;
+  const curataUrl = () => {
+    if (nou) router.replace(pathname);
+  };
   const raportariNoi = date.raportari.filter((r) => r.stare === "noua").length;
 
   const tabs: { id: Tab; eticheta: string; nr?: number }[] = [
@@ -80,8 +92,14 @@ export function VoluntariClient({ orgSlug, date }: { orgSlug: string; date: Date
       </div>
 
       {tab === "prezentare" && <Prezentare orgSlug={orgSlug} date={date} mergiLa={setTab} />}
-      {tab === "online" && <SarciniTab orgSlug={orgSlug} date={date} deschis={formSarcina} inchideFormular={() => setFormSarcina(false)} />}
-      {tab === "teren" && <ActivitatiTab orgSlug={orgSlug} date={date} deschis={formActivitate} inchideFormular={() => setFormActivitate(false)} />}
+      {tab === "online" && <SarciniTab orgSlug={orgSlug} date={date} deschis={formSarcina} inchideFormular={() => {
+        setFormSarcina(false);
+        curataUrl();
+      }} />}
+      {tab === "teren" && <ActivitatiTab orgSlug={orgSlug} date={date} deschis={formActivitate} inchideFormular={() => {
+        setFormActivitate(false);
+        curataUrl();
+      }} />}
       {tab === "voluntari" && <VoluntariTab orgSlug={orgSlug} date={date} />}
       {tab === "raportari" && <RaportariTab orgSlug={orgSlug} date={date} />}
     </div>
