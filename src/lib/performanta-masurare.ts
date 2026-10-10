@@ -1,4 +1,4 @@
-import { sarbatoriRo } from "@/lib/kpi-echipa";
+import { sarbatoriRo } from "@/lib/sarbatori-ro";
 
 // Echipă & Performanță — regulile de măsurare, fără acces la baza de date (importabile și din browser, și în teste).
 // Păstrează DISTINCTE patru lucruri: realizarea numerică (progres), starea față de ritm (în grafic / în risc / întârziat),

@@ -33,7 +33,7 @@ import {
   type MembruDisponibil,
   type RolRand,
 } from "./actions";
-import { importaMembriiInEchipaAction } from "../kpi/onboarding-actions";
+import { importaMembriiInEchipaAction } from "./actions";
 
 const STATUS_TONE = { activ: "green", concediu: "amber", suspendat: "orange", inactiv: "neutral" } as const;
 const STATUS_LABEL_RO: Record<AngajatRand["status"], string> = { activ: "Activ", concediu: "Concediu", suspendat: "Suspendat", inactiv: "Inactiv" };
@@ -328,7 +328,7 @@ function RoluriTab({
         action={esteAdmin && <Button size="sm" onClick={deschideNou}><Plus className="h-3.5 w-3.5" /> {ro ? "Adaugă" : "Add"}</Button>}
       />
       {roluri.length === 0 ? (
-        <EmptyState icon={Users} title={ro ? "Niciun rol încă" : "No roles yet"} description={ro ? "Creează primul rol ca să poți atribui KPI pe el." : "Create your first role to assign KPIs to it."} action={esteAdmin && <Button size="sm" onClick={deschideNou}>{ro ? "Adaugă rol" : "Add role"}</Button>} />
+        <EmptyState icon={Users} title={ro ? "Niciun rol încă" : "No roles yet"} description={ro ? "Creează primul rol ca să poți lega obiective și activități de el." : "Create your first role to link objectives and tasks to it."} action={esteAdmin && <Button size="sm" onClick={deschideNou}>{ro ? "Adaugă rol" : "Add role"}</Button>} />
       ) : (
         <div className="space-y-2">
           {roluri.map((r) => (
@@ -622,9 +622,9 @@ function AngajatiTab({
             <Input value={form.locatie ?? ""} onChange={(e) => setForm({ ...form, locatie: e.target.value || null })} />
           </div>
           <div className="col-span-2">
-            <Label>{ro ? "Nivel acces KPI" : "KPI access level"}</Label>
+            <Label>{ro ? "Nivel de acces în Echipă & Performanță" : "Team & Performance access level"}</Label>
             <Select value={form.nivelAcces} onChange={(e) => setForm({ ...form, nivelAcces: e.target.value as AngajatInput["nivelAcces"] })}>
-              <option value="membru">{ro ? "Membru — vede doar propriile KPI" : "Member — sees only own KPIs"}</option>
+              <option value="membru">{ro ? "Membru — vede doar ce îl privește (obiectivele lui, activitățile lui, discuțiile lui)" : "Member — sees only their own objectives, tasks and conversations"}</option>
               <option value="manager">{ro ? "Manager — vede echipa din subordine" : "Manager — sees their reports"}</option>
               <option value="admin_departament">{ro ? "Admin departament — vede tot departamentul" : "Department admin — sees the whole department"}</option>
             </Select>

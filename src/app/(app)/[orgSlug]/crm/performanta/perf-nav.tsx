@@ -78,9 +78,6 @@ export function PerfNav({ orgSlug }: { orgSlug: string }) {
         Notificări
         {necititeAfisate > 0 && <span className="ci-tabular ml-1.5 rounded-full bg-[var(--ci-red)] px-1.5 py-px text-[11px] font-semibold text-white"><span className="sr-only">{necititeAfisate} necitite</span><span aria-hidden>{necititeAfisate > 99 ? "99+" : necititeAfisate}</span></span>}
       </Link>
-      <Link href={`/${orgSlug}/crm/kpi`} prefetch={false} className="shrink-0 rounded-[calc(var(--ci-radius-card)-4px)] px-3.5 py-1.5 text-[13px] font-semibold text-[var(--ci-text-muted)] transition-colors hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
-        Biblioteca KPI
-      </Link>
       {!demo && (
         <Link href={`/${orgSlug}/crm/performanta/demo`} prefetch={false} className="ml-auto shrink-0 rounded-[calc(var(--ci-radius-card)-4px)] border border-dashed border-[var(--ci-border-strong)] px-3.5 py-1.5 text-[13px] font-semibold text-[var(--ci-purple)] transition-colors hover:bg-[var(--ci-purple-soft)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
           Exemplu demonstrativ

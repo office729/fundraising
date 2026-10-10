@@ -465,7 +465,7 @@ function EditorRezultat({
             <Select id={`${pref}-s`} value={r.sursa} onChange={(e) => onChange({ sursa: e.target.value as SursaRezultat })}>
               <option value="manual">Introdusă manual</option>
               <option value="crm">Calculată din CRM</option>
-              <option value="kpi">Preluată dintr-un KPI</option>
+              {r.sursa === "kpi" && <option value="kpi">Preluată dintr-un KPI (vechi)</option>}
             </Select>
           </div>
           {r.sursa === "manual" && (

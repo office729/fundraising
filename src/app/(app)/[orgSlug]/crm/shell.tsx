@@ -3,7 +3,6 @@
 import dynamic from "next/dynamic";
 import {
   Banknote,
-  BarChart3,
   Bell,
   Building2,
   CalendarClock,
@@ -19,7 +18,6 @@ import {
   HelpCircle,
   Landmark,
   LayoutGrid,
-  LibraryBig,
   LogOut,
   Link2,
   Menu,
@@ -30,7 +28,6 @@ import {
   Settings,
   Target,
   Sparkles,
-  TrendingUp,
   Upload,
   Users,
   Wrench,
@@ -116,11 +113,8 @@ function buildNav(dict: DashboardDict, orgSlug: string): { section: string; item
     {
       section: dict.nav.sectionPerformanta,
       items: [
-        { href: "kpi/dashboard", label: dict.nav.kpiPerformantaMea, hint: dict.hints.kpiPerformantaMea, icon: TrendingUp },
-        { href: "kpi", label: dict.nav.kpiLibrary, hint: dict.hints.kpiLibrary, icon: LibraryBig },
         { href: "performanta", label: dict.nav.performanta, hint: dict.hints.performanta, icon: Target },
         { href: "organizatie", label: dict.nav.organizatie, hint: dict.hints.organizatie, icon: Network },
-        { href: "kpi-echipa", label: dict.nav.kpiEchipa, hint: dict.hints.kpiEchipa, icon: BarChart3 },
       ],
     },
     {
