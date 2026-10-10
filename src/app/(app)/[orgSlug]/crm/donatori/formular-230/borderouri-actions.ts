@@ -1,13 +1,13 @@
 "use server";
 
-import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, like, not, sql } from "drizzle-orm";
 
 import { inregistreazaAudit } from "@/lib/audit";
 import { withOrgAdmin } from "@/lib/auth/guard";
 import { adresaAnaf, atribuieBorderouri, MAX_PE_BORDEROU, type DateBorderou } from "@/lib/borderou230";
 import { formular230Beneficiari, formular230Submissions, organizations } from "@/lib/db/schema";
 import { EroareUtilizator } from "@/lib/erori";
-import { decripteazaSauLegacy } from "@/lib/secret-box";
+import { criptareConfigurata, cripteaza, decripteazaSauLegacy } from "@/lib/secret-box";
 
 const F = formular230Submissions;
 const anFormular = sql<number>`coalesce(${F.an}, extract(year from ${F.createdAt})::int)`;
@@ -25,6 +25,19 @@ export type BorderouSumar = {
 // Atribuie formularele noi borderourilor (max. 50 per borderou; când se umple unul, se deschide următorul) și întoarce
 // sumarul pe borderouri. Formularele deja atribuite nu se mută niciodată.
 export const listeazaBorderouri = withOrgAdmin(async (ctx): Promise<BorderouSumar[]> => {
+  // Formularele primite ÎNAINTE de criptarea CNP-ului au CNP-ul în clar, iar baza de date refuză orice UPDATE pe un rând așa
+  // (constrângerea f230_cnp_criptat) — deci nici borderoul, nici „depus” nu se puteau salva. Le criptăm acum, cu aceeași cheie
+  // și același format ca la formularele noi (idempotent: atinge doar rândurile al căror CNP nu începe cu „v1.”).
+  if (criptareConfigurata()) {
+    const vechi = await ctx.db.select({ id: F.id, cnp: F.cnp }).from(F).where(and(eq(F.orgId, ctx.orgId), not(like(F.cnp, "v1.%"))));
+    for (const r of vechi) {
+      await ctx.db.update(F).set({ cnp: cripteaza(r.cnp) }).where(and(eq(F.orgId, ctx.orgId), eq(F.id, r.id), not(like(F.cnp, "v1.%"))));
+    }
+    if (vechi.length > 0) {
+      await inregistreazaAudit(ctx.db, { orgId: ctx.orgId, actorAppUserId: ctx.userId, actiune: "f230_cnp_criptat_automat", entitate: "formular230", detalii: { randuri: vechi.length } });
+    }
+  }
+
   const randuri = await ctx.db
     .select({ id: F.id, beneficiarId: F.beneficiarId, an: anFormular, borderouNr: F.borderouNr, createdAt: F.createdAt, procesat: F.procesatAnaf })
     .from(F)
