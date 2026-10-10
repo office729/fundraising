@@ -11,7 +11,7 @@ export const STUDII_DE_CAZ_DICT = {
       stats: [
         { v: "28M €", l: "strânși" },
         { v: "700+", l: "campanii" },
-        { v: "1000+", l: "beneficiari" },
+        { v: "1.500", l: "persoane ajutate" },
         { v: "14 ani", l: "de activitate" },
       ],
       provocare: {
@@ -24,7 +24,7 @@ export const STUDII_DE_CAZ_DICT = {
       },
       rezultat: {
         titlu: "Rezultatul",
-        desc: "Peste 28 de milioane de euro strânși în peste 14 ani de activitate, prin peste 700 de campanii umanitare care au ajuns la peste 1.000 de beneficiari.",
+        desc: "Peste 28 de milioane de euro strânși în peste 14 ani de activitate, prin peste 700 de campanii umanitare care au ajutat 1.500 de persoane.",
       },
       cta: "Discută despre situația ONG-ului tău",
     },
@@ -41,7 +41,7 @@ export const STUDII_DE_CAZ_DICT = {
       stats: [
         { v: "€28M", l: "raised" },
         { v: "700+", l: "campaigns" },
-        { v: "1000+", l: "beneficiaries" },
+        { v: "1,500", l: "people helped" },
         { v: "14 yrs", l: "of activity" },
       ],
       provocare: {
@@ -54,7 +54,7 @@ export const STUDII_DE_CAZ_DICT = {
       },
       rezultat: {
         titlu: "The result",
-        desc: "Over €28 million raised across more than 14 years of activity, through 700+ humanitarian campaigns that reached over 1,000 beneficiaries.",
+        desc: "Over €28 million raised across more than 14 years of activity, through 700+ humanitarian campaigns that helped 1,500 people.",
       },
       cta: "Discuss your NGO's situation",
     },

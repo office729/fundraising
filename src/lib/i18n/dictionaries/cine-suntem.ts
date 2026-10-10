@@ -16,7 +16,7 @@ export const CINE_SUNTEM_DICT = {
     stats: [
       { v: "28", l: "milioane de euro mobilizate" },
       { v: "700+", l: "campanii umanitare susținute" },
-      { v: "1.000+", l: "beneficiari sprijiniți" },
+      { v: "1.500", l: "persoane ajutate" },
       { v: "14 ani", l: "de experiență în fundraising" },
     ],
     diferentiatoriTitlu: "Ce ne face diferiți?",
@@ -24,7 +24,7 @@ export const CINE_SUNTEM_DICT = {
     diferentiatori: [
       "Expertiză reală în fundraising: peste 28 milioane de euro strânși prin campanii de succes.",
       "Mentorat 1 la 1: sesiuni personalizate direct cu Vlad Plăcintă, Omul Anului 2023.",
-      "Impact tangibil: peste 700 de campanii care au salvat viețile a peste 1000 de copii.",
+      "Impact tangibil: peste 700 de campanii care au ajutat 1.500 de persoane în 14 ani.",
       "Cursuri structurate: fundraising în 10 ședințe, cu suport practic și resurse aplicabile.",
       "Acces la rețea: conectează-te cu alți lideri ONG și creează parteneriate valoroase.",
     ],
@@ -46,7 +46,7 @@ export const CINE_SUNTEM_DICT = {
     titlu: "I guide NGOs to success through effective campaigns and clear strategies",
     paragrafe: [
       "We're the Alexandrit team, and we've combined our experience, knowledge and passion to help nonprofit organizations build effective, well-structured fundraising campaigns with real impact.",
-      "The platform is built on Vlad Plăcintă's 14+ years of experience as president of Asociația „Salvează o inimă”, as well as the work of a team involved daily in communication, fundraising, and relationships with donors and companies. Together, we've contributed to raising over €27 million and supporting hundreds of humanitarian campaigns.",
+      "The platform is built on Vlad Plăcintă's 14+ years of experience as president of Asociația „Salvează o inimă”, as well as the work of a team involved daily in communication, fundraising, and relationships with donors and companies. Together, we've contributed to raising over €28 million and supporting hundreds of humanitarian campaigns.",
       "Through Alexandrit, we offer you tested methods, practical tools and personalized guidance, so your organization can attract more donors, build lasting partnerships, and get better results.",
       "At every step, you'll have a team that understands the real challenges of running an NGO and wants to help you turn the good you do into an ever-stronger impact on your community.",
     ],
@@ -54,7 +54,7 @@ export const CINE_SUNTEM_DICT = {
     stats: [
       { v: "28", l: "million euros mobilized" },
       { v: "700+", l: "humanitarian campaigns supported" },
-      { v: "1,000+", l: "beneficiaries supported" },
+      { v: "1,500", l: "people helped" },
       { v: "14 yrs", l: "of fundraising experience" },
     ],
     diferentiatoriTitlu: "What makes us different?",
@@ -62,7 +62,7 @@ export const CINE_SUNTEM_DICT = {
     diferentiatori: [
       "Real fundraising expertise: over €28 million raised through successful campaigns.",
       "1-on-1 mentoring: personalized sessions directly with Vlad Plăcintă, Man of the Year 2023.",
-      "Tangible impact: 700+ campaigns that saved the lives of over 1,000 children.",
+      "Tangible impact: 700+ campaigns that helped 1,500 people over 14 years.",
       "Structured courses: fundraising in 10 sessions, with practical support and applicable resources.",
       "Network access: connect with other NGO leaders and build valuable partnerships.",
     ],

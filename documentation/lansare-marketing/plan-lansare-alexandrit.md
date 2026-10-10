@@ -21,7 +21,7 @@ apoi postările și planul.
 n-aveam sistem, n-aveam o listă de donatori. Aveam un telefon, un cont de Facebook și oameni care voiau să ajute.
 
 Așa a început Asociația „Salvează o inimă”. În cei peste 14 ani care au urmat, am coordonat peste 700 de campanii
-umanitare, am ajuns la peste 1.000 de beneficiari și am strâns, împreună cu donatorii noștri, peste 28 de milioane de euro.
+umanitare, am ajutat 1.500 de persoane și am strâns, împreună cu donatorii noștri, peste 28 de milioane de euro.
 
 Dar cifrele nu spun partea grea. Partea grea a fost haosul: donatori notați în caiete și tabele diferite, firme sunate
 de două ori de colegi diferiți, contracte de sponsorizare scrise de mână de la zero, termene de Formular 230 și D177
@@ -46,7 +46,7 @@ poate permite și o asociație de trei oameni.
 ### Varianta scurtă (100 de cuvinte — descrieri, comunicate, bio)
 
 Alexandrit este platforma CRM și de fundraising creată de Vlad Plăcintă, președintele Asociației „Salvează o inimă”,
-după peste 14 ani, 700+ campanii și peste 28 de milioane de euro strânși pentru cauze umanitare. Instrumentele s-au
+după 14 ani, 700+ campanii, 1.500 de persoane ajutate și peste 28 de milioane de euro strânși pentru cauze umanitare. Instrumentele s-au
 născut din nevoile reale ale unei echipe de ONG: evidența donatorilor, relația cu companiile, contractele de
 sponsorizare 20% și D177, Formularul 230, paginile de donație și rapoartele. Acum sunt disponibile pentru orice ONG din
 România, de la 49 de lei pe lună, cu 30 de zile de probă gratuită, fără card.
@@ -66,14 +66,14 @@ fiscale se fac manual; nimeni nu știe cine trebuie sunat azi.
 **Soluția:** un singur abonament care include CRM pentru persoane fizice și companii, pagini de donație online,
 Formularul 230 online, contracte 20% și D177, newsletter, rapoarte și programul de lucru al echipei.
 
-**Dovada:** sistemul a fost construit și folosit în activitatea Asociației „Salvează o inimă” (28 mil. €, 700+ campanii).
+**Dovada:** sistemul a fost construit și folosit în activitatea Asociației „Salvează o inimă” (28 mil. € în 14 ani, 700+ campanii, 1.500 de persoane ajutate).
 
 **Îndemnul:** încearcă 30 de zile gratuit, fără card — alexandrit.ro
 
 ### Pitch de 30 de secunde (pentru video, evenimente, apeluri)
 
-„Sunt Vlad Plăcintă. De 14 ani conduc Salvează o inimă, unde am strâns peste 28 de milioane de euro pentru copii
-bolnavi. Ce am învățat e simplu: banii nu se pierd din lipsă de oameni buni, ci din lipsă de ordine. Un donator
+„Sunt Vlad Plăcintă. De 14 ani conduc Salvează o inimă, unde am strâns peste 28 de milioane de euro și am ajutat
+1.500 de oameni. Ce am învățat e simplu: banii nu se pierd din lipsă de oameni buni, ci din lipsă de ordine. Un donator
 uitat, un sponsor nesunat, un contract întârziat. Alexandrit e sistemul pe care l-am construit ca să nu mai pierdem
 nimic — și acum îl poate folosi orice ONG din România. De la 49 de lei pe lună, cu o lună de probă gratuită.”
 
@@ -159,7 +159,7 @@ cifrele din arhiva asociației (extrasele contabile, CRM-ul SOI, rapoartele anua
 
 ## Pasul 6 — Ce creștere am avut folosind aceste instrumente
 
-Ce se poate spune deja, public: **peste 28 de milioane de euro strânși, 700+ campanii, 1.000+ beneficiari, 14 ani.**
+Ce se poate spune deja, public: **28 de milioane de euro strânși în 14 ani, 700+ campanii, 1.500 de persoane ajutate.**
 
 Ce ar transforma asta într-o poveste de creștere (cifre pe ani, de completat):
 
@@ -215,7 +215,7 @@ Restul e timp câștigat pentru cauza ta.”
 ## Pasul 8 — Ce ne diferențiază de alte CRM-uri
 
 1. **Construit de un ONG, pentru ONG-uri.** Fiecare instrument vine din activitatea reală a Salvează o inimă
-   (28 mil. €, 700+ campanii), nu din presupuneri.
+   (28 mil. € în 14 ani, 700+ campanii, 1.500 de persoane ajutate), nu din presupuneri.
 2. **Făcut pentru România.** Formularul 230 online, contracte de sponsorizare 20%, Declarația 177, totul în limba română.
 3. **Totul într-un singur abonament.** CRM, pagini de donație, rapoarte, newsletter, voluntari — nu plătești module
    separate, doar capacitatea.
@@ -237,7 +237,7 @@ Alexandrit), **Instagram** (carusele și reels). Linkul: alexandrit.ro (ideal cu
 ### Faza 1 — Teaser (săptămâna -2 și -1)
 
 **P1 · Facebook/LinkedIn · Întrebare**
-> 14 ani. 700+ campanii. Peste 28 de milioane de euro strânși pentru copii bolnavi.
+> 14 ani. 700+ campanii. 28 de milioane de euro strânși. 1.500 de oameni ajutați.
 > Și o lecție care m-a costat cel mai mult: banii nu se pierd din lipsă de oameni buni, ci din lipsă de ordine.
 > Voi unde țineți evidența donatorilor? Excel, caiet, telefon, „în cap”? 👇
 > Peste două săptămâni vă arăt ce am construit ca să nu mai pierdem niciun donator.
@@ -389,5 +389,6 @@ Cele 30 de zile de probă se câștigă sau se pierd în prima săptămână:
 3. **Semnificația numelui „Alexandrit”**, dacă vrei să o folosim.
 4. **Data lansării** — ca să punem date reale în calendar (și să verificăm că lista din `lansare-checklist.md` e gata).
 5. **Acordul celor din testimoniale** pentru folosirea citatelor în reclame.
-6. **O nepotrivire pe site:** pagina „Cine suntem” spune **28 de milioane de euro** în română, dar **„over €27 million”**
-   în engleză. Trebuie aleasă cifra corectă, pentru ca postările să nu contrazică site-ul.
+
+> Confirmat: **28 de milioane de euro în 14 ani** și **1.500 de persoane ajutate**. Site-ul a fost aliniat
+> (pagina „Cine suntem” în română și engleză, „Studii de caz”).
