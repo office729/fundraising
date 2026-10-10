@@ -1,9 +1,10 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { cache } from "react";
 import { notFound } from "next/navigation";
 
 import { db } from "@/lib/db";
-import { formular230Beneficiari, organizations } from "@/lib/db/schema";
+import { formular230Beneficiari, fundraisingPages, organizations } from "@/lib/db/schema";
+import { caleCampanie } from "@/lib/link-campanie";
 
 import { Formular230Client } from "../formular-client";
 
@@ -35,7 +36,15 @@ const getFormularPublic = cache(async function getFormularPublic(orgSlug: string
     const beneficiar = beneficiarRows[0];
     if (!beneficiar) return null;
 
-    return { org, beneficiar };
+    // Cauzele susținute acum: campaniile active ale organizației (cele mai avansate întâi), cel mult 4. Date deja publice.
+    const cauze = await tx
+      .select({ titlu: fundraisingPages.titlu, slug: fundraisingPages.slug, judet: fundraisingPages.judet })
+      .from(fundraisingPages)
+      .where(and(eq(fundraisingPages.orgId, org.id), eq(fundraisingPages.status, "activa")))
+      .orderBy(desc(fundraisingPages.sumaStransa), desc(fundraisingPages.createdAt))
+      .limit(4);
+
+    return { org, beneficiar, cauze };
   });
 });
 
@@ -65,6 +74,7 @@ export default async function Formular230PublicPage({
       orgName={rezultat.org.name}
       brandColor={rezultat.org.brandColor}
       beneficiar={{ nume: rezultat.beneficiar.nume, cif: rezultat.beneficiar.cif ?? "", iban: rezultat.beneficiar.iban ?? "" }}
+      cauze={rezultat.cauze.map((c) => ({ titlu: c.titlu, judet: c.judet, href: caleCampanie(orgSlug, c.slug) }))}
     />
   );
 }

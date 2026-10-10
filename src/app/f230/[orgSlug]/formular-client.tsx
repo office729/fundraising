@@ -43,12 +43,15 @@ export function Formular230Client({
   orgName,
   brandColor,
   beneficiar,
+  cauze = [],
 }: {
   orgSlug: string;
   beneficiarSlug: string;
   orgName: string;
   brandColor: string | null;
   beneficiar: DateBeneficiarPdf;
+  // Cauzele susținute acum (campaniile active ale organizației), cel mult 4: apar sus, înainte de formular.
+  cauze?: { titlu: string; judet: string | null; href: string }[];
 }) {
   const [date, setDate] = useState<Record<Camp, string>>(INITIAL);
   const [distributie2Ani, setDistributie2Ani] = useState(false);
@@ -163,6 +166,30 @@ export function Formular230Client({
           Nu te costă nimic — banii sunt oricum reținuți din salariu de stat. Completezi o dată, ANAF face restul.
         </p>
       </div>
+
+      {cauze.length > 0 && (
+        <section aria-labelledby="cauze-230" className="mb-6 rounded-2xl border border-line bg-panel p-5 shadow-sm">
+          <h2 id="cauze-230" className="font-display text-base font-bold text-ink">
+            Cauzele pe care le susținem acum
+          </h2>
+          <p className="mt-1 text-[13px] text-muted">Prin {orgName}, redirecționarea ta ajută oameni și proiecte ca acestea:</p>
+          <ul className="mt-3 divide-y divide-line">
+            {cauze.map((c) => (
+              <li key={c.href} className="flex items-center gap-3 py-2.5">
+                <span aria-hidden="true" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[13px]" style={{ background: `${accent}1a`, color: accent }}>♥</span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-ink">{c.titlu}</p>
+                  {c.judet && <p className="text-xs text-muted-2">{c.judet}</p>}
+                </div>
+                <a href={c.href} target="_blank" rel="noopener noreferrer" className="shrink-0 text-xs font-semibold hover:underline" style={{ color: accent }}>
+                  Vezi campania
+                  <span className="sr-only"> {c.titlu} (se deschide în filă nouă)</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <form onSubmit={trimite} className="space-y-6 rounded-2xl border border-line bg-panel p-6 shadow-sm">
         <input
