@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { getOrgSlugDupaEmail } from "@/lib/auth/dal";
 import { finalizeazaAutomatDinInscriere } from "@/lib/auth/finalizare-automata";
 import { createClient } from "@/lib/supabase/server";
 
@@ -31,6 +32,12 @@ export async function GET(request: Request) {
         const { data } = await supabase.auth.getUser();
         const slug = data.user ? await finalizeazaAutomatDinInscriere(data.user).catch(() => null) : null;
         if (slug) return NextResponse.redirect(`${origin}/${slug}/crm`);
+        // Cont existent, cu organizație (de ex. autentificare cu Google): direct în CRM, fiindcă pagina de start nu mai redirecționează.
+        // Cu parametri de plan în adresă (flux de înscriere) se rămâne pe pagina de start.
+        if (new URL(destinatie).search === "" && data.user?.email) {
+          const existent = await getOrgSlugDupaEmail(data.user.email).catch(() => null);
+          if (existent) return NextResponse.redirect(`${origin}/${existent}/crm`);
+        }
       }
       return NextResponse.redirect(destinatie);
     }

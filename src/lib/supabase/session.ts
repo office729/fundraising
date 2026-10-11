@@ -122,7 +122,7 @@ export async function updateSession(request: NextRequest, rewriteTo?: URL) {
   const hasInviteParam = request.nextUrl.searchParams.has("invite");
   if (user && (path === "/login" || path === "/signup") && !hasInviteParam) {
     const url = request.nextUrl.clone();
-    url.pathname = "/";
+    url.pathname = "/intra";
     return NextResponse.redirect(url);
   }
 

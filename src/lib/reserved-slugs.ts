@@ -28,6 +28,7 @@ const RESERVED_SLUGS = new Set([
   "gdpr",
   "hub",
   "invite",
+  "intra",
   "invite-beneficiar",
   "login",
   "platform-admin",

@@ -57,7 +57,7 @@ export function TopBar({ dict, locale }: { dict: MarketingDict; locale: Locale }
   );
 }
 
-export function SiteHeader({ dict }: { dict: MarketingDict }) {
+export function SiteHeader({ dict, panouHref = null }: { dict: MarketingDict; panouHref?: string | null }) {
   const pathname = usePathname();
   const [deschis, setDeschis] = useState(false);
   const seara = useEsteSeara();
@@ -137,20 +137,32 @@ export function SiteHeader({ dict }: { dict: MarketingDict }) {
           >
             {dict.header.consulting}
           </Link>
-          <Link
-            prefetch={false}
-            href="/login"
-            className="hidden text-sm font-bold whitespace-nowrap text-ink transition hover:text-brand-blue min-[1140px]:inline-block"
-          >
-            {dict.header.login}
-          </Link>
-          <Link
-            prefetch={false}
-            href="/signup"
-            className="hidden rounded-md bg-brand-blue px-4 py-2 text-sm font-bold whitespace-nowrap text-white transition hover:bg-brand-blue-hover min-[1140px]:inline-block"
-          >
-            {dict.header.signup}
-          </Link>
+          {panouHref ? (
+            <Link
+              prefetch={false}
+              href={panouHref}
+              className="hidden rounded-md bg-brand-blue px-4 py-2 text-sm font-bold whitespace-nowrap text-white transition hover:bg-brand-blue-hover min-[1140px]:inline-block"
+            >
+              {dict.header.panou}
+            </Link>
+          ) : (
+            <>
+              <Link
+                prefetch={false}
+                href="/login"
+                className="hidden text-sm font-bold whitespace-nowrap text-ink transition hover:text-brand-blue min-[1140px]:inline-block"
+              >
+                {dict.header.login}
+              </Link>
+              <Link
+                prefetch={false}
+                href="/signup"
+                className="hidden rounded-md bg-brand-blue px-4 py-2 text-sm font-bold whitespace-nowrap text-white transition hover:bg-brand-blue-hover min-[1140px]:inline-block"
+              >
+                {dict.header.signup}
+              </Link>
+            </>
+          )}
           <button
             type="button"
             onClick={() => setDeschis((v) => !v)}
@@ -202,22 +214,35 @@ export function SiteHeader({ dict }: { dict: MarketingDict }) {
           >
             {dict.header.consulting}
           </Link>
-          <Link
-            prefetch={false}
-            href="/signup"
-            onClick={() => setDeschis(false)}
-            className="mt-1 rounded-md bg-brand-blue px-4 py-2.5 text-center text-sm font-bold text-white"
-          >
-            {dict.header.signup}
-          </Link>
-          <Link
-            prefetch={false}
-            href="/login"
-            onClick={() => setDeschis(false)}
-            className="mt-1 rounded-md border border-line px-4 py-2.5 text-center text-sm font-bold text-ink"
-          >
-            {dict.header.login}
-          </Link>
+          {panouHref ? (
+            <Link
+              prefetch={false}
+              href={panouHref}
+              onClick={() => setDeschis(false)}
+              className="mt-1 rounded-md bg-brand-blue px-4 py-2.5 text-center text-sm font-bold text-white"
+            >
+              {dict.header.panou}
+            </Link>
+          ) : (
+            <>
+              <Link
+                prefetch={false}
+                href="/signup"
+                onClick={() => setDeschis(false)}
+                className="mt-1 rounded-md bg-brand-blue px-4 py-2.5 text-center text-sm font-bold text-white"
+              >
+                {dict.header.signup}
+              </Link>
+              <Link
+                prefetch={false}
+                href="/login"
+                onClick={() => setDeschis(false)}
+                className="mt-1 rounded-md border border-line px-4 py-2.5 text-center text-sm font-bold text-ink"
+              >
+                {dict.header.login}
+              </Link>
+            </>
+          )}
         </nav>
       )}
     </header>

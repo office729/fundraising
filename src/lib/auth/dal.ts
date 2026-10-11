@@ -68,11 +68,15 @@ export async function reinnoiesteAcceptareTermeni(tx: Pick<typeof db, "update">,
 export async function getMyOrgSlug(): Promise<string | null> {
   const authUser = await getAuthUser();
   if (!authUser?.email) return null;
+  return getOrgSlugDupaEmail(authUser.email);
+}
 
+// Aceeași căutare, pornind direct de la emailul unui utilizator deja autentificat (folosită și de /auth/callback, imediat după schimbul codului).
+export async function getOrgSlugDupaEmail(email: string): Promise<string | null> {
   return db.transaction(async (tx) => {
-    await tx.execute(sql`select set_config('app.current_user_email', ${authUser.email}, true)`);
+    await tx.execute(sql`select set_config('app.current_user_email', ${email}, true)`);
 
-    const appUserRows = await tx.select().from(appUsers).where(eq(appUsers.email, authUser.email!.toLowerCase())).limit(1);
+    const appUserRows = await tx.select().from(appUsers).where(eq(appUsers.email, email.toLowerCase())).limit(1);
     const appUser = appUserRows[0];
     if (!appUser) return null;
 

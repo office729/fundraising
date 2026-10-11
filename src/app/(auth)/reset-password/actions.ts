@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { getMyOrgSlug } from "@/lib/auth/dal";
 
 import { AUTH_DICT } from "@/lib/i18n/dictionaries/auth";
 import { getLocale } from "@/lib/i18n/get-locale";
@@ -29,5 +30,7 @@ export async function resetPasswordAction(
     return { error: errors.resetLinkExpirat };
   }
 
-  redirect("/");
+  // După resetare utilizatorul e autentificat: direct în platformă, dacă are organizație.
+  const slug = await getMyOrgSlug().catch(() => null);
+  redirect(slug ? `/${slug}/crm` : "/");
 }

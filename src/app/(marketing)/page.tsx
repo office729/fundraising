@@ -17,14 +17,10 @@ export default async function LandingPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  // Un user logat cu organizație nu trebuie să mai vadă pagina de marketing
-  // și să dea click pe „Continuă în platformă" — pagina principală, odată
-  // logat, E dashboard-ul CRM direct.
+  // Un user logat cu organizație poate vedea în continuare site-ul (antetul îi arată „Intră în platformă”); după autentificare
+  // ajunge în CRM prin redirecționările de la login și din /auth/callback, nu prin această pagină.
   const authUser = await getAuthUser();
   const myOrgSlug = authUser ? await getMyOrgSlug() : null;
-  if (myOrgSlug) {
-    redirect(`/${myOrgSlug}/crm`);
-  }
   // Verificat înainte de FinalizeForm — un beneficiar logat nu trebuie să
   // vadă formularul de finalizare a unui cont de ONG (acela nu se aplică lui).
   if (authUser && (await esteBeneficiarLogat())) {
@@ -33,7 +29,7 @@ export default async function LandingPage({
   // Autentificat (de obicei prin Google, primul login) dar fără organizație
   // încă — spre deosebire de fluxul clasic de /signup, contul Supabase deja
   // există aici, mai lipsește doar numele organizației.
-  if (authUser?.email) {
+  if (authUser?.email && !myOrgSlug) {
     const sp = await searchParams;
     // Valorile alese la înscrierea cu email (păstrate în metadatele contului cât
     // timp emailul aștepta confirmarea) servesc drept implicit; query-ul are prioritate.
