@@ -12,9 +12,10 @@ Data: 2026-10-12 · Surse: Lusha, Apollo.io, Hunter, Prospeo, LinkedIn, termene.
 | Nume | Funcție | Prioritate | Email | Telefon | LinkedIn | Sursă | Încredere |
 |---|---|---|---|---|---|---|---|
 | Daniel Lipara | Managing Director Magic Games AB (din 10.2012), deci CEO/administrator | 1 | daniel.lipara@magic.ro (Hunter: valid, scor 99) | +40 725 550 272 (mobil) | linkedin.com/in/daniel-lipara-6190b3179 | Lusha (telefon) + Hunter (email) + Apollo + LinkedIn | Ridicat |
+| Monica Nițu | probabil HR/recrutare: emailul ei apare în anunțurile de angajare ale firmei pe awork.ro | 2 (HR) | monica.nitu@magic.ro (Hunter, găsit public, încredere 89) | – | – | Hunter | Mediu |
 | Dominique Ciolacu | Regional Manager, București | 3 (operațional) | – | – | linkedin.com/in/dominique-ciolacu-31948629 | Lusha | Scăzut |
 
 Atenție: Lusha, Apollo și Prospeo asociază greșit firma cu „Magic Games” din Brazilia (magicgames.com.br). Persoanele sunt din România; domeniul de email real al firmei este, cel mai probabil, magic.ro (vezi mai jos).
-Nu am găsit director financiar, director economic, resurse umane (HR) sau responsabil CSR în Lusha, Apollo, Prospeo ori Hunter.
+Nu am găsit director financiar, director economic sau responsabil CSR în Lusha, Apollo, Prospeo ori Hunter. Firma nu are activitate publică de responsabilitate socială (CSR). Pentru HR: hr@magic.ro (adresa din anunțurile de angajare) și Monica Nițu. Alte adrese generale: receptie@magic.ro.
 Contact brand Magic Jackpot (Hunter): info@magicjackpot.ro, suport@magicjackpot.ro. Sunt adrese de suport pentru clienți, nu pentru conducere.
 Domeniul firmei pare să fie magic.ro: un anunț de angajare pe LinkedIn cere CV-uri la hr@magic.ro. Emailul lui Daniel Lipara l-a dedus Hunter din formatul prenume.nume, apoi l-a verificat pe server: adresa e validă, iar serverul nu acceptă orice adresă. Tel. central (director): +40 21 317 0390. Pentru resurse umane: hr@magic.ro.
