@@ -52,3 +52,25 @@ test("sursa traficului: direct, social, căutare, e-mail, site propriu, trimiter
   // un domeniu care doar CONȚINE „x.com" nu e rețea socială
   assert.equal(sursa("mixx.com").sursa, "trimitere");
 });
+
+test("analiza (Google Analytics) nu rulează nici pe linkurile scurte ale campaniilor", async () => {
+  const { esteCaleExclusa } = await import("../src/lib/analytics-cale.ts");
+  const { caleReala } = await import("../src/lib/link-campanie.ts");
+  const { esteSlugRezervat } = await import("../src/lib/reserved-slugs.ts");
+  const esteCaleExclusaDinAnaliza = (p) => esteCaleExclusa(p, caleReala, esteSlugRezervat);
+  // linkul lung și cel scurt al aceleiași campanii, plus subpaginile
+  assert.equal(esteCaleExclusaDinAnaliza("/strangere-fonduri/salveaza-o-inima/maria-craciun"), true);
+  assert.equal(esteCaleExclusaDinAnaliza("/salveaza-o-inima/maria-craciun"), true);
+  assert.equal(esteCaleExclusaDinAnaliza("/salveaza-o-inima/maria-craciun/multumim"), true);
+  assert.equal(esteCaleExclusaDinAnaliza("/strangere-fonduri/salveaza-o-inima/donator/gestioneaza"), true);
+  // site-ul de marketing și aplicația rămân măsurate (cu consimțământ)
+  assert.equal(esteCaleExclusaDinAnaliza("/"), false);
+  assert.equal(esteCaleExclusaDinAnaliza("/hub"), false);
+  assert.equal(esteCaleExclusaDinAnaliza("/automatizari"), false);
+  assert.equal(esteCaleExclusaDinAnaliza("/salveaza-o-inima/crm"), false);
+  assert.equal(esteCaleExclusaDinAnaliza("/salveaza-o-inima/crm/donatori"), false);
+  assert.equal(esteCaleExclusaDinAnaliza("/salveaza-o-inima/setari"), false);
+  // paginile cu date personale rămân excluse
+  assert.equal(esteCaleExclusaDinAnaliza("/f230/salveaza-o-inima/principal"), true);
+  assert.equal(esteCaleExclusaDinAnaliza("/dezabonare"), true);
+});

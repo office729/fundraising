@@ -1,3 +1,7 @@
+import { esteCaleExclusa } from "./analytics-cale";
+import { caleReala } from "./link-campanie";
+import { esteSlugRezervat } from "./reserved-slugs";
+
 // Google Analytics 4 — inițializare + trimitere de evenimente, ambele DOAR după
 // acordul vizitatorului din bannerul de cookie-uri (components/analytics-consent.tsx).
 // Fără acord, niciuna dintre funcții nu face nimic: nu se încarcă scriptul Google
@@ -14,23 +18,8 @@ type GtagWindow = Window & {
   __faGaInit?: boolean;
 };
 
-// Pagini cu date personale sau cu tokenuri în URL (adresa de email din linkul de dezabonare, formularul 230, donațiile,
-// invitațiile, rezultatul plății): analiza NU rulează deloc aici, chiar dacă vizitatorul a acceptat statisticile —
-// notele de informare ale donatorilor nu menționează Google și URL-ul ar ajunge la Google ca `page_location`.
-const PRIMUL_SEGMENT_EXCLUS = new Set([
-  "f230",
-  "strangere-fonduri",
-  "dezabonare",
-  "invite",
-  "invite-beneficiar",
-  "auth",
-  "reset-password",
-  "beneficiar",
-  "s",
-]);
-
 export function esteCaleExclusaDinAnaliza(pathname: string): boolean {
-  return PRIMUL_SEGMENT_EXCLUS.has(pathname.split("/")[1] ?? "");
+  return esteCaleExclusa(pathname, caleReala, esteSlugRezervat);
 }
 
 // Identificatori din adresele dashboard-ului (UUID-uri de donatori/companii, sufixul de 8 caractere din „denumire-c2607e5a")

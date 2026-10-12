@@ -40,7 +40,9 @@ export async function inregistreazaEveniment(
     if (!(await verificaLimitaRata("campanie-eveniment", ip, 120, 10))) return;
 
     const ziua = ziuaRo();
-    const cheie = process.env.ORG_SECRETS_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? "alexandrit";
+    // Fără cheie dedicată nu înregistrăm nimic (o cheie de rezervă ar face amprenta zilnică ușor de regăsit din IP).
+    const cheie = process.env.ORG_SECRETS_KEY;
+    if (!cheie) return;
     // Amprentă care se schimbă zilnic: permite „vizitatori unici pe zi”, nu urmărirea între zile.
     const vizitator = createHmac("sha256", cheie).update(`${ziua}|${ip}|${ua}`).digest("hex").slice(0, 32);
 
