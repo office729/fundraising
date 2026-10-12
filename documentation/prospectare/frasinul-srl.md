@@ -6,7 +6,7 @@ Data: 2026-10-12 · Surse: Lusha, Apollo.io, termene.ro, risco.ro, Kompass, ZF, 
 
 **Companie:** CUI 12337680, J06/278/1999 · construcții de drumuri și clădiri (CAEN 4100), inclusiv centura Comarnic și drumuri județene în Bistrița-Năsăud · sediu: Anieș, jud. Bistrița-Năsăud, str. Principală nr. 59, cod 427131 · ~287 angajați
 **Cifre:** 2025: CA ≈ 695,5 mil. lei, profit ≈ 98,7 mil. lei. 2024: CA ≈ 440,7 mil. lei.
-**Proprietar:** Traian Larionesi, asociat unic (ZF, Adevărul). **Administrator:** Ionuț-Cristian Larionesi, fiul acestuia (Adevărul). Kompass, cu date mai vechi, îl trece ca administrator pe Traian Larionesi. Termene.ro arată doar inițiale: asociat unic L.T., administrator L.P. Numele complet trebuie confirmat din extrasul ONRC.
+**Proprietar:** Traian Larionesi, asociat unic (ZF, Adevărul). **Administrator:** Ionuț-Cristian Larionesi, fiul acestuia (Adevărul). Kompass, cu date mai vechi, îl trece ca administrator pe Traian Larionesi. Termene.ro arată doar inițiale: asociat unic L.T., administrator L.P. Numele complet trebuie confirmat din extrasul ONRC. Rolocal.ro îl trece pe Traian Larionesi ca director general, iar România Curată îl descrie pe fratele său, Iacob Larionesi, drept administratorul de facto.
 
 **Scor potențial sponsorizare:** 6/10. Capacitatea financiară e foarte mare, dar nu am găsit sponsorizări sau activitate de responsabilitate socială (CSR). Firma și proprietarul au fost menționați în presă în dosare penale (defrișări ilegale, corupție), deci verifică riscul de imagine înainte de abordare.
 
