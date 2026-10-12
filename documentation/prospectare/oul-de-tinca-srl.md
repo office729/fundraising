@@ -17,6 +17,6 @@ Data: 2026-10-12 · Surse: Apollo.io, Lusha, Hunter, Prospeo, site ouldetinca.ro
 | Lennart Behrens | funcție necunoscută, posibil reprezentant al acționarului german | 3 (de verificat) | behrens@ouldetinca.ro | – | – | Hunter (email găsit pe site) | Scăzut |
 
 Nu am găsit pe nimeni pentru resurse umane (HR) sau CSR în Lusha, Apollo, Prospeo ori Hunter. Pentru resurse umane, scrie la info@ouldetinca.ro sau sună la 0359 412 543.
-Telefonul administratorului l-am cerut prin Apollo (cerere -630106680306144516); după aproximativ 3 minute rezultatul era încă în lucru.
+Telefonul administratorului nu există în Apollo, Lusha sau Prospeo (verificat la 2026-10-12). Pentru el sunați la 0359 412 543 sau 0721 690 269.
 
 Contacte excluse, fără putere de decizie pe sponsorizări: Lavinia Păcală (responsabil IFS, calitate), Andrei Gherle (organizator producție), Lavinia Alexandru (medic veterinar), Laura Dove (operator producție), orosz@ (rol necunoscut).
