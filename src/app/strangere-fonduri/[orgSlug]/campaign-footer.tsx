@@ -48,6 +48,7 @@ export function CampaignFooter({
             Alexandrit
           </a>
         </p>
+        <p className="max-w-md text-[11.5px] leading-relaxed text-muted-2">{t.masurare}</p>
       </div>
     </footer>
   );

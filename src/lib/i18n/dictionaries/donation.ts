@@ -139,6 +139,7 @@ export const DONATION_DICT = {
       toateCampaniile: (orgName: string) => `Toate campaniile ${orgName}`,
       platformaOferita: "Platformă de strângere de fonduri oferită de",
       cif: "CIF",
+      masurare: "Numărăm vizitele paginii fără cookie-uri și fără să păstrăm adresa IP, doar ca organizația să vadă câți oameni îi susțin campaniile.",
     },
   },
   en: {
@@ -273,6 +274,7 @@ export const DONATION_DICT = {
       toateCampaniile: (orgName: string) => `All ${orgName} campaigns`,
       platformaOferita: "Fundraising platform provided by",
       cif: "Tax ID",
+      masurare: "We count visits to this page without cookies and without keeping your IP address, only so the organisation can see how many people support its campaigns.",
     },
   },
 } as const satisfies Record<Locale, unknown>;

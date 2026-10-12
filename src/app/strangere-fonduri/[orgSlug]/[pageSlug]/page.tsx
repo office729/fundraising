@@ -21,6 +21,7 @@ import { BaraDoneazaMobil } from "./bara-doneaza-mobil";
 import { DoneazaModal } from "./doneaza-modal";
 import { RecentDonationsList } from "./recent-donations-list";
 import { ShareLinksClient } from "./share-links";
+import { UrmarireVizite } from "./urmarire-vizite";
 
 // Coloane public-safe pentru donații — NICIODATĂ email_donator aici, chiar
 // dacă politica RLS ar permite (RLS controlează rânduri, nu coloane).
@@ -244,6 +245,7 @@ export default async function PaginaStrangereFonduriPage({
       <a href="#sustine-campania" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:rounded-md focus:bg-panel focus:px-3 focus:py-2 focus:text-sm focus:font-semibold focus:text-ink focus:shadow-lg">
         {c.sariLaDonatie}
       </a>
+      <UrmarireVizite orgSlug={orgSlug} pageSlug={pageSlug} />
       <main className="mx-auto max-w-6xl px-4 pt-5 pb-16 sm:px-6 sm:pt-8">
         <Link href={`/strangere-fonduri/${orgSlug}`} className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-muted-2 transition hover:text-brand-blue">
           <ArrowLeft className="h-3.5 w-3.5" /> {c.acasaLa(org.name)}

@@ -793,6 +793,10 @@ const POLICIES = [
   `create policy donatii_importate_tenant_isolation on donatii_importate
     using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
     with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  // Statistici de trafic ale campaniilor: izolare pe organizație (scrierea publică trece prin app.current_org_id, setat de server după ce rezolvă pagina).
+  `create policy campaign_page_events_tenant_isolation on campaign_page_events
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
   // Panoul voluntarilor: izolare pe organizație.
   `create policy volunteer_visitors_tenant_isolation on volunteer_visitors
     using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
@@ -927,6 +931,7 @@ const FORCE_TABLES = [
   "performanta_notificari",
   "donatori_importuri",
   "donatii_importate",
+  "campaign_page_events",
 ];
 
 try {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { inregistreazaEveniment } from "@/lib/statistici-campanii/inregistreaza";
 import { preconnect } from "react-dom";
 
 import type { Locale } from "@/lib/i18n/config";
@@ -56,6 +57,10 @@ export function DoneazaModal({
     preconnect("https://m.stripe.network", { crossOrigin: "anonymous" });
   }
   const [open, setOpen] = useState(false);
+  // Deschiderea formularului de donație = pasul dintre vizită și donație în statisticile campaniei.
+  useEffect(() => {
+    if (open) void inregistreazaEveniment(orgSlug, pageSlug, "deschide_donatia");
+  }, [open, orgSlug, pageSlug]);
   // Metoda aleasă: Revolut / Google Pay / Apple Pay deschid un modal dedicat (ca pe
   // Nektarios); fără metodă, formularul obișnuit (card, pagina găzduită de Stripe).
   const [metoda, setMetoda] = useState<"revolut" | "gpay" | "apay" | "paypal" | undefined>(undefined);
