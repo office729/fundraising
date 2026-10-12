@@ -139,7 +139,7 @@ export const DONATION_DICT = {
       toateCampaniile: (orgName: string) => `Toate campaniile ${orgName}`,
       platformaOferita: "Platformă de strângere de fonduri oferită de",
       cif: "CIF",
-      masurare: "Numărăm vizitele paginii fără cookie-uri și fără să păstrăm adresa IP, doar ca organizația să vadă câți oameni îi susțin campaniile.",
+      masurare: "Numărăm vizitele paginii fără cookie-uri și fără să păstrăm adresa IP: păstrăm 13 luni doar o amprentă zilnică pseudonimizată, sursa vizitei, tipul dispozitivului și țara, ca organizația să vadă câți oameni îi susțin campaniile. Te poți opune activând „Nu mă urmări” în browser.",
     },
   },
   en: {
@@ -274,7 +274,7 @@ export const DONATION_DICT = {
       toateCampaniile: (orgName: string) => `All ${orgName} campaigns`,
       platformaOferita: "Fundraising platform provided by",
       cif: "Tax ID",
-      masurare: "We count visits to this page without cookies and without keeping your IP address, only so the organisation can see how many people support its campaigns.",
+      masurare: "We count visits to this page without cookies and without keeping your IP address: for 13 months we keep only a pseudonymised daily fingerprint, the visit source, device type and country, so the organisation can see how many people support its campaigns. You can object by turning on “Do Not Track” in your browser.",
     },
   },
 } as const satisfies Record<Locale, unknown>;
