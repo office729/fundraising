@@ -73,7 +73,7 @@ export async function pregatesteDonatie(
     return { ok: false, error: errors.preaMulteIncercari };
   }
   const suma = Math.round(Number(formData.get("suma")));
-  if (!Number.isFinite(suma) || suma < 5) {
+  if (!Number.isFinite(suma) || suma < 2) {
     return { ok: false, error: errors.sumaMinima };
   }
   if (suma > 50_000) {

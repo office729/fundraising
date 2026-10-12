@@ -202,7 +202,7 @@ export function DoneazaForm({
         <input
           type="number"
           name="suma"
-          min={5}
+          min={2}
           max={50000}
           value={suma}
           onChange={(e) => setSuma(Number(e.target.value))}
