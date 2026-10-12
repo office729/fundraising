@@ -1,4 +1,6 @@
 import { and, desc, eq, sql } from "drizzle-orm";
+import { BarChart3 } from "lucide-react";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { withOrgSession } from "@/lib/auth/guard";
@@ -71,6 +73,13 @@ export default async function PaginaDetaliuPage({ params }: { params: Promise<{ 
           <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">{dictDetail.organizatDe(pagina.numeCreator, pagina.emailCreator)}</p>
         </div>
         <div className="flex items-center gap-2">
+          <Link
+            prefetch={false}
+            href={`/${orgSlug}/crm/statistici-campanii?campanie=${pagina.id}`}
+            className="inline-flex h-9 items-center gap-1.5 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 text-[13px] font-medium text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]"
+          >
+            <BarChart3 className="h-3.5 w-3.5" aria-hidden="true" /> Statistici
+          </Link>
           <AddOfflineDonationButton orgSlug={orgSlug} pageId={pagina.id} />
           <CopyPageLinkButton orgSlug={orgSlug} pageSlug={pagina.slug} />
           <ToggleStatusButton orgSlug={orgSlug} id={pagina.id} status={pagina.status} />

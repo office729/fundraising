@@ -82,7 +82,9 @@ function Bare({ randuri, gol }: { randuri: { eticheta: string; valoare: number; 
 
 export type DateStatistici = Awaited<ReturnType<typeof incarcaStatistici>>;
 
-export function StatisticiVedere({ orgSlug, zile, d }: { orgSlug: string; zile: number; d: DateStatistici }) {
+export function StatisticiVedere({ orgSlug, zile, d, campanieId = null }: { orgSlug: string; zile: number; d: DateStatistici; campanieId?: string | null }) {
+  const campanie = d.pagini.find((p) => p.id === campanieId) ?? null;
+  const sufixCampanie = campanie ? `&campanie=${campanie.id}` : "";
   const gv = d.global.find((g) => g.tip === "vizita") ?? { vizualizari: 0, unici: 0 };
   const gd = d.global.find((g) => g.tip === "deschide_donatia") ?? { vizualizari: 0, unici: 0 };
   const vizitatori = gv.unici;
@@ -122,15 +124,17 @@ export function StatisticiVedere({ orgSlug, zile, d }: { orgSlug: string; zile: 
 
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">Statistici campanii</h1>
-          <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">Câți oameni îți văd campaniile, de unde vin și câți donează.</p>
+          <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">{campanie ? campanie.titlu : "Statistici campanii"}</h1>
+          <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">
+            {campanie ? "Statisticile acestei campanii: câți oameni o văd, de unde vin și câți donează." : "Câți oameni îți văd campaniile, de unde vin și câți donează."}
+          </p>
         </div>
         <nav aria-label="Perioadă" className="flex gap-1 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-1">
           {PERIOADE.map((p) => (
             <Link
               key={p.zile}
               prefetch={false}
-              href={`/${orgSlug}/crm/statistici-campanii?zile=${p.zile}`}
+              href={`/${orgSlug}/crm/statistici-campanii?zile=${p.zile}${sufixCampanie}`}
               aria-current={p.zile === zile ? "page" : undefined}
               className={`rounded-[calc(var(--ci-radius-btn)-2px)] px-3 py-1.5 text-[13px] font-medium transition ${
                 p.zile === zile ? "bg-[var(--ci-primary)] text-white" : "text-[var(--ci-text-muted)] hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)]"
@@ -141,6 +145,31 @@ export function StatisticiVedere({ orgSlug, zile, d }: { orgSlug: string; zile: 
           ))}
         </nav>
       </div>
+
+      {d.pagini.length > 1 && (
+        <form method="get" className="flex flex-wrap items-center gap-2 text-[13px]">
+          <input type="hidden" name="zile" value={zile} />
+          <label htmlFor="campanie" className="text-[var(--ci-text-muted)]">
+            Campania:
+          </label>
+          <select id="campanie" name="campanie" defaultValue={campanie?.id ?? ""} className="max-w-[320px] rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-2.5 py-1.5 text-[13px] text-[var(--ci-text)]">
+            <option value="">Toate campaniile</option>
+            {d.pagini.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.titlu}
+              </option>
+            ))}
+          </select>
+          <button type="submit" className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-1.5 font-medium text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]">
+            Afișează
+          </button>
+          {campanie && (
+            <Link prefetch={false} href={`/${orgSlug}/crm/statistici-campanii?zile=${zile}`} className="font-medium text-[var(--ci-primary)] hover:underline">
+              Toate campaniile
+            </Link>
+          )}
+        </form>
+      )}
 
       <div className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface-2)] px-4 py-3 text-[12.5px] leading-relaxed text-[var(--ci-text-muted)]">
         {incepeMasurarea ? (
@@ -204,6 +233,7 @@ export function StatisticiVedere({ orgSlug, zile, d }: { orgSlug: string; zile: 
             <GraficeTrafic date={grafic} />
           </Card>
 
+          {!campanie && (
           <Card padded={false}>
             <div className="p-5 pb-3">
               <CardHeader title="Pe campanii" subtitle="Doar campaniile cu vizite sau donații în perioada aleasă." />
@@ -246,6 +276,7 @@ export function StatisticiVedere({ orgSlug, zile, d }: { orgSlug: string; zile: 
               </div>
             )}
           </Card>
+          )}
 
           <div className="grid gap-5 lg:grid-cols-2">
             <Card>

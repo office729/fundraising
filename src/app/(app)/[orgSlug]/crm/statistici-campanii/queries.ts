@@ -5,19 +5,21 @@ import { campaignPageEvents, fundraisingDonations, fundraisingPages } from "@/li
 
 const ziuaRoSql = sql`(timezone('Europe/Bucharest', now()))::date`;
 
-export async function incarcaStatistici(dbx: typeof db, orgId: string, orgSlug: string, zile: number) {
+// `pageId` (opțional) restrânge totul la o singură campanie.
+export async function incarcaStatistici(dbx: typeof db, orgId: string, orgSlug: string, zile: number, pageId?: string) {
   const de = sql`(${ziuaRoSql} - ${zile - 1}::int)`;
   const ev = campaignPageEvents;
-  const dOrg = and(eq(ev.orgId, orgId), sql`${ev.ziua} >= ${de}`);
+  const dOrg = and(eq(ev.orgId, orgId), sql`${ev.ziua} >= ${de}`, pageId ? eq(ev.pageId, pageId) : undefined);
   const donOrg = and(
     eq(fundraisingDonations.orgId, orgId),
     eq(fundraisingDonations.status, "reusita"),
     sql`(timezone('Europe/Bucharest', ${fundraisingDonations.createdAt}))::date >= ${de}`,
+    pageId ? eq(fundraisingDonations.pageId, pageId) : undefined,
   );
   const venitNet = sql<number>`coalesce(sum(${fundraisingDonations.suma} - ${fundraisingDonations.sumaRambursata}), 0)::int`;
 
   const [prima, global, zilnic, perPagina, surse, sursaDetalii, dispozitive, tari, utm, donGlobal, donZilnic, donPerPagina, donSursa, pagini] = await Promise.all([
-    dbx.select({ prima: sql<string | null>`min(${ev.ziua})::text` }).from(ev).where(eq(ev.orgId, orgId)),
+    dbx.select({ prima: sql<string | null>`min(${ev.ziua})::text` }).from(ev).where(and(eq(ev.orgId, orgId), pageId ? eq(ev.pageId, pageId) : undefined)),
     dbx
       .select({
         tip: ev.tip,
@@ -98,4 +100,27 @@ export async function incarcaStatistici(dbx: typeof db, orgId: string, orgSlug: 
   ]);
 
   return { orgSlug, prima: prima[0]?.prima ?? null, global, zilnic, perPagina, surse, sursaDetalii, dispozitive, tari, utm, donGlobal: donGlobal[0]!, donZilnic, donPerPagina, donSursa, pagini };
+}
+
+// Cifrele din rândul fiecărei campanii din lista din CRM: vizitatori unici (zile-vizitator) și donații din ultimele `zile` zile.
+export async function rezumatCampanii(dbx: typeof db, orgId: string, zile = 30) {
+  const de = sql`(${ziuaRoSql} - ${zile - 1}::int)`;
+  const [vizite, donatii] = await Promise.all([
+    dbx
+      .select({ pageId: campaignPageEvents.pageId, vizitatori: sql<number>`count(distinct (${campaignPageEvents.ziua}::text || ${campaignPageEvents.vizitator}))::int` })
+      .from(campaignPageEvents)
+      .where(and(eq(campaignPageEvents.orgId, orgId), eq(campaignPageEvents.tip, "vizita"), sql`${campaignPageEvents.ziua} >= ${de}`))
+      .groupBy(campaignPageEvents.pageId),
+    dbx
+      .select({ pageId: fundraisingDonations.pageId, donatii: sql<number>`count(*)::int` })
+      .from(fundraisingDonations)
+      .where(and(eq(fundraisingDonations.orgId, orgId), eq(fundraisingDonations.status, "reusita"), sql`(timezone('Europe/Bucharest', ${fundraisingDonations.createdAt}))::date >= ${de}`))
+      .groupBy(fundraisingDonations.pageId),
+  ]);
+  return new Map(
+    [...new Set([...vizite.map((v) => v.pageId), ...donatii.map((d) => d.pageId)])].map((id) => [
+      id,
+      { vizitatori: vizite.find((v) => v.pageId === id)?.vizitatori ?? 0, donatii: donatii.find((d) => d.pageId === id)?.donatii ?? 0 },
+    ]),
+  );
 }

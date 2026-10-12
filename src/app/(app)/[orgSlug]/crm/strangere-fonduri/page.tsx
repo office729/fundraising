@@ -1,5 +1,5 @@
 import { and, desc, eq, sql } from "drizzle-orm";
-import { ExternalLink } from "lucide-react";
+import { BarChart3, ExternalLink } from "lucide-react";
 import Link from "next/link";
 
 import { withOrgSession } from "@/lib/auth/guard";
@@ -17,9 +17,11 @@ import { STRANGERE_FONDURI_DICT } from "@/lib/i18n/dictionaries/strangere-fondur
 import { AddPageButton, CopyCreateLinkButton, CopyPageLinkButton, DeletePageButton, EditPageButton, ToggleStatusButton } from "./client";
 import { titluAbsolut } from "@/lib/page-titles";
 
+import { rezumatCampanii } from "../statistici-campanii/queries";
+
 const getPagini = withOrgSession(async (ctx) => {
   // Citiri independente — rulează împreună pe aceeași conexiune, nu secvențial.
-  const [[{ totalStrans }], [{ totalDonatii }], pagini, topDonatori, [org]] = await Promise.all([
+  const [[{ totalStrans }], [{ totalDonatii }], pagini, topDonatori, [org], rezumat] = await Promise.all([
     ctx.db
       .select({ totalStrans: sql<number>`coalesce(sum(${fundraisingPages.sumaStransa}), 0)::int` })
       .from(fundraisingPages)
@@ -43,17 +45,19 @@ const getPagini = withOrgSession(async (ctx) => {
       .orderBy(desc(fundraisingDonations.suma))
       .limit(10),
     ctx.db.select({ customPlanConfig: organizations.customPlanConfig, logoUrl: organizations.logoUrl }).from(organizations).where(eq(organizations.id, ctx.orgId)).limit(1),
+    // Cifre din ultimele 30 de zile pentru fiecare campanie (vizitatori și donații) — detaliul e în pagina de statistici.
+    rezumatCampanii(ctx.db, ctx.orgId, 30),
   ]);
   const customPlanConfig = org?.customPlanConfig as CustomPlanConfigSaved | null;
   const templateuriDisponibile = getTemplatesDisponibile(ctx.orgDomeniuActivitate, Boolean(customPlanConfig?.accesDesignToate));
 
   const contact = { nume: ctx.userName ?? "", email: ctx.userEmail };
-  return { totalStrans, totalDonatii, pagini, topDonatori, templateuriDisponibile, contact, orgNume: ctx.orgName, orgLogoUrl: org?.logoUrl ?? null, domeniu: ctx.orgDomeniuActivitate };
+  return { totalStrans, totalDonatii, pagini, topDonatori, rezumat, templateuriDisponibile, contact, orgNume: ctx.orgName, orgLogoUrl: org?.logoUrl ?? null, domeniu: ctx.orgDomeniuActivitate };
 });
 
 export default async function StrangereFonduriPage({ params }: { params: Promise<{ orgSlug: string }> }) {
   const { orgSlug } = await params;
-  const { totalStrans, totalDonatii, pagini, topDonatori, templateuriDisponibile, contact, orgNume, orgLogoUrl, domeniu } = await getPagini(orgSlug);
+  const { totalStrans, totalDonatii, pagini, topDonatori, rezumat, templateuriDisponibile, contact, orgNume, orgLogoUrl, domeniu } = await getPagini(orgSlug);
   const locale = await getLocale();
   const dict = STRANGERE_FONDURI_DICT[locale].page;
 
@@ -123,6 +127,21 @@ export default async function StrangereFonduriPage({ params }: { params: Promise
                     </span>
                     <span className={`shrink-0 ${p.judet ? "" : "italic text-[var(--ci-text-faint)]"}`}>{p.judet ? `📍 ${p.judet}` : "județ necompletat"}</span>
                   </p>
+                  {(() => {
+                    const z = rezumat.get(p.id);
+                    return (
+                      <p className="ci-tabular mt-0.5 text-[12px] text-[var(--ci-text-muted)]">
+                        {z && (z.vizitatori > 0 || z.donatii > 0) ? (
+                          <>
+                            Ultimele 30 de zile: <b className="font-semibold text-[var(--ci-text)]">{z.vizitatori.toLocaleString("ro-RO")}</b> vizitatori · <b className="font-semibold text-[var(--ci-text)]">{z.donatii.toLocaleString("ro-RO")}</b> donații
+                            {z.vizitatori > 0 ? ` · conversie ${((z.donatii / z.vizitatori) * 100).toLocaleString("ro-RO", { maximumFractionDigits: 1 })}%` : ""}
+                          </>
+                        ) : (
+                          <span className="text-[var(--ci-text-faint)]">Încă nu sunt vizite măsurate în ultimele 30 de zile</span>
+                        )}
+                      </p>
+                    );
+                  })()}
                 </Link>
                 <div className="flex shrink-0 items-center gap-2">
                   <Badge tone={p.status === "activa" ? "green" : "neutral"} icon={false}>
@@ -140,6 +159,15 @@ export default async function StrangereFonduriPage({ params }: { params: Promise
                   >
                     <ExternalLink className="h-3.5 w-3.5" />
                   </a>
+                  <Link
+                    prefetch={false}
+                    href={`/${orgSlug}/crm/statistici-campanii?campanie=${p.id}`}
+                    title="Statistici campanie"
+                    aria-label={`Statistici: ${p.titlu}`}
+                    className="flex h-7 w-7 items-center justify-center rounded-[var(--ci-radius-btn)] text-[var(--ci-text-faint)] hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-primary)]"
+                  >
+                    <BarChart3 className="h-3.5 w-3.5" />
+                  </Link>
                   <CopyPageLinkButton orgSlug={orgSlug} pageSlug={p.slug} />
                   <EditPageButton orgSlug={orgSlug} pagina={p} templateuriDisponibile={templateuriDisponibile} />
                   <ToggleStatusButton orgSlug={orgSlug} id={p.id} status={p.status} />
