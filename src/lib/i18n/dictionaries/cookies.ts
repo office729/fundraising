@@ -6,13 +6,19 @@ export const COOKIES_DICT = {
     eyebrow: "Legal",
     titlu: "Politica de cookies",
     actualizatLabel: "Ultima actualizare",
-    actualizat: "6 octombrie 2026",
+    actualizat: "12 octombrie 2026",
     banner: {
       titlu: "Cookie-uri și statistici",
       text: "Folosim cookie-uri strict necesare pentru autentificare. Cu acordul tău, folosim și Google Analytics pentru statistici despre utilizarea site-ului (date pseudonimizate, nu complet anonime). Poți schimba alegerea oricând.",
       accept: "Accept statisticile",
       refuz: "Refuz",
       politica: "Politica de cookies",
+      textCuPublicitate: "Folosim cookie-uri strict necesare pentru autentificare. Cu acordul tău, pe care îl poți da separat pentru fiecare scop, folosim și Google Analytics (statistici despre utilizarea site-ului) și Meta Pixel (ca să-ți arătăm reclame Alexandrit pe Facebook și Instagram). Poți schimba alegerea oricând.",
+      statistici: "Statistici (Google Analytics): ne arată, agregat, cum este folosit site-ul",
+      publicitate: "Publicitate (Meta Pixel): ne ajută să-ți arătăm reclame Alexandrit pe Facebook și Instagram",
+      salveaza: "Salvează alegerea",
+      acceptaToate: "Accept toate",
+      refuzaToate: "Refuz toate",
     },
     setariLabel: "Modifică alegerea pentru cookie-uri",
     s1: {
@@ -24,6 +30,7 @@ export const COOKIES_DICT = {
       introBefore: "Platforma Alexandrit folosește",
       introBold: "strict necesare",
       introAfter: "pentru autentificare, fără acordul tău separat, fiindcă fără ele nu poți intra în cont. Nu folosim cookie-uri de marketing sau publicitate.",
+      introAfterCuPublicitate: "pentru autentificare, fără acordul tău separat, fiindcă fără ele nu poți intra în cont. Cookie-urile de analiză și de publicitate se folosesc doar cu acordul tău (secțiunile următoare).",
       tabelHeaders: { cookie: "Cookie", scop: "Scop", durata: "Durată" },
       randuri: [
         { nume: "sb-*-auth-token", scop: "Menține sesiunea de autentificare (Supabase Auth) — te ține conectat între vizite.", durata: "Sesiune sau persistent, în funcție de „Rămâi conectat” bifat la autentificare" },
@@ -41,6 +48,15 @@ export const COOKIES_DICT = {
       randuri: [
         { nume: "_ga", scop: "Distinge vizitatorii, pentru statistici agregate (Google Analytics).", durata: "Până la 2 ani" },
         { nume: "_ga_*", scop: "Păstrează starea sesiunii de vizită (Google Analytics).", durata: "Până la 2 ani" },
+      ],
+    },
+    sPublicitate: {
+      titlu: "3a. Cookie-uri de publicitate (doar cu acordul tău)",
+      text: "Dacă bifezi „Publicitate (Meta Pixel)” în banner, încărcăm Pixelul Meta (Meta Platforms Ireland Limited) doar pe paginile publice de prezentare ale site-ului (nu în aplicație, nu pe paginile de campanie sau de donație și nu pe Formularul 230). Pixelul ne spune că ai vizitat site-ul și ce acțiuni ai făcut (de exemplu înscrierea sau programarea unei discuții), ca să-ți putem arăta reclame Alexandrit pe Facebook și Instagram și să măsurăm rezultatul reclamelor. Nu trimitem date de contact și dezactivăm detectarea automată a butoanelor și a formularelor. Meta poate prelucra datele ca operator propriu și le poate transfera în afara Spațiului Economic European; vezi politica de confidențialitate Meta. Poți retrage oricând acordul din butonul de mai jos, iar cookie-urile se șterg.",
+      tabelHeaders: { cookie: "Cookie", scop: "Scop", durata: "Durată" },
+      randuri: [
+        { nume: "_fbp", scop: "Identifică browserul pentru măsurarea și țintirea reclamelor Meta.", durata: "Până la 3 luni" },
+        { nume: "_fbc", scop: "Păstrează click-ul pe o reclamă Meta, ca să putem măsura rezultatul ei (apare doar dacă ai ajuns pe site dintr-o reclamă).", durata: "Până la 3 luni" },
       ],
     },
     s3: {
@@ -64,13 +80,19 @@ export const COOKIES_DICT = {
     eyebrow: "Legal",
     titlu: "Cookie Policy",
     actualizatLabel: "Last updated",
-    actualizat: "October 6, 2026",
+    actualizat: "October 12, 2026",
     banner: {
       titlu: "Cookies and statistics",
       text: "We use strictly necessary cookies for sign-in. With your consent, we also use Google Analytics for statistics about how the site is used (pseudonymized data, not fully anonymous). You can change your choice at any time.",
       accept: "Accept statistics",
       refuz: "Decline",
       politica: "Cookie policy",
+      textCuPublicitate: "We use strictly necessary cookies for sign-in. With your consent, which you can give separately for each purpose, we also use Google Analytics (statistics about how the site is used) and Meta Pixel (to show you Alexandrit ads on Facebook and Instagram). You can change your choice at any time.",
+      statistici: "Statistics (Google Analytics): shows us, in aggregate, how the site is used",
+      publicitate: "Advertising (Meta Pixel): helps us show you Alexandrit ads on Facebook and Instagram",
+      salveaza: "Save choice",
+      acceptaToate: "Accept all",
+      refuzaToate: "Decline all",
     },
     setariLabel: "Change your cookie choice",
     s1: {
@@ -82,6 +104,7 @@ export const COOKIES_DICT = {
       introBefore: "The Alexandrit platform uses",
       introBold: "strictly necessary",
       introAfter: "cookies for authentication, without separate consent, because you can't sign in without them. We do not use marketing or advertising cookies.",
+      introAfterCuPublicitate: "for sign-in, without your separate consent, because you cannot sign in without them. Analytics and advertising cookies are used only with your consent (next sections).",
       tabelHeaders: { cookie: "Cookie", scop: "Purpose", durata: "Duration" },
       randuri: [
         { nume: "sb-*-auth-token", scop: "Maintains the authentication session (Supabase Auth) — keeps you signed in between visits.", durata: "Session or persistent, depending on whether \"Stay signed in\" was checked at login" },
@@ -99,6 +122,15 @@ export const COOKIES_DICT = {
       randuri: [
         { nume: "_ga", scop: "Distinguishes visitors, for aggregate statistics (Google Analytics).", durata: "Up to 2 years" },
         { nume: "_ga_*", scop: "Keeps the visit session state (Google Analytics).", durata: "Up to 2 years" },
+      ],
+    },
+    sPublicitate: {
+      titlu: "3a. Advertising cookies (only with your consent)",
+      text: "If you tick “Advertising (Meta Pixel)” in the banner, we load the Meta Pixel (Meta Platforms Ireland Limited) only on the site's public presentation pages (not in the app, not on campaign or donation pages and not on Form 230). The Pixel tells us that you visited the site and what actions you took (for example signing up or booking a call), so we can show you Alexandrit ads on Facebook and Instagram and measure how the ads perform. We send no contact data and turn off automatic detection of buttons and forms. Meta may process the data as its own controller and may transfer it outside the European Economic Area; see Meta's privacy policy. You can withdraw consent at any time with the button below, and the cookies are deleted.",
+      tabelHeaders: { cookie: "Cookie", scop: "Purpose", durata: "Duration" },
+      randuri: [
+        { nume: "_fbp", scop: "Identifies the browser for measuring and targeting Meta ads.", durata: "Up to 3 months" },
+        { nume: "_fbc", scop: "Stores a click on a Meta ad so we can measure its result (appears only if you reached the site from an ad).", durata: "Up to 3 months" },
       ],
     },
     s3: {

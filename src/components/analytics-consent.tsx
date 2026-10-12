@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { usePathname } from "next/navigation";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { CONSENT_KEY as STORAGE_KEY, ensureAnalyticsInit, GA_ID } from "@/lib/analytics";
+import { CONSENT_MARKETING_KEY, initMetaPixel, paginaNouaMeta, pixelConfigurat, revocaMeta } from "@/lib/meta-pixel";
 
 const REOPEN_EVENT = "fa-cookie-consent-reopen";
 const CHANGE_EVENT = "fa-cookie-consent-change";
@@ -16,21 +18,27 @@ export type BannerTexts = {
   accept: string;
   refuz: string;
   politica: string;
+  // Alegerea separată pentru publicitate (Pixelul Meta): apare doar dacă NEXT_PUBLIC_META_PIXEL_ID e setat.
+  textCuPublicitate: string;
+  statistici: string;
+  publicitate: string;
+  salveaza: string;
+  acceptaToate: string;
+  refuzaToate: string;
 };
 
-function citesteAlegerea(): Alegere | null {
+function citeste(cheie: string): Alegere | null {
   try {
-    const v = window.localStorage.getItem(STORAGE_KEY);
+    const v = window.localStorage.getItem(cheie);
     return v === "granted" || v === "denied" ? v : null;
   } catch {
     return null;
   }
 }
 
-function salveazaAlegerea(v: Alegere | null) {
+function salveaza(cheie: string, v: Alegere) {
   try {
-    if (v) window.localStorage.setItem(STORAGE_KEY, v);
-    else window.localStorage.removeItem(STORAGE_KEY);
+    window.localStorage.setItem(cheie, v);
   } catch {
     // Storage blocat: alegerea rămâne valabilă doar pe pagina curentă.
   }
@@ -57,7 +65,8 @@ function opresteAnalytics() {
 
 // "pending" = încă nu știm (randare pe server / înainte de hidratare) — bannerul
 // nu apare atunci, ca să nu clipească pentru cine a ales deja.
-type Stare = Alegere | "unset" | "pending";
+type Stare = { analytics: Alegere | "unset" | "pending"; marketing: Alegere | "unset" | "pending" };
+const SERVER: Stare = { analytics: "pending", marketing: "pending" };
 
 function aboneaza(onChange: () => void) {
   window.addEventListener(CHANGE_EVENT, onChange);
@@ -68,33 +77,65 @@ function aboneaza(onChange: () => void) {
   };
 }
 
-const snapshotClient = (): Stare => citesteAlegerea() ?? "unset";
-const snapshotServer = (): Stare => "pending";
+// Snapshot-ul trebuie să fie stabil între apeluri (altfel React se reîncarcă la infinit): îl păstrăm și îl înlocuim doar dacă s-a schimbat ceva.
+let ultim: Stare = SERVER;
+function snapshotClient(): Stare {
+  const nou: Stare = { analytics: citeste(STORAGE_KEY) ?? "unset", marketing: citeste(CONSENT_MARKETING_KEY) ?? "unset" };
+  if (nou.analytics !== ultim.analytics || nou.marketing !== ultim.marketing) ultim = nou;
+  return ultim;
+}
+const snapshotServer = (): Stare => SERVER;
 
 export function AnalyticsConsent({ texts }: { texts: BannerTexts }) {
   const stare = useSyncExternalStore(aboneaza, snapshotClient, snapshotServer);
+  const pathname = usePathname();
   const [redeschis, setRedeschis] = useState(false);
+  const cuPublicitate = pixelConfigurat();
+  const [bifaStatistici, setBifaStatistici] = useState(false);
+  const [bifaPublicitate, setBifaPublicitate] = useState(false);
+  const ultimaCale = useRef(pathname);
 
   useEffect(() => {
-    const redeschide = () => setRedeschis(true);
+    const redeschide = () => {
+      // La redeschidere, casetele arată alegerea curentă.
+      setBifaStatistici(citeste(STORAGE_KEY) === "granted");
+      setBifaPublicitate(citeste(CONSENT_MARKETING_KEY) === "granted");
+      setRedeschis(true);
+    };
     window.addEventListener(REOPEN_EVENT, redeschide);
     return () => window.removeEventListener(REOPEN_EVENT, redeschide);
   }, []);
 
-  const alege = useCallback((v: Alegere) => {
-    salveazaAlegerea(v);
+  const aplica = useCallback((statistici: boolean, publicitate: boolean) => {
+    salveaza(STORAGE_KEY, statistici ? "granted" : "denied");
+    if (pixelConfigurat()) salveaza(CONSENT_MARKETING_KEY, publicitate ? "granted" : "denied");
     window.dispatchEvent(new Event(CHANGE_EVENT));
     setRedeschis(false);
-    if (v === "denied") opresteAnalytics();
+    if (!statistici) opresteAnalytics();
     else (window as unknown as Record<string, unknown>)[`ga-disable-${GA_ID}`] = false;
+    if (pixelConfigurat() && !publicitate) revocaMeta();
   }, []);
 
-  const alegere = stare === "granted" || stare === "denied" ? stare : null;
-  const bannerDeschis = stare === "unset" || (stare !== "pending" && redeschis);
+  const statisticiAcceptate = stare.analytics === "granted";
+  const publicitateAcceptata = stare.marketing === "granted";
+  const necunoscut = stare.analytics === "pending";
+  // Dacă există Pixel configurat, cine a ales deja doar pentru statistici e întrebat o singură dată și despre publicitate.
+  const bannerDeschis = !necunoscut && (stare.analytics === "unset" || (cuPublicitate && stare.marketing === "unset") || redeschis);
 
   useEffect(() => {
-    if (alegere === "granted") ensureAnalyticsInit();
-  }, [alegere]);
+    if (statisticiAcceptate) ensureAnalyticsInit();
+  }, [statisticiAcceptate]);
+
+  useEffect(() => {
+    if (publicitateAcceptata) initMetaPixel();
+  }, [publicitateAcceptata]);
+
+  // PageView Meta la navigarea între pagini (prima încărcare e trimisă de initMetaPixel).
+  useEffect(() => {
+    if (ultimaCale.current === pathname) return;
+    ultimaCale.current = pathname;
+    if (publicitateAcceptata) paginaNouaMeta();
+  }, [pathname, publicitateAcceptata]);
 
   return (
     <>
@@ -108,25 +149,46 @@ export function AnalyticsConsent({ texts }: { texts: BannerTexts }) {
             {texts.titlu}
           </p>
           <p className="mt-1.5 text-[13px] leading-relaxed text-body">
-            {texts.text}{" "}
+            {cuPublicitate ? texts.textCuPublicitate : texts.text}{" "}
             <Link href="/cookies" className="font-medium text-brand-green underline">
               {texts.politica}
             </Link>
           </p>
+          {cuPublicitate && (
+            <div className="mt-3 flex flex-col gap-2 text-[13px] text-ink">
+              <label className="flex items-start gap-2">
+                <input type="checkbox" checked={bifaStatistici} onChange={(e) => setBifaStatistici(e.target.checked)} className="mt-0.5 h-4 w-4 rounded border-line" />
+                <span>{texts.statistici}</span>
+              </label>
+              <label className="flex items-start gap-2">
+                <input type="checkbox" checked={bifaPublicitate} onChange={(e) => setBifaPublicitate(e.target.checked)} className="mt-0.5 h-4 w-4 rounded border-line" />
+                <span>{texts.publicitate}</span>
+              </label>
+            </div>
+          )}
           <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:justify-end">
             <button
               type="button"
-              onClick={() => alege("denied")}
+              onClick={() => aplica(false, false)}
               className="rounded-md border border-line bg-panel px-4 py-2 text-sm font-bold text-ink transition hover:bg-panel-2"
             >
-              {texts.refuz}
+              {cuPublicitate ? texts.refuzaToate : texts.refuz}
             </button>
+            {cuPublicitate && (
+              <button
+                type="button"
+                onClick={() => aplica(bifaStatistici, bifaPublicitate)}
+                className="rounded-md border border-line bg-panel px-4 py-2 text-sm font-bold text-ink transition hover:bg-panel-2"
+              >
+                {texts.salveaza}
+              </button>
+            )}
             <button
               type="button"
-              onClick={() => alege("granted")}
+              onClick={() => aplica(true, true)}
               className="rounded-md bg-brand-green px-4 py-2 text-sm font-bold text-white transition hover:bg-brand-green-hover"
             >
-              {texts.accept}
+              {cuPublicitate ? texts.acceptaToate : texts.accept}
             </button>
           </div>
         </div>

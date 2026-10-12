@@ -21,13 +21,13 @@ const csp = [
   // publică de donații (butoanele Apple Pay/Google Pay/PayPal, Elements) —
   // vezi express-checkout.tsx. Fără el, loadStripe() eșuează silențios (CSP
   // blochează scriptul, fără nicio eroare vizibilă donatorului).
-  `script-src 'self' 'unsafe-inline' https://assets.calendly.com https://www.googletagmanager.com https://js.stripe.com${isDev ? " 'unsafe-eval'" : ""}`,
+  `script-src 'self' 'unsafe-inline' https://assets.calendly.com https://www.googletagmanager.com https://connect.facebook.net https://js.stripe.com${isDev ? " 'unsafe-eval'" : ""}`,
   `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://assets.calendly.com`,
   `img-src 'self' data: blob: https:`,
   `font-src 'self' data: https://fonts.gstatic.com`,
   // `data:` — necesar ca fetch() să poată citi imaginea semnăturii olografe
   // (canvas.toDataURL) la completarea PDF-ului Formularului 230 (pdf-lib).
-  `connect-src 'self' data: https://fonts.googleapis.com https://fonts.gstatic.com https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://js.stripe.com https://m.stripe.network https://calendly.com https://*.ingest.sentry.io https://*.ingest.de.sentry.io https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://*.twilio.com wss://*.twilio.com${isDev ? " ws:" : ""}`,
+  `connect-src 'self' data: https://fonts.googleapis.com https://fonts.gstatic.com https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://js.stripe.com https://m.stripe.network https://calendly.com https://*.ingest.sentry.io https://*.ingest.de.sentry.io https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://connect.facebook.net https://www.facebook.com https://*.twilio.com wss://*.twilio.com${isDev ? " ws:" : ""}`,
   // js.stripe.com/pay.google.com — iframe-uri interne folosite de Stripe
   // Elements (ExpressCheckoutElement) pentru Google Pay/Link; checkout.stripe.com
   // rămâne pentru fluxul vechi (redirect Checkout Session), neatins.

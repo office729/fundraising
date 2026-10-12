@@ -1,4 +1,5 @@
 import { esteCaleExclusa } from "./analytics-cale";
+import { trimiteLaMeta } from "./meta-pixel";
 import { caleReala } from "./link-campanie";
 import { esteSlugRezervat } from "./reserved-slugs";
 
@@ -71,6 +72,8 @@ export function ensureAnalyticsInit() {
 }
 
 export function trackEvent(name: string, params: Record<string, unknown> = {}) {
+  // Pixelul Meta are acord propriu (cookie-uri de publicitate), independent de cel pentru statistici.
+  trimiteLaMeta(name);
   if (typeof window === "undefined" || !esteAcordDat()) return;
   if (esteCaleExclusaDinAnaliza(window.location.pathname)) return;
   ensureAnalyticsInit();

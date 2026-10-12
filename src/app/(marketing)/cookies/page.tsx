@@ -8,6 +8,8 @@ import { metadatePagina } from "@/lib/page-titles";
 export default async function CookiesPage() {
   const locale = await getLocale();
   const dict = COOKIES_DICT[locale];
+  // Secțiunea despre publicitate apare doar dacă Pixelul Meta este configurat (NEXT_PUBLIC_META_PIXEL_ID).
+  const pixel = Boolean(process.env.NEXT_PUBLIC_META_PIXEL_ID);
 
   return (
     <LegalLayout
@@ -24,7 +26,7 @@ export default async function CookiesPage() {
 
       <Sectiune titlu={dict.s2.titlu}>
         <p>
-          {dict.s2.introBefore} <strong>{dict.s2.introBold}</strong> {dict.s2.introAfter}
+          {dict.s2.introBefore} <strong>{dict.s2.introBold}</strong> {pixel ? dict.s2.introAfterCuPublicitate : dict.s2.introAfter}
         </p>
         <div className="overflow-x-auto rounded-lg border border-line">
           <table className="w-full text-left text-[13px]">
@@ -71,6 +73,32 @@ export default async function CookiesPage() {
           </table>
         </div>
       </Sectiune>
+
+      {pixel && (
+        <Sectiune titlu={dict.sPublicitate.titlu}>
+          <p>{dict.sPublicitate.text}</p>
+          <div className="overflow-x-auto rounded-lg border border-line">
+            <table className="w-full text-left text-[13px]">
+              <thead className="bg-panel-2">
+                <tr>
+                  <th className="p-2.5 font-semibold text-ink">{dict.sPublicitate.tabelHeaders.cookie}</th>
+                  <th className="p-2.5 font-semibold text-ink">{dict.sPublicitate.tabelHeaders.scop}</th>
+                  <th className="p-2.5 font-semibold text-ink">{dict.sPublicitate.tabelHeaders.durata}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dict.sPublicitate.randuri.map((c) => (
+                  <tr key={c.nume} className="border-t border-line">
+                    <td className="p-2.5 font-mono text-[12px] text-brand-blue">{c.nume}</td>
+                    <td className="p-2.5 text-body">{c.scop}</td>
+                    <td className="p-2.5 text-muted-2">{c.durata}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Sectiune>
+      )}
 
       <Sectiune titlu={dict.s3.titlu}>
         <p>
