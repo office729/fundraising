@@ -13,7 +13,7 @@ Data: 2026-10-12 · Surse: Lusha, Apollo.io, termene.ro, targetare.ro, risco.ro,
 | Nume | Funcție | Prioritate | Email | Telefon | LinkedIn | Sursă | Încredere |
 |---|---|---|---|---|---|---|---|
 | Zhang Dong | Administrator / Director general | 1 (decident final) | – | – | – | Kompass, termene.ro (nu apare în Lusha/Apollo) | Mediu |
-| Adrian Puiu | Manager de marketing (din 2021) | 2 (marketing, poate propune intern) | adrian.puiu@honest.ro | – | linkedin.com/in/adrian-puiu-9a6a51b5 | Lusha + Apollo (Apollo: „verificat”) | Ridicat |
+| Adrian Puiu | Manager de marketing (din 2021) | 2 (marketing, poate propune intern) | adrian.puiu@honest.ro | +40 761 989 876 (mobil, Apollo, valid, încredere ridicată) | linkedin.com/in/adrian-puiu-9a6a51b5 | Lusha + Apollo (Apollo: „verificat”) | Ridicat |
 
 Nu am găsit director financiar, director economic, resurse umane (HR) sau responsabil CSR în Lusha ori Apollo.
 Căi de acces: Adrian Puiu, care poate duce propunerea la administrator, apoi secretariatul (+40 371 503 730) și o scrisoare adresată administratorului Zhang Dong, la sediul din Glina.
