@@ -277,7 +277,13 @@ export function DoneazaForm({
         </label>
         <label className="flex items-start gap-2 text-[13px] text-body">
           <input type="checkbox" name="consimtamantTermeni" required className="mt-0.5 h-4 w-4 rounded border-line" />
-          <span>{t.acordTermeniPre}</span>
+          <span>
+            {t.acordTermeniPre}{" "}
+            <a href="/termeni-donatori" target="_blank" rel="noopener noreferrer" className="font-medium text-brand-green underline">
+              {t.acordTermeniLink}
+            </a>
+            .
+          </span>
         </label>
       </div>
 

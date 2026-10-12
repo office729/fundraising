@@ -27,6 +27,8 @@ export function NotaInformareDonatie({ locale, orgName, orgCif }: { locale: Loca
           <li>{n.scop}</li>
           <li>{n.optional}</li>
           <li>{n.destinatari}</li>
+          <li>{n.trafic}</li>
+          <li>{n.portal}</li>
           <li>{n.pastrare}</li>
           <li>
             {n.drepturiPre(orgName)}{" "}

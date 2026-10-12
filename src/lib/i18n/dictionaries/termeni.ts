@@ -1,5 +1,7 @@
 import type { Locale } from "../config";
 
+import { COMPLETARI_TERMENI } from "./termeni-completari";
+
 // Termeni și condiții — platforma Alexandrit (CRM pentru ONG-uri), operată de Medigroupplus SRL.
 // Proiect de lucru: trebuie verificat de un jurist înainte de a fi considerat definitiv (vezi DraftBanner).
 export type SectiuneLegala = { titlu: string; paragrafe?: string[]; puncte?: string[]; incheiere?: string[] };
@@ -10,7 +12,7 @@ export const TERMENI_DICT = {
     eyebrow: "Legal",
     titlu: "Termeni și condiții",
     actualizatLabel: "Ultima actualizare",
-    actualizat: "6 octombrie 2026",
+    actualizat: "12 octombrie 2026",
     sectiuni: [
       {
         titlu: "1. Aspecte generale și identificarea operatorului",
@@ -171,12 +173,13 @@ export const TERMENI_DICT = {
         titlu: "20. Protecția datelor și cookie-uri",
         paragrafe: ["Modul în care prelucrăm date personale este descris în Politica de confidențialitate (GDPR), iar cookie-urile sunt descrise în Politica de cookies. Ambele fac parte din acești Termeni."],
       },
+      ...COMPLETARI_TERMENI.ro,
       {
-        titlu: "21. Legea aplicabilă și soluționarea litigiilor",
+        titlu: "33. Legea aplicabilă și soluționarea litigiilor",
         paragrafe: ["Acești Termeni sunt guvernați de legea română. Orice neînțelegere se rezolvă în primul rând pe cale amiabilă; dacă nu este posibil, litigiul se soluționează de instanțele judecătorești competente de la sediul Operatorului, din România."],
       },
       {
-        titlu: "22. Dispoziții finale și contact",
+        titlu: "34. Dispoziții finale și contact",
         paragrafe: [
           "Putem actualiza acești Termeni, de exemplu pentru schimbări legislative sau ale serviciilor. Versiunea în vigoare este cea publicată aici, cu data ultimei actualizări; pentru modificări importante te anunțăm prin email sau în Platformă. Continuarea utilizării după publicare înseamnă acceptarea noii versiuni. Campaniile sau ofertele speciale pot avea condiții suplimentare, care se aplică cu prioritate. Dacă o clauză este nulă sau inaplicabilă, restul Termenilor rămâne valabil.",
           "Pentru orice întrebare sau sesizare: MEDIGROUPPLUS SRL, CUI 38103518, J07/617/2017, Str. Prieteniei nr. 4, sat Boscoteni, comuna Frumușica, județul Botoșani — email vlad.placinta@alexandrit.ro, telefon 0757 401 042 (suport tehnic: andrei.placinta@alexandrit.ro, 0721 425 650).",
@@ -189,7 +192,7 @@ export const TERMENI_DICT = {
     eyebrow: "Legal",
     titlu: "Terms and Conditions",
     actualizatLabel: "Last updated",
-    actualizat: "October 6, 2026",
+    actualizat: "October 12, 2026",
     sectiuni: [
       {
         titlu: "1. General aspects and operator identification",
@@ -346,12 +349,13 @@ export const TERMENI_DICT = {
         titlu: "20. Data protection and cookies",
         paragrafe: ["How we process personal data is described in the Privacy Policy (GDPR), and cookies in the Cookie Policy. Both form part of these Terms."],
       },
+      ...COMPLETARI_TERMENI.en,
       {
-        titlu: "21. Governing law and disputes",
+        titlu: "33. Governing law and disputes",
         paragrafe: ["These Terms are governed by Romanian law. Any dispute is first resolved amicably; if that is not possible, it is settled by the competent courts at the Operator's registered office, in Romania."],
       },
       {
-        titlu: "22. Final provisions and contact",
+        titlu: "34. Final provisions and contact",
         paragrafe: [
           "We may update these Terms, for example for legal or service changes. The version in force is the one published here with the last-updated date; for important changes we notify you by email or in the Platform. Continued use after publication means acceptance of the new version. Special campaigns or offers may carry additional conditions, which apply with priority. If a clause is void or unenforceable, the rest of the Terms remains valid.",
           "For any question or complaint: MEDIGROUPPLUS SRL, Tax ID 38103518, J07/617/2017, Str. Prieteniei nr. 4, Boscoteni village, Frumușica commune, Botoșani county — email vlad.placinta@alexandrit.ro, phone 0757 401 042 (technical support: andrei.placinta@alexandrit.ro, 0721 425 650).",

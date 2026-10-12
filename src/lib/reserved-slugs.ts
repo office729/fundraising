@@ -43,6 +43,7 @@ const RESERVED_SLUGS = new Set([
   "strangere-fonduri",
   "studii-de-caz",
   "termeni",
+  "termeni-donatori",
   "vlad-placinta",
   "voluntar",
 ]);

@@ -52,6 +52,9 @@ export function CampaignFooter({
         <Link href={`/strangere-fonduri/${orgSlug}/donator`} className="text-[13px] font-medium text-muted-2 underline-offset-2 hover:text-brand-blue hover:underline">
           {PORTAL_DONATOR_DICT[locale].linkInSubsol}
         </Link>
+        <Link href="/termeni-donatori" className="text-[13px] font-medium text-muted-2 underline-offset-2 hover:text-brand-blue hover:underline">
+          {t.termeniDonatori}
+        </Link>
         <p className="max-w-md text-[11.5px] leading-relaxed text-muted-2">{t.masurare}</p>
       </div>
     </footer>

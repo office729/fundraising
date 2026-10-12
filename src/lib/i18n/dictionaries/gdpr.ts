@@ -9,7 +9,7 @@ export const GDPR_DICT = {
     eyebrow: "Legal",
     titlu: "Politica de confidențialitate (GDPR)",
     actualizatLabel: "Ultima actualizare",
-    actualizat: "6 octombrie 2026",
+    actualizat: "12 octombrie 2026",
     sectiuni: [
       {
         titlu: "1. Cine suntem și în ce calitate prelucrăm date",
@@ -112,6 +112,8 @@ export const GDPR_DICT = {
           "Rolul nostru este strict tehnic: găzduim aplicația în care organizația își introduce și gestionează datele, izolat de alte organizații, ca persoană împuternicită. Nu accesăm datele unei organizații decât la cererea ei, pentru suport tehnic, sau când legea ne obligă; nu le comunicăm terților (în afara sub-procesatorilor tehnici de la punctul 4) și nu le combinăm cu alte date.",
           "Prin acordul de prelucrare (DPA, disponibil la alexandrit.ro/dpa și acceptat de organizație la crearea contului sau din Setări) ne angajăm, printre altele, să: păstrăm confidențialitatea; aplicăm măsuri de securitate adecvate; folosim sub-procesatori doar cu informarea organizației; asistăm organizația în exercitarea drepturilor persoanelor vizate; o notificăm fără întârzieri nejustificate despre incidente; și, la încetarea contractului, ștergem sau returnăm datele, în afara celor pe care legea ne obligă să le păstrăm.",
           "Organizația se asigură că are temei legal pentru datele introduse (consimțământ, contract, interes legitim), că își informează persoanele vizate și respectă regulile privind comunicările comerciale, inclusiv dezabonarea.",
+          "Pagini publice de donații: pentru paginile de campanie ale unei organizații prelucrăm, ca persoană împuternicită și la instrucțiunile organizației, date tehnice despre vizite: o amprentă zilnică pseudonimizată (calculată din adresa IP, browser și ziua, fără a stoca adresa IP), sursa vizitei (de exemplu rețea socială sau căutare), tipul dispozitivului, țara și dacă s-a deschis formularul de donație. Nu folosim cookie-uri și nu citim sau scriem nimic în dispozitivul tău. Scopul este ca organizația să vadă câți oameni îi susțin campaniile (interes legitim, art. 6 alin. (1) lit. f din GDPR); datele se păstrează 13 luni, apoi se șterg automat, iar vizitele echipelor autentificate și ale roboților nu se numără. Te poți opune activând „Nu mă urmări” (DNT/GPC) în browser sau scriind organizației. Paginile publice de campanie sunt excluse din Google Analytics.",
+          "Donatorii lunari primesc un e-mail cu un link valabil o oră pentru a-și gestiona donația (schimbarea sumei, pauză, oprire, actualizarea cardului); adresa de e-mail este folosită în acest scop (executarea donației), iar organizația este informată despre modificările făcute.",
         ],
       },
       {
@@ -124,7 +126,7 @@ export const GDPR_DICT = {
       },
       {
         titlu: "11. Cookie-uri",
-        paragrafe: ["Folosim cookie-uri strict necesare funcționării (de exemplu sesiunea de autentificare) și, doar cu acordul tău, cookie-uri de analiză. Detalii și opțiuni de gestionare găsești în Politica de cookies."],
+        paragrafe: ["Folosim cookie-uri strict necesare funcționării (de exemplu sesiunea de autentificare) și, doar cu acordul tău, cookie-uri de analiză. Detalii și opțiuni de gestionare găsești în Politica de cookies. Măsurarea vizitelor pe paginile publice de campanie nu folosește cookie-uri (vezi punctul 9)."],
       },
       {
         titlu: "12. Modificări ale acestei politici",
@@ -141,7 +143,7 @@ export const GDPR_DICT = {
     eyebrow: "Legal",
     titlu: "Privacy Policy (GDPR)",
     actualizatLabel: "Last updated",
-    actualizat: "October 6, 2026",
+    actualizat: "October 12, 2026",
     sectiuni: [
       {
         titlu: "1. Who we are and in what capacity we process data",
@@ -244,6 +246,8 @@ export const GDPR_DICT = {
           "Our role is strictly technical: we host the application in which the organization enters and manages its data, isolated from other organizations, as a data processor. We do not access an organization's data except at its request, for technical support, or when the law requires us to; we do not disclose it to third parties (other than the technical sub-processors in section 4) and do not combine it with other data.",
           "Under the data processing agreement (DPA, available at alexandrit.ro/dpa and accepted by the organization when creating the account or from Settings) we undertake, among other things, to: keep it confidential; apply appropriate security measures; use sub-processors only with notice to the organization; assist the organization in handling data subjects' rights; notify it without undue delay of incidents; and, at the end of the contract, delete or return the data, except what the law requires us to keep.",
           "The organization ensures it has a legal basis for the data entered (consent, contract, legitimate interest), that it informs its data subjects and follows the rules on commercial communications, including unsubscribing.",
+          "Public donation pages: for an organization's campaign pages we process, as a processor and on the organization's instructions, technical visit data: a pseudonymised daily fingerprint (calculated from the IP address, browser and day, without storing the IP address), the visit source (for example social network or search), device type, country and whether the donation form was opened. We use no cookies and read or write nothing on your device. The purpose is for the organization to see how many people support its campaigns (legitimate interest, Art. 6(1)(f) GDPR); the data is kept for 13 months and then deleted automatically, and visits by signed-in team members and by robots are not counted. You can object by turning on “Do Not Track” (DNT/GPC) in your browser or by writing to the organization. Public campaign pages are excluded from Google Analytics.",
+          "Monthly donors receive an e-mail with a link, valid for one hour, to manage their donation (change the amount, pause, stop, update the card); the e-mail address is used for this purpose (performance of the donation), and the organization is informed of the changes made.",
         ],
       },
       {
@@ -256,7 +260,7 @@ export const GDPR_DICT = {
       },
       {
         titlu: "11. Cookies",
-        paragrafe: ["We use cookies strictly necessary for operation (for example the authentication session) and, only with your consent, analytics cookies. Details and options are in the Cookie Policy."],
+        paragrafe: ["We use cookies strictly necessary for operation (for example the authentication session) and, only with your consent, analytics cookies. Details and options are in the Cookie Policy. Measuring visits on public campaign pages uses no cookies (see point 9)."],
       },
       {
         titlu: "12. Changes to this policy",

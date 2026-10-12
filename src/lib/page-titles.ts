@@ -26,6 +26,7 @@ const TITLURI = {
   premii: { ro: "Premii", en: "Awards" },
   "studii-de-caz": { ro: "Studii de caz", en: "Case studies" },
   termeni: { ro: "Termeni și condiții", en: "Terms and conditions" },
+  "termeni-donatori": { ro: "Termeni pentru donatori", en: "Terms for donors" },
   "vlad-placinta": { ro: "Vlad Plăcintă", en: "Vlad Plăcintă" },
   login: { ro: "Autentificare", en: "Sign in" },
   signup: { ro: "Creează cont", en: "Create account" },
@@ -178,6 +179,10 @@ const DESCRIERI: Partial<Record<PaginaCuTitlu, { ro: string; en: string }>> = {
     ro: "Termenii și condițiile de utilizare a platformei Alexandrit: abonamente, plăți, responsabilități și încetarea contractului.",
     en: "Terms and conditions for using the Alexandrit platform: subscriptions, payments, responsibilities and termination.",
   },
+  "termeni-donatori": {
+    ro: "Termenii și condițiile pentru donatori: donații voluntare și lunare, rambursări, afișarea numelui și datele personale.",
+    en: "Terms and conditions for donors: voluntary and monthly donations, refunds, name display and personal data.",
+  },
   "vlad-placinta": {
     ro: "Vlad Plăcintă: consiliere de fundraising pentru ONG-uri, prin platforma Alexandrit.",
     en: "Vlad Plăcintă: fundraising advice for NGOs, through the Alexandrit platform.",
@@ -200,6 +205,7 @@ const CALE_CANONICA: Partial<Record<PaginaCuTitlu, string>> = {
   "portofoliu-clienti": "/portofoliu-clienti",
   premii: "/premii",
   termeni: "/termeni",
+  "termeni-donatori": "/termeni-donatori",
   "vlad-placinta": "/vlad-placinta",
 };
 

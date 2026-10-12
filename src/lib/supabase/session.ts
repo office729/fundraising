@@ -61,6 +61,7 @@ export async function updateSession(request: NextRequest, rewriteTo?: URL) {
     "/studii-de-caz",
     "/blog",
     "/termeni",
+    "/termeni-donatori",
     "/gdpr",
     "/dpa",
     "/cookies",

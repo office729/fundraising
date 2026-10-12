@@ -11,7 +11,7 @@ export const DPA_DICT = {
     eyebrow: "Legal",
     titlu: "Acord de prelucrare a datelor (DPA)",
     actualizatLabel: "Versiune",
-    actualizat: "6 octombrie 2026",
+    actualizat: "12 octombrie 2026",
     sectiuni: [
       {
         titlu: "1. Părțile și obiectul acordului",
@@ -24,6 +24,7 @@ export const DPA_DICT = {
         titlu: "2. Descrierea prelucrării",
         puncte: [
           "Natura și scopul: găzduirea și operarea aplicației în care Operatorul își gestionează CRM-ul (persoane de contact, donatori, sponsori, voluntari, beneficiari), paginile de campanie și donații, Formularul 230, comunicările (email, apeluri) pornite de Operator și rapoartele sale;",
+          "Funcții publice ale paginilor de campanie, în scopurile și pe temeiurile stabilite de Operator: măsurarea vizitelor (amprentă zilnică pseudonimizată, sursă, dispozitiv, țară; fără cookie-uri și fără stocarea adresei IP; păstrare 13 luni) și portalul donatorului lunar (e-mail cu link pentru gestionarea donației);",
           "Durata: cât timp contul Operatorului este activ, plus perioada de retenție de la secțiunea 10;",
           "Tipuri de date: date de identificare și contact (nume, email, telefon, adresă), istoricul donațiilor și al comunicărilor, date din Formularul 230 (inclusiv CNP și semnătură), notițe, precum și, dacă Operatorul le introduce, date despre sănătate sau despre minori (categorii speciale — vezi secțiunea 11);",
           "Categorii de persoane vizate: donatori, sponsori și persoane de contact ale companiilor, voluntari, beneficiari și reprezentanții lor legali, angajați și colaboratori ai Operatorului, creatori de pagini de campanie.",
@@ -125,7 +126,7 @@ export const DPA_DICT = {
     eyebrow: "Legal",
     titlu: "Data Processing Agreement (DPA)",
     actualizatLabel: "Version",
-    actualizat: "October 6, 2026",
+    actualizat: "October 12, 2026",
     sectiuni: [
       {
         titlu: "1. Parties and subject matter",
@@ -138,6 +139,7 @@ export const DPA_DICT = {
         titlu: "2. Description of the processing",
         puncte: [
           "Nature and purpose: hosting and operating the application in which the Controller manages its CRM (contacts, donors, sponsors, volunteers, beneficiaries), campaign and donation pages, Form 230, communications (email, calls) initiated by the Controller, and its reports;",
+          "Public campaign page functions, for the purposes and on the bases set by the Controller: visit measurement (pseudonymised daily fingerprint, source, device, country; no cookies and no storage of the IP address; kept for 13 months) and the monthly donor portal (e-mail with a link to manage the donation);",
           "Duration: while the Controller's account is active, plus the retention period in section 10;",
           "Types of data: identification and contact data (name, email, phone, address), donation and communication history, Form 230 data (including personal ID number and signature), notes, and, if the Controller enters them, health data or data about minors (special categories — see section 11);",
           "Data subjects: donors, sponsors and company contact persons, volunteers, beneficiaries and their legal representatives, the Controller's employees and collaborators, campaign page creators.",

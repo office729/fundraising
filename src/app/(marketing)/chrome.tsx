@@ -275,6 +275,9 @@ export function SiteFooter({ dict }: { dict: MarketingDict }) {
             <Link prefetch={false} href="/termeni" className="text-sm text-white/75 hover:text-white">
               {dict.footer.terms}
             </Link>
+            <Link prefetch={false} href="/termeni-donatori" className="text-sm text-white/75 hover:text-white">
+              {dict.footer.termsDonors}
+            </Link>
             <Link prefetch={false} href="/gdpr" className="text-sm text-white/75 hover:text-white">
               {dict.footer.gdpr}
             </Link>
