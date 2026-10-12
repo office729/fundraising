@@ -16,6 +16,8 @@ export function htmlEmailMultumireDonatie(params: {
   pageTitlu: string;
   orgName: string;
   recurenta: boolean;
+  // Pagina unde donatorul lunar își cere accesul ca să-și gestioneze donația (doar la donațiile lunare).
+  linkGestionare?: string;
 }): string {
   const { suma, recurenta } = params;
   const numeDonator = escHtml(params.numeDonator);
@@ -31,7 +33,11 @@ export function htmlEmailMultumireDonatie(params: {
       </p>
       ${
         recurenta
-          ? `<p>Donația ta lunară s-a înregistrat cu succes — vei primi câte o confirmare ca aceasta la fiecare reînnoire.</p>`
+          ? `<p>Donația ta lunară s-a înregistrat cu succes — vei primi câte o confirmare ca aceasta la fiecare reînnoire.</p>${
+              params.linkGestionare
+                ? `<p>Poți schimba suma, pune donația pe pauză, o poți opri sau îți poți actualiza cardul oricând: <a href="${escHtml(params.linkGestionare)}">gestionează-ți donația lunară</a>.</p>`
+                : ""
+            }`
           : ""
       }
       <p>Cu recunoștință,<br/>Echipa ${orgName}</p>

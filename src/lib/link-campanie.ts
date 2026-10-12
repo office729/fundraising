@@ -10,6 +10,8 @@ export const RUTE_ORGANIZATIE = [
   "crm",
   "crm-pj",
   "crm-voluntari",
+  // Pagina publică unde donatorii lunari își gestionează donația (/strangere-fonduri/<org>/donator): un slug de campanie nu o poate umbri.
+  "donator",
   "echipa",
   "grupuri-facebook",
   "newsletter-pf",

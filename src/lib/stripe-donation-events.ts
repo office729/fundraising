@@ -9,6 +9,7 @@ import type Stripe from "stripe";
 import { cursEurRon } from "@/lib/curs-valutar";
 import { db } from "@/lib/db";
 import { fundraisingDonations, fundraisingPages } from "@/lib/db/schema";
+import { adresaPaginiiDeCerere } from "@/lib/donator-portal";
 import { htmlEmailMultumireDonatie, subiectEmailMultumireDonatie } from "@/lib/donation-email-template";
 import { emailConfigurat, trimiteEmail } from "@/lib/email";
 import { raporteazaAvertisment, raporteazaEroare } from "@/lib/monitoring";
@@ -34,7 +35,7 @@ async function trimiteEmailMultumireDacaSePoate(params: {
   numeDonator: string | null;
   suma: number;
   recurenta: boolean;
-  info: { pageTitlu: string; orgName: string } | null;
+  info: { pageTitlu: string; orgName: string; orgSlug?: string } | null;
 }) {
   if (!params.emailDonator || !params.info || !emailConfigurat()) return;
   try {
@@ -47,6 +48,8 @@ async function trimiteEmailMultumireDacaSePoate(params: {
         pageTitlu: params.info.pageTitlu,
         orgName: params.info.orgName,
         recurenta: params.recurenta,
+        // Donatorul lunar își poate gestiona singur donația: link spre pagina unde cere accesul (nu un link cu acces în sine).
+        linkGestionare: params.recurenta && params.info.orgSlug ? adresaPaginiiDeCerere(params.info.orgSlug) : undefined,
       }),
     });
   } catch (e) {

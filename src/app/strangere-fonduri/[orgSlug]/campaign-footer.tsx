@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import type { Locale } from "@/lib/i18n/config";
 import { DONATION_DICT } from "@/lib/i18n/dictionaries/donation";
+import { PORTAL_DONATOR_DICT } from "@/lib/i18n/dictionaries/portal-donator";
 
 // Footer comun paginilor publice de strângere de fonduri (hub-ul organizației
 // și fiecare campanie individuală) — identifică organizația care a publicat
@@ -48,6 +49,9 @@ export function CampaignFooter({
             Alexandrit
           </a>
         </p>
+        <Link href={`/strangere-fonduri/${orgSlug}/donator`} className="text-[13px] font-medium text-muted-2 underline-offset-2 hover:text-brand-blue hover:underline">
+          {PORTAL_DONATOR_DICT[locale].linkInSubsol}
+        </Link>
         <p className="max-w-md text-[11.5px] leading-relaxed text-muted-2">{t.masurare}</p>
       </div>
     </footer>

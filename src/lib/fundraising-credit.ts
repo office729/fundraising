@@ -36,9 +36,9 @@ export async function crediteazaPaginaSiDonator(
     // își păstrează valoarea).
     consimtamantEmail: boolean | null;
   },
-): Promise<{ pageTitlu: string; orgName: string } | null> {
+): Promise<{ pageTitlu: string; orgName: string; orgSlug: string } | null> {
   const rezultat = await tx
-    .select({ pageTitlu: fundraisingPages.titlu, orgName: organizations.name })
+    .select({ pageTitlu: fundraisingPages.titlu, orgName: organizations.name, orgSlug: organizations.slug })
     .from(fundraisingPages)
     .innerJoin(organizations, eq(organizations.id, fundraisingPages.orgId))
     .where(eq(fundraisingPages.id, params.pageId))
