@@ -17,7 +17,7 @@ Data: 2026-10-12 · Surse: Lusha, Apollo.io, termene.ro, risco.ro, Kompass, ZF, 
 | Ionuț-Cristian Larionesi | Administrator | 1 | – | – | – | Adevărul (nu apare în Lusha/Apollo) | Mediu |
 | Traian Larionesi | Asociat unic / fondator | 1 (decident final) | – | – | – | ZF, Adevărul, Kompass (nu apare în Lusha/Apollo) | Ridicat |
 
-Nu am găsit director financiar, director economic, resurse umane (HR) sau responsabil CSR în Lusha ori Apollo. Apollo are doar 5 angajați ai firmei, toți ingineri sau manageri de proiect.
+Nu am găsit director financiar, director economic, resurse umane (HR) sau responsabil CSR în Lusha, Apollo, Prospeo (15 angajați, toți ingineri sau muncitori) ori Hunter (doar office@frasinulbn.ro). Apollo are doar 5 angajați ai firmei, toți ingineri sau manageri de proiect.
 **Contact firmă (site-ul oficial frasinulbn.ro/contact):** office@frasinulbn.ro, frasinulbn@yahoo.ro · tel. +40 263 377 681 (fix), +40 728 176 724 (mobil). Unele cataloage dau și 0263 377 491, care poate fi depășit.
 Căi de acces: un email la office@frasinulbn.ro, în atenția administratorului, cu cerere de întâlnire, urmat de un telefon la +40 263 377 681 în care ceri legătura cu contabilitatea sau cu resursele umane. Ca variantă, o scrisoare oficială la sediul din Anieș.
 
