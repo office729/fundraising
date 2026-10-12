@@ -4,7 +4,7 @@ Data: 2026-10-12 · Surse: Lusha, Apollo.io, termene.ro, targetare.ro, risco.ro,
 
 **Companie:** CUI 6615609, J40/25279/1994 · distribuitor en-gros de scule DIY, materiale electrice și obiecte sanitare (mărcile Evotools, EvoSanitary) · sediu social: București, str. Agricultori 121 · depozit: Glina, Intrarea Abatorului 1A · tel. +40 371 503 730 (Apollo), 021-492 0… (Pagini Aurii) · site: honest.ro / evotools.ro · ~399 angajați
 **Cifre:** 2025: CA ≈ 356,1 mil. lei, profit net ≈ 30,2 mil. lei. 2024: CA 327,0 mil. lei, profit 54,1 mil. lei.
-**Asociați:** 2 cetățeni chinezi (DeFapt.ro); administrator: ZHANG DONG (Kompass; inițialele Z.D. pe termene.ro).
+**Asociați și administratori:** 2 asociați, cetățeni chinezi (DeFapt.ro), cu cote de ~67,9% și ~32,1% (EMIS). Asociații au inițialele Z.D. și C.C. (termene.ro), iar firma are 2 administratori. Primul este ZHANG DONG (Kompass), care pare să fie și asociat. Al doilea apare mascat pe targetare.ro („C*** Ch*****g”); numele complet trebuie confirmat din extrasul ONRC.
 
 **Scor potențial sponsorizare:** 7/10. Firma este foarte profitabilă și are o capacitate mare de sponsorizare. Nu am găsit însă activitate CSR publică sau sponsorizări anterioare, iar decizia aparține probabil asociaților și administratorilor.
 
