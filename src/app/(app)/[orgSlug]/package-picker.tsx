@@ -31,7 +31,7 @@ function limiteText(pkg: Exclude<OrgPackage, "trial" | "custom">, locale: Locale
   const conturi = l.conturi230;
   const modul = (m: ModulPachet) => areModul(pkg, m);
   const [programLucru, kpi, design, voluntari, presa, analiza] = ["program-lucru", "kpi", "instrumente-design", "voluntari", "comunicat-presa", "analiza-baze"].map((m) => modul(m as ModulPachet));
-  // Aceeași listă ca pe pagina publică de prețuri (hub.ts); modulele care nu sunt încă gata poartă mențiunea „în curând”.
+  // Aceeași listă ca pe pagina publică de prețuri (hub.ts).
   return ro
     ? [
         `${utilizatori} ${utilizatori === 1 ? "utilizator" : "utilizatori"}`,
@@ -44,7 +44,7 @@ function limiteText(pkg: Exclude<OrgPackage, "trial" | "custom">, locale: Locale
         ...(kpi ? ["KPI"] : []),
         ...(design ? ["Instrumente de design"] : []),
         ...(voluntari ? ["CRM voluntari"] : []),
-        ...(analiza ? ["Analiza bazei de date persoane fizice", "Analiza bazei de date persoane juridice (în curând)", "Granturi (în curând)", "Calendar (în curând)", "Dăruiește-ți ziua (în curând)"] : []),
+        ...(analiza ? ["Analiza bazei de date persoane fizice"] : []),
         pkg === "impact" ? "Suport prin e-mail și telefon" : "Suport prin e-mail",
       ]
     : [
@@ -58,7 +58,7 @@ function limiteText(pkg: Exclude<OrgPackage, "trial" | "custom">, locale: Locale
         ...(kpi ? ["KPIs"] : []),
         ...(design ? ["Design tools"] : []),
         ...(voluntari ? ["Volunteer CRM"] : []),
-        ...(analiza ? ["Individual database analysis", "Company database analysis (coming soon)", "Grants (coming soon)", "Calendar (coming soon)", "Gift your day (coming soon)"] : []),
+        ...(analiza ? ["Individual database analysis"] : []),
         pkg === "impact" ? "Email and phone support" : "Email support",
       ];
 }
