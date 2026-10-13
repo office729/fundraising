@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-const { PACKAGE_LIMITS, PRET_UTILIZATOR_SUPLIMENTAR, MAX_UTILIZATORI_SUPLIMENTARI, pretLunarPachet, utilizatoriSuplimentariValizi, etichetaPachet, pretPerioadaPachet, facturareValida, luniAcces, PACKAGE_PRICE_ANUAL } = await import("../src/lib/billing/packages.ts");
+const { PACKAGE_LIMITS, PRET_UTILIZATOR_SUPLIMENTAR, MAX_UTILIZATORI_SUPLIMENTARI, pretLunarPachet, utilizatoriSuplimentariValizi, etichetaPachet, pretPerioadaPachet, areModul, facturareValida, luniAcces, PACKAGE_PRICE_ANUAL } = await import("../src/lib/billing/packages.ts");
 const { HUB_DICT } = await import("../src/lib/i18n/dictionaries/hub.ts");
 
 const FIXE = ["start", "crestere", "impact"];
@@ -113,4 +113,35 @@ test("plata anuală = 12 luni de acces la prețul a 10 luni (2 luni gratuite)", 
 test("perioada de facturare venită din client e validată (orice altceva = lunar)", () => {
   assert.equal(facturareValida("anual"), "anual");
   for (const v of ["lunar", "ANUAL", "", undefined, null, 12, "12"]) assert.equal(facturareValida(v), "lunar");
+});
+
+test("modulele pe pachete: ce e în CREȘTERE și ce doar în IMPACT", () => {
+  for (const m of ["program-lucru", "kpi", "instrumente-design", "voluntari"]) {
+    assert.equal(areModul("start", m), false, m);
+    assert.equal(areModul("crestere", m), true, m);
+    assert.equal(areModul("impact", m), true, m);
+  }
+  for (const m of ["comunicat-presa", "analiza-baze"]) {
+    assert.equal(areModul("start", m), false, m);
+    assert.equal(areModul("crestere", m), false, m);
+    assert.equal(areModul("impact", m), true, m);
+  }
+  // Proba și planul personalizat le au pe toate.
+  for (const p of ["trial", "custom"]) for (const m of ["kpi", "comunicat-presa", "analiza-baze"]) assert.equal(areModul(p, m), true);
+});
+
+test("pagina de prețuri spune aceleași cote ca și codul (utilizatori, contacte PF, companii PJ)", () => {
+  const fmt = (n) => n.toLocaleString("ro-RO");
+  const chei = ["start", "crestere", "impact"];
+  HUB_DICT.ro.abonamente.forEach((a, i) => {
+    const l = PACKAGE_LIMITS[chei[i]];
+    const text = a.items.join(" | ");
+    assert.ok(text.includes(`CRM persoane fizice — ${fmt(l.contactePf)} contacte`), a.nume + " PF: " + text);
+    assert.ok(text.includes(`CRM persoane juridice — ${fmt(l.companiiPj)} contacte`), a.nume + " PJ: " + text);
+    assert.ok(a.items[0].startsWith(String(l.utilizatori)), a.nume);
+    assert.equal(a.pret, l.pretLunar + " lei");
+  });
+  const rand = (f) => HUB_DICT.ro.comparatie.find((x) => x.f === f);
+  assert.deepEqual([rand("Utilizatori incluși").v0, rand("Utilizatori incluși").v1, rand("Utilizatori incluși").v2], chei.map((c) => String(PACKAGE_LIMITS[c].utilizatori)));
+  assert.equal(PACKAGE_LIMITS.crestere.companiiPj, 700);
 });

@@ -7,6 +7,7 @@ import { headers } from "next/headers";
 import { aiConfigurat, genereazaContinutCanalAI } from "@/lib/ai";
 import { limitaAIDepasita, MESAJ_LIMITA_AI } from "@/lib/ai-limit";
 import { withOrgAdmin, withOrgFaze, withOrgSession } from "@/lib/auth/guard";
+import { areModul } from "@/lib/billing/packages";
 import { listComunicatCampanieImpl, listGrupuriPublicateCampanieImpl, listLocalGroupsCampanieImpl, listMediaContacteCampanieImpl, listOutreachIstoricImpl } from "./detaliu-queries";
 import { inregistreazaAudit } from "@/lib/audit";
 import {
@@ -40,7 +41,11 @@ async function dateCampanie(
 // din șablonul determinist deja scris (genereazaComunicatPresa); dacă exista
 // deja unul, îl înlocuiește (istoricul de trimitere ține de comunicatul
 // vechi prin fk, dar nu mai contează odată ce textul s-a schimbat).
+// Comunicatul de presă e inclus din pachetul IMPACT.
+const MESAJ_PRESA_IMPACT = "Comunicatul de presă este inclus în pachetul IMPACT. Treci la IMPACT din Setări → Abonament ca să-l generezi.";
+
 export const genereazaComunicatAction = withOrgAdmin(async (ctx, pageId: string) => {
+  if (!areModul(ctx.orgPackage, "comunicat-presa")) return { error: MESAJ_PRESA_IMPACT, ok: false };
   const date = await dateCampanie(ctx.db, pageId, ctx.orgId, ctx.orgSlug, ctx.orgName);
   if (!date) return { error: "Pagina nu a fost găsită.", ok: false };
 
@@ -67,6 +72,7 @@ export const genereazaComunicatAIAction = withOrgFaze<
 >({
   admin: true,
   pregateste: async (ctx, pageId) => {
+    if (!areModul(ctx.orgPackage, "comunicat-presa")) return { gata: { error: MESAJ_PRESA_IMPACT, ok: false } };
     const date = await dateCampanie(ctx.db, pageId, ctx.orgId, ctx.orgSlug, ctx.orgName);
     if (!date) return { gata: { error: "Pagina nu a fost găsită.", ok: false } };
     if (!aiConfigurat())

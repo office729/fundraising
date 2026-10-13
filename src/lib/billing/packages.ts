@@ -21,6 +21,27 @@ export type ToolId =
   | "crm-pf"
   | "program-lucru";
 
+// Module incluse începând cu un anumit pachet (pe lângă cotele din PACKAGE_LIMITS). Ce nu e listat aici (CRM-ul de bază, campaniile,
+// Formularul 230, contractele, newsletterul, rapoartele) e în toate pachetele. Probă și plan personalizat: toate deschise.
+export type ModulPachet = "program-lucru" | "kpi" | "instrumente-design" | "voluntari" | "comunicat-presa" | "analiza-baze";
+
+export const MODULE_PACHET: Record<ModulPachet, { minim: "crestere" | "impact"; nume: string }> = {
+  "program-lucru": { minim: "crestere", nume: "Program de lucru" },
+  kpi: { minim: "crestere", nume: "KPI și performanță" },
+  "instrumente-design": { minim: "crestere", nume: "Instrumente de design" },
+  voluntari: { minim: "crestere", nume: "CRM voluntari" },
+  "comunicat-presa": { minim: "impact", nume: "Comunicat de presă" },
+  "analiza-baze": { minim: "impact", nume: "Analiza bazei de date" },
+};
+
+const RANG_PACHET: Record<string, number> = { start: 1, crestere: 2, impact: 3 };
+
+// Pachetul are modulul? Proba (nivel IMPACT) și planul personalizat le au pe toate.
+export function areModul(pkg: OrgPackage, modul: ModulPachet): boolean {
+  if (pkg === "trial" || pkg === "custom") return true;
+  return (RANG_PACHET[pkg] ?? 0) >= RANG_PACHET[MODULE_PACHET[modul].minim];
+}
+
 // Toate instrumentele sunt disponibile în orice pachet — inclusiv trial.
 export const ALL_TOOLS: ToolId[] = [
   "one-pager",
@@ -116,7 +137,7 @@ export const PACKAGE_LIMITS: Record<Exclude<OrgPackage, "custom">, PackageLimits
     pretLunar: 149,
     utilizatori: 3,
     contactePf: 10_000,
-    companiiPj: 2_000,
+    companiiPj: 700,
     onePagerActive: 5,
     rapoarteCompaniiPeLuna: 15,
     contracteSponsorizarePeLuna: null,

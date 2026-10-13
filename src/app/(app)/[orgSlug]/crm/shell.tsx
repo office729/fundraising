@@ -37,6 +37,7 @@ import {
   Users,
   Wrench,
   X,
+  Lock,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -45,6 +46,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
 import type { DomeniuActivitate } from "@/lib/campaign-templates";
+import { areModul, type ModulPachet, type OrgPackage } from "@/lib/billing/packages";
 import { AVATAR_DONATOR_ACTIV, paginaCrmAscunsa } from "@/lib/module-ascunse";
 import { DASHBOARD_DICT, type DashboardDict } from "@/lib/i18n/dictionaries/dashboard";
 import type { Locale } from "@/lib/i18n/config";
@@ -79,6 +81,16 @@ const EMPTY_STATUS_MAP: Record<string, Task["status"]> = {};
 const EMPTY_TERMEN_MAP: Record<string, string> = {};
 const EMPTY_STERSE_MAP: Record<string, boolean> = {};
 const EMPTY_VAZUTE_MAP: Record<string, boolean> = {};
+
+// Intrările din meniu care țin de un modul inclus doar din anumite pachete: cine nu îl are vede un lacăt (pagina explică pachetul).
+const MODUL_PE_INTRARE: Record<string, ModulPachet> = {
+  rfm: "analiza-baze",
+  voluntari: "voluntari",
+  "/crm-voluntari": "voluntari",
+  performanta: "kpi",
+  organizatie: "kpi",
+  "/program-lucru": "program-lucru",
+};
 
 // Etichetele vin din dicționarul RO/EN (vezi lib/i18n/dictionaries/dashboard.ts)
 // — restul (href/icon) rămâne fix, doar textul se traduce.
@@ -256,8 +268,8 @@ export function CrmShell({
             </button>
           </div>
           <nav className="ci-scrollbar flex-1 space-y-3 overflow-y-auto px-2">
-            <Suspense fallback={<NavGroups pathname={pathname} base={base} collapsed={collapsed} query="" dict={dict} role={role} onNavigate={() => setMobileOpen(false)} />}>
-              <NavGroupsWithQuery pathname={pathname} base={base} collapsed={collapsed} dict={dict} role={role} onNavigate={() => setMobileOpen(false)} />
+            <Suspense fallback={<NavGroups pathname={pathname} base={base} collapsed={collapsed} query="" dict={dict} role={role} orgPackage={orgPackage} onNavigate={() => setMobileOpen(false)} />}>
+              <NavGroupsWithQuery pathname={pathname} base={base} collapsed={collapsed} dict={dict} role={role} orgPackage={orgPackage} onNavigate={() => setMobileOpen(false)} />
             </Suspense>
             {/* Imediat sub ultimul element din meniu; planul și utilizatorul stau fixate jos, în afara derulării meniului */}
             <div className="hidden border-t border-[var(--ci-border)] pt-2 md:block">
@@ -329,7 +341,7 @@ export function CrmShell({
 
 // Citește query-ul curent — separat de NavGroups ca boundary-ul de Suspense
 // cerut de useSearchParams() să nu blocheze randarea restului shell-ului.
-function NavGroupsWithQuery(props: { pathname: string | null; base: string; collapsed: boolean; dict: DashboardDict; role: string; onNavigate: () => void }) {
+function NavGroupsWithQuery(props: { pathname: string | null; base: string; collapsed: boolean; dict: DashboardDict; role: string; orgPackage: OrgPackage; onNavigate: () => void }) {
   const searchParams = useSearchParams();
   return <NavGroups {...props} query={searchParams.toString()} />;
 }
@@ -345,6 +357,7 @@ function NavGroups({
   query,
   dict,
   role,
+  orgPackage,
   onNavigate,
 }: {
   pathname: string | null;
@@ -353,6 +366,7 @@ function NavGroups({
   query: string;
   dict: DashboardDict;
   role: string;
+  orgPackage: OrgPackage;
   onNavigate: () => void;
 }) {
   const nav = buildNav(dict, base.split("/")[1] ?? "", role);
@@ -419,6 +433,9 @@ function NavGroups({
                 >
                   <Icon className="h-4 w-4 shrink-0" />
                   <span className={cn("min-w-0 leading-tight break-words", collapsed && "md:hidden")}>{item.label}</span>
+                  {MODUL_PE_INTRARE[item.href] && !areModul(orgPackage, MODUL_PE_INTRARE[item.href]) && (
+                    <Lock className={cn("ml-auto h-3 w-3 shrink-0 text-[var(--ci-text-faint)]", collapsed && "md:hidden")} aria-label="Inclus într-un pachet superior" />
+                  )}
                 </Link>
               );
             })}

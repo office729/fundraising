@@ -4,7 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 
 import { trackEvent } from "@/lib/analytics";
 import { dateFacturareComplete } from "@/lib/billing/date-facturare";
-import { LUNI_ACCES_ANUAL, MAX_UTILIZATORI_SUPLIMENTARI, PACKAGE_LIMITS, PRET_UTILIZATOR_SUPLIMENTAR, pretLunarPachet, pretPerioadaPachet, type Facturare, type OrgPackage } from "@/lib/billing/packages";
+import { areModul, LUNI_ACCES_ANUAL, MAX_UTILIZATORI_SUPLIMENTARI, PACKAGE_LIMITS, PRET_UTILIZATOR_SUPLIMENTAR, pretLunarPachet, pretPerioadaPachet, type Facturare, type ModulPachet, type OrgPackage } from "@/lib/billing/packages";
 import type { Locale } from "@/lib/i18n/config";
 import { ABONAMENT_DICT } from "@/lib/i18n/dictionaries/abonament";
 import { JUDETE } from "@/lib/judete";
@@ -23,27 +23,44 @@ const PACHETE: { key: Exclude<OrgPackage, "trial" | "custom">; nume: string; pop
 
 function limiteText(pkg: Exclude<OrgPackage, "trial" | "custom">, locale: Locale, extra = 0): string[] {
   const l = PACKAGE_LIMITS[pkg];
-  const t = ABONAMENT_DICT[locale].picker;
-  const loc = locale === "ro" ? "ro-RO" : "en-US";
-  return [
-    `${l.utilizatori! + extra} ${l.utilizatori! + extra === 1 ? t.utilizator : t.utilizatori}`,
-    `${l.contactePf!.toLocaleString(loc)} ${t.contactePf}`,
-    `${l.companiiPj!.toLocaleString(loc)} ${t.companii}`,
-    l.contracteSponsorizarePeLuna == null ? t.contracteNelimitate : t.contracte(l.contracteSponsorizarePeLuna),
-    ...(locale === "ro"
-      ? [
-          l.campaniiActive == null ? "Campanii active nelimitate" : `${l.campaniiActive} ${l.campaniiActive === 1 ? "campanie activă" : "campanii active"}`,
-          l.conturi230 == null ? "Conturi Formular 230 nelimitate" : `${l.conturi230} ${l.conturi230 === 1 ? "cont" : "conturi"} Formular 230`,
-          l.rapoarteCompaniiPeLuna == null ? "Rapoarte de impact nelimitate" : `${l.rapoarteCompaniiPeLuna} ${l.rapoarteCompaniiPeLuna === 1 ? "raport" : "rapoarte"} de impact pe lună`,
-          l.voluntariActivitati ? "Voluntari: sarcini online și activități pe teren" : "Voluntari: sarcini online",
-        ]
-      : [
-          l.campaniiActive == null ? "Unlimited active campaigns" : `${l.campaniiActive} active ${l.campaniiActive === 1 ? "campaign" : "campaigns"}`,
-          l.conturi230 == null ? "Unlimited Form 230 accounts" : `${l.conturi230} Form 230 ${l.conturi230 === 1 ? "account" : "accounts"}`,
-          l.rapoarteCompaniiPeLuna == null ? "Unlimited impact reports" : `${l.rapoarteCompaniiPeLuna} impact ${l.rapoarteCompaniiPeLuna === 1 ? "report" : "reports"} per month`,
-          l.voluntariActivitati ? "Volunteers: online tasks and on-site activities" : "Volunteers: online tasks",
-        ]),
-  ];
+  const ro = locale === "ro";
+  const loc = ro ? "ro-RO" : "en-US";
+  const nr = (n: number) => n.toLocaleString(loc);
+  const utilizatori = l.utilizatori! + extra;
+  const campanii = l.campaniiActive;
+  const conturi = l.conturi230;
+  const modul = (m: ModulPachet) => areModul(pkg, m);
+  const [programLucru, kpi, design, voluntari, presa, analiza] = ["program-lucru", "kpi", "instrumente-design", "voluntari", "comunicat-presa", "analiza-baze"].map((m) => modul(m as ModulPachet));
+  // Aceeași listă ca pe pagina publică de prețuri (hub.ts); modulele care nu sunt încă gata poartă mențiunea „în curând”.
+  return ro
+    ? [
+        `${utilizatori} ${utilizatori === 1 ? "utilizator" : "utilizatori"}`,
+        `CRM persoane fizice — ${nr(l.contactePf!)} contacte`,
+        `CRM persoane juridice — ${nr(l.companiiPj!)} contacte`,
+        campanii == null ? "Campanii de strângere de fonduri — nelimitate" : `Campanii de strângere de fonduri — ${campanii} ${campanii === 1 ? "campanie activă" : "campanii active"}`,
+        conturi == null ? "Formular 230 — conturi nelimitate" : `Formular 230 — ${conturi} ${conturi === 1 ? "cont" : "conturi"}`,
+        ...(presa ? ["Comunicat de presă"] : []),
+        ...(programLucru ? ["Program de lucru"] : []),
+        ...(kpi ? ["KPI"] : []),
+        ...(design ? ["Instrumente de design"] : []),
+        ...(voluntari ? ["CRM voluntari"] : []),
+        ...(analiza ? ["Analiza bazei de date persoane fizice", "Analiza bazei de date persoane juridice (în curând)", "Granturi (în curând)", "Calendar (în curând)", "Dăruiește-ți ziua (în curând)"] : []),
+        pkg === "impact" ? "Suport prin e-mail și telefon" : "Suport prin e-mail",
+      ]
+    : [
+        `${utilizatori} ${utilizatori === 1 ? "user" : "users"}`,
+        `Individual CRM — ${nr(l.contactePf!)} contacts`,
+        `Company CRM — ${nr(l.companiiPj!)} contacts`,
+        campanii == null ? "Fundraising campaigns — unlimited" : `Fundraising campaigns — ${campanii} active ${campanii === 1 ? "campaign" : "campaigns"}`,
+        conturi == null ? "Form 230 — unlimited accounts" : `Form 230 — ${conturi} ${conturi === 1 ? "account" : "accounts"}`,
+        ...(presa ? ["Press release"] : []),
+        ...(programLucru ? ["Work schedule"] : []),
+        ...(kpi ? ["KPIs"] : []),
+        ...(design ? ["Design tools"] : []),
+        ...(voluntari ? ["Volunteer CRM"] : []),
+        ...(analiza ? ["Individual database analysis", "Company database analysis (coming soon)", "Grants (coming soon)", "Calendar (coming soon)", "Gift your day (coming soon)"] : []),
+        pkg === "impact" ? "Email and phone support" : "Email support",
+      ];
 }
 
 // Grila de pachete + planul à la carte — folosită atât pe ecranul de blocare
