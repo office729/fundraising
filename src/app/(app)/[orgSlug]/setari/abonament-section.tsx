@@ -7,6 +7,7 @@ import type { OrgPackage } from "@/lib/billing/packages";
 import type { Locale } from "@/lib/i18n/config";
 import { SETARI_ECHIPA_DICT } from "@/lib/i18n/dictionaries/setari-echipa";
 
+import { AnulareAbonament } from "./anulare-abonament";
 import { NetopiaCardSection } from "./netopia-card-section";
 import type { StatusReinnoireAutomata } from "./netopia-card-actions";
 
@@ -59,6 +60,8 @@ export function AbonamentSection({
       </p>
 
       <NetopiaCardSection orgSlug={orgSlug} status={reinnoireAutomata} locale={locale} />
+
+      {pachetCurent !== "trial" && statusCurent === "active" && <AnulareAbonament orgSlug={orgSlug} status={reinnoireAutomata} locale={locale} />}
 
       {!arataOptiuni && (
         <button

@@ -13,6 +13,10 @@ export type StatusReinnoireAutomata = {
   expiraAn: number | null;
   activa: boolean;
   incercariEsuate: number;
+  // Abonamentul a fost anulat de organizație (nu se mai reînnoiește); accesul rămâne până la sfârșitul perioadei plătite.
+  anulat: boolean;
+  // Sfârșitul perioadei plătite (ISO), sau null dacă nu are dată de sfârșit.
+  valabilPanaLa: string | null;
 };
 
 export const obtineStatusReinnoireAutomata = withOrgAdmin(async (ctx): Promise<StatusReinnoireAutomata> => {
@@ -24,6 +28,7 @@ export const obtineStatusReinnoireAutomata = withOrgAdmin(async (ctx): Promise<S
       an: organizations.netopiaCardExpireYear,
       activa: organizations.netopiaAutoRenew,
       incercari: organizations.netopiaRenewalAttempts,
+      anulat: organizations.netopiaAutorenewOptOut,
     })
     .from(organizations)
     .where(eq(organizations.id, ctx.orgId))
@@ -36,6 +41,8 @@ export const obtineStatusReinnoireAutomata = withOrgAdmin(async (ctx): Promise<S
     expiraAn: r?.an ?? null,
     activa: r?.activa ?? false,
     incercariEsuate: r?.incercari ?? 0,
+    anulat: r?.anulat ?? false,
+    valabilPanaLa: ctx.orgCurrentPeriodEnd ? ctx.orgCurrentPeriodEnd.toISOString() : null,
   };
 });
 
@@ -76,6 +83,26 @@ export const eliminaCardSalvatAction = withOrgAdmin(async (ctx): Promise<void> =
       netopiaAutoRenew: false,
       netopiaRenewalAttempts: 0,
       netopiaRenewalFailedAt: null,
+    })
+    .where(eq(organizations.id, ctx.orgId));
+});
+
+// Anulează abonamentul: oprește reînnoirea (taxarea automată și, prin opt-out, orice reactivare ulterioară dintr-o plată manuală).
+// Nu schimbă pachetul, starea sau data de sfârșit: accesul rămâne până la sfârșitul perioadei deja plătite, apoi se aplică regulile
+// obișnuite (perioada de grație din Termeni, vezi lib/billing/trial.ts). Cardul salvat rămâne, ca organizația să poată reînnoi
+// ulterior fără să-l introducă din nou — îl poate elimina separat.
+export const anuleazaAbonamentulAction = withOrgAdmin(async (ctx): Promise<void> => {
+  await ctx.db.update(organizations).set({ netopiaAutoRenew: false, netopiaAutorenewOptOut: true }).where(eq(organizations.id, ctx.orgId));
+});
+
+// Reia abonamentul anulat: scoate opt-out-ul și, dacă există un card salvat, repornește taxarea automată.
+export const reiaAbonamentulAction = withOrgAdmin(async (ctx): Promise<void> => {
+  const rows = await ctx.db.select({ token: organizations.netopiaCardTokenEnc }).from(organizations).where(eq(organizations.id, ctx.orgId)).limit(1);
+  await ctx.db
+    .update(organizations)
+    .set({
+      netopiaAutorenewOptOut: false,
+      ...(rows[0]?.token ? { netopiaAutoRenew: true, netopiaRenewalAttempts: 0, netopiaRenewalFailedAt: null } : {}),
     })
     .where(eq(organizations.id, ctx.orgId));
 });

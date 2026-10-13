@@ -129,6 +129,26 @@ export const SETARI_ECHIPA_DICT = {
         confirmaEliminare: "Sigur elimini cardul salvat? Va trebui să plătești manual sau să salvezi alt card.",
         eroare: "Nu am reușit — încearcă din nou.",
       },
+      anulareAbonament: {
+        title: "Anulare abonament",
+        descriere: (data: string | null) =>
+          data
+            ? `Dacă anulezi, nu mai ești taxat și abonamentul nu se mai reînnoiește. Păstrezi accesul până la ${data}.`
+            : "Dacă anulezi, nu mai ești taxat și abonamentul nu se mai reînnoiește. Păstrezi accesul până la sfârșitul perioadei deja plătite.",
+        anuleaza: "Anulează abonamentul",
+        confirmaTitlu: "Sigur anulezi abonamentul?",
+        confirmaText: (data: string | null) =>
+          `Nu vei mai fi taxat${data ? ` după ${data}` : ""}. Accesul rămâne activ până la sfârșitul perioadei plătite${data ? ` (${data})` : ""}; după aceea se aplică regulile din Termeni. Poți relua abonamentul oricând.`,
+        confirma: "Da, anulează abonamentul",
+        renunta: "Renunță",
+        anulat: (data: string | null) =>
+          data
+            ? `Abonamentul este anulat: nu mai este reînnoit. Rămâne activ până la ${data}.`
+            : "Abonamentul este anulat: nu mai este reînnoit. Rămâne activ până la sfârșitul perioadei deja plătite.",
+        reia: "Reia abonamentul",
+        seSalveaza: "Se salvează...",
+        eroare: "Nu am reușit — încearcă din nou.",
+      },
       referral: {
         title: "Recomandă alte ONG-uri",
         descriere: "Oricine se înscrie cu linkul tău primește 50% reducere la primul abonament plătit.",
@@ -396,6 +416,26 @@ export const SETARI_ECHIPA_DICT = {
         activeaza: "Turn on automatic renewal",
         eliminaCard: "Remove saved card",
         confirmaEliminare: "Remove the saved card? You'll need to pay manually or save another card.",
+        eroare: "Something went wrong — try again.",
+      },
+      anulareAbonament: {
+        title: "Cancel subscription",
+        descriere: (data: string | null) =>
+          data
+            ? `If you cancel, you won't be charged again and the subscription won't renew. You keep access until ${data}.`
+            : "If you cancel, you won't be charged again and the subscription won't renew. You keep access until the end of the period you have already paid for.",
+        anuleaza: "Cancel subscription",
+        confirmaTitlu: "Are you sure you want to cancel?",
+        confirmaText: (data: string | null) =>
+          `You won't be charged${data ? ` after ${data}` : " again"}. Access stays active until the end of the paid period${data ? ` (${data})` : ""}; after that the rules in the Terms apply. You can resume the subscription at any time.`,
+        confirma: "Yes, cancel the subscription",
+        renunta: "Keep it",
+        anulat: (data: string | null) =>
+          data
+            ? `The subscription is cancelled and will not renew. It stays active until ${data}.`
+            : "The subscription is cancelled and will not renew. It stays active until the end of the period you have already paid for.",
+        reia: "Resume subscription",
+        seSalveaza: "Saving...",
         eroare: "Something went wrong — try again.",
       },
       referral: {
