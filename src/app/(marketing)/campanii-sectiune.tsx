@@ -352,8 +352,6 @@ const AVANTAJE: { icon: LucideIcon; t: string; d: string }[] = [
 ];
 
 function InCurand() {
-  const start = PACKAGE_LIMITS.start;
-  const crestere = PACKAGE_LIMITS.crestere;
   return (
     <section id="campanii" className="bg-panel-2 px-[6%] py-16 sm:py-20">
       <div className="mx-auto max-w-6xl">
@@ -391,18 +389,9 @@ function InCurand() {
                 Vezi abonamentele
               </Link>
             </div>
-            <p className="mt-4 text-[13.5px] text-muted">{TRIAL_DAYS} de zile de probă, fără card. Apoi, campanii active simultan:</p>
-            <ul className="mt-2 flex flex-wrap gap-2">
-              {[
-                { n: "START", v: String(start.campaniiActive), p: `${start.pretLunar} lei/lună` },
-                { n: "CREȘTERE", v: String(crestere.campaniiActive), p: `${crestere.pretLunar} lei/lună` },
-                { n: "IMPACT", v: "nelimitate", p: `${PACKAGE_LIMITS.impact.pretLunar} lei/lună` },
-              ].map((x) => (
-                <li key={x.n} className="rounded-lg border border-line bg-panel px-3 py-2 text-[13px]">
-                  <b className="font-bold text-ink">{x.n}</b> · {x.v} · <span className="text-muted">{x.p}</span>
-                </li>
-              ))}
-            </ul>
+            <p className="mt-4 text-[13.5px] text-muted">
+              {TRIAL_DAYS} de zile de probă, fără card. Apoi, campanii active nelimitate în toate pachetele, de la {PACKAGE_LIMITS.start.pretLunar} lei/lună.
+            </p>
           </div>
 
           {/* Cum arată pagina unei campanii: schemă, fără sume sau organizații inventate */}

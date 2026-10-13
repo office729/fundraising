@@ -24,14 +24,13 @@ test("proba are tot ce are IMPACT, ca ONG-ul să poată evalua platforma complet
   }
 });
 
-test("valorile promise: START 1 campanie și 1 cont 230, fără activități pe teren; IMPACT cu domeniu propriu", () => {
-  assert.equal(PACKAGE_LIMITS.start.campaniiActive, 1);
-  assert.equal(PACKAGE_LIMITS.start.conturi230, 1);
+test("valorile promise: campanii și conturi 230 nelimitate peste tot, fără activități pe teren la START; IMPACT cu domeniu propriu", () => {
+  for (const p of ["start", "crestere", "impact"]) {
+    assert.equal(PACKAGE_LIMITS[p].campaniiActive, null, p);
+    assert.equal(PACKAGE_LIMITS[p].conturi230, null, p);
+  }
   assert.equal(PACKAGE_LIMITS.start.voluntariActivitati, false);
-  assert.equal(PACKAGE_LIMITS.crestere.campaniiActive, 5);
-  assert.equal(PACKAGE_LIMITS.crestere.conturi230, 3);
   assert.equal(PACKAGE_LIMITS.crestere.voluntariActivitati, true);
-  assert.equal(PACKAGE_LIMITS.impact.campaniiActive, null);
   assert.equal(PACKAGE_LIMITS.impact.domeniuPropriu, true);
   assert.equal(PACKAGE_LIMITS.crestere.domeniuPropriu, false);
 });
