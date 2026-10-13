@@ -4,7 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 
 import { trackEvent } from "@/lib/analytics";
 import { dateFacturareComplete } from "@/lib/billing/date-facturare";
-import { MAX_UTILIZATORI_SUPLIMENTARI, PACKAGE_LIMITS, PRET_UTILIZATOR_SUPLIMENTAR, pretLunarPachet, type OrgPackage } from "@/lib/billing/packages";
+import { LUNI_ACCES_ANUAL, MAX_UTILIZATORI_SUPLIMENTARI, PACKAGE_LIMITS, PRET_UTILIZATOR_SUPLIMENTAR, pretLunarPachet, pretPerioadaPachet, type Facturare, type OrgPackage } from "@/lib/billing/packages";
 import type { Locale } from "@/lib/i18n/config";
 import { ABONAMENT_DICT } from "@/lib/i18n/dictionaries/abonament";
 import { JUDETE } from "@/lib/judete";
@@ -138,6 +138,10 @@ export function PackagePicker({ orgSlug, locale, extraInitial = 0 }: { orgSlug: 
   const [acord, setAcord] = useState(false);
   // Utilizatori plătiți în plus peste START (15 lei/lună fiecare) — prețul se recalculează oricum pe server.
   const [extra, setExtra] = useState(Math.min(MAX_UTILIZATORI_SUPLIMENTARI, Math.max(0, extraInitial)));
+  // Anual = 12 luni de acces, 10 plătite. Suma exactă care se taxează acum apare pe buton.
+  const [facturare, setFacturare] = useState<Facturare>("anual");
+  const anual = facturare === "anual";
+  const fmt = (n: number) => n.toLocaleString(locale === "ro" ? "ro-RO" : "en-US", { maximumFractionDigits: 0 });
 
   const [pending, startTransition] = useTransition();
   const [seLncarca, setSeIncarca] = useState<Exclude<OrgPackage, "trial"> | null>(null);
@@ -148,10 +152,10 @@ export function PackagePicker({ orgSlug, locale, extraInitial = 0 }: { orgSlug: 
     setSeIncarca(pkg);
     startTransition(async () => {
       try {
-        const { url } = await startCheckoutAction(orgSlug, pkg, acord, pkg === "start" ? extra : 0);
+        const { url } = await startCheckoutAction(orgSlug, pkg, acord, pkg === "start" ? extra : 0, facturare);
         trackEvent("begin_checkout", {
           currency: "RON",
-          value: pretLunarPachet(pkg, pkg === "start" ? extra : 0) ?? undefined,
+          value: pretPerioadaPachet(pkg, pkg === "start" ? extra : 0, facturare) ?? undefined,
           items: [{ item_name: `Pachet ${PACHETE.find((p) => p.key === pkg)?.nume ?? pkg}`, quantity: 1 }],
           transport_type: "beacon",
         });
@@ -169,13 +173,35 @@ export function PackagePicker({ orgSlug, locale, extraInitial = 0 }: { orgSlug: 
           automată pornește implicit dacă banca permite salvarea cardului (vezi
           netopia-confirm.ts), deci clientul trebuie să știe asta dinainte, nu
           să afle abia la a doua taxare. */}
-      <p className="mx-auto mb-4 max-w-xl text-center text-[12.5px] leading-relaxed text-muted-2">{t.recurent}</p>
+      <div className="mx-auto mb-5 flex max-w-xl flex-col items-center gap-2.5">
+        <p className="text-[13px] font-semibold text-muted">{t.facturareTitlu}</p>
+        <div role="group" aria-label={t.facturareTitlu} className="inline-flex rounded-full border border-line bg-panel p-1">
+          <button
+            type="button"
+            onClick={() => setFacturare("lunar")}
+            aria-pressed={!anual}
+            className={`rounded-full px-5 py-2 text-sm font-bold transition ${anual ? "text-muted hover:text-ink" : "bg-brand-blue text-white"}`}
+          >
+            {t.facturareLunar}
+          </button>
+          <button
+            type="button"
+            onClick={() => setFacturare("anual")}
+            aria-pressed={anual}
+            className={`flex items-center gap-2 rounded-full px-5 py-2 text-sm font-bold transition ${anual ? "bg-brand-blue text-white" : "text-muted hover:text-ink"}`}
+          >
+            {t.facturareAnual}
+            <span className={`rounded-full px-2 py-0.5 text-[11px] font-extrabold ${anual ? "bg-white/20 text-white" : "bg-brand-green-soft text-brand-green"}`}>{t.facturareReducere}</span>
+          </button>
+        </div>
+      </div>
+      <p className="mx-auto mb-4 max-w-xl text-center text-[12.5px] leading-relaxed text-muted-2">{anual ? t.recurentAnual : t.recurent}</p>
       {eroare && <p className="mx-auto mb-4 max-w-xl text-center text-sm text-red-600">{eroare}</p>}
       {date && !dateOk && <DateFacturareForm orgSlug={orgSlug} initial={date} onSaved={setDate} locale={locale} />}
       <label className="mx-auto mb-5 flex max-w-xl items-start gap-2.5 text-[13px] leading-relaxed text-ink">
         <input type="checkbox" checked={acord} onChange={(e) => setAcord(e.target.checked)} className="mt-1 h-4 w-4 shrink-0 rounded border-line" />
         <span>
-          {t.acord}{" "}
+          {anual ? t.acordAnual : t.acord}{" "}
           <a href="/termeni" target="_blank" rel="noopener" className="font-medium underline">
             {t.acordTermeni}
           </a>
@@ -199,9 +225,16 @@ export function PackagePicker({ orgSlug, locale, extraInitial = 0 }: { orgSlug: 
                 </div>
               )}
               <h3 className="font-display text-lg font-bold text-ink">{p.nume}</h3>
-              <p className="text-2xl font-extrabold text-ink">
-                {pretLunarPachet(p.key, p.key === "start" ? extra : 0)} lei<span className="text-sm font-medium text-muted">{t.pePerLuna}</span>
-              </p>
+              <div>
+                <p className="text-2xl font-extrabold text-ink">
+                  {fmt(pretPerioadaPachet(p.key, p.key === "start" ? extra : 0, facturare) ?? 0)} lei<span className="text-sm font-medium text-muted">{anual ? t.pePerAn : t.pePerLuna}</span>
+                </p>
+                {anual && (
+                  <p className="mt-0.5 text-[12px] text-muted">
+                    {t.echivalentLunar(fmt(Math.round(((pretPerioadaPachet(p.key, p.key === "start" ? extra : 0, facturare) ?? 0) / LUNI_ACCES_ANUAL) * 10) / 10))}
+                  </p>
+                )}
+              </div>
               {p.key === "start" && (
                 <div className="flex items-center justify-between gap-3 rounded-lg border border-line px-3 py-2">
                   <div className="min-w-0">
@@ -249,7 +282,7 @@ export function PackagePicker({ orgSlug, locale, extraInitial = 0 }: { orgSlug: 
                   activ ? "bg-brand-green text-white" : "border border-brand-blue text-brand-blue hover:bg-brand-blue-soft"
                 }`}
               >
-                {activ ? t.seRedirectioneaza : t.alege(p.nume)}
+                {activ ? t.seRedirectioneaza : anual ? t.alegeAnual(p.nume, fmt(pretPerioadaPachet(p.key, p.key === "start" ? extra : 0, facturare) ?? 0)) : t.alege(p.nume)}
               </button>
             </div>
           );

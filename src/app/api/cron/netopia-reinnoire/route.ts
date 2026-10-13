@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { NETOPIA_RENEWAL_MAX_INCERCARI, reiaFacturileNeemise } from "@/lib/billing/netopia-confirm";
 import { taxeazaReinnoireAutomata } from "@/lib/billing/netopia-checkout";
 import { dateFacturareComplete } from "@/lib/billing/date-facturare";
-import { etichetaPachet, pretLunarPachet, type OrgPackage } from "@/lib/billing/packages";
+import { etichetaPachet, luniAcces, pretPerioadaPachet, type OrgPackage } from "@/lib/billing/packages";
 import type { CustomPlanConfigSaved } from "@/lib/billing/custom-plan";
 import { isAccessBlocked, isPlatformAdmin, trialEndsAt } from "@/lib/billing/trial";
 import { cronAutorizat } from "@/lib/cron-auth";
@@ -48,12 +48,17 @@ function cardExpiratLa(luna: number | null, an: number | null, data: Date): bool
   return anComplet < y || (anComplet === y && luna < m);
 }
 
-function pretSiEticheta(org: { package: string; customPlanConfig: unknown; extraUsers: number }): { pret: number; eticheta: string } | null {
+// Perioada de facturare: planul personalizat e mereu lunar; pachetele fixe urmează `billingLuni` al organizației (1 sau 12).
+function facturareOrg(org: { package: string; billingLuni: number }) {
+  return org.package !== "custom" && org.billingLuni === 12 ? ("anual" as const) : ("lunar" as const);
+}
+
+function pretSiEticheta(org: { package: string; customPlanConfig: unknown; extraUsers: number; billingLuni: number }): { pret: number; eticheta: string } | null {
   const fix = org.package as Exclude<OrgPackage, "trial" | "custom">;
-  const pret = org.package === "custom" ? (org.customPlanConfig as CustomPlanConfigSaved | null)?.pretLunar : pretLunarPachet(fix, org.extraUsers);
+  const pret = org.package === "custom" ? (org.customPlanConfig as CustomPlanConfigSaved | null)?.pretLunar : pretPerioadaPachet(fix, org.extraUsers, facturareOrg(org));
   if (!pret) return null;
   const eticheta = org.package === "custom" ? "Plan personalizat" : etichetaPachet(fix, org.package === "start" ? org.extraUsers : 0);
-  return { pret, eticheta };
+  return { pret, eticheta: facturareOrg(org) === "anual" ? `${eticheta} — abonament anual` : eticheta };
 }
 
 // Politica de retenție (valori implicite — de confirmat): ștergere la 90 de zile după expirarea accesului, cu două
@@ -203,6 +208,7 @@ async function proceseazaReinnoiri(): Promise<Record<string, unknown>> {
         package: organizations.package,
         customPlanConfig: organizations.customPlanConfig,
         extraUsers: organizations.extraUsers,
+        billingLuni: organizations.billingLuni,
         netopiaCardTokenEnc: organizations.netopiaCardTokenEnc,
         netopiaRenewalAttempts: organizations.netopiaRenewalAttempts,
         cif: organizations.cif,
@@ -233,6 +239,7 @@ async function proceseazaReinnoiri(): Promise<Record<string, unknown>> {
         package: organizations.package,
         customPlanConfig: organizations.customPlanConfig,
         extraUsers: organizations.extraUsers,
+        billingLuni: organizations.billingLuni,
         currentPeriodEnd: organizations.currentPeriodEnd,
         netopiaCardMasked: organizations.netopiaCardMasked,
         netopiaCardExpireMonth: organizations.netopiaCardExpireMonth,
@@ -346,12 +353,13 @@ async function proceseazaReinnoiri(): Promise<Record<string, unknown>> {
       const pretLunar =
         org.package === "custom"
           ? (org.customPlanConfig as CustomPlanConfigSaved | null)?.pretLunar
-          : pretLunarPachet(org.package as Exclude<OrgPackage, "trial" | "custom">, org.extraUsers);
+          : pretPerioadaPachet(org.package as Exclude<OrgPackage, "trial" | "custom">, org.extraUsers, facturareOrg(org));
       if (!pretLunar) {
         raporteazaAvertisment("netopia-reinnoire", "prețul lunar lipsește — reînnoire omisă", { orgSlug: org.slug, package: org.package });
         continue;
       }
       const packageLabel = org.package === "custom" ? "Plan personalizat" : etichetaPachet(org.package as Exclude<OrgPackage, "trial" | "custom">, org.package === "start" ? org.extraUsers : 0);
+      const luni = luniAcces(facturareOrg(org));
 
       const rezultat = await taxeazaReinnoireAutomata(
         {
@@ -364,6 +372,7 @@ async function proceseazaReinnoiri(): Promise<Record<string, unknown>> {
           packageLabel,
           planConfig: org.package === "custom" ? (org.customPlanConfig as CustomPlanConfigSaved) : null,
           extraUtilizatori: org.package === "start" ? org.extraUsers : 0,
+          luni,
           netopiaCardTokenEnc: org.netopiaCardTokenEnc,
           facturareEmail,
         },

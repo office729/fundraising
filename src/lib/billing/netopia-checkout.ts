@@ -25,6 +25,8 @@ type ParametriComanda = {
   pretLunar: number;
   planConfig: CustomPlanConfigSaved | null;
   extraUtilizatori: number;
+  // Luni de acces acoperite de plată (1 = lunar, 12 = anual); `pretLunar` de mai jos e deja prețul întregii perioade.
+  luni: number;
   renewal: boolean;
 };
 
@@ -54,7 +56,7 @@ async function insereazaComandaAbonament(tx: Tx, p: ParametriComanda): Promise<{
   const sumaLei = areDreptulLaReducere ? Math.round((p.pretLunar * (100 - REFERRAL_DISCOUNT_PERCENT)) / 100) : p.pretLunar;
 
   const orderId = `fa_${randomUUID().replace(/-/g, "")}`;
-  await tx.insert(platformPayments).values({ orgId: p.orgId, orderId, package: p.pachet, sumaLei, luni: 1, planConfig: p.planConfig, extraUsers: p.extraUtilizatori, renewal: p.renewal });
+  await tx.insert(platformPayments).values({ orgId: p.orgId, orderId, package: p.pachet, sumaLei, luni: p.luni, planConfig: p.planConfig, extraUsers: p.extraUtilizatori, renewal: p.renewal });
   return { orderId, sumaLei };
 }
 
@@ -98,6 +100,8 @@ export async function creeazaPlataAbonament(
     planConfig: CustomPlanConfigSaved | null;
     // Utilizatori plătiți în plus peste START; 0 pentru celelalte pachete. Prețul din `pretLunar` îi include deja.
     extraUtilizatori?: number;
+    // 12 pentru plata anuală (10 luni plătite); `pretLunar` primit e atunci prețul pe an.
+    luni?: number;
     origin: string;
   },
 ): Promise<string> {
@@ -120,6 +124,7 @@ export async function creeazaPlataAbonament(
       pretLunar: params.pretLunar,
       planConfig: params.planConfig,
       extraUtilizatori: params.extraUtilizatori ?? 0,
+      luni: params.luni ?? 1,
       renewal: false,
     });
   });
@@ -132,7 +137,7 @@ export async function creeazaPlataAbonament(
     ({ paymentUrl, ntpId } = await pornestePlata({
       orderId,
       sumaLei,
-      descriere: `Alexandrit — ${params.packageLabel} (o lună)`,
+      descriere: `Alexandrit — ${params.packageLabel} (${(params.luni ?? 1) === 12 ? "un an" : "o lună"})`,
       facturare: {
         email: ctx.userEmail,
         prenume: prenume ?? "Client",
@@ -210,6 +215,8 @@ export async function taxeazaReinnoireAutomata(
     packageLabel: string;
     planConfig: CustomPlanConfigSaved | null;
     extraUtilizatori: number;
+    // 1 = lunar, 12 = anual; `pretLunar` e prețul pe perioada respectivă.
+    luni: number;
     netopiaCardTokenEnc: string | null;
     facturareEmail: string;
   },
@@ -269,6 +276,7 @@ export async function taxeazaReinnoireAutomata(
       pretLunar: org.pretLunar,
       planConfig: org.planConfig,
       extraUtilizatori: org.extraUtilizatori,
+      luni: org.luni,
       renewal: true,
     });
   });

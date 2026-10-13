@@ -48,6 +48,8 @@ export const organizations = pgTable("organizations", {
   // Utilizatori plătiți în plus peste cei incluși în pachetul fix START (15 lei/lună fiecare) — vezi lib/billing/packages.ts.
   // Se setează doar la confirmarea unei plăți (netopia-confirm.ts); pentru alte pachete rămâne 0.
   extraUsers: integer("extra_users").notNull().default(0),
+  // Câte luni acoperă o plată: 1 = lunar, 12 = anual (10 luni plătite, 2 gratuite). Se setează la confirmarea plății; reînnoirea automată îl folosește.
+  billingLuni: integer("billing_luni").notNull().default(1),
   subscriptionStatus: subscriptionStatus("subscription_status").notNull().default("trialing"),
   // Vechi — abonamentele PLATFORMEI se încasează acum prin Netopia (vezi
   // platform_payments); coloanele rămân doar pentru rândurile mai vechi.

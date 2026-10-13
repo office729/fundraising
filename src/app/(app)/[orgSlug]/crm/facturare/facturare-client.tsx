@@ -34,7 +34,7 @@ export function FacturareClient({ orgSlug, date }: { orgSlug: string; date: Date
     metodaPlata.tip === "card-automat"
       ? { titlu: "Card, reînnoire automată", detaliu: [metodaPlata.masca, metodaPlata.expira ? `expiră ${metodaPlata.expira}` : null].filter(Boolean).join(" · ") }
       : metodaPlata.tip === "card"
-        ? { titlu: "Card, plată lunară", detaliu: "Plătești manual la fiecare reînnoire" }
+        ? { titlu: "Card, plată manuală", detaliu: "Plătești manual la fiecare reînnoire" }
         : { titlu: "Nicio plată încă", detaliu: plan.probaZileRamase != null ? `${plan.probaZileRamase} zile de probă rămase` : "Alege un plan pentru a începe" };
 
   return (
@@ -155,7 +155,7 @@ function RandFactura({ orgSlug, f, facturareActiva }: { orgSlug: string; f: Date
       <tr className="border-t border-[var(--ci-border)]">
         <td className="px-3 py-2.5 whitespace-nowrap">{data(f.data)}</td>
         <td className="px-3 py-2.5">
-          {f.pachet} <span className="text-[var(--ci-text-muted)]">(o lună)</span>
+          {f.pachet} <span className="text-[var(--ci-text-muted)]">({f.luni === 12 ? "un an" : "o lună"})</span>
         </td>
         <td className="ci-tabular px-3 py-2.5 text-right whitespace-nowrap">{f.sumaLei.toLocaleString("ro-RO")} lei</td>
         <td className="px-3 py-2.5 text-right whitespace-nowrap">

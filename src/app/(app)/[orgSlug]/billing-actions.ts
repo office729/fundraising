@@ -7,7 +7,7 @@ import { inregistreazaAudit } from "@/lib/audit";
 import { withOrgAdmin, type OrgContext } from "@/lib/auth/guard";
 import { calculateCustomPlanPrice, normalizeCustomPlanConfig, type CustomPlanConfigSaved } from "@/lib/billing/custom-plan";
 import { creeazaPlataAbonament } from "@/lib/billing/netopia-checkout";
-import { etichetaPachet, pretLunarPachet, utilizatoriSuplimentariValizi, type OrgPackage } from "@/lib/billing/packages";
+import { etichetaPachet, facturareValida, luniAcces, pretPerioadaPachet, utilizatoriSuplimentariValizi, type Facturare, type OrgPackage } from "@/lib/billing/packages";
 import { organizations, platformPayments } from "@/lib/db/schema";
 import { cifFolositDeAltaOrganizatie, MESAJ_CIF_FOLOSIT } from "@/lib/cif";
 import { EroareUtilizator } from "@/lib/erori";
@@ -30,14 +30,14 @@ async function origin(): Promise<string> {
 
 // Acordul pentru taxarea automată lunară (plată inițiată de comerciant): fără el nu pornește plata, iar bifa e
 // înregistrată în jurnalul de audit cu versiunea Termenilor, ca dovadă a acordului scris.
-async function inregistreazaAcordReinnoire(ctx: OrgContext, acord: boolean, pachet: string, pretLunar: number): Promise<void> {
+async function inregistreazaAcordReinnoire(ctx: OrgContext, acord: boolean, pachet: string, pretLunar: number, facturare: Facturare = "lunar"): Promise<void> {
   if (acord !== true) throw new EroareUtilizator("Bifează acordul pentru reînnoirea automată ca să continui la plată.");
   await inregistreazaAudit(ctx.db, {
     orgId: ctx.orgId,
     actorAppUserId: ctx.userId,
     actiune: "acord_reinnoire_automata",
     entitate: "abonament",
-    detalii: { pachet, pretLunar, termeniVersiune: TERMENI_VERSIUNE },
+    detalii: { pachet, pretLunar, facturare, termeniVersiune: TERMENI_VERSIUNE },
   });
 }
 
@@ -46,19 +46,22 @@ async function inregistreazaAcordReinnoire(ctx: OrgContext, acord: boolean, pach
 // schimbă abia când IPN-ul verificat confirmă plata (api/netopia/ipn/route.ts),
 // niciodată optimist, înainte de confirmare.
 export const startCheckoutAction = withOrgAdmin(
-  async (ctx, pkg: Exclude<OrgPackage, "trial" | "custom">, acordReinnoire: boolean, extraUtilizatori: number = 0) => {
+  async (ctx, pkg: Exclude<OrgPackage, "trial" | "custom">, acordReinnoire: boolean, extraUtilizatori: number = 0, facturareCeruta: string = "lunar") => {
     // Tipurile TypeScript nu protejează o Server Action apelată direct: cu „trial" sau „custom" prețul ar fi null/0.
     if (pkg !== "start" && pkg !== "crestere" && pkg !== "impact") throw new EroareUtilizator("Pachet invalid.");
     // Utilizatorii suplimentari există doar la START; numărul și prețul se recalculează AICI, nu se iau de la client.
     const extra = utilizatoriSuplimentariValizi(pkg, extraUtilizatori);
-    const pretLunar = pretLunarPachet(pkg, extra)!;
-    await inregistreazaAcordReinnoire(ctx, acordReinnoire, pkg, pretLunar);
+    // Perioada (lună sau an) și suma se stabilesc AICI; anualul = 10 luni plătite pentru 12 de acces (2 luni gratuite).
+    const facturare = facturareValida(facturareCeruta);
+    const pretPerioada = pretPerioadaPachet(pkg, extra, facturare)!;
+    await inregistreazaAcordReinnoire(ctx, acordReinnoire, pkg, pretPerioada, facturare);
     const url = await creeazaPlataAbonament(ctx, {
       pachet: pkg,
-      pretLunar,
+      pretLunar: pretPerioada,
       packageLabel: etichetaPachet(pkg, extra),
       planConfig: null,
       extraUtilizatori: extra,
+      luni: luniAcces(facturare),
       origin: await origin(),
     });
     return { url };

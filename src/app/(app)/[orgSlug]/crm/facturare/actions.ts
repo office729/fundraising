@@ -18,6 +18,8 @@ export type FacturaPlata = {
   data: string;
   pachet: string;
   sumaLei: number;
+  // Luni de acces acoperite de plată: 1 = lunar, 12 = anual.
+  luni: number;
   numar: string | null;
   link: string | null;
   stare: "emisa" | "se-emite" | "nefacturat";
@@ -59,6 +61,7 @@ export const obtineDateFacturare = withOrgAdmin(async (ctx): Promise<DateFactura
       createdAt: platformPayments.createdAt,
       pachet: platformPayments.package,
       sumaLei: platformPayments.sumaLei,
+      luni: platformPayments.luni,
       numar: platformPayments.oblioNumber,
       link: platformPayments.oblioLink,
     })
@@ -96,6 +99,7 @@ export const obtineDateFacturare = withOrgAdmin(async (ctx): Promise<DateFactura
       data: p.createdAt.toISOString(),
       pachet: (NUME_PACHET_FIX as Record<string, string>)[p.pachet] ?? ETICHETE[p.pachet] ?? p.pachet,
       sumaLei: p.sumaLei,
+      luni: p.luni,
       numar: p.numar,
       link: p.link,
       stare: p.link ? "emisa" : p.numar?.startsWith(MARCAJ_NEFACTURAT_SANDBOX) ? "nefacturat" : "se-emite",

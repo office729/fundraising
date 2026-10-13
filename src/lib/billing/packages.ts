@@ -173,13 +173,32 @@ export function pretLunarPachet(pkg: Exclude<OrgPackage, "custom">, extraUtiliza
   return baza + utilizatoriSuplimentariValizi(pkg, extraUtilizatori) * PRET_UTILIZATOR_SUPLIMENTAR;
 }
 
-// Prețuri anuale — 2 luni gratuite (din pagina de prețuri). Doar informativ
-// azi (Paywall/Setări afișează prețul anual, dar checkout-ul real e
-// lunar-only — vezi lib/billing/netopia-checkout.ts).
+// Facturare anuală: 12 luni de acces, 10 luni plătite (2 luni gratuite). Prețul se calculează mereu server-side.
+export const LUNI_ACCES_ANUAL = 12;
+export const LUNI_PLATITE_ANUAL = 10;
+export type Facturare = "lunar" | "anual";
+
+// Valorile acceptate din client; orice altceva = lunar.
+export function facturareValida(cerut: unknown): Facturare {
+  return cerut === "anual" ? "anual" : "lunar";
+}
+
+export function luniAcces(facturare: Facturare): number {
+  return facturare === "anual" ? LUNI_ACCES_ANUAL : 1;
+}
+
+// Prețul unei plăți pe perioada aleasă (lună sau an), cu utilizatorii suplimentari incluși; null pentru trial.
+export function pretPerioadaPachet(pkg: Exclude<OrgPackage, "custom">, extraUtilizatori: number, facturare: Facturare): number | null {
+  const lunar = pretLunarPachet(pkg, extraUtilizatori);
+  if (lunar === null) return null;
+  return facturare === "anual" ? lunar * LUNI_PLATITE_ANUAL : lunar;
+}
+
+// Prețuri anuale de bază (fără utilizatori suplimentari) — derivate din prețul lunar, pentru afișare.
 export const PACKAGE_PRICE_ANUAL: Record<Exclude<OrgPackage, "trial" | "custom">, number> = {
-  start: 490,
-  crestere: 1490,
-  impact: 2990,
+  start: PACKAGE_LIMITS.start.pretLunar! * LUNI_PLATITE_ANUAL,
+  crestere: PACKAGE_LIMITS.crestere.pretLunar! * LUNI_PLATITE_ANUAL,
+  impact: PACKAGE_LIMITS.impact.pretLunar! * LUNI_PLATITE_ANUAL,
 };
 
 // Numele afișat al fiecărui pachet fix — folosit în descrierea comenzii Netopia

@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-const { PACKAGE_LIMITS, PRET_UTILIZATOR_SUPLIMENTAR, MAX_UTILIZATORI_SUPLIMENTARI, pretLunarPachet, utilizatoriSuplimentariValizi, etichetaPachet } = await import("../src/lib/billing/packages.ts");
+const { PACKAGE_LIMITS, PRET_UTILIZATOR_SUPLIMENTAR, MAX_UTILIZATORI_SUPLIMENTARI, pretLunarPachet, utilizatoriSuplimentariValizi, etichetaPachet, pretPerioadaPachet, facturareValida, luniAcces, PACKAGE_PRICE_ANUAL } = await import("../src/lib/billing/packages.ts");
 const { HUB_DICT } = await import("../src/lib/i18n/dictionaries/hub.ts");
 
 const FIXE = ["start", "crestere", "impact"];
@@ -95,4 +95,22 @@ test("pagina de prețuri spune același preț pe utilizator suplimentar ca și c
   assert.ok(ro && en);
   assert.ok(ro.v0.startsWith(String(PRET_UTILIZATOR_SUPLIMENTAR)), ro.v0);
   assert.ok(en.v0.startsWith(String(PRET_UTILIZATOR_SUPLIMENTAR)), en.v0);
+});
+
+test("plata anuală = 12 luni de acces la prețul a 10 luni (2 luni gratuite)", () => {
+  assert.equal(luniAcces("anual"), 12);
+  assert.equal(luniAcces("lunar"), 1);
+  assert.equal(pretPerioadaPachet("start", 0, "lunar"), 49);
+  assert.equal(pretPerioadaPachet("start", 0, "anual"), 490);
+  assert.equal(pretPerioadaPachet("crestere", 0, "anual"), 1490);
+  assert.equal(pretPerioadaPachet("impact", 0, "anual"), 2990);
+  // Utilizatorii suplimentari intră în același preț pe an: (49 + 2 x 15) x 10.
+  assert.equal(pretPerioadaPachet("start", 2, "anual"), (49 + 2 * PRET_UTILIZATOR_SUPLIMENTAR) * 10);
+  assert.equal(pretPerioadaPachet("trial", 0, "anual"), null);
+  for (const p of ["start", "crestere", "impact"]) assert.equal(PACKAGE_PRICE_ANUAL[p], PACKAGE_LIMITS[p].pretLunar * 10);
+});
+
+test("perioada de facturare venită din client e validată (orice altceva = lunar)", () => {
+  assert.equal(facturareValida("anual"), "anual");
+  for (const v of ["lunar", "ANUAL", "", undefined, null, 12, "12"]) assert.equal(facturareValida(v), "lunar");
 });

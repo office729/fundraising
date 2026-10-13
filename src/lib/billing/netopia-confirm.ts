@@ -79,6 +79,7 @@ export async function factureazaPlata(orderId: string): Promise<void> {
         sumaLei: platformPayments.sumaLei,
         pachet: platformPayments.package,
         extraUsers: platformPayments.extraUsers,
+        luni: platformPayments.luni,
         oblioNumber: platformPayments.oblioNumber,
         ntpId: platformPayments.ntpId,
       })
@@ -115,7 +116,7 @@ export async function factureazaPlata(orderId: string): Promise<void> {
     const factura = await emiteFacturaAbonament({
       orderId: plata.orderId,
       client: { nume: org.name, cif: org.cif, adresa: org.adresaSediu, judet: org.judet, iban: org.iban, email: emailProprietar },
-      descriere: `Alexandrit — ${packageLabel} (o lună)`,
+      descriere: `Alexandrit — ${packageLabel} (${plata.luni === 12 ? "un an" : "o lună"})`,
       sumaLei: plata.sumaLei,
       referintaIncasare: plata.ntpId ?? plata.orderId,
     });
@@ -267,6 +268,8 @@ export async function proceseazaRezultatPlataNetopia(orderId: string, rezultat: 
           customPlanConfig: plata.package === "custom" ? plata.planConfig : null,
           // Utilizatorii suplimentari se aplică doar la START; orice alt pachet îi resetează la 0 (cota de bază a pachetului).
           extraUsers: plata.package === "start" ? plata.extraUsers : 0,
+          // Perioada de facturare a organizației (1 sau 12) urmează ultima plată; reînnoirea automată o păstrează.
+          billingLuni: plata.luni === 12 ? 12 : 1,
           subscriptionStatus: "active",
           // Aceeași aritmetică GREATEST atomică ca înainte — o plată nouă
           // prelungește accesul existent, nu-l suprapune.
