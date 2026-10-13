@@ -18,7 +18,9 @@ import { aziRo, zileRamase } from "@/app/(app)/[orgSlug]/crm/strangere-fonduri/c
 
 import { CampaignFooter } from "../campaign-footer";
 import { BaraDoneazaMobil } from "./bara-doneaza-mobil";
+import { getDetaliuDonatie } from "./detaliu-donatie";
 import { DoneazaModal } from "./doneaza-modal";
+import { PopupMultumire } from "./popup-multumire";
 import { RecentDonationsList } from "./recent-donations-list";
 import { ShareLinksClient } from "./share-links";
 import { UrmarireVizite } from "./urmarire-vizite";
@@ -127,15 +129,24 @@ export async function generateMetadata({
 
 export default async function PaginaStrangereFonduriPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ orgSlug: string; pageSlug: string }>;
+  searchParams: Promise<{ multumim?: string; session_id?: string; payment_intent?: string; redirect_status?: string }>;
 }) {
   const { orgSlug, pageSlug } = await params;
+  const sp = await searchParams;
   // Metodele cu redirect (Revolut/PayPal) se verifică în paralel cu încărcarea paginii.
   const [data, locale, metode] = await Promise.all([getPaginaPublica(orgSlug, pageSlug), getLocale(), metodeRedirect(orgSlug)]);
   if (!data) notFound();
   const t = DONATION_DICT[locale];
   const c = t.campaignPage;
+
+  // După o plată (Stripe întoarce donatorul aici, prin /multumim) arătăm popup-ul de mulțumire, fără butoane de partajare.
+  const arataMultumire = sp.multumim === "1";
+  const nefinalizata = sp.redirect_status === "failed";
+  const idPlata = sp.session_id ?? sp.payment_intent;
+  const detaliuDonatie = arataMultumire && !nefinalizata && idPlata ? await getDetaliuDonatie(idPlata) : null;
 
   const { org, pagina, recente, topDonatori, actualizari, totalDonatii, alteCampanii } = data;
   const procent = pagina.sumaTinta ? Math.min(100, Math.round((pagina.sumaStransa / pagina.sumaTinta) * 100)) : null;
@@ -246,6 +257,27 @@ export default async function PaginaStrangereFonduriPage({
         {c.sariLaDonatie}
       </a>
       <UrmarireVizite orgSlug={orgSlug} pageSlug={pageSlug} />
+      {arataMultumire && (
+        <PopupMultumire inchide={t.thankYou.inchide}>
+          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-brand-green-soft text-2xl">{nefinalizata ? "↩️" : "🎉"}</span>
+          <h2 className="font-display mt-4 text-2xl font-bold text-ink">{nefinalizata ? t.thankYou.nefinalizata : t.thankYou.titlu}</h2>
+          {nefinalizata ? null : detaliuDonatie ? (
+            <>
+              <p className="mt-2 text-[14.5px] leading-relaxed text-body">
+                {detaliuDonatie.numeDonator ? t.thankYou.multumimNume(detaliuDonatie.numeDonator) : t.thankYou.multumim} {t.thankYou.pentruDonatia}{" "}
+                <strong className="text-ink">
+                  {detaliuDonatie.suma.toLocaleString(t.numeLocale)} lei{detaliuDonatie.recurenta ? t.thankYou.lunaSufix : ""}
+                </strong>{" "}
+                {t.thankYou.pentru} <strong className="text-ink">{detaliuDonatie.pageTitlu}</strong>
+                {t.thankYou.finalCuEmail}
+              </p>
+              {!detaliuDonatie.recurenta && <p className="mt-3 text-[13px] text-muted">{t.thankYou.lunarOferta}</p>}
+            </>
+          ) : (
+            <p className="mt-2 text-[14.5px] leading-relaxed text-muted">{t.thankYou.faraDetaliu}</p>
+          )}
+        </PopupMultumire>
+      )}
       <main className="mx-auto max-w-6xl px-4 pt-5 pb-16 sm:px-6 sm:pt-8">
         <Link href={`/strangere-fonduri/${orgSlug}`} className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-muted-2 transition hover:text-brand-blue">
           <ArrowLeft className="h-3.5 w-3.5" /> {c.acasaLa(org.name)}
