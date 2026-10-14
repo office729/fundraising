@@ -304,16 +304,16 @@ export async function cautaApeluriAI(p: { domeniu: string; zona: string; observa
   const gasite = new Set<string>();
   let text = "";
   try {
-    // „pause_turn”: căutarea lungă e întreruptă de API și se continuă retrimițând răspunsul parțial (cel mult de trei ori).
-    for (let tura = 0; tura < 3; tura++) {
+    // „pause_turn”: căutarea lungă e întreruptă de API și se continuă retrimițând răspunsul parțial (o singură dată: două ture de cel mult 50 s, sub limita paginii).
+    for (let tura = 0; tura < 2; tura++) {
       const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), 100_000);
+      const t = setTimeout(() => ctrl.abort(), 50_000);
       let res: Response;
       try {
         res = await fetch(ANTHROPIC_URL, {
           method: "POST",
           headers: { "content-type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
-          body: JSON.stringify({ model, max_tokens: 3000, system, messages, tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 6 }] }),
+          body: JSON.stringify({ model, max_tokens: 3000, system, messages, tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 3 }] }),
           signal: ctrl.signal,
         });
       } finally {

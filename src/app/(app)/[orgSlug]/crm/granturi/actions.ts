@@ -5,7 +5,7 @@ import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 
 import { aiConfigurat, cautaApeluriAI, genereazaDraftGrantAI, type RezultatCautareApeluri } from "@/lib/ai";
-import { limitaAIDepasita, MESAJ_LIMITA_AI } from "@/lib/ai-limit";
+import { limitaAIDepasita, limitaCautareDepasita, MESAJ_LIMITA_AI, MESAJ_LIMITA_CAUTARE } from "@/lib/ai-limit";
 import { withOrgAdmin, withOrgFaze, withOrgSession } from "@/lib/auth/guard";
 import { areModul } from "@/lib/billing/packages";
 import { appUsers, granturi, granturiDosar, memberships, type FisierGrant } from "@/lib/db/schema";
@@ -246,7 +246,13 @@ export const incarcaFisierGrantAction = withOrgSession(async (ctx, grantId: stri
 
   const nume = (String(formData.get("nume") ?? "").trim() || fisier.name || `document.${ext}`).slice(0, 200);
   const nou: FisierGrant = { id, nume, ref: referintaPrivata(cale), tip: ext, marime: fisier.size, la: new Date().toISOString() };
-  await ctx.db.update(granturi).set({ fisiere: [nou, ...g.fisiere], updatedAt: new Date() }).where(and(eq(granturi.id, grantId), eq(granturi.orgId, ctx.orgId)));
+  try {
+    await ctx.db.update(granturi).set({ fisiere: [nou, ...g.fisiere], updatedAt: new Date() }).where(and(eq(granturi.id, grantId), eq(granturi.orgId, ctx.orgId)));
+  } catch (e) {
+    // Fără rând în listă, fișierul ar rămâne orfan în bucket: îl ștergem înainte să propagăm eroarea.
+    await stergeFisierePrivate(ctx.orgSlug, [nou.ref]);
+    throw e;
+  }
   return { ok: true };
 });
 
@@ -277,6 +283,7 @@ export const stergeFisierGrantAction = withOrgSession(async (ctx, grantId: strin
 
 // ---- Căutare de apeluri cu AI ---------------------------------------------------------------------------------------
 // Folosește căutarea web a Anthropic; păstrează doar rezultate cu linkuri reale (vezi cautaApeluriAI). Plafonată zilnic ca restul funcțiilor AI.
+const CAMPURI_FARA_AI = new Set(["contact_nume", "contact_email", "contact_telefon", "iban"]);
 const ZONE = ["România", "Europa", "Internațional"];
 
 export const cautaApeluriAction = withOrgFaze<
@@ -288,7 +295,7 @@ export const cautaApeluriAction = withOrgFaze<
   pregateste: async (ctx, domeniu, zona, observatii) => {
     cuModul(ctx);
     if (!aiConfigurat()) return { gata: { ok: false, eroare: "Căutarea cu AI nu e configurată pe această platformă." } };
-    if (await limitaAIDepasita(ctx)) return { gata: { ok: false, eroare: MESAJ_LIMITA_AI } };
+    if (await limitaCautareDepasita(ctx)) return { gata: { ok: false, eroare: MESAJ_LIMITA_CAUTARE } };
     return {
       pregatit: {
         domeniu: String(domeniu ?? "").trim().slice(0, 200),
@@ -324,7 +331,8 @@ export const genereazaDraftGrantAction = withOrgFaze<
     return {
       pregatit: {
         cerere: {
-          dosar: CAMPURI_DOSAR.filter((c) => dosar[c.cheie]).map((c) => ({ eticheta: c.eticheta, valoare: dosar[c.cheie] })),
+          // Contactul și IBAN-ul nu sunt necesare scrierii draftului și nu pleacă la model (minimizarea datelor); în draft rămân de completat.
+          dosar: CAMPURI_DOSAR.filter((c) => dosar[c.cheie] && !CAMPURI_FARA_AI.has(c.cheie)).map((c) => ({ eticheta: c.eticheta, valoare: dosar[c.cheie] })),
           finantator: g.finantator,
           titlu: g.titlu,
           suma: FORMAT_SUMA(g.suma, g.moneda),

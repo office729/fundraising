@@ -22,37 +22,43 @@ export type RezultatStergere = { error: string | null };
 // singura poartă de acces e politica organizations_owner_delete + verificarea de rol
 // de aici. Fișierele din Storage (logo, poze, facturi) se șterg explicit, înaintea organizației.
 
-// Șterge fișierele organizației din Storage (logo, poze de campanie, facturi, newsletter) — folderele
-// `<slug>/` și `newsletter/<orgId>/` din bucket-ul org-branding. Rulează cu sesiunea owner-ului (politica
-// org_branding_admin_delete); o eroare aici NU oprește ștergerea organizației, doar se raportează.
+// Șterge fișierele organizației din Storage: în org-branding (logo, poze de campanie, newsletter) folderele `<slug>/` și `newsletter/<orgId>/`,
+// iar în bucket-ul privat org-docs-private (atașamente de granturi, documente de firme, facturi) folderul `<slug>/`. Rulează cu sesiunea
+// owner-ului (politicile de membru ale bucket-urilor); o eroare aici NU oprește ștergerea organizației, doar se raportează — pe fiecare bucket separat.
 async function stergeFisiereOrganizatie(slug: string, orgId: string): Promise<number> {
   const supabase = await createClient();
-  const bucket = supabase.storage.from("org-branding");
-  const cai: string[] = [];
+  let total = 0;
+  const bucketuri: [string, string[]][] = [
+    ["org-branding", [slug, `newsletter/${orgId}`]],
+    ["org-docs-private", [slug]],
+  ];
+  for (const [bucketId, prefixe] of bucketuri) {
+    const bucket = supabase.storage.from(bucketId);
+    const cai: string[] = [];
 
-  async function colecteaza(prefix: string, adancime: number): Promise<void> {
-    if (adancime > 4) return;
-    const { data, error } = await bucket.list(prefix, { limit: 1000 });
-    if (error || !data) throw error ?? new Error("list a eșuat");
-    for (const intrare of data) {
-      // Folderele vin fără `id`; fișierele au id.
-      if (intrare.id) cai.push(`${prefix}/${intrare.name}`);
-      else await colecteaza(`${prefix}/${intrare.name}`, adancime + 1);
+    async function colecteaza(prefix: string, adancime: number): Promise<void> {
+      if (adancime > 4) return;
+      const { data, error } = await bucket.list(prefix, { limit: 1000 });
+      if (error || !data) throw error ?? new Error("list a eșuat");
+      for (const intrare of data) {
+        // Folderele vin fără `id`; fișierele au id.
+        if (intrare.id) cai.push(`${prefix}/${intrare.name}`);
+        else await colecteaza(`${prefix}/${intrare.name}`, adancime + 1);
+      }
+    }
+
+    try {
+      for (const p of prefixe) await colecteaza(p, 0);
+      for (let i = 0; i < cai.length; i += 100) {
+        const { error } = await bucket.remove(cai.slice(i, i + 100));
+        if (error) throw error;
+      }
+      total += cai.length;
+    } catch (e) {
+      raporteazaEroare("organizatie-stergere-storage", e, { orgId, orgSlug: slug, bucket: bucketId });
     }
   }
-
-  try {
-    await colecteaza(slug, 0);
-    await colecteaza(`newsletter/${orgId}`, 0);
-    for (let i = 0; i < cai.length; i += 100) {
-      const { error } = await bucket.remove(cai.slice(i, i + 100));
-      if (error) throw error;
-    }
-    return cai.length;
-  } catch (e) {
-    raporteazaEroare("organizatie-stergere-storage", e, { orgId, orgSlug: slug });
-    return 0;
-  }
+  return total;
 }
 
 const stergeOrganizatia = withOrgSession(

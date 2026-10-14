@@ -124,19 +124,19 @@ export function AnalyticsConsent({ texts }: { texts: BannerTexts }) {
   const bannerDeschis = !esteWidget && !necunoscut && (stare.analytics === "unset" || (cuPublicitate && stare.marketing === "unset") || redeschis);
 
   useEffect(() => {
-    if (statisticiAcceptate) ensureAnalyticsInit();
-  }, [statisticiAcceptate]);
+    if (statisticiAcceptate && !esteWidget) ensureAnalyticsInit();
+  }, [statisticiAcceptate, esteWidget]);
 
   useEffect(() => {
-    if (publicitateAcceptata) initMetaPixel();
-  }, [publicitateAcceptata]);
+    if (publicitateAcceptata && !esteWidget) initMetaPixel();
+  }, [publicitateAcceptata, esteWidget]);
 
   // PageView Meta la navigarea între pagini (prima încărcare e trimisă de initMetaPixel).
   useEffect(() => {
     if (ultimaCale.current === pathname) return;
     ultimaCale.current = pathname;
-    if (publicitateAcceptata) paginaNouaMeta();
-  }, [pathname, publicitateAcceptata]);
+    if (publicitateAcceptata && !esteWidget) paginaNouaMeta();
+  }, [pathname, publicitateAcceptata, esteWidget]);
 
   return (
     <>
