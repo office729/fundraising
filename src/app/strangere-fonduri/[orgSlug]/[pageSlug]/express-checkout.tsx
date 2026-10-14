@@ -53,7 +53,7 @@ function ExpressCheckoutInner({
   // explicit, altfel portofelul ar arăta suma cu care a fost deschis prima
   // dată, nu suma curentă din formular.
   useEffect(() => {
-    if (!elements || !Number.isFinite(suma) || suma < 3) return;
+    if (!elements || !Number.isFinite(suma) || suma < 10) return;
     elements.update({ amount: Math.round(suma * 100) });
   }, [elements, suma]);
 
@@ -87,7 +87,7 @@ function ExpressCheckoutInner({
           // Portofelul se deschide direct: numele și email-ul vin din el (vezi
           // onConfirm), iar acordul pentru Termeni/GDPR e dat prin plată (text sub
           // buton). Singura verificare rămasă e suma, care e deja în formular.
-          if (!Number.isFinite(suma) || suma < 3) {
+          if (!Number.isFinite(suma) || suma < 10) {
             setEroare(t.plataExpressEsuata);
             event.reject();
             return;

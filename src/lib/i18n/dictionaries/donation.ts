@@ -293,7 +293,7 @@ export const DONATION_DICT = {
 // server action-ul să le poată importa fără restul dicționarului de UI.
 export const DONATE_ACTION_ERRORS = {
   ro: {
-    sumaMinima: "Suma minimă pentru o donație este 3 lei.",
+    sumaMinima: "Suma minimă pentru o donație este 10 lei.",
     sumaMaxima: "Pentru sume mai mari, te rugăm să ne contactezi direct.",
     campuriObligatorii: "Numele și emailul sunt obligatorii.",
     emailInvalid: "Adresa de email nu e validă.",
@@ -305,7 +305,7 @@ export const DONATE_ACTION_ERRORS = {
     preaMulteIncercari: "Prea multe încercări — te rugăm să aștepți câteva minute și să încerci din nou.",
   },
   en: {
-    sumaMinima: "The minimum donation amount is 3 lei.",
+    sumaMinima: "The minimum donation amount is 10 lei.",
     sumaMaxima: "For larger amounts, please contact us directly.",
     campuriObligatorii: "Name and email are required.",
     emailInvalid: "The email address isn't valid.",

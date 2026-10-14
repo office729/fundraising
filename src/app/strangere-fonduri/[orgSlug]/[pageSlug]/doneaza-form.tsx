@@ -167,7 +167,7 @@ export function DoneazaForm({
             <input
               type="number"
               name="sumaEur"
-              min={1}
+              min={2}
               max={10000}
               step="any"
               value={sumaEur}
@@ -202,7 +202,7 @@ export function DoneazaForm({
         <input
           type="number"
           name="suma"
-          min={3}
+          min={10}
           max={50000}
           value={suma}
           onChange={(e) => setSuma(Number(e.target.value))}

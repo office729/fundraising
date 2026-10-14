@@ -99,7 +99,7 @@ export async function creeazaIntentPaypalAction(
   if (String(formData.get("website") ?? "").trim()) return { ok: false, error: errors.plataEsuata };
 
   const sumaEur = Number(String(formData.get("sumaEur") ?? "").replace(",", "."));
-  if (!Number.isFinite(sumaEur) || sumaEur < 1) return { ok: false, error: errors.sumaMinima };
+  if (!Number.isFinite(sumaEur) || sumaEur < 2) return { ok: false, error: errors.sumaMinima };
   if (sumaEur > 10_000) return { ok: false, error: errors.sumaMaxima };
   const eurCenti = Math.round(sumaEur * 100);
 
