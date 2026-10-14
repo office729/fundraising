@@ -120,7 +120,7 @@ test("modulele pe pachete: ce e în CREȘTERE și ce doar în IMPACT", () => {
     assert.equal(areModul("crestere", m), true, m);
     assert.equal(areModul("impact", m), true, m);
   }
-  for (const m of ["comunicat-presa", "analiza-baze", "granturi"]) {
+  for (const m of ["comunicat-presa", "analiza-baze", "granturi", "calendar"]) {
     assert.equal(areModul("start", m), false, m);
     assert.equal(areModul("crestere", m), false, m);
     assert.equal(areModul("impact", m), true, m);

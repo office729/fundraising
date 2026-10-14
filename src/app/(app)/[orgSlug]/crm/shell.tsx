@@ -39,6 +39,7 @@ import {
   X,
   Lock,
   Award,
+  CalendarDays,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -92,6 +93,7 @@ const MODUL_PE_INTRARE: Record<string, ModulPachet> = {
   organizatie: "kpi",
   "/program-lucru": "program-lucru",
   granturi: "granturi",
+  calendar: "calendar",
 };
 
 // Etichetele vin din dicționarul RO/EN (vezi lib/i18n/dictionaries/dashboard.ts)
@@ -127,6 +129,7 @@ function buildNav(dict: DashboardDict, orgSlug: string, role: string): { section
     {
       section: dict.nav.sectionOperare,
       items: [
+        { href: "calendar", label: dict.nav.calendar, hint: dict.hints.calendar, icon: CalendarDays },
         { href: "comunicare", label: dict.nav.comunicare, hint: dict.hints.comunicare, icon: MessageSquare },
       ],
     },
