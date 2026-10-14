@@ -1,6 +1,6 @@
 "use client";
 
-import { Award, CalendarClock, Check, ExternalLink, Plus, Sparkles, Trash2 } from "lucide-react";
+import { Award, CalendarClock, Check, ExternalLink, Paperclip, Plus, Search, Sparkles, Trash2 } from "lucide-react";
 import { useState, useTransition } from "react";
 
 import { Badge, type StatusTone } from "../components/ui/badge";
@@ -23,6 +23,7 @@ import {
   textTermen,
   urgentaTermen,
   zileLaTermen,
+  type ApelGasit,
   type ElementLista,
   type GrantInput,
   type StareGrant,
@@ -32,11 +33,15 @@ import { ETICHETE_FEL, SURSE_FINANTARE } from "@/lib/granturi/surse";
 
 import {
   adaugaSursaInRegistruAction,
+  cautaApeluriAction,
+  deschideFisierGrantAction,
   genereazaDraftGrantAction,
+  incarcaFisierGrantAction,
   obtineDateGranturi,
   salveazaDosarAction,
   salveazaGrantAction,
   schimbaStareGrantAction,
+  stergeFisierGrantAction,
   stergeGrantAction,
   type DateGranturi,
   type GrantRand,
@@ -77,6 +82,8 @@ const ELIGIBILITATE_STANDARD = [
 
 const formatData = (iso: string | null) =>
   iso ? new Date(`${iso}T00:00:00`).toLocaleDateString("ro-RO", { day: "numeric", month: "short", year: "numeric" }) : "—";
+
+const formatMarime = (b: number) => (b >= 1024 * 1024 ? `${(b / (1024 * 1024)).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`);
 
 const formatSuma = (n: number | null, moneda: string) =>
   n === null ? "—" : new Intl.NumberFormat("ro-RO", { style: "currency", currency: moneda, maximumFractionDigits: 0 }).format(n);
@@ -437,6 +444,41 @@ function FisaGrant({ orgSlug, date, initial, esteAdmin, onClose, onSaved }: { or
     });
   }
 
+  const fisiere = date.granturi.find((g) => g.id === f.id)?.fisiere ?? [];
+
+  function incarcaFisier(fis: File) {
+    if (!f.id) return;
+    setEroare(null);
+    setMesaj(null);
+    const id = f.id;
+    startTransition(async () => {
+      const fd = new FormData();
+      fd.append("fisier", fis);
+      const r = await incarcaFisierGrantAction(orgSlug, id, fd);
+      if (!r.ok) setEroare(r.eroare);
+      else await onSaved();
+    });
+  }
+
+  function deschideFisier(fisierId: string) {
+    if (!f.id) return;
+    const id = f.id;
+    startTransition(async () => {
+      const r = await deschideFisierGrantAction(orgSlug, id, fisierId);
+      if (r.ok) window.open(r.url, "_blank", "noopener,noreferrer");
+      else setEroare(r.eroare);
+    });
+  }
+
+  function stergeFisier(fisierId: string) {
+    if (!f.id || !window.confirm("Ștergi acest fișier?")) return;
+    const id = f.id;
+    startTransition(async () => {
+      await stergeFisierGrantAction(orgSlug, id, fisierId);
+      await onSaved();
+    });
+  }
+
   function sterge() {
     if (!f.id || !window.confirm("Ștergi această cerere? Acțiunea nu poate fi anulată.")) return;
     startTransition(async () => {
@@ -591,6 +633,45 @@ function FisaGrant({ orgSlug, date, initial, esteAdmin, onClose, onSaved }: { or
         )}
 
         <div>
+          <Label>Fișiere atașate</Label>
+          {noua ? (
+            <p className="text-[12px] text-[var(--ci-text-muted)]">Salvează cererea ca să poți atașa fișiere (PDF, imagini, Word, Excel; maximum 4 MB fiecare).</p>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-[12px] text-[var(--ci-text-muted)]">Statut, bilanț, buget, scrisori de sprijin: tot ce ai pregătit pentru depunere. PDF, imagini, Word, Excel; maximum 4 MB fiecare.</p>
+              {fisiere.length > 0 && (
+                <ul className="space-y-1">
+                  {fisiere.map((x) => (
+                    <li key={x.id} className="flex items-center gap-2 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-2.5 py-1.5">
+                      <Paperclip className="h-3.5 w-3.5 shrink-0 text-[var(--ci-text-faint)]" aria-hidden />
+                      <button type="button" className="min-w-0 flex-1 truncate text-left text-[13px] text-[var(--ci-primary)] hover:underline" onClick={() => deschideFisier(x.id)}>
+                        {x.nume}
+                      </button>
+                      <span className="shrink-0 text-[12px] text-[var(--ci-text-muted)]">{formatMarime(x.marime)}</span>
+                      <button type="button" aria-label={`Șterge fișierul ${x.nume}`} className="text-[var(--ci-text-faint)] hover:text-[var(--ci-red)]" onClick={() => stergeFisier(x.id)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <input
+                type="file"
+                aria-label="Atașează un fișier"
+                accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx,.txt"
+                disabled={pending}
+                onChange={(e) => {
+                  const fis = e.target.files?.[0];
+                  e.target.value = "";
+                  if (fis) incarcaFisier(fis);
+                }}
+                className="block w-full text-[13px] text-[var(--ci-text-muted)] file:mr-3 file:rounded-[var(--ci-radius-btn)] file:border file:border-[var(--ci-border)] file:bg-[var(--ci-surface)] file:px-3 file:py-1.5 file:text-[13px] file:font-medium file:text-[var(--ci-text)]"
+              />
+            </div>
+          )}
+        </div>
+
+        <div>
           <Label>Note interne</Label>
           <Textarea value={f.nota} onChange={(e) => set("nota", e.target.value)} rows={3} maxLength={4000} />
         </div>
@@ -696,6 +777,125 @@ function Dosar({ orgSlug, dosar, prefill, reincarca }: { orgSlug: string; dosar:
 
 // ---------------------------------------------------------------------------------------------------------------- Surse
 
+function CautareApeluri({ orgSlug, date, reincarca }: { orgSlug: string; date: DateGranturi; reincarca: () => Promise<void> }) {
+  const [domeniu, setDomeniu] = useState("");
+  const [zona, setZona] = useState("România");
+  const [observatii, setObservatii] = useState("");
+  const [rezultate, setRezultate] = useState<ApelGasit[] | null>(null);
+  const [eroare, setEroare] = useState<string | null>(null);
+  const [seCauta, setSeCauta] = useState(false);
+  const [pending, startTransition] = useTransition();
+  const [adaugate, setAdaugate] = useState<Record<string, boolean>>({});
+
+  function cauta() {
+    setEroare(null);
+    setRezultate(null);
+    setSeCauta(true);
+    startTransition(async () => {
+      try {
+        const r = await cautaApeluriAction(orgSlug, domeniu, zona, observatii);
+        if (r.ok) setRezultate(r.apeluri);
+        else setEroare(r.eroare);
+      } catch {
+        setEroare("Căutarea nu a reușit acum. Încearcă din nou în câteva momente.");
+      } finally {
+        setSeCauta(false);
+      }
+    });
+  }
+
+  const deja = (a: ApelGasit) => adaugate[a.url] || date.granturi.some((g) => g.link === a.url);
+
+  return (
+    <Card>
+      <div className="flex items-start gap-2.5">
+        <Search className="mt-0.5 h-4 w-4 shrink-0 text-[var(--ci-primary)]" aria-hidden />
+        <div className="min-w-0 flex-1">
+          <h3 className="ci-display text-[14px] font-semibold text-[var(--ci-text)]">Caută apeluri cu AI</h3>
+          <p className="mt-0.5 text-[12.5px] text-[var(--ci-text-muted)]">
+            Caută pe web apeluri deschise sau recurente potrivite organizației. Păstrăm doar rezultatele cu link real, dar <b className="font-semibold text-[var(--ci-text)]">termenul și eligibilitatea se verifică mereu pe pagina oficială</b> înainte să aplici.
+          </p>
+          {!date.aiDisponibil ? (
+            <p className="mt-2 text-[12.5px] text-[var(--ci-text-muted)]">Căutarea cu AI nu e activă pe această platformă.</p>
+          ) : (
+            <>
+              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-[1.4fr_1fr]">
+                <div>
+                  <Label htmlFor="cautare-domeniu">Domeniu și temă</Label>
+                  <Input id="cautare-domeniu" value={domeniu} maxLength={200} onChange={(e) => setDomeniu(e.target.value)} placeholder="ex. sănătate, copii cu dizabilități" />
+                </div>
+                <div>
+                  <Label htmlFor="cautare-zona">Zonă</Label>
+                  <Select id="cautare-zona" value={zona} onChange={(e) => setZona(e.target.value)}>
+                    <option>România</option>
+                    <option>Europa</option>
+                    <option>Internațional</option>
+                  </Select>
+                </div>
+                <div className="sm:col-span-2">
+                  <Label htmlFor="cautare-obs">Precizări (opțional)</Label>
+                  <Input id="cautare-obs" value={observatii} maxLength={300} onChange={(e) => setObservatii(e.target.value)} placeholder="ex. proiecte între 10.000 și 50.000 de euro, fără cofinanțare" />
+                </div>
+              </div>
+              <div className="mt-3">
+                <Button variant="primary" onClick={cauta} loading={seCauta} disabled={pending && !seCauta}>
+                  <Search className="h-4 w-4" /> {seCauta ? "Se caută…" : "Caută apeluri"}
+                </Button>
+                {seCauta && <span className="ml-3 text-[12.5px] text-[var(--ci-text-muted)]">Poate dura până la un minut.</span>}
+              </div>
+            </>
+          )}
+          {eroare && (
+            <p role="alert" className="mt-3 text-[13px] text-[var(--ci-red)]">
+              {eroare}
+            </p>
+          )}
+          {rezultate && rezultate.length === 0 && <p className="mt-3 text-[13px] text-[var(--ci-text-muted)]">Nu am găsit apeluri sigure pentru această căutare. Încearcă o temă mai largă sau altă zonă.</p>}
+          {rezultate && rezultate.length > 0 && (
+            <ul className="mt-3 space-y-2">
+              {rezultate.map((a) => (
+                <li key={a.url} className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] p-3">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[13.5px] font-semibold text-[var(--ci-text)]">{a.titlu}</p>
+                      <p className="text-[12.5px] text-[var(--ci-text-muted)]">
+                        {a.finantator} · {a.termen ? `termen: ${formatData(a.termen)}` : "termen neconfirmat"}
+                      </p>
+                      {a.motiv && <p className="mt-1 text-[12.5px] text-[var(--ci-text)]">{a.motiv}</p>}
+                      <a href={a.url} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1 text-[12.5px] font-medium text-[var(--ci-primary)] hover:underline">
+                        Deschide pagina <ExternalLink className="h-3 w-3" aria-hidden />
+                      </a>
+                    </div>
+                    {deja(a) ? (
+                      <Badge tone="green">În registru</Badge>
+                    ) : (
+                      <Button
+                        size="sm"
+                        disabled={pending}
+                        onClick={() =>
+                          startTransition(async () => {
+                            const r = await adaugaSursaInRegistruAction(orgSlug, a.finantator, a.titlu, "alt", a.url, a.termen ?? "");
+                            if (r.ok) {
+                              setAdaugate((x) => ({ ...x, [a.url]: true }));
+                              await reincarca();
+                            }
+                          })
+                        }
+                      >
+                        <Plus className="h-3.5 w-3.5" /> Adaugă în registru
+                      </Button>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 function Surse({ orgSlug, date, reincarca }: { orgSlug: string; date: DateGranturi; reincarca: () => Promise<void> }) {
   const [fel, setFel] = useState<string>("toate");
   const [pending, startTransition] = useTransition();
@@ -710,6 +910,7 @@ function Surse({ orgSlug, date, reincarca }: { orgSlug: string; date: DateGrantu
           Locurile unde merită căutat periodic. Lista e orientativă și nu arată apeluri în timp real: <b className="font-semibold text-[var(--ci-text)]">termenele, sumele și condițiile se verifică mereu pe site-ul finanțatorului</b>. Apasă „Urmărește” ca să-l pui în registru și să-i adaugi apelul concret când apare.
         </p>
       </Card>
+      <CautareApeluri orgSlug={orgSlug} date={date} reincarca={reincarca} />
       <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filtrează sursele">
         {[["toate", "Toate"], ...Object.entries(ETICHETE_FEL)].map(([k, e]) => (
           <button
@@ -750,7 +951,7 @@ function Surse({ orgSlug, date, reincarca }: { orgSlug: string; date: DateGrantu
                     disabled={pending}
                     onClick={() =>
                       startTransition(async () => {
-                        const r = await adaugaSursaInRegistruAction(orgSlug, s.nume, "Apel de verificat", s.tip, s.url);
+                        const r = await adaugaSursaInRegistruAction(orgSlug, s.nume, "Apel de verificat", s.tip, s.url, "");
                         if (r.ok) {
                           setAdaugat((x) => ({ ...x, [s.nume]: true }));
                           await reincarca();

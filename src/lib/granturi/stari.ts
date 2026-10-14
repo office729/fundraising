@@ -285,3 +285,46 @@ export function reminderDeTrimis(zile: number | null, trimis7z: boolean, trimis1
   if (zile <= 7) return trimis7z ? null : "7z";
   return null;
 }
+
+// ---- Rezultatele căutării cu AI: garda împotriva linkurilor inventate ----
+
+export type ApelGasit = { finantator: string; titlu: string; termen: string | null; url: string; motiv: string };
+
+// Fără parametri de căutare și fără fragment: aceeași pagină cu linkuri ușor diferite se potrivește.
+export function normalizeazaUrl(u: string): string | null {
+  try {
+    const x = new URL(u);
+    if (x.protocol !== "https:" && x.protocol !== "http:") return null;
+    return `${x.hostname.replace(/^www\./, "")}${x.pathname.replace(/\/+$/, "")}`.toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
+// Din textul modelului (un array JSON) păstrează doar elementele complete al căror link a apărut într-un rezultat real al căutării
+// (`gasite`, linkuri normalizate). Termenul rămâne doar dacă e o dată validă, azi sau în viitor.
+export function extrageApeluri(text: string, gasite: ReadonlySet<string>, azi: string): ApelGasit[] {
+  const inceput = text.indexOf("[");
+  const sfarsit = text.lastIndexOf("]");
+  if (inceput < 0 || sfarsit <= inceput) return [];
+  let brut: unknown;
+  try {
+    brut = JSON.parse(text.slice(inceput, sfarsit + 1));
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(brut)) return [];
+  const apeluri: ApelGasit[] = [];
+  for (const e of brut) {
+    if (apeluri.length >= 8 || !e || typeof e !== "object") continue;
+    const o = e as Record<string, unknown>;
+    const url = typeof o.url === "string" ? o.url.trim() : "";
+    const n = normalizeazaUrl(url);
+    const finantator = typeof o.finantator === "string" ? o.finantator.trim().slice(0, 160) : "";
+    const titlu = typeof o.titlu === "string" ? o.titlu.trim().slice(0, 240) : "";
+    if (!n || !gasite.has(n) || !finantator || !titlu || !/^https:\/\//i.test(url)) continue;
+    const termen = dataValida(o.termen) && String(o.termen) >= azi ? String(o.termen) : null;
+    apeluri.push({ finantator, titlu, termen, url: url.slice(0, 500), motiv: typeof o.motiv === "string" ? o.motiv.trim().slice(0, 300) : "" });
+  }
+  return apeluri;
+}

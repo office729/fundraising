@@ -18,6 +18,8 @@ const {
   rezumaRegistru,
   reminderDeTrimis,
   aziBucuresti,
+  normalizeazaUrl,
+  extrageApeluri,
 } = await import("../src/lib/granturi/stari.ts");
 const { SURSE_FINANTARE } = await import("../src/lib/granturi/surse.ts");
 
@@ -181,4 +183,32 @@ test("sursele de finanțare: id-uri unice, linkuri https, fiecare cu explicație
     assert.match(s.url, /^https:\/\//, s.id);
     assert.ok(s.nume && s.descriere && s.cum, s.id);
   }
+});
+
+test("linkurile din căutare se compară fără www, parametri, fragment și slash final", () => {
+  assert.equal(normalizeazaUrl("https://www.Exemplu.ro/apel/?utm=1#sus"), "exemplu.ro/apel");
+  assert.equal(normalizeazaUrl("http://exemplu.ro/apel/"), "exemplu.ro/apel");
+  assert.equal(normalizeazaUrl("javascript:alert(1)"), null);
+  assert.equal(normalizeazaUrl("nu e link"), null);
+});
+
+test("rezultatele AI: doar cele cu link găsit de căutare, complete, cu termen viitor valid", () => {
+  const gasite = new Set(["fundatie.ro/apel-2026", "ue.europa.eu/program"]);
+  const text = `Iată rezultatele: [
+    {"finantator":"Fundația X","titlu":"Apel 2026","termen":"2026-12-15","url":"https://www.fundatie.ro/apel-2026/","motiv":"Se potrivește."},
+    {"finantator":"Inventat","titlu":"Apel fals","termen":null,"url":"https://inventat.ro/apel","motiv":"?"},
+    {"finantator":"UE","titlu":"Program","termen":"2020-01-01","url":"https://ue.europa.eu/program?lang=ro","motiv":""},
+    {"finantator":"","titlu":"Fără finanțator","url":"https://fundatie.ro/apel-2026"},
+    {"finantator":"HTTP","titlu":"Doar http","url":"http://fundatie.ro/apel-2026"},
+    "nu e obiect"
+  ] Sper că ajută.`;
+  const r = extrageApeluri(text, gasite, "2026-10-14");
+  assert.equal(r.length, 2);
+  assert.equal(r[0].finantator, "Fundația X");
+  assert.equal(r[0].termen, "2026-12-15");
+  assert.equal(r[1].titlu, "Program");
+  assert.equal(r[1].termen, null); // termen din trecut nu se păstrează
+  assert.deepEqual(extrageApeluri("fără json", gasite, "2026-10-14"), []);
+  assert.deepEqual(extrageApeluri("[ json stricat", gasite, "2026-10-14"), []);
+  assert.deepEqual(extrageApeluri("{\"a\":1}", gasite, "2026-10-14"), []);
 });

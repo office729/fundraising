@@ -1,13 +1,17 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
+
 import { and, eq } from "drizzle-orm";
 
-import { aiConfigurat, genereazaDraftGrantAI } from "@/lib/ai";
+import { aiConfigurat, cautaApeluriAI, genereazaDraftGrantAI, type RezultatCautareApeluri } from "@/lib/ai";
 import { limitaAIDepasita, MESAJ_LIMITA_AI } from "@/lib/ai-limit";
 import { withOrgAdmin, withOrgFaze, withOrgSession } from "@/lib/auth/guard";
 import { areModul } from "@/lib/billing/packages";
-import { appUsers, granturi, granturiDosar, memberships } from "@/lib/db/schema";
+import { appUsers, granturi, granturiDosar, memberships, type FisierGrant } from "@/lib/db/schema";
 import { EroareUtilizator } from "@/lib/erori";
+import { BUCKET_PRIVAT, caleDinReferinta, referintaPrivata, stergeFisierePrivate } from "@/lib/fisiere-private";
+import { createClient } from "@/lib/supabase/server";
 import { CAMPURI_DOSAR, aziBucuresti, curataDosar, esteStare, valideazaGrant, type ElementLista, type GrantInput } from "@/lib/granturi/stari";
 
 // Modulul Granturi (inclus din pachetul IMPACT; poarta e în layout.tsx). Orice membru al organizației citește și lucrează la cereri;
@@ -28,6 +32,7 @@ export type GrantRand = {
   cerinte: string | null;
   eligibilitate: ElementLista[];
   documente: ElementLista[];
+  fisiere: FisierGrant[];
   draft: string | null;
   sumaCastigata: number | null;
   dataDecizie: string | null;
@@ -78,6 +83,7 @@ export const obtineDateGranturi = withOrgSession(async (ctx): Promise<DateGrantu
       cerinte: g.cerinte,
       eligibilitate: g.eligibilitate,
       documente: g.documente,
+      fisiere: g.fisiere,
       draft: g.draft,
       sumaCastigata: numar(g.sumaCastigata),
       dataDecizie: g.dataDecizie,
@@ -150,11 +156,13 @@ export const schimbaStareGrantAction = withOrgSession(async (ctx, id: string, st
 
 export const stergeGrantAction = withOrgAdmin(async (ctx, id: string): Promise<void> => {
   cuModul(ctx);
+  const [g] = await ctx.db.select({ fisiere: granturi.fisiere }).from(granturi).where(and(eq(granturi.id, id), eq(granturi.orgId, ctx.orgId))).limit(1);
   await ctx.db.delete(granturi).where(and(eq(granturi.id, id), eq(granturi.orgId, ctx.orgId)));
+  if (g?.fisiere?.length) await stergeFisierePrivate(ctx.orgSlug, g.fisiere.map((f) => f.ref));
 });
 
 // Adaugă în registru o sursă din lista „Surse de finanțare” (stare „identificat”); nu o dublează dacă același finanțator + titlu există deja.
-export const adaugaSursaInRegistruAction = withOrgSession(async (ctx, finantator: string, titlu: string, tip: string, link: string): Promise<RezultatSalvare> => {
+export const adaugaSursaInRegistruAction = withOrgSession(async (ctx, finantator: string, titlu: string, tip: string, link: string, termen: string = ""): Promise<RezultatSalvare> => {
   cuModul(ctx);
   const r = valideazaGrant({
     id: null,
@@ -164,7 +172,7 @@ export const adaugaSursaInRegistruAction = withOrgSession(async (ctx, finantator
     stare: "identificat",
     suma: "",
     moneda: "RON",
-    termen: "",
+    termen,
     link,
     responsabilId: null,
     nota: "",
@@ -185,7 +193,7 @@ export const adaugaSursaInRegistruAction = withOrgSession(async (ctx, finantator
   if (exista) return { ok: true, id: exista.id };
   const [nou] = await ctx.db
     .insert(granturi)
-    .values({ orgId: ctx.orgId, finantator: r.v.finantator, titlu: r.v.titlu, tipFinantator: r.v.tipFinantator, link: r.v.link, createdBy: ctx.userId })
+    .values({ orgId: ctx.orgId, finantator: r.v.finantator, titlu: r.v.titlu, tipFinantator: r.v.tipFinantator, link: r.v.link, termen: r.v.termen, createdBy: ctx.userId })
     .returning({ id: granturi.id });
   return { ok: true, id: nou.id };
 });
@@ -198,6 +206,99 @@ export const salveazaDosarAction = withOrgSession(async (ctx, continut: Record<s
     .values({ orgId: ctx.orgId, continut: curat })
     .onConflictDoUpdate({ target: granturiDosar.orgId, set: { continut: curat, updatedAt: new Date() } });
   return { ok: true };
+});
+
+// ---- Fișiere atașate -----------------------------------------------------------------------------------------------
+// Stau în bucket-ul privat (URL semnat la deschidere), ca documentele firmelor; lista lor e în granturi.fisiere.
+const TIPURI_FISIER: Record<string, string> = {
+  "application/pdf": "pdf",
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "application/msword": "doc",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+  "application/vnd.ms-excel": "xls",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
+  "text/plain": "txt",
+};
+const MAX_BYTES_FISIER = 4 * 1024 * 1024; // și plafonul corpului de cerere pe Vercel
+const MAX_FISIERE = 30;
+
+export type RezultatFisier = { ok: true } | { ok: false; eroare: string };
+
+export const incarcaFisierGrantAction = withOrgSession(async (ctx, grantId: string, formData: FormData): Promise<RezultatFisier> => {
+  cuModul(ctx);
+  const fisier = formData.get("fisier");
+  if (!(fisier instanceof File) || fisier.size === 0) return { ok: false, eroare: "Alege un fișier." };
+  if (fisier.size > MAX_BYTES_FISIER) return { ok: false, eroare: "Fișierul e prea mare (maximum 4 MB). Comprimă-l sau împarte-l." };
+  const ext = TIPURI_FISIER[fisier.type];
+  if (!ext) return { ok: false, eroare: "Tip de fișier neacceptat. Folosește PDF, imagine (jpg/png/webp), Word, Excel sau text." };
+
+  const [g] = await ctx.db.select({ fisiere: granturi.fisiere }).from(granturi).where(and(eq(granturi.id, grantId), eq(granturi.orgId, ctx.orgId))).limit(1);
+  if (!g) return { ok: false, eroare: "Cererea nu a fost găsită." };
+  if (g.fisiere.length >= MAX_FISIERE) return { ok: false, eroare: `Ai atins limita de ${MAX_FISIERE} de fișiere pe cerere.` };
+
+  const id = randomUUID();
+  const cale = `${ctx.orgSlug}/granturi/${grantId}/${id}.${ext}`;
+  const supabase = await createClient();
+  const { error } = await supabase.storage.from(BUCKET_PRIVAT).upload(cale, fisier, { contentType: fisier.type, upsert: false });
+  if (error) return { ok: false, eroare: "Încărcarea a eșuat: " + error.message };
+
+  const nume = (String(formData.get("nume") ?? "").trim() || fisier.name || `document.${ext}`).slice(0, 200);
+  const nou: FisierGrant = { id, nume, ref: referintaPrivata(cale), tip: ext, marime: fisier.size, la: new Date().toISOString() };
+  await ctx.db.update(granturi).set({ fisiere: [nou, ...g.fisiere], updatedAt: new Date() }).where(and(eq(granturi.id, grantId), eq(granturi.orgId, ctx.orgId)));
+  return { ok: true };
+});
+
+// Link semnat, valabil zece minute, pentru deschiderea unui fișier; verificat că fișierul aparține chiar acestei cereri.
+export const deschideFisierGrantAction = withOrgSession(async (ctx, grantId: string, fisierId: string): Promise<{ ok: true; url: string } | { ok: false; eroare: string }> => {
+  cuModul(ctx);
+  const [g] = await ctx.db.select({ fisiere: granturi.fisiere }).from(granturi).where(and(eq(granturi.id, grantId), eq(granturi.orgId, ctx.orgId))).limit(1);
+  const f = g?.fisiere.find((x) => x.id === fisierId);
+  const cale = caleDinReferinta(f?.ref);
+  if (!f || !cale || !cale.startsWith(`${ctx.orgSlug}/granturi/${grantId}/`)) return { ok: false, eroare: "Fișierul nu a fost găsit." };
+  const supabase = await createClient();
+  const { data, error } = await supabase.storage.from(BUCKET_PRIVAT).createSignedUrl(cale, 600);
+  if (error || !data?.signedUrl) return { ok: false, eroare: "Nu am putut deschide fișierul acum." };
+  return { ok: true, url: data.signedUrl };
+});
+
+export const stergeFisierGrantAction = withOrgSession(async (ctx, grantId: string, fisierId: string): Promise<RezultatFisier> => {
+  cuModul(ctx);
+  const [g] = await ctx.db.select({ fisiere: granturi.fisiere }).from(granturi).where(and(eq(granturi.id, grantId), eq(granturi.orgId, ctx.orgId))).limit(1);
+  if (!g) return { ok: false, eroare: "Cererea nu a fost găsită." };
+  const f = g.fisiere.find((x) => x.id === fisierId);
+  if (!f) return { ok: true };
+  // Doar căi din folderul acestei cereri, în bucket-ul privat.
+  if (caleDinReferinta(f.ref)?.startsWith(`${ctx.orgSlug}/granturi/${grantId}/`)) await stergeFisierePrivate(ctx.orgSlug, [f.ref]);
+  await ctx.db.update(granturi).set({ fisiere: g.fisiere.filter((x) => x.id !== fisierId), updatedAt: new Date() }).where(and(eq(granturi.id, grantId), eq(granturi.orgId, ctx.orgId)));
+  return { ok: true };
+});
+
+// ---- Căutare de apeluri cu AI ---------------------------------------------------------------------------------------
+// Folosește căutarea web a Anthropic; păstrează doar rezultate cu linkuri reale (vezi cautaApeluriAI). Plafonată zilnic ca restul funcțiilor AI.
+const ZONE = ["România", "Europa", "Internațional"];
+
+export const cautaApeluriAction = withOrgFaze<
+  [string, string, string],
+  { domeniu: string; zona: string; observatii: string; azi: string },
+  RezultatCautareApeluri,
+  RezultatCautareApeluri
+>({
+  pregateste: async (ctx, domeniu, zona, observatii) => {
+    cuModul(ctx);
+    if (!aiConfigurat()) return { gata: { ok: false, eroare: "Căutarea cu AI nu e configurată pe această platformă." } };
+    if (await limitaAIDepasita(ctx)) return { gata: { ok: false, eroare: MESAJ_LIMITA_AI } };
+    return {
+      pregatit: {
+        domeniu: String(domeniu ?? "").trim().slice(0, 200),
+        zona: ZONE.includes(zona) ? zona : "România",
+        observatii: String(observatii ?? "").trim().slice(0, 300),
+        azi: aziBucuresti(),
+      },
+    };
+  },
+  extern: (p) => cautaApeluriAI(p),
 });
 
 export type RezultatDraft = { ok: true; draft: string } | { ok: false; eroare: string };

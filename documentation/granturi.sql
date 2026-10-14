@@ -38,3 +38,6 @@ create unique index if not exists granturi_dosar_org_uniq on granturi_dosar (org
 
 grant select, insert, update, delete on granturi to app_user;
 grant select, insert, update, delete on granturi_dosar to app_user;
+
+-- Fișiere atașate unei cereri (referințe către bucket-ul privat org-docs-private, ca la documentele firmelor). Aditiv.
+alter table granturi add column if not exists fisiere jsonb not null default '[]'::jsonb;

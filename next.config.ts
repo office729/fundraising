@@ -49,6 +49,9 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Acțiunile de server primesc implicit cel mult 1 MB; încărcările de documente (granturi, firme) au nevoie de mai mult. 4 MB e și plafonul
+  // corpului de cerere pe Vercel, deci fișierele mai mari ar fi oricum refuzate de platformă.
+  experimental: { serverActions: { bodySizeLimit: "4mb" } },
   // Adresa veche a paginii „Automatizări" rămâne funcțională.
   async redirects() {
     return [{ source: "/automatizare", destination: "/automatizari", permanent: true }];

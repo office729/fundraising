@@ -4,6 +4,8 @@ import { obtineDateGranturi } from "./actions";
 import { GranturiClient } from "./granturi-client";
 
 export const dynamic = "force-dynamic";
+// Căutarea de apeluri cu AI poate dura (căutare web); acțiunea rulează în această rută.
+export const maxDuration = 120;
 
 // Granturi: registrul cererilor de finanțare, dosarul standard al organizației și sursele unde merită căutat.
 export default async function GranturiPage({ params }: { params: Promise<{ orgSlug: string }> }) {

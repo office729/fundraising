@@ -8,6 +8,9 @@ import { organizations } from "./organizations";
 
 export type ElementListaGrant = { text: string; ok: boolean };
 
+// Fișier atașat unei cereri: `ref` e o referință către bucket-ul privat (vezi lib/fisiere-private.ts), nu un URL public.
+export type FisierGrant = { id: string; nume: string; ref: string; tip: string; marime: number; la: string };
+
 export const granturi = pgTable(
   "granturi",
   {
@@ -27,6 +30,7 @@ export const granturi = pgTable(
     cerinte: text("cerinte"), // cerințele finanțatorului, lipite din ghid — sursa draftului
     eligibilitate: jsonb("eligibilitate").$type<ElementListaGrant[]>().notNull().default([]),
     documente: jsonb("documente").$type<ElementListaGrant[]>().notNull().default([]),
+    fisiere: jsonb("fisiere").$type<FisierGrant[]>().notNull().default([]),
     draft: text("draft"),
     sumaCastigata: numeric("suma_castigata", { precision: 14, scale: 2 }),
     dataDecizie: date("data_decizie"),

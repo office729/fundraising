@@ -1,6 +1,7 @@
 import "server-only";
 
 import { raporteazaEroare } from "@/lib/monitoring";
+import { extrageApeluri, normalizeazaUrl, type ApelGasit } from "@/lib/granturi/stari";
 import type { ContinutCanal, DateCampanie } from "@/lib/promovare/generator";
 
 // Integrare AI (Anthropic) pentru generarea de conținut de promovare — inițializare
@@ -270,6 +271,78 @@ export async function genereazaDraftGrantAI(d: DateDraftGrant): Promise<string |
     raporteazaEroare("ai-grant", e);
     return null;
   }
+}
+
+// Căutare de apeluri de finanțare cu căutarea web a Anthropic (modulul Granturi). Garda principală: păstrăm DOAR rezultatele al căror link a
+// apărut într-un rezultat real al căutării — modelul nu poate propune un link inventat. Termenul se păstrează doar dacă e o dată viitoare validă.
+export type RezultatCautareApeluri = { ok: true; apeluri: ApelGasit[] } | { ok: false; eroare: string };
+
+export async function cautaApeluriAI(p: { domeniu: string; zona: string; observatii: string; azi: string }): Promise<RezultatCautareApeluri> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return { ok: false, eroare: "Căutarea cu AI nu e configurată pe această platformă." };
+  const model = process.env.ANTHROPIC_MODEL || DEFAULT_MODEL;
+  const system = [
+    "Ești cercetător de oportunități de finanțare pentru organizații non-profit din România.",
+    "Folosește căutarea web ca să găsești apeluri sau programe de finanțare DESCHISE sau care se repetă anual și sunt potrivite cererii.",
+    "REGULI STRICTE:",
+    "- Fiecare rezultat trebuie să aibă un link care a apărut într-un rezultat real al căutării. NU inventa finanțatori, apeluri, sume sau termene.",
+    "- Pune termenul de depunere (format AAAA-LL-ZZ) doar dacă îl ai din pagina găsită; altfel null. Nu ghici.",
+    "- Preferă surse oficiale ale finanțatorului față de agregatoare. Ignoră apelurile închise.",
+    "- Răspunde DOAR cu un array JSON, fără alt text, de cel mult 8 elemente: [{\"finantator\": \"...\", \"titlu\": \"...\", \"termen\": \"AAAA-LL-ZZ\" sau null, \"url\": \"https://...\", \"motiv\": \"o propoziție: de ce se potrivește\"}]. Dacă nu găsești nimic sigur, răspunde cu [].",
+  ].join("\n");
+  const prompt = [
+    `Data de azi: ${p.azi}`,
+    `Domeniul de activitate al organizației: ${p.domeniu || "nespecificat"}`,
+    `Zona geografică: ${p.zona}`,
+    p.observatii ? `Alte precizări: ${p.observatii}` : "",
+    "Caută apeluri de finanțare relevante pentru o organizație non-profit din România.",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const messages: unknown[] = [{ role: "user", content: prompt }];
+  const gasite = new Set<string>();
+  let text = "";
+  try {
+    // „pause_turn”: căutarea lungă e întreruptă de API și se continuă retrimițând răspunsul parțial (cel mult de trei ori).
+    for (let tura = 0; tura < 3; tura++) {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 100_000);
+      let res: Response;
+      try {
+        res = await fetch(ANTHROPIC_URL, {
+          method: "POST",
+          headers: { "content-type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
+          body: JSON.stringify({ model, max_tokens: 3000, system, messages, tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 6 }] }),
+          signal: ctrl.signal,
+        });
+      } finally {
+        clearTimeout(t);
+      }
+      if (!res.ok) {
+        const detaliu = await res.text().catch(() => "");
+        if (res.status === 400 && /web.?search/i.test(detaliu)) return { ok: false, eroare: "Căutarea web nu e activată pentru contul Anthropic al platformei." };
+        throw new Error(`AI a răspuns ${res.status}. ${detaliu.slice(0, 200)}`);
+      }
+      const data = (await res.json()) as { content?: Array<{ type: string; text?: string; content?: unknown }>; stop_reason?: string };
+      for (const b of data.content ?? []) {
+        if (b.type === "text" && typeof b.text === "string") text += b.text;
+        if (b.type === "web_search_tool_result" && Array.isArray(b.content)) {
+          for (const r of b.content as Array<{ url?: string }>) {
+            const n = r.url ? normalizeazaUrl(r.url) : null;
+            if (n) gasite.add(n);
+          }
+        }
+      }
+      if (data.stop_reason !== "pause_turn") break;
+      messages.push({ role: "assistant", content: data.content });
+    }
+  } catch (e) {
+    raporteazaEroare("ai-cautare-apeluri", e);
+    return { ok: false, eroare: "Căutarea nu a reușit acum. Încearcă din nou în câteva momente." };
+  }
+
+  return { ok: true, apeluri: extrageApeluri(text, gasite, p.azi) };
 }
 
 export type PostCalendarAI = { obiectiv: string; text: string };
