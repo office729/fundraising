@@ -15,22 +15,28 @@ export async function PoartaModul({ orgSlug, modul, inCrm = true, children }: { 
   if (areModul(access.orgPackage, modul)) return <>{children}</>;
 
   const { nume, minim } = MODULE_PACHET[modul];
+  // Doar owner-ul și administratorii pot schimba pachetul; ceilalți primesc ce să ceară și cui.
+  const poateSchimba = access.role === "owner" || access.role === "admin";
   const card = (
     <div className="flex min-h-[60vh] items-center justify-center px-6">
       <div className="max-w-md text-center">
-        <span className="inline-block rounded-full bg-amber-100 px-3.5 py-1.5 text-xs font-bold tracking-wide text-amber-900 uppercase dark:bg-amber-950 dark:text-amber-200">
+        <span className="inline-block rounded-full bg-[var(--ci-amber-soft)] px-3.5 py-1.5 text-xs font-bold tracking-wide text-[var(--ci-text)] uppercase">
           Începând cu pachetul {NUME_MINIM[minim]}
         </span>
-        <h1 className="font-display mt-4 text-2xl font-bold text-ink">{nume}</h1>
-        <p className="mt-3 text-[15px] leading-relaxed text-muted">
-          {nume} este inclus începând cu pachetul {NUME_MINIM[minim]}. Datele tale rămân păstrate; treci la un pachet mai mare și modulul se deschide imediat.
+        <h1 className="ci-display mt-4 text-2xl font-bold text-[var(--ci-text)]">{nume}</h1>
+        <p className="mt-3 text-[15px] leading-relaxed text-[var(--ci-text-muted)]">
+          {nume} este inclus începând cu pachetul {NUME_MINIM[minim]}. Datele tale rămân păstrate; după trecerea la un pachet care îl include, modulul se deschide imediat.
         </p>
-        <Link
-          href={`/${orgSlug}/crm/setari`}
-          className="mt-5 inline-block rounded-md bg-brand-green px-6 py-3 font-bold text-white transition hover:bg-brand-green-hover"
-        >
-          Vezi pachetele
-        </Link>
+        {poateSchimba ? (
+          <Link
+            href={`/${orgSlug}/crm/setari#abonament`}
+            className="mt-5 inline-flex h-11 items-center rounded-[var(--ci-radius-btn)] bg-[var(--ci-primary)] px-6 text-[15px] font-medium text-white transition-colors hover:bg-[var(--ci-primary-hover)]"
+          >
+            Vezi pachetele
+          </Link>
+        ) : (
+          <p className="mt-5 text-[13px] text-[var(--ci-text-muted)]">Doar proprietarul sau un administrator al organizației poate schimba pachetul. Cere-i să îl aleagă din Setări → Abonament.</p>
+        )}
       </div>
     </div>
   );

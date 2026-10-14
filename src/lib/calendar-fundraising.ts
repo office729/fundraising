@@ -81,6 +81,14 @@ export function termeneFiscale(an: number): EvenimentCalendar[] {
       href: null,
       detaliu: "Până la această dată contribuabilii pot depune formularul. Trimite remindere cu 2–3 săptămâni înainte.",
     },
+    {
+      id: `fiscal-sfarsit-an-${an}`,
+      data: dataIso(an, 12, 31),
+      titlu: "Încheierea anului fiscal",
+      tip: "fiscal",
+      href: null,
+      detaliu: "Companiile își închid planul de sponsorizări al anului: contactează-le din timp și verifică cu contabilul ce se poate finaliza până atunci.",
+    },
   ];
 }
 
@@ -142,4 +150,18 @@ export function grupeazaPeZile(evenimente: EvenimentCalendar[]): Map<string, Eve
     harta.set(e.data, lista);
   }
   return harta;
+}
+
+
+// Rezumatul săptămânal pe e-mail: ce cere acțiune în următoarele 7 zile (inclusiv azi), fără momentele de campanie, plus momentele din următoarele 14 zile.
+export type RezumatSaptamana = { termene: EvenimentCalendar[]; momente: EvenimentCalendar[] };
+
+export function selecteazaPentruRezumat(evenimente: EvenimentCalendar[], azi: string): RezumatSaptamana {
+  const peste7 = adaugaZile(azi, 7);
+  const peste14 = adaugaZile(azi, 14);
+  const ordine = (a: EvenimentCalendar, b: EvenimentCalendar) => a.data.localeCompare(b.data) || a.titlu.localeCompare(b.titlu);
+  return {
+    termene: evenimente.filter((e) => e.tip !== "moment" && e.data >= azi && e.data <= peste7).sort(ordine),
+    momente: evenimente.filter((e) => e.tip === "moment" && e.data >= azi && e.data <= peste14).sort(ordine),
+  };
 }

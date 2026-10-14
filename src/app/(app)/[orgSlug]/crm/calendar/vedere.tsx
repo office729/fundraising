@@ -8,14 +8,33 @@ import { Card } from "../components/ui/card";
 // Culoarea fiecărui tip de eveniment (puncte și etichete); termenele care cer acțiune sunt în roșu sau chihlimbar, momentele de campanie în albastru.
 const CULOARE: Record<TipEveniment, string> = {
   grant: "var(--ci-red)",
-  raportare: "var(--ci-orange, var(--ci-red))",
-  fiscal: "var(--ci-red)",
+  raportare: "var(--ci-orange)",
+  fiscal: "var(--ci-pink)",
   campanie: "var(--ci-green)",
-  obiectiv: "var(--ci-purple, var(--ci-primary))",
-  followup: "var(--ci-amber, var(--ci-primary))",
-  voluntari: "var(--ci-teal, var(--ci-green))",
-  moment: "var(--ci-primary)",
+  obiectiv: "var(--ci-purple)",
+  followup: "var(--ci-amber)",
+  voluntari: "var(--ci-teal)",
+  moment: "var(--ci-blue)",
 };
+
+// Forma completează culoarea: termenele care cer acțiune (grant, raportare, fiscal) nu sunt cercuri, deci se disting și fără culori.
+const FORMA: Record<TipEveniment, string> = {
+  grant: "rounded-sm",
+  raportare: "rounded-sm rotate-45",
+  fiscal: "rotate-45 scale-90 rounded-[1px]",
+  campanie: "rounded-full",
+  obiectiv: "rounded-full",
+  followup: "rounded-full",
+  voluntari: "rounded-full",
+  moment: "rounded-full",
+};
+
+function Punct({ tip, mic }: { tip: TipEveniment; mic?: boolean }) {
+  return <span className={`inline-block shrink-0 ${mic ? "h-1.5 w-1.5" : "h-2 w-2"} ${FORMA[tip]}`} style={{ background: CULOARE[tip] }} aria-hidden />;
+}
+
+// Termenele de acțiune care au trecut sau cad azi se marchează în listă (la „moment de campanie” sau „follow-up” nu are rost).
+const CERE_ACTIUNE: TipEveniment[] = ["grant", "raportare", "obiectiv", "followup"];
 
 const ZILE_SAPTAMANA = ["Lu", "Ma", "Mi", "Jo", "Vi", "Sâ", "Du"];
 
@@ -25,7 +44,7 @@ const dataLunga = (data: string) => new Date(`${data}T12:00:00`).toLocaleDateStr
 function Eticheta({ tip }: { tip: TipEveniment }) {
   return (
     <span className="inline-flex items-center gap-1.5 text-[11.5px] text-[var(--ci-text-muted)]">
-      <span className="h-2 w-2 rounded-full" style={{ background: CULOARE[tip] }} aria-hidden />
+      <Punct tip={tip} />
       {ETICHETE_TIP_EVENIMENT[tip]}
     </span>
   );
@@ -83,13 +102,19 @@ export function CalendarVedere({ orgSlug, an, luna, azi, evenimente }: { orgSlug
             const lista = pe.get(z.data) ?? [];
             return (
               <div key={z.data} className={`min-h-[4.5rem] border-r border-b border-[var(--ci-border)] p-1.5 last:border-r-0 sm:min-h-[6.5rem] ${z.inLuna ? "" : "bg-[var(--ci-surface-2)]/60 opacity-60"}`}>
-                <span className={`inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-[12px] tabular-nums ${z.azi ? "bg-[var(--ci-primary)] font-bold text-white" : "text-[var(--ci-text-muted)]"}`} aria-current={z.azi ? "date" : undefined}>
-                  {zi(z.data)}
-                </span>
+                {lista.length > 0 && z.inLuna ? (
+                  <a href={`#zi-${z.data}`} className={`inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-[12px] font-semibold tabular-nums hover:underline ${z.azi ? "bg-[var(--ci-primary)] text-white" : "text-[var(--ci-text)]"}`} aria-current={z.azi ? "date" : undefined} aria-label={`${dataLunga(z.data)}: ${lista.length} ${lista.length === 1 ? "eveniment" : "evenimente"}`}>
+                    {zi(z.data)}
+                  </a>
+                ) : (
+                  <span className={`inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-[12px] tabular-nums ${z.azi ? "bg-[var(--ci-primary)] font-bold text-white" : "text-[var(--ci-text-muted)]"}`} aria-current={z.azi ? "date" : undefined}>
+                    {zi(z.data)}
+                  </span>
+                )}
                 {/* Pe ecran mic: doar puncte colorate; pe ecran mare: titlurile (cel mult trei, restul într-un „+N”). */}
                 <div className="mt-1 flex flex-wrap gap-1 sm:hidden" aria-hidden>
                   {lista.slice(0, 4).map((e) => (
-                    <span key={e.id} className="h-2 w-2 rounded-full" style={{ background: CULOARE[e.tip] }} />
+                    <Punct key={e.id} tip={e.tip} />
                   ))}
                 </div>
                 <ul className="mt-1 hidden space-y-0.5 sm:block">
@@ -97,12 +122,12 @@ export function CalendarVedere({ orgSlug, an, luna, azi, evenimente }: { orgSlug
                     <li key={e.id}>
                       {e.href ? (
                         <Link prefetch={false} href={e.href} title={e.titlu} className="flex items-center gap-1 truncate rounded px-1 py-0.5 text-[11.5px] leading-tight text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]">
-                          <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: CULOARE[e.tip] }} aria-hidden />
+                          <Punct tip={e.tip} mic />
                           <span className="truncate">{e.titlu}</span>
                         </Link>
                       ) : (
                         <span title={e.titlu} className="flex items-center gap-1 truncate px-1 py-0.5 text-[11.5px] leading-tight text-[var(--ci-text)]">
-                          <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: CULOARE[e.tip] }} aria-hidden />
+                          <Punct tip={e.tip} mic />
                           <span className="truncate">{e.titlu}</span>
                         </span>
                       )}
@@ -129,7 +154,7 @@ export function CalendarVedere({ orgSlug, an, luna, azi, evenimente }: { orgSlug
         ) : (
           <ul className="divide-y divide-[var(--ci-border)]">
             {zileCuEvenimente.map((d) => (
-              <li key={d} className="grid grid-cols-1 gap-1 py-3 sm:grid-cols-[11rem_1fr]">
+              <li key={d} id={`zi-${d}`} className="grid scroll-mt-4 grid-cols-1 gap-1 py-3 sm:grid-cols-[11rem_1fr]">
                 <p className={`text-[13px] font-medium capitalize ${d === azi ? "text-[var(--ci-primary)]" : "text-[var(--ci-text)]"}`}>
                   {dataLunga(d)}
                   {d === azi ? " · azi" : ""}
@@ -137,7 +162,7 @@ export function CalendarVedere({ orgSlug, an, luna, azi, evenimente }: { orgSlug
                 <ul className="space-y-1.5">
                   {(pe.get(d) ?? []).map((e) => (
                     <li key={e.id} className="flex items-start gap-2 text-[13px]">
-                      <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full" style={{ background: CULOARE[e.tip] }} aria-hidden />
+                      <span className="mt-1.5"><Punct tip={e.tip} /></span>
                       <span className="min-w-0">
                         {e.href ? (
                           <Link prefetch={false} href={e.href} className="font-medium text-[var(--ci-text)] hover:underline">
@@ -149,6 +174,8 @@ export function CalendarVedere({ orgSlug, an, luna, azi, evenimente }: { orgSlug
                         <span className="block text-[12px] text-[var(--ci-text-muted)]">
                           {ETICHETE_TIP_EVENIMENT[e.tip]}
                           {e.detaliu ? ` · ${e.detaliu}` : ""}
+                          {CERE_ACTIUNE.includes(e.tip) && e.data < azi && <b className="ml-1.5 font-semibold text-[var(--ci-red)]">· Depășit</b>}
+                          {CERE_ACTIUNE.includes(e.tip) && e.data === azi && <b className="ml-1.5 font-semibold text-[var(--ci-red)]">· Azi</b>}
                         </span>
                       </span>
                     </li>

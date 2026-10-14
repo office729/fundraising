@@ -182,3 +182,6 @@ export const ETICHETE_FEL: Record<SursaFinantare["fel"], string> = {
   agregator: "Adună apeluri",
   platforma: "Program permanent",
 };
+
+// Luna în care a fost verificată ultima dată lista de mai sus (linkuri și descrieri); se actualizează la fiecare revizuire manuală.
+export const SURSE_VERIFICATE_IN = "octombrie 2026";

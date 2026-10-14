@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-const { adaugaZile, pasteOrtodox, givingTuesday, momenteCampanie, termeneFiscale, evenimenteStatice, grilaLuna, lunaDinParametru, lunaVecina, grupeazaPeZile } = await import("../src/lib/calendar-fundraising.ts");
+const { adaugaZile, pasteOrtodox, givingTuesday, momenteCampanie, termeneFiscale, evenimenteStatice, grilaLuna, lunaDinParametru, lunaVecina, grupeazaPeZile, selecteazaPentruRezumat } = await import("../src/lib/calendar-fundraising.ts");
 
 test("Paștele ortodox, pe ani cunoscuți", () => {
   assert.equal(pasteOrtodox(2024), "2024-05-05");
@@ -67,4 +67,14 @@ test("grupare pe zile: ordonat, termenele înaintea momentelor", () => {
   ]);
   assert.deepEqual([...harta.keys()], ["2026-11-20", "2026-12-01"]);
   assert.deepEqual(harta.get("2026-12-01").map((e) => e.tip), ["grant", "moment"]);
+});
+
+test("rezumatul săptămânal: termene pe 7 zile, momente pe 14, fără ce a trecut", () => {
+  const ev = (id, data, tip) => ({ id, data, titlu: id, tip, href: null, detaliu: null });
+  const r = selecteazaPentruRezumat(
+    [ev("ieri", "2026-10-13", "grant"), ev("azi", "2026-10-14", "grant"), ev("peste7", "2026-10-21", "followup"), ev("peste8", "2026-10-22", "grant"), ev("moment10", "2026-10-24", "moment"), ev("moment15", "2026-10-29", "moment"), ev("moment-azi-2", "2026-10-20", "moment")],
+    "2026-10-14",
+  );
+  assert.deepEqual(r.termene.map((e) => e.id), ["azi", "peste7"]);
+  assert.deepEqual(r.momente.map((e) => e.id), ["moment-azi-2", "moment10"]);
 });

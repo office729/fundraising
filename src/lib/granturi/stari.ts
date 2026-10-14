@@ -143,19 +143,19 @@ export function rezumaRegistru(randuri: GrantRezumat[], azi: string): RezumatReg
 }
 
 // Câmpurile dosarului standard, în ordinea în care apar în formular. `cheie` e stabilă (se salvează în baza de date).
-export const CAMPURI_DOSAR: { cheie: string; eticheta: string; ajutor: string; lung?: boolean }[] = [
-  { cheie: "denumire", eticheta: "Denumirea oficială", ajutor: "Așa cum apare în actele de înființare." },
+export const CAMPURI_DOSAR: { cheie: string; eticheta: string; ajutor: string; exemplu?: string; lung?: boolean }[] = [
+  { cheie: "denumire", eticheta: "Denumirea oficială", ajutor: "Așa cum apare în actele de înființare.", exemplu: "Asociația Exemplu pentru Copii" },
   { cheie: "cui", eticheta: "CUI / cod fiscal", ajutor: "" },
-  { cheie: "inregistrare", eticheta: "Înregistrare și statut", ajutor: "Număr în Registrul Asociațiilor și Fundațiilor, forma juridică, statut de utilitate publică dacă există." },
+  { cheie: "inregistrare", eticheta: "Înregistrare și statut", ajutor: "Număr în Registrul Asociațiilor și Fundațiilor, forma juridică, statut de utilitate publică dacă există.", exemplu: "Asociație, înscrisă în Registrul Asociațiilor și Fundațiilor sub nr. …/…" },
   { cheie: "an_infiintare", eticheta: "Anul înființării", ajutor: "" },
   { cheie: "sediu", eticheta: "Sediul", ajutor: "" },
   { cheie: "website", eticheta: "Website și pagini publice", ajutor: "" },
-  { cheie: "misiune", eticheta: "Misiune și viziune", ajutor: "Două-trei propoziții: ce schimbați și pentru cine.", lung: true },
+  { cheie: "misiune", eticheta: "Misiune și viziune", ajutor: "Două-trei propoziții: ce schimbați și pentru cine.", exemplu: "Sprijinim familiile cu copii bolnavi din județul … prin tratamente decontate, transport și consiliere.", lung: true },
   { cheie: "activitati", eticheta: "Activități principale", ajutor: "Ce faceți concret, în fiecare an.", lung: true },
-  { cheie: "beneficiari", eticheta: "Beneficiari", ajutor: "Cine sunt și câți ajungeți anual, cu cifre reale.", lung: true },
-  { cheie: "impact", eticheta: "Cifre de impact", ajutor: "Rezultate măsurabile, cu perioada la care se referă (ex. 2025: 120 de familii sprijinite).", lung: true },
-  { cheie: "povesti", eticheta: "Povești de caz", ajutor: "Două-trei povești scurte, cu acordul persoanelor, care pot fi folosite în cereri.", lung: true },
-  { cheie: "buget", eticheta: "Buget anual și surse de venit", ajutor: "Venituri și cheltuieli pe ultimul an încheiat, pe surse.", lung: true },
+  { cheie: "beneficiari", eticheta: "Beneficiari", ajutor: "Cine sunt și câți ajungeți anual, cu cifre reale. Anonimizează: fără nume complete, adrese, CNP sau diagnostice detaliate.", exemplu: "În 2025 am sprijinit 120 de familii, în principal din mediul rural.", lung: true },
+  { cheie: "impact", eticheta: "Cifre de impact", ajutor: "Rezultate măsurabile, cu perioada la care se referă (ex. 2025: 120 de familii sprijinite).", exemplu: "2025: 120 de familii sprijinite, 340 de drumuri la spital decontate.", lung: true },
+  { cheie: "povesti", eticheta: "Povești de caz", ajutor: "Două-trei povești scurte, cu acordul persoanelor, care pot fi folosite în cereri. Anonimizează: prenume schimbat, fără adresă și fără date de sănătate detaliate (datele de sănătate cer consimțământ explicit).", exemplu: "Andrei (prenume schimbat), 7 ani, a început tratamentul în …", lung: true },
+  { cheie: "buget", eticheta: "Buget anual și surse de venit", ajutor: "Venituri și cheltuieli pe ultimul an încheiat, pe surse.", exemplu: "2025: venituri 480.000 lei (donații 60%, sponsorizări 30%, granturi 10%); cheltuieli 455.000 lei.", lung: true },
   { cheie: "finantari", eticheta: "Finanțări și parteneri anteriori", ajutor: "Cine v-a finanțat, cât și pentru ce, cu anul.", lung: true },
   { cheie: "echipa", eticheta: "Echipă și experiență", ajutor: "Cine conduce organizația și cine implementează proiectele.", lung: true },
   { cheie: "contact_nume", eticheta: "Persoana de contact", ajutor: "" },
@@ -327,4 +327,13 @@ export function extrageApeluri(text: string, gasite: ReadonlySet<string>, azi: s
     apeluri.push({ finantator, titlu, termen, url: url.slice(0, 500), motiv: typeof o.motiv === "string" ? o.motiv.trim().slice(0, 300) : "" });
   }
   return apeluri;
+}
+
+// Doar gazda unui link (fără www, cale sau parametri), pentru afișat lângă rezultate: omul vede de unde vine pagina înainte să o deschidă.
+export function domeniuDinUrl(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "";
+  }
 }

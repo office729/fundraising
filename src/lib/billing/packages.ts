@@ -1,11 +1,9 @@
 // Sursă de adevăr: pagina de prețuri "Hub Fundraising" (Alexandrit).
-// Toate pachetele plătite includ TOATE instrumentele — diferența dintre
-// START / CREȘTERE / IMPACT e prin COTE (utilizatori, contacte, generări
-// lunare), nu prin acces la instrumente. "trial" (14 zile, fără card) are
-// cote generoase, nivel IMPACT, ca ONG-ul să poată evalua platforma complet.
+// Diferența dintre START / CREȘTERE / IMPACT e dată de COTE (utilizatori, contacte, rapoarte pe lună) și de MODULE incluse doar din anumite
+// pachete (vezi MODULE_PACHET mai jos); uneltele de bază (CRM, campanii, Formular 230, contracte, newsletter) sunt în toate. "trial" (30 de zile,
+// fără card; vezi TRIAL_DAYS în trial.ts) are cote generoase și toate modulele, ca ONG-ul să poată evalua platforma complet.
 //
-// Aplicarea efectivă a cotelor (blocare la depășire, contorizare lunară
-// pentru rapoarte/contracte/D177) e Faza 1/2 — aici e doar structura de date.
+// Cotele și modulele se aplică pe server: la creare (contacte, utilizatori, rapoarte) și în acțiunile și paginile modulelor (areModul).
 
 export type OrgPackage = "trial" | "start" | "crestere" | "impact" | "custom";
 

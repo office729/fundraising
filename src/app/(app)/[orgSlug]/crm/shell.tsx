@@ -48,7 +48,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
 import type { DomeniuActivitate } from "@/lib/campaign-templates";
-import { areModul, type ModulPachet, type OrgPackage } from "@/lib/billing/packages";
+import { areModul, MODULE_PACHET, type ModulPachet, type OrgPackage } from "@/lib/billing/packages";
 import { AVATAR_DONATOR_ACTIV, paginaCrmAscunsa } from "@/lib/module-ascunse";
 import { DASHBOARD_DICT, type DashboardDict } from "@/lib/i18n/dictionaries/dashboard";
 import type { Locale } from "@/lib/i18n/config";
@@ -440,7 +440,12 @@ function NavGroups({
                   <Icon className="h-4 w-4 shrink-0" />
                   <span className={cn("min-w-0 leading-tight break-words", collapsed && "md:hidden")}>{item.label}</span>
                   {MODUL_PE_INTRARE[item.href] && !areModul(orgPackage, MODUL_PE_INTRARE[item.href]) && (
-                    <Lock className={cn("ml-auto h-3 w-3 shrink-0 text-[var(--ci-text-faint)]", collapsed && "md:hidden")} aria-label="Inclus într-un pachet superior" />
+                    <>
+                      <Lock className={cn("ml-auto h-3.5 w-3.5 shrink-0 text-[var(--ci-text-muted)]", collapsed && "md:hidden")} aria-hidden>
+                        <title>{`Inclus începând cu pachetul ${MODULE_PACHET[MODUL_PE_INTRARE[item.href]].minim === "impact" ? "IMPACT" : "CREȘTERE"}`}</title>
+                      </Lock>
+                      <span className="sr-only">{`Inclus începând cu pachetul ${MODULE_PACHET[MODUL_PE_INTRARE[item.href]].minim === "impact" ? "IMPACT" : "CREȘTERE"}`}</span>
+                    </>
                   )}
                 </Link>
               );

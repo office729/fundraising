@@ -15,6 +15,7 @@ export function EmbedCard({ orgSlug, pageSlug, baza }: { orgSlug: string; pageSl
   const [text, setText] = useState("Donează");
   const [culoare, setCuloare] = useState("#2e8b57");
   const [copiat, setCopiat] = useState(false);
+  const [eroare, setEroare] = useState<string | null>(null);
   const cod = snippetWidget({ baza, orgSlug, pageSlug, mod, text, culoare }) ?? "";
 
   return (
@@ -52,10 +53,19 @@ export function EmbedCard({ orgSlug, pageSlug, baza }: { orgSlug: string; pageSl
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <Button
           onClick={() => {
-            void navigator.clipboard?.writeText(cod).then(() => {
-              setCopiat(true);
-              window.setTimeout(() => setCopiat(false), 2000);
-            });
+            const clip = navigator.clipboard;
+            if (!clip) {
+              setEroare("Browserul nu permite copierea automată. Selectează codul de mai sus și copiază-l manual.");
+              return;
+            }
+            clip.writeText(cod).then(
+              () => {
+                setEroare(null);
+                setCopiat(true);
+                window.setTimeout(() => setCopiat(false), 2000);
+              },
+              () => setEroare("Nu am putut copia. Selectează codul de mai sus și copiază-l manual."),
+            );
           }}
         >
           {copiat ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />} {copiat ? "Copiat" : "Copiază codul"}
@@ -69,9 +79,20 @@ export function EmbedCard({ orgSlug, pageSlug, baza }: { orgSlug: string; pageSl
           Previzualizează formularul <ExternalLink className="h-3.5 w-3.5" aria-hidden />
         </a>
       </div>
+      {eroare && (
+        <p role="alert" className="mt-2 text-[13px] text-[var(--ci-red)]">
+          {eroare}
+        </p>
+      )}
       <p className="mt-3 text-[12px] text-[var(--ci-text-muted)]">
-        În WordPress folosește un bloc „HTML personalizat”. Widgetul nu folosește cookie-uri pe site-ul tău; plata se face pe pagina securizată Stripe, în contul organizației.
+        Unde îl lipești: în WordPress, un bloc „HTML personalizat”; în Wix, un element „Embed HTML”; în Squarespace, un bloc „Code”; în Webflow, un „Embed”. Cu varianta „buton”, formularul se încarcă doar când cineva apasă pe el. Plata se face pe pagina securizată Stripe, în contul organizației.
       </p>
+      <div className="mt-3 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface-2)] p-3 text-[12px] text-[var(--ci-text-muted)]">
+        <p className="font-medium text-[var(--ci-text)]">Ce adaugi în politica de confidențialitate a site-ului tău</p>
+        <p className="mt-1">
+          „Formularul de donație este oferit de Alexandrit (persoană împuternicită a noastră), care, la încărcarea formularului, primește adresa IP și browserul vizitatorului, fără cookie-uri. Plata este procesată de Stripe.”
+        </p>
+      </div>
     </Card>
   );
 }

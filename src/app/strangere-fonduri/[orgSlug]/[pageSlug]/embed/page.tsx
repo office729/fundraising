@@ -65,8 +65,8 @@ export default async function EmbedDonatiePage({ params }: { params: Promise<{ o
           <p className="mt-4 rounded-lg border border-line bg-panel p-3 text-sm text-body">{c.campanieInchisa}</p>
         )}
 
-        <p className="mt-3 text-center text-[12px]">
-          <a href={caleCampanie(orgSlug, pageSlug)} target="_blank" rel="noopener noreferrer" className="text-muted underline">
+        <p className="mt-3 text-center text-[13px]">
+          <a href={caleCampanie(orgSlug, pageSlug)} target="_blank" rel="noopener noreferrer" className="font-medium text-body underline">
             {locale === "ro" ? "Vezi toată campania" : "See the full campaign"}
           </a>
         </p>

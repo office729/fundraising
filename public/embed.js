@@ -50,6 +50,24 @@
     return /^#[0-9a-f]{6}$/i.test(c) ? c : "#2e8b57";
   }
 
+  // Text alb pe fundal închis, text închis pe fundal deschis (luminanța relativă WCAG), ca butonul să rămână lizibil cu orice culoare aleasă.
+  function culoareText(hex) {
+    var canal = function (i) {
+      var v = parseInt(hex.substr(i, 2), 16) / 255;
+      return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    };
+    var l = 0.2126 * canal(1) + 0.7152 * canal(3) + 0.0722 * canal(5);
+    return l > 0.4 ? "#0f172a" : "#ffffff";
+  }
+
+  function injecteazaStil() {
+    if (document.getElementById("alexandrit-stil")) return;
+    var st = document.createElement("style");
+    st.id = "alexandrit-stil";
+    st.textContent = ".alexandrit-btn:focus-visible,.alexandrit-inchide:focus-visible{outline:3px solid #1d4ed8;outline-offset:2px}";
+    document.head.appendChild(st);
+  }
+
   function deschideFereastra(cfg) {
     var fundal = document.createElement("div");
     fundal.setAttribute("role", "dialog");
@@ -62,18 +80,45 @@
     inchide.type = "button";
     inchide.textContent = "×";
     inchide.setAttribute("aria-label", "Închide");
-    inchide.style.cssText = "position:absolute;top:6px;right:8px;z-index:1;border:0;background:transparent;font-size:26px;line-height:1;cursor:pointer;color:#475569";
+    inchide.style.cssText = "position:absolute;top:6px;right:8px;z-index:2;border:0;background:#ffffff;border-radius:6px;width:36px;height:36px;font-size:26px;line-height:1;cursor:pointer;color:#334155";
+    inchide.className = "alexandrit-inchide";
     var f = creeazaIframe(cfg.org, cfg.campanie);
     var anterior = document.activeElement;
+    var overflowVechi = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    // Indicator până se încarcă formularul.
+    var incarcare = document.createElement("p");
+    incarcare.textContent = "Se încarcă formularul…";
+    incarcare.style.cssText = "position:absolute;top:50%;left:0;right:0;margin:0;text-align:center;color:#475569;font:14px system-ui,sans-serif";
+    f.addEventListener("load", function () {
+      incarcare.remove();
+    });
     function inchideTot() {
       document.removeEventListener("keydown", laTasta);
       var i = iframes.indexOf(f);
       if (i >= 0) iframes.splice(i, 1);
       fundal.remove();
+      document.body.style.overflow = overflowVechi;
       if (anterior && anterior.focus) anterior.focus();
     }
+    // Escape închide; Tab rămâne în fereastră (butonul de închidere și formularul), nu iese în pagina gazdă.
     function laTasta(e) {
-      if (e.key === "Escape") inchideTot();
+      if (e.key === "Escape") {
+        inchideTot();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      var activ = document.activeElement;
+      if (e.shiftKey && activ === inchide) {
+        e.preventDefault();
+        f.focus();
+      } else if (!e.shiftKey && activ === f) {
+        e.preventDefault();
+        inchide.focus();
+      } else if (activ !== inchide && activ !== f) {
+        e.preventDefault();
+        inchide.focus();
+      }
     }
     inchide.addEventListener("click", inchideTot);
     fundal.addEventListener("click", function (e) {
@@ -81,6 +126,7 @@
     });
     document.addEventListener("keydown", laTasta);
     cutie.appendChild(inchide);
+    cutie.appendChild(incarcare);
     cutie.appendChild(f);
     fundal.appendChild(cutie);
     document.body.appendChild(fundal);
@@ -102,7 +148,11 @@
     var b = document.createElement("button");
     b.type = "button";
     b.textContent = cfg.text.slice(0, 40);
-    b.style.cssText = "cursor:pointer;border:0;border-radius:8px;padding:12px 24px;font:600 16px/1.2 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#fff;background:" + culoareValida(cfg.culoare);
+    injecteazaStil();
+    var fundalButon = culoareValida(cfg.culoare);
+    b.className = "alexandrit-btn";
+    b.setAttribute("aria-haspopup", "dialog");
+    b.style.cssText = "cursor:pointer;border:0;border-radius:8px;padding:12px 24px;font:600 16px/1.2 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:" + culoareText(fundalButon) + ";background:" + fundalButon;
     b.addEventListener("click", function () {
       deschideFereastra(cfg);
     });
