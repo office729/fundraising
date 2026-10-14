@@ -147,6 +147,21 @@ export default async function PaginaStrangereFonduriPage({
   const nefinalizata = sp.redirect_status === "failed";
   const idPlata = sp.session_id ?? sp.payment_intent;
   const detaliuDonatie = arataMultumire && !nefinalizata && idPlata ? await getDetaliuDonatie(idPlata) : null;
+  // Mulțumirea apare DOAR după confirmare (status „reusita”, setat de webhook): până atunci popup-ul spune că plata se confirmă și se
+  // reîmprospătează singur; o plată eșuată sau anulată nu primește mulțumire; o donație rambursată nu mai afișează nimic.
+  const stareMultumire: "nimic" | "succes" | "asteapta" | "nefinalizata" | "necunoscuta" = !arataMultumire
+    ? "nimic"
+    : nefinalizata
+      ? "nefinalizata"
+      : !detaliuDonatie
+        ? "necunoscuta"
+        : detaliuDonatie.status === "reusita"
+          ? "succes"
+          : detaliuDonatie.status === "in_asteptare"
+            ? "asteapta"
+            : detaliuDonatie.status === "esuata"
+              ? "nefinalizata"
+              : "nimic";
 
   const { org, pagina, recente, topDonatori, actualizari, totalDonatii, alteCampanii } = data;
   const procent = pagina.sumaTinta ? Math.min(100, Math.round((pagina.sumaStransa / pagina.sumaTinta) * 100)) : null;
@@ -257,12 +272,22 @@ export default async function PaginaStrangereFonduriPage({
         {c.sariLaDonatie}
       </a>
       <UrmarireVizite orgSlug={orgSlug} pageSlug={pageSlug} />
-      {arataMultumire && (
-        <PopupMultumire inchide={t.thankYou.inchide}>
-          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-brand-green-soft text-2xl">{nefinalizata ? "↩️" : "🎉"}</span>
-          <h2 className="font-display mt-4 text-2xl font-bold text-ink">{nefinalizata ? t.thankYou.nefinalizata : t.thankYou.titlu}</h2>
-          {nefinalizata ? null : detaliuDonatie ? (
+      {stareMultumire !== "nimic" && (
+        <PopupMultumire
+          inchide={t.thankYou.inchide}
+          asteapta={stareMultumire === "asteapta"}
+          intarziere={
             <>
+              <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-brand-green-soft text-2xl">⏳</span>
+              <h2 className="font-display mt-4 text-2xl font-bold text-ink">{t.thankYou.intarziere}</h2>
+              <p className="mt-2 text-[14.5px] leading-relaxed text-muted">{t.thankYou.intarziereText}</p>
+            </>
+          }
+        >
+          {stareMultumire === "succes" && detaliuDonatie ? (
+            <>
+              <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-brand-green-soft text-2xl">🎉</span>
+              <h2 className="font-display mt-4 text-2xl font-bold text-ink">{t.thankYou.titlu}</h2>
               <p className="mt-2 text-[14.5px] leading-relaxed text-body">
                 {detaliuDonatie.numeDonator ? t.thankYou.multumimNume(detaliuDonatie.numeDonator) : t.thankYou.multumim} {t.thankYou.pentruDonatia}{" "}
                 <strong className="text-ink">
@@ -273,8 +298,24 @@ export default async function PaginaStrangereFonduriPage({
               </p>
               {!detaliuDonatie.recurenta && <p className="mt-3 text-[13px] text-muted">{t.thankYou.lunarOferta}</p>}
             </>
+          ) : stareMultumire === "asteapta" ? (
+            <>
+              <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-brand-green-soft" aria-hidden>
+                <span className="h-6 w-6 rounded-full border-[3px] border-brand-green border-t-transparent motion-safe:animate-spin" />
+              </span>
+              <h2 className="font-display mt-4 text-2xl font-bold text-ink">{t.thankYou.seConfirma}</h2>
+              <p className="mt-2 text-[14.5px] leading-relaxed text-muted">{t.thankYou.seConfirmaText}</p>
+            </>
+          ) : stareMultumire === "nefinalizata" ? (
+            <>
+              <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-brand-green-soft text-2xl">↩️</span>
+              <h2 className="font-display mt-4 text-2xl font-bold text-ink">{t.thankYou.nefinalizata}</h2>
+            </>
           ) : (
-            <p className="mt-2 text-[14.5px] leading-relaxed text-muted">{t.thankYou.faraDetaliu}</p>
+            <>
+              <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-brand-green-soft text-2xl">✉️</span>
+              <p className="mt-4 text-[14.5px] leading-relaxed text-muted">{t.thankYou.necunoscuta}</p>
+            </>
           )}
         </PopupMultumire>
       )}

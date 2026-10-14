@@ -7,8 +7,8 @@ import { fundraisingDonations, fundraisingPages } from "@/lib/db/schema";
 
 // Stripe întoarce donatorul pe pagina campaniei imediat după plată — confirmarea REALĂ (marcarea donației ca "reusita" și
 // actualizarea sumei strânse) o face webhook-ul asincron (/api/stripe/webhook), care poate ajunge la câteva secunde după
-// întoarcere. De-asta mesajul de mulțumire NU depinde de status: suma, numele donatorului și pagina sunt scrise la CREAREA donației
-// (înainte de Stripe), deci sunt sigur disponibile aici indiferent dacă webhook-ul a apucat să ruleze.
+// întoarcere. Suma, numele donatorului și pagina sunt scrise la CREAREA donației (înainte de Stripe), dar mulțumirea se arată doar când
+// statusul e „reusita” (confirmat de webhook): până atunci popup-ul spune că plata se confirmă și așteaptă (vezi popup-multumire.tsx).
 export async function getDetaliuDonatie(sessionId: string) {
   const rows = await db.transaction(async (tx) => {
     await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
@@ -17,6 +17,7 @@ export async function getDetaliuDonatie(sessionId: string) {
         numeDonator: fundraisingDonations.numeDonator,
         suma: fundraisingDonations.suma,
         recurenta: fundraisingDonations.recurenta,
+        status: fundraisingDonations.status,
         pageTitlu: fundraisingPages.titlu,
       })
       .from(fundraisingDonations)
