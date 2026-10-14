@@ -23,7 +23,7 @@ export type ToolId =
 
 // Module incluse începând cu un anumit pachet (pe lângă cotele din PACKAGE_LIMITS). Ce nu e listat aici (CRM-ul de bază, campaniile,
 // Formularul 230, contractele, newsletterul, rapoartele) e în toate pachetele. Probă și plan personalizat: toate deschise.
-export type ModulPachet = "program-lucru" | "kpi" | "instrumente-design" | "voluntari" | "comunicat-presa" | "analiza-baze";
+export type ModulPachet = "program-lucru" | "kpi" | "instrumente-design" | "voluntari" | "comunicat-presa" | "analiza-baze" | "granturi";
 
 export const MODULE_PACHET: Record<ModulPachet, { minim: "crestere" | "impact"; nume: string }> = {
   "program-lucru": { minim: "crestere", nume: "Program de lucru" },
@@ -32,6 +32,7 @@ export const MODULE_PACHET: Record<ModulPachet, { minim: "crestere" | "impact"; 
   voluntari: { minim: "crestere", nume: "CRM voluntari" },
   "comunicat-presa": { minim: "impact", nume: "Comunicat de presă" },
   "analiza-baze": { minim: "impact", nume: "Analiza bazei de date" },
+  granturi: { minim: "impact", nume: "Granturi" },
 };
 
 const RANG_PACHET: Record<string, number> = { start: 1, crestere: 2, impact: 3 };

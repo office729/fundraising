@@ -220,6 +220,58 @@ export async function genereazaTextMultumireAI(
   }
 }
 
+// Draft de cerere de finanțare (modulul Granturi): pornește din dosarul standard al organizației și din cerințele finanțatorului.
+// AI-ul primește DOAR faptele din dosar și din fișa grantului; ce lipsește rămâne marcat pentru completare, nu se inventează.
+export type DateDraftGrant = {
+  dosar: { eticheta: string; valoare: string }[];
+  finantator: string;
+  titlu: string;
+  suma: string | null;
+  termen: string | null;
+  cerinte: string | null;
+  eligibilitate: string[];
+  limba: "ro" | "en";
+};
+
+export async function genereazaDraftGrantAI(d: DateDraftGrant): Promise<string | null> {
+  if (!aiConfigurat()) return null;
+  const ro = d.limba === "ro";
+  const system = [
+    "Ești specialist în scrierea de cereri de finanțare pentru organizații non-profit din România.",
+    ro ? "Scrii în limba română, clar, concret și fără exagerări." : "You write in clear, concrete English, without exaggeration.",
+    "REGULI STRICTE, fără excepție:",
+    "- Folosește DOAR faptele din dosarul organizației și din fișa grantului. NU inventa cifre, sume, nume, parteneri, date, rezultate, citate sau experiență.",
+    ro
+      ? "- Când o informație necesară lipsește, scrie exact [DE COMPLETAT: ce informație lipsește], în locul ei. Nu completa cu presupuneri."
+      : "- When a needed piece of information is missing, write exactly [TO COMPLETE: what is missing] in its place. Do not fill gaps with assumptions.",
+    "- Păstrează cifrele și sumele exact cum ți-au fost date (nu le rotunji, nu le converti).",
+    "- Dacă cerințele finanțatorului enumeră secțiuni sau limite de lungime, respectă-le; altfel folosește: rezumat, nevoia și contextul, obiective, activități, rezultate așteptate, despre organizație, sustenabilitate. Adaugă bugetul doar dacă există date pentru el.",
+    "- Fără formatare Markdown (fără #, **, liste cu steluțe): titluri de secțiune pe rând separat, apoi text simplu. Răspunde DOAR cu cererea, fără comentarii.",
+  ].join("\n");
+  const prompt = [
+    `Finanțator: ${d.finantator}`,
+    `Programul / apelul: ${d.titlu}`,
+    d.suma ? `Suma solicitată: ${d.suma}` : "Suma solicitată: necomunicată",
+    d.termen ? `Termen de depunere: ${d.termen}` : "",
+    "",
+    "Cerințele finanțatorului (lipite din ghid; singura sursă pentru structura și limitele cererii):",
+    d.cerinte?.trim() || "(nu au fost completate — folosește structura implicită)",
+    d.eligibilitate.length ? "\nCriterii de eligibilitate de reținut:\n" + d.eligibilitate.map((e) => "- " + e).join("\n") : "",
+    "",
+    "Dosarul organizației (singura sursă de fapte despre organizație):",
+    d.dosar.length ? d.dosar.map((x) => `${x.eticheta}: ${x.valoare}`).join("\n") : "(dosarul este gol — marchează tot ce lipsește)",
+  ]
+    .filter((l, i, a) => l !== "" || a[i - 1] !== "")
+    .join("\n");
+  try {
+    const text = curata(await apeleazaAI({ system, prompt, maxTokens: 3000, timeoutMs: 90000 }));
+    return text || null;
+  } catch (e) {
+    raporteazaEroare("ai-grant", e);
+    return null;
+  }
+}
+
 export type PostCalendarAI = { obiectiv: string; text: string };
 
 // Generează un plan de N zile de postări, adaptat la stadiul real al campaniei

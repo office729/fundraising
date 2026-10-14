@@ -30,7 +30,7 @@ function limiteText(pkg: Exclude<OrgPackage, "trial" | "custom">, locale: Locale
   const campanii = l.campaniiActive;
   const conturi = l.conturi230;
   const modul = (m: ModulPachet) => areModul(pkg, m);
-  const [programLucru, kpi, design, voluntari, presa, analiza] = ["program-lucru", "kpi", "instrumente-design", "voluntari", "comunicat-presa", "analiza-baze"].map((m) => modul(m as ModulPachet));
+  const [programLucru, kpi, design, voluntari, presa, analiza, granturi] = ["program-lucru", "kpi", "instrumente-design", "voluntari", "comunicat-presa", "analiza-baze", "granturi"].map((m) => modul(m as ModulPachet));
   // Aceeași listă ca pe pagina publică de prețuri (hub.ts).
   return ro
     ? [
@@ -45,6 +45,7 @@ function limiteText(pkg: Exclude<OrgPackage, "trial" | "custom">, locale: Locale
         ...(design ? ["Instrumente de design"] : []),
         ...(voluntari ? ["CRM voluntari"] : []),
         ...(analiza ? ["Analiza bazei de date persoane fizice"] : []),
+        ...(granturi ? ["Granturi"] : []),
         pkg === "impact" ? "Suport prin e-mail și telefon" : "Suport prin e-mail",
       ]
     : [
@@ -59,6 +60,7 @@ function limiteText(pkg: Exclude<OrgPackage, "trial" | "custom">, locale: Locale
         ...(design ? ["Design tools"] : []),
         ...(voluntari ? ["Volunteer CRM"] : []),
         ...(analiza ? ["Individual database analysis"] : []),
+        ...(granturi ? ["Grants"] : []),
         pkg === "impact" ? "Email and phone support" : "Email support",
       ];
 }

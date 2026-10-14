@@ -25,3 +25,4 @@ export * from "./donatori-pf";
 export * from "./performanta";
 export * from "./certificate-verificari";
 export * from "./campanie-evenimente";
+export * from "./granturi";

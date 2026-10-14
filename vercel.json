@@ -24,6 +24,10 @@
     {
       "path": "/api/cron/voluntari-remindere",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/granturi-remindere",
+      "schedule": "0 6 * * *"
     }
   ],
   "regions": [

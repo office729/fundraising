@@ -1,0 +1,249 @@
+"use server";
+
+import { and, eq } from "drizzle-orm";
+
+import { aiConfigurat, genereazaDraftGrantAI } from "@/lib/ai";
+import { limitaAIDepasita, MESAJ_LIMITA_AI } from "@/lib/ai-limit";
+import { withOrgAdmin, withOrgFaze, withOrgSession } from "@/lib/auth/guard";
+import { areModul } from "@/lib/billing/packages";
+import { appUsers, granturi, granturiDosar, memberships } from "@/lib/db/schema";
+import { EroareUtilizator } from "@/lib/erori";
+import { CAMPURI_DOSAR, aziBucuresti, curataDosar, esteStare, valideazaGrant, type ElementLista, type GrantInput } from "@/lib/granturi/stari";
+
+// Modulul Granturi (inclus din pachetul IMPACT; poarta e în layout.tsx). Orice membru al organizației citește și lucrează la cereri;
+// ștergerea unei cereri cere rol de admin sau owner.
+
+export type GrantRand = {
+  id: string;
+  finantator: string;
+  titlu: string;
+  tipFinantator: string;
+  stare: string;
+  suma: number | null;
+  moneda: string;
+  termen: string | null;
+  link: string | null;
+  responsabilId: string | null;
+  nota: string | null;
+  cerinte: string | null;
+  eligibilitate: ElementLista[];
+  documente: ElementLista[];
+  draft: string | null;
+  sumaCastigata: number | null;
+  dataDecizie: string | null;
+  termenRaportare: string | null;
+};
+
+export type Membru = { id: string; nume: string };
+
+export type DateGranturi = {
+  granturi: GrantRand[];
+  dosar: Record<string, string>;
+  membri: Membru[];
+  azi: string;
+  aiDisponibil: boolean;
+};
+
+// Pagina e închisă în layout pentru pachetele fără Granturi; aceeași verificare și aici, ca acțiunile să nu poată fi apelate direct.
+const cuModul = (ctx: { orgPackage: Parameters<typeof areModul>[0] }) => {
+  if (!areModul(ctx.orgPackage, "granturi")) throw new EroareUtilizator("Granturile sunt incluse în pachetul IMPACT.");
+};
+
+const numar = (x: string | null): number | null => (x === null ? null : Number(x));
+
+export const obtineDateGranturi = withOrgSession(async (ctx): Promise<DateGranturi> => {
+  cuModul(ctx);
+  const [randuri, dosar, membri] = await Promise.all([
+    ctx.db.select().from(granturi).where(eq(granturi.orgId, ctx.orgId)).orderBy(granturi.termen, granturi.createdAt),
+    ctx.db.select({ continut: granturiDosar.continut }).from(granturiDosar).where(eq(granturiDosar.orgId, ctx.orgId)).limit(1),
+    ctx.db
+      .select({ id: appUsers.id, nume: appUsers.name, email: appUsers.email })
+      .from(memberships)
+      .innerJoin(appUsers, eq(appUsers.id, memberships.userId))
+      .where(eq(memberships.orgId, ctx.orgId)),
+  ]);
+  return {
+    granturi: randuri.map((g) => ({
+      id: g.id,
+      finantator: g.finantator,
+      titlu: g.titlu,
+      tipFinantator: g.tipFinantator,
+      stare: g.stare,
+      suma: numar(g.suma),
+      moneda: g.moneda,
+      termen: g.termen,
+      link: g.link,
+      responsabilId: g.responsabilId,
+      nota: g.nota,
+      cerinte: g.cerinte,
+      eligibilitate: g.eligibilitate,
+      documente: g.documente,
+      draft: g.draft,
+      sumaCastigata: numar(g.sumaCastigata),
+      dataDecizie: g.dataDecizie,
+      termenRaportare: g.termenRaportare,
+    })),
+    dosar: curataDosar(dosar[0]?.continut),
+    membri: membri.map((m) => ({ id: m.id, nume: m.nume?.trim() || m.email })),
+    azi: aziBucuresti(),
+    aiDisponibil: aiConfigurat(),
+  };
+});
+
+export type RezultatSalvare = { ok: true; id: string } | { ok: false; eroare: string };
+
+export const salveazaGrantAction = withOrgSession(async (ctx, input: GrantInput): Promise<RezultatSalvare> => {
+  cuModul(ctx);
+  const r = valideazaGrant(input);
+  if (!r.ok) return { ok: false, eroare: r.eroare };
+  const v = r.v;
+  const valori = {
+    finantator: v.finantator,
+    titlu: v.titlu,
+    tipFinantator: v.tipFinantator,
+    stare: v.stare,
+    suma: v.suma === null ? null : String(v.suma),
+    moneda: v.moneda,
+    termen: v.termen,
+    link: v.link,
+    responsabilId: v.responsabilId,
+    nota: v.nota,
+    cerinte: v.cerinte,
+    eligibilitate: v.eligibilitate,
+    documente: v.documente,
+    draft: v.draft,
+    sumaCastigata: v.sumaCastigata === null ? null : String(v.sumaCastigata),
+    dataDecizie: v.dataDecizie,
+    termenRaportare: v.termenRaportare,
+    updatedAt: new Date(),
+  };
+  // Responsabilul trebuie să fie membru al organizației (un id străin nu se acceptă).
+  if (v.responsabilId) {
+    const [m] = await ctx.db.select({ id: memberships.userId }).from(memberships).where(and(eq(memberships.orgId, ctx.orgId), eq(memberships.userId, v.responsabilId))).limit(1);
+    if (!m) return { ok: false, eroare: "Responsabilul ales nu face parte din organizație." };
+  }
+  if (input.id) {
+    // Termenul nou redeschide reminderele: dacă termenul se schimbă, ele pot pleca din nou.
+    const [vechi] = await ctx.db.select({ termen: granturi.termen }).from(granturi).where(and(eq(granturi.id, input.id), eq(granturi.orgId, ctx.orgId))).limit(1);
+    if (!vechi) return { ok: false, eroare: "Cererea nu a fost găsită." };
+    await ctx.db
+      .update(granturi)
+      .set({ ...valori, ...(vechi.termen !== v.termen ? { reminder7zLa: null, reminder1zLa: null } : {}) })
+      .where(and(eq(granturi.id, input.id), eq(granturi.orgId, ctx.orgId)));
+    return { ok: true, id: input.id };
+  }
+  const [nou] = await ctx.db.insert(granturi).values({ ...valori, orgId: ctx.orgId, createdBy: ctx.userId }).returning({ id: granturi.id });
+  return { ok: true, id: nou.id };
+});
+
+// Schimbarea rapidă a stării din listă, fără să deschizi cererea.
+export const schimbaStareGrantAction = withOrgSession(async (ctx, id: string, stare: string): Promise<{ ok: boolean }> => {
+  cuModul(ctx);
+  if (!esteStare(stare)) return { ok: false };
+  const r = await ctx.db
+    .update(granturi)
+    .set({ stare, updatedAt: new Date() })
+    .where(and(eq(granturi.id, id), eq(granturi.orgId, ctx.orgId)))
+    .returning({ id: granturi.id });
+  return { ok: Boolean(r[0]) };
+});
+
+export const stergeGrantAction = withOrgAdmin(async (ctx, id: string): Promise<void> => {
+  cuModul(ctx);
+  await ctx.db.delete(granturi).where(and(eq(granturi.id, id), eq(granturi.orgId, ctx.orgId)));
+});
+
+// Adaugă în registru o sursă din lista „Surse de finanțare” (stare „identificat”); nu o dublează dacă același finanțator + titlu există deja.
+export const adaugaSursaInRegistruAction = withOrgSession(async (ctx, finantator: string, titlu: string, tip: string, link: string): Promise<RezultatSalvare> => {
+  cuModul(ctx);
+  const r = valideazaGrant({
+    id: null,
+    finantator,
+    titlu,
+    tipFinantator: tip,
+    stare: "identificat",
+    suma: "",
+    moneda: "RON",
+    termen: "",
+    link,
+    responsabilId: null,
+    nota: "",
+    cerinte: "",
+    eligibilitate: [],
+    documente: [],
+    draft: "",
+    sumaCastigata: "",
+    dataDecizie: "",
+    termenRaportare: "",
+  });
+  if (!r.ok) return { ok: false, eroare: r.eroare };
+  const [exista] = await ctx.db
+    .select({ id: granturi.id })
+    .from(granturi)
+    .where(and(eq(granturi.orgId, ctx.orgId), eq(granturi.finantator, r.v.finantator), eq(granturi.titlu, r.v.titlu)))
+    .limit(1);
+  if (exista) return { ok: true, id: exista.id };
+  const [nou] = await ctx.db
+    .insert(granturi)
+    .values({ orgId: ctx.orgId, finantator: r.v.finantator, titlu: r.v.titlu, tipFinantator: r.v.tipFinantator, link: r.v.link, createdBy: ctx.userId })
+    .returning({ id: granturi.id });
+  return { ok: true, id: nou.id };
+});
+
+export const salveazaDosarAction = withOrgSession(async (ctx, continut: Record<string, string>): Promise<{ ok: true }> => {
+  cuModul(ctx);
+  const curat = curataDosar(continut);
+  await ctx.db
+    .insert(granturiDosar)
+    .values({ orgId: ctx.orgId, continut: curat })
+    .onConflictDoUpdate({ target: granturiDosar.orgId, set: { continut: curat, updatedAt: new Date() } });
+  return { ok: true };
+});
+
+export type RezultatDraft = { ok: true; draft: string } | { ok: false; eroare: string };
+
+const FORMAT_SUMA = (n: string | null, moneda: string) => (n ? `${Number(n).toLocaleString("ro-RO")} ${moneda}` : null);
+
+// Generează un draft de cerere din dosarul organizației și cerințele finanțatorului. Salvează draftul pe cerere (poate fi rescris după);
+// apelul către model e în afara tranzacției (vezi withOrgFaze), iar numărul de generări pe zi e plafonat ca la celelalte funcții AI.
+export const genereazaDraftGrantAction = withOrgFaze<
+  [string, string],
+  { cerere: Parameters<typeof genereazaDraftGrantAI>[0] },
+  string | null,
+  RezultatDraft
+>({
+  pregateste: async (ctx, grantId, limba) => {
+    cuModul(ctx);
+    if (!aiConfigurat()) return { gata: { ok: false, eroare: "Generarea cu AI nu e configurată pe această platformă. Poți scrie draftul manual." } };
+    const [g] = await ctx.db.select().from(granturi).where(and(eq(granturi.id, grantId), eq(granturi.orgId, ctx.orgId))).limit(1);
+    if (!g) return { gata: { ok: false, eroare: "Cererea nu a fost găsită." } };
+    if (await limitaAIDepasita(ctx)) return { gata: { ok: false, eroare: MESAJ_LIMITA_AI } };
+    const [d] = await ctx.db.select({ continut: granturiDosar.continut }).from(granturiDosar).where(eq(granturiDosar.orgId, ctx.orgId)).limit(1);
+    const dosar = curataDosar(d?.continut);
+    return {
+      pregatit: {
+        cerere: {
+          dosar: CAMPURI_DOSAR.filter((c) => dosar[c.cheie]).map((c) => ({ eticheta: c.eticheta, valoare: dosar[c.cheie] })),
+          finantator: g.finantator,
+          titlu: g.titlu,
+          suma: FORMAT_SUMA(g.suma, g.moneda),
+          termen: g.termen,
+          cerinte: g.cerinte,
+          eligibilitate: g.eligibilitate.map((e) => e.text),
+          limba: limba === "en" ? "en" : "ro",
+        },
+      },
+    };
+  },
+  extern: ({ cerere }) => genereazaDraftGrantAI(cerere),
+  salveaza: async (ctx, _pregatit, draft, grantId) => {
+    if (!draft) return { ok: false, eroare: "Nu am putut genera draftul acum. Încearcă din nou în câteva momente." };
+    const r = await ctx.db
+      .update(granturi)
+      .set({ draft, updatedAt: new Date() })
+      .where(and(eq(granturi.id, grantId), eq(granturi.orgId, ctx.orgId)))
+      .returning({ id: granturi.id });
+    if (!r[0]) throw new EroareUtilizator("Cererea nu a fost găsită.");
+    return { ok: true, draft };
+  },
+});
