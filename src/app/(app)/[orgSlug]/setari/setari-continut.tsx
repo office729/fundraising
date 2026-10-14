@@ -86,6 +86,7 @@ export async function SetariContinut({ orgSlug }: { orgSlug: string }) {
         <AbonamentSection
           orgSlug={orgSlug}
           pachetCurent={access.orgPackage}
+          pachetAles={access.orgPackageAles}
           extraUtilizatori={access.orgExtraUsers}
           statusCurent={access.orgSubscriptionStatus}
           reinnoireAutomata={reinnoireAutomata}

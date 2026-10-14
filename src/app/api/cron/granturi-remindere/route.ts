@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
-import { isAccessBlocked } from "@/lib/billing/trial";
+import { isAccessBlocked, pachetEfectiv } from "@/lib/billing/trial";
 import { cronAutorizat } from "@/lib/cron-auth";
 import { db } from "@/lib/db";
 import { organizations } from "@/lib/db/schema";
@@ -43,7 +43,7 @@ export async function GET(req: Request) {
     if (Date.now() > deadline) break;
     if (isAccessBlocked(org)) continue; // fără acces plătit, platforma nu mai trimite e-mailuri în numele organizației
     try {
-      const r = await trimiteRemindereGranturi({ id: org.id, slug: org.slug, nume: org.name, pachet: org.package }, deadline);
+      const r = await trimiteRemindereGranturi({ id: org.id, slug: org.slug, nume: org.name, pachet: pachetEfectiv(org) }, deadline);
       if (r.trimise + r.esuate > 0) rezultate.push({ orgSlug: org.slug, ...r });
     } catch (e) {
       raporteazaEroare("cron-granturi", e, { orgSlug: org.slug });

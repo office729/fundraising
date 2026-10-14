@@ -11,6 +11,7 @@ import { JUDETE } from "@/lib/judete";
 
 import { citesteDateFacturareAction, salveazaDateFacturareAction, startCheckoutAction } from "./billing-actions";
 import { CustomPlanBuilder } from "./custom-plan-builder";
+import { RecomandarePachet } from "./recomandare-pachet";
 
 // Planul personalizat (la cartă) e ascuns, la fel ca pe pagina publică de prețuri (hub/page.tsx). Codul rămâne; pune true ca să reapară.
 const AFISEAZA_PLAN_PERSONALIZAT = false;
@@ -137,7 +138,8 @@ function DateFacturareForm({ orgSlug, initial, onSaved, locale }: { orgSlug: str
   );
 }
 
-export function PackagePicker({ orgSlug, locale, extraInitial = 0 }: { orgSlug: string; locale: Locale; extraInitial?: number }) {
+// `pachetAles`: planul ales la înscriere (/signup?plan=…); se marchează pe card, dar nu schimbă prețul sau alegerea.
+export function PackagePicker({ orgSlug, locale, extraInitial = 0, pachetAles }: { orgSlug: string; locale: Locale; extraInitial?: number; pachetAles?: OrgPackage }) {
   const t = ABONAMENT_DICT[locale].picker;
   const [date, setDate] = useState<DateFacturare | null>(null);
   useEffect(() => {
@@ -200,6 +202,7 @@ export function PackagePicker({ orgSlug, locale, extraInitial = 0 }: { orgSlug: 
           automată pornește implicit dacă banca permite salvarea cardului (vezi
           netopia-confirm.ts), deci clientul trebuie să știe asta dinainte, nu
           să afle abia la a doua taxare. */}
+      <RecomandarePachet orgSlug={orgSlug} locale={locale} />
       <div className="mx-auto mb-5 flex max-w-xl flex-col items-center gap-2.5">
         <p className="text-[13px] font-semibold text-muted">{t.facturareTitlu}</p>
         <div role="group" aria-label={t.facturareTitlu} className="inline-flex rounded-full border border-line bg-panel p-1">
@@ -252,6 +255,7 @@ export function PackagePicker({ orgSlug, locale, extraInitial = 0 }: { orgSlug: 
                 </div>
               )}
               <h3 className="font-display text-lg font-bold text-ink">{p.nume}</h3>
+              {pachetAles === p.key && <p className="-mt-2 text-[12px] font-medium text-brand-green">{locale === "ro" ? "Ales la înscriere" : "Chosen at sign-up"}</p>}
               <div>
                 <p className="text-2xl font-extrabold text-ink">
                   {fmt(pretPerioadaPachet(p.key, p.key === "start" ? extra : 0, facturare) ?? 0)} lei<span className="text-sm font-medium text-muted">{anual ? t.pePerAn : t.pePerLuna}</span>

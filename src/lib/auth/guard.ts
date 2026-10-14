@@ -5,7 +5,7 @@ import { cache } from "react";
 
 import type { CustomPlanConfigSaved } from "@/lib/billing/custom-plan";
 import { areModul, MODULE_PACHET, type ModulPachet } from "@/lib/billing/packages";
-import { isAccessBlocked } from "@/lib/billing/trial";
+import { isAccessBlocked, pachetEfectiv } from "@/lib/billing/trial";
 import { db } from "@/lib/db";
 import { EroareUtilizator } from "@/lib/erori";
 import type { DomeniuActivitate } from "@/lib/campaign-templates";
@@ -29,7 +29,9 @@ export type OrgContext = {
   orgJudet: string | null;
   orgIban: string | null;
   orgDomeniuActivitate: DomeniuActivitate | null;
+  // Pachetul efectiv (în proba gratuită: „trial”, cu acces la tot — vezi pachetEfectiv); `orgPackageAles` = ce e salvat pe organizație.
   orgPackage: "trial" | "start" | "crestere" | "impact" | "custom";
+  orgPackageAles: "trial" | "start" | "crestere" | "impact" | "custom";
   // Doar pentru pachetul "custom" — cotele reale (utilizatori/contactePf/
   // companiiPj) diferă de PACKAGE_LIMITS, vezi lib/billing/quota.ts.
   orgCustomPlanConfig: CustomPlanConfigSaved | null;
@@ -134,7 +136,8 @@ export function withOrgSession<A extends unknown[], R>(
         orgJudet: found.org.judet,
         orgIban: found.org.iban,
         orgDomeniuActivitate: found.org.domeniuActivitate,
-        orgPackage: found.org.package,
+        orgPackage: pachetEfectiv({ package: found.org.package, createdAt: found.org.createdAt, subscriptionStatus: found.org.subscriptionStatus, currentPeriodEnd: found.org.currentPeriodEnd }),
+        orgPackageAles: found.org.package,
         orgCustomPlanConfig: found.org.customPlanConfig as CustomPlanConfigSaved | null,
         orgExtraUsers: found.org.extraUsers,
         orgSubscriptionStatus: found.org.subscriptionStatus,
@@ -257,6 +260,7 @@ export const requireOrgAccess = cache(function requireOrgAccess(orgSlug: string)
     orgIban: ctx.orgIban,
     orgDomeniuActivitate: ctx.orgDomeniuActivitate,
     orgPackage: ctx.orgPackage,
+    orgPackageAles: ctx.orgPackageAles,
     orgCustomPlanConfig: ctx.orgCustomPlanConfig,
     orgExtraUsers: ctx.orgExtraUsers,
     orgSubscriptionStatus: ctx.orgSubscriptionStatus,

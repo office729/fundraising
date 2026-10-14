@@ -44,6 +44,17 @@ export function esteAbonamentPlatit(org: { subscriptionStatus: string; currentPe
   return org.subscriptionStatus === "active" && (!org.currentPeriodEnd || org.currentPeriodEnd > new Date());
 }
 
+// Pachetul cu care lucrează organizația ACUM (cote și module). În cele 30 de zile de probă, fără abonament plătit, e „trial”: toate modulele și
+// cotele cele mai mari, ca ONG-ul să încerce tot înainte să aleagă. Planul ales la înscriere (/signup?plan=…) rămâne în `package`, ca
+// preferință afișată la alegerea pachetului, dar nu limitează proba. Cine a plătit (sau e în grația de după o perioadă plătită) are pachetul
+// plătit; după probă, fără plată, rămâne `package` (iar accesul e oricum blocat de isAccessBlocked).
+export function pachetEfectiv(org: { package: OrgPackage; createdAt: Date; subscriptionStatus: string; currentPeriodEnd?: Date | null }): OrgPackage {
+  if (org.package === "trial") return "trial";
+  if (esteAbonamentPlatit(org)) return org.package;
+  if (org.subscriptionStatus === "active" && org.currentPeriodEnd && org.currentPeriodEnd.getTime() + GRATIE_ZILE * 86_400_000 > Date.now()) return org.package;
+  return trialDaysRemaining(org.createdAt) > 0 ? "trial" : org.package;
+}
+
 export function isAccessBlocked(
   org: {
     createdAt: Date;

@@ -33,6 +33,7 @@ export type FacturaRand = {
 export function AbonamentSection({
   orgSlug,
   pachetCurent,
+  pachetAles,
   extraUtilizatori = 0,
   statusCurent,
   reinnoireAutomata,
@@ -41,6 +42,7 @@ export function AbonamentSection({
 }: {
   orgSlug: string;
   pachetCurent: OrgPackage;
+  pachetAles?: OrgPackage;
   extraUtilizatori?: number;
   statusCurent: string;
   reinnoireAutomata: StatusReinnoireAutomata;
@@ -58,6 +60,14 @@ export function AbonamentSection({
         {dict.pachetCurent(NUME_PACHET[pachetCurent])}
         {pachetCurent === "start" && extraUtilizatori > 0 ? ` + ${extraUtilizatori} ${locale === "en" ? "extra users" : extraUtilizatori === 1 ? "utilizator suplimentar" : "utilizatori suplimentari"}` : ""} · {statusLabel}
       </p>
+
+      {pachetCurent === "trial" && (
+        <p className="mt-2 text-sm text-body">
+          {locale === "en"
+            ? "During the free trial you have access to everything in the IMPACT plan. Before it ends, choose the plan that fits your needs and budget."
+            : "În perioada de probă gratuită ai acces la tot ce include pachetul IMPACT. Înainte să se încheie, alege pachetul potrivit nevoilor și bugetului tău."}
+        </p>
+      )}
 
       <NetopiaCardSection orgSlug={orgSlug} status={reinnoireAutomata} locale={locale} />
 
@@ -80,7 +90,7 @@ export function AbonamentSection({
               {dict.ascundeOptiunile}
             </button>
           )}
-          <PackagePicker orgSlug={orgSlug} locale={locale} extraInitial={pachetCurent === "start" ? extraUtilizatori : 0} />
+          <PackagePicker orgSlug={orgSlug} locale={locale} extraInitial={pachetCurent === "start" ? extraUtilizatori : 0} pachetAles={pachetAles} />
         </div>
       )}
 

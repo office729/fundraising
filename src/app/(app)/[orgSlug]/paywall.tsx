@@ -7,7 +7,7 @@ import { ABONAMENT_DICT } from "@/lib/i18n/dictionaries/abonament";
 import { logoutAction } from "./actions";
 import { PackagePicker } from "./package-picker";
 
-export function Paywall({ orgSlug, orgName, locale }: { orgSlug: string; orgName: string; locale: Locale }) {
+export function Paywall({ orgSlug, orgName, locale, pachetAles }: { orgSlug: string; orgName: string; locale: Locale; pachetAles?: "trial" | "start" | "crestere" | "impact" | "custom" }) {
   const t = ABONAMENT_DICT[locale].paywall;
   return (
     <div className="min-h-screen bg-canvas">
@@ -50,7 +50,7 @@ export function Paywall({ orgSlug, orgName, locale }: { orgSlug: string; orgName
         </div>
 
         <div className="mt-10">
-          <PackagePicker orgSlug={orgSlug} locale={locale} />
+          <PackagePicker orgSlug={orgSlug} locale={locale} pachetAles={pachetAles} />
         </div>
       </main>
     </div>

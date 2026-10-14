@@ -234,3 +234,54 @@ export const NUME_PACHET_FIX: Record<Exclude<OrgPackage, "trial" | "custom">, st
 // fiecare plată are prețul din `pretLunar` de mai sus, calculat server-side
 // (vezi lib/billing/netopia-checkout.ts). Nu există produse sau prețuri de
 // configurat manual în contul Netopia.
+
+// ---- Recomandarea de pachet după proba gratuită ----------------------------------------------------------------------------------
+// Din ce a folosit organizația în cele 30 de zile (utilizatori, contacte, companii, module) alegem cel mai ieftin pachet care acoperă tot,
+// cu utilizatorii suplimentari de la START luați în calcul (15 lei/lună fiecare). Fiecare pachet primește și lista a ceea ce nu acoperă.
+
+export type UtilizarePachet = { utilizatori: number; contactePf: number; companiiPj: number; module: ModulPachet[] };
+
+export type EvaluarePachet = {
+  pachet: Exclude<OrgPackage, "trial" | "custom">;
+  extra: number; // utilizatori suplimentari plătiți (doar START)
+  pretLunar: number;
+  acopera: boolean;
+  lipsuri: string[];
+};
+
+const PACHETE_ORDONATE: Exclude<OrgPackage, "trial" | "custom">[] = ["start", "crestere", "impact"];
+const nrRo = (n: number) => n.toLocaleString("ro-RO");
+
+export function evalueazaPachete(u: UtilizarePachet): EvaluarePachet[] {
+  return PACHETE_ORDONATE.map((pachet) => {
+    const l = PACKAGE_LIMITS[pachet];
+    const lipsuri: string[] = [];
+    let extra = 0;
+    if (pachet === "start") {
+      extra = Math.max(0, u.utilizatori - l.utilizatori!);
+      if (extra > MAX_UTILIZATORI_SUPLIMENTARI) lipsuri.push(`maximum ${l.utilizatori! + MAX_UTILIZATORI_SUPLIMENTARI} utilizatori (ai ${u.utilizatori})`);
+    } else if (l.utilizatori !== null && u.utilizatori > l.utilizatori) {
+      lipsuri.push(`maximum ${l.utilizatori} utilizatori (ai ${u.utilizatori})`);
+    }
+    if (l.contactePf !== null && u.contactePf > l.contactePf) lipsuri.push(`maximum ${nrRo(l.contactePf)} contacte persoane fizice (ai ${nrRo(u.contactePf)})`);
+    if (l.companiiPj !== null && u.companiiPj > l.companiiPj) lipsuri.push(`maximum ${nrRo(l.companiiPj)} contacte persoane juridice (ai ${nrRo(u.companiiPj)})`);
+    for (const m of u.module) if (!areModul(pachet, m)) lipsuri.push(`nu include ${MODULE_PACHET[m].nume}`);
+    return { pachet, extra: Math.min(extra, MAX_UTILIZATORI_SUPLIMENTARI), pretLunar: pretLunarPachet(pachet, extra) ?? 0, acopera: lipsuri.length === 0, lipsuri };
+  });
+}
+
+export type Recomandare = { alegere: EvaluarePachet; depaseste: boolean; folosit: string[]; evaluari: EvaluarePachet[] };
+
+export function recomandaPachet(u: UtilizarePachet): Recomandare {
+  const evaluari = evalueazaPachete(u);
+  const acoperitoare = evaluari.filter((e) => e.acopera);
+  // Cel mai ieftin care acoperă tot; la preț egal, pachetul mai mic. Dacă nu acoperă niciunul, IMPACT (cel mai mare) și semnalăm depășirea.
+  const alegere = acoperitoare.length ? acoperitoare.reduce((a, b) => (b.pretLunar < a.pretLunar ? b : a)) : evaluari[evaluari.length - 1];
+  const folosit = [
+    `${u.utilizatori} ${u.utilizatori === 1 ? "utilizator" : "utilizatori"}`,
+    ...(u.contactePf > 0 ? [`${nrRo(u.contactePf)} contacte persoane fizice`] : []),
+    ...(u.companiiPj > 0 ? [`${nrRo(u.companiiPj)} contacte persoane juridice`] : []),
+    ...u.module.map((m) => MODULE_PACHET[m].nume),
+  ];
+  return { alegere, depaseste: acoperitoare.length === 0, folosit, evaluari };
+}

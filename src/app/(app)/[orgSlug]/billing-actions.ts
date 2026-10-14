@@ -8,8 +8,9 @@ import { withOrgAdmin, type OrgContext } from "@/lib/auth/guard";
 import { calculateCustomPlanPrice, normalizeCustomPlanConfig, type CustomPlanConfigSaved } from "@/lib/billing/custom-plan";
 import { creeazaPlataAbonament } from "@/lib/billing/netopia-checkout";
 import { schimbarePlanBlocata } from "@/lib/billing/schimbare-plan";
+import { masoaraUtilizarea } from "@/lib/billing/utilizare";
 import { isPlatformAdmin } from "@/lib/billing/trial";
-import { etichetaPachet, facturareValida, luniAcces, pretPerioadaPachet, utilizatoriSuplimentariValizi, type Facturare, type OrgPackage } from "@/lib/billing/packages";
+import { etichetaPachet, facturareValida, luniAcces, pretPerioadaPachet, recomandaPachet, utilizatoriSuplimentariValizi, type Facturare, type OrgPackage, type Recomandare } from "@/lib/billing/packages";
 import { organizations, platformPayments } from "@/lib/db/schema";
 import { cifFolositDeAltaOrganizatie, MESAJ_CIF_FOLOSIT } from "@/lib/cif";
 import { EroareUtilizator } from "@/lib/erori";
@@ -47,6 +48,10 @@ async function inregistreazaAcordReinnoire(ctx: OrgContext, acord: boolean, pach
 // clientul redirecționează la URL-ul întors. Pachetul și starea organizației se
 // schimbă abia când IPN-ul verificat confirmă plata (api/netopia/ipn/route.ts),
 // niciodată optimist, înainte de confirmare.
+// Recomandarea de pachet din ce a folosit organizația în probă (utilizatori, contacte, module); disponibilă și când proba s-a încheiat,
+// ca ecranul de alegere a pachetului să poată explica ce se potrivește.
+export const obtineRecomandareAction = withOrgAdmin(async (ctx): Promise<Recomandare> => recomandaPachet(await masoaraUtilizarea(ctx)), { permiteAccesBlocat: true });
+
 export const startCheckoutAction = withOrgAdmin(
   async (ctx, pkg: Exclude<OrgPackage, "trial" | "custom">, acordReinnoire: boolean, extraUtilizatori: number = 0, facturareCeruta: string = "lunar") => {
     // Tipurile TypeScript nu protejează o Server Action apelată direct: cu „trial" sau „custom" prețul ar fi null/0.

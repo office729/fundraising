@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
-import { isAccessBlocked } from "@/lib/billing/trial";
+import { isAccessBlocked, pachetEfectiv } from "@/lib/billing/trial";
 import { trimiteRezumatCalendar } from "@/lib/calendar-rezumat";
 import { cronAutorizat } from "@/lib/cron-auth";
 import { db } from "@/lib/db";
@@ -43,7 +43,7 @@ export async function GET(req: Request) {
     if (Date.now() > deadline) break;
     if (isAccessBlocked(org)) continue; // fără acces plătit, platforma nu mai trimite e-mailuri în numele organizației
     try {
-      const r = await trimiteRezumatCalendar({ id: org.id, slug: org.slug, nume: org.name, pachet: org.package });
+      const r = await trimiteRezumatCalendar({ id: org.id, slug: org.slug, nume: org.name, pachet: pachetEfectiv(org) });
       if (r.trimis) trimise += 1;
     } catch (e) {
       raporteazaEroare("cron-calendar", e, { orgSlug: org.slug });

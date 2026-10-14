@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-const { PACKAGE_LIMITS, PRET_UTILIZATOR_SUPLIMENTAR, MAX_UTILIZATORI_SUPLIMENTARI, pretLunarPachet, utilizatoriSuplimentariValizi, etichetaPachet, pretPerioadaPachet, areModul, facturareValida, luniAcces, PACKAGE_PRICE_ANUAL } = await import("../src/lib/billing/packages.ts");
+const { PACKAGE_LIMITS, PRET_UTILIZATOR_SUPLIMENTAR, MAX_UTILIZATORI_SUPLIMENTARI, pretLunarPachet, utilizatoriSuplimentariValizi, etichetaPachet, pretPerioadaPachet, areModul, recomandaPachet, facturareValida, luniAcces, PACKAGE_PRICE_ANUAL } = await import("../src/lib/billing/packages.ts");
 const { HUB_DICT } = await import("../src/lib/i18n/dictionaries/hub.ts");
 
 const FIXE = ["start", "crestere", "impact"];
@@ -143,4 +143,41 @@ test("pagina de prețuri spune aceleași cote ca și codul (utilizatori, contact
   const rand = (f) => HUB_DICT.ro.comparatie.find((x) => x.f === f);
   assert.deepEqual([rand("Utilizatori incluși").v0, rand("Utilizatori incluși").v1, rand("Utilizatori incluși").v2], chei.map((c) => String(PACKAGE_LIMITS[c].utilizatori)));
   assert.equal(PACKAGE_LIMITS.crestere.companiiPj, 700);
+});
+
+test("recomandare după probă: cel mai ieftin pachet care acoperă ce s-a folosit", () => {
+  const baza = { utilizatori: 1, contactePf: 300, companiiPj: 40, module: [] };
+  const r1 = recomandaPachet(baza);
+  assert.equal(r1.alegere.pachet, "start");
+  assert.equal(r1.alegere.pretLunar, 49);
+  assert.equal(r1.depaseste, false);
+
+  // 3 utilizatori, doar CRM: START cu 2 utilizatori în plus (79 lei) e mai ieftin decât CREȘTERE (149 lei)
+  const r2 = recomandaPachet({ ...baza, utilizatori: 3 });
+  assert.equal(r2.alegere.pachet, "start");
+  assert.equal(r2.alegere.extra, 2);
+  assert.equal(r2.alegere.pretLunar, 49 + 2 * PRET_UTILIZATOR_SUPLIMENTAR);
+
+  // același 3 utilizatori, dar cu KPI folosit: START nu include modulul → CREȘTERE
+  const r3 = recomandaPachet({ ...baza, utilizatori: 3, module: ["kpi"] });
+  assert.equal(r3.alegere.pachet, "crestere");
+  assert.deepEqual(r3.evaluari.find((e) => e.pachet === "start").lipsuri, ["nu include KPI și performanță"]);
+
+  // modul doar din IMPACT
+  assert.equal(recomandaPachet({ ...baza, module: ["granturi"] }).alegere.pachet, "impact");
+
+  // mai multe contacte decât are CREȘTERE → IMPACT
+  assert.equal(recomandaPachet({ ...baza, contactePf: 20000 }).alegere.pachet, "impact");
+
+  // 6 utilizatori: START nu mai merge (maximum 5), CREȘTERE are 3 → IMPACT
+  assert.equal(recomandaPachet({ ...baza, utilizatori: 6 }).alegere.pachet, "impact");
+
+  // peste cotele IMPACT: se recomandă IMPACT și se semnalează depășirea
+  const mare = recomandaPachet({ ...baza, contactePf: 80000 });
+  assert.equal(mare.alegere.pachet, "impact");
+  assert.equal(mare.depaseste, true);
+  assert.ok(mare.evaluari.every((e) => !e.acopera));
+
+  // „folosit” enumeră doar ce există
+  assert.deepEqual(recomandaPachet({ utilizatori: 2, contactePf: 0, companiiPj: 0, module: ["voluntari"] }).folosit, ["2 utilizatori", "CRM voluntari"]);
 });
