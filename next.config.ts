@@ -38,6 +38,10 @@ const csp = [
   `object-src 'none'`,
 ].join("; ");
 
+// Singura pagină care poate fi încorporată în iframe pe site-urile organizațiilor: formularul de donație din widget (public/embed.js).
+// Conține doar formularul unei campanii active; toate celelalte pagini rămân cu `frame-ancestors 'none'`.
+const cspWidget = csp.replace("frame-ancestors 'none'", "frame-ancestors *");
+
 const securityHeaders = [
   { key: "Content-Security-Policy", value: csp },
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
@@ -65,7 +69,13 @@ const nextConfig: NextConfig = {
     // `max-age=0` (care cerea o verificare la server la fiecare vizită). Imuabil n-ar fi sigur la înlocuiri.
     const cacheStatic = [{ key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" }];
     return [
-      { source: "/:path*", headers: securityHeaders },
+      // Toate paginile, în afară de widget: cu X-Frame-Options și frame-ancestors 'none'.
+      { source: "/:path((?!strangere-fonduri/[^/]+/[^/]+/embed$).*)", headers: securityHeaders },
+      // Widgetul: aceleași antete, dar fără X-Frame-Options și cu frame-ancestors deschis.
+      {
+        source: "/strangere-fonduri/:org/:page/embed",
+        headers: securityHeaders.filter((h) => h.key !== "X-Frame-Options").map((h) => (h.key === "Content-Security-Policy" ? { ...h, value: cspWidget } : h)),
+      },
       { source: "/vendor/:path*", headers: cacheStatic },
       { source: "/fonts/:path*", headers: cacheStatic },
       { source: "/logos-platforme/:path*", headers: cacheStatic },

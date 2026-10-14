@@ -212,3 +212,23 @@ test("rezultatele AI: doar cele cu link găsit de căutare, complete, cu termen 
   assert.deepEqual(extrageApeluri("[ json stricat", gasite, "2026-10-14"), []);
   assert.deepEqual(extrageApeluri("{\"a\":1}", gasite, "2026-10-14"), []);
 });
+
+const { snippetWidget, curataText, curataCuloare } = await import("../src/lib/widget-doneaza.ts");
+
+test("widgetul de donație: codul conține doar valori curățate", () => {
+  const cod = snippetWidget({ baza: "https://alexandrit.ro/", orgSlug: "salveaza-o-inima", pageSlug: "ajuta-ana", mod: "buton", text: 'Donează "acum" <b>', culoare: "#2e8b57" });
+  assert.match(cod, /data-org="salveaza-o-inima"/);
+  assert.match(cod, /data-campanie="ajuta-ana"/);
+  assert.match(cod, /data-text="Donează acum b"/);
+  assert.match(cod, /src="https:\/\/alexandrit\.ro\/embed\.js"/);
+  assert.equal(cod.includes("<b>"), false);
+  const inline = snippetWidget({ baza: "https://alexandrit.ro", orgSlug: "a", pageSlug: "b", mod: "inline", text: "x", culoare: "#000000" });
+  assert.match(inline, /data-mod="inline"/);
+  assert.equal(inline.includes("data-text"), false);
+  // intrări nesigure nu produc cod
+  assert.equal(snippetWidget({ baza: "javascript:alert(1)", orgSlug: "a", pageSlug: "b", mod: "buton", text: "x", culoare: "#000000" }), null);
+  assert.equal(snippetWidget({ baza: "https://alexandrit.ro", orgSlug: 'a" onload="x', pageSlug: "b", mod: "buton", text: "x", culoare: "#000000" }), null);
+  assert.equal(curataCuloare("red"), "#2e8b57");
+  assert.equal(curataText("   "), "Donează");
+  assert.equal(curataText("x".repeat(100)).length, 40);
+});

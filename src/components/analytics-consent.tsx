@@ -120,7 +120,8 @@ export function AnalyticsConsent({ texts }: { texts: BannerTexts }) {
   const publicitateAcceptata = stare.marketing === "granted";
   const necunoscut = stare.analytics === "pending";
   // Dacă există Pixel configurat, cine a ales deja doar pentru statistici e întrebat o singură dată și despre publicitate.
-  const bannerDeschis = !necunoscut && (stare.analytics === "unset" || (cuPublicitate && stare.marketing === "unset") || redeschis);
+  const esteWidget = pathname?.endsWith("/embed") ?? false;
+  const bannerDeschis = !esteWidget && !necunoscut && (stare.analytics === "unset" || (cuPublicitate && stare.marketing === "unset") || redeschis);
 
   useEffect(() => {
     if (statisticiAcceptate) ensureAnalyticsInit();

@@ -70,6 +70,7 @@ export async function updateSession(request: NextRequest, rewriteTo?: URL) {
     MARKETING_ROUTES.includes(path) ||
     path === "/api/health" ||
     path === "/robots.txt" ||
+    path === "/embed.js" ||
     path === "/sitemap.xml" ||
     path === "/login" ||
     path === "/signup" ||

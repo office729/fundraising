@@ -15,7 +15,8 @@ import { raporteazaEroare } from "@/lib/monitoring";
 import { stripeOrgDupaSlug } from "@/lib/org-stripe";
 import { EMAIL_RE, normalizeazaEmail } from "@/lib/validation";
 
-export type DoneazaState = { error: string | null };
+// `url`: adresa paginii Stripe, întoarsă doar de varianta pentru widget (în iframe nu se poate face redirect; părintele o deschide).
+export type DoneazaState = { error: string | null; url?: string };
 
 const MAX_LEN = 200;
 const MAX_MESAJ_LEN = 1000;
@@ -163,12 +164,7 @@ export async function pregatesteDonatie(
   };
 }
 
-export async function doneazaAction(
-  orgSlug: string,
-  pageSlug: string,
-  _prevState: DoneazaState,
-  formData: FormData,
-): Promise<DoneazaState> {
+async function ruleazaDonatie(orgSlug: string, pageSlug: string, formData: FormData): Promise<DoneazaState> {
   const errors = DONATE_ACTION_ERRORS[await getLocale()];
 
   // Honeypot — un bot completează orice câmp, un om nu-l vede.
@@ -278,5 +274,17 @@ export async function doneazaAction(
     return { error: errors.plataEsuata };
   }
 
-  redirect(sessionUrl);
+  return { error: null, url: sessionUrl };
+}
+
+export async function doneazaAction(orgSlug: string, pageSlug: string, _prevState: DoneazaState, formData: FormData): Promise<DoneazaState> {
+  const r = await ruleazaDonatie(orgSlug, pageSlug, formData);
+  if (r.url) redirect(r.url);
+  return { error: r.error };
+}
+
+// Widgetul de pe site-ul organizației: aceeași donație, dar adresa Stripe se întoarce în loc de redirect (formularul stă într-un iframe,
+// iar Stripe nu se poate deschide într-un iframe — pagina părinte face navigarea, vezi public/embed.js).
+export async function doneazaEmbedAction(orgSlug: string, pageSlug: string, _prevState: DoneazaState, formData: FormData): Promise<DoneazaState> {
+  return ruleazaDonatie(orgSlug, pageSlug, formData);
 }

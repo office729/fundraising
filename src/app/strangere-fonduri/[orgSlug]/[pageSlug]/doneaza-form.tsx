@@ -1,12 +1,12 @@
 "use client";
 
-import { useRef, useState, useSyncExternalStore, type FormEvent } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from "react";
 
 import type { Locale } from "@/lib/i18n/config";
 import { DONATION_DICT } from "@/lib/i18n/dictionaries/donation";
 import { SUME_LUNARE, SUME_RAPIDE } from "@/lib/sume-donatie";
 
-import { doneazaAction, type DoneazaState } from "./actions";
+import { doneazaAction, doneazaEmbedAction, type DoneazaState } from "./actions";
 import { ExpressCheckoutPanel } from "./express-checkout";
 import { creeazaIntentPaypalAction, creeazaIntentRevolutAction } from "./express-checkout-actions";
 import { NotaInformareDonatie } from "./nota-informare-donatie";
@@ -33,6 +33,7 @@ export function DoneazaForm({
   cursEur,
   orgName,
   orgCif,
+  embed,
 }: {
   orgSlug: string;
   pageSlug: string;
@@ -49,8 +50,10 @@ export function DoneazaForm({
   metoda?: "revolut" | "gpay" | "apay" | "paypal";
   // Curs EUR→RON, doar pentru afișarea echivalentului în modalul PayPal.
   cursEur?: number | null;
+  // Widgetul din iframe de pe site-ul organizației: serverul întoarce adresa Stripe, iar pagina părinte (public/embed.js) face navigarea.
+  embed?: boolean;
 }) {
-  const action = doneazaAction.bind(null, orgSlug, pageSlug);
+  const action = (embed ? doneazaEmbedAction : doneazaAction).bind(null, orgSlug, pageSlug);
   const [state, formAction, pending, valori] = useActionStatePastrat(action, INITIAL);
   const [suma, setSuma] = useState(50);
   const [recurenta, setRecurenta] = useState(false);
@@ -58,6 +61,11 @@ export function DoneazaForm({
   // trimitere, nu se păstrează nimic pe dispozitiv, iar eticheta nu identifică persoana.
   const sursaMarketing = useSyncExternalStore(abonareNula, eticheta, () => "");
   const t = DONATION_DICT[locale].donateForm;
+  useEffect(() => {
+    if (!embed || !state.url) return;
+    if (window.parent !== window) window.parent.postMessage({ type: "alexandrit:redirect", url: state.url }, "*");
+    else window.location.href = state.url;
+  }, [embed, state.url]);
   const formRef = useRef<HTMLFormElement>(null);
   const revolut = metoda === "revolut";
   const paypal = metoda === "paypal";
@@ -308,6 +316,15 @@ export function DoneazaForm({
       </button>
       <p className="text-center text-[11.5px] font-medium text-body">{t.incredere(orgName, orgCif)}</p>
       <p className="text-center text-[11px] text-muted-2">{t.notaPlataSecurizata}</p>
+      {embed && state.url && (
+        <p role="status" className="text-center text-[12.5px] text-body">
+          {locale === "ro" ? "Te ducem la plata securizată. Dacă nu se întâmplă nimic, " : "Taking you to the secure payment. If nothing happens, "}
+          <a href={state.url} target="_top" rel="noopener" className="font-medium text-brand-green underline">
+            {locale === "ro" ? "apasă aici" : "click here"}
+          </a>
+          .
+        </p>
+      )}
         </>
       )}
     </form>

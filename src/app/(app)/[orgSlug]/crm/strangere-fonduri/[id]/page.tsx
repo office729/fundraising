@@ -1,5 +1,6 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import { BarChart3 } from "lucide-react";
+import { headers } from "next/headers";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -13,6 +14,7 @@ import { Badge } from "../../components/ui/badge";
 import { Breadcrumb } from "../../components/ui/breadcrumb";
 import { Card, CardHeader } from "../../components/ui/card";
 import { EmptyState } from "../../components/ui/states";
+import { EmbedCard } from "./embed-card";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { STRANGERE_FONDURI_DICT } from "@/lib/i18n/dictionaries/strangere-fonduri";
 import { AddOfflineDonationButton, AddUpdateButton, CopyPageLinkButton, DeleteUpdateButton, EditPageButton, EditUpdateButton, ImageUploadCard, ToggleStatusButton } from "../client";
@@ -55,6 +57,9 @@ export default async function PaginaDetaliuPage({ params }: { params: Promise<{ 
   if (!pagina) notFound();
 
   const locale = await getLocale();
+  // Adresa platformei pentru codul widgetului (domeniul canonic dacă e setat, altfel cel din cerere).
+  const hdrs = await headers();
+  const bazaWidget = (process.env.NEXT_PUBLIC_SITE_URL || `${hdrs.get("x-forwarded-proto") ?? "https"}://${hdrs.get("host")}`).replace(/\/+$/, "");
   const dict = STRANGERE_FONDURI_DICT[locale];
   const dictDetail = dict.detail;
 
@@ -125,6 +130,8 @@ export default async function PaginaDetaliuPage({ params }: { params: Promise<{ 
           <p className="mt-3 text-[12px] text-[var(--ci-text-muted)]">Ca să vezi sursa, adaugă la linkul din newsletter sau de pe rețele, de exemplu: <span className="font-mono">?utm_source=newsletter&amp;utm_medium=email&amp;utm_campaign=numele-campaniei</span></p>
         </Card>
       )}
+
+      {pagina.status === "activa" && <EmbedCard orgSlug={orgSlug} pageSlug={pagina.slug} baza={bazaWidget} />}
 
       <Card>
         <div className="flex flex-wrap items-center justify-between gap-2">
