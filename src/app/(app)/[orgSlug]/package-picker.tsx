@@ -169,7 +169,13 @@ export function PackagePicker({ orgSlug, locale, extraInitial = 0 }: { orgSlug: 
     setSeIncarca(pkg);
     startTransition(async () => {
       try {
-        const { url } = await startCheckoutAction(orgSlug, pkg, acord, pkg === "start" ? extra : 0, facturare);
+        const rezultat = await startCheckoutAction(orgSlug, pkg, acord, pkg === "start" ? extra : 0, facturare);
+        if (rezultat.blocat !== undefined) {
+          setEroare(rezultat.blocat);
+          setSeIncarca(null);
+          return;
+        }
+        const { url } = rezultat;
         trackEvent("begin_checkout", {
           currency: "RON",
           value: pretPerioadaPachet(pkg, pkg === "start" ? extra : 0, facturare) ?? undefined,

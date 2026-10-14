@@ -102,7 +102,12 @@ export function CustomPlanBuilder({ orgSlug, locale, acord }: { orgSlug: string;
     setEroare(null);
     startTransition(async () => {
       try {
-        const { url } = await startCustomCheckoutAction(orgSlug, config, acord);
+        const rezultat = await startCustomCheckoutAction(orgSlug, config, acord);
+        if (rezultat.blocat !== undefined) {
+          setEroare(rezultat.blocat);
+          return;
+        }
+        const { url } = rezultat;
         trackEvent("begin_checkout", {
           currency: "RON",
           value: pret,

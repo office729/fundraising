@@ -7,6 +7,8 @@ import { inregistreazaAudit } from "@/lib/audit";
 import { withOrgAdmin, type OrgContext } from "@/lib/auth/guard";
 import { calculateCustomPlanPrice, normalizeCustomPlanConfig, type CustomPlanConfigSaved } from "@/lib/billing/custom-plan";
 import { creeazaPlataAbonament } from "@/lib/billing/netopia-checkout";
+import { schimbarePlanBlocata } from "@/lib/billing/schimbare-plan";
+import { isPlatformAdmin } from "@/lib/billing/trial";
 import { etichetaPachet, facturareValida, luniAcces, pretPerioadaPachet, utilizatoriSuplimentariValizi, type Facturare, type OrgPackage } from "@/lib/billing/packages";
 import { organizations, platformPayments } from "@/lib/db/schema";
 import { cifFolositDeAltaOrganizatie, MESAJ_CIF_FOLOSIT } from "@/lib/cif";
@@ -51,6 +53,14 @@ export const startCheckoutAction = withOrgAdmin(
     if (pkg !== "start" && pkg !== "crestere" && pkg !== "impact") throw new EroareUtilizator("Pachet invalid.");
     // Utilizatorii suplimentari există doar la START; numărul și prețul se recalculează AICI, nu se iau de la client.
     const extra = utilizatoriSuplimentariValizi(pkg, extraUtilizatori);
+    // Fără schimbare de plan în mijlocul unei perioade plătite (vezi lib/billing/schimbare-plan.ts); administratorii platformei sunt exceptați.
+    const blocat = isPlatformAdmin(ctx.userEmail)
+      ? null
+      : schimbarePlanBlocata(
+          { package: ctx.orgPackage, extraUsers: ctx.orgExtraUsers, subscriptionStatus: ctx.orgSubscriptionStatus, currentPeriodEnd: ctx.orgCurrentPeriodEnd },
+          { package: pkg, extraUsers: extra },
+        );
+    if (blocat) return { blocat };
     // Perioada (lună sau an) și suma se stabilesc AICI; anualul = 10 luni plătite pentru 12 de acces (2 luni gratuite).
     const facturare = facturareValida(facturareCeruta);
     const pretPerioada = pretPerioadaPachet(pkg, extra, facturare)!;
@@ -85,6 +95,13 @@ export const startCustomCheckoutAction = withOrgAdmin(
     },
     acordReinnoire: boolean,
   ) => {
+    const blocat = isPlatformAdmin(ctx.userEmail)
+      ? null
+      : schimbarePlanBlocata(
+          { package: ctx.orgPackage, extraUsers: ctx.orgExtraUsers, subscriptionStatus: ctx.orgSubscriptionStatus, currentPeriodEnd: ctx.orgCurrentPeriodEnd },
+          { package: "custom", extraUsers: 0 },
+        );
+    if (blocat) return { blocat };
     const config = normalizeCustomPlanConfig(rawConfig);
     const pretLunar = calculateCustomPlanPrice(config);
     const saved: CustomPlanConfigSaved = { ...config, pretLunar };
