@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
 
 import type { CustomPlanConfigSaved } from "@/lib/billing/custom-plan";
+import { areModul, MODULE_PACHET, type ModulPachet } from "@/lib/billing/packages";
 import { isAccessBlocked } from "@/lib/billing/trial";
 import { db } from "@/lib/db";
 import { EroareUtilizator } from "@/lib/erori";
@@ -82,7 +83,8 @@ export type OrgContext = {
 // Opțiuni: `permiteAccesBlocat` doar pentru ce trebuie să meargă și când proba
 // s-a terminat și nu există abonament valabil — pornirea plății și pagina de
 // rezultat a plății. Orice altceva e refuzat AICI, nu doar ascuns de layout.
-export type OrgSessionOptions = { permiteAccesBlocat?: boolean };
+// `modul`: acțiunea aparține unui modul inclus doar din anumite pachete (vezi MODULE_PACHET); pachetele fără el sunt refuzate aici, nu doar în pagină.
+export type OrgSessionOptions = { permiteAccesBlocat?: boolean; modul?: ModulPachet };
 
 export function withOrgSession<A extends unknown[], R>(
   action: (ctx: OrgContext, ...args: A) => Promise<R>,
@@ -168,6 +170,10 @@ export function withOrgSession<A extends unknown[], R>(
         )
       ) {
         throw new EroareUtilizator("Perioada de probă s-a încheiat — alege un pachet ca să continui.");
+      }
+      if (opts?.modul && !areModul(ctx.orgPackage, opts.modul)) {
+        const m = MODULE_PACHET[opts.modul];
+        throw new EroareUtilizator(`${m.nume} este inclus începând cu pachetul ${m.minim === "impact" ? "IMPACT" : "CREȘTERE"}.`);
       }
       return action(ctx, ...args);
     });

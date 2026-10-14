@@ -2,7 +2,8 @@
 
 import { and, eq, inArray, sql } from "drizzle-orm";
 
-import { withOrgSession, type OrgContext } from "@/lib/auth/guard";
+import { type OrgContext } from "@/lib/auth/guard";
+import { guardModul } from "@/lib/auth/guard-modul";
 import {
   fundraisingAuditLog,
   fundraisingPages,
@@ -15,6 +16,8 @@ import {
 import { genereazaCodScurt } from "@/lib/short-code";
 import { saptamaniDisponibile, ziuaRo } from "@/lib/voluntari-panou";
 import { citesteDatePanou, type DatePanou } from "@/lib/voluntari-panou-echipa";
+
+const { withOrgSession } = guardModul("voluntari");
 export type { CampaniePentruEchipa, DatePanou, VoluntarPanou } from "@/lib/voluntari-panou-echipa";
 
 // Pagina echipei pentru panoul voluntarilor: linkul comun, campania săptămânii, setări pe campanie și activitatea voluntarilor.

@@ -2,9 +2,11 @@
 
 import { and, eq, isNull } from "drizzle-orm";
 
-import { withOrgAdmin, withOrgSession } from "@/lib/auth/guard";
+import { guardModul } from "@/lib/auth/guard-modul";
 import { angajati, appUsers, departments, kpiAuditLog, memberships, roluri } from "@/lib/db/schema";
 import { EroareUtilizator, mesajSigur } from "@/lib/erori";
+
+const { withOrgAdmin, withOrgSession } = guardModul("kpi");
 
 // Modulul „Organizație & Echipă" (Faza A a modulului KPI generic) — orice
 // membru al org-ului poate CITI structura (organigramă vizibilă echipei),

@@ -2,7 +2,8 @@
 
 import { and, eq, inArray, sql } from "drizzle-orm";
 
-import { withOrgSession, type OrgContext } from "@/lib/auth/guard";
+import { type OrgContext } from "@/lib/auth/guard";
+import { guardModul } from "@/lib/auth/guard-modul";
 import { getLimiteleEfective, mesajeCote } from "@/lib/billing/quota";
 import type { Tx } from "@/lib/db";
 import { fundraisingAuditLog, fundraisingPages, volunteerActivities, volunteerPanelLinks, volunteerReports, volunteerShifts, volunteerSignups, volunteerTasks, volunteerVisitors } from "@/lib/db/schema";
@@ -25,6 +26,8 @@ import { CANAL_IDS } from "@/lib/voluntari-panou";
 import { URL_BAZA } from "@/lib/voluntari-panou-server";
 import { blocheazaTura, locuriOcupate, promoveazaDinRezerva } from "@/lib/voluntari-inscrieri";
 import { citesteDateVoluntari, type DateVoluntari } from "@/lib/voluntari-echipa";
+
+const { withOrgSession } = guardModul("voluntari");
 export type { ActivitateEchipa, DateVoluntari, InscrisEchipa, RaportareEchipa, SarcinaEchipa, TuraEchipa, VoluntarEchipa } from "@/lib/voluntari-echipa";
 
 // Acțiunile echipei pe pagina „Voluntari”. Orice membru al organizației coordonează (ca în CRM Voluntari); schimbările importante

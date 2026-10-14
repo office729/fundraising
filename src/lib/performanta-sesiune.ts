@@ -12,7 +12,7 @@ const DIN_DEMO = /\/performanta\/demo(\/|\?|#|$)/;
 export const MESAJ_DEMO = "Modul demonstrativ nu salvează și nu citește nimic din datele organizației. Ieși din demo ca să lucrezi cu datele tale.";
 
 export function withOrgSessionPerf<A extends unknown[], R>(action: Parameters<typeof withOrgSession<A, R>>[0]): (orgSlug: string, ...args: A) => Promise<R> {
-  const inner = withOrgSession(action);
+  const inner = withOrgSession(action, { modul: "kpi" });
   return async (orgSlug: string, ...args: A) => {
     const h = await headers();
     if (h.get("next-action") && DIN_DEMO.test(h.get("referer") ?? "")) return { ok: false, eroare: MESAJ_DEMO } as unknown as R;
