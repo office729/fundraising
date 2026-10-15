@@ -2,7 +2,7 @@ import "server-only";
 
 import { randomUUID } from "node:crypto";
 
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, or, sql } from "drizzle-orm";
 
 import type { OrgContext } from "@/lib/auth/guard";
 import { db, type Tx } from "@/lib/db";
@@ -11,6 +11,9 @@ import { raporteazaAvertisment, raporteazaEroare } from "@/lib/monitoring";
 import { organizations, platformPayments } from "@/lib/db/schema";
 import { clasificaStatus, interogheazaStatus, netopiaConfigurata, pornestePlata, taxeazaCuTokenSalvat, type DateFacturare } from "@/lib/netopia";
 import { decripteaza } from "@/lib/secret-box";
+
+import { alertaOperatorZilnic } from "./alerta-operator";
+import { NetopiaRespins } from "./netopia-erori";
 
 import { REFERRAL_DISCOUNT_PERCENT } from "../referral";
 import { dateFacturareComplete, MESAJ_DATE_FACTURARE_LIPSA } from "./date-facturare";
@@ -168,7 +171,8 @@ export type RezultatReinnoire =
 // O taxare cu token căzută după ce Netopia a încasat (timeout, răspuns pierdut)
 // lasă comanda `in_asteptare`; fără verificare, rularea de a doua zi ar taxa a
 // doua oară același card. Interogăm statusul comenzilor de reînnoire nelămurite
-// (ultimele 72h) și, dacă una s-a decis, o confirmăm pe ea în loc să mai taxăm.
+// (de ORICE vârstă — o comandă nelămurită nu „expiră", vezi blocarea de mai jos) și, dacă una s-a decis, o confirmăm pe ea în loc
+// să mai taxăm.
 async function verificaComenziInCurs(orgId: string): Promise<ConfirmareNetopia | null> {
   const pending = await db.transaction(async (tx) => {
     await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
@@ -180,9 +184,9 @@ async function verificaComenziInCurs(orgId: string): Promise<ConfirmareNetopia |
           eq(platformPayments.orgId, orgId),
           eq(platformPayments.renewal, true),
           eq(platformPayments.status, "in_asteptare"),
-          sql`${platformPayments.createdAt} > now() - interval '72 hours'`,
         ),
-      );
+      )
+      .limit(20);
   });
   for (const p of pending) {
     if (!p.ntpId) continue;
@@ -244,9 +248,11 @@ export async function taxeazaReinnoireAutomata(
     await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
     // Același lock ca în insereazaComandaAbonament (reentrant în aceeași
     // tranzacție): două rulări suprapuse ale cron-ului se serializează aici, iar
-    // a doua vede comanda abia creată de prima și nu mai taxează. O comandă
-    // nelămurită mai tânără de 36h (fără ntpID de verificat, sau încă în curs)
-    // blochează o nouă taxare — IPN-ul are timp să sosească.
+    // a doua vede comanda abia creată de prima și nu mai taxează. O comandă de reînnoire nelămurită (fără ntpID de verificat, sau încă în
+    // curs) blochează orice nouă taxare, ORICÂT de veche ar fi: o limită de timp ar fi retaxat același card după ce IPN-ul nu a mai
+    // sosit, deși Netopia încasase prima dată. Se deblochează doar când comanda se lămurește (IPN târziu, verificare de status, respingere
+    // sigură) sau o rezolvă un om (vezi documentation/reinnoire-comanda-nelamurita.md). Tot așa, o plată interactivă pornită în ultimele
+    // 30 de minute (clientul e chiar acum în pagina de plată) amână taxarea automată.
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`plata_abonament:${org.id}`}))`);
     const [{ nelamurite }] = await tx
       .select({ nelamurite: sql<number>`count(*)`.mapWith(Number) })
@@ -254,9 +260,8 @@ export async function taxeazaReinnoireAutomata(
       .where(
         and(
           eq(platformPayments.orgId, org.id),
-          eq(platformPayments.renewal, true),
           eq(platformPayments.status, "in_asteptare"),
-          sql`${platformPayments.createdAt} > now() - interval '72 hours'`,
+          or(eq(platformPayments.renewal, true), sql`${platformPayments.createdAt} > now() - interval '30 minutes'`),
         ),
       );
     if (nelamurite > 0) return "in_curs" as const;
@@ -282,8 +287,14 @@ export async function taxeazaReinnoireAutomata(
   });
   if (comanda === "deja_reinnoit") return { ok: false, motiv: "deja_reinnoit" };
   if (comanda === "in_curs" || !comanda) {
-    // O comandă nelămurită (răspuns pierdut, fără IPN) blochează retaxarea 72h, ca să nu taxăm de două ori: cere verificare manuală.
+    // O comandă nelămurită (răspuns pierdut, fără IPN) blochează retaxarea până se lămurește, ca să nu taxăm de două ori: cere verificare
+    // manuală în Netopia. Alertă pe email o dată pe zi, ca să nu rămână doar în Sentry.
     raporteazaAvertisment("netopia-reinnoire", "taxare blocată: există o comandă de reînnoire nelămurită (verifică în Netopia)", { orgSlug: org.slug });
+    await alertaOperatorZilnic(
+      `reinnoire-nelamurita:${org.id}`,
+      `Reînnoire blocată — comandă nelămurită (${org.name})`,
+      `<p>Reînnoirea automată a organizației <strong>${org.name.replace(/[<>&]/g, "")}</strong> (${org.slug}) este <strong>blocată</strong> pentru că are o comandă de reînnoire „în așteptare" a cărei plată nu s-a lămurit (răspuns pierdut sau IPN neprimit).</p><p>Verifică în panoul Netopia dacă plata a fost încasată și rezolvă comanda conform <code>documentation/reinnoire-comanda-nelamurita.md</code>. Până atunci nu se mai taxează cardul, ca să nu se încaseze de două ori.</p>`,
+    );
     return { ok: false, motiv: "comanda_in_curs" };
   }
   const { orderId, sumaLei } = comanda;
@@ -308,8 +319,18 @@ export async function taxeazaReinnoireAutomata(
     const confirmare = await proceseazaRezultatPlataNetopia(orderId, rezultat);
     return { ok: true, confirmare };
   } catch (e) {
-    // Cauza (timeout, Netopia căzut, răspuns pierdut) se pierdea complet; comanda rămâne „în așteptare" și blochează retaxarea.
     raporteazaEroare("netopia-reinnoire-taxare", e, { orgSlug: org.slug, orderId });
+    if (e instanceof NetopiaRespins) {
+      // Netopia a respins cererea (nimic procesat): comanda se închide ca eșuată, ca să NU blocheze reînnoirea de mâine.
+      await db.transaction(async (tx: Tx) => {
+        await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
+        await tx
+          .update(platformPayments)
+          .set({ status: "esuata" })
+          .where(and(eq(platformPayments.orderId, orderId), eq(platformPayments.status, "in_asteptare")));
+      });
+    }
+    // Orice altă cauză (timeout, Netopia căzut, răspuns pierdut): rezultat NECUNOSCUT — comanda rămâne „în așteptare" și blochează retaxarea.
     return { ok: false, motiv: "eroare" };
   }
 }

@@ -2,6 +2,8 @@ import "server-only";
 
 import { createHash, createPublicKey, createVerify } from "node:crypto";
 
+import { NetopiaRespins, respingereSigura } from "./billing/netopia-erori";
+
 // Netopia Payments API v2 — încasarea abonamentelor PLATFORMEI (nu a donațiilor,
 // care merg în contul Stripe al fiecărui ONG). Flux cu pagină de plată găzduită
 // de Netopia: pornim plata FĂRĂ date de card (nu trec niciodată prin serverul
@@ -254,8 +256,12 @@ export async function taxeazaCuTokenSalvat(p: OrderPentruStart & { token: string
   const { payment, error, ok, httpStatus } = await netopiaStart(corpCerere(p, { token: p.token }));
   if (!ok && !payment) {
     console.error("Netopia: taxarea cu token a eșuat la nivel de transport", httpStatus, error);
+    // Respingere sigură (cerere refuzată, nimic procesat) vs rezultat necunoscut (5xx etc.): vezi billing/netopia-erori.ts.
+    if (respingereSigura(httpStatus)) throw new NetopiaRespins(httpStatus, error?.code);
     throw new Error("netopia_token_esuat");
   }
+  // Răspuns fără obiectul plății: nu știm dacă s-a taxat. NU îl lăsăm să devină un status „în așteptare” fără urmă (NaN).
+  if (!payment) throw new Error("netopia_raspuns_fara_plata");
   return extrageRezultat(payment);
 }
 
