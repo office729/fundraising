@@ -76,6 +76,10 @@ export default async function LandingPage({
         </div>
 
         <div className="relative mx-auto max-w-3xl">
+          <p className="mx-auto mb-5 flex max-w-full flex-col items-center gap-2 rounded-2xl border border-white/20 bg-white/10 p-1.5 text-sm text-white sm:inline-flex sm:flex-row sm:rounded-full sm:pr-5">
+            <span className="rounded-full bg-brand-green px-3.5 py-1 font-bold whitespace-nowrap text-white">{dict.hero.trialEticheta}</span>
+            <span className="px-3 pb-1 text-white/90 sm:px-0 sm:pb-0">{dict.hero.trialText}</span>
+          </p>
           <h1 className="font-display text-[28px] leading-[1.15] font-bold text-balance sm:text-[36px]">
             {dict.hero.titlePre}
             <span className="text-brand-green">{dict.hero.titleHighlight}</span>
@@ -95,6 +99,7 @@ export default async function LandingPage({
               {dict.hero.ctaSecondary}
             </Link>
           </div>
+          <p className="mt-3 text-xs text-white/70 sm:text-sm">{dict.hero.ctaNota}</p>
 
           {/* Cifre de impact — scoase din text, ca element vizual propriu */}
           <div className="mt-6 grid grid-cols-3 divide-x divide-white/15 rounded-2xl border border-white/15 bg-white/[0.06] backdrop-blur-sm">

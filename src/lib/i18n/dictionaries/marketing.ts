@@ -36,12 +36,15 @@ export const MARKETING_DICT = {
       titlePre: "Platforma care organizează ",
       titleHighlight: "donatorii, companiile și campaniile",
       titlePost: " ONG-ului tău",
-      ctaPrimary: "Începe trial gratuit",
+      trialEticheta: "30 de zile gratuit",
+      trialText: "Acces la toate instrumentele și paginile platformei, fără card. Alegi pachetul abia după probă.",
+      ctaPrimary: "Începe cele 30 de zile gratuite",
+      ctaNota: "Fără card bancar · fără angajament · toate modulele deschise",
       ctaSecondary: "Vezi platforma →",
       stats: [
         { n: "28M€+", l: "strânși de fondator pentru cauze umanitare" },
         { n: "9", l: "instrumente incluse în platformă" },
-        { n: "30 zile", l: "trial gratuit, fără card" },
+        { n: "30 zile", l: "gratuit, cu acces la tot" },
       ],
     },
     platforma: {
@@ -60,7 +63,7 @@ export const MARKETING_DICT = {
       items: [
         { t: "Construită pe o fundație solidă, care a strâns 28M€", d: "Fiecare instrument pornește din nevoi reale, testate în activitatea Asociației Salvează o Inimă, nu din presupuneri." },
         { t: "Toate instrumentele, într-un singur abonament", d: "CRM, pagini de donație, rapoarte și newslettere — nu plătești separat pentru fiecare unealtă, doar pentru capacitate." },
-        { t: "Trial complet, 30 de zile, fără card", d: "Testezi platforma cu datele tale reale înainte să te decizi — fără angajament, fără card bancar." },
+        { t: "30 de zile gratuit, cu acces la tot", d: "Cât ține proba ai toate instrumentele și paginile deschise, cu datele tale reale — fără card, fără angajament. Abia după alegi pachetul potrivit nevoilor și bugetului." },
       ],
     },
     testimoniale: {
@@ -200,12 +203,15 @@ export const MARKETING_DICT = {
       titlePre: "The platform that organizes ",
       titleHighlight: "your donors, companies and campaigns",
       titlePost: "",
-      ctaPrimary: "Start free trial",
+      trialEticheta: "30 days free",
+      trialText: "Access to every tool and page of the platform, no card. You pick a package only after the trial.",
+      ctaPrimary: "Start your 30 free days",
+      ctaNota: "No bank card · no commitment · every module unlocked",
       ctaSecondary: "See the platform →",
       stats: [
         { n: "€28M+", l: "raised by the founder for humanitarian causes" },
         { n: "9", l: "tools included in the platform" },
-        { n: "30 days", l: "free trial, no card" },
+        { n: "30 days", l: "free, with access to everything" },
       ],
     },
     platforma: {
@@ -224,7 +230,7 @@ export const MARKETING_DICT = {
       items: [
         { t: "Built on a solid foundation that raised €28M", d: "Every tool starts from a real need, tested in Asociația Salvează o Inimă's own work — not from guesswork." },
         { t: "Every tool, in one subscription", d: "CRM, donation pages, reports and newsletters — you don't pay separately per tool, only for capacity." },
-        { t: "Full 30-day trial, no card", d: "Test the platform with your real data before you decide — no commitment, no bank card." },
+        { t: "30 days free, access to everything", d: "Throughout the trial every tool and page is open, with your real data — no card, no commitment. Only then do you pick the package that fits your needs and budget." },
       ],
     },
     testimoniale: {
