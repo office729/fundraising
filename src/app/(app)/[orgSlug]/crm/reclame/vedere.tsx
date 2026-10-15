@@ -35,7 +35,7 @@ import { salveazaLegaturaAction, type DateReclame } from "./actions";
 import { GraficReclame } from "./grafic";
 import { TabConexiuni } from "./tab-conexiuni";
 import { TabImport } from "./tab-import";
-import { TabInstructiuni } from "./tab-instructiuni";
+import { TabGhid } from "./tab-ghid";
 import { TabLinkuri } from "./tab-linkuri";
 
 const dataRo = (iso: string) => new Date(`${iso}T00:00:00Z`).toLocaleDateString("ro-RO", { timeZone: "UTC", day: "numeric", month: "short", year: "numeric" });
@@ -246,12 +246,13 @@ export function ReclameVedere({ orgSlug, date }: { orgSlug: string; date: DateRe
           { key: "linkuri", label: "Linkuri UTM" },
           { key: "conexiuni", label: "Conexiuni" },
           { key: "import", label: "Import costuri" },
-          { key: "instructiuni", label: "Instrucțiuni de implementare" },
+          { key: "instructiuni", label: "Ghid de pornire" },
         ]}
       >
         {(activ) => (
           <>
             <div hidden={activ !== "rezumat"} className="space-y-5">
+              <PasiPornire date={date} />
               {fara ? (
                 <EmptyState
                   icon={Megaphone}
@@ -499,7 +500,7 @@ export function ReclameVedere({ orgSlug, date }: { orgSlug: string; date: DateRe
                         )}
                         <ul className="list-disc space-y-1 pl-5 text-[var(--ci-text-muted)]">
                           <li>Valoarea netă scade doar rambursările; comisioanele procesatorului nu sunt păstrate pe donație și nu sunt scăzute.</li>
-                          <li>Conversiile raportate de platformele de reclame nu sunt incluse; conectarea lor prin API nu e activă în această versiune.</li>
+                          <li>Conversiile raportate de platformele de reclame (ce spune Meta că a adus) nu sunt incluse: aici contează doar plățile confirmate.</li>
                           <li>Donațiile fără parametri UTM și fără acord pentru statistici rămân neatribuite: cifrele sunt un minim verificabil.</li>
                         </ul>
                       </div>
@@ -519,7 +520,7 @@ export function ReclameVedere({ orgSlug, date }: { orgSlug: string; date: DateRe
               <TabImport orgSlug={orgSlug} date={date} />
             </div>
             <div hidden={activ !== "instructiuni"}>
-              <TabInstructiuni orgSlug={orgSlug} />
+              <TabGhid />
             </div>
           </>
         )}
@@ -527,6 +528,43 @@ export function ReclameVedere({ orgSlug, date }: { orgSlug: string; date: DateRe
 
       {detaliu && <DetaliuCampanie orgSlug={orgSlug} linie={detaliu} date={date} onClose={() => setDetaliu(null)} />}
     </div>
+  );
+}
+
+// Lista scurtă de pornire: ce ai făcut deja și ce urmează. Dispare când toți pașii sunt bifați.
+function PasiPornire({ date }: { date: DateReclame }) {
+  const costuriAduse = date.conexiuni.some((c) => c.platforma === "meta" && c.stare === "activ") || date.importuri.length > 0;
+  const pasi = [
+    { ok: date.linkuri.length > 0, titlu: "Fă un link pentru reclamă", cum: "Fila „Linkuri UTM”: alegi sursa, lipești adresa paginii de donații și copiezi linkul." },
+    { ok: date.parcurs.vizitatori > 0 || date.raport.totaluri.donatii > 0, titlu: "Pune linkul în reclama ta", cum: "În Ads Manager, la adresa site-ului reclamei. Pașii sunt în „Ghid de pornire”." },
+    { ok: costuriAduse, titlu: "Adu cheltuielile din Meta", cum: "Conectezi contul în fila „Conexiuni” sau încarci un raport în „Import costuri”." },
+    { ok: date.raport.totaluri.donatii > 0, titlu: "Vezi prima donație atribuită", cum: "Apare aici singură, după ce o plată venită din reclamă e confirmată." },
+  ];
+  if (pasi.every((p) => p.ok)) return null;
+  const facute = pasi.filter((p) => p.ok).length;
+  return (
+    <Card>
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="text-[15px] font-bold text-[var(--ci-text)]">Cum pornești</h2>
+        <p className="text-[12.5px] text-[var(--ci-text-muted)]">{facute} din {pasi.length} pași făcuți</p>
+      </div>
+      <ol className="mt-3 space-y-2.5">
+        {pasi.map((p, i) => (
+          <li key={p.titlu} className="flex items-start gap-3">
+            <span className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[12px] font-bold ${p.ok ? "bg-[var(--ci-green)] text-white" : "border border-[var(--ci-border-strong)] text-[var(--ci-text-muted)]"}`} aria-hidden>
+              {p.ok ? "✓" : i + 1}
+            </span>
+            <div>
+              <p className={`text-[13.5px] font-semibold ${p.ok ? "text-[var(--ci-text-muted)] line-through" : "text-[var(--ci-text)]"}`}>
+                {p.titlu}
+                <span className="sr-only">{p.ok ? " (făcut)" : " (de făcut)"}</span>
+              </p>
+              {!p.ok && <p className="text-[12.5px] text-[var(--ci-text-muted)]">{p.cum}</p>}
+            </div>
+          </li>
+        ))}
+      </ol>
+    </Card>
   );
 }
 

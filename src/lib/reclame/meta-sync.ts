@@ -175,7 +175,7 @@ export async function conecteazaMeta(orgId: string, userId: string, input: { con
   if (!contId) return { ok: false, eroare: "ID-ul contului publicitar nu e valid. Îl găsești în Ads Manager (cifre, cu sau fără act_)." };
   const token = String(input.token ?? "").trim();
   if (!TOKEN_RE.test(token)) return { ok: false, eroare: "Tokenul nu pare valid. Lipește tokenul de acces generat pentru utilizatorul de sistem, fără spații." };
-  if (!criptareConfigurata()) return { ok: false, eroare: "Serverul nu poate păstra secrete în siguranță (lipsește ORG_SECRETS_KEY). Contactează echipa Alexandrit." };
+  if (!criptareConfigurata()) return { ok: false, eroare: "Conectarea automată nu e disponibilă momentan. Scrie echipei Alexandrit; între timp poți folosi Import costuri." };
   try {
     const cont = await citesteCont({ fetchImpl: input.fetchImpl ?? fetchReal, token, versiune: VERSIUNE(), contId });
     const moneda = cont.moneda ?? "RON";

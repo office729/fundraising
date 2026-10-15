@@ -22,7 +22,7 @@ const ziRo = (iso: string) => new Date(`${iso}T00:00:00Z`).toLocaleDateString("r
 const ORDINE: CampMapat[] = ["ziua", "cheltuiala", "campanieNume", "campanieCheie", "setNume", "reclamaNume", "afisari", "clicuri", "plasament", "cont"];
 type Ok = Extract<AnalizaCsv, { ok: true }>;
 
-// Import de costuri din CSV (export din Ads Manager). Conexiunea prin API pentru citire automată nu e activă; importul manual e etichetat ca atare.
+// Import de costuri din CSV (export din Ads Manager), pentru cine nu vrea sau nu poate conecta contul din fila „Conexiuni”. Importul manual e etichetat ca atare.
 export function TabImport({ orgSlug, date }: { orgSlug: string; date: DateReclame }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -106,8 +106,18 @@ export function TabImport({ orgSlug, date }: { orgSlug: string; date: DateReclam
             <FileUp className="h-4 w-4 text-[var(--ci-primary)]" aria-hidden /> Import costuri din CSV
           </h2>
           <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">
-            Exportă din Ads Manager un raport pe zile (cu numele campaniei, suma cheltuită, afișări și clicuri pe link) și încarcă-l aici. Reimportul aceleiași perioade înlocuiește rândurile, nu le dublează. Datele importate sunt marcate „import manual”.
+            Varianta fără conectare: descarci din Ads Manager un raport pe zile și îl încarci aici. Reimportul aceleiași perioade înlocuiește rândurile, nu le dublează. Datele importate sunt marcate „import manual”. Dacă preferi să vină singure, conectează contul în fila „Conexiuni”.
           </p>
+          <details className="mt-2 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-3 py-2">
+            <summary className="cursor-pointer text-[13px] font-semibold text-[var(--ci-text)]">Cum descarc raportul din Ads Manager?</summary>
+            <ol className="mt-2 list-decimal space-y-1 pl-5 text-[12.5px] text-[var(--ci-text-muted)]">
+              <li>În Ads Manager alege perioada dorită (de exemplu ultimele 30 de zile).</li>
+              <li>La „Defalcare” alege <strong className="text-[var(--ci-text)]">Timp → Zi</strong>.</li>
+              <li>Din „Coloane” bifează: Numele campaniei, Numele setului de reclame, Numele reclamei, Suma cheltuită, Afișări, Clicuri pe link.</li>
+              <li>Apasă „Rapoarte” → „Exportă datele tabelului” → format CSV, apoi încarcă fișierul aici.</li>
+            </ol>
+            <p className="mt-1.5 text-[12px] text-[var(--ci-text-muted)]">Numele butoanelor din Meta se mai schimbă; important e ca fișierul să aibă o linie pe zi și coloanele de mai sus.</p>
+          </details>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">

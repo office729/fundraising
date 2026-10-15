@@ -23,6 +23,35 @@ const STARE: Record<string, { text: string; ton: "green" | "amber" | "red" }> = 
 };
 
 // Conexiunea cu Meta Ads: doar citire (permisiunea ads_read). Aduce costurile pe zi, reclamă și plasament (Facebook / Instagram). Nu modifică nimic în cont.
+const TEXT_PASI = [
+  "Cum obții cheia de acces Meta pentru Alexandrit (doar citire, ~10 minute):",
+  "1. business.facebook.com → Setări business → Utilizatori → Utilizatori de sistem → adaugă unul nou (de exemplu „Alexandrit citire”).",
+  "2. „Adaugă active” → Conturi publicitare → bifează contul de reclame → drept doar de vizualizare a performanței.",
+  "3. „Generează token” → alege aplicația organizației → bifează numai ads_read → alege „fără expirare”, dacă se oferă.",
+  "4. Copiază cheia și trimite-o, împreună cu numărul contului de reclame (din Ads Manager), persoanei care o lipește în Alexandrit → Performanța reclamelor → Conexiuni.",
+  "Cheia e ca o parolă: trimite-o pe un canal privat, nu pe e-mail către mulți destinatari.",
+].join("\n");
+
+function CopiazaPasii() {
+  const [stare, setStare] = useState<"nu" | "da" | "eroare">("nu");
+  return (
+    <Button
+      type="button"
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(TEXT_PASI);
+          setStare("da");
+        } catch {
+          setStare("eroare");
+        }
+        setTimeout(() => setStare("nu"), 2500);
+      }}
+    >
+      {stare === "da" ? "Pașii au fost copiați" : stare === "eroare" ? "Nu am putut copia; selectează textul manual" : "Copiază pașii, ca să-i trimiți unui coleg"}
+    </Button>
+  );
+}
+
 export function TabConexiuni({ orgSlug, date }: { orgSlug: string; date: DateReclame }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -182,7 +211,7 @@ export function TabConexiuni({ orgSlug, date }: { orgSlug: string; date: DateRec
           >
             {!date.conectareDisponibila && (
               <p role="alert" className="rounded-[var(--ci-radius-btn)] bg-[var(--ci-amber-soft)] px-3 py-2 text-[13px] text-[var(--ci-text)]">
-                Serverul nu poate păstra secrete în siguranță (lipsește ORG_SECRETS_KEY), deci conectarea e dezactivată. Importul din CSV merge în continuare.
+                Conectarea automată nu e disponibilă momentan. Scrie echipei Alexandrit; între timp poți folosi „Import costuri”, care nu cere nicio cheie.
               </p>
             )}
             <div className="grid gap-4 sm:grid-cols-2">
@@ -215,17 +244,20 @@ export function TabConexiuni({ orgSlug, date }: { orgSlug: string; date: DateRec
       </Card>
 
       <Card className="space-y-3">
-        <h2 className="text-[15px] font-bold text-[var(--ci-text)]">Cum obții tokenul (o singură dată)</h2>
-        <p className="text-[13px] text-[var(--ci-text-muted)]">
-          Folosește un utilizator de sistem din Meta Business, nu contul tău personal: tokenul lui nu depinde de parola ta și are doar drepturile pe care i le dai. Ecranele Meta se mai schimbă, deci verifică pașii și în ajutorul Meta pentru „Utilizatori de sistem”.
+        <h2 className="text-[15px] font-bold text-[var(--ci-text)]">Cum obții cheia de acces (o singură dată, cam 10 minute)</h2>
+        <p className="text-[13px] leading-relaxed text-[var(--ci-text-muted)]">
+          Cheia de acces e o parolă separată, doar pentru citire: prin ea Alexandrit vede cât ai cheltuit, fără să-ți știe parola de Facebook și fără să poată schimba ceva în reclame. O creezi tu, în Meta Business, ca <strong className="text-[var(--ci-text)]">utilizator de sistem</strong>. Dacă contul de reclame îl administrează altcineva, trimite-i pașii de mai jos.
         </p>
-        <ol className="list-decimal space-y-1.5 pl-5 text-[13px] text-[var(--ci-text-muted)]">
-          <li>În Meta Business Suite → Setări business → Utilizatori → <strong className="text-[var(--ci-text)]">Utilizatori de sistem</strong>, adaugă un utilizator (rol obișnuit, nu administrator).</li>
-          <li>La „Adaugă active”, alege contul publicitar și dă-i cel mai mic drept care permite <strong className="text-[var(--ci-text)]">vizualizarea performanței</strong> (nu gestionarea campaniilor).</li>
-          <li>La „Generează token”, alege o aplicație Meta a organizației (se creează gratuit în Meta for Developers) și bifează doar permisiunea <strong className="text-[var(--ci-text)]">ads_read</strong>. Alege fără expirare dacă ți se oferă; altfel notează data și regenerează la timp.</li>
-          <li>Copiază tokenul aici, odată cu ID-ul contului. După conectare, pagina arată numele contului: dacă numele e corect, tokenul și ID-ul sunt bune.</li>
+        <ol className="list-decimal space-y-1.5 pl-5 text-[13px] leading-relaxed text-[var(--ci-text-muted)]">
+          <li>Intră în <strong className="text-[var(--ci-text)]">business.facebook.com</strong> → Setări business → Utilizatori → <strong className="text-[var(--ci-text)]">Utilizatori de sistem</strong> și adaugă unul nou (numele poate fi „Alexandrit citire”).</li>
+          <li>Apasă „Adaugă active”, alege <strong className="text-[var(--ci-text)]">Conturi publicitare</strong>, bifează contul tău și dă-i doar dreptul de <strong className="text-[var(--ci-text)]">vizualizare a performanței</strong>.</li>
+          <li>Apasă „Generează token”, alege aplicația organizației (dacă nu ai una, Meta te lasă să creezi una gratuit la developers.facebook.com) și bifează <strong className="text-[var(--ci-text)]">numai ads_read</strong>. Dacă ți se oferă „fără expirare”, alege-o.</li>
+          <li>Copiază cheia lungă care apare și lipește-o mai sus, împreună cu numărul contului de reclame. După conectare, pagina arată numele contului: dacă e al tău, e corect.</li>
         </ol>
-        <p className="text-[12.5px] text-[var(--ci-text-muted)]">Dacă tokenul expiră sau e revocat, starea devine „Necesită reconectare” și sincronizările se opresc până generezi altul. Datele deja aduse rămân.</p>
+        <p className="text-[12.5px] leading-relaxed text-[var(--ci-text-muted)]">
+          Ecranele Meta se mai schimbă, deci numele butoanelor pot diferi puțin. Dacă te blochezi, folosește „Import costuri”: nu cere nicio cheie. Dacă cheia expiră, aici apare „Necesită reconectare”; generezi alta și o lipești; ce ai adus până atunci rămâne.
+        </p>
+        <CopiazaPasii />
       </Card>
     </div>
   );
