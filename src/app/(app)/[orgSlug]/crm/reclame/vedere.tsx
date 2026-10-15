@@ -33,6 +33,7 @@ import { Tabs } from "../components/ui/tabs";
 
 import { salveazaLegaturaAction, type DateReclame } from "./actions";
 import { GraficReclame } from "./grafic";
+import { TabConexiuni } from "./tab-conexiuni";
 import { TabImport } from "./tab-import";
 import { TabInstructiuni } from "./tab-instructiuni";
 import { TabLinkuri } from "./tab-linkuri";
@@ -243,6 +244,7 @@ export function ReclameVedere({ orgSlug, date }: { orgSlug: string; date: DateRe
         tabs={[
           { key: "rezumat", label: "Rezumat" },
           { key: "linkuri", label: "Linkuri UTM" },
+          { key: "conexiuni", label: "Conexiuni" },
           { key: "import", label: "Import costuri" },
           { key: "instructiuni", label: "Instrucțiuni de implementare" },
         ]}
@@ -322,6 +324,14 @@ export function ReclameVedere({ orgSlug, date }: { orgSlug: string; date: DateRe
                                 <span className="ci-tabular mt-0.5 block text-[12px] text-[var(--ci-text-muted)]">
                                   {formatLei(p.totaluri.cheltuieliBani, 0)} cheltuiți · {formatNumar(p.totaluri.donatii)} donații · {formatLei(i.netBani, 0)} net
                                 </span>
+                                {raport.pePlasament.filter((x) => x.platforma === p.platforma).length > 1 && (
+                                  <span className="ci-tabular mt-1 block text-[11.5px] text-[var(--ci-text-muted)]">
+                                    {raport.pePlasament
+                                      .filter((x) => x.platforma === p.platforma)
+                                      .map((x) => `${x.eticheta}: ${formatLei(x.totaluri.cheltuieliBani, 0)}, ${formatNumar(x.totaluri.donatii)} donații`)
+                                      .join(" · ")}
+                                  </span>
+                                )}
                               </button>
                             );
                           })
@@ -463,7 +473,9 @@ export function ReclameVedere({ orgSlug, date }: { orgSlug: string; date: DateRe
                               {date.calitate.surse.map((s) => (
                                 <li key={s.platforma}>
                                   {date.etichetePlatforme[s.platforma] ?? s.platforma}: costuri până la {s.ultimaZi ? dataRo(s.ultimaZi) : "—"}
-                                  {s.actualizatLa ? `, actualizate ${dataOraRo(s.actualizatLa)}` : ""} (import manual)
+                                  {s.actualizatLa ? `, actualizate ${dataOraRo(s.actualizatLa)}` : ""} (
+                                  {date.conexiuni.some((c) => c.platforma === s.platforma && c.stare === "activ") ? "sincronizare automată" : "import manual"})
+                                  {date.conexiuni.some((c) => c.platforma === s.platforma && c.stare !== "activ") && " · conexiunea cere atenție, vezi fila Conexiuni"}
                                 </li>
                               ))}
                             </ul>
@@ -499,6 +511,9 @@ export function ReclameVedere({ orgSlug, date }: { orgSlug: string; date: DateRe
 
             <div hidden={activ !== "linkuri"}>
               <TabLinkuri orgSlug={orgSlug} date={date} />
+            </div>
+            <div hidden={activ !== "conexiuni"}>
+              <TabConexiuni orgSlug={orgSlug} date={date} />
             </div>
             <div hidden={activ !== "import"}>
               <TabImport orgSlug={orgSlug} date={date} />

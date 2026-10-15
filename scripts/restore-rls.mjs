@@ -866,6 +866,12 @@ const POLICIES = [
   `create policy reclame_linkuri_tenant_isolation on reclame_linkuri
     using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
     with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy reclame_conexiuni_tenant_isolation on reclame_conexiuni
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy reclame_conexiuni_cron_citire on reclame_conexiuni for select using (
+    nullif(current_setting('app.public_lookup', true), '') = 'true'
+  )`,
   // Feedback de la utilizatori: organizația citește și adaugă; echipa platformei citește și răspunde peste toate (app.platform_admin).
   `create policy feedback_platforma_citire on feedback_platforma for select using (
     org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
@@ -973,6 +979,7 @@ const FORCE_TABLES = [
   "reclame_importuri",
   "donatie_atribuiri",
   "reclame_linkuri",
+  "reclame_conexiuni",
 ];
 
 try {

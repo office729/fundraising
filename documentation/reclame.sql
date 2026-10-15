@@ -97,3 +97,29 @@ grant select, insert, update, delete on reclame_campanii to app_user;
 grant select, insert, update, delete on reclame_importuri to app_user;
 grant select, insert, update, delete on donatie_atribuiri to app_user;
 grant select, insert, update, delete on reclame_linkuri to app_user;
+
+-- Conexiune de citire către o platformă de reclame (acum: Meta). Tokenul e criptat (AES-256-GCM, ORG_SECRETS_KEY) și nu pleacă niciodată spre browser.
+-- Modulul doar citește costuri; nu modifică bugete și nu pornește sau oprește reclame.
+create table if not exists reclame_conexiuni (
+  id uuid primary key default gen_random_uuid(),
+  org_id uuid not null references organizations(id) on delete cascade,
+  platforma text not null,
+  cont_id text not null,                          -- id-ul contului publicitar, fără prefixul act_
+  cont_nume text,
+  moneda text,
+  fus_orar text,
+  token_enc text not null,
+  curs_manual numeric(14,6),                      -- pentru monede diferite de RON/EUR; EUR folosește cursul zilei dacă nu e setat
+  stare text not null default 'activ',            -- activ | necesita-reconectare | eroare
+  ultima_eroare text,
+  ultima_sincronizare timestamptz,                -- ultima încercare
+  ultima_reusita timestamptz,                     -- ultima sincronizare încheiată cu succes
+  randuri_ultima integer,
+  de_la date,
+  pana_la date,
+  sincronizare_pornita_la timestamptz,            -- blocaj ca două sincronizări să nu ruleze deodată pe același cont
+  creat_de uuid references app_users(id) on delete set null,
+  creat_la timestamptz not null default now()
+);
+create unique index if not exists reclame_conexiuni_uniq on reclame_conexiuni (org_id, platforma);
+grant select, insert, update, delete on reclame_conexiuni to app_user;

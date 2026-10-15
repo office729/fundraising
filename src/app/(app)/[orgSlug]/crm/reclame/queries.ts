@@ -3,6 +3,7 @@ import "server-only";
 import { sql } from "drizzle-orm";
 
 import type { OrgContext } from "@/lib/auth/guard";
+import { plasamentDinSursa } from "@/lib/reclame/atribuire";
 import type { LegaturaCampanie, RandCostAgg, RandDonatieAgg } from "@/lib/reclame/raport";
 
 // Interogările modulului „Performanța reclamelor”. Rulează pe `ctx.db` (izolat pe organizație prin RLS); org_id e filtrat și explicit.
@@ -18,14 +19,15 @@ const CONFIRMATA = sql`d.status in ('reusita', 'rambursata')`;
 
 export async function costuriPeriodei(ctx: OrgContext, de: string, pana: string): Promise<RandCostAgg[]> {
   const r = await ctx.db.execute(sql`
-    select platforma, ziua::text as ziua, campanie_cheie, max(campanie_nume) as campanie_nume,
+    select platforma, plasament, ziua::text as ziua, campanie_cheie, max(campanie_nume) as campanie_nume,
            sum(cheltuiala_ron_minor)::bigint as cost, sum(afisari)::bigint as afisari, sum(clicuri_link)::bigint as clicuri
     from reclame_costuri
     where org_id = ${ctx.orgId} and ziua between ${de}::date and ${pana}::date
-    group by platforma, ziua, campanie_cheie
+    group by platforma, plasament, ziua, campanie_cheie
   `);
-  return rows<{ platforma: string; ziua: string; campanie_cheie: string; campanie_nume: string; cost: string; afisari: string | null; clicuri: string | null }>(r).map((x) => ({
+  return rows<{ platforma: string; plasament: string; ziua: string; campanie_cheie: string; campanie_nume: string; cost: string; afisari: string | null; clicuri: string | null }>(r).map((x) => ({
     platforma: x.platforma,
+    plasament: x.plasament,
     ziua: x.ziua,
     campanieCheie: x.campanie_cheie,
     campanieNume: x.campanie_nume,
@@ -39,7 +41,7 @@ export async function costuriPeriodei(ctx: OrgContext, de: string, pana: string)
 // „Nou” = niciun alt rând confirmat anterior cu același e-mail în organizație; fără e-mail, donatorul rămâne neclasificat.
 export async function donatiiAtribuite(ctx: OrgContext, de: string, pana: string, fereastraZile: number): Promise<RandDonatieAgg[]> {
   const r = await ctx.db.execute(sql`
-    select ${ZI_DONATIE}::text as ziua, a.platforma, a.utm_campaign,
+    select ${ZI_DONATIE}::text as ziua, a.platforma, a.utm_source, a.utm_campaign,
            case when coalesce(d.email_donator, '') = '' then 'necl'
                 when exists (
                   select 1 from fundraising_donations p
@@ -55,11 +57,12 @@ export async function donatiiAtribuite(ctx: OrgContext, de: string, pana: string
       and a.click_la is not null
       and d.created_at >= a.click_la - interval '5 minutes'
       and d.created_at - a.click_la <= make_interval(days => ${fereastraZile}::int)
-    group by 1, 2, 3, 4
+    group by 1, 2, 3, 4, 5
   `);
-  return rows<{ ziua: string; platforma: string | null; utm_campaign: string | null; clasa_donator: "nou" | "existent" | "necl"; n: number; brut: string; rambursat: string }>(r).map((x) => ({
+  return rows<{ ziua: string; platforma: string | null; utm_source: string | null; utm_campaign: string | null; clasa_donator: "nou" | "existent" | "necl"; n: number; brut: string; rambursat: string }>(r).map((x) => ({
     ziua: x.ziua,
     platforma: x.platforma,
+    plasament: plasamentDinSursa(x.utm_source),
     utmCampanie: x.utm_campaign,
     clasaDonator: x.clasa_donator,
     n: N(x.n),

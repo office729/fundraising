@@ -106,3 +106,30 @@ export const reclameLinkuri = pgTable(
   },
   (t) => [index("reclame_linkuri_org_idx").on(t.orgId, t.creatLa)],
 ).enableRLS();
+
+// Conexiune de citire către o platformă de reclame (acum: Meta). Tokenul e criptat și nu se citește niciodată în browser.
+export const reclameConexiuni = pgTable(
+  "reclame_conexiuni",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    orgId: uuid("org_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+    platforma: text("platforma").notNull(),
+    contId: text("cont_id").notNull(),
+    contNume: text("cont_nume"),
+    moneda: text("moneda"),
+    fusOrar: text("fus_orar"),
+    tokenEnc: text("token_enc").notNull(),
+    cursManual: numeric("curs_manual", { precision: 14, scale: 6 }),
+    stare: text("stare").notNull().default("activ"), // activ | necesita-reconectare | eroare
+    ultimaEroare: text("ultima_eroare"),
+    ultimaSincronizare: timestamp("ultima_sincronizare", { withTimezone: true }),
+    ultimaReusita: timestamp("ultima_reusita", { withTimezone: true }),
+    randuriUltima: integer("randuri_ultima"),
+    deLa: date("de_la", { mode: "string" }),
+    panaLa: date("pana_la", { mode: "string" }),
+    sincronizarePornitaLa: timestamp("sincronizare_pornita_la", { withTimezone: true }),
+    creatDe: uuid("creat_de").references(() => appUsers.id, { onDelete: "set null" }),
+    creatLa: timestamp("creat_la", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("reclame_conexiuni_uniq").on(t.orgId, t.platforma)],
+).enableRLS();

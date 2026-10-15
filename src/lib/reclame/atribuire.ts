@@ -47,6 +47,16 @@ export function platformaDinSursa(source: string | null): Platforma {
   return "altele";
 }
 
+// Plasamentul din utm_source, când Meta îl completează ({{site_source_name}}: fb, ig, an, msg); gol dacă sursa nu îl spune.
+export function plasamentDinSursa(source: string | null): string {
+  const s = (source ?? "").toLowerCase();
+  if (s === "fb" || s === "facebook") return "facebook";
+  if (s === "ig" || s === "instagram") return "instagram";
+  if (s === "an" || s === "audience_network") return "audience_network";
+  if (s === "msg" || s === "messenger") return "messenger";
+  return "";
+}
+
 export type Touch = {
   s: string; // utm_source
   m: string | null; // utm_medium

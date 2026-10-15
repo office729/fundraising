@@ -108,13 +108,17 @@ export function TabInstructiuni({ orgSlug }: { orgSlug: string }) {
             <p>În Ads Manager, la nivelul reclamei, la „Destinație” (Website URL), completează câmpul „URL parameters” cu textul de mai jos. {"{{site_source_name}}"} e completat de Meta (fb, ig etc.), deci Facebook și Instagram rămân separate. După publicarea primei reclame, deschide linkul din reclamă și verifică în bara de adrese că parametrii sunt completați.</p>
             <Cod text={PARAMETRI_META("cmp_026", "cr_014")} />
           </Pas>
-          <Pas n={3} titlu="Exportă costurile din Ads Manager">
+          <Pas n={3} titlu="Adu costurile: conectează Meta sau importă un CSV">
+            <p>Varianta automată: în fila „Conexiuni” lipești ID-ul contului publicitar și un token cu permisiunea ads_read (doar citire). Costurile vin pe zi, campanie, reclamă și plasament (Facebook / Instagram), se reîmprospătează singure la deschiderea paginii (dacă sunt mai vechi de o oră) și zilnic, iar ultimele 7 zile se recitesc ca să prindă corecțiile Meta.</p>
+            <p>Varianta manuală, dacă nu vrei sau nu poți conecta contul:</p>
+          </Pas>
+          <Pas n={4} titlu="Exportă costurile din Ads Manager (varianta manuală)">
             <p>Rapoarte → alege perioada → „Defalcare: Timp → Zi” → coloanele: Numele campaniei, Numele setului de reclame, Numele reclamei, Suma cheltuită, Afișări, Clicuri pe link → Exportă ca CSV. Reia exportul periodic (de exemplu săptămânal); reimportul aceleiași perioade înlocuiește rândurile, nu le dublează.</p>
           </Pas>
-          <Pas n={4} titlu="Importă și leagă campaniile de coduri">
-            <p>În fila „Import costuri” alege platforma și fișierul, verifică coloanele recunoscute și moneda, apoi scrie în dreptul fiecărei campanii codul UTM din linkuri (cmp_026). Fără cod, costul apare ca „nealocat”: intră în total, dar nu poate fi comparat cu donații.</p>
+          <Pas n={5} titlu="Leagă campaniile de coduri UTM">
+            <p>Cu conexiunea Meta, campaniile apar singure în listă; dacă numele campaniei conține codul (de exemplu „Inimă pentru Ana — cmp_026”), legătura se face automat. Altfel deschizi campania din tabel și scrii codul. La import CSV scrii codul în dreptul fiecărei campanii (cmp_026). Fără cod, costul apare ca „nealocat”: intră în total, dar nu poate fi comparat cu donații.</p>
           </Pas>
-          <Pas n={5} titlu="Verifică o donație de test">
+          <Pas n={6} titlu="Verifică o donație de test">
             <p>Deschide linkul generat (cu codul cmp_test), fă o donație în contul Stripe al organizației aflat în mod test (card 4242 4242 4242 4242) și așteaptă confirmarea plății. În „Rezumat” apare la „Donații confirmate atribuite reclamelor” după webhook, chiar dacă codul nu e încă legat de o cheltuială (atunci rândul cere legarea). Dacă nu apare: vezi interogarea de mai jos și secțiunea „Calitatea datelor”.</p>
             <Cod limba="sql" text={SQL_VERIFICARE} />
           </Pas>
@@ -139,6 +143,7 @@ export function TabInstructiuni({ orgSlug }: { orgSlug: string }) {
                 ["Fixarea atribuirii (server)", "src/lib/reclame/inregistreaza-atribuire.ts, apelat după fiecare inserare de donație: strangere-fonduri/…/actions.ts (Checkout) și express-checkout-actions.ts (Apple/Google Pay, PayPal, Revolut; unic și recurent)"],
                 ["Reguli de atribuire", "src/lib/reclame/atribuire.ts: curățarea codurilor, clasa traficului, platforma din sursă, fereastra; browserul nu e de încredere, clasa se recalculează pe server"],
                 ["Confirmarea donațiilor", "Neschimbată: webhook-ul Stripe al fiecărei organizații (api/stripe/webhook/[orgSlug]) pune donația pe «reusita»; rapoartele numără doar reusita și rambursata"],
+                ["Conexiunea Meta (citire)", "src/lib/reclame/meta-api.ts (client Graph API: paginare, reîncercări, împărțirea intervalelor; testat fără rețea) · meta-sync.ts (sincronizare pe intervale de 14 zile, blocaj, conectare) · api/cron/reclame-meta (zilnic)"],
                 ["Calcule și agregare", "src/lib/reclame/calcule.ts · raport.ts · csv-costuri.ts · export-csv.ts · dictionar.ts (toate pure, testate în tests/reclame.test.mjs)"],
                 ["Interogări și acțiuni", `src/app/(app)/[orgSlug]/crm/reclame/{queries,actions}.ts; pagina: /${orgSlug}/crm/reclame (doar owner/admin, pachet IMPACT sau probă)`],
               ].map(([a, b]) => (
@@ -166,9 +171,12 @@ export function TabInstructiuni({ orgSlug }: { orgSlug: string }) {
 
         <div className="space-y-1.5">
           <p className="text-[13.5px] font-semibold text-[var(--ci-text)]">Variabile de mediu</p>
-          <p className="text-[13px] text-[var(--ci-text-muted)]">
-            Modulul curent nu cere variabile noi. Folosește ORG_SECRETS_KEY (deja necesară pentru amprenta zilnică a traficului). NEXT_PUBLIC_META_PIXEL_ID rămâne opțională și independentă: Pixelul nu e sursa cheltuielilor, iar încărcarea lui cere acordul separat pentru publicitate.
-          </p>
+          <ul className="list-disc space-y-1 pl-5 text-[13px] text-[var(--ci-text-muted)]">
+            <li>ORG_SECRETS_KEY: obligatorie pentru conexiunea Meta (criptează tokenul, AES-256-GCM) și pentru amprenta zilnică a traficului. Fără ea, conectarea e dezactivată.</li>
+            <li>CRON_SECRET: pentru cronul zilnic /api/cron/reclame-meta (ca la celelalte crons din vercel.json).</li>
+            <li>META_GRAPH_VERSION (opțională): versiunea Graph API, implicit v25.0. Meta retrage versiunile vechi; verifică jurnalul de modificări înainte să o schimbi.</li>
+            <li>NEXT_PUBLIC_META_PIXEL_ID rămâne opțională și independentă: Pixelul nu e sursa cheltuielilor, iar încărcarea lui cere acordul separat pentru publicitate.</li>
+          </ul>
         </div>
       </Card>
 
@@ -204,9 +212,9 @@ export function TabInstructiuni({ orgSlug }: { orgSlug: string }) {
           {NOTE_LIMITE.map((n) => (
             <li key={n}>{n}</li>
           ))}
-          <li>
-            Costurile intră acum prin import CSV. Citirea automată a costurilor și a conversiilor raportate (Meta Marketing API, TikTok, LinkedIn) nu e conectată în această versiune și cere conturi și permisiuni de citire pe care organizația le configurează; verifică versiunile și permisiunile în documentația oficială a fiecărei platforme înainte de conectare.
-          </li>
+          <li>Meta: se citesc doar costuri, afișări și clicuri pe link (Insights, doar citire). Conversiile raportate de Meta nu se aduc și nu se adună cu cele de aici. TikTok și LinkedIn se importă încă din CSV; aceeași schemă primește și o conexiune automată pentru ele.</li>
+          <li>Sincronizarea Meta înlocuiește costurile Meta din zilele citite, inclusiv cele importate manual pentru aceleași zile. Insights are fusul orar al contului publicitar și se actualizează la aproximativ 15 minute; zilele mai vechi de ~28 de zile nu se mai schimbă.</li>
+          <li>Conturile în EUR se convertesc la cursul din ziua sincronizării (nu cel istoric al fiecărei zile); pentru alte monede se cere un curs manual la conectare.</li>
           <li>Comparația cu primul contact și raportarea nativă a platformelor, prezentate separat de modelul intern, nu sunt implementate încă.</li>
         </ul>
       </Card>

@@ -7,7 +7,7 @@ if (!url) {
   console.error("MIGRATOR_DATABASE_URL lipsește din mediu.");
   process.exit(1);
 }
-const TABELE = ["reclame_costuri", "reclame_campanii", "reclame_importuri", "donatie_atribuiri", "reclame_linkuri"];
+const TABELE = ["reclame_costuri", "reclame_campanii", "reclame_importuri", "donatie_atribuiri", "reclame_linkuri", "reclame_conexiuni"];
 const sql = postgres(url, { connect_timeout: 8 });
 try {
   await sql.unsafe(readFileSync(new URL("../documentation/reclame.sql", import.meta.url), "utf8"));
@@ -21,6 +21,12 @@ try {
     } catch (e) {
       if (!/already exists/i.test(e.message)) throw e;
     }
+  }
+  // Cronul de sincronizare listează conexiunile tuturor organizațiilor în contextul de încredere app.public_lookup (doar citire); scrie apoi pe fiecare organizație separat.
+  try {
+    await sql.unsafe(`create policy reclame_conexiuni_cron_citire on reclame_conexiuni for select using (nullif(current_setting('app.public_lookup', true), '') = 'true')`);
+  } catch (e) {
+    if (!/already exists/i.test(e.message)) throw e;
   }
   const rls = await sql`select relname, relrowsecurity, relforcerowsecurity from pg_class where relname = any(${TABELE}) order by 1`;
   const pol = await sql`select tablename, policyname, cmd from pg_policies where tablename = any(${TABELE}) order by 1`;

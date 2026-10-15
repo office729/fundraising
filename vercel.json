@@ -30,6 +30,10 @@
       "schedule": "0 6 * * *"
     },
     {
+      "path": "/api/cron/reclame-meta",
+      "schedule": "50 4 * * *"
+    },
+    {
       "path": "/api/cron/calendar-rezumat",
       "schedule": "30 6 * * 1"
     }

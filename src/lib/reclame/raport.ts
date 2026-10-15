@@ -12,8 +12,8 @@ export type Totaluri = {
   donatoriNeclasificati: number;
 };
 
-export type RandCostAgg = { platforma: string; ziua: string; campanieCheie: string; campanieNume: string; costBani: number; afisari: number | null; clicuri: number | null };
-export type RandDonatieAgg = { ziua: string; platforma: string | null; utmCampanie: string | null; clasaDonator: "nou" | "existent" | "necl"; n: number; brutBani: number; rambursatBani: number };
+export type RandCostAgg = { platforma: string; plasament?: string; ziua: string; campanieCheie: string; campanieNume: string; costBani: number; afisari: number | null; clicuri: number | null };
+export type RandDonatieAgg = { ziua: string; plasament?: string; platforma: string | null; utmCampanie: string | null; clasaDonator: "nou" | "existent" | "necl"; n: number; brutBani: number; rambursatBani: number };
 export type LegaturaCampanie = { platforma: string; campanieCheie: string; campanieNume: string; utmCampanie: string | null };
 
 export type LinieRaport = {
@@ -34,6 +34,8 @@ export type ZiRaport = { ziua: string; cheltuieliBani: number; donatii: number; 
 export type Raport = {
   totaluri: Totaluri;
   pePlatforma: LinieRaport[];
+  // Defalcare pe plasament (Facebook, Instagram etc.): aceleași sume ca pe platformă, doar împărțite; nu se adună încă o dată la total.
+  pePlasament: LinieRaport[];
   peCampanie: LinieRaport[];
   peZi: ZiRaport[];
   costNealocatBani: number;
@@ -61,6 +63,8 @@ function adaugaDonatii(t: Totaluri, d: RandDonatieAgg) {
 
 const adunaOpt = (a: number | null, b: number | null): number | null => (a === null && b === null ? null : (a ?? 0) + (b ?? 0));
 
+export const ETICHETE_PLASAMENT: Record<string, string> = { facebook: "Facebook", instagram: "Instagram", audience_network: "Audience Network", messenger: "Messenger", "": "Plasament nespecificat" };
+
 export function asambleaza(input: { de: string; pana: string; costuri: RandCostAgg[]; donatii: RandDonatieAgg[]; legaturi: LegaturaCampanie[]; etichetePlatforme: Record<string, string> }): Raport {
   const { de, pana, costuri, donatii, legaturi } = input;
   // cod UTM legat, după (platformă + cheia campaniei de la platformă)
@@ -76,6 +80,7 @@ export function asambleaza(input: { de: string; pana: string; costuri: RandCostA
   const total = goale();
   const pePlatformaMap = new Map<string, LinieRaport>();
   const peCampanieMap = new Map<string, LinieRaport>();
+  const pePlasamentMap = new Map<string, LinieRaport>();
   const peZiMap = new Map<string, ZiRaport>(zileDintre(de, pana).map((z) => [z, { ziua: z, cheltuieliBani: 0, donatii: 0, brutBani: 0, netBani: 0 }]));
 
   const linie = (map: Map<string, LinieRaport>, cheie: string, init: () => Omit<LinieRaport, "totaluri" | "afisari" | "clicuri">): LinieRaport => {
@@ -88,9 +93,16 @@ export function asambleaza(input: { de: string; pana: string; costuri: RandCostA
   };
   const platforma = (p: string) => linie(pePlatformaMap, p, () => ({ cheie: p, eticheta: input.etichetePlatforme[p] ?? p, platforma: p, utmCampanie: null, legata: true, nota: null }));
 
+  const plasament = (p: string, pl: string) =>
+    linie(pePlasamentMap, `${p}|${pl}`, () => ({ cheie: `${p}|${pl}`, eticheta: ETICHETE_PLASAMENT[pl] ?? pl, platforma: p, utmCampanie: null, legata: true, nota: null }));
+
   let costNealocatBani = 0;
   for (const c of costuri) {
     total.cheltuieliBani += c.costBani;
+    const pls = plasament(c.platforma, c.plasament ?? "");
+    pls.totaluri.cheltuieliBani += c.costBani;
+    pls.afisari = adunaOpt(pls.afisari, c.afisari);
+    pls.clicuri = adunaOpt(pls.clicuri, c.clicuri);
     const pl = platforma(c.platforma);
     pl.totaluri.cheltuieliBani += c.costBani;
     pl.afisari = adunaOpt(pl.afisari, c.afisari);
@@ -120,6 +132,7 @@ export function asambleaza(input: { de: string; pana: string; costuri: RandCostA
     adaugaDonatii(total, d);
     const pcheie = d.platforma ?? "altele";
     adaugaDonatii(platforma(pcheie).totaluri, d);
+    adaugaDonatii(plasament(pcheie, d.plasament ?? "").totaluri, d);
     const zi = peZiMap.get(d.ziua);
     if (zi) {
       zi.donatii += d.n;
@@ -144,6 +157,7 @@ export function asambleaza(input: { de: string; pana: string; costuri: RandCostA
   return {
     totaluri: total,
     pePlatforma: [...pePlatformaMap.values()].sort(sorteaza),
+    pePlasament: [...pePlasamentMap.values()].sort(sorteaza),
     peCampanie: [...peCampanieMap.values()].sort(sorteaza),
     peZi: [...peZiMap.values()],
     costNealocatBani,

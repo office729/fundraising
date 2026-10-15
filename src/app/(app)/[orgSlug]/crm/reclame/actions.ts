@@ -5,11 +5,14 @@ import { randomUUID } from "node:crypto";
 import { and, desc, eq, sql } from "drizzle-orm";
 
 import { withOrgAdmin } from "@/lib/auth/guard";
-import { reclameCampanii, reclameCosturi, reclameImporturi, reclameLinkuri } from "@/lib/db/schema";
+import { reclameCampanii, reclameConexiuni, reclameCosturi, reclameImporturi, reclameLinkuri } from "@/lib/db/schema";
+import { verificaLimitaRata } from "@/lib/auth/rate-limit";
+import { criptareConfigurata } from "@/lib/secret-box";
 import { curataCod, esteCheiePlatforma, FEREASTRA_IMPLICITA_ZILE, PLATFORME } from "@/lib/reclame/atribuire";
 import { perioadaAnterioara, rezolvaPerioada, type PresetPerioada } from "@/lib/reclame/calcule";
 import { detecteazaColoane, MAX_RANDURI, monedaDinAntet, normalizeaza, parseCsv, type CampMapat, type Mapare, type RandCost } from "@/lib/reclame/csv-costuri";
 import { asambleaza, totaluriSimple, type LegaturaCampanie, type Raport, type Totaluri } from "@/lib/reclame/raport";
+import { conecteazaMeta, deconecteazaMeta, sincronizeazaMeta, type RezultatConectare, type RezultatSync } from "@/lib/reclame/meta-sync";
 import { construiesteLink } from "@/lib/reclame/utm";
 
 import { calitateDate, costuriPeriodei, donatiiAtribuite, legaturiCampanii, parcursObservat, reinnoiriAbonamenteAtribuite, type CalitateDate, type Parcurs } from "./queries";
@@ -26,6 +29,22 @@ export type ParametriReclame = { preset?: string; de?: string; pana?: string; fe
 export type ImportRand = { id: string; platforma: string; numeFisier: string | null; randuri: number; deLa: string | null; panaLa: string | null; moneda: string; cursRon: number; totalRonBani: number; creatLa: string };
 export type LinkRand = { id: string; url: string; utmSource: string; utmMedium: string; utmCampaign: string; utmContent: string | null; eticheta: string | null; creatLa: string };
 
+// Conexiunea către o platformă de reclame, fără token (tokenul nu părăsește niciodată serverul).
+export type ConexiuneMeta = {
+  platforma: string;
+  contId: string;
+  contNume: string | null;
+  moneda: string | null;
+  fusOrar: string | null;
+  stare: string;
+  ultimaEroare: string | null;
+  ultimaSincronizare: string | null;
+  ultimaReusita: string | null;
+  randuriUltima: number | null;
+  deLa: string | null;
+  panaLa: string | null;
+};
+
 export type DateReclame = {
   perioada: { preset: PresetPerioada; de: string; pana: string; anterioara: { de: string; pana: string }; azi: string; ziuaInCurs: boolean };
   fereastraZile: number;
@@ -37,6 +56,9 @@ export type DateReclame = {
   legaturi: LegaturaCampanie[];
   importuri: ImportRand[];
   linkuri: LinkRand[];
+  conexiuni: ConexiuneMeta[];
+  // false = serverul nu poate păstra tokenuri criptate (lipsește ORG_SECRETS_KEY): conectarea nu se oferă.
+  conectareDisponibila: boolean;
   etichetePlatforme: Record<string, string>;
 };
 
@@ -66,6 +88,8 @@ export const obtineDateReclame = withOrgAdmin(async (ctx, p: ParametriReclame = 
   const importuri = await ctx.db.select().from(reclameImporturi).where(eq(reclameImporturi.orgId, ctx.orgId)).orderBy(desc(reclameImporturi.creatLa)).limit(10);
   const linkuri = await ctx.db.select().from(reclameLinkuri).where(eq(reclameLinkuri.orgId, ctx.orgId)).orderBy(desc(reclameLinkuri.creatLa)).limit(15);
 
+  const conexiuni = await ctx.db.select().from(reclameConexiuni).where(eq(reclameConexiuni.orgId, ctx.orgId));
+
   return {
     perioada: { ...perioada, anterioara, azi, ziuaInCurs: perioada.pana >= azi },
     fereastraZile,
@@ -88,9 +112,48 @@ export const obtineDateReclame = withOrgAdmin(async (ctx, p: ParametriReclame = 
       creatLa: i.creatLa.toISOString(),
     })),
     linkuri: linkuri.map((l) => ({ id: l.id, url: l.url, utmSource: l.utmSource, utmMedium: l.utmMedium, utmCampaign: l.utmCampaign, utmContent: l.utmContent, eticheta: l.eticheta, creatLa: l.creatLa.toISOString() })),
+    conexiuni: conexiuni.map((c) => ({
+      platforma: c.platforma,
+      contId: c.contId,
+      contNume: c.contNume,
+      moneda: c.moneda,
+      fusOrar: c.fusOrar,
+      stare: c.stare,
+      ultimaEroare: c.ultimaEroare,
+      ultimaSincronizare: c.ultimaSincronizare ? c.ultimaSincronizare.toISOString() : null,
+      ultimaReusita: c.ultimaReusita ? c.ultimaReusita.toISOString() : null,
+      randuriUltima: c.randuriUltima,
+      deLa: c.deLa,
+      panaLa: c.panaLa,
+    })),
+    conectareDisponibila: criptareConfigurata(),
     etichetePlatforme,
   };
 }, OPT);
+
+// ───────────── conexiunea Meta (doar citire) ─────────────
+
+// Verificarea accesului se face într-o tranzacție scurtă; cererile către Meta (lente) rulează apoi fără conexiune deschisă la baza de date.
+const autorizeaza = withOrgAdmin(async (ctx) => ({ orgId: ctx.orgId, userId: ctx.userId }), OPT);
+
+export async function conecteazaMetaAction(orgSlug: string, input: { contId: string; token: string; cursManual?: number | null }): Promise<RezultatConectare> {
+  const { orgId, userId } = await autorizeaza(orgSlug);
+  // Plafon pe organizație: tokenurile greșite încercate la nesfârșit nu trebuie să încarce Meta sau serverul.
+  if (!(await verificaLimitaRata("reclame-meta-conectare", orgId, 10, 60))) return { ok: false, eroare: "Prea multe încercări de conectare. Revino peste o oră." };
+  return conecteazaMeta(orgId, userId, input);
+}
+
+export async function sincronizeazaMetaAction(orgSlug: string, zile: number): Promise<RezultatSync> {
+  const { orgId } = await autorizeaza(orgSlug);
+  if (!(await verificaLimitaRata("reclame-meta-sync", orgId, 8, 60))) return { ok: false, eroare: "Ai sincronizat de prea multe ori într-o oră. Datele se reîmprospătează oricum singure.", clasa: "limita-locala" };
+  return sincronizeazaMeta(orgId, { zile: [7, 28, 90].includes(zile) ? zile : 7 });
+}
+
+export async function deconecteazaMetaAction(orgSlug: string): Promise<{ ok: true }> {
+  const { orgId } = await autorizeaza(orgSlug);
+  await deconecteazaMeta(orgId);
+  return { ok: true };
+}
 
 // ───────────── import costuri din CSV ─────────────
 
