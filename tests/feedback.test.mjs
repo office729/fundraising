@@ -108,3 +108,30 @@ test("rezumatul agregă NPS, media pe arii, modulele folosite și evoluția luna
   assert.deepEqual(r.moduleFrecvente.map((m) => [m.cheie, m.nr]), [["donatori", 2], ["granturi", 1]]);
   assert.deepEqual(r.pelUna, [{ luna: "2026-01", nr: 1, nps: 100 }, { luna: "2026-02", nr: 2, nps: 0 }]);
 });
+
+const { chestionarulCerePrompt, compuneChestionarCuProblema, compuneSugestie } = await import("../src/lib/feedback/notificare-continut.ts");
+
+test("e-mailul de alertă pentru chestionar pleacă doar la scor scăzut", () => {
+  assert.equal(chestionarulCerePrompt(6, 5), true);
+  assert.equal(chestionarulCerePrompt(9, 2), true);
+  assert.equal(chestionarulCerePrompt(7, 3), false);
+  assert.equal(chestionarulCerePrompt(10, 5), false);
+});
+
+test("e-mailul despre o sugestie scapă HTML-ul din text și arată contactul doar dacă există", () => {
+  const cu = compuneSugestie({ orgNume: "ONG <b>X</b>", categorie: "O funcție nouă", titlu: "Export", mesaj: "<script>alert(1)</script>\nrând doi", contact: "a@b.ro" }, "https://exemplu.ro/p");
+  assert.match(cu.subiect, /Sugestie nouă de la ONG <b>X<\/b>: Export/); // subiectul e text simplu, nu HTML
+  assert.ok(!cu.html.includes("<script>"));
+  assert.ok(cu.html.includes("&lt;script&gt;"));
+  assert.ok(cu.html.includes("rând doi") && cu.html.includes("<br>"));
+  assert.ok(cu.html.includes("a@b.ro"));
+  const fara = compuneSugestie({ orgNume: "ONG", categorie: "x", titlu: "Titlu", mesaj: "Mesaj lung", contact: null }, "https://exemplu.ro/p");
+  assert.ok(!fara.html.includes("Contact:"));
+});
+
+test("e-mailul despre un chestionar cu probleme conține scorurile și textele", () => {
+  const e = compuneChestionarCuProblema({ orgNume: "ONG", nps: 3, satisfactie: 2, cePlace: null, ceLipseste: "Export", contact: null }, "https://exemplu.ro/p");
+  assert.match(e.subiect, /NPS 3, satisfacție 2\/5/);
+  assert.ok(e.html.includes("Export") && e.html.includes("https://exemplu.ro/p"));
+  assert.ok(!e.html.includes("Ce îi place"));
+});

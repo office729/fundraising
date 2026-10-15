@@ -1,11 +1,15 @@
 "use server";
 
 import { and, desc, eq, gte } from "drizzle-orm";
+import { after } from "next/server";
 
 import { withOrgSession } from "@/lib/auth/guard";
 import { isPlatformAdmin } from "@/lib/billing/trial";
 import { feedbackPlatforma } from "@/lib/db/schema";
+import { notificaChestionarCuProblema, notificaSugestieNoua } from "@/lib/feedback/notificare";
+import { chestionarulCerePrompt } from "@/lib/feedback/notificare-continut";
 import {
+  CATEGORII_SUGESTIE,
   MAX_SUGESTII_PE_ZI,
   ZILE_INTRE_CHESTIONARE,
   trebuieInvitat,
@@ -96,6 +100,11 @@ export const trimiteChestionarAction = withOrgSession(async (ctx, input: Chestio
     ceLipseste: v.ceLipseste,
     poateContacta: v.poateContacta,
   });
+  // Echipa află pe e-mail doar de chestionarele cu scor scăzut; trimiterea pleacă după ce răspunsul s-a întors și tranzacția s-a încheiat.
+  if (chestionarulCerePrompt(v.nps, v.satisfactie)) {
+    const c = { orgNume: ctx.orgName, nps: v.nps, satisfactie: v.satisfactie, cePlace: v.cePlace, ceLipseste: v.ceLipseste, contact: v.poateContacta ? ctx.userEmail : null };
+    after(() => notificaChestionarCuProblema(c));
+  }
   return { ok: true };
 });
 
@@ -121,6 +130,14 @@ export const trimiteSugestieAction = withOrgSession(async (ctx, input: SugestieI
     mesaj: v.mesaj,
     poateContacta: v.poateContacta,
   });
+  const s = {
+    orgNume: ctx.orgName,
+    categorie: CATEGORII_SUGESTIE.find((c) => c.cheie === v.categorie)?.eticheta ?? v.categorie,
+    titlu: v.titlu,
+    mesaj: v.mesaj,
+    contact: v.poateContacta ? ctx.userEmail : null,
+  };
+  after(() => notificaSugestieNoua(s));
   return { ok: true };
 });
 
