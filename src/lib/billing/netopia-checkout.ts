@@ -13,6 +13,7 @@ import { clasificaStatus, interogheazaStatus, netopiaConfigurata, pornestePlata,
 import { decripteaza } from "@/lib/secret-box";
 
 import { alertaOperatorZilnic } from "./alerta-operator";
+import { dateAntifraud } from "./date-antifraud";
 import { NetopiaRespins } from "./netopia-erori";
 
 import { REFERRAL_DISCOUNT_PERCENT } from "../referral";
@@ -132,7 +133,16 @@ export async function creeazaPlataAbonament(
     });
   });
 
-  const [prenume, ...restNume] = (ctx.userName ?? "").trim().split(/\s+/).filter(Boolean);
+  // Telefonul organizației (completat la înscriere) — nu e în contextul de sesiune, deci îl citim aici.
+  const [orgTel] = await ctx.db.select({ telefon: organizations.telefon }).from(organizations).where(eq(organizations.id, ctx.orgId)).limit(1);
+  const antifraud = dateAntifraud({
+    numeUtilizator: ctx.userName,
+    orgName: ctx.orgName,
+    telefon: orgTel?.telefon,
+    adresaSediu: ctx.orgAdresaSediu,
+    judet: ctx.orgJudet,
+  });
+  if (!antifraud.telefonReal) raporteazaAvertisment("netopia-antifraud", "organizația nu are un telefon valid: se trimite telefonul implicit", { orgSlug: ctx.orgSlug });
 
   let paymentUrl: string;
   let ntpId: string | null;
@@ -143,10 +153,12 @@ export async function creeazaPlataAbonament(
       descriere: `Alexandrit — ${params.packageLabel} (${(params.luni ?? 1) === 12 ? "un an" : "o lună"})`,
       facturare: {
         email: ctx.userEmail,
-        prenume: prenume ?? "Client",
-        nume: restNume.join(" ") || ctx.orgName.slice(0, 60),
-        // Nu colectăm încă un telefon al plătitorului; Netopia îl cere obligatoriu.
-        telefon: "0700000000",
+        prenume: antifraud.prenume,
+        nume: antifraud.nume,
+        telefon: antifraud.telefon,
+        oras: antifraud.oras,
+        judet: antifraud.judet,
+        adresa: antifraud.adresa,
       },
       notifyUrl: `${params.origin}/api/netopia/ipn`,
       redirectUrl: `${params.origin}/abonament/${ctx.orgSlug}/rezultat?comanda=${orderId}`,
@@ -223,6 +235,11 @@ export async function taxeazaReinnoireAutomata(
     luni: number;
     netopiaCardTokenEnc: string | null;
     facturareEmail: string;
+    // Date reale pentru antifraud (vezi date-antifraud.ts); lipsesc doar la apelanți vechi.
+    facturareNume?: string | null;
+    telefon?: string | null;
+    adresaSediu?: string | null;
+    judet?: string | null;
   },
   baseUrl: string,
 ): Promise<RezultatReinnoire> {
@@ -299,11 +316,16 @@ export async function taxeazaReinnoireAutomata(
   }
   const { orderId, sumaLei } = comanda;
 
+  const antifraud = dateAntifraud({ numeUtilizator: org.facturareNume, orgName: org.name, telefon: org.telefon, adresaSediu: org.adresaSediu, judet: org.judet });
+  if (!antifraud.telefonReal) raporteazaAvertisment("netopia-antifraud", "organizația nu are un telefon valid: se trimite telefonul implicit", { orgSlug: org.slug });
   const facturare: DateFacturare = {
     email: org.facturareEmail,
-    prenume: "Client",
-    nume: org.name.slice(0, 60),
-    telefon: "0700000000",
+    prenume: antifraud.prenume,
+    nume: antifraud.nume,
+    telefon: antifraud.telefon,
+    oras: antifraud.oras,
+    judet: antifraud.judet,
+    adresa: antifraud.adresa,
   };
 
   try {

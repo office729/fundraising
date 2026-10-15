@@ -64,6 +64,10 @@ export type DateFacturare = {
   nume: string;
   prenume: string;
   telefon: string;
+  // Adresa reală a organizației (vezi billing/date-antifraud.ts); lipsesc doar la apelanți vechi, care primesc valorile implicite de mai jos.
+  oras?: string;
+  judet?: string;
+  adresa?: string;
 };
 
 type OrderPentruStart = {
@@ -87,12 +91,13 @@ function corpCerere(p: OrderPentruStart, instrument: { type: "card" } | { token:
     phone: p.facturare.telefon,
     firstName: p.facturare.prenume,
     lastName: p.facturare.nume,
-    city: "București",
+    city: p.facturare.oras ?? "București",
     country: 642,
     countryName: "Romania",
-    state: "București",
+    state: p.facturare.judet ?? "București",
+    // Codul poștal nu se păstrează nicăieri; rămâne valoarea care a funcționat (de verificat cu Netopia ce câmpuri sunt obligatorii).
     postalCode: "010000",
-    details: "-",
+    details: p.facturare.adresa ?? "-",
   };
   return {
     config: {

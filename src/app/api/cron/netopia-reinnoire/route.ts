@@ -223,6 +223,7 @@ async function proceseazaReinnoiri(): Promise<Record<string, unknown>> {
         cif: organizations.cif,
         adresaSediu: organizations.adresaSediu,
         judet: organizations.judet,
+        telefon: organizations.telefon,
         currentPeriodEnd: organizations.currentPeriodEnd,
         netopiaCardMasked: organizations.netopiaCardMasked,
         netopiaCardExpireMonth: organizations.netopiaCardExpireMonth,
@@ -269,7 +270,7 @@ async function proceseazaReinnoiri(): Promise<Record<string, unknown>> {
     if (ids.length === 0) return { orgs, avize, proprietari: [] };
 
     const proprietari = await tx
-      .select({ orgId: memberships.orgId, email: appUsers.email })
+      .select({ orgId: memberships.orgId, email: appUsers.email, nume: appUsers.name })
       .from(memberships)
       .innerJoin(appUsers, eq(appUsers.id, memberships.userId))
       .where(and(inArray(memberships.orgId, ids), eq(memberships.role, "owner")));
@@ -280,7 +281,11 @@ async function proceseazaReinnoiri(): Promise<Record<string, unknown>> {
     return { ok: true, procesate: 0 };
   }
   const emailProprietar = new Map<string, string>();
-  for (const p of proprietari) if (!emailProprietar.has(p.orgId)) emailProprietar.set(p.orgId, p.email);
+  const numeProprietar = new Map<string, string | null>();
+  for (const p of proprietari) if (!emailProprietar.has(p.orgId)) {
+    emailProprietar.set(p.orgId, p.email);
+    numeProprietar.set(p.orgId, p.nume ?? null);
+  }
 
   const rezultate: { orgSlug: string; rezultat: string }[] = [];
 
@@ -384,6 +389,10 @@ async function proceseazaReinnoiri(): Promise<Record<string, unknown>> {
           luni,
           netopiaCardTokenEnc: org.netopiaCardTokenEnc,
           facturareEmail,
+          facturareNume: numeProprietar.get(org.id) ?? null,
+          telefon: org.telefon,
+          adresaSediu: org.adresaSediu,
+          judet: org.judet,
         },
         baseUrl,
       );
