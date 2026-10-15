@@ -630,9 +630,9 @@ function PasDonatii({ t, titluRef, orgSlug }: { t: Texte } & TitluRef & { orgSlu
           <button aria-pressed={!lunar} onClick={() => setLunar(false)} className={`px-4 py-2 transition-colors ${!lunar ? "bg-[var(--ci-primary)] text-white" : "hover:bg-[var(--ci-surface-2)]"}`}>{dn.odata}</button>
           <button aria-pressed={lunar} onClick={() => setLunar(true)} className={`px-4 py-2 transition-colors ${lunar ? "bg-[var(--ci-primary)] text-white" : "hover:bg-[var(--ci-surface-2)]"}`}>{dn.lunar}</button>
         </div>
-        <div className="mt-3 grid grid-cols-4 gap-2">
-          {sume.map((s, i) => (
-            <span key={s} className={`rounded-[var(--ci-radius-btn)] border py-2.5 text-center text-[14px] font-bold ${i === 1 ? "border-[var(--ci-primary)] bg-[var(--ci-primary-soft)] text-[var(--ci-primary)]" : "border-[var(--ci-border)]"}`}>{s} lei</span>
+        <div className="mt-3 grid grid-cols-5 gap-2">
+          {sume.map((s) => (
+            <span key={s} className={`rounded-[var(--ci-radius-btn)] border py-2.5 text-center text-[14px] font-bold ${s === (lunar ? 20 : 50) ? "border-[var(--ci-primary)] bg-[var(--ci-primary-soft)] text-[var(--ci-primary)]" : "border-[var(--ci-border)]"}`}>{s} lei</span>
           ))}
         </div>
         <p className="mt-3 text-[12.5px] text-[var(--ci-text-muted)]">{dn.altaSuma} {lunar ? dn.lunarNota : ""}</p>

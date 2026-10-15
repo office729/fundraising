@@ -89,8 +89,8 @@ function PaginaCampanie({ telefon, form, orgNume, orgLogoUrl, pozaUrl, pozaPozit
       <p className="font-display text-sm font-bold text-ink">{t.sustine}</p>
       <p className="mt-1 text-[12.5px] leading-relaxed text-muted-2">{t.sustineText}</p>
       <div className="mt-3 grid grid-cols-2 gap-2">
-        {SUME_RAPIDE.map((s, i) => (
-          <span key={s} className={`rounded-lg border px-3 py-2 text-center text-sm font-bold ${i === 1 ? "border-brand-green bg-brand-green text-white" : "border-line bg-panel text-ink"}`}>
+        {SUME_RAPIDE.map((s) => (
+          <span key={s} className={`rounded-lg border px-3 py-2 text-center text-sm font-bold ${s === 50 ? "border-brand-green bg-brand-green text-white" : "border-line bg-panel text-ink"}`}>
             {s} {t.leiSuffix}
           </span>
         ))}
