@@ -20,6 +20,9 @@ import { Label, Select } from "./ui/input";
 
 type Tip = "donatori" | "companii";
 
+// Câte rânduri randăm în previzualizare (restul se importă la fel, doar nu se afișează toate).
+const PREVIEW_MAX_ROWS = 200;
+
 const TIP_LABEL: Record<Tip, string> = {
   donatori: "Persoane fizice (donatori)",
   companii: "Persoane juridice (companii)",
@@ -151,7 +154,9 @@ export function ImportDialog({ open, onClose, tip }: { open: boolean; onClose: (
   }
 
   const coloaneFisier = rows[0] ? Object.keys(rows[0]) : [];
-  const coloanePreview = coloaneFisier.slice(0, 5);
+  // Previzualizarea arată TOATE coloanele și rândurile (cu derulare); doar la fișiere foarte mari afișăm primele PREVIEW_MAX_ROWS.
+  const coloanePreview = coloaneFisier;
+  const preview = rows.slice(0, PREVIEW_MAX_ROWS);
   const campuri = FIELD_LABELS[tip];
   const numeMapat = !!mapping.nume;
 
@@ -207,17 +212,17 @@ export function ImportDialog({ open, onClose, tip }: { open: boolean; onClose: (
                   {rows.length} {rows.length === 1 ? "rând găsit" : "rânduri găsite"} · {coloaneFisier.length} coloane
                 </p>
               </div>
-              <div className="ci-scrollbar overflow-x-auto rounded-[var(--ci-radius-card)] border border-[var(--ci-border)]">
+              <div className="ci-scrollbar max-h-72 overflow-auto rounded-[var(--ci-radius-card)] border border-[var(--ci-border)]">
                 <table className="w-full border-collapse text-[12px]">
-                  <thead>
-                    <tr className="bg-[var(--ci-surface-2)] text-left text-[var(--ci-text-muted)]">
+                  <thead className="sticky top-0 z-10">
+                    <tr className="text-left text-[var(--ci-text-muted)]">
                       {coloanePreview.map((c) => (
-                        <th key={c} className="px-2.5 py-1.5 font-semibold whitespace-nowrap">{c}</th>
+                        <th key={c} className="bg-[var(--ci-surface-2)] px-2.5 py-1.5 font-semibold whitespace-nowrap">{c}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {rows.slice(0, 3).map((r, i) => (
+                    {preview.map((r, i) => (
                       <tr key={i} className="border-t border-[var(--ci-border)]">
                         {coloanePreview.map((c) => (
                           <td key={c} className="px-2.5 py-1.5 whitespace-nowrap text-[var(--ci-text)]">{r[c] || "—"}</td>
@@ -227,6 +232,9 @@ export function ImportDialog({ open, onClose, tip }: { open: boolean; onClose: (
                   </tbody>
                 </table>
               </div>
+              {rows.length > PREVIEW_MAX_ROWS && (
+                <p className="mt-1.5 text-[12px] text-[var(--ci-text-faint)]">Se afișează primele {PREVIEW_MAX_ROWS} de rânduri; toate cele {rows.length} se importă.</p>
+              )}
             </div>
 
             <div>
