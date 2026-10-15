@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, CreditCard, Download, FileText, Pencil, Receipt } from "lucide-react";
+import { Building2, CreditCard, Download, FileText, Pencil, Receipt, XCircle } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -14,6 +14,7 @@ import { Dialog } from "../components/ui/dialog";
 import { Input, Label, Select } from "../components/ui/input";
 import { EmptyState } from "../components/ui/states";
 import { salveazaDateFacturareAction } from "../../billing-actions";
+import { anuleazaAbonamentulAction, eliminaCardSalvatAction, reiaAbonamentulAction } from "../../setari/netopia-card-actions";
 
 import { genereazaFacturaAction, type DateFacturare } from "./actions";
 
@@ -29,6 +30,7 @@ export function FacturareClient({ orgSlug, date }: { orgSlug: string; date: Date
   const { plan, metodaPlata, firma, facturi } = date;
   const status = STATUS[plan.status] ?? { text: plan.status, ton: "neutral" as const };
   const [editare, setEditare] = useState(false);
+  const [anulare, setAnulare] = useState(false);
 
   const metoda =
     metodaPlata.tip === "card-automat"
@@ -76,6 +78,8 @@ export function FacturareClient({ orgSlug, date }: { orgSlug: string; date: Date
           </p>
         </Card>
       </div>
+
+      <ControlAbonament orgSlug={orgSlug} date={date} onAnuleaza={() => setAnulare(true)} />
 
       <Card>
         <div className="flex flex-wrap items-start justify-between gap-3">
@@ -132,7 +136,133 @@ export function FacturareClient({ orgSlug, date }: { orgSlug: string; date: Date
       </Card>
 
       {editare && <EditareDate orgSlug={orgSlug} firma={firma} onClose={() => setEditare(false)} />}
+      {anulare && <DialogAnulare orgSlug={orgSlug} date={date} onClose={() => setAnulare(false)} />}
     </div>
+  );
+}
+
+// Anularea abonamentului și ștergerea cardului. Anularea oprește reînnoirea; accesul rămâne până la sfârșitul perioadei deja plătite.
+function ControlAbonament({ orgSlug, date, onAnuleaza }: { orgSlug: string; date: DateFacturare; onAnuleaza: () => void }) {
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  const [eroare, setEroare] = useState("");
+  const { plan, abonament, metodaPlata } = date;
+  const pana = plan.expiraLa ? data(plan.expiraLa) : null;
+  const card = [metodaPlata.masca, metodaPlata.expira ? `expiră ${metodaPlata.expira}` : null].filter(Boolean).join(" · ") || "salvat";
+
+  // Nimic de controlat: fără card salvat și fără abonament anulat, plata e manuală și abonamentul se încheie singur la expirare.
+  const explicatie = abonament.anulat
+    ? `Abonamentul e anulat: nu se mai reînnoiește și nu ți se mai ia nicio sumă${pana ? `. Ai acces la tot până pe ${pana}` : ""}. Îl poți relua oricând.`
+    : abonament.reinnoireActiva
+      ? `Abonamentul se reînnoiește automat cu cardul (${card})${pana ? `, următoarea dată pe ${pana}` : ""}.`
+      : abonament.cardSalvat
+        ? `Ai un card salvat (${card}), dar reînnoirea automată e oprită: plătești manual la fiecare reînnoire.`
+        : "Plătești manual la fiecare reînnoire: abonamentul se încheie singur la expirare, nu e nimic de anulat.";
+
+  function ruleaza(f: () => Promise<unknown>) {
+    setEroare("");
+    start(async () => {
+      try {
+        await f();
+        router.refresh();
+      } catch {
+        setEroare("Nu am putut face modificarea acum. Încearcă din nou peste puțin timp.");
+      }
+    });
+  }
+
+  return (
+    <Card>
+      <h2 className="flex items-center gap-2 text-[16px] font-bold text-[var(--ci-text)]">
+        <XCircle className="h-4 w-4 text-[var(--ci-primary)]" aria-hidden /> Anulare abonament și card
+      </h2>
+      <p className="mt-1 text-[13px] text-[var(--ci-text-muted)]">{explicatie}</p>
+      {eroare && (
+        <p role="alert" className="mt-3 rounded-lg bg-[var(--ci-red-soft)] px-3 py-2 text-[13px] text-[var(--ci-red)]">
+          {eroare}
+        </p>
+      )}
+      <div className="mt-4 flex flex-wrap gap-2.5">
+        {abonament.anulat ? (
+          <Button variant="primary" loading={pending} onClick={() => ruleaza(() => reiaAbonamentulAction(orgSlug))}>
+            Reia abonamentul
+          </Button>
+        ) : (
+          (abonament.reinnoireActiva || abonament.cardSalvat) && (
+            <Button variant="danger" disabled={pending} onClick={onAnuleaza}>
+              Anulează abonamentul
+            </Button>
+          )
+        )}
+        {abonament.cardSalvat && (
+          <Button
+            disabled={pending}
+            onClick={() => {
+              if (!window.confirm("Ștergem cardul salvat? Nu se mai poate face nicio plată automată; la următoarea plată poți salva un card nou.")) return;
+              ruleaza(() => eliminaCardSalvatAction(orgSlug));
+            }}
+          >
+            Șterge cardul salvat
+          </Button>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+function DialogAnulare({ orgSlug, date, onClose }: { orgSlug: string; date: DateFacturare; onClose: () => void }) {
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  const [stergeCard, setStergeCard] = useState(date.abonament.cardSalvat);
+  const [eroare, setEroare] = useState("");
+  const pana = date.plan.expiraLa ? data(date.plan.expiraLa) : null;
+
+  return (
+    <Dialog open onClose={onClose} title="Anulezi abonamentul?" width="max-w-md">
+      <div className="space-y-4">
+        <ul className="list-disc space-y-1.5 pl-5 text-[13.5px] text-[var(--ci-text)]">
+          <li>Abonamentul nu se mai reînnoiește și nu se mai ia nicio sumă din card.</li>
+          <li>{pana ? `Ai în continuare acces la tot până pe ${pana}, cât ai plătit deja.` : "Accesul rămâne cât ai plătit deja."}</li>
+          <li>Datele organizației nu se șterg imediat; după încheierea accesului se aplică perioada de grație din Termeni.</li>
+          <li>Poți relua abonamentul oricând din această pagină.</li>
+        </ul>
+        {date.abonament.cardSalvat && (
+          <label className="flex cursor-pointer items-start gap-2.5 text-[13px] text-[var(--ci-text)]">
+            <input type="checkbox" checked={stergeCard} onChange={(e) => setStergeCard(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--ci-primary)]" />
+            <span>Șterge și cardul salvat, ca să nu mai poată fi folosit pentru plăți automate.</span>
+          </label>
+        )}
+        {eroare && (
+          <p role="alert" className="rounded-lg bg-[var(--ci-red-soft)] px-3 py-2 text-[13px] text-[var(--ci-red)]">
+            {eroare}
+          </p>
+        )}
+        <div className="flex justify-end gap-2 border-t border-[var(--ci-border)] pt-3">
+          <Button type="button" onClick={onClose}>
+            Păstrez abonamentul
+          </Button>
+          <Button
+            variant="danger"
+            loading={pending}
+            onClick={() => {
+              setEroare("");
+              start(async () => {
+                try {
+                  await anuleazaAbonamentulAction(orgSlug);
+                  if (stergeCard && date.abonament.cardSalvat) await eliminaCardSalvatAction(orgSlug);
+                  router.refresh();
+                  onClose();
+                } catch {
+                  setEroare("Nu am putut anula acum. Încearcă din nou peste puțin timp.");
+                }
+              });
+            }}
+          >
+            Anulează abonamentul
+          </Button>
+        </div>
+      </div>
+    </Dialog>
   );
 }
 

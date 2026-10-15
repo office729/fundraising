@@ -28,6 +28,8 @@ export type FacturaPlata = {
 export type DateFacturare = {
   plan: { pachet: string; eticheta: string; status: string; expiraLa: string | null; probaZileRamase: number | null };
   metodaPlata: { tip: "card-automat" | "card" | "factura"; masca: string | null; expira: string | null };
+  // Controlul abonamentului: card salvat pentru reînnoire, reînnoire activă, abonament anulat (accesul rămâne până la sfârșitul perioadei plătite).
+  abonament: { cardSalvat: boolean; reinnoireActiva: boolean; anulat: boolean };
   firma: { nume: string; cif: string | null; adresa: string | null; judet: string | null; emailFacturi: string | null; completa: boolean };
   facturi: FacturaPlata[];
   facturareActiva: boolean;
@@ -43,6 +45,7 @@ export const obtineDateFacturare = withOrgAdmin(async (ctx): Promise<DateFactura
       an: organizations.netopiaCardExpireYear,
       autoRenew: organizations.netopiaAutoRenew,
       token: organizations.netopiaCardTokenEnc,
+      anulat: organizations.netopiaAutorenewOptOut,
     })
     .from(organizations)
     .where(eq(organizations.id, ctx.orgId))
@@ -86,6 +89,7 @@ export const obtineDateFacturare = withOrgAdmin(async (ctx): Promise<DateFactura
       masca: org?.masca ?? null,
       expira: org?.luna && org?.an ? `${String(org.luna).padStart(2, "0")}/${org.an}` : null,
     },
+    abonament: { cardSalvat, reinnoireActiva: cardSalvat && !!org?.autoRenew, anulat: !!org?.anulat },
     firma: {
       nume: ctx.orgName,
       cif: ctx.orgCif,
