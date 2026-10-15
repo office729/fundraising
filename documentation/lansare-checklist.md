@@ -34,8 +34,9 @@ documentat în `audit-complet-2026-10-06.md`; mai jos rămân doar lucrurile car
 ## 2. Monitorizare (recomandat înainte de lansare)
 
 - Monitor de uptime (de ex. UptimeRobot) pe `https://alexandrit.ro/api/health` (răspunde 200 `{"ok":true}` sau 503).
-- Alerte Sentry pe etichetele `netopia-*`, `stripe-*`, `oblio-*`, `cron-*`, `gdpr-*`. Mesajele noi: „taxare blocată: există o comandă de
-  reînnoire nelămurită" (verifică în Netopia dacă plata a trecut) și „N reînnoiri au eșuat tehnic".
+- Alerte Sentry pe eticheta **`categorie`** (nu pe `zona`): `categorie:plati` (Netopia, Stripe, Oblio, donații, portalul donatorului) = alertă imediată; `categorie:cron` = alertă zilnică. Zonele nu urmează un singur prefix (`donatie-express`, `retentie`, `performanta-automatizari`…), de aceea regulile pe `zona:netopia-*` ratau erori reale. Pe lângă erori, `netopia-ipn` și `stripe-webhook` avertizează acum (cel mult o dată la 10 minute pe tip) când o semnătură de IPN/webhook e respinsă.
+- **Monitor de cron în Sentry** (`netopia-reinnoire`, zilnic 05:00 UTC): se creează singur la prima rulare cu `SENTRY_DSN` setat; alertează dacă rularea lipsește sau depășește 6 minute. În Sentry: Crons → monitor `netopia-reinnoire` → adaugă o regulă de alertă pe emailul tău (numărul de monitoare incluse depinde de planul Sentry).
+- Mesaje de urmărit: „taxare blocată: există o comandă de reînnoire nelămurită" (verifică în Netopia dacă plata a trecut) și „N reînnoiri au eșuat tehnic".
 - Source maps în Sentry cer un token de autentificare Sentry (`SENTRY_AUTH_TOKEN`) și `withSentryConfig` — nu l-am activat fără token.
 
 ## 3. Procese operaționale (rămân manuale, trebuie făcute la timp)

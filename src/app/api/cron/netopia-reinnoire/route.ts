@@ -26,7 +26,7 @@ import {
   subiectReinnoireEsuata,
   subiectRetentie,
 } from "@/lib/netopia-renewal-email-template";
-import { raporteazaAvertisment, raporteazaEroare } from "@/lib/monitoring";
+import { cuMonitorCron, raporteazaAvertisment, raporteazaEroare } from "@/lib/monitoring";
 
 // Rulat zilnic de Vercel Cron (vezi vercel.json) — taxează AUTOMAT organizațiile
 // care au reînnoirea activă (card salvat, vezi organizations.netopia_auto_renew)
@@ -174,17 +174,20 @@ export async function GET(req: Request) {
   if (!cronAutorizat(req)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  // Întâi reconcilierea plăților rămase „în așteptare” (IPN pierdut + fila închisă): clientul care a plătit și nu are acces trebuie
-  // recunoscut înaintea reînnoirilor. Limitată în timp (90 s) ca să nu consume timpul de taxare.
-  const reconciliere = netopiaConfigurata()
-    ? await reconcilieazaComenziInAsteptare({ bugetMs: 90_000 }).catch((e) => {
-        raporteazaEroare("netopia-reconciliere", e);
-        return null;
-      })
-    : null;
-  const principal = await proceseazaReinnoiri();
-  const auxiliar = await pasiAuxiliari();
-  return NextResponse.json({ ...principal, ...auxiliar, reconciliere });
+  // Bătaie de inimă în Sentry: dacă rularea zilnică lipsește sau depășește durata maximă, primești alertă (altfel nu rămâne nicio urmă).
+  return cuMonitorCron("netopia-reinnoire", "0 5 * * *", 6, async () => {
+    // Întâi reconcilierea plăților rămase „în așteptare” (IPN pierdut + fila închisă): clientul care a plătit și nu are acces trebuie
+    // recunoscut înaintea reînnoirilor. Limitată în timp (90 s) ca să nu consume timpul de taxare.
+    const reconciliere = netopiaConfigurata()
+      ? await reconcilieazaComenziInAsteptare({ bugetMs: 90_000 }).catch((e) => {
+          raporteazaEroare("netopia-reconciliere", e);
+          return null;
+        })
+      : null;
+    const principal = await proceseazaReinnoiri();
+    const auxiliar = await pasiAuxiliari();
+    return NextResponse.json({ ...principal, ...auxiliar, reconciliere });
+  });
 }
 
 async function proceseazaReinnoiri(): Promise<Record<string, unknown>> {

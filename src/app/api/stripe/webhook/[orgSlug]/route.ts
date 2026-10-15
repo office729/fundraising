@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import StripeSDK from "stripe";
 import type Stripe from "stripe";
 
-import { raporteazaAvertisment, raporteazaEroare } from "@/lib/monitoring";
+import { raporteazaAvertisment, raporteazaAvertismentLimitat, raporteazaEroare } from "@/lib/monitoring";
 import { stripeOrgDupaId, stripeOrgDupaSlug } from "@/lib/org-stripe";
 import { proceseazaEvenimentDonatie } from "@/lib/stripe-donation-events";
 
@@ -45,6 +45,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ orgSlug
     event = StripeSDK.webhooks.constructEvent(rawBody, semnatura, stripeOrg.webhookSecret);
   } catch (e) {
     console.error("Semnătură webhook Stripe invalidă:", e);
+    // Secret de webhook greșit/rotit într-un ONG = donațiile lui rămân „în așteptare" fără nicio altă urmă.
+    raporteazaAvertismentLimitat("stripe-webhook", "semnătură de webhook respinsă: secretul de webhook al organizației nu corespunde sau cererea nu vine de la Stripe", stripeOrg.orgId, {
+      orgId: stripeOrg.orgId,
+    });
     return NextResponse.json({ error: "invalid_signature" }, { status: 400 });
   }
 
