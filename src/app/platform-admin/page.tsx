@@ -1,4 +1,5 @@
 import { sql } from "drizzle-orm";
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { getAuthUser } from "@/lib/auth/dal";
@@ -52,6 +53,10 @@ export default async function PlatformAdminPage() {
     <main className="mx-auto max-w-3xl px-6 py-10">
       <h1 className="font-display text-2xl font-bold text-ink">Panou platformă</h1>
       <p className="mt-1 text-sm text-muted">Vizibil doar pentru contul platformei — nicio organizație client nu ajunge la această pagină.</p>
+
+      <Link href="/platform-admin/feedback" className="mt-4 inline-flex items-center gap-2 rounded-lg border border-line bg-panel px-4 py-2.5 text-sm font-semibold text-brand-blue transition hover:border-brand-blue">
+        Feedback de la utilizatori: satisfacție și sugestii →
+      </Link>
 
       <h2 className="mt-8 text-sm font-semibold text-ink">
         Organizații <span className="font-normal text-muted">({organizatii.length})</span>

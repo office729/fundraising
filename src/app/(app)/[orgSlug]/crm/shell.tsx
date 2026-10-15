@@ -40,6 +40,7 @@ import {
   Lock,
   Award,
   CalendarDays,
+  MessageSquareHeart,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -54,6 +55,7 @@ import { DASHBOARD_DICT, type DashboardDict } from "@/lib/i18n/dictionaries/dash
 import type { Locale } from "@/lib/i18n/config";
 
 import { LogoutForm } from "../logout-form";
+import { FeedbackInvitatie } from "./feedback/feedback-invitatie";
 import { DomeniuProvider } from "./lib/domeniu-context";
 import { LocaleProvider } from "./lib/locale-context";
 import { Avatar } from "./components/ui/avatar";
@@ -147,6 +149,7 @@ function buildNav(dict: DashboardDict, orgSlug: string, role: string): { section
       items: [
         { href: "instrumente", label: dict.nav.instrumente, hint: dict.hints.instrumente, icon: Wrench },
         { href: "consultanta", label: dict.nav.consultanta, hint: dict.hints.consultanta, icon: GraduationCap },
+        { href: "feedback", label: dict.nav.feedback, hint: dict.hints.feedback, icon: MessageSquareHeart },
         // Facturarea (plan, metodă de plată, facturi) o văd doar proprietarul și administratorii; stă chiar deasupra Setărilor.
         ...(role === "owner" || role === "admin" ? [{ href: "facturare", label: dict.nav.facturare, hint: dict.hints.facturare, icon: Receipt }] : []),
         { href: "setari", label: dict.nav.setari, hint: dict.hints.setari, icon: Settings },
@@ -329,6 +332,8 @@ export function CrmShell({
           </a>
           <AvatarMenu userName={userName} orgSlug={orgSlug} role={role} />
         </header>
+
+        <FeedbackInvitatie orgSlug={orgSlug} />
 
         {/* Nu <main>: layout-ul organizației (app/[orgSlug]/layout.tsx) are deja reperul „main"; două ar fi invalide. */}
         <div className="ci-scrollbar relative flex-1 overflow-y-auto px-6 py-6">

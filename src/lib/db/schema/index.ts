@@ -26,3 +26,4 @@ export * from "./performanta";
 export * from "./certificate-verificari";
 export * from "./campanie-evenimente";
 export * from "./granturi";
+export * from "./feedback";

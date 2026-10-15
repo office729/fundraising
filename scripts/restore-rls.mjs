@@ -850,6 +850,16 @@ const POLICIES = [
   `create policy granturi_dosar_tenant_isolation on granturi_dosar
     using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
     with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  // Feedback de la utilizatori: organizația citește și adaugă; echipa platformei citește și răspunde peste toate (app.platform_admin).
+  `create policy feedback_platforma_citire on feedback_platforma for select using (
+    org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
+  )`,
+  `create policy feedback_platforma_adaugare on feedback_platforma for insert with check (
+    org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
+  )`,
+  `create policy feedback_platforma_admin on feedback_platforma for all
+    using (nullif(current_setting('app.platform_admin', true), '') = 'true')
+    with check (nullif(current_setting('app.platform_admin', true), '') = 'true')`,
   `create policy kpi_audit_log_member_insert on kpi_audit_log for insert with check (
     org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
   )`,
@@ -941,6 +951,7 @@ const FORCE_TABLES = [
   "campaign_page_events",
   "granturi",
   "granturi_dosar",
+  "feedback_platforma",
 ];
 
 try {

@@ -1,0 +1,10 @@
+import { titluAbsolut } from "@/lib/page-titles";
+
+// Pagina de aici e componentă client — titlul vine din acest layout de server.
+export async function generateMetadata() {
+  return titluAbsolut("crmFeedback");
+}
+
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return children;
+}
