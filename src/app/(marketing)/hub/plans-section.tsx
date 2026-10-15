@@ -28,6 +28,7 @@ type Texte = {
   facturatAnual: string;
   facturatLunar: string;
   popularBadge: string;
+  trialNotaPlan: string;
 };
 
 const PLAN_KEYS = ["start", "crestere", "impact"] as const;
@@ -114,6 +115,7 @@ export function PlansSection({ plans, texte, locale }: { plans: Plan[]; texte: T
               >
                 {plan.cta}
               </Link>
+              <p className="-mt-1.5 text-center text-xs font-semibold text-brand-green">{texte.trialNotaPlan}</p>
             </div>
           );
         })}

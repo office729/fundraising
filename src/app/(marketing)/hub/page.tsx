@@ -62,6 +62,22 @@ export default async function HubPage() {
           <p className="mt-2 text-base leading-relaxed text-muted">{dict.abonamenteDesc2}</p>
         </div>
 
+        <div className="mx-auto mb-9 max-w-[1000px] rounded-2xl border-2 border-brand-green bg-brand-green-soft p-6 text-center shadow-[0_12px_32px_rgba(63,168,92,0.14)] sm:p-7">
+          <span className="inline-block rounded-full bg-brand-green px-4 py-1 text-sm font-extrabold tracking-wide text-white">{dict.trialEticheta}</span>
+          <h3 className="font-display mt-3 text-[22px] leading-tight font-bold text-balance text-ink sm:text-[26px]">{dict.trialTitlu}</h3>
+          <p className="mx-auto mt-2 max-w-[720px] text-[15px] leading-relaxed text-body">{dict.trialDesc}</p>
+          <ul className="mt-4 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm font-semibold text-ink">
+            {dict.trialPuncte.map((p) => (
+              <li key={p} className="flex items-center gap-1.5">
+                <span className="font-extrabold text-brand-green" aria-hidden="true">
+                  ✓
+                </span>
+                {p}
+              </li>
+            ))}
+          </ul>
+        </div>
+
         <PlansSection
           plans={dict.abonamente}
           locale={locale}
@@ -77,6 +93,7 @@ export default async function HubPage() {
             facturatAnual: dict.facturatAnual,
             facturatLunar: dict.facturatLunar,
             popularBadge: dict.popularBadge,
+            trialNotaPlan: dict.trialNotaPlan,
           }}
         />
 
