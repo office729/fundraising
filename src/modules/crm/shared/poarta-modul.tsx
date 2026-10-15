@@ -4,6 +4,7 @@ import Link from "next/link";
 import { CrmToolPage } from "@/app/(app)/[orgSlug]/crm/tool-page";
 import { requireOrgAccess } from "@/lib/auth/guard";
 import { areModul, MODULE_PACHET, type ModulPachet } from "@/lib/billing/packages";
+import { pachetPentruModule } from "@/lib/billing/trial";
 
 const NUME_MINIM = { crestere: "CREȘTERE", impact: "IMPACT" } as const;
 
@@ -12,7 +13,7 @@ const NUME_MINIM = { crestere: "CREȘTERE", impact: "IMPACT" } as const;
 // își aduc singure meniul, ca mesajul să apară în același cadru ca instrumentul.
 export async function PoartaModul({ orgSlug, modul, inCrm = true, children }: { orgSlug: string; modul: ModulPachet; inCrm?: boolean; children: ReactNode }) {
   const access = await requireOrgAccess(orgSlug);
-  if (areModul(access.orgPackage, modul)) return <>{children}</>;
+  if (areModul(pachetPentruModule(access.orgPackage, access.userEmail), modul)) return <>{children}</>;
 
   const { nume, minim } = MODULE_PACHET[modul];
   // Doar owner-ul și administratorii pot schimba pachetul; ceilalți primesc ce să ceară și cui.

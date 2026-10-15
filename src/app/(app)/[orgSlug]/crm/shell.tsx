@@ -174,6 +174,7 @@ export function CrmShell({
   orgLogoUrl,
   orgDomeniuActivitate,
   orgPackage,
+  pachetModule,
   userName,
   role,
   locale,
@@ -184,6 +185,8 @@ export function CrmShell({
   orgLogoUrl: string | null;
   orgDomeniuActivitate: DomeniuActivitate | null;
   orgPackage: "trial" | "start" | "crestere" | "impact" | "custom";
+  // Pachetul după care se arată lacătele modulelor (conturile administratorilor platformei: IMPACT, adică toate deschise).
+  pachetModule: "trial" | "start" | "crestere" | "impact" | "custom";
   userName: string;
   role: string;
   locale: Locale;
@@ -274,8 +277,8 @@ export function CrmShell({
             </button>
           </div>
           <nav className="ci-scrollbar flex-1 space-y-3 overflow-y-auto px-2">
-            <Suspense fallback={<NavGroups pathname={pathname} base={base} collapsed={collapsed} query="" dict={dict} role={role} orgPackage={orgPackage} onNavigate={() => setMobileOpen(false)} />}>
-              <NavGroupsWithQuery pathname={pathname} base={base} collapsed={collapsed} dict={dict} role={role} orgPackage={orgPackage} onNavigate={() => setMobileOpen(false)} />
+            <Suspense fallback={<NavGroups pathname={pathname} base={base} collapsed={collapsed} query="" dict={dict} role={role} orgPackage={pachetModule} onNavigate={() => setMobileOpen(false)} />}>
+              <NavGroupsWithQuery pathname={pathname} base={base} collapsed={collapsed} dict={dict} role={role} orgPackage={pachetModule} onNavigate={() => setMobileOpen(false)} />
             </Suspense>
             {/* Imediat sub ultimul element din meniu; planul și utilizatorul stau fixate jos, în afara derulării meniului */}
             <div className="hidden border-t border-[var(--ci-border)] pt-2 md:block">

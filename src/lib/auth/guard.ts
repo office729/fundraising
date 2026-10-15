@@ -5,7 +5,7 @@ import { cache } from "react";
 
 import type { CustomPlanConfigSaved } from "@/lib/billing/custom-plan";
 import { areModul, MODULE_PACHET, type ModulPachet } from "@/lib/billing/packages";
-import { isAccessBlocked, pachetEfectiv } from "@/lib/billing/trial";
+import { isAccessBlocked, pachetEfectiv, pachetPentruModule } from "@/lib/billing/trial";
 import { db } from "@/lib/db";
 import { EroareUtilizator } from "@/lib/erori";
 import type { DomeniuActivitate } from "@/lib/campaign-templates";
@@ -174,7 +174,7 @@ export function withOrgSession<A extends unknown[], R>(
       ) {
         throw new EroareUtilizator("Perioada de probă s-a încheiat — alege un pachet ca să continui.");
       }
-      if (opts?.modul && !areModul(ctx.orgPackage, opts.modul)) {
+      if (opts?.modul && !areModul(pachetPentruModule(ctx.orgPackage, ctx.userEmail), opts.modul)) {
         const m = MODULE_PACHET[opts.modul];
         throw new EroareUtilizator(`${m.nume} este inclus începând cu pachetul ${m.minim === "impact" ? "IMPACT" : "CREȘTERE"}.`);
       }

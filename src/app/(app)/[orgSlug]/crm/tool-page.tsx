@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { requireOrgAccess } from "@/lib/auth/guard";
+import { pachetPentruModule } from "@/lib/billing/trial";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { FitCrmShell } from "@/modules/crm/shared/fit-viewport";
 
@@ -21,6 +22,7 @@ export async function CrmToolPage({ orgSlug, access, children }: { orgSlug: stri
       orgLogoUrl={access.orgLogoUrl}
       orgDomeniuActivitate={access.orgDomeniuActivitate}
       orgPackage={access.orgPackage}
+      pachetModule={pachetPentruModule(access.orgPackage, access.userEmail)}
       userName={access.userName ?? access.userEmail}
       role={access.role}
       locale={locale}

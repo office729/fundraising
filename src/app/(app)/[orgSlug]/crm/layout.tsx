@@ -1,4 +1,5 @@
 import { requireOrgAccess } from "@/lib/auth/guard";
+import { pachetPentruModule } from "@/lib/billing/trial";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { titluAbsolut } from "@/lib/page-titles";
 
@@ -31,6 +32,7 @@ export default async function CrmLayout({
       orgLogoUrl={access.orgLogoUrl}
       orgDomeniuActivitate={access.orgDomeniuActivitate}
       orgPackage={access.orgPackage}
+      pachetModule={pachetPentruModule(access.orgPackage, access.userEmail)}
       userName={access.userName ?? access.userEmail}
       role={access.role}
       locale={locale}

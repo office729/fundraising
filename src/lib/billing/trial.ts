@@ -19,6 +19,12 @@ export function isPlatformAdmin(userEmail?: string | null): boolean {
   return Boolean(userEmail && PLATFORM_ADMIN_EMAILS.includes(userEmail.toLowerCase()));
 }
 
+// Pachetul după care se deschid MODULELE pentru un utilizator: conturile administratorilor platformei (vezi isPlatformAdmin) văd toate
+// modulele deschise, ca pe pachetul IMPACT, indiferent de pachetul organizației în care lucrează. Nu schimbă cotele, prețul sau facturarea.
+export function pachetPentruModule(pkg: OrgPackage, userEmail?: string | null): OrgPackage {
+  return isPlatformAdmin(userEmail) ? "impact" : pkg;
+}
+
 export function trialEndsAt(orgCreatedAt: Date): Date {
   return new Date(orgCreatedAt.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
 }

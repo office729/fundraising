@@ -8,6 +8,7 @@ import { aiConfigurat, cautaApeluriAI, genereazaDraftGrantAI, type RezultatCauta
 import { limitaAIDepasita, limitaCautareDepasita, MESAJ_LIMITA_AI, MESAJ_LIMITA_CAUTARE } from "@/lib/ai-limit";
 import { withOrgAdmin, withOrgFaze, withOrgSession } from "@/lib/auth/guard";
 import { areModul } from "@/lib/billing/packages";
+import { pachetPentruModule } from "@/lib/billing/trial";
 import { appUsers, granturi, granturiDosar, memberships, type FisierGrant } from "@/lib/db/schema";
 import { EroareUtilizator } from "@/lib/erori";
 import { BUCKET_PRIVAT, caleDinReferinta, referintaPrivata, stergeFisierePrivate } from "@/lib/fisiere-private";
@@ -50,8 +51,8 @@ export type DateGranturi = {
 };
 
 // Pagina e închisă în layout pentru pachetele fără Granturi; aceeași verificare și aici, ca acțiunile să nu poată fi apelate direct.
-const cuModul = (ctx: { orgPackage: Parameters<typeof areModul>[0] }) => {
-  if (!areModul(ctx.orgPackage, "granturi")) throw new EroareUtilizator("Granturile sunt incluse în pachetul IMPACT.");
+const cuModul = (ctx: { orgPackage: Parameters<typeof areModul>[0]; userEmail: string }) => {
+  if (!areModul(pachetPentruModule(ctx.orgPackage, ctx.userEmail), "granturi")) throw new EroareUtilizator("Granturile sunt incluse în pachetul IMPACT.");
 };
 
 const numar = (x: string | null): number | null => (x === null ? null : Number(x));
