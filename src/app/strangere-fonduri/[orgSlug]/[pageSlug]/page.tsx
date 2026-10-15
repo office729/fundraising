@@ -20,7 +20,7 @@ import { CampaignFooter } from "../campaign-footer";
 import { BaraDoneazaMobil } from "./bara-doneaza-mobil";
 import { getDetaliuDonatie } from "./detaliu-donatie";
 import { DoneazaModal } from "./doneaza-modal";
-import { ConfettiLogo } from "./confetti-logo";
+import { LogoMultumire } from "./logo-multumire";
 import { PopupMultumire } from "./popup-multumire";
 import { RecentDonationsList } from "./recent-donations-list";
 import { ShareLinksClient } from "./share-links";
@@ -287,7 +287,7 @@ export default async function PaginaStrangereFonduriPage({
         >
           {stareMultumire === "succes" && detaliuDonatie ? (
             <>
-              <ConfettiLogo logo={logoOrg} nume={org.name} />
+              <LogoMultumire logo={logoOrg} nume={org.name} />
               <h2 className="font-display mt-4 text-2xl font-bold text-ink">{t.thankYou.titlu}</h2>
               <p className="mt-2 text-[14.5px] leading-relaxed text-body">
                 {detaliuDonatie.numeDonator ? t.thankYou.multumimNume(detaliuDonatie.numeDonator) : t.thankYou.multumim} {t.thankYou.pentruDonatia}{" "}
