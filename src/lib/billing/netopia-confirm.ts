@@ -228,6 +228,14 @@ export async function proceseazaRezultatPlataNetopia(orderId: string, rezultat: 
         // doar dacă organizația nu are deja un card salvat (nu suprascriem un card
         // eliminat sau schimbat între timp).
         const recenta = plata.paidAt !== null && Date.now() - plata.paidAt.getTime() < 6 * 3600_000;
+        if (plata.status === "reusita" && rezultat.cardToken && !(recenta && criptareConfigurata())) {
+          // Tokenul vine o singură dată: ce nu salvăm acum nu se mai poate recupera, iar clientul rămâne fără reînnoire automată fără să știe.
+          raporteazaAvertisment("netopia-confirm", "token de card primit prea târziu sau fără criptare configurată: cardul NU a fost salvat pentru reînnoire automată", {
+            orderId,
+            orgId: plata.orgId,
+            motiv: !criptareConfigurata() ? "ORG_SECRETS_KEY lipsă" : "plata confirmată cu peste 6 ore în urmă",
+          });
+        }
         if (plata.status === "reusita" && recenta && rezultat.cardToken && criptareConfigurata()) {
           const [optOutRand] = await tx.select({ o: organizations.netopiaAutorenewOptOut }).from(organizations).where(eq(organizations.id, plata.orgId)).limit(1);
           await tx
@@ -250,6 +258,9 @@ export async function proceseazaRezultatPlataNetopia(orderId: string, rezultat: 
       // alegere a pachetului, ÎNAINTE de plată; organizația poate opri oricând
       // din Setări, fără să piardă cardul salvat.
       // Clientul care a oprit explicit reînnoirea automată nu o primește înapoi doar pentru că a plătit manual o lună.
+      if (rezultat.cardToken && !criptareConfigurata()) {
+        raporteazaAvertisment("netopia-confirm", "token de card primit, dar ORG_SECRETS_KEY lipsește: cardul NU a fost salvat pentru reînnoire automată", { orderId, orgId: plata.orgId });
+      }
       const [optOutOrg] = await tx.select({ o: organizations.netopiaAutorenewOptOut }).from(organizations).where(eq(organizations.id, plata.orgId)).limit(1);
       const setCard: Partial<typeof organizations.$inferInsert> =
         rezultat.cardToken && criptareConfigurata()
@@ -289,10 +300,15 @@ export async function proceseazaRezultatPlataNetopia(orderId: string, rezultat: 
     }
 
     if (decizie === "esuata") {
-      await tx
+      const inchisa = await tx
         .update(platformPayments)
         .set({ status: "esuata", netopiaStatus: rezultat.status, ntpId: sql`coalesce(${rezultat.ntpId ?? null}, ${platformPayments.ntpId})` })
-        .where(and(eq(platformPayments.id, plata.id), eq(platformPayments.status, "in_asteptare")));
+        .where(and(eq(platformPayments.id, plata.id), eq(platformPayments.status, "in_asteptare")))
+        .returning({ id: platformPayments.id });
+      // Comanda nu mai era în așteptare (eșec deja înregistrat — IPN retrimis, reconciliere + IPN pentru aceeași comandă — sau plata
+      // reușise/fusese rambursată): același eșec nu se numără a doua oară. Înainte, 3 notificări duplicate ale UNEI singure
+      // reînnoiri eșuate dezactivau reînnoirea și ștergeau cardul salvat.
+      if (!inchisa[0]) return { actiune: "ignorat" };
 
       // Doar reînnoirile automate țin evidența eșecurilor consecutive — o plată
       // manuală eșuată nu spune nimic despre cardul salvat (poate fi alt card,
@@ -360,7 +376,11 @@ export async function proceseazaRezultatPlataNetopia(orderId: string, rezultat: 
 
     // Încă în curs (autentificare 3DS, verificare antifraudă) — doar reținem
     // starea; va veni o confirmare finală.
-    await tx.update(platformPayments).set({ netopiaStatus: rezultat.status, ntpId: sql`coalesce(${rezultat.ntpId ?? null}, ${platformPayments.ntpId})` }).where(eq(platformPayments.id, plata.id));
+    // Doar pentru comenzi încă în așteptare: un IPN intermediar retrimis tardiv nu are voie să rescrie starea unei comenzi deja închise.
+    await tx
+      .update(platformPayments)
+      .set({ netopiaStatus: rezultat.status, ntpId: sql`coalesce(${rezultat.ntpId ?? null}, ${platformPayments.ntpId})` })
+      .where(and(eq(platformPayments.id, plata.id), eq(platformPayments.status, "in_asteptare")));
     return { actiune: "in_curs" };
   });
 
