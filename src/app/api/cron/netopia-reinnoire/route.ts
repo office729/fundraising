@@ -26,7 +26,8 @@ import {
   subiectReinnoireEsuata,
   subiectRetentie,
 } from "@/lib/netopia-renewal-email-template";
-import { cuMonitorCron, raporteazaAvertisment, raporteazaEroare } from "@/lib/monitoring";
+import { cuMonitorCron } from "@/lib/cron-monitor";
+import { raporteazaAvertisment, raporteazaEroare } from "@/lib/monitoring";
 
 // Rulat zilnic de Vercel Cron (vezi vercel.json) — taxează AUTOMAT organizațiile
 // care au reînnoirea activă (card salvat, vezi organizations.netopia_auto_renew)
