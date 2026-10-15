@@ -157,7 +157,9 @@ function ControlAbonament({ orgSlug, date, onAnuleaza }: { orgSlug: string; date
       ? `Abonamentul se reînnoiește automat cu cardul (${card})${pana ? `, următoarea dată pe ${pana}` : ""}.`
       : abonament.cardSalvat
         ? `Ai un card salvat (${card}), dar reînnoirea automată e oprită: plătești manual la fiecare reînnoire.`
-        : "Plătești manual la fiecare reînnoire: abonamentul se încheie singur la expirare, nu e nimic de anulat.";
+        : abonament.platit
+          ? `Plătești manual la fiecare reînnoire${pana ? `; abonamentul curent e valabil până pe ${pana}` : ""}. Dacă îl anulezi, nu se mai prelungește: se oprește singur la această dată.`
+          : "Nu ai încă un abonament plătit, deci nu e nimic de anulat. Cât ții proba gratuită nu se ia nicio sumă.";
 
   function ruleaza(f: () => Promise<unknown>) {
     setEroare("");
@@ -188,7 +190,7 @@ function ControlAbonament({ orgSlug, date, onAnuleaza }: { orgSlug: string; date
             Reia abonamentul
           </Button>
         ) : (
-          (abonament.reinnoireActiva || abonament.cardSalvat) && (
+          (abonament.reinnoireActiva || abonament.cardSalvat || abonament.platit) && (
             <Button variant="danger" disabled={pending} onClick={onAnuleaza}>
               Anulează abonamentul
             </Button>
@@ -221,7 +223,7 @@ function DialogAnulare({ orgSlug, date, onClose }: { orgSlug: string; date: Date
     <Dialog open onClose={onClose} title="Anulezi abonamentul?" width="max-w-md">
       <div className="space-y-4">
         <ul className="list-disc space-y-1.5 pl-5 text-[13.5px] text-[var(--ci-text)]">
-          <li>Abonamentul nu se mai reînnoiește și nu se mai ia nicio sumă din card.</li>
+          <li>Abonamentul nu se mai prelungește și nu se mai ia nicio sumă. Se oprește singur la sfârșitul perioadei plătite.</li>
           <li>{pana ? `Ai în continuare acces la tot până pe ${pana}, cât ai plătit deja.` : "Accesul rămâne cât ai plătit deja."}</li>
           <li>Datele organizației nu se șterg imediat; după încheierea accesului se aplică perioada de grație din Termeni.</li>
           <li>Poți relua abonamentul oricând din această pagină.</li>

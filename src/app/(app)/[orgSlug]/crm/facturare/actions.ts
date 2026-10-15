@@ -29,7 +29,8 @@ export type DateFacturare = {
   plan: { pachet: string; eticheta: string; status: string; expiraLa: string | null; probaZileRamase: number | null };
   metodaPlata: { tip: "card-automat" | "card" | "factura"; masca: string | null; expira: string | null };
   // Controlul abonamentului: card salvat pentru reînnoire, reînnoire activă, abonament anulat (accesul rămâne până la sfârșitul perioadei plătite).
-  abonament: { cardSalvat: boolean; reinnoireActiva: boolean; anulat: boolean };
+  // `platit`: are un abonament plătit (o plată reușită sau o perioadă activă) — doar atunci are sens să-l anulezi, chiar și fără card salvat.
+  abonament: { cardSalvat: boolean; reinnoireActiva: boolean; anulat: boolean; platit: boolean };
   firma: { nume: string; cif: string | null; adresa: string | null; judet: string | null; emailFacturi: string | null; completa: boolean };
   facturi: FacturaPlata[];
   facturareActiva: boolean;
@@ -89,7 +90,12 @@ export const obtineDateFacturare = withOrgAdmin(async (ctx): Promise<DateFactura
       masca: org?.masca ?? null,
       expira: org?.luna && org?.an ? `${String(org.luna).padStart(2, "0")}/${org.an}` : null,
     },
-    abonament: { cardSalvat, reinnoireActiva: cardSalvat && !!org?.autoRenew, anulat: !!org?.anulat },
+    abonament: {
+      cardSalvat,
+      reinnoireActiva: cardSalvat && !!org?.autoRenew,
+      anulat: !!org?.anulat,
+      platit: plati.length > 0 || (ctx.orgSubscriptionStatus === "active" && !!ctx.orgCurrentPeriodEnd && ctx.orgCurrentPeriodEnd.getTime() > Date.now()),
+    },
     firma: {
       nume: ctx.orgName,
       cif: ctx.orgCif,
