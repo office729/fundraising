@@ -41,6 +41,7 @@ import {
   Award,
   CalendarDays,
   MessageSquareHeart,
+  Megaphone,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -96,6 +97,7 @@ const MODUL_PE_INTRARE: Record<string, ModulPachet> = {
   "/program-lucru": "program-lucru",
   granturi: "granturi",
   calendar: "calendar",
+  reclame: "reclame",
 };
 
 // Etichetele vin din dicționarul RO/EN (vezi lib/i18n/dictionaries/dashboard.ts)
@@ -122,6 +124,7 @@ function buildNav(dict: DashboardDict, orgSlug: string, role: string): { section
         { href: "donatii", label: dict.nav.donatii, hint: dict.hints.donatii, icon: Sparkles },
         { href: "strangere-fonduri", label: dict.nav.strangereFonduri, hint: dict.hints.strangereFonduri, icon: HandCoins },
         { href: "statistici-campanii", label: dict.nav.statisticiCampanii, hint: dict.hints.statisticiCampanii, icon: BarChart3 },
+        { href: "reclame", label: dict.nav.reclame, hint: dict.hints.reclame, icon: Megaphone },
         { href: "granturi", label: dict.nav.granturi, hint: dict.hints.granturi, icon: Award },
         { href: "fonduri-plati", label: dict.nav.fonduriPlati, hint: dict.hints.fonduriPlati, icon: Banknote },
         { href: "rfm", label: dict.nav.rfm, hint: dict.hints.rfm, icon: LayoutGrid },

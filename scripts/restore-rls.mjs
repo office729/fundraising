@@ -850,6 +850,22 @@ const POLICIES = [
   `create policy granturi_dosar_tenant_isolation on granturi_dosar
     using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
     with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  // Performanța reclamelor: costuri, legături campanie ↔ cod UTM, contextul de atribuire al donațiilor, istoricul importurilor și al linkurilor.
+  `create policy reclame_costuri_tenant_isolation on reclame_costuri
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy reclame_campanii_tenant_isolation on reclame_campanii
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy reclame_importuri_tenant_isolation on reclame_importuri
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy donatie_atribuiri_tenant_isolation on donatie_atribuiri
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy reclame_linkuri_tenant_isolation on reclame_linkuri
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
   // Feedback de la utilizatori: organizația citește și adaugă; echipa platformei citește și răspunde peste toate (app.platform_admin).
   `create policy feedback_platforma_citire on feedback_platforma for select using (
     org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
@@ -952,6 +968,11 @@ const FORCE_TABLES = [
   "granturi",
   "granturi_dosar",
   "feedback_platforma",
+  "reclame_costuri",
+  "reclame_campanii",
+  "reclame_importuri",
+  "donatie_atribuiri",
+  "reclame_linkuri",
 ];
 
 try {

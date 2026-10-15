@@ -11,6 +11,7 @@ import { ExpressCheckoutPanel } from "./express-checkout";
 import { creeazaIntentPaypalAction, creeazaIntentRevolutAction } from "./express-checkout-actions";
 import { NotaInformareDonatie } from "./nota-informare-donatie";
 import { useActionStatePastrat } from "@/lib/use-action-state-pastrat";
+import { touchPentruDonatie } from "@/lib/reclame/touch-client";
 
 const INITIAL: DoneazaState = { error: null };
 
@@ -60,6 +61,8 @@ export function DoneazaForm({
   // De unde a venit donatorul: eticheta din parametrii utm_* ai linkului (newsletter, rețele sociale, one-pager). Se citește din adresa paginii la
   // trimitere, nu se păstrează nimic pe dispozitiv, iar eticheta nu identifică persoana.
   const sursaMarketing = useSyncExternalStore(abonareNula, eticheta, () => "");
+  // Ultimul clic eligibil (utm_*), pentru atribuirea donației reclamelor; vezi lib/reclame/touch-client.ts. Fără utm și fără acord rămâne gol.
+  const atribuire = useSyncExternalStore(abonareNula, touchPentruDonatie, () => "");
   const t = DONATION_DICT[locale].donateForm;
   useEffect(() => {
     if (!embed || !state.url) return;
@@ -152,6 +155,7 @@ export function DoneazaForm({
       </div>
       <input type="hidden" name="recurenta" value={recurenta ? "1" : ""} />
       <input type="hidden" name="sursaMarketing" value={sursaMarketing} />
+      <input type="hidden" name="atribuire" value={atribuire} />
 
       {paypal ? (
         <>

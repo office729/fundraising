@@ -39,6 +39,7 @@ export const GDPR_DICT = {
           "Newsletter și comunicări comerciale: adresa de email și preferințele, doar dacă ți-ai dat consimțământul;",
           "Cookie-uri: cookie-uri necesare funcționării (sesiune) și, doar cu acordul tău, cookie-uri de analiză — vezi Politica de cookies;",
           "Chestionarul de satisfacție și sugestiile din Platformă: notele și textele pe care le scrii, organizația ta și utilizatorul care a răspuns; adresa ta de e-mail o folosim pentru a te contacta doar dacă bifezi acest lucru;",
+          "Măsurarea reclamelor pe paginile de campanie: parametrii UTM din linkul pe care ai venit (sursa, canalul, codul campaniei) și momentul vizitei, legați de donația făcută; cu acordul tău pentru statistici, ultimul astfel de context se păstrează în browser cel mult 30 de zile, ca donația făcută la o a doua vizită să rămână atribuită. Nu conține nume, e-mail sau alt identificator, iar datele nu se trimit platformelor de reclame;",
           "Vizitatorii site-ului: date tehnice minime (adresă IP, tip de browser, jurnale de securitate și erori).",
         ],
       },

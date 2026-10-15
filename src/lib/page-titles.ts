@@ -58,6 +58,7 @@ const TITLURI = {
   crmComunicare: { ro: "Comunicare — CRM", en: "Communication — CRM" },
   crmInstrumente: { ro: "Instrumente — CRM", en: "Tools — CRM" },
   crmConsultanta: { ro: "Consultanță cu Vlad — CRM", en: "Consultation with Vlad — CRM" },
+  crmReclame: { ro: "Performanța reclamelor — CRM", en: "Ad performance — CRM" },
   crmFeedback: { ro: "Părerea ta — CRM", en: "Your feedback — CRM" },
   crmIntegrari: { ro: "Setări — CRM", en: "Settings — CRM" },
   crmPresaGrupuri: { ro: "Presă & grupuri locale — CRM", en: "Press & local groups — CRM" },

@@ -11,6 +11,7 @@ import { obtineIpClient } from "@/lib/auth/rate-limit";
 import { cursEurRon } from "@/lib/curs-valutar";
 import { DONATE_ACTION_ERRORS } from "@/lib/i18n/dictionaries/donation";
 import { getLocale } from "@/lib/i18n/get-locale";
+import { inregistreazaAtribuireDonatie } from "@/lib/reclame/inregistreaza-atribuire";
 import { idDin } from "@/lib/stripe-donation-events";
 
 import { pregatesteDonatie, type DateComuneDonatie } from "./actions";
@@ -240,6 +241,7 @@ async function creeazaAbonamentRedirect(
     stripeSubscriptionId: subscription.id,
     recurenta: true,
   });
+  await inregistreazaAtribuireDonatie(date.orgId, donationId, date.atribuire);
 
   return {
     ok: true,
@@ -310,6 +312,7 @@ async function creeazaPlataUnicaExpress(
     stripeSessionId: paymentIntent.id,
     recurenta: false,
   });
+  await inregistreazaAtribuireDonatie(date.orgId, donationId, date.atribuire);
 
   return {
     ok: true,
@@ -409,6 +412,7 @@ async function creeazaAbonamentExpress(date: DateComuneDonatie, eroareGenerica: 
     stripeSubscriptionId: subscription.id,
     recurenta: true,
   });
+  await inregistreazaAtribuireDonatie(date.orgId, donationId, date.atribuire);
 
   return { ok: true, clientSecret };
 }

@@ -13,6 +13,7 @@ import { DONATE_ACTION_ERRORS } from "@/lib/i18n/dictionaries/donation";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { raporteazaEroare } from "@/lib/monitoring";
 import { stripeOrgDupaSlug } from "@/lib/org-stripe";
+import { inregistreazaAtribuireDonatie } from "@/lib/reclame/inregistreaza-atribuire";
 import { EMAIL_RE, normalizeazaEmail } from "@/lib/validation";
 
 // `url`: adresa paginii Stripe, întoarsă doar de varianta pentru widget (în iframe nu se poate face redirect; părintele o deschide).
@@ -35,6 +36,8 @@ export type DateComuneDonatie = {
   consimtamantEmail: boolean;
   // Eticheta de marketing din utm_* (ex. „newsletter|email|campanie”), curățată; nu e dată personală.
   sursaMarketing: string | null;
+  // Contextul de atribuire trimis de browser (JSON, validat abia în inregistreazaAtribuireDonatie).
+  atribuire: string | null;
   orgId: string;
   pageId: string;
   titlu: string;
@@ -156,6 +159,7 @@ export async function pregatesteDonatie(
       consimtamantWhatsapp,
       consimtamantEmail,
       sursaMarketing: curataSursa(formData.get("sursaMarketing")),
+      atribuire: String(formData.get("atribuire") ?? "").slice(0, 400) || null,
       orgId: rezolvat.orgId,
       pageId: rezolvat.pageId,
       titlu: rezolvat.titlu,
@@ -187,6 +191,7 @@ async function ruleazaDonatie(orgSlug: string, pageSlug: string, formData: FormD
     consimtamantWhatsapp,
     consimtamantEmail,
     sursaMarketing,
+    atribuire,
     orgId,
     pageId,
     titlu,
@@ -269,6 +274,7 @@ async function ruleazaDonatie(orgSlug: string, pageSlug: string, formData: FormD
       stripeSessionId: session.id,
       recurenta,
     });
+    await inregistreazaAtribuireDonatie(orgId, donationId, atribuire);
   } catch (e) {
     raporteazaEroare("donatie-sesiune-stripe", e, { orgSlug, pageSlug });
     return { error: errors.plataEsuata };
