@@ -506,7 +506,8 @@ export const cautaDateAnaf = withOrgSession(async (_ctx, cui: string): Promise<A
     return { error: "ANAF nu a răspuns — încearcă din nou peste puțin timp." };
   }
   if (!stare) return { error: `Niciun rezultat ANAF pentru CUI ${curataCui(cui)} — verifică dacă e corect.` };
-  const bilant = await celMaiRecentBilant(cui).catch(() => null);
+  // Bilanțul se caută pe rând pe ultimii ani, într-un serviciu ANAF uneori lent: nu lăsăm identificarea (deja găsită) să aștepte mai mult de 6 secunde după el.
+  const bilant = await Promise.race([celMaiRecentBilant(cui).catch(() => null), new Promise<null>((resolve) => setTimeout(() => resolve(null), 6000))]);
   const anInreg = stare.dataInregistrare ? Number(stare.dataInregistrare.slice(0, 4)) : NaN;
   return {
     error: null,

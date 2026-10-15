@@ -7,6 +7,7 @@ import { Button } from "../components/ui/button";
 import { Dialog } from "../components/ui/dialog";
 import { Input, Textarea } from "../components/ui/input";
 import { useLocale } from "../lib/locale-context";
+import { completeazaDinAnaf } from "@/lib/anaf-completare";
 import { COMPANII_DICT } from "@/lib/i18n/dictionaries/companii";
 import { adaugaContact, adaugaFirma, cautaDateAnaf, type DateAnaf } from "./actions";
 
@@ -56,14 +57,24 @@ export function AddCompanyFormDialog({
   const seteaza = (k: keyof typeof valori, v: string) => setValori((p) => ({ ...p, [k]: v }));
 
   // „Adu date din ANAF”: pe baza CUI-ului completează datele de identificare și ultimul bilanț (cifră de afaceri, profit, angajați).
-  // Pornește singur când ieși din câmpul CUI; câmpurile deja completate de tine nu se suprascriu.
-  async function aduAnaf(cui: string) {
+  // Pornește singur când ieși din câmpul CUI (fără să suprascrie ce ai scris); butonul „Adu date din ANAF” caută mereu și înlocuiește datele de identificare.
+  async function aduAnaf(cui: string, explicit = false) {
     const cifre = cui.replace(/\D/g, "");
-    if (cifre.length < 2 || cifre === cuiCautat) return;
+    if (cifre.length < 2) return;
+    if (!explicit && cifre === cuiCautat) return;
     setCuiCautat(cifre);
     setAnafPending(true);
     setAnafMesaj("");
-    const r = await cautaDateAnaf(orgSlug, cui);
+    let r: Awaited<ReturnType<typeof cautaDateAnaf>>;
+    try {
+      r = await cautaDateAnaf(orgSlug, cui);
+    } catch {
+      // Cerere întreruptă sau expirată: fără asta butonul rămânea blocat pe „Se caută…”.
+      setAnafPending(false);
+      setCuiCautat("");
+      setAnafMesaj("Nu am putut contacta ANAF acum. Încearcă din nou peste puțin timp.");
+      return;
+    }
     setAnafPending(false);
     if (r.error || !r.date) {
       setAnaf(null);
@@ -73,15 +84,7 @@ export function AddCompanyFormDialog({
     }
     const d = r.date;
     setAnaf(d);
-    setValori((p) => ({
-      ...p,
-      nume: p.nume.trim() ? p.nume : (d.denumire ?? ""),
-      nrRegCom: p.nrRegCom.trim() ? p.nrRegCom : (d.nrRegCom ?? ""),
-      judet: p.judet.trim() ? p.judet : (d.judet ?? ""),
-      localitate: p.localitate.trim() ? p.localitate : (d.localitate ?? ""),
-      adresa: p.adresa.trim() ? p.adresa : (d.adresa ?? ""),
-      caen: p.caen.trim() ? p.caen : (d.caen ?? ""),
-    }));
+    setValori((p) => completeazaDinAnaf(p, d, explicit));
     setAnafMesaj(d.activ ? "Date preluate din ANAF." : "Atenție: firma apare ca inactivă fiscal în ANAF.");
   }
 
@@ -132,6 +135,7 @@ export function AddCompanyFormDialog({
             <div>
               <div className="flex gap-2">
                 <Input
+                  id="cui-firma"
                   name="cui"
                   placeholder={dict.cuiPlaceholder}
                   value={valori.cui}
@@ -139,7 +143,21 @@ export function AddCompanyFormDialog({
                   onBlur={(e) => void aduAnaf(e.target.value)}
                   className="min-w-0 flex-1"
                 />
-                <Button type="button" variant="secondary" disabled={anafPending || valori.cui.replace(/\D/g, "").length < 2} onClick={() => { setCuiCautat(""); void aduAnaf(valori.cui); }}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={anafPending}
+                  onClick={() => {
+                    // Butonul nu mai e „stins” fără explicație: ANAF caută doar după CUI, nu după nume.
+                    if (valori.cui.replace(/\D/g, "").length < 2) {
+                      setAnaf(null);
+                      setAnafMesaj("Scrie întâi CUI-ul firmei (doar cifre, cu sau fără RO). ANAF caută după CUI, nu după nume.");
+                      document.getElementById("cui-firma")?.focus();
+                      return;
+                    }
+                    void aduAnaf(valori.cui, true);
+                  }}
+                >
                   {anafPending ? "Se caută…" : "Adu date din ANAF"}
                 </Button>
               </div>
