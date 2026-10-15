@@ -872,6 +872,10 @@ const POLICIES = [
   `create policy reclame_conexiuni_cron_citire on reclame_conexiuni for select using (
     nullif(current_setting('app.public_lookup', true), '') = 'true'
   )`,
+  // Notificări pe e-mail oprite de utilizator: citite și scrise din rute publice (link semnat), „Contul meu” și cron, cu predicat explicit pe user_id.
+  `create policy notificari_oprite_public_lookup on notificari_oprite for all
+    using (nullif(current_setting('app.public_lookup', true), '') = 'true')
+    with check (nullif(current_setting('app.public_lookup', true), '') = 'true')`,
   // Feedback de la utilizatori: organizația citește și adaugă; echipa platformei citește și răspunde peste toate (app.platform_admin).
   `create policy feedback_platforma_citire on feedback_platforma for select using (
     org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
@@ -980,6 +984,7 @@ const FORCE_TABLES = [
   "donatie_atribuiri",
   "reclame_linkuri",
   "reclame_conexiuni",
+  "notificari_oprite",
 ];
 
 try {

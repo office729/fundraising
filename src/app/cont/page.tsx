@@ -2,8 +2,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { getAuthUser, getMyOrgSlug } from "@/lib/auth/dal";
+import { estePrimitaOprita, idUtilizatorDupaEmail } from "@/lib/notificari-oprite";
 
 import { StergeContForm } from "./form";
+import { NotificariForm } from "./notificari-form";
 
 export const metadata = { title: "Contul meu", robots: { index: false } };
 
@@ -12,6 +14,9 @@ export default async function ContPage() {
   if (!user?.email) redirect("/login");
   // Pagina nu face parte din layout-ul organizației: fără acest link, utilizatorul n-ar avea cum să se întoarcă în aplicație.
   const orgSlug = await getMyOrgSlug();
+  // Dacă baza nu răspunde, secțiunea de notificări se arată cu valoarea implicită (activă), fără să strice pagina.
+  const userId = await idUtilizatorDupaEmail(user.email).catch(() => null);
+  const rezumatOprit = userId ? await estePrimitaOprita(userId, "rezumat-calendar").catch(() => false) : false;
 
   return (
     <main className="mx-auto max-w-lg px-6 py-16">
@@ -20,6 +25,13 @@ export default async function ContPage() {
       </Link>
       <h1 className="font-display text-2xl font-bold text-ink">Contul meu</h1>
       <p className="mt-1 text-sm text-muted">{user.email}</p>
+
+      {userId && (
+        <section className="mt-8 rounded-xl border border-line bg-panel p-5">
+          <h2 className="font-medium text-ink">E-mailuri de la Alexandrit</h2>
+          <NotificariForm optiuni={[{ tip: "rezumat-calendar", titlu: "Rezumatul săptămânal al calendarului", descriere: "În fiecare luni: termenele din săptămână și momentele bune de campanie. Îl primești ca proprietar al unei organizații cu calendarul inclus.", primita: !rezumatOprit }]} />
+        </section>
+      )}
 
       <section className="mt-8 rounded-xl border border-red-200 bg-panel p-5 dark:border-red-900">
         <h2 className="font-medium text-ink">Șterge-mi contul</h2>

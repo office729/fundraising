@@ -84,9 +84,10 @@ export type DestinatarEmail = { email: string; nume: string };
 // de mulțumire imediat după o donație), unde nu are sens să aștepți un batch.
 // Best-effort: erorile se propagă către apelant, care alege dacă le prinde
 // (de regulă da — un email eșuat nu trebuie să strice confirmarea plății).
-export async function trimiteEmail(params: { to: string; subiect: string; html: string }): Promise<void> {
+// `headers`: antete suplimentare, ex. List-Unsubscribe pentru mesajele recurente (RFC 8058).
+export async function trimiteEmail(params: { to: string; subiect: string; html: string; headers?: Record<string, string> }): Promise<void> {
   const { transporter, from } = getTransporter("tx");
-  await transporter.sendMail({ from, to: params.to, subject: params.subiect, html: params.html });
+  await transporter.sendMail({ from, to: params.to, subject: params.subiect, html: params.html, ...(params.headers ? { headers: params.headers } : {}) });
 }
 
 // Trimite câte un email individual fiecărui destinatar (nu un singur email cu

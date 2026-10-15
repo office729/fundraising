@@ -3,7 +3,7 @@
 // Pagini cu date personale sau cu tokenuri în URL (adresa de email din linkul de dezabonare, formularul 230, donațiile,
 // invitațiile, rezultatul plății): analiza NU rulează deloc aici, chiar dacă vizitatorul a acceptat statisticile —
 // notele de informare ale donatorilor nu menționează Google și URL-ul ar ajunge la Google ca `page_location`.
-const PRIMUL_SEGMENT_EXCLUS = new Set(["f230", "strangere-fonduri", "dezabonare", "invite", "invite-beneficiar", "auth", "reset-password", "beneficiar", "s"]);
+const PRIMUL_SEGMENT_EXCLUS = new Set(["f230", "strangere-fonduri", "dezabonare", "dezabonare-notificare", "invite", "invite-beneficiar", "auth", "reset-password", "beneficiar", "s"]);
 
 export function esteCaleExclusa(
   pathname: string,

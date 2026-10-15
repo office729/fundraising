@@ -4,11 +4,29 @@ import { sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 
 import { getAuthUser } from "@/lib/auth/dal";
+import { idUtilizatorDupaEmail, opreNotificare, reiaNotificare, esteTipNotificare } from "@/lib/notificari-oprite";
 import { db } from "@/lib/db";
 import { raporteazaEroare } from "@/lib/monitoring";
 import { createClient } from "@/lib/supabase/server";
 
 export type StergeContState = { error: string | null };
+
+// Pornește sau oprește un tip de e-mail pentru utilizatorul autentificat (identitatea vine din sesiunea verificată, nu dintr-un câmp trimis de client).
+export async function seteazaNotificareAction(tip: string, activ: boolean): Promise<{ ok: true } | { ok: false; eroare: string }> {
+  const user = await getAuthUser();
+  if (!user?.email) redirect("/login");
+  if (!esteTipNotificare(tip)) return { ok: false, eroare: "Tip de notificare necunoscut." };
+  try {
+    const id = await idUtilizatorDupaEmail(user.email);
+    if (!id) return { ok: false, eroare: "Contul nu a fost găsit." };
+    if (activ) await reiaNotificare(id, tip);
+    else await opreNotificare(id, tip);
+    return { ok: true };
+  } catch (e) {
+    raporteazaEroare("cont-notificari", e);
+    return { ok: false, eroare: "Nu am putut salva alegerea. Încearcă din nou." };
+  }
+}
 
 // „Șterge-mi contul" (art. 17 GDPR) pentru orice utilizator autentificat. Identitatea vine din sesiunea VERIFICATĂ pe
 // server (nu dintr-un câmp trimis de client): un utilizator își poate șterge doar propriul cont. Funcția din baza de
