@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 
 import { NETOPIA_RENEWAL_MAX_INCERCARI, reiaFacturileNeemise } from "@/lib/billing/netopia-confirm";
 import { taxeazaReinnoireAutomata } from "@/lib/billing/netopia-checkout";
+import { reconcilieazaComenziInAsteptare } from "@/lib/billing/netopia-reconciliere";
 import { dateFacturareComplete } from "@/lib/billing/date-facturare";
 import { etichetaPachet, luniAcces, pretPerioadaPachet, type OrgPackage } from "@/lib/billing/packages";
 import type { CustomPlanConfigSaved } from "@/lib/billing/custom-plan";
@@ -173,9 +174,17 @@ export async function GET(req: Request) {
   if (!cronAutorizat(req)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+  // Întâi reconcilierea plăților rămase „în așteptare” (IPN pierdut + fila închisă): clientul care a plătit și nu are acces trebuie
+  // recunoscut înaintea reînnoirilor. Limitată în timp (90 s) ca să nu consume timpul de taxare.
+  const reconciliere = netopiaConfigurata()
+    ? await reconcilieazaComenziInAsteptare({ bugetMs: 90_000 }).catch((e) => {
+        raporteazaEroare("netopia-reconciliere", e);
+        return null;
+      })
+    : null;
   const principal = await proceseazaReinnoiri();
   const auxiliar = await pasiAuxiliari();
-  return NextResponse.json({ ...principal, ...auxiliar });
+  return NextResponse.json({ ...principal, ...auxiliar, reconciliere });
 }
 
 async function proceseazaReinnoiri(): Promise<Record<string, unknown>> {
