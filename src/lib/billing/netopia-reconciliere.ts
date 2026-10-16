@@ -23,6 +23,12 @@ const MIN_VARSTA_MIN = 10;
 const MAX_VARSTA_ZILE = 14;
 const LIMITA_VERIFICARI = 25;
 const LIMITA_CURATENIE = 50;
+// O reînnoire automată rămasă „în așteptare” (de ex. status 15, „autentificare 3-D Secure întreruptă”: banca cere clientului o confirmare pe care
+// o taxare fără client nu o poate da) nu se rezolvă singură și, prin regula „comandă nelămurită blochează retaxarea”, ținea abonamentul blocat
+// la nesfârșit, fără niciun semn pentru client. După acest prag se închide ca eșuată (se numără ca încercare, iar clientul e anunțat).
+const PRAG_REINNOIRE_BLOCATA_ORE = 6;
+// „Respinsă” în clasificarea Netopia (vezi clasificaStatus): singura stare finală de eșec care nu rescrie altceva.
+const STATUS_INCHIS_CA_ESUAT = 12;
 
 export type RezultatReconciliere = {
   verificate: number;
@@ -30,18 +36,20 @@ export type RezultatReconciliere = {
   esuate: number;
   rambursate: number;
   anulate: number;
+  // Reînnoiri nefinalizate închise ca eșuate; cronul anunță clienții (vezi api/cron/netopia-reinnoire).
+  reinnoiriInchise: { orgId: string; reinnoireDezactivata: boolean }[];
   faraNtpId: number;
   intrerupt: boolean;
 };
 
 export async function reconcilieazaComenziInAsteptare(opts: { bugetMs?: number } = {}): Promise<RezultatReconciliere> {
   const limita = Date.now() + (opts.bugetMs ?? 90_000);
-  const rez: RezultatReconciliere = { verificate: 0, recuperate: 0, esuate: 0, rambursate: 0, anulate: 0, faraNtpId: 0, intrerupt: false };
+  const rez: RezultatReconciliere = { verificate: 0, recuperate: 0, esuate: 0, rambursate: 0, anulate: 0, reinnoiriInchise: [], faraNtpId: 0, intrerupt: false };
 
   const candidate = await db.transaction(async (tx) => {
     await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
     return tx
-      .select({ orderId: platformPayments.orderId, ntpId: platformPayments.ntpId, orgId: platformPayments.orgId })
+      .select({ orderId: platformPayments.orderId, ntpId: platformPayments.ntpId, orgId: platformPayments.orgId, renewal: platformPayments.renewal, createdAt: platformPayments.createdAt })
       .from(platformPayments)
       .where(
         and(
@@ -64,7 +72,22 @@ export async function reconcilieazaComenziInAsteptare(opts: { bugetMs?: number }
     rez.verificate++;
     try {
       const rezultat = await interogheazaStatus({ orderId: c.orderId, ntpId: c.ntpId });
-      if (!rezultat || clasificaStatus(rezultat.status) === "in_asteptare") continue;
+      if (!rezultat) continue;
+      if (clasificaStatus(rezultat.status) === "in_asteptare") {
+        if (c.renewal && Date.now() - c.createdAt.getTime() > PRAG_REINNOIRE_BLOCATA_ORE * 3600_000) {
+          const inchisa = await proceseazaRezultatPlataNetopia(c.orderId, { ...rezultat, status: STATUS_INCHIS_CA_ESUAT });
+          raporteazaAvertisment("netopia-reconciliere", "reînnoire automată nefinalizată (de obicei autentificare cerută de bancă): închisă ca eșuată, clientul e anunțat", {
+            orderId: c.orderId,
+            orgId: c.orgId,
+            statusNetopia: rezultat.status,
+          });
+          if (inchisa.actiune === "esuata") {
+            rez.esuate++;
+            rez.reinnoiriInchise.push({ orgId: inchisa.orgId, reinnoireDezactivata: inchisa.reinnoireDezactivata });
+          }
+        }
+        continue;
+      }
       const confirmare = await proceseazaRezultatPlataNetopia(c.orderId, rezultat);
       if (confirmare.actiune === "reusita") {
         rez.recuperate++;

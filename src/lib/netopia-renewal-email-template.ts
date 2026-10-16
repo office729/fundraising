@@ -16,6 +16,8 @@ export function htmlReinnoireEsuata(params: {
   setariUrl: string;
   incercariRamase: number;
   reinnoireDezactivata: boolean;
+  // true = reînnoirea nu a fost refuzată, ci banca a cerut o autentificare (3-D Secure) pe care o taxare fără tine nu o poate da.
+  autentificare?: boolean;
 }): string {
   const orgName = escHtml(params.orgName);
   return `
@@ -23,7 +25,11 @@ export function htmlReinnoireEsuata(params: {
       <p>Bună!</p>
       <p>
         Am încercat să reînnoim automat abonamentul Alexandrit pentru <strong>${orgName}</strong>,
-        dar plata cu cardul salvat a fost refuzată de bancă.
+        ${
+          params.autentificare
+            ? "dar banca a cerut o confirmare suplimentară a plății (autentificare 3-D Secure), pe care o putem obține doar cu tine de față."
+            : "dar plata cu cardul salvat a fost refuzată de bancă."
+        }
       </p>
       ${
         params.reinnoireDezactivata

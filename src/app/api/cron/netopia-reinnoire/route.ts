@@ -185,10 +185,52 @@ export async function GET(req: Request) {
           return null;
         })
       : null;
+    if (reconciliere?.reinnoiriInchise.length) await anuntaReinnoiriInchise(reconciliere.reinnoiriInchise);
     const principal = await proceseazaReinnoiri();
     const auxiliar = await pasiAuxiliari();
     return NextResponse.json({ ...principal, ...auxiliar, reconciliere });
   });
+}
+
+// Clientul a cărui reînnoire a rămas nefinalizată (reconciliere) află asta pe email: altfel abonamentul se oprește fără să știe. Emailul spune
+// că banca a cerut autentificare și trimite la Setări (plată manuală sau card nou).
+async function anuntaReinnoiriInchise(lista: { orgId: string; reinnoireDezactivata: boolean }[]): Promise<void> {
+  if (!emailConfigurat()) {
+    raporteazaAvertisment("netopia-reinnoire", "email neconfigurat: clienții cu reînnoire nefinalizată nu au fost anunțați", { organizatii: lista.length });
+    return;
+  }
+  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://alexandrit.ro").replace(/\/$/, "");
+  const ids = lista.map((l) => l.orgId);
+  const { orgs, proprietari } = await db.transaction(async (tx) => {
+    await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
+    const orgs = await tx
+      .select({ id: organizations.id, name: organizations.name, slug: organizations.slug, incercari: organizations.netopiaRenewalAttempts })
+      .from(organizations)
+      .where(inArray(organizations.id, ids));
+    const proprietari = await tx
+      .select({ orgId: memberships.orgId, email: appUsers.email })
+      .from(memberships)
+      .innerJoin(appUsers, eq(appUsers.id, memberships.userId))
+      .where(and(inArray(memberships.orgId, ids), eq(memberships.role, "owner")));
+    return { orgs, proprietari };
+  });
+  for (const l of lista) {
+    const org = orgs.find((o) => o.id === l.orgId);
+    const email = proprietari.find((p) => p.orgId === l.orgId)?.email;
+    if (!org || !email) continue;
+    const incercariRamase = Math.max(0, NETOPIA_RENEWAL_MAX_INCERCARI - org.incercari);
+    await trimiteEmail({
+      to: email,
+      subiect: subiectReinnoireEsuata(incercariRamase),
+      html: htmlReinnoireEsuata({
+        orgName: org.name,
+        setariUrl: `${baseUrl}/${org.slug}/crm/setari`,
+        incercariRamase,
+        reinnoireDezactivata: l.reinnoireDezactivata,
+        autentificare: true,
+      }),
+    }).catch((e) => raporteazaEroare("netopia-reinnoire-email", e, { orgSlug: org.slug }));
+  }
 }
 
 async function proceseazaReinnoiri(): Promise<Record<string, unknown>> {
