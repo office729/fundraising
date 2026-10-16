@@ -14,6 +14,7 @@ import { decripteaza } from "@/lib/secret-box";
 
 import { alertaOperatorZilnic } from "./alerta-operator";
 import { dateAntifraud } from "./date-antifraud";
+import { pretDeTest } from "./pret-test";
 import { NetopiaRespins } from "./netopia-erori";
 
 import { REFERRAL_DISCOUNT_PERCENT } from "../referral";
@@ -119,13 +120,16 @@ export async function creeazaPlataAbonament(
   // Comanda se scrie într-o tranzacție SCURTĂ, separată și comisă imediat (cu context de încredere), nu în tranzacția
   // organizației: altfel `salveazaNtpId` (alt rând de conexiune) nu vedea rândul necomis, actualiza 0 rânduri și
   // fallback-ul de status (pentru IPN întârziat) nu putea funcționa niciodată.
+  // Preț de test (vezi pret-test.ts): doar organizația țintă din variabilele de mediu, cu plafon; vizibil în Sentry cât e activ.
+  const pretTest = pretDeTest(ctx.orgSlug);
+  if (pretTest !== null) raporteazaAvertisment("netopia-test", "PREȚ DE TEST aplicat plății de abonament", { orgSlug: ctx.orgSlug, sumaLei: pretTest });
   const { orderId, sumaLei } = await db.transaction(async (tx) => {
     await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
     return insereazaComandaAbonament(tx, {
       orgId: ctx.orgId,
       orgReferredByOrgId: ctx.orgReferredByOrgId,
       pachet: params.pachet,
-      pretLunar: params.pretLunar,
+      pretLunar: pretTest ?? params.pretLunar,
       planConfig: params.planConfig,
       extraUtilizatori: params.extraUtilizatori ?? 0,
       luni: params.luni ?? 1,
