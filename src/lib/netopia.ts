@@ -48,8 +48,19 @@ function mediu(): keyof typeof BAZA {
   return process.env.NETOPIA_ENV === "live" ? "live" : "sandbox";
 }
 
+// Semnătura POS din variabila de mediu, fără spații/linii noi de la copiere: un spațiu rămas la lipire făcea ca „aud” din IPN să nu mai
+// coincidă cu valoarea configurată (IPN respins cu „audienta_invalida”), deși cererea de start era acceptată.
+function semnaturaPos(): string | undefined {
+  return process.env.NETOPIA_POS_SIGNATURE?.trim() || undefined;
+}
+
+// Pentru loguri: nu scriem identificatorul întreg, doar capetele și lungimea (suficient ca să vedem o nepotrivire, un spațiu sau o altă valoare).
+function mascheaza(valoare: string): string {
+  return valoare.length <= 8 ? `***(${valoare.length})` : `${valoare.slice(0, 4)}…${valoare.slice(-4)}(${valoare.length})`;
+}
+
 export function netopiaConfigurata(): boolean {
-  return Boolean(process.env.NETOPIA_API_KEY && process.env.NETOPIA_POS_SIGNATURE);
+  return Boolean(process.env.NETOPIA_API_KEY && semnaturaPos());
 }
 
 // NU citește din variabilă de mediu — ar fi un pericol real: o valoare veche
@@ -85,7 +96,7 @@ type OrderPentruStart = {
 // pagină, fără redirect). Construit o singură dată, ca cele două fluxuri să nu
 // diveargă silențios pe restul câmpurilor (facturare, produs, monedă).
 function corpCerere(p: OrderPentruStart, instrument: { type: "card" } | { token: string }): unknown {
-  const posSignature = process.env.NETOPIA_POS_SIGNATURE;
+  const posSignature = semnaturaPos();
   const facturare = {
     email: p.facturare.email,
     phone: p.facturare.telefon,
@@ -216,7 +227,7 @@ async function netopiaStart(body: unknown): Promise<{
 // Începe o plată NOUĂ (card încă necunoscut nouă) și întoarce URL-ul paginii
 // găzduite de Netopia — clientul introduce cardul ACOLO, niciodată la noi.
 export async function pornestePlata(p: OrderPentruStart): Promise<{ paymentUrl: string; ntpId: string | null }> {
-  if (!process.env.NETOPIA_POS_SIGNATURE) throw new Error("netopia_neconfigurat");
+  if (!semnaturaPos()) throw new Error("netopia_neconfigurat");
   const { payment, error, ok } = await netopiaStart(corpCerere(p, { type: "card" }));
   if (!ok || !payment?.paymentURL) {
     console.error("Netopia: pornirea plății a eșuat", error);
@@ -233,7 +244,7 @@ export async function pornestePlata(p: OrderPentruStart): Promise<{ paymentUrl: 
 // pornestePlata la crearea comenzii, salvat separat — vezi netopia-checkout.ts).
 export async function interogheazaStatus(p: { orderId: string; ntpId: string }): Promise<RezultatPlataNetopia | null> {
   const apiKey = process.env.NETOPIA_API_KEY;
-  const posSignature = process.env.NETOPIA_POS_SIGNATURE;
+  const posSignature = semnaturaPos();
   if (!apiKey || !posSignature) throw new Error("netopia_neconfigurat");
 
   const res = await fetch(`${BAZA[mediu()]}/operation/status`, {
@@ -257,7 +268,7 @@ export async function interogheazaStatus(p: { orderId: string; ntpId: string }):
 // anterioară reușită. Rezultatul vine SINCRON, în răspunsul acestui apel — un
 // card recurent refuzat NU declanșează neapărat un IPN separat.
 export async function taxeazaCuTokenSalvat(p: OrderPentruStart & { token: string }): Promise<RezultatPlataNetopia> {
-  if (!process.env.NETOPIA_POS_SIGNATURE) throw new Error("netopia_neconfigurat");
+  if (!semnaturaPos()) throw new Error("netopia_neconfigurat");
   const { payment, error, ok, httpStatus } = await netopiaStart(corpCerere(p, { token: p.token }));
   if (!ok && !payment) {
     console.error("Netopia: taxarea cu token a eșuat la nivel de transport", httpStatus, error);
@@ -283,8 +294,8 @@ function b64urlLaBuffer(s: string): Buffer {
 
 const ALGORITMI: Record<string, string> = { RS256: "RSA-SHA256", RS384: "RSA-SHA384", RS512: "RSA-SHA512" };
 
-export function verificaIpn(corpBrut: string, tokenAntet: string | null): { ok: true } | { ok: false; motiv: string } {
-  const posSignature = process.env.NETOPIA_POS_SIGNATURE;
+export function verificaIpn(corpBrut: string, tokenAntet: string | null): { ok: true } | { ok: false; motiv: string; detalii?: string } {
+  const posSignature = semnaturaPos();
   const pem = cheiePublicaPem();
   if (!posSignature || !pem) return { ok: false, motiv: "neconfigurat" };
   if (!tokenAntet) return { ok: false, motiv: "lipseste_token" };
@@ -313,7 +324,9 @@ export function verificaIpn(corpBrut: string, tokenAntet: string | null): { ok: 
     };
     if (claims.iss !== "NETOPIA Payments") return { ok: false, motiv: "emitent_invalid" };
     const aud = Array.isArray(claims.aud) ? claims.aud : claims.aud ? [claims.aud] : [];
-    if (!aud.includes(posSignature)) return { ok: false, motiv: "audienta_invalida" };
+    if (!aud.includes(posSignature)) {
+      return { ok: false, motiv: "audienta_invalida", detalii: `aud primit: [${aud.map(mascheaza).join(", ")}]; configurat: ${mascheaza(posSignature)}` };
+    }
 
     const acum = Math.floor(Date.now() / 1000);
     if (typeof claims.exp === "number" && acum > claims.exp) return { ok: false, motiv: "expirat" };

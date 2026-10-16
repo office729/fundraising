@@ -23,11 +23,14 @@ export async function POST(req: Request) {
 
   const verificare = verificaIpn(corp, req.headers.get("verification-token"));
   if (!verificare.ok) {
-    console.error("IPN Netopia respins:", verificare.motiv);
+    console.error("IPN Netopia respins:", verificare.motiv, verificare.detalii ?? "");
     // Lipsa tokenului / un token malformat = cereri de la scanere; restul (semnătură, audiență, hash, expirat, cheie neconfigurată) înseamnă
     // fie o configurare greșită (cheia publică a POS-ului), fie o încercare reală — iar plățile rămân neconfirmate până la reconciliere.
     if (verificare.motiv !== "lipseste_token" && verificare.motiv !== "token_invalid") {
-      raporteazaAvertismentLimitat("netopia-ipn", `IPN respins (${verificare.motiv}): plățile nu se confirmă prin IPN până se rezolvă`, verificare.motiv, { motiv: verificare.motiv });
+      raporteazaAvertismentLimitat("netopia-ipn", `IPN respins (${verificare.motiv}): plățile nu se confirmă prin IPN până se rezolvă`, verificare.motiv, {
+        motiv: verificare.motiv,
+        ...(verificare.detalii ? { detalii: verificare.detalii } : {}),
+      });
     }
     return NextResponse.json({ errorType: 2, errorCode: 1, errorMessage: "verificare esuata" }, { status: 400 });
   }
