@@ -136,6 +136,8 @@ export const MARKETING_DICT = {
         { rol: "Consiliere", nume: "Vlad Plăcintă", email: "vlad.placinta@alexandrit.ro", telefon: "0757 401 042", tel: "0757401042" },
         { rol: "Suport tehnic", nume: "Andrei Plăcintă", email: "andrei.placinta@alexandrit.ro", telefon: "0721 425 650", tel: "0721425650" },
       ],
+      paymentsTitle: "Plăți securizate",
+      paymentsNote: "Plățile cu cardul pentru abonamentul platformei sunt procesate de NETOPIA Payments, prin pagină securizată cu 3-D Secure. Datele cardului nu trec prin Alexandrit.",
       anpcTitle: "Protecția consumatorilor",
       anpc: [
         { label: "ANPC — SAL", sub: "Soluționarea alternativă a litigiilor", href: "https://anpc.ro" },
@@ -303,6 +305,8 @@ export const MARKETING_DICT = {
         { rol: "Consulting", nume: "Vlad Plăcintă", email: "vlad.placinta@alexandrit.ro", telefon: "0757 401 042", tel: "0757401042" },
         { rol: "Technical support", nume: "Andrei Plăcintă", email: "andrei.placinta@alexandrit.ro", telefon: "0721 425 650", tel: "0721425650" },
       ],
+      paymentsTitle: "Secure payments",
+      paymentsNote: "Card payments for the platform subscription are processed by NETOPIA Payments, on a secure 3-D Secure page. Card details never pass through Alexandrit.",
       anpcTitle: "Consumer protection",
       anpc: [
         { label: "ANPC — SAL", sub: "Alternative dispute resolution", href: "https://anpc.ro" },

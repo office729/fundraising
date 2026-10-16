@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { NetopiaLogo } from "@/components/netopia-logo";
 import type { Locale } from "@/lib/i18n/config";
 import type { MarketingDict } from "@/lib/i18n/dictionaries/marketing";
 
@@ -323,7 +324,13 @@ export function SiteFooter({ dict }: { dict: MarketingDict }) {
         </div>
       </div>
 
-      <div className="mx-auto mt-8 flex max-w-6xl flex-wrap items-center gap-3 border-t border-white/10 pt-6">
+      <div className="mx-auto mt-8 flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-3 border-t border-white/10 pt-6">
+        <span className="text-xs font-bold tracking-wide text-white/50 uppercase">{dict.footer.paymentsTitle}</span>
+        <NetopiaLogo pe="inchis" />
+        <p className="max-w-xl text-xs leading-relaxed text-white/60">{dict.footer.paymentsNote}</p>
+      </div>
+
+      <div className="mx-auto mt-6 flex max-w-6xl flex-wrap items-center gap-3 border-t border-white/10 pt-6">
         <span className="text-xs font-bold tracking-wide text-white/50 uppercase">{dict.footer.anpcTitle}</span>
         {dict.footer.anpc.map((l) => (
           <a
