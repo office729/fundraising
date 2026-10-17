@@ -1,6 +1,9 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+import { isPlatformAdmin } from "@/lib/billing/trial";
+import { esteCaleInchisaPublicului, starePrelansare } from "@/lib/prelansare";
+
 // Rulat din proxy la fiecare request: reîmprospătează sesiunea Supabase.
 // Verificarea de membership/organizație se face în DAL (org.ts), nu aici —
 // aici doar decidem dacă userul e autentificat sau nu (gate „optimist").
@@ -68,6 +71,7 @@ export async function updateSession(request: NextRequest, rewriteTo?: URL) {
   ];
   const isPublicRoute =
     MARKETING_ROUTES.includes(path) ||
+    path === "/prelansare" ||
     path === "/api/health" ||
     path === "/robots.txt" ||
     path === "/embed.js" ||
@@ -113,6 +117,26 @@ export async function updateSession(request: NextRequest, rewriteTo?: URL) {
     // Paginile de strângere fonduri create de susținători (peer-to-peer) —
     // creare, vizualizare și donație sunt toate publice, neautentificate.
     path.startsWith("/strangere-fonduri/");
+
+  // Pre-lansare (vezi lib/prelansare.ts): până pe 26 octombrie 2026 paginile comerciale ale site-ului sunt vizibile doar administratorilor platformei.
+  // Publicul vede cronometrul în locul paginii „/”, iar celelalte pagini comerciale îl duc la „/”. Rămân deschise: autentificarea, paginile de donație și
+  // Formularul 230 ale organizațiilor, widgetul, webhook-urile, cron-urile, textele legale și contactul (vezi esteCaleInchisaPublicului).
+  const areInvitatie = request.nextUrl.searchParams.has("invite") || request.nextUrl.searchParams.has("beneficiarInvite");
+  if (
+    esteCaleInchisaPublicului(path, areInvitatie) &&
+    starePrelansare(Date.now(), process.env.PRELANSARE_OPRITA === "1") !== "live" &&
+    !isPlatformAdmin(user?.email)
+  ) {
+    if (path !== "/") {
+      const acasa = request.nextUrl.clone();
+      acasa.pathname = "/";
+      acasa.search = "";
+      return NextResponse.redirect(acasa);
+    }
+    const rescris = NextResponse.rewrite(new URL("/prelansare", request.url), { request });
+    supabaseResponse.cookies.getAll().forEach((c) => rescris.cookies.set(c));
+    return rescris;
+  }
 
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
