@@ -73,6 +73,11 @@ export async function reconcilieazaComenziInAsteptare(opts: { bugetMs?: number }
     try {
       const rezultat = await interogheazaStatus({ orderId: c.orderId, ntpId: c.ntpId });
       if (!rezultat) continue;
+      // Motivul de la Netopia (cod + mesaj) pentru orice plată care nu e o aprobare curată: singura cale de a afla DE CE a fost respinsă/blocată (ex. 36 = filtre
+      // antifraudă). Fără date personale; doar identificatori de comandă și coduri.
+      if (rezultat.eroareCod && rezultat.eroareCod !== "00") {
+        console.warn(`[netopia-reconciliere] comanda ${c.orderId}: status Netopia ${rezultat.status}, cod eroare ${rezultat.eroareCod}${rezultat.eroareMesaj ? ` (${rezultat.eroareMesaj})` : ""}`);
+      }
       if (clasificaStatus(rezultat.status) === "in_asteptare") {
         if (c.renewal && Date.now() - c.createdAt.getTime() > PRAG_REINNOIRE_BLOCATA_ORE * 3600_000) {
           const inchisa = await proceseazaRezultatPlataNetopia(c.orderId, { ...rezultat, status: STATUS_INCHIS_CA_ESUAT });

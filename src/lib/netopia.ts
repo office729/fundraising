@@ -165,6 +165,10 @@ export type RezultatPlataNetopia = {
   cardExpireMonth: number | null;
   cardExpireYear: number | null;
   cardMasked: string | null;
+  // Codul și mesajul de eroare ale Netopia pentru plată (ex. „36” = respinsă de filtrele antifraudă, „20” = fonduri insuficiente, „99” = eroare
+  // generală; „00” = aprobată). Doar pentru diagnosticare și loguri — decizia despre bani se ia după `status`, ca până acum.
+  eroareCod?: string | null;
+  eroareMesaj?: string | null;
 };
 
 type PaymentJson = {
@@ -177,7 +181,9 @@ type PaymentJson = {
   instrument?: { panMasked?: string };
 };
 
-function extrageRezultat(payment: PaymentJson | undefined): RezultatPlataNetopia {
+type EroareJson = { code?: string | number; message?: string };
+
+function extrageRezultat(payment: PaymentJson | undefined, eroare?: EroareJson): RezultatPlataNetopia {
   const suma = payment?.amount !== undefined ? Number(payment.amount) : null;
   return {
     status: Number(payment?.status),
@@ -188,19 +194,35 @@ function extrageRezultat(payment: PaymentJson | undefined): RezultatPlataNetopia
     cardExpireMonth: payment?.binding?.expireMonth ?? null,
     cardExpireYear: payment?.binding?.expireYear ?? null,
     cardMasked: payment?.instrument?.panMasked ?? null,
+    eroareCod: eroare?.code !== undefined ? String(eroare.code) : null,
+    eroareMesaj: eroare?.message ? String(eroare.message).slice(0, 120) : null,
   };
+}
+
+// Pentru loguri, la un IPN al cărui semnătură NU s-a putut verifica: ce spune corpul (status și cod de eroare), ca să aflăm de ce a fost respinsă o plată
+// chiar dacă notificarea n-o putem folosi. Nu acționăm pe baza lui — doar îl scriem, scurtat.
+export function rezumatIpnNeverificat(corpBrut: string): string {
+  try {
+    const b = JSON.parse(corpBrut) as { payment?: { status?: unknown }; error?: EroareJson };
+    const status = b.payment?.status !== undefined ? String(b.payment.status).slice(0, 6) : "?";
+    const cod = b.error?.code !== undefined ? String(b.error.code).slice(0, 6) : "?";
+    const mesaj = b.error?.message ? String(b.error.message).slice(0, 80) : "";
+    return `status=${status} eroare=${cod}${mesaj ? ` (${mesaj})` : ""}`;
+  } catch {
+    return "corp ilizibil";
+  }
 }
 
 // Parsează corpul brut al IPN-ului Netopia — folosit DOAR după ce
 // verificaIpn() a confirmat semnătura (vezi api/netopia/ipn/route.ts).
 export function extrageRezultatDinIpn(corpBrut: string): { orderId: string | null; rezultat: RezultatPlataNetopia } | null {
-  let body: { payment?: PaymentJson; order?: { orderID?: string } };
+  let body: { payment?: PaymentJson; order?: { orderID?: string }; error?: EroareJson };
   try {
     body = JSON.parse(corpBrut) as typeof body;
   } catch {
     return null;
   }
-  return { orderId: body.order?.orderID ?? null, rezultat: extrageRezultat(body.payment) };
+  return { orderId: body.order?.orderID ?? null, rezultat: extrageRezultat(body.payment, body.error) };
 }
 
 async function netopiaStart(body: unknown): Promise<{
@@ -255,10 +277,11 @@ export async function interogheazaStatus(p: { orderId: string; ntpId: string }):
     signal: AbortSignal.timeout(30_000),
   });
   const json = (await res.json().catch(() => null)) as { payment?: PaymentJson; error?: { code?: string; message?: string } } | null;
-  // code "00" = găsită și returnată cu succes; orice alt cod (ex. "103" — comandă
-  // negăsită) înseamnă că nu avem încă un rezultat de încredere.
-  if (!res.ok || json?.error?.code !== "00" || !json.payment) return null;
-  return extrageRezultat(json.payment);
+  // Contează obiectul plății cu un `status` numeric, NU codul de eroare: o plată respinsă (fonduri insuficiente, antifraud, card cu risc) vine tocmai cu un
+  // cod diferit de „00” și cu `payment.status` final — cu vechea condiție („00” obligatoriu) o astfel de comandă rămânea „în așteptare” la nesfârșit.
+  // O comandă negăsită vine fără obiectul plății (sau fără status), deci tot nu avem rezultat de încredere.
+  if (!res.ok || !json?.payment || !Number.isFinite(Number(json.payment.status))) return null;
+  return extrageRezultat(json.payment, json.error);
 }
 
 // Taxează un card SALVAT dintr-o plată anterioară (reînnoire lunară automată,
