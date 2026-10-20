@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { ImagePlus } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useRef, useState } from "react";
+import { startTransition, useActionState, useEffect, useRef, useState } from "react";
 
 import { TOATE_DOMENIILE, type DomeniuActivitate } from "@/lib/campaign-templates";
 import type { Locale } from "@/lib/i18n/config";
@@ -89,9 +89,12 @@ export function BrandingForm({
     // header-ul și accentul CRM sunt citite din server (layout-uri) — fără
     // refresh, logo-ul nou nu apare decât la următoarea navigare.
     router.refresh();
+    // Fișierul de logo deja trimis nu rămâne selectat în câmp (formularul nu se mai resetează singur după salvare, vezi onSubmit).
+    if (fileRef.current) fileRef.current.value = "";
     onSaved?.();
+    // Legat de obiectul de stare (nou la fiecare rezultat), nu doar de `ok`: și a doua salvare consecutivă reîmprospătează pagina.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.ok]);
+  }, [state]);
 
   const [numeFisier, setNumeFisier] = useState<string | null>(null);
   const [eroareLogo, setEroareLogo] = useState<string | null>(null);
@@ -138,8 +141,17 @@ export function BrandingForm({
     preiaFisier(file);
   }
 
+  // Trimitem formularul NOI, nu prin `action={formAction}`: în React 19, după o acțiune de formular câmpurile necontrolate se resetează la `defaultValue`,
+  // adică la valorile vechi primite din server (propurile se actualizează abia după router.refresh). Așa județul salvat revenea la cel vechi până la o
+  // reîncărcare, iar la o eroare de validare se pierdea tot ce scrisese omul. Fără resetare, câmpurile rămân cum le-a completat utilizatorul.
+  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const date = new FormData(e.currentTarget);
+    startTransition(() => formAction(date));
+  }
+
   return (
-    <form action={formAction} className="mt-6 flex flex-col gap-5">
+    <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-5">
       <div>
         <div className="flex items-center gap-2">
           <label htmlFor="logo-input" className="text-sm font-medium text-ink">
