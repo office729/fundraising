@@ -30,6 +30,7 @@ import { createClient } from "@/lib/supabase/server";
 import { genereazaSlugUnic } from "@/lib/unique-slug";
 import { extensieImagine } from "@/lib/upload-imagini";
 import { EMAIL_RE, normalizeazaEmail } from "@/lib/validation";
+import { raporteazaEroare } from "@/lib/monitoring";
 
 export type StergePaginaState = { error: string | null };
 
@@ -476,7 +477,7 @@ export const adaugaDonatieOfflineAction = withOrgAdmin(
           html: htmlEmailMultumireDonatie({ numeDonator, suma, pageTitlu: info.pageTitlu, orgName: info.orgName, recurenta: false }),
         });
       } catch (e) {
-        console.error("Eroare la trimiterea emailului de mulțumire (donație offline):", e);
+        raporteazaEroare("email-multumire-offline", e);
       }
     }
 

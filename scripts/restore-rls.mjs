@@ -889,6 +889,29 @@ const POLICIES = [
   `create policy kpi_audit_log_member_insert on kpi_audit_log for insert with check (
     org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
   )`,
+  // Acces de suport acordat de organizație echipei platformei + erori fără date personale (documentation/suport-acces.sql).
+  `create policy suport_acces_org_citire on suport_acces for select using (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy suport_acces_org_acordare on suport_acces for insert with check (
+    org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
+    and org_id in (select org_id from memberships where user_id = nullif(current_setting('app.current_user_id', true), '')::uuid and role in ('owner', 'admin'))
+  )`,
+  `create policy suport_acces_org_retragere on suport_acces for update
+    using (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
+      and org_id in (select org_id from memberships where user_id = nullif(current_setting('app.current_user_id', true), '')::uuid and role in ('owner', 'admin')))
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
+      and org_id in (select org_id from memberships where user_id = nullif(current_setting('app.current_user_id', true), '')::uuid and role in ('owner', 'admin')))`,
+  `create policy suport_acces_platforma_citire on suport_acces for select using (nullif(current_setting('app.platform_admin', true), '') = 'true')`,
+  `create policy erori_aplicatie_org_scriere on erori_aplicatie for insert with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy erori_aplicatie_org_citire on erori_aplicatie for select using (
+    org_id = nullif(current_setting('app.current_org_id', true), '')::uuid
+    and org_id in (select org_id from memberships where user_id = nullif(current_setting('app.current_user_id', true), '')::uuid and role in ('owner', 'admin'))
+  )`,
+  `create policy erori_aplicatie_org_curatare on erori_aplicatie for delete using (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy erori_aplicatie_platforma_citire on erori_aplicatie for select using (
+    nullif(current_setting('app.platform_admin', true), '') = 'true' and exists (
+      select 1 from suport_acces s where s.org_id = erori_aplicatie.org_id and s.retras_la is null and s.expira_la > now()
+    )
+  )`,
 ];
 
 const FORCE_TABLES = [
@@ -985,6 +1008,8 @@ const FORCE_TABLES = [
   "reclame_linkuri",
   "reclame_conexiuni",
   "notificari_oprite",
+  "suport_acces",
+  "erori_aplicatie",
 ];
 
 try {

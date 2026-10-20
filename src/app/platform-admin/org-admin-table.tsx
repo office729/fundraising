@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 
 import { TRIAL_DAYS } from "@/lib/billing/trial";
@@ -94,6 +95,14 @@ export function OrgAdminTable({ initial }: { initial: OrgRand[] }) {
                       {zileRamase === 0 ? "probă expirată" : `${zileRamase} zile probă`}
                     </span>
                   )}
+                  <Link
+                    prefetch={false}
+                    href={`/platform-admin/diagnoza/${o.slug}`}
+                    title={o.suportExpiraLa ? `Acces de suport activ până la ${formatData(o.suportExpiraLa)}` : "Organizația nu a acordat accesul de suport"}
+                    className={`rounded-lg border px-2.5 py-1 text-xs font-medium ${o.suportExpiraLa ? "border-brand-green text-brand-green hover:bg-panel-2" : "border-line text-muted hover:bg-panel-2"}`}
+                  >
+                    Diagnoză{o.suportExpiraLa ? "" : " (fără acces)"}
+                  </Link>
                   <button type="button" onClick={() => deschideEdit(o)} className="rounded-lg border border-line px-2.5 py-1 text-xs font-medium text-ink hover:bg-panel-2">
                     Ajustează
                   </button>

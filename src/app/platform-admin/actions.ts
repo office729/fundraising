@@ -8,6 +8,7 @@ import { isPlatformAdmin } from "@/lib/billing/trial";
 import { db } from "@/lib/db";
 import { appUsers, fundraisingAuditLog, memberships, organizations } from "@/lib/db/schema";
 import { EroareUtilizator } from "@/lib/erori";
+import { accesuriSuportActive } from "@/lib/suport/diagnoza";
 
 // Garda pentru toate acțiunile din acest fișier — propriul verificator, NU
 // withOrgAdmin/withOrgSession (acelea sunt scopate la UN org; aici citim/
@@ -29,6 +30,8 @@ export type OrgRand = {
   createdAt: Date;
   proprietarEmail: string | null;
   proprietarUltimaAutentificare: Date | null;
+  // Până când are organizația un acces de suport activ (null = nu a acordat accesul).
+  suportExpiraLa: Date | null;
 };
 
 // Listă completă — toate organizațiile, indiferent de abonament, cu
@@ -39,7 +42,8 @@ export type OrgRand = {
 // gardat explicit mai sus prin cerePlatformAdmin().
 export async function listeazaOrganizatiiAction(): Promise<OrgRand[]> {
   await cerePlatformAdmin();
-  return db.transaction(async (tx) => {
+  const suport = await accesuriSuportActive();
+  const organizatii = await db.transaction(async (tx) => {
     await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
     const rows = await tx
       .select({
@@ -62,6 +66,7 @@ export async function listeazaOrganizatiiAction(): Promise<OrgRand[]> {
       .orderBy(desc(organizations.createdAt));
     return rows;
   });
+  return organizatii.map((o) => ({ ...o, suportExpiraLa: suport.get(o.id) ?? null }));
 }
 
 // Ajustare manuală, „la cerere" — pachetul și/sau sfârșitul perioadei plătite

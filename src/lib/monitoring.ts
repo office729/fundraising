@@ -1,6 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
 
 import { categorieZona, trebuieRaportat } from "./monitoring-categorii";
+import { curataPersonale } from "./suport/date-personale";
 
 // Raportare de erori pentru căile care mută bani sau date (webhook-uri Stripe/
 // Netopia, cron, Formular 230). Până acum acolo se făcea doar console.error și
@@ -10,8 +11,8 @@ import { categorieZona, trebuieRaportat } from "./monitoring-categorii";
 // Erorile Drizzle includ în mesaj interogarea ȘI parametrii ei ("...\nparams: a,b"),
 // adică nume, emailuri, CNP criptat, semnături. Păstrăm doar interogarea, scurtată.
 export function curataMesajEroare(mesaj: string): string {
-  const i = mesaj.search(/\r?\n\s*params:/i);
-  return (i >= 0 ? mesaj.slice(0, i) : mesaj).slice(0, 500);
+  // curataPersonale taie parametrii interogării și ascunde e-mailuri, telefoane, CNP, IBAN și tokenuri (vezi suport/date-personale.ts).
+  return curataPersonale(mesaj).slice(0, 500);
 }
 
 // URL-urile unor pagini conțin date personale sau tokenuri (linkul de dezabonare are emailul în base64, invitațiile au

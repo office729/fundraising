@@ -26,6 +26,7 @@ import { ExportButtons } from "./export-buttons";
 import { FilterBar } from "./filter-bar";
 import { RomaniaMapCard } from "./romania-map-card";
 import { StatsChartCard } from "./stats-chart-card";
+import { raporteazaEroare } from "@/lib/monitoring";
 
 // Limita de rânduri citite pentru statistici/filtre/hartă — practic
 // suficientă pentru orice ONG de dimensiunea platformei azi; dacă un cont
@@ -196,7 +197,7 @@ export default async function Formular230StatsPage({
   let eroareBorderouri = "";
   const borderouri = poateVedeaDateSensibile
     ? await listeazaBorderouri(orgSlug).catch((e: unknown) => {
-        console.error("[formular-230] borderouri:", e);
+        raporteazaEroare("formular230-borderouri", e);
         eroareBorderouri = e instanceof Error ? e.message : "eroare necunoscută";
         return null;
       })

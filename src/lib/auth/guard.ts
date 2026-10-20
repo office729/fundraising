@@ -8,6 +8,7 @@ import { areModul, MODULE_PACHET, type ModulPachet } from "@/lib/billing/package
 import { isAccessBlocked, pachetEfectiv, pachetPentruModule } from "@/lib/billing/trial";
 import { db } from "@/lib/db";
 import { EroareUtilizator } from "@/lib/erori";
+import { esteEroareDeJurnalizat, jurnalizeazaEroareOrg } from "@/lib/suport/jurnal-erori";
 import type { DomeniuActivitate } from "@/lib/campaign-templates";
 
 import { findBeneficiaryProfile } from "./beneficiar";
@@ -98,7 +99,10 @@ export function withOrgSession<A extends unknown[], R>(
       redirect("/login");
     }
 
-    return db.transaction(async (tx) => {
+    // Organizația pe care a început să lucreze acțiunea — se completează doar după ce accesul a fost verificat; folosită ca să jurnalizăm erorile neașteptate.
+    const urma = { orgId: null as string | null };
+    try {
+    return await db.transaction(async (tx) => {
       // Pas 1: contextul de email — singurul lucru știut cu certitudine la
       // primul login, înainte să existe un rând app_users.
       await tx.execute(sql`select set_config('app.current_user_email', ${authUser.email}, true)`);
@@ -178,8 +182,14 @@ export function withOrgSession<A extends unknown[], R>(
         const m = MODULE_PACHET[opts.modul];
         throw new EroareUtilizator(`${m.nume} este inclus începând cu pachetul ${m.minim === "impact" ? "IMPACT" : "CREȘTERE"}.`);
       }
+      urma.orgId = ctx.orgId;
       return action(ctx, ...args);
     });
+    } catch (e) {
+      // Tranzacția a fost anulată: scriem eroarea (fără date personale) într-una nouă, pentru diagnoza pe cont. EroareUtilizator și redirect/notFound nu sunt erori.
+      if (urma.orgId && esteEroareDeJurnalizat(e)) await jurnalizeazaEroareOrg(urma.orgId, action.name || "org-session", e);
+      throw e;
+    }
   };
 }
 

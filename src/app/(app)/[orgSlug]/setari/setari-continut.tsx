@@ -14,6 +14,8 @@ import { ReferralSection } from "./referral-section";
 import { DPA_ACTIV, DPA_VERSIUNE } from "@/lib/legal-version";
 
 import { DpaSection } from "./dpa-section";
+import { obtineStareSuport } from "./suport-actions";
+import { SuportSection } from "./suport-section";
 import { obtineStatusStripeDonatii } from "./stripe-donatii-actions";
 import { StripeDonatiiSection } from "./stripe-donatii-section";
 
@@ -24,12 +26,13 @@ export async function SetariContinut({ orgSlug }: { orgSlug: string }) {
   const locale = await getLocale();
   const dict = SETARI_ECHIPA_DICT[locale].orgSetari;
 
-  // Patru citiri independente (fiecare cu propria tranzacție): rulează împreună, nu una după alta.
-  const [{ cod, numarRecomandari }, facturi, stripeStatus, reinnoireAutomata] = await Promise.all([
+  // Cinci citiri independente (fiecare cu propria tranzacție): rulează împreună, nu una după alta.
+  const [{ cod, numarRecomandari }, facturi, stripeStatus, reinnoireAutomata, stareSuport] = await Promise.all([
     obtineDateReferral(orgSlug),
     listeazaFacturiAction(orgSlug),
     obtineStatusStripeDonatii(orgSlug),
     obtineStatusReinnoireAutomata(orgSlug),
+    obtineStareSuport(orgSlug),
   ]);
   const hdrs = await headers();
   const webhookOrigin = `${hdrs.get("x-forwarded-proto") ?? "https"}://${hdrs.get("x-forwarded-host") ?? hdrs.get("host")}`;
@@ -50,6 +53,7 @@ export async function SetariContinut({ orgSlug }: { orgSlug: string }) {
             ["plati-donatii", locale === "ro" ? "Plăți donații" : "Donation payments"],
             ["recomanda", locale === "ro" ? "Recomandă" : "Refer"],
             ...(DPA_ACTIV ? [["dpa", locale === "ro" ? "Acord date (DPA)" : "Data agreement (DPA)"]] : []),
+            ["suport", locale === "ro" ? "Acces suport" : "Support access"],
             ["roluri-integrari", locale === "ro" ? "Roluri și integrări" : "Roles and integrations"],
           ].map(([id, label]) => (
             <a key={id} href={`#${id}`} className="rounded-full border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-1.5 font-medium text-[var(--ci-text)] transition hover:bg-[var(--ci-surface-2)]">
@@ -111,6 +115,7 @@ export async function SetariContinut({ orgSlug }: { orgSlug: string }) {
             versiuneCurenta={access.orgDpaVersion === DPA_VERSIUNE}
           />
         )}
+        <SuportSection orgSlug={orgSlug} locale={locale} stare={stareSuport} />
       </div>
       </div>
     </>

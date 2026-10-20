@@ -14,6 +14,7 @@ import { fundraisingPages, organizations } from "@/lib/db/schema";
 import { slugify } from "@/lib/slugify";
 import { genereazaSlugUnic } from "@/lib/unique-slug";
 import { EMAIL_RE } from "@/lib/validation";
+import { raporteazaEroare } from "@/lib/monitoring";
 
 const MAX_LEN = 200;
 const MAX_POVESTE_LEN = 5000;
@@ -131,7 +132,7 @@ export async function creeazaPaginaAction(
     if (e instanceof Error && e.message === "org_not_found") {
       return { error: "Organizația nu a fost găsită." };
     }
-    console.error("creeaza pagina strangere fonduri failed:", e);
+    raporteazaEroare("pagina-campanie-creare", e);
     return { error: "A apărut o eroare — încearcă din nou." };
   }
 
