@@ -1,5 +1,4 @@
 import { requireOrgAccess } from "@/lib/auth/guard";
-import { isPlatformAdmin } from "@/lib/billing/trial";
 
 import { obtineDateGranturi } from "./actions";
 import { GranturiClient } from "./granturi-client";
@@ -20,5 +19,5 @@ export default async function GranturiPage({ params }: { params: Promise<{ orgSl
   const sediu = [access.orgAdresaSediu, access.orgJudet].filter(Boolean).join(", ");
   if (sediu) prefill.sediu = sediu;
   if (access.orgIban) prefill.iban = access.orgIban;
-  return <GranturiClient orgSlug={orgSlug} initial={date} prefill={prefill} esteAdmin={access.role === "owner" || access.role === "admin"} cautareAi={isPlatformAdmin(access.userEmail)} />;
+  return <GranturiClient orgSlug={orgSlug} initial={date} prefill={prefill} esteAdmin={access.role === "owner" || access.role === "admin"} />;
 }

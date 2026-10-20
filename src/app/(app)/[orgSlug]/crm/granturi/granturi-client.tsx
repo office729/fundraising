@@ -192,7 +192,7 @@ function Camp({ eticheta, ajutor, className, children }: { eticheta: string; aju
 
 // ---------------------------------------------------------------------------------------------------------------- Pagina
 
-export function GranturiClient({ orgSlug, initial, prefill, esteAdmin, cautareAi }: { orgSlug: string; initial: DateGranturi; prefill: Record<string, string>; esteAdmin: boolean; cautareAi: boolean }) {
+export function GranturiClient({ orgSlug, initial, prefill, esteAdmin }: { orgSlug: string; initial: DateGranturi; prefill: Record<string, string>; esteAdmin: boolean }) {
   const [date, setDate] = useState(initial);
   const reincarca = async () => setDate(await obtineDateGranturi(orgSlug));
 
@@ -226,9 +226,9 @@ export function GranturiClient({ orgSlug, initial, prefill, esteAdmin, cautareAi
           tab === "registru" ? (
             <Registru orgSlug={orgSlug} date={date} rezumat={rezumat} reincarca={reincarca} esteAdmin={esteAdmin} />
           ) : tab === "dosar" ? (
-            <Dosar orgSlug={orgSlug} dosar={date.dosar} prefill={prefill} reincarca={reincarca} />
+            <Dosar orgSlug={orgSlug} dosar={date.dosar} prefill={prefill} reincarca={reincarca} aiPermis={date.aiPermis} />
           ) : (
-            <Surse orgSlug={orgSlug} date={date} reincarca={reincarca} cautareAi={cautareAi} />
+            <Surse orgSlug={orgSlug} date={date} reincarca={reincarca} />
           )
         }
       </Tabs>
@@ -747,21 +747,24 @@ function FisaGrant({ orgSlug, date, initial, esteAdmin, onClose, onSaved }: { or
                 Pornește din dosarul organizației ({progres.completate}/{progres.total} câmpuri completate) și din cerințele de mai sus. Folosește doar faptele din dosar; ce lipsește rămâne marcat. E un punct de plecare, nu o cerere gata de depus.
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <Select aria-label="Limba schiței" value={limba} onChange={(e) => setLimba(e.target.value as "ro" | "en")} className="!h-8 !w-auto !text-[13px]">
-                <option value="ro">Română</option>
-                <option value="en">English</option>
-              </Select>
-              <Button type="button" onClick={genereaza} loading={seGenereaza} disabled={!date.aiDisponibil || pending}>
-                <Sparkles className="h-4 w-4" /> {f.draft ? "Regenerează schița" : "Generează schiță cu AI"}
-              </Button>
-            </div>
+            {date.aiPermis && (
+              <div className="flex items-center gap-2">
+                <Select aria-label="Limba schiței" value={limba} onChange={(e) => setLimba(e.target.value as "ro" | "en")} className="!h-8 !w-auto !text-[13px]">
+                  <option value="ro">Română</option>
+                  <option value="en">English</option>
+                </Select>
+                <Button type="button" onClick={genereaza} loading={seGenereaza} disabled={!date.aiDisponibil || pending}>
+                  <Sparkles className="h-4 w-4" /> {f.draft ? "Regenerează schița" : "Generează schiță cu AI"}
+                </Button>
+              </div>
+            )}
           </div>
-          {!date.aiDisponibil ? (
-            <p className="text-[12px] text-[var(--ci-text-muted)]">Generarea cu AI nu e activă pe această platformă; poți scrie schița manual mai jos.</p>
-          ) : (
-            <p className="text-[12px] text-[var(--ci-text-muted)]">{AVERTISMENT_AI}</p>
-          )}
+          {date.aiPermis &&
+            (!date.aiDisponibil ? (
+              <p className="text-[12px] text-[var(--ci-text-muted)]">Generarea cu AI nu e activă pe această platformă; poți scrie schița manual mai jos.</p>
+            ) : (
+              <p className="text-[12px] text-[var(--ci-text-muted)]">{AVERTISMENT_AI}</p>
+            ))}
           <Textarea id="grant-draft" value={f.draft} onChange={(e) => set("draft", e.target.value)} rows={12} maxLength={30000} placeholder="Schița apare aici. O poți edita liber." />
           <div className="flex flex-wrap items-center gap-2">
             {f.draft && (
@@ -875,7 +878,7 @@ function FisaGrant({ orgSlug, date, initial, esteAdmin, onClose, onSaved }: { or
 
 // ---------------------------------------------------------------------------------------------------------------- Dosar
 
-function Dosar({ orgSlug, dosar, prefill, reincarca }: { orgSlug: string; dosar: Record<string, string>; prefill: Record<string, string>; reincarca: () => Promise<void> }) {
+function Dosar({ orgSlug, dosar, prefill, reincarca, aiPermis }: { orgSlug: string; dosar: Record<string, string>; prefill: Record<string, string>; reincarca: () => Promise<void>; aiPermis: boolean }) {
   // Câmpurile necompletate pornesc din ce știe deja platforma despre organizație.
   const [v, setV] = useState<Record<string, string>>(() => ({ ...prefill, ...dosar }));
   const [pending, startTransition] = useTransition();
@@ -895,7 +898,7 @@ function Dosar({ orgSlug, dosar, prefill, reincarca }: { orgSlug: string; dosar:
             <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">
               Faptele pe care le cere aproape orice finanțator, scrise o singură dată. Schița fiecărei cereri pornește de aici: scrie numai ce poți susține cu documente. Un dosar gol produce schițe aproape goale.
             </p>
-            <p className="mt-1.5 text-[12px] text-[var(--ci-text-muted)]">Când generezi o schiță cu AI, textul din dosar (fără contact și IBAN) este trimis către Anthropic (SUA). Folosește prenume schimbate și detalii generale pentru beneficiari.</p>
+            {aiPermis && <p className="mt-1.5 text-[12px] text-[var(--ci-text-muted)]">Când generezi o schiță cu AI, textul din dosar (fără contact și IBAN) este trimis către Anthropic (SUA). Folosește prenume schimbate și detalii generale pentru beneficiari.</p>}
           </div>
           <div className="text-right">
             <p className="ci-display text-lg font-bold tabular-nums text-[var(--ci-text)]">
@@ -1076,7 +1079,7 @@ function CautareApeluri({ orgSlug, date, reincarca }: { orgSlug: string; date: D
   );
 }
 
-function Surse({ orgSlug, date, reincarca, cautareAi }: { orgSlug: string; date: DateGranturi; reincarca: () => Promise<void>; cautareAi: boolean }) {
+function Surse({ orgSlug, date, reincarca }: { orgSlug: string; date: DateGranturi; reincarca: () => Promise<void> }) {
   const [fel, setFel] = useState<string>("toate");
   const [pending, startTransition] = useTransition();
   const [mesaj, setMesaj] = useState<MesajUi>(null);
@@ -1086,7 +1089,7 @@ function Surse({ orgSlug, date, reincarca, cautareAi }: { orgSlug: string; date:
 
   return (
     <div className="space-y-4 pt-4">
-      {cautareAi && <CautareApeluri orgSlug={orgSlug} date={date} reincarca={reincarca} />}
+      {date.aiPermis && <CautareApeluri orgSlug={orgSlug} date={date} reincarca={reincarca} />}
       <Card>
         <p className="text-[13px] text-[var(--ci-text-muted)]">
           Locurile unde merită căutat periodic (lista a fost verificată în {SURSE_VERIFICATE_IN}). Nu arată apeluri în timp real: <b className="font-semibold text-[var(--ci-text)]">termenele, sumele și condițiile se verifică mereu pe site-ul finanțatorului</b>, iar criteriile se pot schimba. Apasă „Urmărește” ca să-l pui în registru și să-i adaugi apelul concret când apare.

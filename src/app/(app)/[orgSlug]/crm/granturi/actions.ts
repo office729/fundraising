@@ -48,6 +48,9 @@ export type DateGranturi = {
   membri: Membru[];
   azi: string;
   aiDisponibil: boolean;
+  // Funcțiile AI din Granturi (căutarea de apeluri, schița cererii) consumă creditele Anthropic ale platformei și nu sunt promise în niciun pachet:
+  // le văd doar conturile administratorilor platformei (vezi isPlatformAdmin). Clienții nu le văd în interfață, iar acțiunile le refuză și pe server.
+  aiPermis: boolean;
 };
 
 // Pagina e închisă în layout pentru pachetele fără Granturi; aceeași verificare și aici, ca acțiunile să nu poată fi apelate direct.
@@ -94,6 +97,7 @@ export const obtineDateGranturi = withOrgSession(async (ctx): Promise<DateGrantu
     membri: membri.map((m) => ({ id: m.id, nume: m.nume?.trim() || m.email })),
     azi: aziBucuresti(),
     aiDisponibil: aiConfigurat(),
+    aiPermis: isPlatformAdmin(ctx.userEmail),
   };
 });
 
@@ -295,8 +299,6 @@ export const cautaApeluriAction = withOrgFaze<
 >({
   pregateste: async (ctx, domeniu, zona, observatii) => {
     cuModul(ctx);
-    // Căutarea consumă creditele Anthropic ale platformei și nu e promisă în niciun pachet: o văd doar conturile administratorilor platformei
-    // (vezi isPlatformAdmin). Verificarea e și pe server, nu doar în interfață, ca acțiunea să nu poată fi apelată direct.
     if (!isPlatformAdmin(ctx.userEmail)) throw new EroareUtilizator("Căutarea de apeluri cu AI nu este disponibilă.");
     if (!aiConfigurat()) return { gata: { ok: false, eroare: "Căutarea cu AI nu e configurată pe această platformă." } };
     if (await limitaCautareDepasita(ctx)) return { gata: { ok: false, eroare: MESAJ_LIMITA_CAUTARE } };
@@ -326,6 +328,7 @@ export const genereazaDraftGrantAction = withOrgFaze<
 >({
   pregateste: async (ctx, grantId, limba) => {
     cuModul(ctx);
+    if (!isPlatformAdmin(ctx.userEmail)) throw new EroareUtilizator("Generarea schiței cu AI nu este disponibilă.");
     if (!aiConfigurat()) return { gata: { ok: false, eroare: "Generarea cu AI nu e configurată pe această platformă. Poți scrie draftul manual." } };
     const [g] = await ctx.db.select().from(granturi).where(and(eq(granturi.id, grantId), eq(granturi.orgId, ctx.orgId))).limit(1);
     if (!g) return { gata: { ok: false, eroare: "Cererea nu a fost găsită." } };
