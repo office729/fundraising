@@ -9,6 +9,7 @@ import { NUME_PACHET_FIX } from "@/lib/billing/packages";
 import { trialDaysRemaining } from "@/lib/billing/trial";
 import { appUsers, memberships, organizations, platformPayments } from "@/lib/db/schema";
 import { facturareFiscalaPermisa, MARCAJ_NEFACTURAT_SANDBOX, oblioConfigurata } from "@/lib/oblio";
+import { cardAfisat } from "@/lib/billing/card-afisat";
 
 // Pagina „Facturare” a organizației: planul, metoda de plată, datele de facturare și facturile emise de Alexandrit prin Oblio.
 // Doar owner/admin; datele de facturare se editează cu acțiunea existentă (salveazaDateFacturareAction din billing-actions).
@@ -87,7 +88,7 @@ export const obtineDateFacturare = withOrgAdmin(async (ctx): Promise<DateFactura
     },
     metodaPlata: {
       tip,
-      masca: org?.masca ?? null,
+      masca: cardAfisat(org?.masca),
       expira: org?.luna && org?.an ? `${String(org.luna).padStart(2, "0")}/${org.an}` : null,
     },
     abonament: {

@@ -13,6 +13,7 @@ import { htmlFacturaEmisa, subiectFacturaEmisa } from "@/lib/oblio-invoice-email
 import { criptareConfigurata, cripteaza } from "@/lib/secret-box";
 
 import { etichetaPachet, NUME_PACHET_FIX } from "./packages";
+import { cardAfisat } from "./card-afisat";
 
 // Confirmarea unei plăți Netopia — SINGURUL loc care schimbă bani/acces, apelat
 // din DOUĂ locuri care ajung aici cu exact aceeași formă de rezultat
@@ -242,7 +243,7 @@ export async function proceseazaRezultatPlataNetopia(orderId: string, rezultat: 
             .update(organizations)
             .set({
               netopiaCardTokenEnc: cripteaza(rezultat.cardToken),
-              netopiaCardMasked: rezultat.cardMasked,
+              netopiaCardMasked: cardAfisat(rezultat.cardMasked),
               netopiaCardExpireMonth: rezultat.cardExpireMonth,
               netopiaCardExpireYear: rezultat.cardExpireYear,
               netopiaAutoRenew: !optOutRand?.o,
@@ -266,7 +267,7 @@ export async function proceseazaRezultatPlataNetopia(orderId: string, rezultat: 
         rezultat.cardToken && criptareConfigurata()
           ? {
               netopiaCardTokenEnc: cripteaza(rezultat.cardToken),
-              netopiaCardMasked: rezultat.cardMasked,
+              netopiaCardMasked: cardAfisat(rezultat.cardMasked),
               netopiaCardExpireMonth: rezultat.cardExpireMonth,
               netopiaCardExpireYear: rezultat.cardExpireYear,
               netopiaAutoRenew: !optOutOrg?.o,

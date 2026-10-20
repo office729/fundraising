@@ -8,6 +8,7 @@ import { dateFacturareComplete } from "@/lib/billing/date-facturare";
 import { etichetaPachet, luniAcces, pretPerioadaPachet, type OrgPackage } from "@/lib/billing/packages";
 import type { CustomPlanConfigSaved } from "@/lib/billing/custom-plan";
 import { isAccessBlocked, isPlatformAdmin, trialEndsAt } from "@/lib/billing/trial";
+import { cardAfisat } from "@/lib/billing/card-afisat";
 import { cronAutorizat } from "@/lib/cron-auth";
 import { db } from "@/lib/db";
 import { appUsers, memberships, organizations } from "@/lib/db/schema";
@@ -353,7 +354,7 @@ async function proceseazaReinnoiri(): Promise<Record<string, unknown>> {
           dataTaxare: formatData(dataTaxare),
           sumaLei: pret.pret,
           packageLabel: pret.eticheta,
-          card: org.netopiaCardMasked ?? "salvat",
+          card: cardAfisat(org.netopiaCardMasked) ?? "salvat",
           cardExpiraInainte: cardExpiratLa(org.netopiaCardExpireMonth, org.netopiaCardExpireYear, dataTaxare),
           setariUrl: `${baseUrl}/${org.slug}/crm/setari`,
         }),
@@ -404,7 +405,7 @@ async function proceseazaReinnoiri(): Promise<Record<string, unknown>> {
           await trimiteEmail({
             to: facturareEmail,
             subiect: subiectCardExpirat(),
-            html: htmlCardExpirat({ orgName: org.name, card: org.netopiaCardMasked ?? "salvat", setariUrl: `${baseUrl}/${org.slug}/crm/setari` }),
+            html: htmlCardExpirat({ orgName: org.name, card: cardAfisat(org.netopiaCardMasked) ?? "salvat", setariUrl: `${baseUrl}/${org.slug}/crm/setari` }),
           }).catch((e) => raporteazaEroare("netopia-reinnoire-email", e, { orgSlug: org.slug }));
         }
         continue;

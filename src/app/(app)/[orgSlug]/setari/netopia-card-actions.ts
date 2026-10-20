@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 
 import { withOrgAdmin } from "@/lib/auth/guard";
 import { organizations } from "@/lib/db/schema";
+import { cardAfisat } from "@/lib/billing/card-afisat";
 
 export type StatusReinnoireAutomata = {
   // Există un token salvat — indiferent dacă reînnoirea e activă sau oprită.
@@ -36,7 +37,7 @@ export const obtineStatusReinnoireAutomata = withOrgAdmin(async (ctx): Promise<S
   const r = rows[0];
   return {
     cardSalvat: Boolean(r?.token),
-    cardMasked: r?.masked ?? null,
+    cardMasked: cardAfisat(r?.masked),
     expiraLuna: r?.luna ?? null,
     expiraAn: r?.an ?? null,
     activa: r?.activa ?? false,
