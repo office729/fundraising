@@ -46,7 +46,7 @@ async function CompaniiContent({
   const locale = await getLocale();
   const dict = COMPANII_DICT[locale].page;
 
-  const { totalFirme, stats, lista, responsabili, dupaJudet } = await getPaginaCompanii(orgSlug, filtru);
+  const { totalFirme, stats, lista, responsabili, dupaJudet, functiiNr } = await getPaginaCompanii(orgSlug, filtru);
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-5">
@@ -79,7 +79,7 @@ async function CompaniiContent({
         <StatCard label={dict.stats.medieCompanie} value={`${stats.medieCompanie.toLocaleString("ro-RO")} RON`} />
       </div>
 
-      <FilterBar responsabili={responsabili} />
+      <FilterBar responsabili={responsabili} functiiNr={functiiNr} />
 
       <Card padded={false}>
         {lista.rows.length === 0 ? (
@@ -128,6 +128,12 @@ async function CompaniiContent({
                     {c.responsabilNume && <span>· {c.responsabilNume}</span>}
                     <span>· {dict.vizitat(c.lastViewedAt ? formatDataRelativa(c.lastViewedAt.toISOString()) : dict.niciodata)}</span>
                   </p>
+                  {c.contacteFunctie.length > 0 && (
+                    <p className="mt-0.5 text-[12px] text-[var(--ci-text-muted)]">
+                      {c.contacteFunctie.map((p) => (p.functie ? `${p.nume} (${p.functie})` : p.nume)).join(" · ")}
+                      {COMPANII_DICT[locale].filterBar.persoanePotrivite(c.contacteFunctieTotal - c.contacteFunctie.length)}
+                    </p>
+                  )}
                 </div>
                 <div className="pointer-events-none relative z-10 flex shrink-0 items-center gap-1.5">
                   {c.temperatura === "cald" && <Badge tone="red" icon={false}>{dict.cald}</Badge>}

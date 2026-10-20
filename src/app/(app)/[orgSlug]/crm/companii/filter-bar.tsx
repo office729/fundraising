@@ -7,6 +7,7 @@ import { useState } from "react";
 import { Input, Select } from "../components/ui/input";
 import { useLocale } from "../lib/locale-context";
 import { COMPANII_DICT } from "@/lib/i18n/dictionaries/companii";
+import { CHEI_FUNCTII, FUNCTIE_NESPECIFICATA } from "@/lib/functii-contact";
 import { JUDETE, numarFiltreActive, parseFiltru, type PerioadaTip } from "./lib/filters";
 
 const PERIOADA_KEYS = ["toate", "q1", "q2", "q3", "q4", "an", "luna", "saptamana"] as const satisfies readonly PerioadaTip[];
@@ -21,7 +22,7 @@ function pill(activ: boolean) {
   }`;
 }
 
-export function FilterBar({ responsabili }: { responsabili: { id: string; name: string | null }[] }) {
+export function FilterBar({ responsabili, functiiNr }: { responsabili: { id: string; name: string | null }[]; functiiNr: Record<string, number> }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -31,6 +32,7 @@ export function FilterBar({ responsabili }: { responsabili: { id: string; name: 
   const [q, setQ] = useState(f.q);
   const [dataStart, setDataStart] = useState(f.dataStart);
   const [dataSfarsit, setDataSfarsit] = useState(f.dataSfarsit);
+  const [functieText, setFunctieText] = useState(f.functieText);
 
   // Rândurile de filtre detaliate ocupă mult spațiu pe verticală — se restrâng
   // implicit, în spatele rotiței (doar căutarea rapidă rămâne vizibilă); numărul
@@ -59,6 +61,13 @@ export function FilterBar({ responsabili }: { responsabili: { id: string; name: 
     if (set.has(m)) set.delete(m);
     else set.add(m);
     push({ marcaj: [...set] });
+  }
+
+  function toggleFunctie(cheie: string) {
+    const set = new Set(f.functie);
+    if (set.has(cheie)) set.delete(cheie);
+    else set.add(cheie);
+    push({ functie: [...set] });
   }
 
   return (
@@ -193,6 +202,34 @@ export function FilterBar({ responsabili }: { responsabili: { id: string; name: 
         <button type="button" onClick={() => push({ contact: f.contact === "fara" ? null : "fara" })} className={pill(f.contact === "fara")}>
           {dict.faraContact}
         </button>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-[12px] font-semibold text-[var(--ci-text-muted)]" title={dict.functieHint}>
+          {dict.functie}
+        </span>
+        {[...CHEI_FUNCTII, FUNCTIE_NESPECIFICATA].map((cheie) => {
+          const nr = functiiNr[cheie] ?? 0;
+          const activ = f.functie.includes(cheie);
+          return (
+            <button key={cheie} type="button" onClick={() => toggleFunctie(cheie)} aria-pressed={activ} title={dict.functieHint} className={pill(activ)}>
+              {dict.functii[cheie as keyof typeof dict.functii]}
+              <span className="ci-tabular ml-1.5 font-normal opacity-70">{nr.toLocaleString("ro-RO")}</span>
+            </button>
+          );
+        })}
+        <form
+          className="flex items-center gap-1.5"
+          onSubmit={(e) => {
+            e.preventDefault();
+            push({ functieq: functieText.trim() || null });
+          }}
+        >
+          <Input value={functieText} onChange={(e) => setFunctieText(e.target.value)} placeholder={dict.altaFunctie} maxLength={60} className="h-8 w-48 text-[12px]" />
+          <button type="submit" className="h-8 rounded-[var(--ci-radius-btn)] bg-[var(--ci-primary)] px-3 text-[12px] font-semibold text-white hover:opacity-90">
+            {dict.aplicaFunctie}
+          </button>
+        </form>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">

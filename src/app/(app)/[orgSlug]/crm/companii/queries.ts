@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, or, sql, type SQL } from "drizzle-orm";
 
 import { withOrgSession, type OrgContext } from "@/lib/auth/guard";
 import { appUsers, companies, fundraisingPages, companyNotite, companySponsorizari, companyStageLog, contacts, memberships } from "@/lib/db/schema";
@@ -6,10 +6,29 @@ import { appUsers, companies, fundraisingPages, companyNotite, companySponsoriza
 import { citesteSegment, hexFaraCratime, LUNGIME_SUFIX, segmentFirma, slugFirma } from "@/lib/id-scurt";
 import { cifreCui, patternLike, sqlFaraDiacritice } from "@/lib/cautare";
 import { codJudetDinTextLiber } from "@/lib/judete";
+import { CHEI_FUNCTII, esteCheieFunctie, FUNCTIE_NESPECIFICATA, regexFunctie } from "@/lib/functii-contact";
 import { sectiuneSigura } from "@/lib/sectiune-sigura";
 import { calculeazaInterval, type FiltruCompanii, RECENTE_LIMIT, TOP_LIMIT } from "./lib/filters";
 
 const PAGE_SIZE = 25;
+
+// Funcția și departamentul unei persoane, lipite și aduse la „fără diacritice, minuscule” (vezi lib/functii-contact.ts).
+const textFunctieSql = () => sqlFaraDiacritice(sql`(coalesce(${contacts.rol}, '') || ' ' || coalesce(${contacts.dept}, ''))`);
+const faraFunctieSql = () => sql`(coalesce(trim(${contacts.rol}), '') = '' and coalesce(trim(${contacts.dept}), '') = '')`;
+
+// Condiția filtrului „funcția contactului” pe UN rând din contacts: persoana intră în oricare dintre categoriile alese
+// ȘI (dacă e scris) funcția/departamentul ei conține textul liber. null = filtrul nu e folosit.
+function conditieContactFunctie(f: FiltruCompanii): SQL | null {
+  const parti: SQL[] = [];
+  for (const c of f.functie) {
+    if (c === FUNCTIE_NESPECIFICATA) parti.push(faraFunctieSql());
+    else if (esteCheieFunctie(c)) parti.push(sql`${textFunctieSql()} ~ ${regexFunctie(c)}`);
+  }
+  const conditii: SQL[] = [];
+  if (parti.length) conditii.push(or(...parti)!);
+  if (f.functieText.trim()) conditii.push(sql`${textFunctieSql()} like ${patternLike(f.functieText)}`);
+  return conditii.length ? and(...conditii)! : null;
+}
 
 // Condiții COMUNE listei și statisticilor — orice filtru nou trebuie adăugat
 // AICI o singură dată, ca lista și cardurile de sus să rămână mereu coerente
@@ -31,6 +50,8 @@ function conditiiComune(f: FiltruCompanii, userId: string) {
   } else if (f.contact === "fara") {
     cond.push(sql`not exists (select 1 from ${contacts} where ${contacts.companyId} = ${companies.id} and (${contacts.telefon} is not null or ${contacts.email} is not null))`);
   }
+  const dupaFunctie = conditieContactFunctie(f);
+  if (dupaFunctie) cond.push(sql`exists (select 1 from ${contacts} where ${contacts.companyId} = ${companies.id} and ${dupaFunctie})`);
   for (const m of f.marcaje) {
     if (m === "d177") cond.push(eq(companies.d177, true));
     else if (m === "decembrie") cond.push(eq(companies.decembrie, true));
@@ -68,6 +89,8 @@ export type RandCompanie = {
   temperatura: "cald" | "rece" | null;
   updatedAt: Date;
   lastViewedAt: Date | null;
+  contacteFunctie: { nume: string; functie: string | null }[]; // doar când filtrul de funcție e activ
+  contacteFunctieTotal: number;
 };
 
 const getCompaniiListaImpl = async (ctx: OrgContext, filtru: FiltruCompanii) => {
@@ -117,8 +140,25 @@ const getCompaniiListaImpl = async (ctx: OrgContext, filtru: FiltruCompanii) => 
     .limit(recente ? RECENTE_LIMIT : PAGE_SIZE)
     .offset(recente ? 0 : (filtru.pagina - 1) * PAGE_SIZE);
 
+  // Cu filtrul de funcție activ, fiecare firmă arată persoanele care l-au potrivit (cel mult 3, prioritarii întâi).
+  const dupaFunctie = conditieContactFunctie(filtru);
+  const potrivite = new Map<string, { nume: string; functie: string | null }[]>();
+  if (dupaFunctie && rows.length) {
+    const persoane = await ctx.db
+      .select({ companyId: contacts.companyId, nume: contacts.nume, rol: contacts.rol, dept: contacts.dept })
+      .from(contacts)
+      .where(and(eq(contacts.orgId, ctx.orgId), inArray(contacts.companyId, rows.map((r) => r.id)), dupaFunctie))
+      .orderBy(desc(contacts.cheie), contacts.nume);
+    for (const p of persoane) {
+      const lista = potrivite.get(p.companyId) ?? [];
+      lista.push({ nume: p.nume, functie: [p.rol, p.dept].filter(Boolean).join(" · ") || null });
+      potrivite.set(p.companyId, lista);
+    }
+  }
+
   const pageSize = recente ? RECENTE_LIMIT : PAGE_SIZE;
-  return { rows: rows as RandCompanie[], total, pageSize, pageCount: Math.max(1, Math.ceil(total / pageSize)) };
+  const randuri = rows.map((r) => ({ ...r, contacteFunctie: (potrivite.get(r.id) ?? []).slice(0, 3), contacteFunctieTotal: potrivite.get(r.id)?.length ?? 0 }));
+  return { rows: randuri as RandCompanie[], total, pageSize, pageCount: Math.max(1, Math.ceil(total / pageSize)) };
 };
 export const getCompaniiLista = withOrgSession(getCompaniiListaImpl);
 
@@ -195,6 +235,18 @@ const getFirmeDupaJudetImpl = async (ctx: OrgContext) => {
     if (cod) dupaJudet[cod] = (dupaJudet[cod] ?? 0) + r.nr;
   }
   return dupaJudet;
+};
+
+const getFunctiiNrImpl = async (ctx: OrgContext) => {
+  const select: Record<string, SQL<number>> = {};
+  for (const c of CHEI_FUNCTII) select[c] = sql<number>`count(distinct ${contacts.companyId}) filter (where ${textFunctieSql()} ~ ${regexFunctie(c)})::int`;
+  select[FUNCTIE_NESPECIFICATA] = sql<number>`count(distinct ${contacts.companyId}) filter (where ${faraFunctieSql()})::int`;
+  const [row] = await ctx.db
+    .select(select)
+    .from(contacts)
+    .innerJoin(companies, eq(companies.id, contacts.companyId))
+    .where(and(eq(contacts.orgId, ctx.orgId), sql`${companies.deletedAt} is null`));
+  return (row ?? {}) as Record<string, number>;
 };
 
 const getResponsabiliOrgImpl = async (ctx: OrgContext) => {
@@ -296,12 +348,13 @@ export const getCompanieDetaliu = withOrgSession(async (ctx, segment: string) =>
 // Pagina cere toate patru într-o SINGURĂ tranzacție (o conexiune din pool, un singur set de verificări de acces),
 // nu patru tranzacții paralele — pool-ul are doar 5 conexiuni și layout-urile mai folosesc și ele.
 export const getPaginaCompanii = withOrgSession(async (ctx, filtru: FiltruCompanii) => {
-  const [totalFirme, stats, lista, responsabili, dupaJudet] = await Promise.all([
+  const [totalFirme, stats, lista, responsabili, dupaJudet, functiiNr] = await Promise.all([
     getTotalFirmeImpl(ctx),
     getStatisticiCompaniiImpl(ctx, filtru),
     getCompaniiListaImpl(ctx, filtru),
     getResponsabiliOrgImpl(ctx),
     getFirmeDupaJudetImpl(ctx),
+    getFunctiiNrImpl(ctx),
   ]);
-  return { totalFirme, stats, lista, responsabili, dupaJudet };
+  return { totalFirme, stats, lista, responsabili, dupaJudet, functiiNr };
 });

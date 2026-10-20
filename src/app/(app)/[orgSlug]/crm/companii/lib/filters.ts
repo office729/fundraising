@@ -2,6 +2,8 @@
 // fără DB, fără "use client"/"use server", ca să fie folosită identic din
 // Server Components (queries.ts) și din bara de filtre (client).
 
+import { curataSelectieFunctii } from "@/lib/functii-contact";
+
 export { JUDETE } from "@/lib/judete";
 
 export type PerioadaTip = "toate" | "q1" | "q2" | "q3" | "q4" | "an" | "luna" | "saptamana" | "interval";
@@ -20,6 +22,8 @@ export type FiltruCompanii = {
   responsabil: string; // "toti" sau id (uuid) de app_user
   judet: string; // "toate" sau un județ din JUDETE
   contact: "toate" | "cu" | "fara";
+  functie: string[]; // categorii de funcții ale persoanelor de contact (vezi lib/functii-contact.ts); firma are cel puțin o persoană în oricare dintre ele
+  functieText: string; // text liber căutat în funcția/departamentul aceleiași persoane (ex. „director”)
   marcaje: string[]; // subset din ["d177", "decembrie", "caz"]
   vezi: "toata" | "lucrate" | "recente"; // „recente” = ultimele 20 firme la care a lucrat utilizatorul curent
   q: string;
@@ -39,6 +43,7 @@ export function numarFiltreActive(f: FiltruCompanii): number {
     (f.responsabil !== "toti" ? 1 : 0) +
     (f.judet !== "toate" ? 1 : 0) +
     (f.contact !== "toate" ? 1 : 0) +
+    (f.functie.length > 0 || f.functieText.trim() ? 1 : 0) +
     f.marcaje.length +
     (f.vezi !== "toata" ? 1 : 0)
   );
@@ -64,6 +69,8 @@ export function parseFiltru(sp: URLSearchParams): FiltruCompanii {
     responsabil: sp.get("responsabil") ?? "toti",
     judet: sp.get("judet") ?? "toate",
     contact: sp.get("contact") === "cu" || sp.get("contact") === "fara" ? (sp.get("contact") as "cu" | "fara") : "toate",
+    functie: curataSelectieFunctii(sp.getAll("functie")),
+    functieText: (sp.get("functieq") ?? "").slice(0, 60),
     marcaje: marcajeRaw.filter((m) => MARCAJE_VALIDE.has(m)),
     vezi: sp.get("vezi") === "lucrate" ? "lucrate" : sp.get("vezi") === "recente" ? "recente" : "toata",
     q: sp.get("q") ?? "",
