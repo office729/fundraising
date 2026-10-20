@@ -49,3 +49,16 @@ test("limite de lungime respectate", () => {
   const d = dateAntifraud({ numeUtilizator: "A ".repeat(100), orgName: "B".repeat(200), adresaSediu: "x".repeat(500), judet: "Cluj" });
   assert.ok(d.prenume.length <= 60 && d.nume.length <= 60 && d.adresa.length <= 120 && d.oras.length <= 60);
 });
+
+test("telefonPlataValid: doar numere românești utilizabile; goale, străine sau inventate nu trec", async () => {
+  const { telefonPlataValid, MESAJ_TELEFON_LIPSA } = await import("../src/lib/billing/date-antifraud.ts");
+  for (const ok of ["0722123456", "+40722123456", "0040722123456", "0722 123 456", "0722-123-456"]) assert.equal(telefonPlataValid(ok), true, ok);
+  for (const prost of [null, undefined, "", "   ", "12345", "abc", "+4412345678", "0722123"]) assert.equal(telefonPlataValid(prost), false, String(prost));
+  assert.match(MESAJ_TELEFON_LIPSA, /telefon valid/);
+});
+
+test("numărul implicit 0700000000 nu trece drept telefon valid", async () => {
+  const { telefonPlataValid } = await import("../src/lib/billing/date-antifraud.ts");
+  assert.equal(telefonPlataValid("0700000000"), false);
+  assert.equal(telefonPlataValid("+40700000000"), false);
+});

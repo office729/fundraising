@@ -4,6 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 
 import { trackEvent } from "@/lib/analytics";
 import { dateFacturareComplete } from "@/lib/billing/date-facturare";
+import { telefonPlataValid } from "@/lib/billing/date-antifraud";
 import { areModul, LUNI_ACCES_ANUAL, MAX_UTILIZATORI_SUPLIMENTARI, PACKAGE_LIMITS, PRET_UTILIZATOR_SUPLIMENTAR, pretLunarPachet, pretPerioadaPachet, type Facturare, type ModulPachet, type OrgPackage } from "@/lib/billing/packages";
 import type { Locale } from "@/lib/i18n/config";
 import { ABONAMENT_DICT } from "@/lib/i18n/dictionaries/abonament";
@@ -73,7 +74,7 @@ function limiteText(pkg: Exclude<OrgPackage, "trial" | "custom">, locale: Locale
 // disponibilă oricând, ca un ONG recomandat să-și poată revendica reducerea de
 // 50% imediat, nu abia peste 14 zile). La alegere, pornește o sesiune Stripe
 // Checkout reală și redirecționează — nu doar înregistrează intenția.
-type DateFacturare = { cif: string | null; adresaSediu: string | null; judet: string | null };
+type DateFacturare = { cif: string | null; adresaSediu: string | null; judet: string | null; telefon: string | null };
 
 // Date de facturare cerute ÎNAINTE de prima plată (factura Oblio nu poate pleca
 // fără CIF și adresă). Formularul e aici, nu doar în Setări: un cont cu proba
@@ -83,6 +84,9 @@ function DateFacturareForm({ orgSlug, initial, onSaved, locale }: { orgSlug: str
   const [cif, setCif] = useState(initial.cif ?? "");
   const [adresa, setAdresa] = useState(initial.adresaSediu ?? "");
   const [judet, setJudet] = useState(initial.judet ?? "");
+  // Telefonul plătitorului: câmpul apare doar când organizația nu are deja unul valid (altfel rămâne cel salvat la înscriere).
+  const cereTelefon = !telefonPlataValid(initial.telefon);
+  const [telefon, setTelefon] = useState("");
   const [eroare, setEroare] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -91,9 +95,9 @@ function DateFacturareForm({ orgSlug, initial, onSaved, locale }: { orgSlug: str
     setEroare(null);
     startTransition(async () => {
       try {
-        const r = await salveazaDateFacturareAction(orgSlug, { cif, adresaSediu: adresa, judet });
+        const r = await salveazaDateFacturareAction(orgSlug, { cif, adresaSediu: adresa, judet, ...(cereTelefon ? { telefon } : {}) });
         if (r.error) setEroare(r.error);
-        else onSaved({ cif: cif.trim(), adresaSediu: adresa.trim(), judet });
+        else onSaved({ cif: cif.trim(), adresaSediu: adresa.trim(), judet, telefon: cereTelefon ? telefon.trim() : initial.telefon });
       } catch {
         setEroare(t.eroare);
       }
@@ -125,6 +129,12 @@ function DateFacturareForm({ orgSlug, initial, onSaved, locale }: { orgSlug: str
             ))}
           </select>
         </label>
+        {cereTelefon && (
+          <label className="text-sm font-medium text-ink">
+            {t.telefon}
+            <input value={telefon} onChange={(e) => setTelefon(e.target.value)} placeholder={t.telefonPlaceholder} inputMode="tel" autoComplete="tel" className={camp} />
+          </label>
+        )}
       </div>
       {eroare && <p className="mt-3 text-sm text-red-600">{eroare}</p>}
       <button
@@ -155,7 +165,7 @@ export function PackagePicker({ orgSlug, locale, extraInitial = 0, pachetAles }:
       anulat = true;
     };
   }, [orgSlug]);
-  const dateOk = date !== null && dateFacturareComplete(date);
+  const dateOk = date !== null && dateFacturareComplete(date) && telefonPlataValid(date.telefon);
   // Acord explicit pentru taxarea automată lunară (cerut de rețelele de carduri pentru plățile inițiate de comerciant):
   // butoanele de plată (pachete și plan personalizat) rămân blocate până e bifat.
   const [acord, setAcord] = useState(false);

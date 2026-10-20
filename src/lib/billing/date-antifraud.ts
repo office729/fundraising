@@ -13,7 +13,8 @@ export function telefonPentruNetopia(telefon: string | null | undefined): { tele
   if (c.startsWith("+40")) c = `0${c.slice(3)}`;
   else if (c.startsWith("0040")) c = `0${c.slice(4)}`;
   else if (/^40\d{9}$/.test(c)) c = `0${c.slice(2)}`;
-  if (/^0\d{9}$/.test(c)) return { telefon: c, real: true };
+  // Numărul implicit nu e unul real, chiar dacă arată ca un telefon: nu are voie să treacă drept „valid” dacă e scris sau salvat.
+  if (/^0\d{9}$/.test(c) && c !== TELEFON_IMPLICIT) return { telefon: c, real: true };
   return { telefon: TELEFON_IMPLICIT, real: false };
 }
 
@@ -47,6 +48,14 @@ export function extrageLocalitate(adresa: string | null | undefined, judet: stri
   }
   const j = String(judet ?? "").trim();
   return j ? titluri(j).slice(0, 60) : "București";
+}
+
+// Pentru plata interactivă: fără un telefon valid nu pornim plata. Înainte, plecau „0700000000” și alte valori inventate, iar Netopia a marcat „Fraudă”
+// tranzacțiile cu date de test, înainte de bancă; același card cu date reale a ajuns la 3-D Secure.
+export const MESAJ_TELEFON_LIPSA = "Completează un număr de telefon valid (ex. 0722 123 456) înainte de plată: banca și procesatorul de plăți îl cer pentru a verifica plata.";
+
+export function telefonPlataValid(telefon: string | null | undefined): boolean {
+  return telefonPentruNetopia(telefon).real;
 }
 
 export type DateAntifraud = {

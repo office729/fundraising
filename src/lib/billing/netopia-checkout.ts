@@ -13,7 +13,7 @@ import { clasificaStatus, interogheazaStatus, netopiaConfigurata, pornestePlata,
 import { decripteaza } from "@/lib/secret-box";
 
 import { alertaOperatorZilnic } from "./alerta-operator";
-import { dateAntifraud } from "./date-antifraud";
+import { dateAntifraud, MESAJ_TELEFON_LIPSA } from "./date-antifraud";
 import { pretDeTest } from "./pret-test";
 import { NetopiaRespins } from "./netopia-erori";
 
@@ -117,6 +117,18 @@ export async function creeazaPlataAbonament(
     throw new EroareUtilizator(MESAJ_DATE_FACTURARE_LIPSA);
   }
 
+  // Telefonul organizației (completat la înscriere) — nu e în contextul de sesiune, deci îl citim aici. Obligatoriu la plata interactivă și verificat
+  // ÎNAINTE de a crea comanda: altfel ar rămâne o comandă „în așteptare” pentru o plată care nu pornește.
+  const [orgTel] = await ctx.db.select({ telefon: organizations.telefon }).from(organizations).where(eq(organizations.id, ctx.orgId)).limit(1);
+  const antifraud = dateAntifraud({
+    numeUtilizator: ctx.userName,
+    orgName: ctx.orgName,
+    telefon: orgTel?.telefon,
+    adresaSediu: ctx.orgAdresaSediu,
+    judet: ctx.orgJudet,
+  });
+  if (!antifraud.telefonReal) throw new EroareUtilizator(MESAJ_TELEFON_LIPSA);
+
   // Comanda se scrie într-o tranzacție SCURTĂ, separată și comisă imediat (cu context de încredere), nu în tranzacția
   // organizației: altfel `salveazaNtpId` (alt rând de conexiune) nu vedea rândul necomis, actualiza 0 rânduri și
   // fallback-ul de status (pentru IPN întârziat) nu putea funcționa niciodată.
@@ -136,17 +148,6 @@ export async function creeazaPlataAbonament(
       renewal: false,
     });
   });
-
-  // Telefonul organizației (completat la înscriere) — nu e în contextul de sesiune, deci îl citim aici.
-  const [orgTel] = await ctx.db.select({ telefon: organizations.telefon }).from(organizations).where(eq(organizations.id, ctx.orgId)).limit(1);
-  const antifraud = dateAntifraud({
-    numeUtilizator: ctx.userName,
-    orgName: ctx.orgName,
-    telefon: orgTel?.telefon,
-    adresaSediu: ctx.orgAdresaSediu,
-    judet: ctx.orgJudet,
-  });
-  if (!antifraud.telefonReal) raporteazaAvertisment("netopia-antifraud", "organizația nu are un telefon valid: se trimite telefonul implicit", { orgSlug: ctx.orgSlug });
 
   let paymentUrl: string;
   let ntpId: string | null;

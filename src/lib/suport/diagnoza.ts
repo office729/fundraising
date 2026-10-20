@@ -136,7 +136,7 @@ export async function citesteDiagnoza(orgSlug: string, actorEmail: string): Prom
     });
 
     const pachet = pachetEfectiv({ package: org.package, createdAt: org.createdAt, subscriptionStatus: org.subscriptionStatus, currentPeriodEnd: org.currentPeriodEnd });
-    const domeniiWidget = (org.widgetDomenii ?? "").split(/[\s,;]+/).filter(Boolean).length;
+    const domeniiWidget = ((org as { widgetDomenii?: string | null }).widgetDomenii ?? "").split(/[\s,;]+/).filter(Boolean).length;
     return {
       tip: "ok",
       orgNume: org.name,

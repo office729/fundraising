@@ -15,6 +15,8 @@ import { organizations, platformPayments } from "@/lib/db/schema";
 import { cifFolositDeAltaOrganizatie, MESAJ_CIF_FOLOSIT } from "@/lib/cif";
 import { EroareUtilizator } from "@/lib/erori";
 import { cifValidFormat } from "@/lib/iban";
+import { telefonPlataValid } from "@/lib/billing/date-antifraud";
+import { normalizeazaTelefon } from "@/lib/telefon";
 import { gasesteJudet } from "@/lib/judete";
 import { TERMENI_VERSIUNE } from "@/lib/legal-version";
 
@@ -147,22 +149,34 @@ export const listeazaFacturiAction = withOrgAdmin(async (ctx) => {
 // lib/billing/date-facturare.ts). Disponibile și când accesul e blocat de
 // paywall — tocmai atunci se completează, iar Setările nu sunt accesibile.
 export const citesteDateFacturareAction = withOrgAdmin(
-  async (ctx) => ({ cif: ctx.orgCif, adresaSediu: ctx.orgAdresaSediu, judet: ctx.orgJudet }),
+  async (ctx) => {
+    const [org] = await ctx.db.select({ telefon: organizations.telefon }).from(organizations).where(eq(organizations.id, ctx.orgId)).limit(1);
+    return { cif: ctx.orgCif, adresaSediu: ctx.orgAdresaSediu, judet: ctx.orgJudet, telefon: org?.telefon ?? null };
+  },
   { permiteAccesBlocat: true },
 );
 
 export const salveazaDateFacturareAction = withOrgAdmin(
-  async (ctx, v: { cif: string; adresaSediu: string; judet: string }): Promise<{ error: string | null }> => {
+  async (ctx, v: { cif: string; adresaSediu: string; judet: string; telefon?: string }): Promise<{ error: string | null }> => {
     const cif = v.cif.trim();
     const adresa = v.adresaSediu.trim();
     const judet = gasesteJudet(v.judet.trim());
     if (!cif || !cifValidFormat(cif)) return { error: "CIF invalid — scrie-l cu sau fără prefixul RO (ex. RO12345678)." };
     if (adresa.length < 5 || adresa.length > 300) return { error: "Scrie adresa sediului social (strada, număr, localitate)." };
     if (!judet) return { error: "Alege județul." };
+    // Telefonul plătitorului (cerut de procesatorul de plăți): dacă a fost scris, se validează și se salvează; dacă organizația nu are deja unul valid, e obligatoriu.
+    let telefon: string | null = null;
+    if (v.telefon !== undefined && v.telefon.trim() !== "") {
+      telefon = normalizeazaTelefon(v.telefon);
+      if (!telefon || !telefonPlataValid(telefon)) return { error: "Telefon invalid — scrie un număr românesc (ex. 0722 123 456)." };
+    } else {
+      const [org] = await ctx.db.select({ telefon: organizations.telefon }).from(organizations).where(eq(organizations.id, ctx.orgId)).limit(1);
+      if (!telefonPlataValid(org?.telefon)) return { error: "Scrie un număr de telefon valid (ex. 0722 123 456)." };
+    }
     // CIF unic între organizații (vezi lib/cif.ts) — mesaj clar, nu eroarea brută a indexului unic.
     if (await cifFolositDeAltaOrganizatie(cif, ctx.orgId)) return { error: MESAJ_CIF_FOLOSIT };
     try {
-      await ctx.db.update(organizations).set({ cif, adresaSediu: adresa, judet }).where(eq(organizations.id, ctx.orgId));
+      await ctx.db.update(organizations).set({ cif, adresaSediu: adresa, judet, ...(telefon ? { telefon } : {}) }).where(eq(organizations.id, ctx.orgId));
     } catch (e) {
       const mesaj = String((e as { message?: string })?.message ?? "") + String((e as { cause?: { message?: string } })?.cause?.message ?? "");
       if (mesaj.includes("organizations_cif_norm_unique")) return { error: MESAJ_CIF_FOLOSIT };
