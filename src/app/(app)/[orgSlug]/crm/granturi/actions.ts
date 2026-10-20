@@ -8,7 +8,7 @@ import { aiConfigurat, cautaApeluriAI, genereazaDraftGrantAI, type RezultatCauta
 import { limitaAIDepasita, limitaCautareDepasita, MESAJ_LIMITA_AI, MESAJ_LIMITA_CAUTARE } from "@/lib/ai-limit";
 import { withOrgAdmin, withOrgFaze, withOrgSession } from "@/lib/auth/guard";
 import { areModul } from "@/lib/billing/packages";
-import { pachetPentruModule } from "@/lib/billing/trial";
+import { isPlatformAdmin, pachetPentruModule } from "@/lib/billing/trial";
 import { appUsers, granturi, granturiDosar, memberships, type FisierGrant } from "@/lib/db/schema";
 import { EroareUtilizator } from "@/lib/erori";
 import { BUCKET_PRIVAT, caleDinReferinta, referintaPrivata, stergeFisierePrivate } from "@/lib/fisiere-private";
@@ -295,6 +295,9 @@ export const cautaApeluriAction = withOrgFaze<
 >({
   pregateste: async (ctx, domeniu, zona, observatii) => {
     cuModul(ctx);
+    // Căutarea consumă creditele Anthropic ale platformei și nu e promisă în niciun pachet: o văd doar conturile administratorilor platformei
+    // (vezi isPlatformAdmin). Verificarea e și pe server, nu doar în interfață, ca acțiunea să nu poată fi apelată direct.
+    if (!isPlatformAdmin(ctx.userEmail)) throw new EroareUtilizator("Căutarea de apeluri cu AI nu este disponibilă.");
     if (!aiConfigurat()) return { gata: { ok: false, eroare: "Căutarea cu AI nu e configurată pe această platformă." } };
     if (await limitaCautareDepasita(ctx)) return { gata: { ok: false, eroare: MESAJ_LIMITA_CAUTARE } };
     return {

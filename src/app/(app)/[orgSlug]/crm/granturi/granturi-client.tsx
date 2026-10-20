@@ -192,7 +192,7 @@ function Camp({ eticheta, ajutor, className, children }: { eticheta: string; aju
 
 // ---------------------------------------------------------------------------------------------------------------- Pagina
 
-export function GranturiClient({ orgSlug, initial, prefill, esteAdmin }: { orgSlug: string; initial: DateGranturi; prefill: Record<string, string>; esteAdmin: boolean }) {
+export function GranturiClient({ orgSlug, initial, prefill, esteAdmin, cautareAi }: { orgSlug: string; initial: DateGranturi; prefill: Record<string, string>; esteAdmin: boolean; cautareAi: boolean }) {
   const [date, setDate] = useState(initial);
   const reincarca = async () => setDate(await obtineDateGranturi(orgSlug));
 
@@ -228,7 +228,7 @@ export function GranturiClient({ orgSlug, initial, prefill, esteAdmin }: { orgSl
           ) : tab === "dosar" ? (
             <Dosar orgSlug={orgSlug} dosar={date.dosar} prefill={prefill} reincarca={reincarca} />
           ) : (
-            <Surse orgSlug={orgSlug} date={date} reincarca={reincarca} />
+            <Surse orgSlug={orgSlug} date={date} reincarca={reincarca} cautareAi={cautareAi} />
           )
         }
       </Tabs>
@@ -1076,7 +1076,7 @@ function CautareApeluri({ orgSlug, date, reincarca }: { orgSlug: string; date: D
   );
 }
 
-function Surse({ orgSlug, date, reincarca }: { orgSlug: string; date: DateGranturi; reincarca: () => Promise<void> }) {
+function Surse({ orgSlug, date, reincarca, cautareAi }: { orgSlug: string; date: DateGranturi; reincarca: () => Promise<void>; cautareAi: boolean }) {
   const [fel, setFel] = useState<string>("toate");
   const [pending, startTransition] = useTransition();
   const [mesaj, setMesaj] = useState<MesajUi>(null);
@@ -1086,7 +1086,7 @@ function Surse({ orgSlug, date, reincarca }: { orgSlug: string; date: DateGrantu
 
   return (
     <div className="space-y-4 pt-4">
-      <CautareApeluri orgSlug={orgSlug} date={date} reincarca={reincarca} />
+      {cautareAi && <CautareApeluri orgSlug={orgSlug} date={date} reincarca={reincarca} />}
       <Card>
         <p className="text-[13px] text-[var(--ci-text-muted)]">
           Locurile unde merită căutat periodic (lista a fost verificată în {SURSE_VERIFICATE_IN}). Nu arată apeluri în timp real: <b className="font-semibold text-[var(--ci-text)]">termenele, sumele și condițiile se verifică mereu pe site-ul finanțatorului</b>, iar criteriile se pot schimba. Apasă „Urmărește” ca să-l pui în registru și să-i adaugi apelul concret când apare.
