@@ -6,9 +6,10 @@ import { escHtml } from "./html-escape";
 
 const bazaSite = () => (process.env.NEXT_PUBLIC_SITE_URL || "https://alexandrit.ro").replace(/\/$/, "");
 
-// O adresă de email în text: Gmail o transformă în link albastru subliniat. Un caracter invizibil după „@” oprește asta, fără să schimbe cum arată.
+// O adresă de email în text: Gmail o transformă în link albastru subliniat, iar dacă „@” e rupt, leagă măcar domeniul (gmail.com). Un caracter invizibil
+// după „@” și după fiecare punct oprește asta, fără să schimbe cum arată.
 export function emailFaraLink(adresa: string): string {
-  return escHtml(adresa).replace("@", "@&#8203;");
+  return escHtml(adresa).replace(/[@.]/g, (c) => `${c}&#8203;`);
 }
 
 export type ParametriLayoutEmail = {

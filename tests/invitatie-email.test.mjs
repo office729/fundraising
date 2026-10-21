@@ -35,7 +35,7 @@ test("rolul schimbă textul", () => {
 
 test("adresa celui care invită nu devine link: caracter invizibil după @", () => {
   const h = htmlInvitatie({ ...baza, invitatDe: "colega@exemplu.ro" });
-  assert.ok(h.includes("colega@&#8203;exemplu.ro"));
+  assert.ok(h.includes("colega@&#8203;exemplu.&#8203;ro"), "și după punct, ca să nu se lege nici domeniul");
   assert.ok(!h.includes("colega@exemplu.ro"));
 });
 
