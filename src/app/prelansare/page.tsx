@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+
+import { starePrelansare } from "@/lib/prelansare";
 
 import { Cronometru } from "./cronometru";
 import { FundalMeniu } from "./fundal-meniu";
@@ -11,11 +14,19 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+// Dinamică: starea (cronometru / live) se calculează la fiecare cerere, nu o dată la build.
+export const dynamic = "force-dynamic";
+
+const esteOprit = () => process.env.PRELANSARE_OPRITA === "1";
+const esteLive = () => starePrelansare(Date.now(), esteOprit()) === "live";
+
 export default function PrelansarePage() {
+  // După lansare, adresa veche /prelansare (bookmark, filă deschisă) duce direct la site.
+  if (esteLive()) redirect("/");
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#08213b]">
       <FundalMeniu />
-      <Cronometru oprit={process.env.PRELANSARE_OPRITA === "1"} />
+      <Cronometru oprit={esteOprit()} />
     </main>
   );
 }

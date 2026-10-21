@@ -17,6 +17,8 @@ import { cifValidFormat } from "@/lib/iban";
 import { normalizeazaTelefon } from "@/lib/telefon";
 import { AUTH_DICT } from "@/lib/i18n/dictionaries/auth";
 import { getLocale } from "@/lib/i18n/get-locale";
+import { isPlatformAdmin } from "@/lib/billing/trial";
+import { starePrelansare } from "@/lib/prelansare";
 import { createClient } from "@/lib/supabase/server";
 
 async function emailulExista(email: string): Promise<boolean> {
@@ -52,6 +54,11 @@ export async function signupAction(
   }
   if (orgName.length > MAX_LUNGIME_NUME_ORGANIZATIE) {
     return { error: errors.numeOrganizatiePreaLung };
+  }
+  // Pre-lansare: proxy-ul lasă /signup deschis pentru linkurile de invitație (?invite=) fără să verifice tokenul, deci cine adaugă parametrul la o adresă
+  // oarecare ar ajunge la formularul de organizație nouă. Verificarea e și aici, pe server: până pe 26 octombrie, organizație nouă doar pentru administratori.
+  if (!inviteToken && !beneficiarInviteToken && starePrelansare(Date.now(), process.env.PRELANSARE_OPRITA === "1") !== "live" && !isPlatformAdmin(email)) {
+    return { error: errors.inscriereInchisa };
   }
   // Adrese de unică folosință: trial-uri repetate ale aceleiași persoane.
   if (esteEmailTemporar(email)) {

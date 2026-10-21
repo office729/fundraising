@@ -15,6 +15,7 @@ import { decripteaza } from "@/lib/secret-box";
 import { alertaOperatorZilnic } from "./alerta-operator";
 import { dateAntifraud, MESAJ_TELEFON_LIPSA } from "./date-antifraud";
 import { pretDeTest } from "./pret-test";
+import { isPlatformAdmin } from "./trial";
 import { NetopiaRespins } from "./netopia-erori";
 
 import { REFERRAL_DISCOUNT_PERCENT } from "../referral";
@@ -133,7 +134,8 @@ export async function creeazaPlataAbonament(
   // organizației: altfel `salveazaNtpId` (alt rând de conexiune) nu vedea rândul necomis, actualiza 0 rânduri și
   // fallback-ul de status (pentru IPN întârziat) nu putea funcționa niciodată.
   // Preț de test (vezi pret-test.ts): doar organizația țintă din variabilele de mediu, cu plafon; vizibil în Sentry cât e activ.
-  const pretTest = pretDeTest(ctx.orgSlug);
+  // Doar conturile administratorilor platformei: slug-ul „test” nu e rezervat, deci un client care ajunge să-l aibă nu primește prețul de test.
+  const pretTest = isPlatformAdmin(ctx.userEmail) ? pretDeTest(ctx.orgSlug) : null;
   if (pretTest !== null) raporteazaAvertisment("netopia-test", "PREȚ DE TEST aplicat plății de abonament", { orgSlug: ctx.orgSlug, sumaLei: pretTest });
   const { orderId, sumaLei } = await db.transaction(async (tx) => {
     await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);

@@ -29,9 +29,10 @@ export function Cronometru({ oprit }: { oprit: boolean }) {
   const stare = acum === null ? "numaratoare" : starePrelansare(acum, oprit);
   const timp = acum === null ? null : descompune(tintaCronometru(stare) - acum);
 
-  // La ora lansării, pagina se reîncarcă singură și arată site-ul.
+  // La ora lansării, pagina trece singură la site. Spre „/”, nu reload: pe /prelansare (rută publică care rămâne și după lansare) un reload ar reîncărca
+  // aceeași pagină la nesfârșit.
   useEffect(() => {
-    if (acum !== null && stare === "live") window.location.reload();
+    if (acum !== null && stare === "live") window.location.replace("/");
   }, [acum, stare]);
 
   const ajun = stare === "ajun";
