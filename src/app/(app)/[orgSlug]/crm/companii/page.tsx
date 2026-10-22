@@ -56,7 +56,7 @@ async function CompaniiContent({
         <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">{dict.subtitle(totalFirme.toLocaleString("ro-RO"))}</p>
       </div>
 
-      <NotaCrm />
+      <NotaCrm id="companii" />
 
       <HartaJudeteCard
         dupaJudet={dupaJudet}

@@ -9,12 +9,12 @@ import { useLocale } from "../lib/locale-context";
 import { getNotaCrmAscunsa, setNotaCrmAscunsa, useLocalStoreValue } from "../lib/local-store";
 
 // Explicația „Ce înseamnă CRM?” pentru ONG-urile mici: sensul fiecărui cuvânt din abrevierea CRM + partea tehnică. Apare deschisă până o închide
-// utilizatorul cu „Am înțeles”; după aceea rămâne doar un buton mic „Ce înseamnă CRM?”, care o redeschide. Alegerea e păstrată în browser
-// (aceeași pentru toate paginile CRM).
-export function NotaCrm() {
+// utilizatorul cu „Am înțeles”; după aceea rămâne doar un buton mic „Ce înseamnă CRM?”, care o redeschide. Alegerea e păstrată în browser,
+// separat pe secțiune (`id`: acasa, companii, persoane-fizice, voluntari), ca fiecare modul să o arate o dată.
+export function NotaCrm({ id }: { id: string }) {
   const t = NOTA_CRM_DICT[useLocale()];
   // La randarea de pe server și la primul paint valoarea e „ascunsă” (fără clipire pentru cine a închis-o deja); după hidratare se citește alegerea reală.
-  const ascunsa = useLocalStoreValue(getNotaCrmAscunsa, true);
+  const ascunsa = useLocalStoreValue(() => getNotaCrmAscunsa(id), true);
   const [deschisaManual, setDeschisaManual] = useState(false);
 
   if (ascunsa && !deschisaManual) {
@@ -31,7 +31,7 @@ export function NotaCrm() {
   }
 
   const inchide = () => {
-    setNotaCrmAscunsa(true);
+    setNotaCrmAscunsa(id, true);
     setDeschisaManual(false);
   };
   const titluSectiune = "text-[11px] font-semibold tracking-wide text-[var(--ci-text-muted)] uppercase";

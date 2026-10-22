@@ -172,7 +172,7 @@ export default function CrmDashboardPage() {
         <DomainWelcomeBanner salut={salut} nume={prenume} subtitle={dict.summary(actiuni.length, blocate)} />
       )}
 
-      <NotaCrm />
+      <NotaCrm id="acasa" />
 
       {faraDateReale && !exemple && (
         <>

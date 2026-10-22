@@ -2,7 +2,6 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { Badge } from "../components/ui/badge";
-import { NotaCrm } from "../components/nota-crm";
 import { HartaJudeteCard } from "../components/harta-judete-card";
 import { Card } from "../components/ui/card";
 import { DONATORI } from "../mock";
@@ -54,8 +53,6 @@ async function DonatoriContent({
         <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">{dict.title}</h1>
         <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">{dict.subtitle}</p>
       </div>
-
-      <NotaCrm />
 
       <PfNav orgSlug={orgSlug} />
 

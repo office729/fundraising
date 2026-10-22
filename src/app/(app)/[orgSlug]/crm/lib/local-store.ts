@@ -80,12 +80,12 @@ export function useLocalStoreValue<T>(getSnapshot: () => T, serverValue: T): T {
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
 
-const NOTA_CRM_KEY = "ci-nota-crm-ascunsa";
-export function getNotaCrmAscunsa(): boolean {
-  return readAll<boolean>(NOTA_CRM_KEY, false);
+const NOTA_CRM_KEY = "ci-nota-crm";
+export function getNotaCrmAscunsa(id: string): boolean {
+  return !!readAll<Record<string, boolean>>(NOTA_CRM_KEY, {})[id];
 }
-export function setNotaCrmAscunsa(value: boolean) {
-  writeAll(NOTA_CRM_KEY, value);
+export function setNotaCrmAscunsa(id: string, value: boolean) {
+  writeAll(NOTA_CRM_KEY, { ...readAll<Record<string, boolean>>(NOTA_CRM_KEY, {}), [id]: value });
 }
 
 const WORKED_KEY = "ci-lucrat";

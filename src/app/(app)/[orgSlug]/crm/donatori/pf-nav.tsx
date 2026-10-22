@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { NotaCrm } from "../components/nota-crm";
+
 const FILE = [
   { sub: "", label: "Donatori" },
   { sub: "/acasa", label: "Acasă" },
@@ -17,6 +19,8 @@ export function PfNav({ orgSlug }: { orgSlug: string }) {
   const pathname = usePathname() ?? "";
   const baza = `/${orgSlug}/crm/donatori`;
   return (
+    <>
+    <NotaCrm id="persoane-fizice" />
     <nav aria-label="Vederi persoane fizice" className="ci-scrollbar flex gap-1 overflow-x-auto rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-1">
       {FILE.map((t) => {
         const href = `${baza}${t.sub}`;
@@ -36,5 +40,6 @@ export function PfNav({ orgSlug }: { orgSlug: string }) {
         );
       })}
     </nav>
+    </>
   );
 }
