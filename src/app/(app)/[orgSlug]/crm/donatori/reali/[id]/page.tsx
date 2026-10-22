@@ -1,5 +1,12 @@
 import { notFound } from "next/navigation";
 
+import { analizeazaDonator } from "@/lib/analiza-donator";
+import { requireOrgAccess } from "@/lib/auth/guard";
+import { areModul } from "@/lib/billing/packages";
+import { pachetPentruModule } from "@/lib/billing/trial";
+
+import { AnalizaDonatorCard } from "../../../components/analiza-donator-card";
+import { ModulBlocatInline } from "../../../components/modul-blocat-inline";
 import { Avatar } from "../../../components/ui/avatar";
 import { Badge, type StatusTone } from "../../../components/ui/badge";
 import { Breadcrumb } from "../../../components/ui/breadcrumb";
@@ -21,6 +28,9 @@ export default async function DonatorRealProfilPage({ params }: { params: Promis
   const data = await getDonatorRealDetaliu(orgSlug, id);
   if (!data) notFound();
   const { donator, donatii, notite, poateAdministra } = data;
+  const access = await requireOrgAccess(orgSlug);
+  const areAnaliza = areModul(pachetPentruModule(access.orgPackage, access.userEmail), "analiza-donator");
+  const analiza = areAnaliza ? analizeazaDonator({ primaAt: donator.primaDonatieLa, ultimaAt: donator.ultimaDonatieLa, nr: donator.numarDonatii, total: donator.totalDonat }) : null;
   const locale = await getLocale();
   const dict = DONATORI_REALI_DICT[locale].detail;
   const statusLabel = dict.donatii.statusLabel;
@@ -62,6 +72,17 @@ export default async function DonatorRealProfilPage({ params }: { params: Promis
           <Stat label={dict.stats.ultimaDonatie} value={formatDataRelativa(donator.ultimaDonatieLa.toISOString())} />
         </div>
       </Card>
+
+      {analiza ? (
+        <AnalizaDonatorCard analiza={analiza} />
+      ) : (
+        <ModulBlocatInline
+          orgSlug={orgSlug}
+          modul="analiza-donator"
+          descriere="Riscul de pierdere, ritmul donațiilor, data probabilă a următoarei donații și valoarea estimată de viitor, calculate din istoricul donatorului."
+          poateSchimba={access.role === "owner" || access.role === "admin"}
+        />
+      )}
 
       <Card className={donator.consimtamantWhatsapp ? "border-[var(--ci-green-soft)] bg-[var(--ci-green-soft)]" : ""}>
         <p className="text-[13px] font-medium text-[var(--ci-text)]">

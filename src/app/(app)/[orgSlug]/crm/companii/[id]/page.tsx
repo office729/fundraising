@@ -2,13 +2,19 @@ import { Award, Building2, FileText, Mail } from "lucide-react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
+import { requireOrgAccess } from "@/lib/auth/guard";
+import { areModul } from "@/lib/billing/packages";
+import { pachetPentruModule } from "@/lib/billing/trial";
+import { ModulBlocatInline } from "../../components/modul-blocat-inline";
 import { Badge, type StatusTone } from "../../components/ui/badge";
 import { Breadcrumb } from "../../components/ui/breadcrumb";
 import { Card } from "../../components/ui/card";
 import { formatData, formatDataRelativa } from "../../lib/format";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { COMPANII_DICT } from "@/lib/i18n/dictionaries/companii";
+import { getCaiCalde } from "../cai-calde";
 import { getCompanieDetaliu } from "../queries";
+import { CaiCaldeCard } from "./cai-calde-card";
 import { CompanyTabs } from "./company-tabs";
 import { IstoricEtape } from "./istoric-etape";
 import { ContractSponsorizareSection } from "./contract-sponsorizare-section";
@@ -41,6 +47,10 @@ export default async function CompanieProfilPage({
   if (id !== data.segmentCanonic) redirect(`/${orgSlug}/crm/companii/${data.segmentCanonic}`);
   const locale = await getLocale();
   const dict = COMPANII_DICT[locale].detail;
+  // „Căi calde” sunt incluse din pachetul IMPACT: fără el, în locul cardului apare o notă despre pachet.
+  const access = await requireOrgAccess(orgSlug);
+  const areCaiCalde = areModul(pachetPentruModule(access.orgPackage, access.userEmail), "cai-calde");
+  const cai = areCaiCalde ? await getCaiCalde(orgSlug, data.companie.id) : null;
 
   const { companie: c, sponsorizari, notite, contacte, responsabili, jurnalEtape, orgNume, userEmail, campanii } = data;
   const extra = (c.extra ?? {}) as {
@@ -134,6 +144,17 @@ export default async function CompanieProfilPage({
           contacte: contacte.map((ct) => ({ dept: ct.dept, cheie: ct.cheie })),
         }}
       />
+
+      {cai ? (
+        <CaiCaldeCard orgSlug={orgSlug} cai={cai} />
+      ) : (
+        <ModulBlocatInline
+          orgSlug={orgSlug}
+          modul="cai-calde"
+          descriere="Arată dacă o persoană de contact a firmei este deja donator, voluntar sau contact la un sponsor, semn că abordarea va fi mai ușoară."
+          poateSchimba={access.role === "owner" || access.role === "admin"}
+        />
+      )}
 
       <PipelineCard
         companyId={c.id}

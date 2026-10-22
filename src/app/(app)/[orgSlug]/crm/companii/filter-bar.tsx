@@ -8,6 +8,7 @@ import { Input, Select } from "../components/ui/input";
 import { useLocale } from "../lib/locale-context";
 import { COMPANII_DICT } from "@/lib/i18n/dictionaries/companii";
 import { CHEI_FUNCTII, FUNCTIE_NESPECIFICATA } from "@/lib/functii-contact";
+import { BENZI, type Banda } from "@/lib/prioritizare-firme";
 import { JUDETE, numarFiltreActive, parseFiltru, type PerioadaTip } from "./lib/filters";
 
 const PERIOADA_KEYS = ["toate", "q1", "q2", "q3", "q4", "an", "luna", "saptamana"] as const satisfies readonly PerioadaTip[];
@@ -22,7 +23,17 @@ function pill(activ: boolean) {
   }`;
 }
 
-export function FilterBar({ responsabili, functiiNr }: { responsabili: { id: string; name: string | null }[]; functiiNr: Record<string, number> }) {
+export function FilterBar({
+  responsabili,
+  functiiNr,
+  prioritizare,
+  benziNr,
+}: {
+  responsabili: { id: string; name: string | null }[];
+  functiiNr: Record<string, number>;
+  prioritizare: boolean; // pachetul include prioritizarea pe benzi A/B/C
+  benziNr: Record<Banda, number>;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -230,6 +241,27 @@ export function FilterBar({ responsabili, functiiNr }: { responsabili: { id: str
             {dict.aplicaFunctie}
           </button>
         </form>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        {prioritizare ? (
+          <>
+            <span className="text-[12px] font-semibold text-[var(--ci-text-muted)]" title={dict.prioritateHint}>
+              {dict.prioritate}
+            </span>
+            {BENZI.map((b) => (
+              <button key={b} type="button" onClick={() => push({ banda: f.banda === b ? null : b })} aria-pressed={f.banda === b} title={dict.prioritateHint} className={pill(f.banda === b)}>
+                {dict.benzi[b]}
+                <span className="ci-tabular ml-1.5 font-normal opacity-70">{(benziNr[b] ?? 0).toLocaleString("ro-RO")}</span>
+              </button>
+            ))}
+            <button type="button" onClick={() => push({ ordine: f.ordine === "contactabilitate" ? null : "contactabilitate" })} aria-pressed={f.ordine === "contactabilitate"} className={pill(f.ordine === "contactabilitate")}>
+              {dict.ordineContactabilitate}
+            </button>
+          </>
+        ) : (
+          <span className="text-[12px] text-[var(--ci-text-muted)]">🔒 {dict.prioritizareBlocata}</span>
+        )}
       </div>
 
       <div className="flex flex-wrap items-center gap-2">

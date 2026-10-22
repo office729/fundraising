@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { Suspense } from "react";
 
+import { requireOrgAccess } from "@/lib/auth/guard";
+import { areModul } from "@/lib/billing/packages";
+import { pachetPentruModule } from "@/lib/billing/trial";
 import { Badge } from "../components/ui/badge";
 import { NotaCrm } from "../components/nota-crm";
 import { ImportExportPanel } from "../components/import-export-panel";
@@ -44,10 +47,17 @@ async function CompaniiContent({
     else sp.set(k, v);
   }
   const filtru = parseFiltru(sp);
+  // Prioritizarea pe benzi A/B/C e inclusă din pachetul IMPACT: fără el, parametrii din adresă sunt ignorați.
+  const access = await requireOrgAccess(orgSlug);
+  const areBenzi = areModul(pachetPentruModule(access.orgPackage, access.userEmail), "prioritizare-firme");
+  if (!areBenzi) {
+    filtru.banda = "";
+    filtru.ordine = "";
+  }
   const locale = await getLocale();
   const dict = COMPANII_DICT[locale].page;
 
-  const { totalFirme, stats, lista, responsabili, dupaJudet, functiiNr } = await getPaginaCompanii(orgSlug, filtru);
+  const { totalFirme, stats, lista, responsabili, dupaJudet, functiiNr, benziNr } = await getPaginaCompanii(orgSlug, filtru);
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-5">
@@ -82,7 +92,7 @@ async function CompaniiContent({
         <StatCard label={dict.stats.medieCompanie} value={`${stats.medieCompanie.toLocaleString("ro-RO")} RON`} />
       </div>
 
-      <FilterBar responsabili={responsabili} functiiNr={functiiNr} />
+      <FilterBar responsabili={responsabili} functiiNr={functiiNr} prioritizare={areBenzi} benziNr={benziNr} />
 
       <Card padded={false}>
         {lista.rows.length === 0 ? (
@@ -139,6 +149,11 @@ async function CompaniiContent({
                   )}
                 </div>
                 <div className="pointer-events-none relative z-10 flex shrink-0 items-center gap-1.5">
+                  {areBenzi && (
+                    <Badge tone={c.banda === "A" ? "green" : c.banda === "B" ? "amber" : "neutral"} icon={false}>
+                      {COMPANII_DICT[locale].filterBar.benzi[c.banda].split(" · ")[0]}
+                    </Badge>
+                  )}
                   {c.temperatura === "cald" && <Badge tone="red" icon={false}>{dict.cald}</Badge>}
                   {c.temperatura === "rece" && <Badge tone="blue" icon={false}>{dict.rece}</Badge>}
                   {c.recurent && <Badge tone="purple" icon={false}>{dict.recurent}</Badge>}

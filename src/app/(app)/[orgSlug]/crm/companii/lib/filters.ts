@@ -3,6 +3,7 @@
 // Server Components (queries.ts) și din bara de filtre (client).
 
 import { curataSelectieFunctii } from "@/lib/functii-contact";
+import { esteBanda, type Banda } from "@/lib/prioritizare-firme";
 
 export { JUDETE } from "@/lib/judete";
 
@@ -24,6 +25,8 @@ export type FiltruCompanii = {
   contact: "toate" | "cu" | "fara";
   functie: string[]; // categorii de funcții ale persoanelor de contact (vezi lib/functii-contact.ts); firma are cel puțin o persoană în oricare dintre ele
   functieText: string; // text liber căutat în funcția/departamentul aceleiași persoane (ex. „director”)
+  banda: Banda | ""; // banda de prioritizare A/B/C (vezi lib/prioritizare-firme.ts); doar pentru pachetul IMPACT
+  ordine: "" | "contactabilitate"; // „cele mai ușor de abordat” întâi; doar pentru pachetul IMPACT
   marcaje: string[]; // subset din ["d177", "decembrie", "caz"]
   vezi: "toata" | "lucrate" | "recente"; // „recente” = ultimele 20 firme la care a lucrat utilizatorul curent
   q: string;
@@ -44,6 +47,8 @@ export function numarFiltreActive(f: FiltruCompanii): number {
     (f.judet !== "toate" ? 1 : 0) +
     (f.contact !== "toate" ? 1 : 0) +
     (f.functie.length > 0 || f.functieText.trim() ? 1 : 0) +
+    (f.banda ? 1 : 0) +
+    (f.ordine ? 1 : 0) +
     f.marcaje.length +
     (f.vezi !== "toata" ? 1 : 0)
   );
@@ -71,6 +76,8 @@ export function parseFiltru(sp: URLSearchParams): FiltruCompanii {
     contact: sp.get("contact") === "cu" || sp.get("contact") === "fara" ? (sp.get("contact") as "cu" | "fara") : "toate",
     functie: curataSelectieFunctii(sp.getAll("functie")),
     functieText: (sp.get("functieq") ?? "").slice(0, 60),
+    banda: esteBanda(sp.get("banda")) ? (sp.get("banda") as Banda) : "",
+    ordine: sp.get("ordine") === "contactabilitate" ? "contactabilitate" : "",
     marcaje: marcajeRaw.filter((m) => MARCAJE_VALIDE.has(m)),
     vezi: sp.get("vezi") === "lucrate" ? "lucrate" : sp.get("vezi") === "recente" ? "recente" : "toata",
     q: sp.get("q") ?? "",

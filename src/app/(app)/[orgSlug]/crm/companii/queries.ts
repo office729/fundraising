@@ -7,10 +7,22 @@ import { citesteSegment, hexFaraCratime, LUNGIME_SUFIX, segmentFirma, slugFirma 
 import { cifreCui, patternLike, sqlFaraDiacritice } from "@/lib/cautare";
 import { codJudetDinTextLiber } from "@/lib/judete";
 import { CHEI_FUNCTII, esteCheieFunctie, FUNCTIE_NESPECIFICATA, regexFunctie } from "@/lib/functii-contact";
+import { PRAG_BANDA_B, PRAG_MICRO_CA } from "@/lib/prioritizare-firme";
 import { sectiuneSigura } from "@/lib/sectiune-sigura";
 import { calculeazaInterval, type FiltruCompanii, RECENTE_LIMIT, TOP_LIMIT } from "./lib/filters";
 
 const PAGE_SIZE = 25;
+
+// Benzile A/B/C (lib/prioritizare-firme.ts): aceleași reguli, scrise în SQL ca să se poată filtra și sorta pe ele.
+const eligibilaD177Sql = sql`(${companies.regimFiscal} = 'profit' or (${companies.regimFiscal} = 'necunoscut' and coalesce(${companies.profit}, 0) > 0 and coalesce(${companies.ca}, 0) >= ${PRAG_MICRO_CA}))`;
+const areUrmaSql = sql`(coalesce(${companies.site}, '') <> '' or coalesce(${companies.linkedin}, '') <> '' or coalesce(${companies.facebook}, '') <> '' or exists (select 1 from ${contacts} ct where ct.company_id = ${companies.id}))`;
+const bandaSql = sql<"A" | "B" | "C">`(case when not ${eligibilaD177Sql} then 'C' when ${areUrmaSql} then 'A' when coalesce(${companies.sumaDisponibila}, 0) >= ${PRAG_BANDA_B} then 'B' else 'C' end)`;
+const contactabilitateSql = sql<number>`(
+  (case when coalesce(${companies.site}, '') <> '' then 2 else 0 end)
+  + (case when coalesce(${companies.linkedin}, '') <> '' or coalesce(${companies.facebook}, '') <> '' then 2 else 0 end)
+  + (case when exists (select 1 from ${contacts} ct where ct.company_id = ${companies.id}) then 3 else 0 end)
+  + (case when nullif(btrim(${companies.extra}->>'telefon'), '') is not null then 1 else 0 end)
+)`;
 
 // Funcția și departamentul unei persoane, lipite și aduse la „fără diacritice, minuscule” (vezi lib/functii-contact.ts).
 const textFunctieSql = () => sqlFaraDiacritice(sql`(coalesce(${contacts.rol}, '') || ' ' || coalesce(${contacts.dept}, ''))`);
@@ -52,6 +64,7 @@ function conditiiComune(f: FiltruCompanii, userId: string) {
   }
   const dupaFunctie = conditieContactFunctie(f);
   if (dupaFunctie) cond.push(sql`exists (select 1 from ${contacts} where ${contacts.companyId} = ${companies.id} and ${dupaFunctie})`);
+  if (f.banda) cond.push(sql`${bandaSql} = ${f.banda}`);
   for (const m of f.marcaje) {
     if (m === "d177") cond.push(eq(companies.d177, true));
     else if (m === "decembrie") cond.push(eq(companies.decembrie, true));
@@ -86,6 +99,7 @@ export type RandCompanie = {
   d177Incasat: boolean;
   decembrie: boolean;
   mec20: boolean;
+  banda: "A" | "B" | "C";
   temperatura: "cald" | "rece" | null;
   updatedAt: Date;
   lastViewedAt: Date | null;
@@ -116,6 +130,7 @@ const getCompaniiListaImpl = async (ctx: OrgContext, filtru: FiltruCompanii) => 
       d177Incasat: companies.d177Incasat,
       decembrie: companies.decembrie,
       mec20: companies.mec20,
+      banda: bandaSql,
       temperatura: companies.temperatura,
       updatedAt: companies.updatedAt,
       lastViewedAt: companies.lastViewedAt,
@@ -130,6 +145,8 @@ const getCompaniiListaImpl = async (ctx: OrgContext, filtru: FiltruCompanii) => 
         ? [desc(companies.updatedAt)]
         : filtru.top
         ? [desc(sql`coalesce(${companies.sumaSponsorizata}, 0)`)]
+        : filtru.ordine === "contactabilitate"
+        ? [sql`${contactabilitateSql} desc`, sql`coalesce(${companies.sumaDisponibila}, -1) desc`, desc(companies.id)]
         : [
             sql`(case when (${companies.ownerId} is not null or ${companies.stage} <> 'nou' or ${companies.status} <> 'open' or coalesce(${companies.sumaSponsorizata}, 0) > 0) then 1 else 0 end) desc`,
             sql`coalesce(${companies.sumaSponsorizata}, -1) desc`,
@@ -249,6 +266,16 @@ const getFunctiiNrImpl = async (ctx: OrgContext) => {
   return (row ?? {}) as Record<string, number>;
 };
 
+// Câte firme sunt în fiecare bandă (toată baza), pentru etichetele din filtru.
+const getBenziNrImpl = async (ctx: OrgContext) => {
+  const rows = (await ctx.db.execute(
+    sql`select ${bandaSql} as banda, count(*)::int as nr from ${companies} where ${companies.orgId} = ${ctx.orgId} and ${companies.deletedAt} is null group by 1`,
+  )) as unknown as { banda: "A" | "B" | "C"; nr: number }[];
+  const rezultat: Record<"A" | "B" | "C", number> = { A: 0, B: 0, C: 0 };
+  for (const r of rows) rezultat[r.banda] = r.nr;
+  return rezultat;
+};
+
 const getResponsabiliOrgImpl = async (ctx: OrgContext) => {
   return ctx.db
     .select({ id: appUsers.id, name: appUsers.name, email: appUsers.email })
@@ -348,13 +375,14 @@ export const getCompanieDetaliu = withOrgSession(async (ctx, segment: string) =>
 // Pagina cere toate patru într-o SINGURĂ tranzacție (o conexiune din pool, un singur set de verificări de acces),
 // nu patru tranzacții paralele — pool-ul are doar 5 conexiuni și layout-urile mai folosesc și ele.
 export const getPaginaCompanii = withOrgSession(async (ctx, filtru: FiltruCompanii) => {
-  const [totalFirme, stats, lista, responsabili, dupaJudet, functiiNr] = await Promise.all([
+  const [totalFirme, stats, lista, responsabili, dupaJudet, functiiNr, benziNr] = await Promise.all([
     getTotalFirmeImpl(ctx),
     getStatisticiCompaniiImpl(ctx, filtru),
     getCompaniiListaImpl(ctx, filtru),
     getResponsabiliOrgImpl(ctx),
     getFirmeDupaJudetImpl(ctx),
     getFunctiiNrImpl(ctx),
+    getBenziNrImpl(ctx),
   ]);
-  return { totalFirme, stats, lista, responsabili, dupaJudet, functiiNr };
+  return { totalFirme, stats, lista, responsabili, dupaJudet, functiiNr, benziNr };
 });
