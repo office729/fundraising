@@ -9,6 +9,7 @@ import { MARKETING_DICT } from "@/lib/i18n/dictionaries/marketing";
 import { FinalizeForm } from "./finalize-form";
 import { metadatePagina } from "@/lib/page-titles";
 import { PanouPreview } from "./panou-preview";
+import { NotaCrmMarketing } from "./nota-crm-marketing";
 import { CampaniiSectiune } from "./campanii-sectiune";
 import { getCampaniiLanding, PRAG_ORGANIZATII } from "@/lib/campanii-publice";
 
@@ -125,6 +126,9 @@ export default async function LandingPage({
 
       {/* Panoul de administrare (ilustrație cu date demonstrative) */}
       <PanouPreview locale={locale} />
+
+      {/* Ce înseamnă „CRM” — termenul nu e cunoscut ONG-urilor mici */}
+      <NotaCrmMarketing locale={locale} />
 
       {/* Campanii de strângere de fonduri — se activează după primele PRAG_ORGANIZATII organizații */}
       {campanii && <CampaniiSectiune stare={{ ...campanii, prag: PRAG_ORGANIZATII }} />}

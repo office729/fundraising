@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { Input } from "./components/ui/input";
 import { DomainWelcomeBanner } from "./components/domain-welcome-banner";
+import { NotaCrm } from "./components/nota-crm";
 import { DemoBanner } from "./components/demo-banner";
 import { TaskuriCard } from "./components/dashboard/taskuri-card";
 import { RiscPipelineCard } from "./components/dashboard/risc-pipeline-card";
@@ -170,6 +171,8 @@ export default function CrmDashboardPage() {
       {arataDashboard && (
         <DomainWelcomeBanner salut={salut} nume={prenume} subtitle={dict.summary(actiuni.length, blocate)} />
       )}
+
+      <NotaCrm />
 
       {faraDateReale && !exemple && (
         <>

@@ -48,10 +48,10 @@ export const DASHBOARD_DICT = {
     },
     hints: {
       home: "Privire de ansamblu: ce ai de făcut azi și cum merg donațiile",
-      companii: "Firmele cu care lucrezi: contacte, discuții și sponsorizări",
+      companii: "Caietul digital cu firmele cu care lucrezi (CRM): contacte, discuții și sponsorizări",
       prospectare: "Caută și urmărește firme care ar putea deveni sponsori",
       companiiD177: "Firme care redirecționează 20% din impozitul pe profit către organizația ta (Declarația 177)",
-      donatori: "Persoanele care au donat: date de contact și istoricul donațiilor",
+      donatori: "Caietul digital cu persoanele care au donat (CRM): date de contact și istoricul donațiilor",
       avatarDonator: "Descrierea donatorului tău tipic, ca să știi cui te adresezi",
       formular230: "Formularul prin care oamenii redirecționează 3,5% din impozitul pe venit către organizația ta",
       voluntari: "Evidența voluntarilor și a activităților lor",

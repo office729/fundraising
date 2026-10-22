@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { Badge } from "../components/ui/badge";
+import { NotaCrm } from "../components/nota-crm";
 import { ImportExportPanel } from "../components/import-export-panel";
 import { HartaJudeteCard } from "../components/harta-judete-card";
 import { Card } from "../components/ui/card";
@@ -54,6 +55,8 @@ async function CompaniiContent({
         <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">{dict.title}</h1>
         <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">{dict.subtitle(totalFirme.toLocaleString("ro-RO"))}</p>
       </div>
+
+      <NotaCrm />
 
       <HartaJudeteCard
         dupaJudet={dupaJudet}
