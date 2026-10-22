@@ -81,7 +81,7 @@ function LoginFormInner({ dict }: { dict: Dict }) {
           ascunde={dict.ascundeParola}
         />
 
-        <Link href="/forgot-password" className="-mt-1 self-start text-sm font-medium text-brand-green">
+        <Link href="/forgot-password" className="-mt-1 self-start py-2 text-sm font-medium text-brand-green">
           {dict.login.uitatParola}
         </Link>
 
