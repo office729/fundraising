@@ -169,7 +169,16 @@
   .badge-gray{background:var(--chip); color:var(--muted)} .badge-gray .dot{background:var(--muted-2)}
   .badge-red{background:var(--red-tint); color:var(--red)} .badge-red .dot{background:var(--red-2)}
 
-  .chk{width:18px; height:18px; accent-color:var(--red); cursor:pointer}
+  .chk{appearance:none; -webkit-appearance:none; width:18px; height:18px; margin:0; border:1.5px solid var(--muted-2); border-radius:5px; background:#fff center/12px no-repeat; cursor:pointer; vertical-align:middle; transition:background-color .12s,border-color .12s}
+  .chk:hover{border-color:var(--red)}
+  .chk:checked{background-color:var(--red); border-color:var(--red); background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E")}
+  .chk:focus-visible{outline:2px solid var(--red); outline-offset:2px}
+  /* „Contactat”: stare afișată ca etichetă, nu ca și casetă de bifat; un clic o comută */
+  .st-contact{border:1px solid transparent; font-family:inherit; cursor:pointer; transition:filter .12s}
+  .st-contact:hover{filter:brightness(.96)}
+  .st-contact.off{background:#fff; border-color:var(--line); color:var(--muted-2)}
+  .st-contact.off:hover{border-color:var(--muted-2); color:var(--ink-2)}
+  .st-contact svg{width:12px; height:12px; flex:none}
   .sent-icons{display:flex; gap:9px; align-items:center; justify-content:center}
   .sent-ic{width:18px; height:18px; color:#DAD0CB; display:inline-flex}
   .sent-ic svg{width:18px; height:18px}
@@ -848,7 +857,7 @@
     var body = state.volunteers.length===0
       ? emptyState()
       : '<div class="card"><div class="table-scroll"><table><thead><tr>'+
-          '<th style="width:40px"><input class="chk" type="checkbox" id="selAll" /></th><th style="width:72px">Contactat</th><th>Nume și prenume</th><th>Telefon</th><th>Email</th><th>Facebook</th><th>Responsabil</th><th style="text-align:center">Trimis</th><th>Activ</th><th>Ultim contact</th><th>Automatizare</th>'+
+          '<th style="width:40px"><input class="chk" type="checkbox" id="selAll" /></th><th style="width:118px">Contactat</th><th>Nume și prenume</th><th>Telefon</th><th>Email</th><th>Facebook</th><th>Responsabil</th><th style="text-align:center">Trimis</th><th>Activ</th><th>Ultim contact</th><th>Automatizare</th>'+
         '</tr></thead><tbody id="tbody">'+rowsHtml()+'</tbody></table></div></div>';
     return head+banner+controls+filterBar+filtInfo+'<div id="bulkBar" class="bulkbar"></div>'+body;
   }
@@ -866,7 +875,9 @@
       var elig=isEligible(v);
       return '<tr class="rowlink'+(state.selected[v.id]?" row-sel":"")+'" data-id="'+esc(v.id)+'">'+
         '<td><input class="chk sel-chk" type="checkbox" data-sel="'+esc(v.id)+'" '+(state.selected[v.id]?"checked":"")+' /></td>'+
-        '<td><input class="chk" type="checkbox" data-chk="'+esc(v.id)+'" '+(v.contactat?"checked":"")+' /></td>'+
+        '<td>'+(v.contactat
+          ? '<button type="button" class="badge badge-green st-contact" data-chk="'+esc(v.id)+'" data-stop="1" aria-pressed="true" title="Contactat — apasă ca să marchezi „necontactat”"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Contactat</button>'
+          : '<button type="button" class="badge badge-gray st-contact off" data-chk="'+esc(v.id)+'" data-stop="1" aria-pressed="false" title="Necontactat — apasă ca să marchezi „contactat”">Necontactat</button>')+'</td>'+
         '<td><div class="cell-name"><div class="avatar">'+esc(initials(v.nume))+'</div>'+channelIcon(v)+
           '<span class="name-main">'+esc(v.nume||"(fără nume)")+'</span>'+
           '<button class="note-btn'+(v.notite2.length?" has-note":"")+'" data-note="'+esc(v.id)+'" data-stop="1" type="button" title="Notițe rapide">📝'+(v.notite2.length?'<sup>'+v.notite2.length+'</sup>':'')+'</button>'+
@@ -964,10 +975,10 @@
       };
     });
     document.querySelectorAll("[data-chk]").forEach(function(cb){
-      cb.onclick=function(ev){ ev.stopPropagation(); };
-      cb.onchange=function(){
+      cb.onclick=function(ev){
+        ev.stopPropagation();
         var v=byId(cb.getAttribute("data-chk")); if(!v) return;
-        v.contactat=cb.checked; if(cb.checked) v.dataContact=todayIso();
+        v.contactat=!v.contactat; if(v.contactat) v.dataContact=todayIso();
         scheduleSave();
         // reîmprospătează tabelul (data ultim contact + badge automatizare)
         var tb=$("tbody"); if(tb){ tb.innerHTML=rowsHtml(); bindRows(); }
