@@ -9,6 +9,7 @@ import { TERMENI_VERSIUNE } from "@/lib/legal-version";
 import { createClient } from "@/lib/supabase/server";
 
 import { findBeneficiaryProfile } from "./beneficiar";
+import { alegeOrganizatiaImplicita } from "./organizatie-implicita";
 
 // User-ul autentificat la nivel Supabase (sau null). Memoizat pe render.
 export const getAuthUser = cache(async () => {
@@ -83,14 +84,19 @@ export async function getOrgSlugDupaEmail(email: string): Promise<string | null>
     await tx.execute(sql`select set_config('app.current_user_id', ${appUser.id}, true)`);
 
     const rows = await tx
-      .select({ slug: organizations.slug })
+      .select({
+        slug: organizations.slug,
+        createdAt: organizations.createdAt,
+        subscriptionStatus: organizations.subscriptionStatus,
+        package: organizations.package,
+        currentPeriodEnd: organizations.currentPeriodEnd,
+      })
       .from(memberships)
       .innerJoin(organizations, eq(memberships.orgId, organizations.id))
       .where(eq(memberships.userId, appUser.id))
-      .orderBy(memberships.createdAt)
-      .limit(1);
+      .orderBy(memberships.createdAt);
 
-    return rows[0]?.slug ?? null;
+    return alegeOrganizatiaImplicita(rows, email);
   });
 }
 
