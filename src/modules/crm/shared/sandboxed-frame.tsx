@@ -1,8 +1,9 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 
-import { anuleazaFetch, citesteSnapshot, handeazaFetch, injecteazaShim, persistaStocare, type FetchMsg } from "./sandbox-bridge";
+import { anuleazaFetch, citesteSnapshot, destinatieNavigare, handeazaFetch, injecteazaShim, persistaStocare, type FetchMsg } from "./sandbox-bridge";
 
 // Iframe SANDBOXED (origine opacă) pentru instrumentele HTML — vezi sandbox-bridge.ts.
 // Snapshotul datelor din browser se citește o singură dată la montare și rămâne înghețat
@@ -27,6 +28,7 @@ export function SandboxedFrame({ html, title, orgSlug }: { html: string; title: 
   useEffect(() => () => void SNAPSHOTURI.delete(cheie), [cheie]);
 
   const ref = useRef<HTMLIFrameElement>(null);
+  const router = useRouter();
 
   useEffect(() => {
     function onMessage(e: MessageEvent) {
@@ -39,11 +41,14 @@ export function SandboxedFrame({ html, title, orgSlug }: { html: string; title: 
         handeazaFetch(m as unknown as FetchMsg, orgSlug, window.location.origin).then((r) => frame.postMessage(r, "*"));
       } else if (m.t === "fetch-abort") {
         anuleazaFetch((m as unknown as { id: number }).id);
+      } else if (m.t === "nav") {
+        const dest = destinatieNavigare((m as unknown as { href?: unknown }).href, orgSlug);
+        if (dest) router.push(dest);
       }
     }
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [orgSlug]);
+  }, [orgSlug, router]);
 
   const srcDoc = useMemo(() => {
     if (snap == null) return undefined;

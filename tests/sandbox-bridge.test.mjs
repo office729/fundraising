@@ -60,3 +60,20 @@ test("chei invalide sau prea lungi sunt refuzate", () => {
   persistaStocare({ t: "ls-set", k: "sb-abc", v: "1" }, s, "org-a");
   assert.deepEqual(s._chei(), []);
 });
+
+test("navigarea cerută de instrument: „/” duce la CRM-ul organizației, doar căi locale sunt acceptate", async () => {
+  const B = await import("../src/modules/crm/shared/sandbox-bridge.ts");
+  assert.equal(B.destinatieNavigare("/", "salveaza-o-inima"), "/salveaza-o-inima/crm");
+  assert.equal(B.destinatieNavigare("/salveaza-o-inima/crm/companii", "salveaza-o-inima"), "/salveaza-o-inima/crm/companii");
+  assert.equal(B.destinatieNavigare("https://exemplu.ro/", "x"), null);
+  assert.equal(B.destinatieNavigare("//exemplu.ro/x", "x"), null);
+  assert.equal(B.destinatieNavigare("/\\exemplu.ro", "x"), null);
+  assert.equal(B.destinatieNavigare("javascript:alert(1)", "x"), null);
+  assert.equal(B.destinatieNavigare(undefined, "x"), null);
+});
+
+test("shimul expune window.__faNav, care trimite gazdei un mesaj „nav”", async () => {
+  const B = await import("../src/modules/crm/shared/sandbox-bridge.ts");
+  const html = B.injecteazaShim("<html><head></head><body></body></html>", { snap: {}, host: { origin: "https://x.ro", pathname: "/", search: "", href: "https://x.ro/" } });
+  assert.ok(html.includes("window.__faNav=function(h){post({t:'nav',href:String(h)});}"));
+});

@@ -2055,7 +2055,8 @@
       if(state.view==="cazuri") loadCazuri();
     };
   });
-  function goHome(){ try{ window.top.location.href="/"; }catch(e){ window.location.href="/"; } }
+  // În CRM, instrumentul rulează într-un iframe sandboxed: gazda face navigarea (window.__faNav, vezi sandbox-bridge.ts); în afara lui, navigare obișnuită.
+  function goHome(){ if(window.__faNav){ window.__faNav("/"); return; } try{ window.top.location.href="/"; }catch(e){ window.location.href="/"; } }
   $("brandHome").onclick=goHome;
   $("brandHome").onkeydown=function(ev){ if(ev.key==="Enter"||ev.key===" "){ ev.preventDefault(); goHome(); } };
   document.querySelectorAll("#m_tip .pill").forEach(function(b){

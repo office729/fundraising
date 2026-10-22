@@ -82,6 +82,7 @@ function makeStore(init,persist){
 try{Object.defineProperty(window,'localStorage',{value:makeStore(C.snap,true),configurable:true});}catch(e){}
 try{Object.defineProperty(window,'sessionStorage',{value:makeStore({},false),configurable:true});}catch(e){}
 try{Object.defineProperty(window,'parent',{value:{location:C.host,postMessage:function(){}},configurable:true});}catch(e){}
+window.__faNav=function(h){post({t:'nav',href:String(h)});};
 var seq=0,pend={};
 window.addEventListener('message',function(ev){
   var m=ev.data;if(!m||m.fa!==1||m.t!=='fetch-res'||ev.source!==P)return;
@@ -129,6 +130,16 @@ export function injecteazaShim(html: string, cfg: ShimConfig): string {
 
 // ---------------------------------------------------------------------------------
 // Partea din gazdă.
+
+// Navigare cerută de instrument (window.__faNav). Un iframe sandboxed nu poate naviga pagina părinte, iar dacă își schimbă singur adresa spre o pagină a
+// aplicației, aceasta refuză să fie afișată într-un cadru („alexandrit.ro este blocat”). Gazda navighează în locul lui: „/” înseamnă pagina de pornire a
+// CRM-ului organizației, iar orice altă cale locală (care începe cu un singur „/”) se deschide ca atare. Adresele externe sau cu „//” sunt ignorate.
+export function destinatieNavigare(href: unknown, orgSlug: string): string | null {
+  if (typeof href !== "string") return null;
+  if (href === "/") return `/${orgSlug}/crm`;
+  if (!href.startsWith("/") || href.startsWith("//") || href.includes("\\")) return null;
+  return href;
+}
 type Raspuns = Record<string, unknown>;
 
 export type FetchMsg = { fa: 1; t: "fetch"; id: number; url: string; method: string; headers: Record<string, string>; body?: string; cache?: string };
