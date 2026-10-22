@@ -76,6 +76,17 @@
   .rel{font-size:11.5px; color:var(--muted); margin-top:1px}
   .rel-old{color:#C2660C; font-weight:600}
   /* Lista are propria derulare, cu antetul fix: bara de derulare orizontală stă lângă marginea de jos a ferestrei, nu sub ultimul rând. */
+  .table-free{overflow-x:auto}
+  .table-free table{min-width:980px}
+  .table-free thead th{background:transparent; border-bottom:1px solid var(--line); padding:10px 8px}
+  .table-free tbody td{padding:13px 8px; border-bottom:1px solid var(--line-soft)}
+  .table-free tbody td:nth-child(5){max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .table-free tbody tr:last-child td{border-bottom:1px solid var(--line-soft)}
+  .table-free tbody td:nth-child(4), .table-free tbody td:nth-child(7), .table-free tbody td:nth-child(8){white-space:nowrap}
+  .table-free .cell-name .name-main{white-space:nowrap}
+  /* pe ecrane mai înguste dispar coloanele mai puțin folosite (Facebook, apoi Automatizare), ca tabelul să nu aibă nevoie de derulare laterală; rămân în profilul voluntarului */
+  @media(max-width:1450px){ .table-free th:nth-child(6), .table-free td:nth-child(6){display:none} }
+  @media(max-width:1300px){ .table-free th:nth-child(11), .table-free td:nth-child(11){display:none} }
   .table-scroll{overflow:auto; max-height:max(340px, calc(100vh - 440px))}
   .table-scroll thead th{position:sticky; top:0; z-index:2}
   .table-scroll table{min-width:1080px}
@@ -856,9 +867,9 @@
     var filtInfo=anyFilter()?'<div class="filt-info"><b>'+nFilt+'</b> voluntari după filtre</div>':'';
     var body = state.volunteers.length===0
       ? emptyState()
-      : '<div class="card"><div class="table-scroll"><table><thead><tr>'+
+      : '<div class="table-free"><table><thead><tr>'+
           '<th style="width:40px"><input class="chk" type="checkbox" id="selAll" /></th><th style="width:118px">Contactat</th><th>Nume și prenume</th><th>Telefon</th><th>Email</th><th>Facebook</th><th>Responsabil</th><th style="text-align:center">Trimis</th><th>Activ</th><th>Ultim contact</th><th>Automatizare</th>'+
-        '</tr></thead><tbody id="tbody">'+rowsHtml()+'</tbody></table></div></div>';
+        '</tr></thead><tbody id="tbody">'+rowsHtml()+'</tbody></table></div>';
     return head+banner+controls+filterBar+filtInfo+'<div id="bulkBar" class="bulkbar"></div>'+body;
   }
   function emptyState(){
