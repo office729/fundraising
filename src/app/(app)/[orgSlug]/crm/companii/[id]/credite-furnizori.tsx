@@ -1,32 +1,35 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
 import { NUME_CONECTOR } from "@/lib/prospectare/motor";
 
 import { creditePrelucrare, type CreditFurnizor } from "./prospectare-actions";
 
-// Marcă simplă pentru fiecare instrument (inițială pe culoarea lui), ca să se recunoască dintr-o privire; nu sunt siglele oficiale.
-const MARCA: Record<CreditFurnizor["furnizor"], { initiala: string; fundal: string; text: string }> = {
-  lusha: { initiala: "L", fundal: "#6d3df2", text: "#ffffff" },
-  apollo: { initiala: "A", fundal: "#f5c518", text: "#1d1d1b" },
-  prospeo: { initiala: "P", fundal: "#2a6df4", text: "#ffffff" },
-  hunter: { initiala: "H", fundal: "#f26a2e", text: "#ffffff" },
-  waalaxy: { initiala: "W", fundal: "#e83e8c", text: "#ffffff" },
+// Siglele instrumentelor (pictogramele oficiale de pe site-urile lor, în public/furnizori), folosite doar ca să se recunoască instrumentul conectat.
+const SIGLA: Record<CreditFurnizor["furnizor"], string> = {
+  lusha: "/furnizori/lusha.png",
+  apollo: "/furnizori/apollo.svg",
+  prospeo: "/furnizori/prospeo.png",
+  hunter: "/furnizori/hunter.png",
+  waalaxy: "/furnizori/waalaxy.png",
 };
 
 const fmt = new Intl.NumberFormat("ro-RO");
 
 function MarcaFurnizor({ furnizor, activ }: { furnizor: CreditFurnizor["furnizor"]; activ: boolean }) {
-  const m = MARCA[furnizor];
   return (
-    <span
+    <Image
+      src={SIGLA[furnizor]}
+      alt=""
       aria-hidden
-      className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[13px] font-bold"
-      style={{ background: m.fundal, color: m.text, opacity: activ ? 1 : 0.35 }}
-    >
-      {m.initiala}
-    </span>
+      width={28}
+      height={28}
+      unoptimized
+      className="h-7 w-7 shrink-0 rounded-md border border-[var(--ci-border)] bg-white object-contain"
+      style={{ opacity: activ ? 1 : 0.4, filter: activ ? undefined : "grayscale(1)" }}
+    />
   );
 }
 
@@ -51,7 +54,7 @@ export function CrediteFurnizori({ orgSlug, versiune }: { orgSlug: string; versi
     };
   }, [orgSlug, versiune]);
 
-  const lista: CreditFurnizor[] = date ?? (Object.keys(MARCA) as CreditFurnizor["furnizor"][]).map((furnizor) => ({ furnizor, conectat: false, credite: null }));
+  const lista: CreditFurnizor[] = date ?? (Object.keys(SIGLA) as CreditFurnizor["furnizor"][]).map((furnizor) => ({ furnizor, conectat: false, credite: null }));
 
   return (
     <ul className="mb-3 flex flex-wrap gap-2" aria-label="Instrumente conectate și credite">
