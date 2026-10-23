@@ -7,7 +7,7 @@ import { inregistreazaAudit } from "@/lib/audit";
 import { withOrgFaze, withOrgSession } from "@/lib/auth/guard";
 import { companies, contacts, prospectareCandidati, prospectareChei, prospectareJurnal, prospectareSuprimati } from "@/lib/db/schema";
 import { EroareUtilizator, mesajSigur } from "@/lib/erori";
-import { cautaDecidenti, cheieNume, domeniuDinEmail, FURNIZORI, linkedinNormalizat, prenumeSiNume, waalaxyTrimite, type Furnizor, type ProspectWaalaxy, type RezultatCautare } from "@/lib/prospectare/motor";
+import { cautaDecidenti, cheieNume, crediteFurnizor, domeniuDinEmail, FURNIZORI, linkedinNormalizat, prenumeSiNume, waalaxyTrimite, type Credite, type Furnizor, type ProspectWaalaxy, type RezultatCautare } from "@/lib/prospectare/motor";
 import { decripteaza } from "@/lib/secret-box";
 
 // Prospectare de decidenți pentru o firmă (pachetul IMPACT). Folosește cheile PROPRII ale organizației la Lusha, Apollo, Prospeo și Hunter (Setări → Prospectare).
@@ -73,6 +73,40 @@ type Pregatit = {
   suprimate: { chei: string[]; emailuri: string[]; linkedin: string[] };
   ramase: number;
 };
+
+// Creditele rămase în conturile organizației, citite de la furnizori (apeluri de cont gratuite). Apollo și Waalaxy nu le expun: apar doar ca „conectat”.
+export type CreditFurnizor = { furnizor: Furnizor | "waalaxy"; conectat: boolean; credite: Credite | null; eroare?: string };
+
+export const getCredite = withOrgFaze<[], { chei: Partial<Record<Furnizor, string>>; waalaxy: boolean }, CreditFurnizor[], CreditFurnizor[]>({
+  opts: OPTIUNI,
+  pregateste: async (ctx) => {
+    const randuri = await ctx.db.select({ furnizor: prospectareChei.provider, enc: prospectareChei.cheieEnc }).from(prospectareChei).where(eq(prospectareChei.orgId, ctx.orgId));
+    const chei: Partial<Record<Furnizor, string>> = {};
+    let waalaxy = false;
+    for (const r of randuri) {
+      if (r.furnizor === "waalaxy") waalaxy = true;
+      if (!FURNIZORI.includes(r.furnizor as Furnizor)) continue;
+      try {
+        chei[r.furnizor as Furnizor] = decripteaza(r.enc);
+      } catch {
+        // cheie ilizibilă: se tratează ca neconectată
+      }
+    }
+    return { pregatit: { chei, waalaxy } };
+  },
+  extern: async (p): Promise<CreditFurnizor[]> => {
+    const rezultate = await Promise.all(
+      FURNIZORI.map(async (f): Promise<CreditFurnizor> => {
+        const cheie = p.chei[f];
+        if (!cheie) return { furnizor: f, conectat: false, credite: null };
+        const r = await crediteFurnizor(f, cheie, fetch);
+        return r.ok ? { furnizor: f, conectat: true, credite: r.date } : { furnizor: f, conectat: true, credite: null, eroare: r.eroare };
+      }),
+    );
+    return [...rezultate, { furnizor: "waalaxy", conectat: p.waalaxy, credite: null }];
+  },
+  salveaza: async (_ctx, _p, r) => r,
+});
 
 export const cautaDecidentiAction = withOrgFaze<[string], Pregatit, RezultatCautare, RezultatActiune>({
   opts: OPTIUNI,
@@ -265,6 +299,14 @@ export async function respingeCandidatAction(orgSlug: string, candidatId: string
     return { error: null };
   } catch (e) {
     return { error: mesajSigur(e, "Nu am putut respinge persoana. Încearcă din nou.", "prospectare-respingere") };
+  }
+}
+
+export async function creditePrelucrare(orgSlug: string): Promise<CreditFurnizor[]> {
+  try {
+    return await getCredite(orgSlug);
+  } catch {
+    return [];
   }
 }
 

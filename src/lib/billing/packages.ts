@@ -38,7 +38,7 @@ export const MODULE_PACHET: Record<ModulPachet, { minim: "crestere" | "impact"; 
   "prioritizare-firme": { minim: "impact", nume: "Prioritizarea firmelor (benzi A/B/C)" },
   "cai-calde": { minim: "impact", nume: "Căi calde către firme" },
   // Căutarea de decidenți cu cheile proprii ale organizației la Lusha, Apollo, Prospeo, Hunter și Waalaxy (nu sunt incluse în abonament).
-  "prospectare-multi": { minim: "impact", nume: "Prospectare de decidenți (Apollo, Hunter)" },
+  "prospectare-multi": { minim: "impact", nume: "Prospectare de decidenți (Lusha, Apollo, Prospeo, Hunter, Waalaxy)" },
 };
 
 const RANG_PACHET: Record<string, number> = { start: 1, crestere: 2, impact: 3 };

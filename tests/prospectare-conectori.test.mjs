@@ -144,3 +144,27 @@ test("Waalaxy: eroarea API-ului ajunge ca mesaj, cheia nu apare nicăieri", asyn
   assert.match(r.eroare, /list not found/);
   assert.ok(!r.eroare.includes("secret-w"));
 });
+
+test("credite: Hunter, Prospeo și Lusha se citesc din răspunsurile de cont; Apollo nu expune credite; forme neașteptate dau necunoscut", async () => {
+  assert.deepEqual(S.crediteDinRaspuns("hunter", { data: { requests: { credits: { used: 120, available: 500 } } } }), { ramase: 380, total: 500 });
+  assert.deepEqual(S.crediteDinRaspuns("hunter", { data: { requests: { searches: { used: 10, available: 25 } } } }), { ramase: 15, total: 25 });
+  assert.deepEqual(S.crediteDinRaspuns("prospeo", { error: false, response: { remaining_credits: 900, used_credits: 100 } }), { ramase: 900, total: 1000 });
+  assert.deepEqual(S.crediteDinRaspuns("lusha", { usage: { used: 30, remaining: 70, total: 100 } }), { ramase: 70, total: 100 });
+  assert.deepEqual(S.crediteDinRaspuns("lusha", { used: 30, total: 100 }), { ramase: 70, total: 100 });
+  assert.deepEqual(S.crediteDinRaspuns("apollo", { orice: 1 }), { ramase: null, total: null });
+  assert.deepEqual(S.crediteDinRaspuns("hunter", {}), { ramase: null, total: null });
+  assert.deepEqual(S.crediteDinRaspuns("prospeo", null), { ramase: null, total: null });
+});
+
+test("credite: apelul de cont folosește cheia în header; Apollo nu face niciun apel; 401 dă mesaj", async () => {
+  const { f, apeluri } = furnizoriSimulati({ "/account": raspuns({ data: { requests: { credits: { used: 1, available: 50 } } } }) });
+  const r = await S.crediteFurnizor("hunter", "kH", f);
+  assert.deepEqual(r, { ok: true, date: { ramase: 49, total: 50 } });
+  assert.equal(apeluri[0].headers["X-API-KEY"], "kH");
+  const { f: f2, apeluri: a2 } = furnizoriSimulati({});
+  assert.deepEqual(await S.crediteFurnizor("apollo", "kA", f2), { ok: true, date: { ramase: null, total: null } });
+  assert.equal(a2.length, 0);
+  const respinsa = await S.crediteFurnizor("lusha", "k", async () => raspuns({}, 401));
+  assert.equal(respinsa.ok, false);
+  assert.match(respinsa.eroare, /Lusha nu a acceptat cheia/);
+});

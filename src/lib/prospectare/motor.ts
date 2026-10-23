@@ -554,6 +554,68 @@ export async function waalaxyTrimite(cheie: string, intrare: { listaId: string; 
   return waalaxy<unknown>(cheie, "/prospects/addProspectFromIntegration", f, { method: "POST", body: corp });
 }
 
+// ===== Credite rămase în contul organizației =====
+// Se citesc de la apelurile gratuite de cont ale furnizorilor (nu consumă credite). Furnizorii care nu expun creditele prin API (Apollo, Waalaxy)
+// dau `ramase: null`: interfața arată doar că sunt conectați. Răspunsurile se citesc defensiv: o formă neașteptată înseamnă „necunoscut”, nu eroare.
+export type Credite = { ramase: number | null; total: number | null };
+
+const nr = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
+
+// Caută prima valoare numerică cu unul dintre numele date, oriunde în obiect (răspunsurile sunt uneori împachetate în data/response/usage).
+function gasesteNumar(o: unknown, nume: readonly string[], adancime = 0): number | null {
+  if (!o || typeof o !== "object" || adancime > 4) return null;
+  const rec = o as Record<string, unknown>;
+  for (const n of nume) {
+    const v = nr(rec[n]);
+    if (v !== null) return v;
+  }
+  for (const v of Object.values(rec)) {
+    const g = gasesteNumar(v, nume, adancime + 1);
+    if (g !== null) return g;
+  }
+  return null;
+}
+
+export function crediteDinRaspuns(furnizor: Furnizor, corp: unknown): Credite {
+  if (furnizor === "hunter") {
+    const c = ((corp as { data?: { requests?: { credits?: { used?: number; available?: number }; searches?: { used?: number; available?: number } } } })?.data?.requests) ?? {};
+    const sursa = c.credits ?? c.searches;
+    const total = nr(sursa?.available);
+    const folosite = nr(sursa?.used);
+    return { ramase: total !== null && folosite !== null ? Math.max(0, total - folosite) : null, total };
+  }
+  if (furnizor === "prospeo") {
+    const ramase = gasesteNumar(corp, ["remaining_credits"]);
+    const folosite = gasesteNumar(corp, ["used_credits"]);
+    return { ramase, total: ramase !== null && folosite !== null ? ramase + folosite : null };
+  }
+  if (furnizor === "lusha") {
+    const total = gasesteNumar(corp, ["total"]);
+    const folosite = gasesteNumar(corp, ["used"]);
+    const ramase = gasesteNumar(corp, ["remaining"]) ?? (total !== null && folosite !== null ? Math.max(0, total - folosite) : null);
+    return { ramase, total };
+  }
+  return { ramase: null, total: null };
+}
+
+const CALE_CONT: Partial<Record<Furnizor, { url: string; headere: (cheie: string) => Record<string, string> }>> = {
+  hunter: { url: `${HUNTER}/account`, headere: headereHunter },
+  prospeo: { url: `${PROSPEO}/account-information`, headere: headerePr },
+  lusha: { url: `${LUSHA}/account/usage`, headere: headereLusha },
+};
+
+export async function crediteFurnizor(furnizor: Furnizor, cheie: string, f: FetchFn): Promise<Rezultat<Credite>> {
+  const cale = CALE_CONT[furnizor];
+  if (!cale) return { ok: true, date: { ramase: null, total: null } }; // Apollo nu expune creditele prin API
+  try {
+    const res = await f(cale.url, { headers: cale.headere(cheie), signal: AbortSignal.timeout(10000), cache: "no-store" });
+    if (!res.ok) return { ok: false, eroare: eroareHttp(furnizor, res.status), status: res.status };
+    return { ok: true, date: crediteDinRaspuns(furnizor, await res.json().catch(() => ({}))) };
+  } catch (e) {
+    return { ok: false, eroare: eroareRetea(furnizor, e) };
+  }
+}
+
 // ============================================================================
 // Orchestrator: căutarea de decidenți pentru o firmă
 // ============================================================================

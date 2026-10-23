@@ -9,6 +9,7 @@ import { NUME_FURNIZOR, type Furnizor } from "@/lib/prospectare/motor";
 
 import { Badge } from "../../components/ui/badge";
 import { Card, CardHeader } from "../../components/ui/card";
+import { CrediteFurnizori } from "./credite-furnizori";
 import { aprobaCandidatAction, cautaDecidentiPentruFirma, respingeCandidatAction, type RezultatActiune, type StareProspectare } from "./prospectare-actions";
 
 // „Decidenți găsiți”: caută persoane de decizie pentru firmă cu cheile organizației (Lusha, Apollo, Prospeo, Hunter) și le păstrează în „De aprobat” până le aprobă cineva.
@@ -21,6 +22,7 @@ export function DecidentiCard({ orgSlug, companyId, stare }: { orgSlug: string; 
   const [nuMaiPropune, setNuMaiPropune] = useState<Record<string, boolean>>({});
   const [inWaalaxy, setInWaalaxy] = useState<Record<string, boolean>>({});
   const [avertisment, setAvertisment] = useState<string | null>(null);
+  const [versiuneCredite, setVersiuneCredite] = useState(0); // crește după fiecare căutare, ca să se recitească creditele
   const faraChei = stare.furnizoriConfigurati.length === 0;
 
   const cauta = () =>
@@ -30,6 +32,7 @@ export function DecidentiCard({ orgSlug, companyId, stare }: { orgSlug: string; 
       const r = await cautaDecidentiPentruFirma(orgSlug, companyId);
       if (!r.ok) setEroare(r.eroare ?? "Căutarea nu a reușit.");
       else setRezultat(r);
+      setVersiuneCredite((v) => v + 1);
       router.refresh();
     });
 
@@ -69,6 +72,8 @@ export function DecidentiCard({ orgSlug, companyId, stare }: { orgSlug: string; 
           )
         }
       />
+
+      <CrediteFurnizori orgSlug={orgSlug} versiune={versiuneCredite} />
 
       {eroare && <p className="mb-3 rounded-lg bg-[var(--ci-red-soft)] px-3 py-2 text-[12.5px] text-[var(--ci-red)]">{eroare}</p>}
       {avertisment && <p className="mb-3 rounded-lg bg-[var(--ci-surface-2)] px-3 py-2 text-[12.5px] text-[var(--ci-amber)]">{avertisment}</p>}
