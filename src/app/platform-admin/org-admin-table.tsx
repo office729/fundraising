@@ -103,6 +103,14 @@ export function OrgAdminTable({ initial }: { initial: OrgRand[] }) {
                   >
                     Diagnoză{o.suportExpiraLa ? "" : " (fără acces)"}
                   </Link>
+                  <Link
+                    prefetch={false}
+                    href={`/platform-admin/personalizare/${o.slug}`}
+                    title="Aspectul dashboardului: meniu, familie vizuală, blocuri, cu previzualizare pe date de exemplu (fără datele organizației)"
+                    className="rounded-lg border border-line px-2.5 py-1 text-xs font-medium text-ink hover:bg-panel-2"
+                  >
+                    Aspect
+                  </Link>
                   <button type="button" onClick={() => deschideEdit(o)} className="rounded-lg border border-line px-2.5 py-1 text-xs font-medium text-ink hover:bg-panel-2">
                     Ajustează
                   </button>

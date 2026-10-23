@@ -4,6 +4,7 @@ import { getLocale } from "@/lib/i18n/get-locale";
 import { titluAbsolut } from "@/lib/page-titles";
 
 import "./calm-impact.css";
+import { citestePersonalizareOrg } from "./personalizare-actions";
 import { CrmShell } from "./shell";
 
 // Titlul de aici e pentru pagina de start a CRM (crm/page.tsx, componentă
@@ -24,6 +25,8 @@ export default async function CrmLayout({
   const { orgSlug } = await params;
   const access = await requireOrgAccess(orgSlug);
   const locale = await getLocale();
+  // Aspectul personalizat de echipa platformei (meniu, blocuri de pe prima pagină); null = aspect standard.
+  const personalizare = await citestePersonalizareOrg(orgSlug);
 
   return (
     <CrmShell
@@ -36,6 +39,7 @@ export default async function CrmLayout({
       userName={access.userName ?? access.userEmail}
       role={access.role}
       locale={locale}
+      personalizare={personalizare}
     >
       {children}
     </CrmShell>

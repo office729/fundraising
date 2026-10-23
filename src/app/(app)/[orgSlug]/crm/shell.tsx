@@ -81,6 +81,8 @@ import { UtilizatorProvider } from "./lib/utilizator-context";
 import { useExempleDemo } from "./lib/exemple-demo";
 import { useSalut } from "@/lib/use-salut";
 import { getOrgCustomization } from "@/lib/org-customizations";
+import { combinaPersonalizari, type PersonalizareOrg } from "@/lib/personalizare-org";
+import { PersonalizareProvider, usePersonalizare } from "./lib/personalizare-context";
 
 const EMPTY_TASKURI_GLOBALE: Task[] = [];
 const EMPTY_STATUS_MAP: Record<string, Task["status"]> = {};
@@ -104,7 +106,8 @@ const MODUL_PE_INTRARE: Record<string, ModulPachet> = {
 
 // Etichetele vin din dicționarul RO/EN (vezi lib/i18n/dictionaries/dashboard.ts)
 // — restul (href/icon) rămâne fix, doar textul se traduce.
-function buildNav(dict: DashboardDict, orgSlug: string, role: string): { section: string; items: { href: string; label: string; hint?: string; icon: typeof Gauge }[] }[] {
+// `persDb`: personalizarea salvată de echipa platformei pentru organizație (lib/personalizare-org.ts); se combină cu cea veche din fișier.
+export function buildNav(dict: DashboardDict, orgSlug: string, role: string, persDb?: PersonalizareOrg | null): { section: string; items: { href: string; label: string; hint?: string; icon: typeof Gauge }[] }[] {
   const baza = [
     { section: "", items: [{ href: "", label: dict.nav.home, hint: dict.hints.home, icon: Gauge }] },
     {
@@ -164,14 +167,14 @@ function buildNav(dict: DashboardDict, orgSlug: string, role: string): { section
   ];
   // personalizări agreate cu ONG-ul respectiv (vezi lib/org-customizations.ts) — pentru
   // orice alt cont rămâne meniul standard, neschimbat
-  const pers = getOrgCustomization(orgSlug);
+  const pers = combinaPersonalizari(getOrgCustomization(orgSlug), persDb);
   return baza
     .map((g) => ({
       ...g,
       items: [
         ...g.items
-          .filter((i) => !pers.hiddenNav?.includes(i.href) && !paginaCrmAscunsa(i.href))
-          .map((i) => (pers.navLabels?.[i.href] ? { ...i, label: pers.navLabels[i.href] } : i)),
+          .filter((i) => !pers.navAscunse?.includes(i.href) && !paginaCrmAscunsa(i.href))
+          .map((i) => (pers.navEtichete?.[i.href] ? { ...i, label: pers.navEtichete[i.href] } : i)),
       ],
     }))
     .filter((g) => g.items.length > 0);
@@ -187,6 +190,8 @@ export function CrmShell({
   userName,
   role,
   locale,
+  personalizare,
+  previzualizare,
   children,
 }: {
   orgSlug: string;
@@ -199,6 +204,9 @@ export function CrmShell({
   userName: string;
   role: string;
   locale: Locale;
+  // Aspectul personalizat al organizației (meniu, blocuri) și modul „previzualizare de suport” (fără apeluri către datele organizației).
+  personalizare?: PersonalizareOrg | null;
+  previzualizare?: boolean;
   children: ReactNode;
 }) {
   const collapsed = useLocalStoreValue(getSidebarRestrans, false);
@@ -240,6 +248,7 @@ export function CrmShell({
   }, []);
 
   return (
+    <PersonalizareProvider personalizare={personalizare ?? null}>
     <div
       ref={radacina}
       className="ci-root flex min-h-[calc(100vh-73px)]"
@@ -339,7 +348,7 @@ export function CrmShell({
           <AvatarMenu userName={userName} orgSlug={orgSlug} role={role} />
         </header>
 
-        <FeedbackInvitatie orgSlug={orgSlug} />
+        {!previzualizare && <FeedbackInvitatie orgSlug={orgSlug} />}
 
         {/* Nu <main>: layout-ul organizației (app/[orgSlug]/layout.tsx) are deja reperul „main"; două ar fi invalide. */}
         <div className="ci-scrollbar relative flex-1 overflow-y-auto px-6 py-6">
@@ -356,6 +365,7 @@ export function CrmShell({
         {userName.includes("@") ? `${salut}.` : `${salut}, ${userName.split(" ")[0]}.`}
       </span>
     </div>
+    </PersonalizareProvider>
   );
 }
 
@@ -389,7 +399,8 @@ function NavGroups({
   orgPackage: OrgPackage;
   onNavigate: () => void;
 }) {
-  const nav = buildNav(dict, base.split("/")[1] ?? "", role);
+  const persDb = usePersonalizare();
+  const nav = buildNav(dict, base.split("/")[1] ?? "", role, persDb);
   // Nav-ul e o listă plată, nu o ierarhie reală — dar unele rute (ex.
   // „Formularul 230" la donatori/formular-230) sunt sub-căi ale altui item
   // (donatori), și altele (ex. „Companii D177") au ACELAȘI path, doar alt
