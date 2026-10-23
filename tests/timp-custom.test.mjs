@@ -2,11 +2,13 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  aziBucuresti,
   bancaOre,
   curataDescriere,
   formateazaMinute,
   MINUTE_MAXIME_INTRARE,
   minuteDinTimer,
+  minuteInLuna,
   parseDurata,
   sumaPentru,
   totaluri,
@@ -128,4 +130,19 @@ test("banca de ore: fără pachet, în limită, atenție de la 80%, depășit pe
   const dep = bancaOre(660, 10);
   assert.deepEqual([dep.stare, dep.minuteRamase, dep.procent], ["depasit", -60, 1], "bara se plafonează la 100%, dar rămase e negativ");
   assert.equal(bancaOre(0, 2.5).minutePachet, 150);
+});
+
+test("pachet lunar: se numără doar luna curentă; ziua de azi e în fusul României", () => {
+  const intrari = [
+    { data: "2026-09-30", minute: 100 },
+    { data: "2026-10-01", minute: 30 },
+    { data: "2026-10-23", minute: 45 },
+    { data: "2025-10-23", minute: 999 },
+  ];
+  assert.equal(minuteInLuna(intrari, "2026-10-23"), 75, "anul precedent nu se amestecă");
+  assert.equal(minuteInLuna(intrari, "2026-11-02"), 0);
+  assert.equal(minuteInLuna([], "2026-10-23"), 0);
+  // 23:30 UTC pe 31 oct = 01:30 pe 1 nov în România (iarna, UTC+2)
+  assert.equal(aziBucuresti(new Date("2026-10-31T23:30:00Z")), "2026-11-01");
+  assert.match(aziBucuresti(), /^\d{4}-\d{2}-\d{2}$/);
 });

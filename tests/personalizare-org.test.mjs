@@ -193,3 +193,11 @@ test("orele din pachet: pozitive, cu 2 zecimale, maximum; în configurare, rezum
   assert.ok(rezumatPersonalizare({ v: 1, arataTimp: true, orePachet: 40 }).some((l) => l.includes("pachet de 40 ore")));
   assert.equal(combinaPersonalizari(undefined, { v: 1, arataTimp: true, orePachet: 40 }).orePachet, 40);
 });
+
+test("pachet lunar: boolean, apare în rezumat și în combinare", () => {
+  assert.equal(ok({ v: 1, arataTimp: true, orePachet: 10, pachetLunar: true }).pachetLunar, true);
+  assert.equal(ok({ v: 1, arataTimp: true, orePachet: 10, pachetLunar: false }).pachetLunar, undefined);
+  refuza({ v: 1, arataTimp: true, orePachet: 10, pachetLunar: "da" });
+  assert.ok(rezumatPersonalizare({ v: 1, arataTimp: true, orePachet: 10, pachetLunar: true }).some((l) => l.includes("pe lună")));
+  assert.equal(combinaPersonalizari(undefined, { v: 1, arataTimp: true, orePachet: 10, pachetLunar: true }).pachetLunar, true);
+});

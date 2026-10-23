@@ -132,6 +132,23 @@ export function totaluri(intrari: { categorie: Categorie; minute: number; cuAi?:
   return { minute, minuteCuAi, peCategorie, suma: tarife ? { total: sumaPentru(minute, tarife.ora), moneda: tarife.moneda } : null };
 }
 
+// Ziua de azi în România, „AAAA-LL-ZZ” (nu în UTC: o intrare de la 00:30 e din ziua nouă).
+export const aziBucuresti = (acum: Date = new Date()): string => acum.toLocaleDateString("sv-SE", { timeZone: "Europe/Bucharest" });
+
+// Minutele intrărilor din luna calendaristică a datei `azi` („AAAA-LL-ZZ”). Pentru pachetul lunar: banca de ore se resetează la începutul fiecărei luni.
+export function minuteInLuna(intrari: { data: string; minute: number }[], azi: string): number {
+  const luna = azi.slice(0, 7);
+  return intrari.reduce((s, i) => (i.data.slice(0, 7) === luna ? s + i.minute : s), 0);
+}
+
+// „octombrie 2026” pentru luna datei „AAAA-LL-ZZ”, și „1 noiembrie” pentru următorul reset (prima zi a lunii următoare).
+export const numeLuna = (azi: string): string => new Date(`${azi.slice(0, 7)}-01T12:00:00`).toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
+export function urmatorulReset(azi: string): string {
+  const d = new Date(`${azi.slice(0, 7)}-01T12:00:00`);
+  d.setMonth(d.getMonth() + 1);
+  return d.toLocaleDateString("ro-RO", { day: "numeric", month: "long" });
+}
+
 export type StareBanca = "fara_pachet" | "in_limita" | "atentie" | "depasit";
 export type BancaOre = {
   stare: StareBanca;

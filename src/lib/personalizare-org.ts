@@ -61,6 +61,8 @@ export type PersonalizareOrg = {
   arataTimp?: boolean;
   // Banca de ore: ore incluse în pachet (cu cel mult 2 zecimale); clientul vede cât a folosit și cât a rămas. Lipsa înseamnă fără pachet.
   orePachet?: number;
+  // true = pachetul de ore se resetează în fiecare lună calendaristică (banca de ore numără doar luna curentă); lipsa înseamnă un pachet total, fără reset.
+  pachetLunar?: boolean;
 };
 
 export type RezultatValidare = { ok: true; valoare: PersonalizareOrg } | { ok: false; eroare: string };
@@ -78,7 +80,7 @@ function curataEticheta(x: unknown): string | null {
 // Validează și normalizează o configurare primită de la client sau citită din baza de date. Refuză orice nu e recunoscut, în loc să ignore în tăcere.
 export function valideazaPersonalizare(brut: unknown): RezultatValidare {
   if (!esteObiect(brut)) return { ok: false, eroare: "Configurarea trebuie să fie un obiect." };
-  const permise = new Set(["v", "familie", "navAscunse", "navEtichete", "dashboard", "variante", "arataTimp", "orePachet"]);
+  const permise = new Set(["v", "familie", "navAscunse", "navEtichete", "dashboard", "variante", "arataTimp", "orePachet", "pachetLunar"]);
   for (const k of Object.keys(brut)) if (!permise.has(k)) return { ok: false, eroare: `Câmp necunoscut: ${k}.` };
   if (brut.v !== VERSIUNE_PERSONALIZARE) return { ok: false, eroare: "Versiune de configurare necunoscută." };
 
@@ -161,6 +163,10 @@ export function valideazaPersonalizare(brut: unknown): RezultatValidare {
     if (ore === null) return { ok: false, eroare: `Orele din pachet trebuie să fie un număr între 0,01 și ${ORE_PACHET_MAXIME}, cu cel mult 2 zecimale.` };
     rez.orePachet = ore;
   }
+  if (brut.pachetLunar !== undefined) {
+    if (typeof brut.pachetLunar !== "boolean") return { ok: false, eroare: "Setarea „pachet lunar” trebuie să fie da sau nu." };
+    if (brut.pachetLunar) rez.pachetLunar = true;
+  }
 
   return { ok: true, valoare: rez };
 }
@@ -187,6 +193,7 @@ export function combinaPersonalizari(
     ...(dinBaza?.variante ? { variante: dinBaza.variante } : {}),
     ...(dinBaza?.arataTimp ? { arataTimp: true } : {}),
     ...(dinBaza?.orePachet ? { orePachet: dinBaza.orePachet } : {}),
+    ...(dinBaza?.pachetLunar ? { pachetLunar: true } : {}),
   };
 }
 
@@ -236,7 +243,7 @@ export function rezumatPersonalizare(pers: PersonalizareOrg | null | undefined):
     const optiuni: Record<string, string> = reg.optiuni;
     linii.push(`Variantă la ${reg.eticheta}: ${are(optiuni, varianta) ? optiuni[varianta] : varianta}`);
   }
-  if (pers.arataTimp) linii.push(`Pagina „Timp alocat” vizibilă clientului (fără tarife)${pers.orePachet ? `, pachet de ${pers.orePachet} ore` : ""}`);
+  if (pers.arataTimp) linii.push(`Pagina „Timp alocat” vizibilă clientului (fără tarife)${pers.orePachet ? `, pachet de ${pers.orePachet} ore${pers.pachetLunar ? " pe lună (se resetează lunar)" : ""}` : ""}`);
   if (pers.familie) linii.push(`Familie de dashboard: ${ETICHETE_FAMILIE[pers.familie]}`);
   if (pers.navAscunse?.length) linii.push(`Meniu: intrări ascunse (${pers.navAscunse.join(", ")})`);
   const redenumite = Object.entries(pers.navEtichete ?? {});

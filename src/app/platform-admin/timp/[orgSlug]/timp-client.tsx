@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 
-import { bancaOre, CATEGORII, formateazaMinute, sumaPentru, totaluri, type Categorie, type Tarife } from "@/lib/timp-custom";
+import { aziBucuresti, bancaOre, CATEGORII, formateazaMinute, minuteInLuna, numeLuna, sumaPentru, totaluri, urmatorulReset, type Categorie, type Tarife } from "@/lib/timp-custom";
 
 import { adaugaIntrareAction, opresteTimerAction, pornesteTimerAction, salveazaTarifeAction, stergeIntrareAction } from "../../timp-actions";
 
@@ -46,12 +46,15 @@ export function TimpClient({
   date,
   arataClientului,
   orePachet,
+  pachetLunar,
 }: {
   org: { id: string; slug: string; nume: string };
   date: DateTimpClient;
   arataClientului: boolean;
   // Orele incluse în pachet (din configurarea de aspect), pentru banca de ore; null = fără pachet.
   orePachet: number | null;
+  // true = banca de ore numără doar luna curentă (se resetează lunar).
+  pachetLunar: boolean;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -61,7 +64,9 @@ export function TimpClient({
   const pornit = date.intrari.find((i) => i.pornitLa && !i.opritLa && i.creatDe === date.actorId) ?? null;
   const tarifActiv = date.tarife && date.tarife.ora > 0 ? date.tarife : null;
   const tot = useMemo(() => totaluri(terminate, tarifActiv), [terminate, tarifActiv]);
-  const banca = bancaOre(tot.minute, orePachet);
+  const lunar = pachetLunar && !!orePachet;
+  const astazi = aziBucuresti();
+  const banca = bancaOre(lunar ? minuteInLuna(terminate, astazi) : tot.minute, orePachet);
 
   // Cronometrul afișat cât rulează timerul.
   const [acum, setAcum] = useState(() => Date.now());
@@ -123,7 +128,7 @@ export function TimpClient({
           {tot.suma && <p className="mt-1 text-sm text-ink">De facturat: <strong>{bani(tot.suma.total)}</strong></p>}
         </div>
         <div className="rounded-xl border border-line bg-panel p-4">
-          <p className="text-xs text-muted">Banca de ore</p>
+          <p className="text-xs text-muted">{lunar ? `Banca de ore · ${numeLuna(astazi)}` : "Banca de ore"}</p>
           {banca.stare === "fara_pachet" ? (
             <p className="mt-1 text-sm text-muted">Fără pachet. Setează orele incluse din editorul de aspect (Timp alocat).</p>
           ) : (
@@ -137,6 +142,7 @@ export function TimpClient({
               <p className={`mt-1 text-xs ${banca.stare === "depasit" ? "font-semibold text-red-700" : banca.stare === "atentie" ? "font-semibold text-amber-700" : "text-muted"}`}>
                 {banca.stare === "depasit" ? `Depășit cu ${formateazaMinute(-banca.minuteRamase)}` : `Rămase ${formateazaMinute(banca.minuteRamase)}`}
                 {banca.stare === "atentie" ? " · pachetul se apropie de sfârșit" : ""}
+                {lunar ? ` · se resetează pe ${urmatorulReset(astazi)}` : ""}
               </p>
             </>
           )}

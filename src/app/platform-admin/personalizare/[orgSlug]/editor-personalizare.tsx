@@ -52,6 +52,7 @@ export function EditorPersonalizare({
   });
   const [variante, setVariante] = useState<Record<string, string>>(configInitiala?.variante ?? {});
   const [arataTimp, setArataTimp] = useState(configInitiala?.arataTimp === true);
+  const [pachetLunar, setPachetLunar] = useState(configInitiala?.pachetLunar === true);
   const [orePachet, setOrePachet] = useState(configInitiala?.orePachet ? String(configInitiala.orePachet).replace(".", ",") : "");
   const [latime, setLatime] = useState<"desktop" | "telefon">("desktop");
   const [mesaj, setMesaj] = useState<Mesaj>(null);
@@ -69,11 +70,12 @@ export function EditorPersonalizare({
       ...(arataTimp ? { arataTimp: true } : {}),
       // Ore incluse în pachet: text în draft ca să fie validat strict (valideazaPersonalizare), nu convertit în tăcere; gol = fără pachet.
       ...(arataTimp && orePachet.trim() ? { orePachet: orePachet.trim() as unknown as number } : {}),
+      ...(arataTimp && orePachet.trim() && pachetLunar ? { pachetLunar: true } : {}),
       ...(blocAscunse.length || ordineDeSalvat.length
         ? { dashboard: { ...(blocAscunse.length ? { ascunse: blocAscunse } : {}), ...(ordineDeSalvat.length ? { ordine: ordineDeSalvat } : {}) } }
         : {}),
     };
-  }, [familie, navAscunse, etichete, blocAscunse, ordine, variante, arataTimp, orePachet]);
+  }, [familie, navAscunse, etichete, blocAscunse, ordine, variante, arataTimp, orePachet, pachetLunar]);
 
   const validare = useMemo(() => valideazaPersonalizare(draft), [draft]);
   // „Ce diferă față de standard”, generat din configurarea din editor (inclusiv modificările nesalvate), și notița internă a echipei.
@@ -281,6 +283,15 @@ export function EditorPersonalizare({
               Ore incluse în pachet (opțional, pentru banca de ore)
               <input inputMode="decimal" placeholder="ex. 10" value={orePachet} onChange={(e) => setOrePachet(e.target.value)} className="mt-1 block w-32 rounded-lg border border-line bg-panel px-2.5 py-1.5 text-sm text-ink" />
               <span className="mt-1 block">Clientul vede orele folosite și rămase, cu avertizare de la 80%. Lasă gol dacă nu are pachet.</span>
+            </label>
+          )}
+          {arataTimp && orePachet.trim() && (
+            <label className="mt-2 flex items-start gap-2 text-sm text-ink">
+              <input type="checkbox" checked={pachetLunar} onChange={(e) => setPachetLunar(e.target.checked)} className="mt-1 h-4 w-4" />
+              <span>
+                Pachet lunar: orele se resetează în fiecare lună.
+                <span className="block text-xs text-muted">Banca numără doar luna curentă; clientul vede și totalul de la început. Fără bifă, pachetul e unul singur, fără reset.</span>
+              </span>
             </label>
           )}
           <a href={`/platform-admin/timp/${org.slug}`} className="mt-2 inline-block text-xs font-medium text-brand-blue hover:underline">

@@ -44,7 +44,7 @@ export default async function TimpPage({ params }: { params: Promise<{ orgSlug: 
         </Link>
       </p>
       {date ? (
-        <TimpClient org={{ id: org.id, slug: org.slug, nume: org.nume }} date={date} arataClientului={org.config?.arataTimp === true} orePachet={org.config?.orePachet ?? null} />
+        <TimpClient org={{ id: org.id, slug: org.slug, nume: org.nume }} date={date} arataClientului={org.config?.arataTimp === true} orePachet={org.config?.orePachet ?? null} pachetLunar={org.config?.pachetLunar === true} />
       ) : (
         <p role="alert" className="mt-6 rounded-xl border border-line bg-panel p-4 text-sm text-red-700">
           Nu am putut citi registrul de timp. Verifică dacă tabelele <code>org_timp</code> și <code>org_timp_tarife</code> au fost create în baza de date (vezi
