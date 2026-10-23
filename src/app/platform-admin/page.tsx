@@ -7,6 +7,8 @@ import { isPlatformAdmin } from "@/lib/billing/trial";
 import { db } from "@/lib/db";
 import { rezumatPersonalizare } from "@/lib/personalizare-org";
 import { listeazaPersonalizari } from "@/lib/suport/personalizare-admin";
+import { minutePeOrganizatii } from "@/lib/suport/timp-admin";
+import { formateazaMinute } from "@/lib/timp-custom";
 
 import { listeazaOrganizatiiAction } from "./actions";
 import { OrgAdminTable } from "./org-admin-table";
@@ -30,6 +32,8 @@ export default async function PlatformAdminPage() {
   if (!isPlatformAdmin(authUser.email)) notFound();
 
   const organizatii = await listeazaOrganizatiiAction();
+  const minutePeOrg = await minutePeOrganizatii();
+  const timp = Object.fromEntries(Object.entries(minutePeOrg).filter(([, m]) => m > 0).map(([id, m]) => [id, formateazaMinute(m)]));
   // Ce diferă față de standard la fiecare organizație (generat din configurare), pentru indicatorul de lângă „Aspect”.
   const personalizari = Object.fromEntries(
     (await listeazaPersonalizari().catch(() => [])).map((r) => [r.slug, { linii: rezumatPersonalizare(r.config), nota: r.nota.length > 0 }]),
@@ -74,7 +78,7 @@ export default async function PlatformAdminPage() {
         Cine s-a înscris, cine s-a autentificat ultima dată, și ajustare manuală de pachet/status/perioadă plătită, la cerere.
       </p>
       <div className="mt-2">
-        <OrgAdminTable initial={organizatii} personalizari={personalizari} />
+        <OrgAdminTable initial={organizatii} personalizari={personalizari} timp={timp} />
       </div>
 
       <h2 className="mt-10 text-sm font-semibold text-ink">Spațiu bază de date</h2>

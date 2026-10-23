@@ -43,6 +43,7 @@ import {
   CalendarDays,
   MessageSquareHeart,
   Megaphone,
+  Clock,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -108,6 +109,8 @@ const MODUL_PE_INTRARE: Record<string, ModulPachet> = {
 // — restul (href/icon) rămâne fix, doar textul se traduce.
 // `persDb`: personalizarea salvată de echipa platformei pentru organizație (lib/personalizare-org.ts); se combină cu cea veche din fișier.
 export function buildNav(dict: DashboardDict, orgSlug: string, role: string, persDb?: PersonalizareOrg | null): { section: string; items: { href: string; label: string; hint?: string; icon: typeof Gauge }[] }[] {
+  // Personalizarea efectivă (fișierul vechi + cea din baza de date); aici, pentru intrarea „Timp alocat”, mai jos pentru ascunderi și denumiri.
+  const persEfectiva = combinaPersonalizari(getOrgCustomization(orgSlug), persDb);
   const baza = [
     { section: "", items: [{ href: "", label: dict.nav.home, hint: dict.hints.home, icon: Gauge }] },
     {
@@ -159,6 +162,8 @@ export function buildNav(dict: DashboardDict, orgSlug: string, role: string, per
         { href: "instrumente", label: dict.nav.instrumente, hint: dict.hints.instrumente, icon: Wrench },
         { href: "consultanta", label: dict.nav.consultanta, hint: dict.hints.consultanta, icon: GraduationCap },
         { href: "feedback", label: dict.nav.feedback, hint: dict.hints.feedback, icon: MessageSquareHeart },
+        // Registrul de timp al muncii custom și al suportului: doar dacă echipa platformei l-a activat pentru organizație, și doar pentru owner/admin.
+        ...(persEfectiva.arataTimp && (role === "owner" || role === "admin") ? [{ href: "timp-alocat", label: "Timp alocat", hint: "Timpul alocat modificărilor custom, integrărilor și suportului", icon: Clock }] : []),
         // Facturarea (plan, metodă de plată, facturi) o văd doar proprietarul și administratorii; stă chiar deasupra Setărilor.
         ...(role === "owner" || role === "admin" ? [{ href: "facturare", label: dict.nav.facturare, hint: dict.hints.facturare, icon: Receipt }] : []),
         { href: "setari", label: dict.nav.setari, hint: dict.hints.setari, icon: Settings },
@@ -167,7 +172,7 @@ export function buildNav(dict: DashboardDict, orgSlug: string, role: string, per
   ];
   // personalizări agreate cu ONG-ul respectiv (vezi lib/org-customizations.ts) — pentru
   // orice alt cont rămâne meniul standard, neschimbat
-  const pers = combinaPersonalizari(getOrgCustomization(orgSlug), persDb);
+  const pers = persEfectiva;
   return baza
     .map((g) => ({
       ...g,

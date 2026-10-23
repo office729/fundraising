@@ -23,7 +23,7 @@ function formatData(d: Date | null): string {
 // `personalizari`: ce diferă față de standard la fiecare organizație (după slug), generat din configurare; `nota`: există o notiță internă.
 export type PersonalizariOrg = Record<string, { linii: string[]; nota: boolean }>;
 
-export function OrgAdminTable({ initial, personalizari = {} }: { initial: OrgRand[]; personalizari?: PersonalizariOrg }) {
+export function OrgAdminTable({ initial, personalizari = {}, timp = {} }: { initial: OrgRand[]; personalizari?: PersonalizariOrg; timp?: Record<string, string> }) {
   const [orgs, setOrgs] = useState(initial);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<{ package: string; subscriptionStatus: string; currentPeriodEnd: string }>({
@@ -121,6 +121,9 @@ export function OrgAdminTable({ initial, personalizari = {} }: { initial: OrgRan
                     Aspect
                     {personalizari[o.slug]?.linii.length ? ` · ${personalizari[o.slug].linii.length} diferențe` : ""}
                     {personalizari[o.slug]?.nota ? " · notiță" : ""}
+                  </Link>
+                  <Link prefetch={false} href={`/platform-admin/timp/${o.slug}`} title="Timp alocat: timer, intrări, tarife și suma de facturat" className="rounded-lg border border-line px-2.5 py-1 text-xs font-medium text-ink hover:bg-panel-2">
+                    Timp{timp[o.id] ? ` · ${timp[o.id]}` : ""}
                   </Link>
                   <button type="button" onClick={() => deschideEdit(o)} className="rounded-lg border border-line px-2.5 py-1 text-xs font-medium text-ink hover:bg-panel-2">
                     Ajustează

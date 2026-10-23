@@ -51,6 +51,7 @@ export function EditorPersonalizare({
     return [...dinConfig, ...BLOCURI_ORDONABILE.filter((b) => !dinConfig.includes(b))];
   });
   const [variante, setVariante] = useState<Record<string, string>>(configInitiala?.variante ?? {});
+  const [arataTimp, setArataTimp] = useState(configInitiala?.arataTimp === true);
   const [latime, setLatime] = useState<"desktop" | "telefon">("desktop");
   const [mesaj, setMesaj] = useState<Mesaj>(null);
   const [pending, startTransition] = useTransition();
@@ -64,11 +65,12 @@ export function EditorPersonalizare({
       ...(navAscunse.length ? { navAscunse } : {}),
       ...(Object.keys(eticheteCurate).length ? { navEtichete: eticheteCurate } : {}),
       ...(Object.keys(variante).length ? { variante } : {}),
+      ...(arataTimp ? { arataTimp: true } : {}),
       ...(blocAscunse.length || ordineDeSalvat.length
         ? { dashboard: { ...(blocAscunse.length ? { ascunse: blocAscunse } : {}), ...(ordineDeSalvat.length ? { ordine: ordineDeSalvat } : {}) } }
         : {}),
     };
-  }, [familie, navAscunse, etichete, blocAscunse, ordine, variante]);
+  }, [familie, navAscunse, etichete, blocAscunse, ordine, variante, arataTimp]);
 
   const validare = useMemo(() => valideazaPersonalizare(draft), [draft]);
   // „Ce diferă față de standard”, generat din configurarea din editor (inclusiv modificările nesalvate), și notița internă a echipei.
@@ -165,6 +167,7 @@ export function EditorPersonalizare({
         setBlocAscunse([]);
         setOrdine([...BLOCURI_ORDONABILE]);
         setVariante({});
+        setArataTimp(false);
         setMesaj({ tip: "ok", text: "Aspectul standard a fost restabilit." });
       } else setMesaj({ tip: "eroare", text: r.eroare });
     });
@@ -259,6 +262,20 @@ export function EditorPersonalizare({
               );
             })}
           </ul>
+        </section>
+
+        <section className="rounded-xl border border-line bg-panel p-4">
+          <h2 className="text-sm font-semibold text-ink">Timp alocat</h2>
+          <label className="mt-2 flex items-start gap-2 text-sm text-ink">
+            <input type="checkbox" checked={arataTimp} onChange={(e) => setArataTimp(e.target.checked)} className="mt-1 h-4 w-4" />
+            <span>
+              Arată clientului pagina „Timp alocat” (doar timpul lucrat, fără tarife), în meniu, pentru owner și admin.
+              <span className="block text-xs text-muted">Timpul se înregistrează din pagina „Timp alocat” a organizației din panoul platformei, cu timer sau manual.</span>
+            </span>
+          </label>
+          <a href={`/platform-admin/timp/${org.slug}`} className="mt-2 inline-block text-xs font-medium text-brand-blue hover:underline">
+            Deschide registrul de timp (timer, tarife, sume) →
+          </a>
         </section>
 
         <section className="rounded-xl border border-line bg-panel p-4">

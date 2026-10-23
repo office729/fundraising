@@ -3,6 +3,8 @@ import Link from "next/link";
 import { cerePlatformAdminPagina } from "@/lib/auth/platform-admin";
 import { VARIANTE_PAGINI, rezumatPersonalizare, variantaPagina, type PaginaCuVarianta } from "@/lib/personalizare-org";
 import { listeazaPersonalizari } from "@/lib/suport/personalizare-admin";
+import { minutePeOrganizatii } from "@/lib/suport/timp-admin";
+import { formateazaMinute } from "@/lib/timp-custom";
 
 export const metadata = { title: "Ce diferă la fiecare organizație", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -16,8 +18,9 @@ function data(d: Date | null): string {
 export default async function PersonalizariPage() {
   await cerePlatformAdminPagina();
   const toate = await listeazaPersonalizari();
-  const randuri = toate.map((r) => ({ ...r, linii: rezumatPersonalizare(r.config) }));
-  const diferite = randuri.filter((r) => r.linii.length > 0 || r.nota);
+  const minutePeOrg = await minutePeOrganizatii();
+  const randuri = toate.map((r) => ({ ...r, linii: rezumatPersonalizare(r.config), minute: minutePeOrg[r.orgId] ?? 0 }));
+  const diferite = randuri.filter((r) => r.linii.length > 0 || r.nota || r.minute > 0);
   const standard = randuri.length - diferite.length;
 
   return (
@@ -45,6 +48,9 @@ export default async function PersonalizariPage() {
               <div className="flex shrink-0 gap-2">
                 <Link prefetch={false} href={`/platform-admin/personalizare/${r.slug}`} className="rounded-lg border border-line px-2.5 py-1 text-xs font-medium text-ink hover:bg-panel-2">
                   Editor
+                </Link>
+                <Link prefetch={false} href={`/platform-admin/timp/${r.slug}`} className="rounded-lg border border-line px-2.5 py-1 text-xs font-medium text-ink hover:bg-panel-2">
+                  Timp{r.minute > 0 ? ` · ${formateazaMinute(r.minute)}` : ""}
                 </Link>
                 <Link prefetch={false} href={`/platform-admin/previzualizare/${r.slug}`} className="rounded-lg border border-line px-2.5 py-1 text-xs font-medium text-ink hover:bg-panel-2">
                   Previzualizare

@@ -57,6 +57,8 @@ export type PersonalizareOrg = {
   dashboard?: { ascunse?: BlocDashboard[]; ordine?: BlocDashboard[] };
   // pagină → varianta activă (vezi VARIANTE_PAGINI); lipsa înseamnă pagina standard.
   variante?: Record<string, string>;
+  // true = organizația vede în meniu pagina „Timp alocat” (registrul de timp al muncii custom și al suportului, fără tarife); vezi lib/timp-custom.ts.
+  arataTimp?: boolean;
 };
 
 export type RezultatValidare = { ok: true; valoare: PersonalizareOrg } | { ok: false; eroare: string };
@@ -74,7 +76,7 @@ function curataEticheta(x: unknown): string | null {
 // Validează și normalizează o configurare primită de la client sau citită din baza de date. Refuză orice nu e recunoscut, în loc să ignore în tăcere.
 export function valideazaPersonalizare(brut: unknown): RezultatValidare {
   if (!esteObiect(brut)) return { ok: false, eroare: "Configurarea trebuie să fie un obiect." };
-  const permise = new Set(["v", "familie", "navAscunse", "navEtichete", "dashboard", "variante"]);
+  const permise = new Set(["v", "familie", "navAscunse", "navEtichete", "dashboard", "variante", "arataTimp"]);
   for (const k of Object.keys(brut)) if (!permise.has(k)) return { ok: false, eroare: `Câmp necunoscut: ${k}.` };
   if (brut.v !== VERSIUNE_PERSONALIZARE) return { ok: false, eroare: "Versiune de configurare necunoscută." };
 
@@ -148,6 +150,11 @@ export function valideazaPersonalizare(brut: unknown): RezultatValidare {
     if (Object.keys(variante).length) rez.variante = variante;
   }
 
+  if (brut.arataTimp !== undefined) {
+    if (typeof brut.arataTimp !== "boolean") return { ok: false, eroare: "Setarea „Timp alocat” trebuie să fie da sau nu." };
+    if (brut.arataTimp) rez.arataTimp = true;
+  }
+
   return { ok: true, valoare: rez };
 }
 
@@ -171,6 +178,7 @@ export function combinaPersonalizari(
     ...(Object.keys(navEtichete).length ? { navEtichete } : {}),
     ...(dinBaza?.dashboard ? { dashboard: dinBaza.dashboard } : {}),
     ...(dinBaza?.variante ? { variante: dinBaza.variante } : {}),
+    ...(dinBaza?.arataTimp ? { arataTimp: true } : {}),
   };
 }
 
@@ -213,6 +221,7 @@ export function rezumatPersonalizare(pers: PersonalizareOrg | null | undefined):
     const optiuni: Record<string, string> = reg.optiuni;
     linii.push(`Variantă la ${reg.eticheta}: ${are(optiuni, varianta) ? optiuni[varianta] : varianta}`);
   }
+  if (pers.arataTimp) linii.push("Pagina „Timp alocat” vizibilă clientului (fără tarife)");
   if (pers.familie) linii.push(`Familie de dashboard: ${ETICHETE_FAMILIE[pers.familie]}`);
   if (pers.navAscunse?.length) linii.push(`Meniu: intrări ascunse (${pers.navAscunse.join(", ")})`);
   const redenumite = Object.entries(pers.navEtichete ?? {});

@@ -1,4 +1,4 @@
-import { jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { date, integer, jsonb, numeric, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 import { appUsers } from "./app-users";
 import { organizations } from "./organizations";
@@ -21,6 +21,36 @@ export const orgPersonalizareNote = pgTable("org_personalizare_note", {
     .primaryKey()
     .references(() => organizations.id, { onDelete: "cascade" }),
   nota: text("nota").notNull().default(""),
+  actualizatLa: timestamp("actualizat_la", { withTimezone: true }).defaultNow().notNull(),
+  actualizatDe: uuid("actualizat_de").references(() => appUsers.id, { onDelete: "set null" }),
+}).enableRLS();
+
+// Registrul de timp pentru munca custom și suportul unei organizații (vezi documentation/personalizare-organizatie.sql și lib/timp-custom.ts). Scris doar de echipa
+// platformei; membrii îl citesc doar dacă pagina „Timp alocat” e activată pentru organizație. Un timer pornit are pornit_la setat și minute null.
+export const orgTimp = pgTable("org_timp", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: uuid("org_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "cascade" }),
+  executant: text("executant").notNull(),
+  categorie: text("categorie").notNull(),
+  descriere: text("descriere").notNull(),
+  minute: integer("minute"),
+  data: date("data", { mode: "string" }).notNull().defaultNow(),
+  pornitLa: timestamp("pornit_la", { withTimezone: true }),
+  opritLa: timestamp("oprit_la", { withTimezone: true }),
+  creatDe: uuid("creat_de").references(() => appUsers.id, { onDelete: "set null" }),
+  creatLa: timestamp("creat_la", { withTimezone: true }).defaultNow().notNull(),
+}).enableRLS();
+
+// Tarifele pe oră ale muncii custom: doar echipa platformei, clientul nu le vede niciodată.
+export const orgTimpTarife = pgTable("org_timp_tarife", {
+  orgId: uuid("org_id")
+    .primaryKey()
+    .references(() => organizations.id, { onDelete: "cascade" }),
+  tarifClaude: numeric("tarif_claude", { precision: 10, scale: 2 }).notNull().default("0"),
+  tarifEchipa: numeric("tarif_echipa", { precision: 10, scale: 2 }).notNull().default("0"),
+  moneda: text("moneda").notNull().default("RON"),
   actualizatLa: timestamp("actualizat_la", { withTimezone: true }).defaultNow().notNull(),
   actualizatDe: uuid("actualizat_de").references(() => appUsers.id, { onDelete: "set null" }),
 }).enableRLS();

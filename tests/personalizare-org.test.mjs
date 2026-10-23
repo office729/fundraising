@@ -171,3 +171,13 @@ test("notița: se curăță, se limitează, goală rămâne goală", () => {
   assert.equal(curataNota(5), null);
   assert.equal(curataNota(null), null);
 });
+
+test("arataTimp: doar boolean; fals înseamnă „fără”; apare în rezumat și în combinare", () => {
+  assert.equal(ok({ v: 1, arataTimp: true }).arataTimp, true);
+  assert.deepEqual(ok({ v: 1, arataTimp: false }), { v: 1 });
+  refuza({ v: 1, arataTimp: "da" });
+  refuza({ v: 1, arataTimp: 1 });
+  assert.ok(rezumatPersonalizare({ v: 1, arataTimp: true }).some((l) => l.includes("Timp alocat")));
+  assert.equal(combinaPersonalizari(undefined, { v: 1, arataTimp: true }).arataTimp, true);
+  assert.equal(combinaPersonalizari(undefined, { v: 1 }).arataTimp, undefined);
+});
