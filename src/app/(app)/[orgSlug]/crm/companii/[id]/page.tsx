@@ -13,6 +13,8 @@ import { formatData, formatDataRelativa } from "../../lib/format";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { COMPANII_DICT } from "@/lib/i18n/dictionaries/companii";
 import { getCaiCalde } from "../cai-calde";
+import { DecidentiCard } from "./decidenti-card";
+import { getStareProspectare } from "./prospectare-actions";
 import { getCompanieDetaliu } from "../queries";
 import { CaiCaldeCard } from "./cai-calde-card";
 import { CompanyTabs } from "./company-tabs";
@@ -51,6 +53,8 @@ export default async function CompanieProfilPage({
   const access = await requireOrgAccess(orgSlug);
   const areCaiCalde = areModul(pachetPentruModule(access.orgPackage, access.userEmail), "cai-calde");
   const cai = areCaiCalde ? await getCaiCalde(orgSlug, data.companie.id) : null;
+  const areProspectare = areModul(pachetPentruModule(access.orgPackage, access.userEmail), "prospectare-multi");
+  const prospectare = areProspectare ? await getStareProspectare(orgSlug, data.companie.id) : null;
 
   const { companie: c, sponsorizari, notite, contacte, responsabili, jurnalEtape, orgNume, userEmail, campanii } = data;
   const extra = (c.extra ?? {}) as {
@@ -152,6 +156,17 @@ export default async function CompanieProfilPage({
           orgSlug={orgSlug}
           modul="cai-calde"
           descriere="Arată dacă o persoană de contact a firmei este deja donator, voluntar sau contact la un sponsor, semn că abordarea va fi mai ușoară."
+          poateSchimba={access.role === "owner" || access.role === "admin"}
+        />
+      )}
+
+      {prospectare ? (
+        <DecidentiCard orgSlug={orgSlug} companyId={c.id} stare={prospectare} />
+      ) : (
+        <ModulBlocatInline
+          orgSlug={orgSlug}
+          modul="prospectare-multi"
+          descriere="Caută decidenți pentru firmă cu conturile tale la Lusha, Apollo, Prospeo sau Hunter, apoi aprobă persoanele care devin contacte."
           poateSchimba={access.role === "owner" || access.role === "admin"}
         />
       )}

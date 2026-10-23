@@ -912,6 +912,10 @@ const POLICIES = [
       select 1 from suport_acces s where s.org_id = erori_aplicatie.org_id and s.retras_la is null and s.expira_la > now()
     )
   )`,
+  // Prospectare de decidenți (documentation/prospectare.sql): izolare pe organizație.
+  ...["prospectare_chei", "prospectare_candidati", "prospectare_jurnal", "prospectare_suprimati"].map(
+    (t) => `create policy ${t}_tenant_isolation on ${t} using (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid) with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  ),
 ];
 
 const FORCE_TABLES = [
@@ -1010,6 +1014,10 @@ const FORCE_TABLES = [
   "notificari_oprite",
   "suport_acces",
   "erori_aplicatie",
+  "prospectare_chei",
+  "prospectare_candidati",
+  "prospectare_jurnal",
+  "prospectare_suprimati",
 ];
 
 try {

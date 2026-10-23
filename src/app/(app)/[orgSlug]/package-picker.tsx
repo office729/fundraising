@@ -32,7 +32,7 @@ function limiteText(pkg: Exclude<OrgPackage, "trial" | "custom">, locale: Locale
   const campanii = l.campaniiActive;
   const conturi = l.conturi230;
   const modul = (m: ModulPachet) => areModul(pkg, m);
-  const [programLucru, kpi, design, voluntari, presa, analiza, granturi, calendar, analizaDonator, prioritizareFirme, caiCalde] = ["program-lucru", "kpi", "instrumente-design", "voluntari", "comunicat-presa", "analiza-baze", "granturi", "calendar", "analiza-donator", "prioritizare-firme", "cai-calde"].map((m) => modul(m as ModulPachet));
+  const [programLucru, kpi, design, voluntari, presa, analiza, granturi, calendar, analizaDonator, prioritizareFirme, caiCalde, prospectareMulti] = ["program-lucru", "kpi", "instrumente-design", "voluntari", "comunicat-presa", "analiza-baze", "granturi", "calendar", "analiza-donator", "prioritizare-firme", "cai-calde", "prospectare-multi"].map((m) => modul(m as ModulPachet));
   // Aceeași listă ca pe pagina publică de prețuri (hub.ts).
   return ro
     ? [
@@ -52,6 +52,7 @@ function limiteText(pkg: Exclude<OrgPackage, "trial" | "custom">, locale: Locale
         ...(analizaDonator ? ["Analiza donatorilor: risc de pierdere, ritm, valoare estimată"] : []),
         ...(prioritizareFirme ? ["Prioritizarea firmelor pe benzi A/B/C"] : []),
         ...(caiCalde ? ["Căi calde către firme"] : []),
+        ...(prospectareMulti ? ["Prospectare de decidenți, cu cheile tale la Lusha, Apollo, Prospeo, Hunter și Waalaxy"] : []),
         pkg === "impact" ? "Suport prin e-mail și telefon" : "Suport prin e-mail",
       ]
     : [

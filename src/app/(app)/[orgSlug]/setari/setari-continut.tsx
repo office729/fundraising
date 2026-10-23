@@ -12,8 +12,14 @@ import { obtineStatusReinnoireAutomata } from "./netopia-card-actions";
 import { obtineDateReferral } from "./referral-actions";
 import { ReferralSection } from "./referral-section";
 import { DPA_ACTIV, DPA_VERSIUNE } from "@/lib/legal-version";
+import { LIMITA_APELURI_PE_ZI } from "@/lib/prospectare/limite";
 
 import { DpaSection } from "./dpa-section";
+import { areModul } from "@/lib/billing/packages";
+import { pachetPentruModule } from "@/lib/billing/trial";
+import { ModulBlocatInline } from "../crm/components/modul-blocat-inline";
+import { obtineStareChei } from "./prospectare-actions";
+import { ProspectareSection } from "./prospectare-section";
 import { obtineStareSuport } from "./suport-actions";
 import { SuportSection } from "./suport-section";
 import { obtineStatusStripeDonatii } from "./stripe-donatii-actions";
@@ -34,6 +40,8 @@ export async function SetariContinut({ orgSlug }: { orgSlug: string }) {
     obtineStatusReinnoireAutomata(orgSlug),
     obtineStareSuport(orgSlug),
   ]);
+  const areProspectare = areModul(pachetPentruModule(access.orgPackage, access.userEmail), "prospectare-multi");
+  const stareChei = areProspectare ? await obtineStareChei(orgSlug).catch(() => null) : null;
   const hdrs = await headers();
   const webhookOrigin = `${hdrs.get("x-forwarded-proto") ?? "https"}://${hdrs.get("x-forwarded-host") ?? hdrs.get("host")}`;
 
@@ -53,6 +61,7 @@ export async function SetariContinut({ orgSlug }: { orgSlug: string }) {
             ["plati-donatii", locale === "ro" ? "Plăți donații" : "Donation payments"],
             ["recomanda", locale === "ro" ? "Recomandă" : "Refer"],
             ...(DPA_ACTIV ? [["dpa", locale === "ro" ? "Acord date (DPA)" : "Data agreement (DPA)"]] : []),
+            ["prospectare", locale === "ro" ? "Prospectare" : "Prospecting"],
             ["suport", locale === "ro" ? "Acces suport" : "Support access"],
             ["roluri-integrari", locale === "ro" ? "Roluri și integrări" : "Roles and integrations"],
           ].map(([id, label]) => (
@@ -114,6 +123,13 @@ export async function SetariContinut({ orgSlug }: { orgSlug: string }) {
             acceptatLa={access.orgDpaAcceptedAt ? access.orgDpaAcceptedAt.toISOString() : null}
             versiuneCurenta={access.orgDpaVersion === DPA_VERSIUNE}
           />
+        )}
+        {stareChei ? (
+          <ProspectareSection orgSlug={orgSlug} stare={stareChei} limitaZilnica={LIMITA_APELURI_PE_ZI} />
+        ) : (
+          <div id="prospectare" className="mt-8 scroll-mt-4">
+            <ModulBlocatInline orgSlug={orgSlug} modul="prospectare-multi" descriere="Caută decidenți pentru firmele tale cu propriile chei la Lusha, Apollo, Prospeo și Hunter, și îi trimite la abordare pe LinkedIn prin Waalaxy." poateSchimba={access.role === "owner" || access.role === "admin"} />
+          </div>
         )}
         <SuportSection orgSlug={orgSlug} locale={locale} stare={stareSuport} />
       </div>

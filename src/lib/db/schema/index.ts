@@ -30,3 +30,4 @@ export * from "./feedback";
 export * from "./reclame";
 export * from "./notificari-oprite";
 export * from "./suport";
+export * from "./prospectare";
