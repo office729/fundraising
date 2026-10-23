@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 
 import { buildNav } from "@/app/(app)/[orgSlug]/crm/shell";
 import { CAMPAIGN_TEMPLATES, type DomeniuActivitate } from "@/lib/campaign-templates";
@@ -15,7 +15,6 @@ import {
   NAV_PROTEJATE,
   VARIANTE_PAGINI,
   VERSIUNE_PERSONALIZARE,
-  codeazaPentruAdresa,
   rezumatPersonalizare,
   valideazaPersonalizare,
   type BlocDashboard,
@@ -24,6 +23,8 @@ import {
 } from "@/lib/personalizare-org";
 
 import { reseteazaPersonalizareAction, salveazaNotaAction, salveazaPersonalizareAction } from "../../personalizare-actions";
+import { ORG_DEMO_SLUG } from "@/lib/previzualizare";
+
 import { pornestePrevizualizareAction } from "../../previzualizare-actions";
 
 type Mesaj = { tip: "ok" | "eroare"; text: string } | null;
@@ -75,15 +76,49 @@ export function EditorPersonalizare({
   const [nota, setNota] = useState(notaInitiala);
   const [mesajNota, setMesajNota] = useState<Mesaj>(null);
 
-  // Previzualizarea se reîncarcă la o scurtă pauză după ultima modificare, cu configurarea NESALVATĂ în adresă.
-  const [cod, setCod] = useState(() => codeazaPentruAdresa(draft));
+  // Previzualizarea e NAVIGABILĂ: paginile reale ale CRM-ului, pe organizația demo (date de test), cu aspectul acestei organizații. Starea (inclusiv modificările
+  // nesalvate) stă într-un cookie setat de server; după o scurtă pauză de la ultima modificare, cookie-ul se actualizează, iar cadrul se reîncarcă pe pagina pe care
+  // te afli (nu te întoarce la prima pagină).
+  const [pregatit, setPregatit] = useState(false);
+  const [maxim, setMaxim] = useState(false);
+  const cadru = useRef<HTMLIFrameElement>(null);
+  const pregatitRef = useRef(false);
+  const [eroarePrevizualizare, setEroarePrevizualizare] = useState<string | null>(null);
   useEffect(() => {
     if (!validare.ok) return;
-    const t = setTimeout(() => setCod(codeazaPentruAdresa(validare.valoare)), 400);
-    return () => clearTimeout(t);
-  }, [validare]);
-  const adresaPrevizualizare = `/platform-admin/previzualizare/${org.slug}?embed=1&c=${cod}`;
-  const adresaFereastraNoua = `/platform-admin/previzualizare/${org.slug}?c=${cod}`;
+    const config = validare.valoare;
+    let anulat = false;
+    const t = setTimeout(async () => {
+      const r = await pornestePrevizualizareAction(org.slug, config);
+      if (anulat) return;
+      if (!r.ok) {
+        setEroarePrevizualizare(r.eroare);
+        return;
+      }
+      setEroarePrevizualizare(null);
+      if (pregatitRef.current) {
+        try {
+          cadru.current?.contentWindow?.location.reload();
+        } catch {
+          /* cadrul încă nu e încărcat */
+        }
+      } else {
+        pregatitRef.current = true;
+        setPregatit(true);
+      }
+    }, 450);
+    return () => {
+      anulat = true;
+      clearTimeout(t);
+    };
+  }, [validare, org.slug]);
+  // Esc închide modul maximizat.
+  useEffect(() => {
+    if (!maxim) return;
+    const la = (e: KeyboardEvent) => e.key === "Escape" && setMaxim(false);
+    document.addEventListener("keydown", la);
+    return () => document.removeEventListener("keydown", la);
+  }, [maxim]);
 
   const familieImplicita = org.domeniuActivitate ? CAMPAIGN_TEMPLATES[org.domeniuActivitate as DomeniuActivitate]?.familie : undefined;
 
@@ -109,21 +144,6 @@ export function EditorPersonalizare({
     startTransition(async () => {
       const r = await salveazaPersonalizareAction(org.id, draft);
       setMesaj(r.ok ? { tip: "ok", text: "Salvat. Aspectul se aplică organizației la următoarea încărcare a paginii ei." } : { tip: "eroare", text: r.eroare });
-    });
-  }
-  // Previzualizarea navigabilă: paginile reale ale CRM-ului, dar pe organizația demo, cu aspectul acestei organizații (și cu modificările nesalvate de aici).
-  function deschideNavigabil() {
-    setMesaj(null);
-    const fereastra = window.open("about:blank", "_blank");
-    startTransition(async () => {
-      const r = await pornestePrevizualizareAction(org.slug, validare.ok ? validare.valoare : null);
-      if (r.ok) {
-        if (fereastra) fereastra.location.href = r.url;
-        else window.location.href = r.url;
-      } else {
-        fereastra?.close();
-        setMesaj({ tip: "eroare", text: r.eroare });
-      }
     });
   }
   function salveazaNota() {
@@ -332,40 +352,56 @@ export function EditorPersonalizare({
         </div>
       </div>
 
-      <div className="min-w-0">
-        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex gap-1" role="group" aria-label="Lățimea previzualizării">
-            {(["desktop", "telefon"] as const).map((l) => (
-              <button
-                key={l}
-                type="button"
-                aria-pressed={latime === l}
-                onClick={() => setLatime(l)}
-                className={`rounded-lg border px-3 py-1.5 text-xs font-medium ${latime === l ? "border-brand-blue bg-brand-blue text-white" : "border-line text-ink"}`}
-              >
-                {l === "desktop" ? "Desktop" : "Telefon"}
-              </button>
-            ))}
+      {/* Același element în ambele moduri (normal / maximizat), ca cadrul să nu se reîncarce și să-și păstreze pagina deschisă. */}
+      <div className={maxim ? "fixed inset-0 z-[100] flex flex-col gap-2 bg-canvas p-3" : "min-w-0"}>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <div className="flex gap-1" role="group" aria-label="Lățimea previzualizării">
+              {(["desktop", "telefon"] as const).map((l) => (
+                <button
+                  key={l}
+                  type="button"
+                  aria-pressed={latime === l}
+                  onClick={() => setLatime(l)}
+                  className={`rounded-lg border px-3 py-1.5 text-xs font-medium ${latime === l ? "border-brand-blue bg-brand-blue text-white" : "border-line text-ink"}`}
+                >
+                  {l === "desktop" ? "Desktop" : "Telefon"}
+                </button>
+              ))}
+            </div>
+            {maxim && <span className="hidden text-sm font-medium text-ink sm:inline">Previzualizare · {org.nume}</span>}
           </div>
-          <span className="flex flex-wrap items-center gap-3">
-            <button type="button" onClick={deschideNavigabil} disabled={pending} className="text-xs font-medium text-brand-blue hover:underline disabled:opacity-50">
-              Deschide cu pagini navigabile (organizația demo) →
-            </button>
-            <a href={adresaFereastraNoua} target="_blank" rel="noopener" className="text-xs font-medium text-brand-blue hover:underline">
-              Doar prima pagină, în fereastră nouă →
-            </a>
-          </span>
+          <button
+            type="button"
+            onClick={() => setMaxim((m) => !m)}
+            aria-pressed={maxim}
+            className="rounded-lg border border-line bg-panel px-3 py-1.5 text-xs font-semibold text-ink hover:bg-panel-2"
+          >
+            {maxim ? "Restrânge (Esc)" : "Maximizează"}
+          </button>
         </div>
-        <div className="overflow-auto rounded-xl border border-line bg-canvas">
-          <iframe
-            key={adresaPrevizualizare}
-            title="Previzualizare de suport"
-            src={adresaPrevizualizare}
-            className="mx-auto block h-[78vh] border-0 bg-white"
-            style={{ width: latime === "telefon" ? 390 : "100%" }}
-          />
+        <div className={`overflow-auto rounded-xl border border-line bg-canvas ${maxim ? "min-h-0 flex-1" : ""}`}>
+          {pregatit ? (
+            <iframe
+              ref={cadru}
+              title="Previzualizare de suport"
+              src={`/${ORG_DEMO_SLUG}/crm`}
+              className={`mx-auto block border-0 bg-white ${maxim ? "h-full" : "h-[78vh]"}`}
+              style={{ width: latime === "telefon" ? 390 : "100%" }}
+            />
+          ) : (
+            <p className={`flex items-center justify-center text-sm text-muted ${maxim ? "h-full" : "h-[78vh]"}`} role="status">
+              {eroarePrevizualizare ?? "Se pregătește previzualizarea…"}
+            </p>
+          )}
         </div>
-        <p className="mt-2 text-xs text-muted">Previzualizarea folosește date de exemplu. Modificările nesalvate se văd aici, dar organizația le vede abia după „Salvează aspectul”. „Pagini navigabile” deschide paginile reale ale CRM-ului pe organizația demo (date de test), cu aspectul acestei organizații.</p>
+        {!maxim && (
+          <p className="text-xs text-muted">
+            Previzualizarea e navigabilă: meniul deschide paginile reale ale CRM-ului pe organizația demo (date de test), cu aspectul acestei organizații. Modificările nesalvate se
+            văd aici, dar clientul le vede abia după „Salvează aspectul”.
+            {eroarePrevizualizare && pregatit ? ` ${eroarePrevizualizare}` : ""}
+          </p>
+        )}
       </div>
     </div>
   );

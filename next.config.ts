@@ -73,14 +73,15 @@ const nextConfig: NextConfig = {
     const cacheStatic = [{ key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" }];
     return [
       // Toate paginile, în afară de widget: cu X-Frame-Options și frame-ancestors 'none'.
-      { source: "/:path((?!strangere-fonduri/[^/]+/[^/]+/embed$|platform-admin/previzualizare/[^/]+$).*)", headers: securityHeaders },
-      // Previzualizarea de suport: încorporabilă doar din același site (SAMEORIGIN / frame-ancestors 'self').
-      {
-        source: "/platform-admin/previzualizare/:org",
+      { source: "/:path((?!strangere-fonduri/[^/]+/[^/]+/embed$|platform-admin/previzualizare/[^/]+$|calm-impact-demo(?:/|$)).*)", headers: securityHeaders },
+      // Previzualizarea de suport: încorporabilă doar din același site (SAMEORIGIN / frame-ancestors 'self'). Pagina statică de previzualizare și organizația demo
+      // (ale cărei pagini reale se deschid din meniul previzualizării, în editorul de aspect).
+      ...["/platform-admin/previzualizare/:org", "/calm-impact-demo/:path*"].map((source) => ({
+        source,
         headers: securityHeaders.map((h) =>
           h.key === "X-Frame-Options" ? { ...h, value: "SAMEORIGIN" } : h.key === "Content-Security-Policy" ? { ...h, value: cspPrevizualizare } : h,
         ),
-      },
+      })),
       // Widgetul: aceleași antete, dar fără X-Frame-Options și cu frame-ancestors deschis.
       {
         source: "/strangere-fonduri/:org/:page/embed",
