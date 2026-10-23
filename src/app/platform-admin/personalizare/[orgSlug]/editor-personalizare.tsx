@@ -272,7 +272,7 @@ export function EditorPersonalizare({
           <label className="mt-2 flex items-start gap-2 text-sm text-ink">
             <input type="checkbox" checked={arataTimp} onChange={(e) => setArataTimp(e.target.checked)} className="mt-1 h-4 w-4" />
             <span>
-              Arată clientului pagina „Timp alocat” (timpul echipei și banca de ore, fără tarife), în meniu, pentru owner și admin.
+              Arată clientului pagina „Timp alocat” (timpul echipei, inclusiv cel cu asistență AI, și banca de ore, fără tarife), în meniu, pentru owner și admin.
               <span className="block text-xs text-muted">Timpul se înregistrează din pagina „Timp alocat” a organizației din panoul platformei, cu timer sau manual.</span>
             </span>
           </label>

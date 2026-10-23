@@ -7,7 +7,7 @@ import { orgTimp } from "@/lib/db/schema";
 import { EroareUtilizator } from "@/lib/erori";
 import type { Categorie } from "@/lib/timp-custom";
 
-export type IntrareTimpClient = { id: string; data: string; categorie: Categorie; descriere: string; minute: number; cuAi: boolean };
+export type IntrareTimpClient = { id: string; data: string; categorie: Categorie; descriere: string; minute: number };
 
 // Timpul alocat organizației (vezi lib/timp-custom.ts), pentru pagina „Timp alocat” a clientului. Doar owner și admin. Citirea trece prin RLS: rândurile se întorc doar dacă pagina
 // e activată pentru organizație (config.arataTimp) și doar intrările terminate. NU se selectează niciodată tarifele, timerele pornite sau cine a introdus intrarea.
@@ -17,7 +17,7 @@ export const citesteTimpOrg = withOrgSession(async (ctx): Promise<IntrareTimpCli
   try {
     const rows = await ctx.db.transaction((sp) =>
       sp
-        .select({ id: orgTimp.id, data: orgTimp.data, categorie: orgTimp.categorie, descriere: orgTimp.descriere, minute: orgTimp.minute, cuAi: orgTimp.cuAi })
+        .select({ id: orgTimp.id, data: orgTimp.data, categorie: orgTimp.categorie, descriere: orgTimp.descriere, minute: orgTimp.minute })
         .from(orgTimp)
         .where(eq(orgTimp.orgId, ctx.orgId))
         .orderBy(desc(orgTimp.data), desc(orgTimp.creatLa)),

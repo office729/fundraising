@@ -6,7 +6,8 @@ import { citesteTimpOrg } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-// Timpul alocat organizației pentru modificări custom, integrări și suport, cu banca de ore (pachet vs folosit). Doar timp: tariful și suma de facturat nu apar niciodată aici.
+// Timpul alocat organizației pentru modificări custom, integrări și suport, cu banca de ore (pachet vs folosit). Doar timp: tariful și suma de facturat nu apar niciodată aici, iar
+// munca făcută cu asistență AI se vede ca timp normal (marcajul „cu AI” rămâne intern, în panoul platformei).
 export default async function TimpAlocatPage({ params }: { params: Promise<{ orgSlug: string }> }) {
   const { orgSlug } = await params;
   const access = await requireOrgAccess(orgSlug);
@@ -20,8 +21,7 @@ export default async function TimpAlocatPage({ params }: { params: Promise<{ org
       <div>
         <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">Timp alocat</h1>
         <p className="mt-0.5 max-w-3xl text-[13px] text-[var(--ci-text-muted)]">
-          Cât timp a alocat echipa Alexandrit modificărilor custom, integrărilor cu alte instrumente și suportului pentru organizația ta, cu ce s-a făcut. Unele intrări sunt marcate „cu asistență AI”: sunt
-          tot timp al echipei, făcut mai eficient.
+          Cât timp a alocat echipa Alexandrit modificărilor custom, integrărilor cu alte instrumente și suportului pentru organizația ta, cu ce s-a făcut.
         </p>
       </div>
 
@@ -34,7 +34,6 @@ export default async function TimpAlocatPage({ params }: { params: Promise<{ org
               {banca.stare !== "fara_pachet" && <span className="text-base font-normal text-[var(--ci-text-muted)]"> din {formateazaMinute(banca.minutePachet)} incluse în pachet</span>}
             </p>
           </div>
-          {tot.minuteCuAi > 0 && <p className="text-[12px] text-[var(--ci-text-muted)]">Din care cu asistență AI: {formateazaMinute(tot.minuteCuAi)}</p>}
         </div>
         {banca.stare !== "fara_pachet" && (
           <>
@@ -85,10 +84,7 @@ export default async function TimpAlocatPage({ params }: { params: Promise<{ org
                 <tr key={i.id} className="border-b border-[var(--ci-border)] last:border-0">
                   <td className="px-3 py-2 whitespace-nowrap tabular-nums">{new Date(`${i.data}T00:00:00`).toLocaleDateString("ro-RO", { day: "2-digit", month: "short", year: "numeric" })}</td>
                   <td className="px-3 py-2">{CATEGORII[i.categorie]}</td>
-                  <td className="px-3 py-2">
-                    {i.descriere}
-                    {i.cuAi && <span className="ml-2 rounded-full border border-[var(--ci-border)] px-2 py-0.5 text-[11px] text-[var(--ci-text-muted)]">cu asistență AI</span>}
-                  </td>
+                  <td className="px-3 py-2">{i.descriere}</td>
                   <td className="px-3 py-2 text-right whitespace-nowrap tabular-nums">{formateazaMinute(i.minute)}</td>
                 </tr>
               ))}
