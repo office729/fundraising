@@ -3,6 +3,7 @@ import Image from "next/image";
 
 import { requireOrgAccess } from "@/lib/auth/guard";
 import { isAccessBlocked, isPlatformAdmin, trialDaysRemaining } from "@/lib/billing/trial";
+import { esteAdminInDemo, previzualizareActiva } from "@/lib/suport/previzualizare-activa";
 import { DPA_ACTIV, DPA_VERSIUNE, TERMENI_VERSIUNE } from "@/lib/legal-version";
 import { TermeniGate } from "@/components/termeni-gate";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -50,14 +51,20 @@ export default async function OrgLayout({
     return <Paywall orgSlug={orgSlug} orgName={access.orgName} locale={locale} pachetAles={access.orgPackageAles} />;
   }
 
+  // Administratorul platformei în organizația demo: fără onboarding și fără banner DPA; în previzualizare, antetul arată numele și sigla organizației previzualizate.
+  const adminInDemo = esteAdminInDemo(orgSlug, access.userEmail);
+  const previzualizare = adminInDemo ? await previzualizareActiva(orgSlug, access.userEmail) : null;
+  const numeAfisat = previzualizare?.tinta.nume ?? access.orgName;
+  const logoAfisat = previzualizare ? previzualizare.tinta.logoUrl : access.orgLogoUrl;
+
   const zileProba =
     access.orgPackage === "trial" && !isPlatformAdmin(access.userEmail) ? trialDaysRemaining(access.orgCreatedAt) : null;
   const initiale =
-    (access.orgName.match(/\p{L}+/gu) ?? [])
+    (numeAfisat.match(/\p{L}+/gu) ?? [])
       .slice(0, 2)
       .map((cuvant) => cuvant[0]?.toUpperCase())
       .join("") || "ONG";
-  const showOnboarding = !access.orgLogoUrl && (access.role === "owner" || access.role === "admin");
+  const showOnboarding = !adminInDemo && !access.orgLogoUrl && (access.role === "owner" || access.role === "admin");
 
   return (
     <div
@@ -89,9 +96,9 @@ export default async function OrgLayout({
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex min-w-0 items-center gap-3 sm:gap-4">
             <Link prefetch={false} href={`/${orgSlug}/crm`} className="flex min-w-0 items-center gap-3">
-              {access.orgLogoUrl ? (
+              {logoAfisat ? (
                 <Image
-                  src={access.orgLogoUrl}
+                  src={logoAfisat}
                   alt=""
                   width={36}
                   height={36}
@@ -109,7 +116,7 @@ export default async function OrgLayout({
               <p
                 className="truncate font-display text-base leading-none font-semibold text-brand-blue"
               >
-                {access.orgName}
+                {numeAfisat}
               </p>
             </Link>
           </div>
@@ -178,7 +185,7 @@ export default async function OrgLayout({
           setari/page.tsx și echipa/page.tsx. */}
       {/* Acordul de prelucrare a datelor (DPA) nu e încă acceptat (sau a apărut o versiune nouă): doar pentru
           owner/admin, necritic — nu blochează lucrul. */}
-      {DPA_ACTIV && (access.role === "owner" || access.role === "admin") && access.orgDpaVersion !== DPA_VERSIUNE && (
+      {DPA_ACTIV && !adminInDemo && (access.role === "owner" || access.role === "admin") && access.orgDpaVersion !== DPA_VERSIUNE && (
         <div data-org-chrome className="border-b border-line bg-amber-50 px-4 py-2.5 text-center text-[13px] text-amber-900 sm:px-6 dark:bg-amber-950 dark:text-amber-200">
           {locale === "ro"
             ? "Mai ai de acceptat Acordul de prelucrare a datelor (DPA) — o formalitate legală, durează un minut. "

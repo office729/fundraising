@@ -1,12 +1,9 @@
-import { cookies } from "next/headers";
-
 import type { DomeniuActivitate } from "@/lib/campaign-templates";
 import { requireOrgAccess } from "@/lib/auth/guard";
-import { isPlatformAdmin, pachetPentruModule } from "@/lib/billing/trial";
+import { pachetPentruModule } from "@/lib/billing/trial";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { titluAbsolut } from "@/lib/page-titles";
-import { COOKIE_PREVIZUALIZARE, ORG_DEMO_SLUG, decodeazaStare } from "@/lib/previzualizare";
-import { citesteOrgPentruPersonalizare } from "@/lib/suport/personalizare-admin";
+import { previzualizareActiva } from "@/lib/suport/previzualizare-activa";
 
 import "./calm-impact.css";
 import { citestePersonalizareOrg } from "./personalizare-actions";
@@ -38,22 +35,18 @@ export default async function CrmLayout({
   let orgPackage = access.orgPackage;
   let pachetModule = pachetPentruModule(access.orgPackage, access.userEmail);
 
-  // Previzualizarea navigabilă de suport (vezi lib/previzualizare.ts): doar pentru un administrator al platformei și doar pe organizația demo, paginile reale
-  // rulează cu aspectul altei organizații (nume, siglă, pachet, meniu, blocuri). Orice altă combinație ignoră cookie-ul.
+  // Previzualizarea navigabilă de suport (vezi lib/previzualizare.ts): paginile reale rulează pe organizația demo, cu aspectul altei organizații (nume, siglă,
+  // pachet, meniu, blocuri). Activă doar pentru un administrator al platformei, doar pe organizația demo.
   let previzualizare: string | null = null;
-  if (orgSlug === ORG_DEMO_SLUG && isPlatformAdmin(access.userEmail)) {
-    const cod = (await cookies()).get(COOKIE_PREVIZUALIZARE)?.value;
-    const stare = cod ? decodeazaStare(cod) : null;
-    const tinta = stare ? await citesteOrgPentruPersonalizare(stare.slug) : null;
-    if (stare && tinta) {
-      previzualizare = tinta.nume;
-      personalizare = stare.config ?? tinta.config;
-      orgName = tinta.nume;
-      orgLogoUrl = tinta.logoUrl;
-      orgDomeniuActivitate = tinta.domeniuActivitate as DomeniuActivitate | null;
-      orgPackage = tinta.package;
-      pachetModule = tinta.package;
-    }
+  const activa = await previzualizareActiva(orgSlug, access.userEmail);
+  if (activa) {
+    previzualizare = activa.tinta.nume;
+    personalizare = activa.config;
+    orgName = activa.tinta.nume;
+    orgLogoUrl = activa.tinta.logoUrl;
+    orgDomeniuActivitate = activa.tinta.domeniuActivitate as DomeniuActivitate | null;
+    orgPackage = activa.tinta.package;
+    pachetModule = activa.tinta.package;
   }
 
   return (
