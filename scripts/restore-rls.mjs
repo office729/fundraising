@@ -915,6 +915,7 @@ const POLICIES = [
   // Personalizarea dashboardului (documentation/personalizare-organizatie.sql): membrii citesc, doar echipa platformei scrie.
   `create policy org_personalizare_membri_citire on org_personalizare for select using (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
   `create policy org_personalizare_platforma on org_personalizare for all using (nullif(current_setting('app.platform_admin', true), '') = 'true') with check (nullif(current_setting('app.platform_admin', true), '') = 'true')`,
+  `create policy org_personalizare_note_platforma on org_personalizare_note for all using (nullif(current_setting('app.platform_admin', true), '') = 'true') with check (nullif(current_setting('app.platform_admin', true), '') = 'true')`,
   // Prospectare de decidenți (documentation/prospectare.sql): izolare pe organizație.
   ...["prospectare_chei", "prospectare_candidati", "prospectare_jurnal", "prospectare_suprimati"].map(
     (t) => `create policy ${t}_tenant_isolation on ${t} using (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid) with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
@@ -1018,6 +1019,7 @@ const FORCE_TABLES = [
   "suport_acces",
   "erori_aplicatie",
   "org_personalizare",
+  "org_personalizare_note",
   "prospectare_chei",
   "prospectare_candidati",
   "prospectare_jurnal",

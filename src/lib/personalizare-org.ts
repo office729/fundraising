@@ -13,6 +13,22 @@ export const BLOCURI_ORDONABILE = ["taskuri", "indicatori", "risc-pipeline", "to
 export const BLOCURI_DASHBOARD = [...BLOCURI_ORDONABILE, "primii-pasi"] as const;
 export type BlocDashboard = (typeof BLOCURI_DASHBOARD)[number];
 
+// Etichetele afișate în editor și în rezumatul „ce diferă față de standard”.
+export const ETICHETE_BLOC: Record<BlocDashboard, { nume: string; descriere: string }> = {
+  taskuri: { nume: "Centrul de acțiuni", descriere: "Sarcinile de rezolvat, în partea de sus." },
+  indicatori: { nume: "Indicatori și grafice", descriere: "Filtrul de perioadă și cifrele cheie, în stilul familiei alese." },
+  "risc-pipeline": { nume: "Alertă de risc", descriere: "Firme care sponsorizau, dar n-au mai donat de mult." },
+  "top-sponsori": { nume: "Top firme sponsori", descriere: "Clasamentul sponsorilor." },
+  "primii-pasi": { nume: "Primii pași", descriere: "Lista pentru o organizație nou-venită (apare mereu la sfârșit)." },
+};
+export const ETICHETE_FAMILIE: Record<FamilieDashboard, string> = {
+  "cald-protector": "Cald și protector",
+  "natural-ancorat": "Natural și ancorat",
+  "indraznet-dinamic": "Îndrăzneț și dinamic",
+  "elegant-editorial": "Elegant editorial",
+  neutru: "Neutru",
+};
+
 // Intrări de meniu care nu se pot ascunde: fără ele, utilizatorul nu mai găsește pagina de start și nici setările sau facturarea.
 export const NAV_PROTEJATE: readonly string[] = ["", "setari", "facturare"];
 
@@ -184,4 +200,36 @@ export function decodeazaDinAdresa(cod: string): RezultatValidare {
   } catch {
     return { ok: false, eroare: "Cod de previzualizare invalid." };
   }
+}
+
+// „Ce diferă față de standard” pentru o organizație, într-o listă de propoziții scurte, generată din configurare (deci nu poate rămâne în urma realității).
+// Listă goală = aspectul standard. Folosită în panoul platformei, la lista de personalizări și în editor.
+export function rezumatPersonalizare(pers: PersonalizareOrg | null | undefined): string[] {
+  if (!pers) return [];
+  const linii: string[] = [];
+  for (const [pagina, varianta] of Object.entries(pers.variante ?? {})) {
+    if (!are(VARIANTE_PAGINI, pagina)) continue;
+    const reg = VARIANTE_PAGINI[pagina as PaginaCuVarianta];
+    const optiuni: Record<string, string> = reg.optiuni;
+    linii.push(`Variantă la ${reg.eticheta}: ${are(optiuni, varianta) ? optiuni[varianta] : varianta}`);
+  }
+  if (pers.familie) linii.push(`Familie de dashboard: ${ETICHETE_FAMILIE[pers.familie]}`);
+  if (pers.navAscunse?.length) linii.push(`Meniu: intrări ascunse (${pers.navAscunse.join(", ")})`);
+  const redenumite = Object.entries(pers.navEtichete ?? {});
+  if (redenumite.length) linii.push(`Meniu: intrări redenumite (${redenumite.map(([h, e]) => `${h || "start"} → „${e}”`).join(", ")})`);
+  if (pers.dashboard?.ascunse?.length) linii.push(`Prima pagină: blocuri ascunse (${pers.dashboard.ascunse.map((b) => ETICHETE_BLOC[b].nume).join(", ")})`);
+  if (pers.dashboard?.ordine?.length) linii.push(`Prima pagină: ordine schimbată (${pers.dashboard.ordine.map((b) => ETICHETE_BLOC[b].nume).join(" → ")})`);
+  return linii;
+}
+
+// Notița internă a echipei platformei despre ce diferă la o organizație: text scurt, fără caractere de control (rândurile noi se păstrează). O notiță goală
+// înseamnă „fără notiță”. Întoarce null dacă e prea lungă sau nu e text.
+export const LUNGIME_MAXIMA_NOTA = 1000;
+export function curataNota(brut: unknown): string | null {
+  if (typeof brut !== "string") return null;
+  const t = brut
+    .replace(/\r\n?/g, "\n")
+    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "")
+    .trim();
+  return t.length <= LUNGIME_MAXIMA_NOTA ? t : null;
 }

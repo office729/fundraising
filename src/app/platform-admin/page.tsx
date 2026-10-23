@@ -5,6 +5,8 @@ import { notFound, redirect } from "next/navigation";
 import { getAuthUser } from "@/lib/auth/dal";
 import { isPlatformAdmin } from "@/lib/billing/trial";
 import { db } from "@/lib/db";
+import { rezumatPersonalizare } from "@/lib/personalizare-org";
+import { listeazaPersonalizari } from "@/lib/suport/personalizare-admin";
 
 import { listeazaOrganizatiiAction } from "./actions";
 import { OrgAdminTable } from "./org-admin-table";
@@ -28,6 +30,10 @@ export default async function PlatformAdminPage() {
   if (!isPlatformAdmin(authUser.email)) notFound();
 
   const organizatii = await listeazaOrganizatiiAction();
+  // Ce diferă față de standard la fiecare organizație (generat din configurare), pentru indicatorul de lângă „Aspect”.
+  const personalizari = Object.fromEntries(
+    (await listeazaPersonalizari().catch(() => [])).map((r) => [r.slug, { linii: rezumatPersonalizare(r.config), nota: r.nota.length > 0 }]),
+  );
 
   const [{ size }] = await db.execute<{ size: string }>(sql`select pg_database_size(current_database()) as size`);
   const bytesFolositi = Number(size);
@@ -54,6 +60,9 @@ export default async function PlatformAdminPage() {
       <h1 className="font-display text-2xl font-bold text-ink">Panou platformă</h1>
       <p className="mt-1 text-sm text-muted">Vizibil doar pentru contul platformei — nicio organizație client nu ajunge la această pagină.</p>
 
+      <Link href="/platform-admin/personalizari" className="mt-4 mr-3 inline-flex items-center gap-2 rounded-lg border border-line bg-panel px-4 py-2.5 text-sm font-semibold text-brand-blue hover:bg-panel-2">
+        Ce diferă la fiecare organizație →
+      </Link>
       <Link href="/platform-admin/feedback" className="mt-4 inline-flex items-center gap-2 rounded-lg border border-line bg-panel px-4 py-2.5 text-sm font-semibold text-brand-blue transition hover:border-brand-blue">
         Feedback de la utilizatori: satisfacție și sugestii →
       </Link>
@@ -65,7 +74,7 @@ export default async function PlatformAdminPage() {
         Cine s-a înscris, cine s-a autentificat ultima dată, și ajustare manuală de pachet/status/perioadă plătită, la cerere.
       </p>
       <div className="mt-2">
-        <OrgAdminTable initial={organizatii} />
+        <OrgAdminTable initial={organizatii} personalizari={personalizari} />
       </div>
 
       <h2 className="mt-10 text-sm font-semibold text-ink">Spațiu bază de date</h2>

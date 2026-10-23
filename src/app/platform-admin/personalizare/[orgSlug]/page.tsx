@@ -27,12 +27,16 @@ export default async function PersonalizarePage({ params }: { params: Promise<{ 
       <h1 className="mt-2 font-display text-2xl font-bold text-ink">Aspectul dashboardului · {org.nume}</h1>
       <p className="mt-1 max-w-3xl text-sm text-muted">
         Alegi ce se vede și cum se numește în meniu, ce familie vizuală are dashboardul și ce blocuri apar pe prima pagină. Previzualizarea arată aspectul organizației cu
-        date de exemplu, nu cu datele ei. Modificările se aplică organizației imediat după salvare și rămân în jurnalul ei de audit.
+        date de exemplu, nu cu datele ei. Modificările se aplică organizației imediat după salvare și rămân în jurnalul ei de audit.{" "}
+        <Link href="/platform-admin/personalizari" className="font-medium text-brand-blue hover:underline">
+          Vezi ce diferă la toate organizațiile →
+        </Link>
       </p>
       <EditorPersonalizare
         locale={locale}
         org={{ id: org.id, slug: org.slug, nume: org.nume, domeniuActivitate: org.domeniuActivitate }}
         configInitiala={org.config}
+        notaInitiala={org.nota}
       />
     </main>
   );

@@ -20,7 +20,10 @@ function formatData(d: Date | null): string {
   return new Date(d).toLocaleDateString("ro-RO", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-export function OrgAdminTable({ initial }: { initial: OrgRand[] }) {
+// `personalizari`: ce diferă față de standard la fiecare organizație (după slug), generat din configurare; `nota`: există o notiță internă.
+export type PersonalizariOrg = Record<string, { linii: string[]; nota: boolean }>;
+
+export function OrgAdminTable({ initial, personalizari = {} }: { initial: OrgRand[]; personalizari?: PersonalizariOrg }) {
   const [orgs, setOrgs] = useState(initial);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<{ package: string; subscriptionStatus: string; currentPeriodEnd: string }>({
@@ -106,10 +109,18 @@ export function OrgAdminTable({ initial }: { initial: OrgRand[] }) {
                   <Link
                     prefetch={false}
                     href={`/platform-admin/personalizare/${o.slug}`}
-                    title="Aspectul dashboardului: meniu, familie vizuală, blocuri, cu previzualizare pe date de exemplu (fără datele organizației)"
-                    className="rounded-lg border border-line px-2.5 py-1 text-xs font-medium text-ink hover:bg-panel-2"
+                    title={
+                      personalizari[o.slug]?.linii.length
+                        ? `Personalizat:\n${personalizari[o.slug].linii.join("\n")}`
+                        : "Aspectul dashboardului: meniu, familie vizuală, blocuri, cu previzualizare pe date de exemplu (fără datele organizației)"
+                    }
+                    className={`rounded-lg border px-2.5 py-1 text-xs font-medium hover:bg-panel-2 ${
+                      personalizari[o.slug]?.linii.length ? "border-brand-blue text-brand-blue" : "border-line text-ink"
+                    }`}
                   >
                     Aspect
+                    {personalizari[o.slug]?.linii.length ? ` · ${personalizari[o.slug].linii.length} diferențe` : ""}
+                    {personalizari[o.slug]?.nota ? " · notiță" : ""}
                   </Link>
                   <button type="button" onClick={() => deschideEdit(o)} className="rounded-lg border border-line px-2.5 py-1 text-xs font-medium text-ink hover:bg-panel-2">
                     Ajustează

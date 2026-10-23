@@ -8,35 +8,23 @@ import type { Locale } from "@/lib/i18n/config";
 import { DASHBOARD_DICT } from "@/lib/i18n/dictionaries/dashboard";
 import {
   BLOCURI_ORDONABILE,
+  ETICHETE_BLOC,
+  ETICHETE_FAMILIE,
   FAMILII_DASHBOARD,
+  LUNGIME_MAXIMA_NOTA,
   NAV_PROTEJATE,
   VARIANTE_PAGINI,
   VERSIUNE_PERSONALIZARE,
   codeazaPentruAdresa,
+  rezumatPersonalizare,
   valideazaPersonalizare,
   type BlocDashboard,
   type FamilieDashboard,
   type PersonalizareOrg,
 } from "@/lib/personalizare-org";
 
-import { reseteazaPersonalizareAction, salveazaPersonalizareAction } from "../../personalizare-actions";
+import { reseteazaPersonalizareAction, salveazaNotaAction, salveazaPersonalizareAction } from "../../personalizare-actions";
 import { pornestePrevizualizareAction } from "../../previzualizare-actions";
-
-const ETICHETE_BLOC: Record<BlocDashboard, { nume: string; descriere: string }> = {
-  taskuri: { nume: "Centrul de acțiuni", descriere: "Sarcinile de rezolvat, în partea de sus." },
-  indicatori: { nume: "Indicatori și grafice", descriere: "Filtrul de perioadă și cifrele cheie, în stilul familiei alese." },
-  "risc-pipeline": { nume: "Alertă de risc", descriere: "Firme care sponsorizau, dar n-au mai donat de mult." },
-  "top-sponsori": { nume: "Top firme sponsori", descriere: "Clasamentul sponsorilor." },
-  "primii-pasi": { nume: "Primii pași", descriere: "Lista pentru o organizație nou-venită (apare mereu la sfârșit)." },
-};
-
-const ETICHETE_FAMILIE: Record<FamilieDashboard, string> = {
-  "cald-protector": "Cald și protector",
-  "natural-ancorat": "Natural și ancorat",
-  "indraznet-dinamic": "Îndrăzneț și dinamic",
-  "elegant-editorial": "Elegant editorial",
-  neutru: "Neutru",
-};
 
 type Mesaj = { tip: "ok" | "eroare"; text: string } | null;
 
@@ -44,10 +32,12 @@ export function EditorPersonalizare({
   locale,
   org,
   configInitiala,
+  notaInitiala,
 }: {
   locale: Locale;
   org: { id: string; slug: string; nume: string; domeniuActivitate: string | null };
   configInitiala: PersonalizareOrg | null;
+  notaInitiala: string;
 }) {
   const nav = useMemo(() => buildNav(DASHBOARD_DICT[locale], org.slug, "owner", null), [locale, org.slug]);
 
@@ -80,6 +70,10 @@ export function EditorPersonalizare({
   }, [familie, navAscunse, etichete, blocAscunse, ordine, variante]);
 
   const validare = useMemo(() => valideazaPersonalizare(draft), [draft]);
+  // „Ce diferă față de standard”, generat din configurarea din editor (inclusiv modificările nesalvate), și notița internă a echipei.
+  const linii = useMemo(() => rezumatPersonalizare(validare.ok ? validare.valoare : null), [validare]);
+  const [nota, setNota] = useState(notaInitiala);
+  const [mesajNota, setMesajNota] = useState<Mesaj>(null);
 
   // Previzualizarea se reîncarcă la o scurtă pauză după ultima modificare, cu configurarea NESALVATĂ în adresă.
   const [cod, setCod] = useState(() => codeazaPentruAdresa(draft));
@@ -132,6 +126,13 @@ export function EditorPersonalizare({
       }
     });
   }
+  function salveazaNota() {
+    setMesajNota(null);
+    startTransition(async () => {
+      const r = await salveazaNotaAction(org.id, nota);
+      setMesajNota(r.ok ? { tip: "ok", text: "Notița a fost salvată." } : { tip: "eroare", text: r.eroare });
+    });
+  }
   function revineLaStandard() {
     if (!window.confirm(`Revii la aspectul standard pentru ${org.nume}? Personalizarea salvată se șterge.`)) return;
     setMesaj(null);
@@ -152,6 +153,43 @@ export function EditorPersonalizare({
   return (
     <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]">
       <div className="space-y-6">
+        <section className="rounded-xl border border-line bg-panel p-4" aria-labelledby="titlu-diferente">
+          <h2 id="titlu-diferente" className="text-sm font-semibold text-ink">
+            Ce diferă față de standard
+          </h2>
+          {linii.length ? (
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-ink">
+              {linii.map((l) => (
+                <li key={l}>{l}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-2 text-sm text-muted">Nimic: organizația are aspectul standard.</p>
+          )}
+          <p className="mt-1 text-xs text-muted">Generat automat din configurare, inclusiv din modificările nesalvate de mai jos.</p>
+          <label htmlFor="nota-interna" className="mt-4 block text-sm font-semibold text-ink">
+            Notiță internă
+          </label>
+          <p className="text-xs text-muted">Vizibilă doar echipei platformei, niciodată clientului. De ce există diferența, cine a cerut-o, ce am promis.</p>
+          <textarea
+            id="nota-interna"
+            value={nota}
+            maxLength={LUNGIME_MAXIMA_NOTA}
+            rows={4}
+            onChange={(e) => setNota(e.target.value)}
+            className="mt-2 w-full rounded-lg border border-line bg-panel px-3 py-2 text-sm"
+          />
+          <div className="mt-2 flex flex-wrap items-center gap-3">
+            <button type="button" onClick={salveazaNota} disabled={pending} className="rounded-lg border border-line px-3 py-1.5 text-sm font-medium text-ink disabled:opacity-50">
+              Salvează notița
+            </button>
+            <span className="text-xs text-muted">
+              {nota.length}/{LUNGIME_MAXIMA_NOTA}
+            </span>
+            {mesajNota && <span className={`text-xs ${mesajNota.tip === "ok" ? "text-brand-green" : "text-red-700"}`}>{mesajNota.text}</span>}
+          </div>
+        </section>
+
         <section className="rounded-xl border border-line bg-panel p-4">
           <h2 className="text-sm font-semibold text-ink">Familia vizuală</h2>
           <p className="mt-1 text-xs text-muted">

@@ -5,7 +5,10 @@ import {
   blocuriVizibile,
   codeazaPentruAdresa,
   combinaPersonalizari,
+  curataNota,
+  LUNGIME_MAXIMA_NOTA,
   decodeazaDinAdresa,
+  rezumatPersonalizare,
   valideazaPersonalizare,
   variantaPagina,
 } from "../src/lib/personalizare-org.ts";
@@ -132,4 +135,39 @@ test("variantaPagina: întoarce varianta activă sau null", () => {
 
 test("combinarea păstrează variantele din baza de date", () => {
   assert.deepEqual(combinaPersonalizari(undefined, { v: 1, variante: { decidenti: "grafic" } }).variante, { decidenti: "grafic" });
+});
+
+test("rezumatul: gol pentru aspectul standard, propoziții clare pentru ce diferă", () => {
+  assert.deepEqual(rezumatPersonalizare(null), []);
+  assert.deepEqual(rezumatPersonalizare({ v: 1 }), []);
+  const linii = rezumatPersonalizare({
+    v: 1,
+    variante: { decidenti: "grafic" },
+    familie: "neutru",
+    navAscunse: ["rfm"],
+    navEtichete: { donatori: "Donatorii noștri" },
+    dashboard: { ascunse: ["top-sponsori"], ordine: ["indicatori", "taskuri"] },
+  });
+  assert.equal(linii.length, 6);
+  assert.ok(linii[0].startsWith("Variantă la Decidenți: Cu grafic"));
+  assert.ok(linii.some((l) => l === "Familie de dashboard: Neutru"));
+  assert.ok(linii.some((l) => l.includes("intrări ascunse (rfm)")));
+  assert.ok(linii.some((l) => l.includes("donatori → „Donatorii noștri”")));
+  assert.ok(linii.some((l) => l.includes("blocuri ascunse (Top firme sponsori)")));
+  assert.ok(linii.some((l) => l.includes("Indicatori și grafice → Centrul de acțiuni")));
+});
+
+test("rezumatul ignoră o variantă scoasă din cod, fără să dea eroare", () => {
+  assert.deepEqual(rezumatPersonalizare({ v: 1, variante: { pagina_veche: "x" } }), []);
+});
+
+test("notița: se curăță, se limitează, goală rămâne goală", () => {
+  assert.equal(curataNota("  Grafic la Decidenți, cerut de client.  "), "Grafic la Decidenți, cerut de client.");
+  assert.equal(curataNota("linia 1\r\nlinia 2"), "linia 1\nlinia 2", "rândurile noi se normalizează");
+  assert.equal(curataNota("a\u0000b\u0007c"), "abc", "caracterele de control dispar");
+  assert.equal(curataNota("   "), "");
+  assert.equal(curataNota("x".repeat(LUNGIME_MAXIMA_NOTA)), "x".repeat(LUNGIME_MAXIMA_NOTA));
+  assert.equal(curataNota("x".repeat(LUNGIME_MAXIMA_NOTA + 1)), null, "prea lungă");
+  assert.equal(curataNota(5), null);
+  assert.equal(curataNota(null), null);
 });

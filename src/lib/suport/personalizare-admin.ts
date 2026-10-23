@@ -3,7 +3,7 @@ import "server-only";
 import { eq, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
-import { appUsers, fundraisingAuditLog, orgPersonalizare, organizations } from "@/lib/db/schema";
+import { appUsers, fundraisingAuditLog, orgPersonalizare, orgPersonalizareNote, organizations } from "@/lib/db/schema";
 import { valideazaPersonalizare, type PersonalizareOrg } from "@/lib/personalizare-org";
 
 // Operații ale echipei platformei asupra personalizării dashboardului unei organizații. Citesc DOAR rândul organizației (nume, sigla, pachet) și configurarea:
@@ -20,6 +20,8 @@ export type OrgPentruPersonalizare = {
   domeniuActivitate: string | null;
   package: "trial" | "start" | "crestere" | "impact" | "custom";
   config: PersonalizareOrg | null;
+  // Notița internă a echipei platformei (tabel separat, doar pentru ei).
+  nota: string;
 };
 
 async function contextPlatforma(tx: Pick<typeof db, "execute">) {
@@ -56,7 +58,16 @@ export async function citesteOrgPentruPersonalizare(orgSlug: string): Promise<Or
     } catch {
       config = null; // tabelul încă nu există: aspect standard
     }
-    return { ...org, domeniuActivitate: org.domeniuActivitate ?? null, config };
+    let nota = "";
+    try {
+      nota = await tx.transaction(async (sp) => {
+        const [r] = await sp.select({ nota: orgPersonalizareNote.nota }).from(orgPersonalizareNote).where(eq(orgPersonalizareNote.orgId, org.id)).limit(1);
+        return r?.nota ?? "";
+      });
+    } catch {
+      nota = ""; // tabelul de notițe încă nu există
+    }
+    return { ...org, domeniuActivitate: org.domeniuActivitate ?? null, config, nota };
   });
 }
 
@@ -94,5 +105,48 @@ export async function stergePersonalizare(orgId: string): Promise<void> {
   await db.transaction(async (tx) => {
     await contextPlatforma(tx);
     await tx.delete(orgPersonalizare).where(eq(orgPersonalizare.orgId, orgId));
+  });
+}
+
+// Un rând pe organizație, pentru lista „ce diferă la fiecare”: configurarea (dacă există) și notița internă. Citește doar aceste două tabele și rândul organizației.
+export type RandPersonalizare = { orgId: string; slug: string; nume: string; config: PersonalizareOrg | null; nota: string; actualizatLa: Date | null };
+
+export async function listeazaPersonalizari(): Promise<RandPersonalizare[]> {
+  return db.transaction(async (tx) => {
+    await contextPlatforma(tx);
+    const orgs = await tx.select({ id: organizations.id, slug: organizations.slug, nume: organizations.name }).from(organizations).orderBy(organizations.name);
+    const configuri = new Map<string, { config: PersonalizareOrg | null; actualizatLa: Date }>();
+    try {
+      const rows = await tx.transaction((sp) => sp.select({ orgId: orgPersonalizare.orgId, config: orgPersonalizare.config, actualizatLa: orgPersonalizare.actualizatLa }).from(orgPersonalizare));
+      for (const r of rows) {
+        const v = valideazaPersonalizare(r.config);
+        configuri.set(r.orgId, { config: v.ok ? v.valoare : null, actualizatLa: r.actualizatLa });
+      }
+    } catch {
+      /* tabelul încă nu există: nicio personalizare */
+    }
+    const note = new Map<string, string>();
+    try {
+      const rows = await tx.transaction((sp) => sp.select({ orgId: orgPersonalizareNote.orgId, nota: orgPersonalizareNote.nota }).from(orgPersonalizareNote));
+      for (const r of rows) note.set(r.orgId, r.nota);
+    } catch {
+      /* tabelul de notițe încă nu există */
+    }
+    return orgs.map((o) => ({ orgId: o.id, slug: o.slug, nume: o.nume, config: configuri.get(o.id)?.config ?? null, nota: note.get(o.id) ?? "", actualizatLa: configuri.get(o.id)?.actualizatLa ?? null }));
+  });
+}
+
+export async function scrieNota(orgId: string, nota: string, actorEmail: string): Promise<void> {
+  await db.transaction(async (tx) => {
+    await contextPlatforma(tx);
+    if (!nota) {
+      await tx.delete(orgPersonalizareNote).where(eq(orgPersonalizareNote.orgId, orgId));
+      return;
+    }
+    const [actor] = await tx.select({ id: appUsers.id }).from(appUsers).where(eq(appUsers.email, actorEmail)).limit(1);
+    await tx
+      .insert(orgPersonalizareNote)
+      .values({ orgId, nota, actualizatDe: actor?.id ?? null })
+      .onConflictDoUpdate({ target: orgPersonalizareNote.orgId, set: { nota, actualizatLa: new Date(), actualizatDe: actor?.id ?? null } });
   });
 }

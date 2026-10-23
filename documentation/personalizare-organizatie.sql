@@ -23,3 +23,21 @@ create policy org_personalizare_membri_citire on org_personalizare for select
 create policy org_personalizare_platforma on org_personalizare for all
   using (nullif(current_setting('app.platform_admin', true), '') = 'true')
   with check (nullif(current_setting('app.platform_admin', true), '') = 'true');
+
+-- Notițe interne ale echipei platformei despre ce diferă la o organizație. Tabel separat de org_personalizare: DOAR echipa platformei (app.platform_admin) îl poate
+-- citi sau scrie; membrii organizației nu au nicio politică, deci nu văd nimic, iar aplicația organizației nu îl selectează niciodată.
+create table if not exists org_personalizare_note (
+  org_id uuid primary key references organizations(id) on delete cascade,
+  nota text not null default '',
+  actualizat_la timestamptz not null default now(),
+  actualizat_de uuid references app_users(id) on delete set null
+);
+
+grant select, insert, update, delete on org_personalizare_note to app_user;
+
+alter table org_personalizare_note enable row level security;
+alter table org_personalizare_note force row level security;
+
+create policy org_personalizare_note_platforma on org_personalizare_note for all
+  using (nullif(current_setting('app.platform_admin', true), '') = 'true')
+  with check (nullif(current_setting('app.platform_admin', true), '') = 'true');
