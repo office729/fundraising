@@ -19,6 +19,7 @@ import {
 } from "@/lib/personalizare-org";
 
 import { reseteazaPersonalizareAction, salveazaPersonalizareAction } from "../../personalizare-actions";
+import { pornestePrevizualizareAction } from "../../previzualizare-actions";
 
 const ETICHETE_BLOC: Record<BlocDashboard, { nume: string; descriere: string }> = {
   taskuri: { nume: "Centrul de acțiuni", descriere: "Sarcinile de rezolvat, în partea de sus." },
@@ -111,6 +112,21 @@ export function EditorPersonalizare({
     startTransition(async () => {
       const r = await salveazaPersonalizareAction(org.id, draft);
       setMesaj(r.ok ? { tip: "ok", text: "Salvat. Aspectul se aplică organizației la următoarea încărcare a paginii ei." } : { tip: "eroare", text: r.eroare });
+    });
+  }
+  // Previzualizarea navigabilă: paginile reale ale CRM-ului, dar pe organizația demo, cu aspectul acestei organizații (și cu modificările nesalvate de aici).
+  function deschideNavigabil() {
+    setMesaj(null);
+    const fereastra = window.open("about:blank", "_blank");
+    startTransition(async () => {
+      const r = await pornestePrevizualizareAction(org.slug, validare.ok ? validare.valoare : null);
+      if (r.ok) {
+        if (fereastra) fereastra.location.href = r.url;
+        else window.location.href = r.url;
+      } else {
+        fereastra?.close();
+        setMesaj({ tip: "eroare", text: r.eroare });
+      }
     });
   }
   function revineLaStandard() {
@@ -254,9 +270,14 @@ export function EditorPersonalizare({
               </button>
             ))}
           </div>
-          <a href={adresaFereastraNoua} target="_blank" rel="noopener" className="text-xs font-medium text-brand-blue hover:underline">
-            Deschide în fereastră nouă →
-          </a>
+          <span className="flex flex-wrap items-center gap-3">
+            <button type="button" onClick={deschideNavigabil} disabled={pending} className="text-xs font-medium text-brand-blue hover:underline disabled:opacity-50">
+              Deschide cu pagini navigabile (organizația demo) →
+            </button>
+            <a href={adresaFereastraNoua} target="_blank" rel="noopener" className="text-xs font-medium text-brand-blue hover:underline">
+              Doar prima pagină, în fereastră nouă →
+            </a>
+          </span>
         </div>
         <div className="overflow-auto rounded-xl border border-line bg-canvas">
           <iframe
@@ -267,7 +288,7 @@ export function EditorPersonalizare({
             style={{ width: latime === "telefon" ? 390 : "100%" }}
           />
         </div>
-        <p className="mt-2 text-xs text-muted">Previzualizarea folosește date de exemplu. Modificările nesalvate se văd aici, dar organizația le vede abia după „Salvează aspectul”.</p>
+        <p className="mt-2 text-xs text-muted">Previzualizarea folosește date de exemplu. Modificările nesalvate se văd aici, dar organizația le vede abia după „Salvează aspectul”. „Pagini navigabile” deschide paginile reale ale CRM-ului pe organizația demo (date de test), cu aspectul acestei organizații.</p>
       </div>
     </div>
   );
