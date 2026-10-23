@@ -107,7 +107,7 @@ test("Waalaxy: validare, liste și campanii din forme diferite de răspuns", asy
   assert.equal((await S.waalaxyValideaza("kW", async () => raspuns({ ok: true }))).ok, true);
   const respinsa = await S.waalaxyValideaza("kW", async () => raspuns({ message: "x" }, 401));
   assert.equal(respinsa.ok, false);
-  assert.match(respinsa.eroare, /Waalaxy nu a acceptat cheia/);
+  assert.match(respinsa.eroare, /Cheia Waalaxy nu mai e acceptată/);
   assert.deepEqual(S.elementeWaalaxy([{ _id: "1", name: "Sponsori" }, { id: "2", title: "Campanie" }, { name: "fără id" }]), [{ id: "1", nume: "Sponsori" }, { id: "2", nume: "Campanie" }]);
   assert.deepEqual(S.elementeWaalaxy({ data: [{ _id: "9", name: "Lista" }] }), [{ id: "9", nume: "Lista" }]);
   assert.deepEqual(S.elementeWaalaxy(null), []);
@@ -166,5 +166,5 @@ test("credite: apelul de cont folosește cheia în header; Apollo nu face niciun
   assert.equal(a2.length, 0);
   const respinsa = await S.crediteFurnizor("lusha", "k", async () => raspuns({}, 401));
   assert.equal(respinsa.ok, false);
-  assert.match(respinsa.eroare, /Lusha nu a acceptat cheia/);
+  assert.match(respinsa.eroare, /Cheia Lusha nu mai e acceptată/);
 });

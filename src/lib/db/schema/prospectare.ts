@@ -1,4 +1,4 @@
-import { boolean, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { boolean, date, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 import { appUsers } from "./app-users";
 import { companies } from "./companies";
@@ -44,6 +44,15 @@ export const prospectareCandidati = pgTable(
     hotaratDe: uuid("hotarat_de").references(() => appUsers.id, { onDelete: "set null" }),
     hotaratLa: timestamp("hotarat_la", { withTimezone: true }),
     contactId: uuid("contact_id").references(() => contacts.id, { onDelete: "set null" }),
+    // Rolul de decizie la găsire (prioritate 1–5 și eticheta arătată), ca să se știe de ce a fost propus și cu ce mesaj se abordează.
+    prioritate: integer("prioritate"),
+    eticheta: text("eticheta"),
+    // După aprobare: cine abordează persoana, în ce stadiu e abordarea și când e următorul pas.
+    responsabilId: uuid("responsabil_id").references(() => appUsers.id, { onDelete: "set null" }),
+    stadiu: text("stadiu").notNull().default("de_contactat"), // de_contactat | contactat | raspuns | inchis
+    urmatorPasLa: date("urmator_pas_la", { mode: "string" }),
+    contactatLa: timestamp("contactat_la", { withTimezone: true }),
+    nrAtingeri: integer("nr_atingeri").notNull().default(0),
   },
   (t) => [uniqueIndex("prospectare_candidati_unic").on(t.companyId, t.numeNorm), index("prospectare_candidati_org_idx").on(t.orgId, t.companyId, t.stare)],
 ).enableRLS();

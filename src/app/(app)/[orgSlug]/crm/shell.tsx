@@ -5,6 +5,7 @@ import {
   Banknote,
   Bell,
   Building2,
+  UserSearch,
   CalendarClock,
   ChevronsLeft,
   ChevronsRight,
@@ -96,6 +97,7 @@ const MODUL_PE_INTRARE: Record<string, ModulPachet> = {
   organizatie: "kpi",
   "/program-lucru": "program-lucru",
   granturi: "granturi",
+  decidenti: "prospectare-multi",
   calendar: "calendar",
   reclame: "reclame",
 };
@@ -109,6 +111,7 @@ function buildNav(dict: DashboardDict, orgSlug: string, role: string): { section
       section: dict.nav.sectionRelatii,
       items: [
         { href: "companii", label: dict.nav.companii, hint: dict.hints.companii, icon: Building2 },
+        { href: "decidenti", label: dict.nav.decidenti, hint: dict.hints.decidenti, icon: UserSearch },
         { href: "d177", label: dict.nav.companiiD177, hint: dict.hints.companiiD177, icon: Landmark },
         { href: "donatori", label: dict.nav.donatori, hint: dict.hints.donatori, icon: Users },
         ...(AVATAR_DONATOR_ACTIV ? [{ href: "avatar-donator", label: dict.nav.avatarDonator, hint: dict.hints.avatarDonator, icon: ScanFace }] : []),

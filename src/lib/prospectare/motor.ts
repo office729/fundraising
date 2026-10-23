@@ -16,41 +16,102 @@ export function faraOwnerFals(titlu: string): string {
   return (titlu || "").replace(RE_OWNER_FALS, " ");
 }
 
-const NIVELURI: { prioritate: number; baza: number; re: RegExp }[] = [
-  { prioritate: 1, baza: 100, re: /\b(ceo|chief executive|owner|proprietar|co-?founder|founder|fondator|asociat unic|administrator|presedinte|president)\b/ },
-  { prioritate: 2, baza: 95, re: /\b(cfo|chief financial|finance director|director financiar|director economic|head of finance|financial director)\b/ },
-  // Contabilul-șef sau economistul-șef: intermediar util (știe de D177), dar nu decide singur.
-  { prioritate: 2, baza: 75, re: /\b(contabil sef|economist sef|chief accountant|contabil)\b/ },
-  { prioritate: 3, baza: 95, re: /\b(csr|esg|sustainab|sustenabil|corporate affairs|corporate responsibility|responsabilitate sociala)\b/ },
-  { prioritate: 1, baza: 90, re: /\b(general manager|managing director|director general|country manager|director executiv|executive director)\b/ },
-  { prioritate: 4, baza: 80, re: /\b(marketing director|director (de )?marketing|head of marketing|cmo|chief marketing|pr manager|public relations|communications?|comunicare|corporate communications)\b/ },
-  { prioritate: 5, baza: 70, re: /\b(hr director|director (de )?resurse umane|head of hr|hr manager|people director|people ?& ?culture|chief people|resurse umane|human resources)\b/ },
+// Fiecare nivel: prioritatea (1 = cel mai important), baza scorului, eticheta arătată utilizatorului și, opțional, `ex` = formulări care anulează nivelul
+// (ex.: „Channel Partner” nu e „Partner” de birou de avocatură). Primul nivel care se potrivește câștigă.
+type Nivel = { prioritate: number; baza: number; eticheta: string; re: RegExp; ex?: RegExp };
+
+const NIVELURI: Nivel[] = [
+  { prioritate: 1, baza: 100, eticheta: "Decident final", re: /\b(ceo|chief executive|owner|proprietar|co-?founder|founder|fondator|asociat unic|presedinte|president)\b/ },
+  { prioritate: 1, baza: 100, eticheta: "Decident final", re: /\b(general manager|managing director|director general|country manager|director executiv|executive director|administrator general)\b/ },
+  // „Administrator” de firmă, nu de rețea, de sistem sau de baze de date.
+  {
+    prioritate: 1,
+    baza: 100,
+    eticheta: "Decident final",
+    re: /\badministrator(?!\s+(?:de\s+)?(?:retea|retele|sistem\w*|system\w*|network|baze|baza|date|it|contract\w*|vanzari|sales|office|portal|cladiri|imobil\w*|bd|database|server\w*|platform\w*|web|ecommerce|e-commerce|cloud|crm|erp|sharepoint|linux|windows|aplicatii|licente))\b/,
+    ex: /\b(?:system|systems|network|database|db|it|office|sql|linux|windows|cloud|sharepoint|crm|erp|web|site|server|contract|contracts|property|imobile)\s+administrator\b/,
+  },
+  {
+    prioritate: 1,
+    baza: 90,
+    eticheta: "Decident final",
+    re: /\b(managing partner|senior partner|name partner|partener coordonator|asociat coordonator|asociat|actionar|shareholder|partner)\b/,
+    ex: /\b(channel|business|sales|technology|strategic|account|alliance|hr|solution|delivery)\s+partner|partner\s+(manager|success|development|program|programs|engineer)|partnerships?\b|parteneriat/,
+  },
+  { prioritate: 2, baza: 95, eticheta: "Decide bugetul", re: /\b(cfo|chief financial|finance director|director financiar|director economic|head of finance|financial director)\b/ },
+  {
+    prioritate: 2,
+    baza: 88,
+    eticheta: "Decide bugetul",
+    re: /\b(finance manager|financial manager|manager financiar|financial controller|controller financiar|finance lead|head of accounting|sef serviciu financiar|sef departament financiar|director financiar contabil|responsabil financiar)\b/,
+  },
+  // Contabilul-șef sau economistul-șef: intermediar util (știe de D177), dar nu decide singur. Contabilul simplu e adesea extern.
+  { prioritate: 2, baza: 80, eticheta: "Intermediar (știe de D177)", re: /\b(contabil sef|economist sef|chief accountant|head of accountant)\b/ },
+  { prioritate: 2, baza: 55, eticheta: "Intermediar (știe de D177)", re: /\b(contabil|accountant|economist)\b/ },
+  { prioritate: 3, baza: 95, eticheta: "CSR / sustenabilitate", re: /\b(csr|esg|sustainab\w*|sustenabil\w*|corporate affairs|corporate responsibility|corporate social responsibility|responsabilitate sociala|impact social)\b/ },
+  { prioritate: 4, baza: 80, eticheta: "Marketing / comunicare", re: /\b(marketing director|director (de )?marketing|head of marketing|cmo|chief marketing|pr manager|public relations|relatii publice|communications?|comunicare|corporate communications)\b/ },
+  { prioritate: 4, baza: 75, eticheta: "Marketing / comunicare", re: /\b(marketing manager|manager (de )?marketing|brand manager|head of brand|director brand|responsabil marketing)\b/ },
+  { prioritate: 5, baza: 70, eticheta: "Resurse umane", re: /\b(hr director|director (de )?resurse umane|head of hr|hr manager|people director|people ?& ?culture|chief people|resurse umane|human resources)\b/ },
 ];
 
 // Funcții de filială sau magazin: nu decid sponsorizări la nivel de companie.
 const RE_LOCAL = /\b(magazin|store|shop|sucursal|filial|branch|punct de lucru|regional|zonal|area|depozit|warehouse|agentie|agency)\b/;
+// Direcții fără legătură cu sponsorizarea: un „Director IT” nu e o țintă, deși e „director”.
+const RE_DIRECTIE_IRELEVANTA = /\b(it|tehnic\w*|technical|technology|productie|production|logistic\w*|achizitii|procurement|calitate|quality|operatii|operations|operational|vanzari|sales|juridic|legal|supply|aprovizionare|engineering|inginer\w*|software|dezvoltare|development|cercetare|r&d)\b/;
+// Asistenții și secretarele de conducere au în titlu funcția șefului, dar nu sunt ținta; pot fi cel mult o poartă de intrare.
+const RE_ASISTENT = /\b(asistent|assistant|secretar|secretary|office manager|personal assistant|pa to)\b/;
+const RE_VICE = /\bvice[\s-]*(president|presedinte)\b/g;
+
+// Scorul minim ca o persoană să fie propusă.
+export const SCOR_MINIM = 55;
 
 export type ScorDecident = { scor: number; prioritate: number | null };
 
+// Grupul de rol după prioritate: din fiecare grup se alege câte cineva, ca lista să acopere decidentul, omul de la finanțe și CSR/marketing.
+export type GrupRol = "decident" | "buget" | "csr" | "hr" | "altul";
+export function grupRol(prioritate: number | null): GrupRol {
+  if (prioritate === 1) return "decident";
+  if (prioritate === 2) return "buget";
+  if (prioritate === 3 || prioritate === 4) return "csr";
+  if (prioritate === 5) return "hr";
+  return "altul";
+}
+
+function nivelPentru(t: string): Nivel | undefined {
+  return NIVELURI.find((n) => n.re.test(t) && !(n.ex && n.ex.test(t)));
+}
+
+// Eticheta rolului pentru interfață („Decident final”, „Decide bugetul”…), sau text gol când funcția nu se încadrează în niciun nivel.
+export function etichetaRol(titlu: string): string {
+  const t = faraDiacritice(faraOwnerFals(titlu)).replace(RE_VICE, " vp ");
+  if (!t || RE_ASISTENT.test(t)) return "";
+  return nivelPentru(t)?.eticheta ?? "";
+}
+
 // `angajati` (mărimea firmei) schimbă pe cine contactezi întâi: sub 50 de angajați decide patronul sau administratorul (+10);
 // peste 250, CSR (+20) și comunicarea sau marketingul (+10) au buget și proces de sponsorizare.
+// `romania` = furnizorul a confirmat țara (+10); fără confirmare nu primește bonusul.
 export function scorDecident(titlu: string, opts: { seniority?: string; romania?: boolean; angajati?: number | null } = {}): ScorDecident {
-  const t = faraDiacritice(faraOwnerFals(titlu));
+  const t = faraDiacritice(faraOwnerFals(titlu)).replace(RE_VICE, " vp ");
   const sen = faraDiacritice(opts.seniority || "");
   if (!t && !sen) return { scor: 0, prioritate: null };
   if (/\b(intern|stagiar|trainee|practicant)\b/.test(t)) return { scor: 0, prioritate: null };
+  if (RE_ASISTENT.test(t)) return { scor: 15, prioritate: null };
 
   let baza = 30;
   let prioritate: number | null = null;
-  const nivel = NIVELURI.find((n) => n.re.test(t));
+  const nivel = nivelPentru(t);
+  const vp = /\bvp\b/.test(t);
   if (nivel) {
-    baza = nivel.baza;
+    baza = vp ? Math.min(nivel.baza, 70) : nivel.baza;
     prioritate = nivel.prioritate;
+  } else if (vp) {
+    baza = 55;
   } else if (/\b(director|head)\b/.test(t)) {
     baza = 45;
   } else if (/\bmanager\b/.test(t)) {
     baza = 50;
-  } else if (/\b(specialist|consultant|assistant|asistent|referent|operator|agent)\b/.test(t)) {
+  } else if (/\b(specialist|consultant|referent|operator|agent)\b/.test(t)) {
     baza = 20;
   }
 
@@ -60,6 +121,7 @@ export function scorDecident(titlu: string, opts: { seniority?: string; romania?
   else if (/\bhead\b/.test(t) || sen === "head") bonus += 10;
   if (opts.romania) bonus += 10;
   if (RE_LOCAL.test(t) && (prioritate === null || prioritate > 1)) bonus -= 40;
+  if (prioritate === null && RE_DIRECTIE_IRELEVANTA.test(t)) bonus -= 40;
   const ang = opts.angajati ?? null;
   if (ang !== null && ang > 0) {
     if (ang < 50 && prioritate === 1) bonus += 10;
@@ -144,6 +206,7 @@ export type CandidatBrut = {
   sursa: Furnizor;
   ids?: Partial<Record<Furnizor, string>>; // id-ul persoanei la fiecare furnizor care a găsit-o
   cerereLusha?: string; // Lusha leagă îmbogățirea de cererea de căutare
+  roConfirmat?: boolean; // furnizorul a căutat doar în România (bonus la scor doar atunci)
   seniority?: string;
 };
 
@@ -154,13 +217,15 @@ const HUNTER = "https://api.hunter.io/v2";
 
 function eroareHttp(furnizor: Furnizor, status: number, mesaj?: string): string {
   const nume = NUME_FURNIZOR[furnizor];
-  if (status === 401 || status === 403) return `${nume} nu a acceptat cheia: verifică-o în Setări → Prospectare.`;
+  if (status === 401 || status === 403) return `Cheia ${nume} nu mai e acceptată (poate a expirat sau a fost înlocuită). Un administrator o poate actualiza în Setări → Prospectare.`;
   if (status === 429) return `Limita contului tău de la ${nume} a fost atinsă; încearcă mai târziu.`;
-  return mesaj ? `${nume}: ${mesaj}` : `${nume} a răspuns cu eroarea ${status}.`;
+  if (status >= 500) return `${nume} are o problemă temporară (eroarea ${status}). Cheia ta nu a fost modificată; încearcă din nou peste câteva minute.`;
+  return mesaj ? `${nume}: ${curataMesaj(mesaj)}` : `${nume} a răspuns cu eroarea ${status}.`;
 }
 
 function eroareRetea(furnizor: Furnizor, e: unknown): string {
-  return `${NUME_FURNIZOR[furnizor]} nu a răspuns (${e instanceof Error ? e.name : "eroare de rețea"}).`;
+  void e;
+  return `${NUME_FURNIZOR[furnizor]} nu răspunde acum. Cheia ta nu a fost modificată; încearcă din nou peste câteva minute.`;
 }
 
 const emailReal = (e?: string | null) => {
@@ -178,7 +243,7 @@ const headereApollo = (cheie: string) => ({ "X-Api-Key": cheie, "Content-Type": 
 
 export async function apolloValideaza(cheie: string, f: FetchFn): Promise<Rezultat<true>> {
   try {
-    const res = await f(`${APOLLO}/auth/health`, { headers: headereApollo(cheie), signal: AbortSignal.timeout(15000), cache: "no-store" });
+    const res = await f(`${APOLLO}/auth/health`, { headers: headereApollo(cheie), signal: AbortSignal.timeout(15000), cache: "no-store", redirect: "error" });
     return res.ok ? { ok: true, date: true } : { ok: false, eroare: eroareHttp("apollo", res.status), status: res.status };
   } catch (e) {
     return { ok: false, eroare: eroareRetea("apollo", e) };
@@ -191,7 +256,7 @@ export async function apolloCauta(cheie: string, firma: { nume: string; domeniu:
   if (firma.domeniu) corp.q_organization_domains_list = [firma.domeniu];
   else corp.q_organization_name = firma.nume;
   try {
-    const res = await f(`${APOLLO}/mixed_people/api_search`, { method: "POST", headers: headereApollo(cheie), body: JSON.stringify(corp), signal: AbortSignal.timeout(20000), cache: "no-store" });
+    const res = await f(`${APOLLO}/mixed_people/api_search`, { method: "POST", headers: headereApollo(cheie), body: JSON.stringify(corp), signal: AbortSignal.timeout(20000), cache: "no-store", redirect: "error" });
     const j = (await res.json().catch(() => ({}))) as { people?: PersoanaApollo[]; error?: string; error_message?: string };
     if (!res.ok) return { ok: false, eroare: eroareHttp("apollo", res.status, j.error_message || j.error), status: res.status };
     const candidati: CandidatBrut[] = (j.people ?? [])
@@ -204,6 +269,7 @@ export async function apolloCauta(cheie: string, firma: { nume: string; domeniu:
         email: "",
         emailStatus: null,
         sursa: "apollo" as const,
+        roConfirmat: true,
         ids: { apollo: String(p.id) },
         seniority: p.seniority || "",
       }))
@@ -218,7 +284,7 @@ export async function apolloCauta(cheie: string, firma: { nume: string; domeniu:
 export async function apolloImbogateste(cheie: string, ids: string[], f: FetchFn): Promise<Rezultat<Record<string, string>>> {
   if (ids.length === 0) return { ok: true, date: {} };
   try {
-    const res = await f(`${APOLLO}/people/bulk_match`, { method: "POST", headers: headereApollo(cheie), body: JSON.stringify({ reveal_personal_emails: false, details: ids.slice(0, 50).map((id) => ({ id })) }), signal: AbortSignal.timeout(30000), cache: "no-store" });
+    const res = await f(`${APOLLO}/people/bulk_match`, { method: "POST", headers: headereApollo(cheie), body: JSON.stringify({ reveal_personal_emails: false, details: ids.slice(0, 50).map((id) => ({ id })) }), signal: AbortSignal.timeout(30000), cache: "no-store", redirect: "error" });
     const j = (await res.json().catch(() => ({}))) as { matches?: (PersoanaApollo | null)[]; error_message?: string };
     if (!res.ok) return { ok: false, eroare: eroareHttp("apollo", res.status, j.error_message), status: res.status };
     const emailuri: Record<string, string> = {};
@@ -238,7 +304,7 @@ const headereHunter = (cheie: string) => ({ "X-API-KEY": cheie });
 
 export async function hunterValideaza(cheie: string, f: FetchFn): Promise<Rezultat<true>> {
   try {
-    const res = await f(`${HUNTER}/account`, { headers: headereHunter(cheie), signal: AbortSignal.timeout(15000), cache: "no-store" });
+    const res = await f(`${HUNTER}/account`, { headers: headereHunter(cheie), signal: AbortSignal.timeout(15000), cache: "no-store", redirect: "error" });
     return res.ok ? { ok: true, date: true } : { ok: false, eroare: eroareHttp("hunter", res.status), status: res.status };
   } catch (e) {
     return { ok: false, eroare: eroareRetea("hunter", e) };
@@ -258,7 +324,7 @@ function statusHunter(s: string | undefined): string | null {
 // Emailurile publice găsite pe domeniul firmei (cu funcție). Consumă 1 credit Hunter pe căutare.
 export async function hunterDomeniu(cheie: string, domeniu: string, f: FetchFn): Promise<Rezultat<CandidatBrut[]>> {
   try {
-    const res = await f(`${HUNTER}/domain-search?domain=${encodeURIComponent(domeniu)}&limit=25`, { headers: headereHunter(cheie), signal: AbortSignal.timeout(20000), cache: "no-store" });
+    const res = await f(`${HUNTER}/domain-search?domain=${encodeURIComponent(domeniu)}&limit=25`, { headers: headereHunter(cheie), signal: AbortSignal.timeout(20000), cache: "no-store", redirect: "error" });
     const j = (await res.json().catch(() => ({}))) as { data?: { emails?: EmailHunter[] }; errors?: { details?: string }[] };
     if (!res.ok) return { ok: false, eroare: eroareHttp("hunter", res.status, j.errors?.[0]?.details), status: res.status };
     const candidati: CandidatBrut[] = (j.data?.emails ?? [])
@@ -283,7 +349,7 @@ export async function hunterDomeniu(cheie: string, domeniu: string, f: FetchFn):
 // Emailul cel mai probabil al unei persoane pe domeniul firmei. Consumă 1 credit Hunter.
 export async function hunterEmail(cheie: string, domeniu: string, numeComplet: string, f: FetchFn): Promise<Rezultat<{ email: string; status: string | null }>> {
   try {
-    const res = await f(`${HUNTER}/email-finder?domain=${encodeURIComponent(domeniu)}&full_name=${encodeURIComponent(numeComplet)}`, { headers: headereHunter(cheie), signal: AbortSignal.timeout(15000), cache: "no-store" });
+    const res = await f(`${HUNTER}/email-finder?domain=${encodeURIComponent(domeniu)}&full_name=${encodeURIComponent(numeComplet)}`, { headers: headereHunter(cheie), signal: AbortSignal.timeout(15000), cache: "no-store", redirect: "error" });
     const j = (await res.json().catch(() => ({}))) as { data?: { email?: string; verification?: { status?: string } } };
     if (!res.ok) return { ok: false, eroare: eroareHttp("hunter", res.status), status: res.status };
     return { ok: true, date: { email: String(j.data?.email || ""), status: statusHunter(j.data?.verification?.status) } };
@@ -295,7 +361,7 @@ export async function hunterEmail(cheie: string, domeniu: string, numeComplet: s
 // Verifică dacă un e-mail există și poate primi mesaje (valid, riscant sau invalid). Consumă 1 credit Hunter.
 export async function hunterVerifica(cheie: string, email: string, f: FetchFn): Promise<Rezultat<string | null>> {
   try {
-    const res = await f(`${HUNTER}/email-verifier?email=${encodeURIComponent(email)}`, { headers: headereHunter(cheie), signal: AbortSignal.timeout(15000), cache: "no-store" });
+    const res = await f(`${HUNTER}/email-verifier?email=${encodeURIComponent(email)}`, { headers: headereHunter(cheie), signal: AbortSignal.timeout(15000), cache: "no-store", redirect: "error" });
     const j = (await res.json().catch(() => ({}))) as { data?: { status?: string; result?: string } };
     if (!res.ok) return { ok: false, eroare: eroareHttp("hunter", res.status), status: res.status };
     return { ok: true, date: statusHunter(j.data?.status || j.data?.result) };
@@ -323,7 +389,7 @@ async function valideazaTolerant(furnizor: Furnizor, res: Response): Promise<Rez
 
 export async function prospeoValideaza(cheie: string, f: FetchFn): Promise<Rezultat<true>> {
   try {
-    return await valideazaTolerant("prospeo", await f(`${PROSPEO}/account-information`, { headers: headerePr(cheie), signal: AbortSignal.timeout(15000), cache: "no-store" }));
+    return await valideazaTolerant("prospeo", await f(`${PROSPEO}/account-information`, { headers: headerePr(cheie), signal: AbortSignal.timeout(15000), cache: "no-store", redirect: "error" }));
   } catch (e) {
     return { ok: false, eroare: eroareRetea("prospeo", e) };
   }
@@ -353,7 +419,7 @@ export async function prospeoCauta(cheie: string, firma: { nume: string; domeniu
     person_location_search: { include: ["Romania"] },
   };
   try {
-    const res = await f(`${PROSPEO}/search-person`, { method: "POST", headers: headerePr(cheie), body: JSON.stringify({ page: 1, filters: filtre }), signal: AbortSignal.timeout(20000), cache: "no-store" });
+    const res = await f(`${PROSPEO}/search-person`, { method: "POST", headers: headerePr(cheie), body: JSON.stringify({ page: 1, filters: filtre }), signal: AbortSignal.timeout(20000), cache: "no-store", redirect: "error" });
     const j = (await res.json().catch(() => ({}))) as unknown;
     if (!res.ok) {
       const o = (j || {}) as { error_code?: string; message?: string };
@@ -372,6 +438,7 @@ export async function prospeoCauta(cheie: string, firma: { nume: string; domeniu
         email: "",
         emailStatus: null,
         sursa: "prospeo" as const,
+        roConfirmat: true,
         ids: { prospeo: String(p.person_id) },
       }))
       .filter((c) => c.nume);
@@ -385,7 +452,7 @@ export async function prospeoCauta(cheie: string, firma: { nume: string; domeniu
 export async function prospeoImbogateste(cheie: string, ids: string[], f: FetchFn): Promise<Rezultat<Record<string, { email: string; verificat: boolean }>>> {
   if (ids.length === 0) return { ok: true, date: {} };
   try {
-    const res = await f(`${PROSPEO}/bulk-enrich-person`, { method: "POST", headers: headerePr(cheie), body: JSON.stringify({ only_verified_email: false, enrich_mobile: false, data: ids.slice(0, 25).map((id) => ({ identifier: id, person_id: id })) }), signal: AbortSignal.timeout(45000), cache: "no-store" });
+    const res = await f(`${PROSPEO}/bulk-enrich-person`, { method: "POST", headers: headerePr(cheie), body: JSON.stringify({ only_verified_email: false, enrich_mobile: false, data: ids.slice(0, 25).map((id) => ({ identifier: id, person_id: id })) }), signal: AbortSignal.timeout(45000), cache: "no-store", redirect: "error" });
     const j = (await res.json().catch(() => ({}))) as unknown;
     if (!res.ok) {
       const o = (j || {}) as { error_code?: string; message?: string };
@@ -413,7 +480,7 @@ const headereLusha = (cheie: string) => ({ api_key: cheie, "Content-Type": "appl
 
 export async function lushaValideaza(cheie: string, f: FetchFn): Promise<Rezultat<true>> {
   try {
-    return await valideazaTolerant("lusha", await f(`${LUSHA}/account/usage`, { headers: headereLusha(cheie), signal: AbortSignal.timeout(15000), cache: "no-store" }));
+    return await valideazaTolerant("lusha", await f(`${LUSHA}/account/usage`, { headers: headereLusha(cheie), signal: AbortSignal.timeout(15000), cache: "no-store", redirect: "error" }));
   } catch (e) {
     return { ok: false, eroare: eroareRetea("lusha", e) };
   }
@@ -435,8 +502,8 @@ export async function lushaCauta(cheie: string, firma: { nume: string; domeniu: 
   const trepte: Record<string, unknown>[] = [{ seniority: SENIORITATI_LUSHA, locations: [{ country: "Romania" }] }, { seniority: SENIORITATI_LUSHA }];
   let cereri = 0;
   try {
-    for (const include of trepte) {
-      const res = await f(`${LUSHA}/prospecting/contact/search`, { method: "POST", headers: headereLusha(cheie), body: JSON.stringify({ pages: { page: 0, size: 25 }, filters: { companies: companii, contacts: { include } } }), signal: AbortSignal.timeout(20000), cache: "no-store" });
+    for (const [treapta, include] of trepte.entries()) {
+      const res = await f(`${LUSHA}/prospecting/contact/search`, { method: "POST", headers: headereLusha(cheie), body: JSON.stringify({ pages: { page: 0, size: 25 }, filters: { companies: companii, contacts: { include } } }), signal: AbortSignal.timeout(20000), cache: "no-store", redirect: "error" });
       cereri++;
       const j = (await res.json().catch(() => ({}))) as { requestId?: string; data?: PersoanaLusha[]; message?: string };
       if (!res.ok) return { ok: false, eroare: eroareHttp("lusha", res.status, j.message), status: res.status };
@@ -450,6 +517,7 @@ export async function lushaCauta(cheie: string, firma: { nume: string; domeniu: 
           email: "",
           emailStatus: null,
           sursa: "lusha" as const,
+          roConfirmat: treapta === 0,
           ids: { lusha: String(c.contactId) },
           cerereLusha: j.requestId,
         }));
@@ -465,7 +533,7 @@ export async function lushaCauta(cheie: string, firma: { nume: string; domeniu: 
 export async function lushaImbogateste(cheie: string, cerereId: string, ids: string[], f: FetchFn): Promise<Rezultat<{ nume: string; email: string; linkedin: string }[]>> {
   if (ids.length === 0) return { ok: true, date: [] };
   try {
-    const res = await f(`${LUSHA}/prospecting/contact/enrich`, { method: "POST", headers: headereLusha(cheie), body: JSON.stringify({ requestId: cerereId, contactIds: ids }), signal: AbortSignal.timeout(30000), cache: "no-store" });
+    const res = await f(`${LUSHA}/prospecting/contact/enrich`, { method: "POST", headers: headereLusha(cheie), body: JSON.stringify({ requestId: cerereId, contactIds: ids }), signal: AbortSignal.timeout(30000), cache: "no-store", redirect: "error" });
     const j = (await res.json().catch(() => ({}))) as { contacts?: { isSuccess?: boolean; data?: Record<string, unknown> }[]; message?: string };
     if (!res.ok) return { ok: false, eroare: eroareHttp("lusha", res.status, j.message), status: res.status };
     const rezultat: { nume: string; email: string; linkedin: string }[] = [];
@@ -493,7 +561,7 @@ export type ElementWaalaxy = { id: string; nume: string };
 
 async function waalaxy<T>(cheie: string, cale: string, f: FetchFn, init: { method?: string; body?: unknown } = {}): Promise<Rezultat<T>> {
   try {
-    const res = await f(`${WAALAXY}${cale}`, { method: init.method ?? "GET", headers: headereWaalaxy(cheie), body: init.body ? JSON.stringify(init.body) : undefined, signal: AbortSignal.timeout(20000), cache: "no-store" });
+    const res = await f(`${WAALAXY}${cale}`, { method: init.method ?? "GET", headers: headereWaalaxy(cheie), body: init.body ? JSON.stringify(init.body) : undefined, signal: AbortSignal.timeout(20000), cache: "no-store", redirect: "error" });
     const text = await res.text().catch(() => "");
     let date: unknown = null;
     try {
@@ -503,11 +571,12 @@ async function waalaxy<T>(cheie: string, cale: string, f: FetchFn, init: { metho
     }
     if (!res.ok) {
       const mesaj = date && typeof date === "object" ? String((date as { message?: unknown; error?: unknown }).message ?? (date as { error?: unknown }).error ?? "") : "";
-      return { ok: false, eroare: res.status === 401 || res.status === 403 ? "Waalaxy nu a acceptat cheia: verific-o în Waalaxy → API Keys." : mesaj ? `Waalaxy: ${mesaj}` : `Waalaxy a răspuns cu eroarea ${res.status}.`, status: res.status };
+      return { ok: false, eroare: res.status === 401 || res.status === 403 ? "Cheia Waalaxy nu mai e acceptată. Un administrator o poate actualiza în Setări → Prospectare." : mesaj ? `Waalaxy: ${curataMesaj(mesaj)}` : `Waalaxy a răspuns cu eroarea ${res.status}.`, status: res.status };
     }
     return { ok: true, date: date as T };
   } catch (e) {
-    return { ok: false, eroare: `Waalaxy nu a răspuns (${e instanceof Error ? e.name : "eroare de rețea"}).` };
+    void e;
+    return { ok: false, eroare: "Waalaxy nu răspunde acum. Cheia ta nu a fost modificată; încearcă din nou peste câteva minute." };
   }
 }
 
@@ -608,7 +677,7 @@ export async function crediteFurnizor(furnizor: Furnizor, cheie: string, f: Fetc
   const cale = CALE_CONT[furnizor];
   if (!cale) return { ok: true, date: { ramase: null, total: null } }; // Apollo nu expune creditele prin API
   try {
-    const res = await f(cale.url, { headers: cale.headere(cheie), signal: AbortSignal.timeout(10000), cache: "no-store" });
+    const res = await f(cale.url, { headers: cale.headere(cheie), signal: AbortSignal.timeout(10000), cache: "no-store", redirect: "error" });
     if (!res.ok) return { ok: false, eroare: eroareHttp(furnizor, res.status), status: res.status };
     return { ok: true, date: crediteDinRaspuns(furnizor, await res.json().catch(() => ({}))) };
   } catch (e) {
@@ -620,13 +689,14 @@ export async function crediteFurnizor(furnizor: Furnizor, cheie: string, f: Fetc
 // Orchestrator: căutarea de decidenți pentru o firmă
 // ============================================================================
 // Cascada: domeniul firmei → descoperire, de la cel mai ieftin la cel mai scump (Apollo: gratuit; Prospeo, Hunter, Lusha: credite din contul organizației),
-// oprită când sunt destui candidați potriviți → alegerea celor mai potriviți după funcție → e-mailul lor (doar pentru cei aleși: Prospeo, Lusha, Apollo, apoi
-// Hunter Email Finder) → verificarea e-mailului (Hunter, dacă nu l-a verificat deja furnizorul). Se caută ieftin și se plătește doar pentru ce contează.
+// oprită când s-a găsit decidentul și omul de la finanțe (sau destui candidați) → alegerea după funcție, câte unul din fiecare rol (decident, buget,
+// CSR/marketing) → e-mailul doar pentru primii aleși (Prospeo, Lusha, apoi Hunter Email Finder, la urmă Apollo) → verificarea e-mailului (Hunter, dacă nu l-a
+// verificat deja furnizorul). Se caută ieftin și se plătește doar pentru ce contează.
 // Un furnizor care răspunde cu eroare nu oprește restul; erorile se întorc pentru a fi afișate.
 
 export type Apel = { furnizor: Furnizor; operatie: "cautare" | "email" | "verificare"; ok: boolean; unitati: number };
 
-export type CandidatGasit = CandidatBrut & { scor: number; prioritate: number | null };
+export type CandidatGasit = CandidatBrut & { scor: number; prioritate: number | null; eticheta: string };
 
 export type IntrareCautare = {
   firma: { nume: string; site: string | null; angajati?: number | null };
@@ -636,50 +706,114 @@ export type IntrareCautare = {
   cunoscute: { chei: ReadonlySet<string>; emailuri: ReadonlySet<string>; linkedin: ReadonlySet<string> };
   // Persoane care nu trebuie propuse niciodată (au cerut ștergerea).
   suprimate: { chei: ReadonlySet<string>; emailuri: ReadonlySet<string>; linkedin: ReadonlySet<string> };
-  limite?: { candidati?: number; cautariEmail?: number; verificari?: number; apeluriRamase?: number };
+  limite?: {
+    candidati?: number; // câți candidați se propun (implicit 5)
+    pentruEmail?: number; // pentru câți dintre ei se plătește e-mailul (implicit 3, primii după scor)
+    cautariEmail?: number;
+    verificari?: number;
+    apeluriRamase?: number;
+    timpMaxMs?: number; // după atât nu se mai pornesc apeluri noi (implicit 45 s)
+  };
   fetchFn: FetchFn;
 };
 
 export type RezultatCautare = { domeniu: string | null; candidati: CandidatGasit[]; apeluri: Apel[]; erori: string[] };
 
 const LIMITA_ATINSA = "Limita zilnică de căutări a organizației a fost atinsă; continuă mâine.";
+const TIMP_DEPASIT = "Căutarea a durat prea mult și s-a oprit; rezultatele de până acum au fost păstrate. Încearcă din nou.";
 // Ordinea descoperirii: gratuit întâi.
 const ORDINE_DESCOPERIRE: Furnizor[] = ["apollo", "prospeo", "hunter", "lusha"];
 // E-mailul se cere întâi de la furnizorii care îl dau după id (Prospeo, Lusha), apoi de la Hunter (după nume și domeniu), la urmă de la Apollo.
 const EMAIL_INTAI: Furnizor[] = ["prospeo", "lusha"];
 
+// Mesajele furnizorilor nu merg nefiltrate către utilizator: fără caractere de control, fără cheia (dacă a repetat-o furnizorul), scurte.
+export function curataMesaj(text: string, chei: readonly string[] = []): string {
+  let t = String(text ?? "").replace(/[\u0000-\u001f\u007f]+/g, " ");
+  for (const c of chei) if (c && c.length >= 8) t = t.split(c).join("[cheie]");
+  t = t.replace(/\s+/g, " ").trim();
+  return t.length > 220 ? `${t.slice(0, 217)}…` : t;
+}
+
+// Adresă LinkedIn acceptată doar dacă duce la linkedin.com (profil sau companie); altfel text gol. Se păstrează fără parametri de urmărire.
+export function linkedinSigur(url: string | null | undefined): string {
+  const brut = (url || "").trim();
+  if (!brut || brut.length > 300) return "";
+  try {
+    const u = new URL(/^https?:\/\//i.test(brut) ? brut : `https://${brut}`);
+    const host = u.hostname.toLowerCase();
+    if (!(host === "linkedin.com" || host.endsWith(".linkedin.com"))) return "";
+    if (!/^\/(in|pub|company)\//i.test(u.pathname)) return "";
+    return `https://${host}${u.pathname.replace(/\/+$/, "")}`;
+  } catch {
+    return "";
+  }
+}
+
+const RE_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const taie = (v: string | null | undefined, max: number) => String(v ?? "").trim().slice(0, max);
+
+// Ordinea candidaților: scor mai mare întâi; la scor egal, prioritatea mai mică (decidentul înaintea celorlalți).
+const maiBun = (a: { scor: number; prioritate: number | null }, b: { scor: number; prioritate: number | null }) => b.scor - a.scor || (a.prioritate ?? 9) - (b.prioritate ?? 9);
+
+// Din lista scorată se aleg câte unul din fiecare grup de rol (decident, buget, CSR/marketing), apoi cei mai buni rămași până la `max`.
+// Fără asta, primii 5 ar putea fi cinci directori generali și niciun om de la finanțe.
+export function alegeCandidati<T extends { scor: number; prioritate: number | null }>(sortati: readonly T[], max: number): T[] {
+  const alesi: T[] = [];
+  for (const grup of ["decident", "buget", "csr"] as const) {
+    const c = sortati.find((x) => grupRol(x.prioritate) === grup && !alesi.includes(x));
+    if (c && alesi.length < max) alesi.push(c);
+  }
+  for (const c of sortati) {
+    if (alesi.length >= max) break;
+    if (!alesi.includes(c)) alesi.push(c);
+  }
+  return alesi.sort(maiBun);
+}
+
 export async function cautaDecidenti(i: IntrareCautare): Promise<RezultatCautare> {
   const apeluri: Apel[] = [];
   const erori: string[] = [];
+  const pornit = Date.now();
+  const timpMax = i.limite?.timpMaxMs ?? 45_000;
   const maxCandidati = i.limite?.candidati ?? 5;
+  const pentruEmail = i.limite?.pentruEmail ?? 3;
   let cautariEmail = i.limite?.cautariEmail ?? 5;
   let verificari = i.limite?.verificari ?? 5;
   let ramase = i.limite?.apeluriRamase ?? Number.POSITIVE_INFINITY;
   const domeniu = domeniuDinSite(i.firma.site) ?? domeniuDinSite(i.domeniuAlternativ ?? null);
   const chei = i.chei;
+  const cheiText = Object.values(chei).filter((c): c is string => Boolean(c));
   const f = i.fetchFn;
   const activi = ORDINE_DESCOPERIRE.filter((p) => chei[p]);
 
-  if (activi.length === 0) return { domeniu, candidati: [], apeluri, erori: ["Nu ai adăugat nicio cheie de furnizor. Adaugă-le în Setări → Prospectare."] };
+  if (activi.length === 0) return { domeniu, candidati: [], apeluri, erori: ["Nu ai adăugat nicio cheie de furnizor. Un administrator le poate adăuga în Setări → Prospectare."] };
 
-  // Un apel se numără și se oprește când limita zilnică a organizației e atinsă.
-  const poate = (): boolean => {
-    if (ramase <= 0) {
+  // Un apel se numără și se oprește când limita zilnică a organizației e atinsă sau a trecut prea mult timp. `n` = câte unități costă (Lusha: până la 2 cereri).
+  const poate = (n = 1): boolean => {
+    if (Date.now() - pornit > timpMax) {
+      if (!erori.includes(TIMP_DEPASIT)) erori.push(TIMP_DEPASIT);
+      return false;
+    }
+    if (ramase < n) {
       if (!erori.includes(LIMITA_ATINSA)) erori.push(LIMITA_ATINSA);
       return false;
     }
-    ramase--;
+    ramase -= n;
     return true;
   };
   const noteaza = (furnizor: Furnizor, operatie: Apel["operatie"], r: Rezultat<unknown>, unitati: number) => {
     apeluri.push({ furnizor, operatie, ok: r.ok, unitati: r.ok ? unitati : 0 });
-    if (!r.ok && !erori.includes(r.eroare)) erori.push(r.eroare);
+    if (!r.ok) {
+      const mesaj = curataMesaj(r.eroare, cheiText);
+      if (!erori.includes(mesaj)) erori.push(mesaj);
+    }
   };
 
   // Unirea a ce au găsit furnizorii (aceeași persoană din mai multe surse devine una), filtrarea și scorul.
   const unite = new Map<string, CandidatBrut>();
   const adauga = (lista: CandidatBrut[]) => {
-    for (const b of lista) {
+    for (const brut of lista) {
+      const b = { ...brut, linkedin: linkedinSigur(brut.linkedin) };
       const cheie = cheieNume(b.nume);
       if (!cheie) continue;
       const existent = unite.get(cheie);
@@ -692,6 +826,7 @@ export async function cautaDecidenti(i: IntrareCautare): Promise<RezultatCautare
       existent.linkedin ||= b.linkedin;
       existent.rol ||= b.rol;
       existent.dept ||= b.dept;
+      existent.roConfirmat ||= b.roConfirmat;
       existent.ids = { ...b.ids, ...existent.ids };
       existent.cerereLusha ||= b.cerereLusha;
     }
@@ -704,21 +839,28 @@ export async function cautaDecidenti(i: IntrareCautare): Promise<RezultatCautare
       const cheie = cheieNume(b.nume);
       if (i.suprimate.chei.has(cheie) || (email && i.suprimate.emailuri.has(email)) || (linkedin && i.suprimate.linkedin.has(linkedin))) continue;
       if (i.cunoscute.chei.has(cheie) || (email && i.cunoscute.emailuri.has(email)) || (linkedin && i.cunoscute.linkedin.has(linkedin))) continue;
-      const s = scorDecident(b.rol, { seniority: b.seniority, romania: true, angajati: i.firma.angajati });
-      if (s.scor <= 0) continue;
-      scorate.push({ ...b, scor: s.scor, prioritate: s.prioritate });
+      const s = scorDecident(b.rol, { seniority: b.seniority, romania: Boolean(b.roConfirmat), angajati: i.firma.angajati });
+      if (s.scor < SCOR_MINIM) continue;
+      scorate.push({ ...b, scor: s.scor, prioritate: s.prioritate, eticheta: etichetaRol(b.rol) });
     }
-    return scorate.sort((a, b) => b.scor - a.scor);
+    return scorate.sort(maiBun);
+  };
+  // Destul pentru a nu plăti mai departe: decidentul și omul de la finanțe găsiți, sau 3 candidați foarte buni, sau lista plină.
+  const suficient = (): boolean => {
+    const p = potriviti();
+    if (p.length >= maxCandidati) return true;
+    if (p.filter((c) => c.scor >= 90).length >= 3) return true;
+    return p.some((c) => c.prioritate === 1 && c.scor >= 90) && p.some((c) => c.prioritate === 2 && c.scor >= 80);
   };
 
   // 1. Descoperire, de la gratuit la scump, oprită când sunt destui candidați potriviți.
   for (const p of activi) {
-    if (potriviti().length >= maxCandidati) break;
+    if (suficient()) break;
     if (p === "hunter" && !domeniu) {
-      if (activi.length === 1) erori.push("Hunter caută după domeniu: completează site-ul firmei sau adaugă un contact cu e-mail de firmă (nu Gmail, Yahoo etc.).");
+      erori.push("Hunter a fost sărit: firma nu are site completat, iar Hunter caută după domeniu. Completează site-ul firmei sau adaugă un contact cu e-mail de firmă (nu Gmail, Yahoo etc.).");
       continue;
     }
-    if (!poate()) break;
+    if (!poate(p === "lusha" ? 2 : 1)) break; // Lusha poate face două cereri (România, apoi fără țară)
     if (p === "apollo") {
       const r = await apolloCauta(chei.apollo!, { nume: i.firma.nume, domeniu }, f);
       noteaza("apollo", "cautare", r, 0); // căutarea în Apollo nu consumă credite
@@ -737,14 +879,16 @@ export async function cautaDecidenti(i: IntrareCautare): Promise<RezultatCautare
       if (r.ok) adauga(r.date.candidati);
     }
   }
-  const alesi = potriviti().slice(0, maxCandidati);
+  const alesi = alegeCandidati(potriviti(), maxCandidati);
+  // E-mailul (plătit) doar pentru primii după scor.
+  const peEmail = alesi.slice(0, pentruEmail);
 
   // 2. E-mailul celor aleși care nu au unul, doar pentru ei.
   const imbogatesteDupaId = async (ordine: readonly Furnizor[]) => {
     for (const p of ordine) {
       const cheie = chei[p];
       if (!cheie) continue;
-      const deImbogatit = alesi.filter((c) => !c.email && c.ids?.[p]);
+      const deImbogatit = peEmail.filter((c) => !c.email && c.ids?.[p]);
       if (deImbogatit.length === 0) continue;
       if (!poate()) return;
       const ids = deImbogatit.map((c) => c.ids![p] as string);
@@ -766,13 +910,17 @@ export async function cautaDecidenti(i: IntrareCautare): Promise<RezultatCautare
         // Lusha: ids aparțin unei cereri de căutare; un lot per cerere
         const peCerere = new Map<string, typeof deImbogatit>();
         for (const c of deImbogatit) if (c.cerereLusha) peCerere.set(c.cerereLusha, [...(peCerere.get(c.cerereLusha) ?? []), c]);
+        let primul = true;
         for (const [cerere, grup] of peCerere) {
+          if (!primul && !poate()) return; // prima cerere e deja plătită de poate() de mai sus
+          primul = false;
           const r = await lushaImbogateste(cheie, cerere, grup.map((c) => c.ids!.lusha as string), f);
           noteaza("lusha", "email", r, r.ok ? r.date.filter((x) => x.email).length : 0);
           if (r.ok) for (const c of grup) {
             const g = r.date.find((x) => cheieNume(x.nume) === cheieNume(c.nume));
             if (g?.email) c.email = g.email;
-            if (g?.linkedin && !c.linkedin) c.linkedin = g.linkedin;
+            const li = linkedinSigur(g?.linkedin);
+            if (li && !c.linkedin) c.linkedin = li;
           }
         }
       }
@@ -780,7 +928,7 @@ export async function cautaDecidenti(i: IntrareCautare): Promise<RezultatCautare
   };
   await imbogatesteDupaId(EMAIL_INTAI);
   if (chei.hunter && domeniu) {
-    for (const c of alesi) {
+    for (const c of peEmail) {
       if (c.email || cautariEmail <= 0 || !poate()) continue;
       cautariEmail--;
       const r = await hunterEmail(chei.hunter, domeniu, c.nume, f);
@@ -802,6 +950,17 @@ export async function cautaDecidenti(i: IntrareCautare): Promise<RezultatCautare
       noteaza("hunter", "verificare", r, 1);
       if (r.ok) c.emailStatus = r.date;
     }
+  }
+
+  // Curățare finală: lungimi rezonabile, adrese LinkedIn doar de pe linkedin.com, e-mail doar dacă arată a e-mail.
+  for (const c of alesi) {
+    c.nume = taie(c.nume, 200);
+    c.rol = taie(c.rol, 200);
+    c.dept = taie(c.dept, 100);
+    c.linkedin = linkedinSigur(c.linkedin);
+    const e = c.email.trim();
+    c.email = e.length <= 254 && RE_EMAIL.test(e) ? e : "";
+    if (!c.email) c.emailStatus = null;
   }
 
   return { domeniu, candidati: alesi, apeluri, erori };

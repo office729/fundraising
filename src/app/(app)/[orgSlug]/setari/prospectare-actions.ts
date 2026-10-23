@@ -1,20 +1,23 @@
 "use server";
 
-import { and, count, eq, gte, sql } from "drizzle-orm";
+import { and, count, desc, eq, gte, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 import { inregistreazaAudit } from "@/lib/audit";
 import { withOrgAdmin, withOrgFaze } from "@/lib/auth/guard";
 import { prospectareChei, prospectareJurnal, prospectareSuprimati } from "@/lib/db/schema";
 import { EroareUtilizator, mesajSigur } from "@/lib/erori";
-import { apolloValideaza, CONECTORI, hunterValideaza, lushaValideaza, NUME_CONECTOR, prospeoValideaza, waalaxyListe, waalaxyValideaza, type Conector, type ElementWaalaxy, type Rezultat } from "@/lib/prospectare/motor";
+import { apolloValideaza, CONECTORI, curataMesaj, hunterValideaza, lushaValideaza, NUME_CONECTOR, prospeoValideaza, waalaxyListe, waalaxyValideaza, type Conector, type ElementWaalaxy, type Rezultat } from "@/lib/prospectare/motor";
 import { criptareConfigurata, cripteaza, decripteaza } from "@/lib/secret-box";
 
 // Cheile PROPRII ale organizației la Lusha, Apollo, Prospeo, Hunter și Waalaxy (pachetul IMPACT). Se salvează criptat (AES-256-GCM) și nu se mai afișează niciodată;
 // rămâne doar o amprentă (ultimele caractere). Doar owner și administratorii le gestionează. Costurile pentru apeluri sunt în contul organizației la furnizor.
 const OPTIUNI = { modul: "prospectare-multi" as const };
 
-export type SetariWaalaxy = { listaId: string; listaNume: string; campanieId: string; campanieNume: string };
+// Campania Waalaxy se poate alege și după rolul persoanei (decident, buget/finanțe, CSR/marketing): fiecare rol are alt mesaj. Fără alegere pe rol, se folosește campania generală.
+export type RolCampanie = "decident" | "buget" | "csr";
+const ROLURI_CAMPANIE: readonly RolCampanie[] = ["decident", "buget", "csr"];
+export type SetariWaalaxy = { listaId: string; listaNume: string; campanieId: string; campanieNume: string; campaniiRol: Partial<Record<RolCampanie, { id: string; nume: string }>> };
 
 export type StareChei = {
   criptareActiva: boolean;
@@ -43,7 +46,15 @@ export const obtineStareChei = withOrgAdmin(
     return {
       criptareActiva: criptareConfigurata(),
       chei: chei.filter((c) => eConector(c.furnizor)).map((c) => ({ furnizor: c.furnizor as Conector, amprenta: c.amprenta, adaugatLa: c.la.toISOString() })),
-      waalaxy: w.listaId ? { listaId: w.listaId, listaNume: w.listaNume ?? "", campanieId: w.campanieId ?? "", campanieNume: w.campanieNume ?? "" } : null,
+      waalaxy: w.listaId
+        ? {
+            listaId: w.listaId,
+            listaNume: w.listaNume ?? "",
+            campanieId: w.campanieId ?? "",
+            campanieNume: w.campanieNume ?? "",
+            campaniiRol: Object.fromEntries(ROLURI_CAMPANIE.filter((r) => w[`campanie_${r}`]).map((r) => [r, { id: w[`campanie_${r}`], nume: w[`campanie_${r}_nume`] ?? "" }])),
+          }
+        : null,
       apeluri30Zile,
       suprimate: suprimate[0]?.n ?? 0,
     };
@@ -69,13 +80,16 @@ const salveaza = withOrgFaze<[string, string], { furnizor: Conector; cheie: stri
   pregateste: async (_ctx, furnizor, cheie) => {
     if (!eConector(furnizor)) throw new EroareUtilizator("Furnizor necunoscut.");
     const curata = String(cheie ?? "").trim();
-    if (!RE_CHEIE.test(curata)) throw new EroareUtilizator("Cheia pare incompletă sau are caractere nepermise. Copiaz-o din contul tău la furnizor, fără spații.");
+    if (!RE_CHEIE.test(curata)) throw new EroareUtilizator("Cheia pare incompletă sau are caractere nepermise. Copiază-o din contul tău la instrument, fără spații.");
     if (!criptareConfigurata()) throw new EroareUtilizator("Salvarea cheilor nu e activată pe această platformă (lipsește cheia de criptare). Scrie-ne ca s-o activăm.");
     return { pregatit: { furnizor, cheie: curata } };
   },
   extern: async (p) => {
     const r = await VALIDATORI[p.furnizor](p.cheie, fetch);
-    return r.ok ? { ok: true } : { ok: false, eroare: r.eroare };
+    if (r.ok) return { ok: true };
+    // Cheia respinsă: mesaj despre ce se poate verifica (nu trimite înapoi în Setări, unde e deja utilizatorul).
+    if (r.status === 401 || r.status === 403) return { ok: false, eroare: `${NUME_CONECTOR[p.furnizor]} nu a acceptat cheia. Verifică să fi copiat-o întreagă, fără spații, și că planul tău ${NUME_CONECTOR[p.furnizor]} include accesul API.` };
+    return { ok: false, eroare: curataMesaj(r.eroare, [p.cheie]) };
   },
   salveaza: async (ctx, p, rezultat) => {
     if (!rezultat.ok) throw new EroareUtilizator(rezultat.eroare ?? "Cheia nu a putut fi verificată.");
@@ -146,13 +160,22 @@ export async function optiuniWaalaxy(orgSlug: string): Promise<OptiuniWaalaxy> {
 }
 
 const RE_ID = /^[A-Za-z0-9_-]{1,100}$/;
-const taie = (v: string) => String(v ?? "").trim().slice(0, 120);
+const taie = (v: unknown) => (typeof v === "string" ? v : "").trim().slice(0, 120);
+
+const idValid = (v: unknown): v is string => typeof v === "string" && RE_ID.test(v);
 
 const salveazaListaWaalaxy = withOrgAdmin(
   async (ctx, alegere: SetariWaalaxy): Promise<void> => {
-    if (!RE_ID.test(alegere.listaId)) throw new EroareUtilizator("Alege o listă din Waalaxy.");
-    if (alegere.campanieId && !RE_ID.test(alegere.campanieId)) throw new EroareUtilizator("Campania aleasă nu e validă.");
-    const setari = { listaId: alegere.listaId, listaNume: taie(alegere.listaNume), campanieId: alegere.campanieId, campanieNume: alegere.campanieId ? taie(alegere.campanieNume) : "" };
+    if (!idValid(alegere?.listaId)) throw new EroareUtilizator("Alege o listă din Waalaxy.");
+    if (alegere.campanieId && !idValid(alegere.campanieId)) throw new EroareUtilizator("Campania aleasă nu e validă.");
+    const setari: Record<string, string> = { listaId: alegere.listaId, listaNume: taie(alegere.listaNume), campanieId: alegere.campanieId || "", campanieNume: alegere.campanieId ? taie(alegere.campanieNume) : "" };
+    for (const rol of ROLURI_CAMPANIE) {
+      const c = alegere.campaniiRol?.[rol];
+      if (!c?.id) continue;
+      if (!idValid(c.id)) throw new EroareUtilizator("O campanie aleasă pe rol nu e validă.");
+      setari[`campanie_${rol}`] = c.id;
+      setari[`campanie_${rol}_nume`] = taie(c.nume);
+    }
     const r = await ctx.db
       .update(prospectareChei)
       .set({ setari, updatedAt: new Date() })
@@ -171,5 +194,49 @@ export async function salveazaAlegereWaalaxy(orgSlug: string, alegere: SetariWaa
     return { error: null };
   } catch (e) {
     return { error: mesajSigur(e, "Nu am putut salva alegerea. Încearcă din nou.", "prospectare-waalaxy-alegere") };
+  }
+}
+
+// ---- Persoane excluse de la prospectare (au cerut să nu mai fie propuse): listă vizibilă și reversibilă pentru administratori
+
+export type Excludere = { id: string; tip: string; valoare: string; motiv: string | null; la: string };
+
+const citesteExcluderi = withOrgAdmin(
+  async (ctx): Promise<Excludere[]> => {
+    const randuri = await ctx.db
+      .select({ id: prospectareSuprimati.id, tip: prospectareSuprimati.tip, valoare: prospectareSuprimati.valoare, motiv: prospectareSuprimati.motiv, la: prospectareSuprimati.createdAt })
+      .from(prospectareSuprimati)
+      .where(eq(prospectareSuprimati.orgId, ctx.orgId))
+      .orderBy(desc(prospectareSuprimati.createdAt))
+      .limit(300);
+    return randuri.map((r) => ({ ...r, la: r.la.toISOString() }));
+  },
+  OPTIUNI,
+);
+
+export async function listaExcluderiProspectare(orgSlug: string): Promise<Excludere[]> {
+  try {
+    return await citesteExcluderi(orgSlug);
+  } catch {
+    return [];
+  }
+}
+
+const eliminaExcludere = withOrgAdmin(
+  async (ctx, id: string): Promise<void> => {
+    if (!idValid(id)) throw new EroareUtilizator("Excluderea nu a fost găsită.");
+    await ctx.db.delete(prospectareSuprimati).where(and(eq(prospectareSuprimati.id, id), eq(prospectareSuprimati.orgId, ctx.orgId)));
+    await inregistreazaAudit(ctx.db, { orgId: ctx.orgId, actorAppUserId: ctx.userId, actiune: "prospectare_excludere_scoasa", entitate: "organizatie", entitateId: ctx.orgId, detalii: {} });
+    revalidatePath(`/${ctx.orgSlug}/crm/setari`);
+  },
+  OPTIUNI,
+);
+
+export async function scoateExcludereProspectare(orgSlug: string, id: string): Promise<{ error: string | null }> {
+  try {
+    await eliminaExcludere(orgSlug, id);
+    return { error: null };
+  } catch (e) {
+    return { error: mesajSigur(e, "Nu am putut scoate persoana din listă. Încearcă din nou.", "prospectare-excludere-scoasa") };
   }
 }

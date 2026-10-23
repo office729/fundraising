@@ -41,6 +41,21 @@ create table if not exists prospectare_candidati (
   hotarat_la timestamptz,
   contact_id uuid references contacts(id) on delete set null
 );
+-- Rol de decizie și urmărirea după aprobare (coada „De contactat azi”).
+alter table prospectare_candidati add column if not exists prioritate integer;
+alter table prospectare_candidati add column if not exists eticheta text;
+alter table prospectare_candidati add column if not exists responsabil_id uuid references app_users(id) on delete set null;
+alter table prospectare_candidati add column if not exists stadiu text not null default 'de_contactat';
+alter table prospectare_candidati add column if not exists urmator_pas_la date;
+alter table prospectare_candidati add column if not exists contactat_la timestamptz;
+alter table prospectare_candidati add column if not exists nr_atingeri integer not null default 0;
+create index if not exists prospectare_candidati_coada_idx on prospectare_candidati (org_id, stadiu, urmator_pas_la) where stare = 'aprobat';
+do $$ begin
+  alter table prospectare_candidati add constraint prospectare_candidati_stare_chk check (stare in ('nou', 'aprobat', 'respins'));
+exception when duplicate_object then null; end $$;
+do $$ begin
+  alter table prospectare_candidati add constraint prospectare_candidati_stadiu_chk check (stadiu in ('de_contactat', 'contactat', 'raspuns', 'inchis'));
+exception when duplicate_object then null; end $$;
 create unique index if not exists prospectare_candidati_unic on prospectare_candidati (company_id, nume_norm);
 create index if not exists prospectare_candidati_org_idx on prospectare_candidati (org_id, company_id, stare);
 
@@ -69,5 +84,33 @@ create table if not exists prospectare_suprimati (
 
 grant select, insert, update, delete on prospectare_chei to app_user;
 grant select, insert, update, delete on prospectare_candidati to app_user;
-grant select, insert on prospectare_jurnal to app_user;
+-- Jurnalul primește și rânduri de „rezervare” (operatie = 'rezervare'), create la începutul unei căutări și șterse când se scriu apelurile reale:
+-- două căutări simultane nu mai pot depăși împreună limita zilnică.
+grant select, insert, delete on prospectare_jurnal to app_user;
 grant select, insert, delete on prospectare_suprimati to app_user;
+
+-- Izolare pe organizație (RLS forțat). Fără app.current_org_id setat nu se vede nimic.
+alter table prospectare_chei enable row level security;
+alter table prospectare_chei force row level security;
+drop policy if exists prospectare_chei_tenant_isolation on prospectare_chei;
+create policy prospectare_chei_tenant_isolation on prospectare_chei
+  using (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+  with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid);
+alter table prospectare_candidati enable row level security;
+alter table prospectare_candidati force row level security;
+drop policy if exists prospectare_candidati_tenant_isolation on prospectare_candidati;
+create policy prospectare_candidati_tenant_isolation on prospectare_candidati
+  using (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+  with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid);
+alter table prospectare_jurnal enable row level security;
+alter table prospectare_jurnal force row level security;
+drop policy if exists prospectare_jurnal_tenant_isolation on prospectare_jurnal;
+create policy prospectare_jurnal_tenant_isolation on prospectare_jurnal
+  using (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+  with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid);
+alter table prospectare_suprimati enable row level security;
+alter table prospectare_suprimati force row level security;
+drop policy if exists prospectare_suprimati_tenant_isolation on prospectare_suprimati;
+create policy prospectare_suprimati_tenant_isolation on prospectare_suprimati
+  using (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+  with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid);

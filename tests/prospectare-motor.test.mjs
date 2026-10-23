@@ -89,12 +89,15 @@ const APOLLO_CAUTARE = raspuns({
   ],
 });
 const HUNTER_DOMENIU = raspuns({ data: { emails: [{ value: "ion.popescu@alfa.ro", first_name: "Ion", last_name: "Popescu", position: "Administrator", confidence: 95, verification: { status: "valid" } }, { value: "contact@alfa.ro", first_name: "", last_name: "", position: "" }] } });
+// Apollo doar cu patronul (fără omul de la finanțe): cascada continuă la Hunter, care îl găsește și pe directorul financiar.
+const APOLLO_DOAR_PATRON = raspuns({ people: [{ id: "a1", name: "Ion Popescu", title: "Administrator", seniority: "owner", departments: ["executive"], linkedin_url: "https://linkedin.com/in/ion-popescu" }, { id: "a3", name: "Andrei Stagiar", title: "Marketing Intern" }] });
+const HUNTER_CU_FINANCIAR = raspuns({ data: { emails: [{ value: "ion.popescu@alfa.ro", first_name: "Ion", last_name: "Popescu", position: "Administrator", verification: { status: "valid" } }, { value: "maria.ionescu@alfa.ro", first_name: "Maria", last_name: "Ionescu", position: "Director Financiar", verification: { status: "valid" } }] } });
 
 test("cascada: Apollo găsește persoanele, Hunter adaugă e-mailul, duplicatele se unesc, stagiarii dispar", async () => {
   const { f, apeluri } = furnizoriSimulati({
-    "api_search": APOLLO_CAUTARE,
-    "domain-search": HUNTER_DOMENIU,
-    "email-finder": raspuns({ data: { email: "maria.ionescu@alfa.ro", verification: { status: "valid" } } }),
+    "api_search": APOLLO_DOAR_PATRON,
+    "domain-search": HUNTER_CU_FINANCIAR,
+    "email-finder": raspuns({ data: { email: "nu-ar-trebui@alfa.ro", verification: { status: "valid" } } }),
     "email-verifier": raspuns({ data: { status: "valid" } }),
   });
   const r = await S.cautaDecidenti({ firma, chei: { apollo: "kA", hunter: "kH" }, cunoscute: gol, suprimate: gol, fetchFn: f });
@@ -105,8 +108,9 @@ test("cascada: Apollo găsește persoanele, Hunter adaugă e-mailul, duplicatele
   assert.equal(ion.email, "ion.popescu@alfa.ro", "e-mailul din Hunter se unește cu persoana din Apollo");
   assert.equal(ion.linkedin, "https://linkedin.com/in/ion-popescu");
   assert.equal(ion.ids.apollo, "a1");
-  assert.equal(r.candidati[1].email, "maria.ionescu@alfa.ro");
+  assert.equal(r.candidati[1].email, "maria.ionescu@alfa.ro", "e-mailul directorului financiar vine direct din Hunter");
   assert.equal(r.candidati[1].emailStatus, "valid");
+  assert.ok(!apeluri.some((a) => a.url.includes("email-finder")), "nu se plătește Email Finder când e-mailul e deja cunoscut");
   // fiecare furnizor primește cheia lui, în header (nu în adresă)
   const catreApollo = apeluri.find((a) => a.url.includes("api_search"));
   assert.equal(catreApollo.headers["X-Api-Key"], "kA");
@@ -116,7 +120,7 @@ test("cascada: Apollo găsește persoanele, Hunter adaugă e-mailul, duplicatele
 });
 
 test("jurnalul de apeluri: Apollo costă 0 unități la căutare, Hunter 1; la eșec nu se numără unități", async () => {
-  const { f } = furnizoriSimulati({ "api_search": APOLLO_CAUTARE, "domain-search": raspuns({ errors: [{ details: "plan epuizat" }] }, 429), "email-finder": raspuns({ data: {} }), "email-verifier": raspuns({ data: { status: "valid" } }) });
+  const { f } = furnizoriSimulati({ "api_search": APOLLO_DOAR_PATRON, "domain-search": raspuns({ errors: [{ details: "plan epuizat" }] }, 429), "email-finder": raspuns({ data: {} }), "email-verifier": raspuns({ data: { status: "valid" } }) });
   const r = await S.cautaDecidenti({ firma, chei: { apollo: "kA", hunter: "kH" }, cunoscute: gol, suprimate: gol, fetchFn: f });
   const cautApollo = r.apeluri.find((a) => a.furnizor === "apollo" && a.operatie === "cautare");
   const cautHunter = r.apeluri.find((a) => a.furnizor === "hunter" && a.operatie === "cautare");
@@ -131,7 +135,7 @@ test("cheie respinsă (401): mesaj clar, fără candidați", async () => {
   const { f } = furnizoriSimulati({ "api_search": raspuns({}, 401) });
   const r = await S.cautaDecidenti({ firma, chei: { apollo: "gresita" }, cunoscute: gol, suprimate: gol, fetchFn: f });
   assert.equal(r.candidati.length, 0);
-  assert.match(r.erori[0], /Apollo nu a acceptat cheia/);
+  assert.match(r.erori[0], /Cheia Apollo nu mai e acceptată/);
 });
 
 test("fără nicio cheie: nu se apelează nimic", async () => {
@@ -180,8 +184,8 @@ test("validarea cheilor: 200 = bună, 401 = respinsă, rețea căzută = mesaj",
   assert.deepEqual(await S.apolloValideaza("k", async () => raspuns({ is_logged_in: true })), { ok: true, date: true });
   const respinsa = await S.hunterValideaza("k", async () => raspuns({}, 401));
   assert.equal(respinsa.ok, false);
-  assert.match(respinsa.eroare, /nu a acceptat cheia/);
+  assert.match(respinsa.eroare, /nu mai e acceptată/);
   const cazuta = await S.apolloValideaza("k", async () => { throw new Error("timp"); });
   assert.equal(cazuta.ok, false);
-  assert.match(cazuta.eroare, /nu a răspuns/);
+  assert.match(cazuta.eroare, /nu răspunde acum/);
 });
