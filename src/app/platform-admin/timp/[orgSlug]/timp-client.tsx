@@ -11,7 +11,6 @@ export type RandTimpClient = {
   id: string;
   categorie: Categorie;
   descriere: string;
-  cuAi: boolean;
   minute: number | null;
   data: string;
   pornitLa: string | null;
@@ -72,13 +71,12 @@ export function TimpClient({
     return () => clearInterval(t);
   }, [pornit]);
 
-  const [timer, setTimer] = useState<{ categorie: Categorie; descriere: string; cuAi: boolean }>({ categorie: "custom", descriere: "", cuAi: true });
-  const [manual, setManual] = useState<{ categorie: Categorie; descriere: string; minute: string; data: string; cuAi: boolean }>({
+  const [timer, setTimer] = useState<{ categorie: Categorie; descriere: string }>({ categorie: "custom", descriere: "" });
+  const [manual, setManual] = useState<{ categorie: Categorie; descriere: string; minute: string; data: string }>({
     categorie: "custom",
     descriere: "",
     minute: "",
     data: azi(),
-    cuAi: true,
   });
   const [tarif, setTarif] = useState({ ora: String(date.tarife?.ora ?? 0), moneda: date.tarife?.moneda ?? "RON" });
 
@@ -95,8 +93,8 @@ export function TimpClient({
   }
 
   function exportaCsv() {
-    const rd = (i: RandTimpClient & { minute: number }) => [i.data, CATEGORII[i.categorie], i.descriere, i.cuAi ? "da" : "nu", i.minute, (i.minute / 60).toFixed(2), tarifActiv ? sumaPentru(i.minute, tarifActiv.ora).toFixed(2) : ""];
-    const linii = [["Data", "Categorie", "Descriere", "Cu asistență AI", "Minute", "Ore", `Suma (${date.tarife?.moneda ?? "RON"})`], ...[...terminate].reverse().map(rd)];
+    const rd = (i: RandTimpClient & { minute: number }) => [i.data, CATEGORII[i.categorie], i.descriere, i.minute, (i.minute / 60).toFixed(2), tarifActiv ? sumaPentru(i.minute, tarifActiv.ora).toFixed(2) : ""];
+    const linii = [["Data", "Categorie", "Descriere", "Minute", "Ore", `Suma (${date.tarife?.moneda ?? "RON"})`], ...[...terminate].reverse().map(rd)];
     const text = "﻿" + linii.map((l) => l.map(celula).join(";")).join("\r\n");
     const url = URL.createObjectURL(new Blob([text], { type: "text/csv;charset=utf-8" }));
     const a = document.createElement("a");
@@ -118,16 +116,11 @@ export function TimpClient({
         </p>
       )}
 
-      <section aria-label="Totaluri" className="grid gap-3 sm:grid-cols-3">
+      <section aria-label="Totaluri" className="grid gap-3 sm:grid-cols-2">
         <div className="rounded-xl border border-line bg-panel p-4">
           <p className="text-xs text-muted">Timp alocat (echipa)</p>
           <p className="mt-1 text-2xl font-bold text-ink tabular-nums">{formateazaMinute(tot.minute)}</p>
           {tot.suma && <p className="mt-1 text-sm text-ink">De facturat: <strong>{bani(tot.suma.total)}</strong></p>}
-        </div>
-        <div className="rounded-xl border border-line bg-panel p-4">
-          <p className="text-xs text-muted">Din care lucrat cu asistență AI</p>
-          <p className="mt-1 text-2xl font-bold text-ink tabular-nums">{formateazaMinute(tot.minuteCuAi)}</p>
-          <p className="mt-1 text-xs text-muted">Indicator: timpul rămâne al echipei.</p>
         </div>
         <div className="rounded-xl border border-line bg-panel p-4">
           <p className="text-xs text-muted">Banca de ore</p>
@@ -165,7 +158,6 @@ export function TimpClient({
             </p>
             <p className="min-w-0 flex-1 text-sm text-muted">
               {CATEGORII[pornit.categorie]} · {pornit.descriere}
-              {pornit.cuAi ? " · cu asistență AI" : ""}
             </p>
             <button
               type="button"
@@ -178,7 +170,7 @@ export function TimpClient({
           </div>
         ) : (
           <form
-            className="mt-3 grid gap-2 sm:grid-cols-[14rem_1fr_auto_auto]"
+            className="mt-3 grid gap-2 sm:grid-cols-[14rem_1fr_auto]"
             onSubmit={(e) => {
               e.preventDefault();
               ruleaza(() => pornesteTimerAction(org.id, timer), "Timer pornit", () => setTimer((t) => ({ ...t, descriere: "" })));
@@ -192,10 +184,6 @@ export function TimpClient({
               ))}
             </select>
             <input aria-label="La ce lucrezi" placeholder="La ce lucrezi (vizibil clientului)" maxLength={300} value={timer.descriere} onChange={(e) => setTimer((t) => ({ ...t, descriere: e.target.value }))} className={clasaCamp} />
-            <label className="flex items-center gap-2 text-sm text-ink">
-              <input type="checkbox" checked={timer.cuAi} onChange={(e) => setTimer((t) => ({ ...t, cuAi: e.target.checked }))} className="h-4 w-4" />
-              Cu asistență AI
-            </label>
             <button type="submit" disabled={pending} className="rounded-lg bg-brand-green px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
               Pornește
             </button>
@@ -209,7 +197,7 @@ export function TimpClient({
         </h2>
         <p className="text-xs text-muted">Timpul echipei: direcție, verificare, testare, deploy, comunicare. Durată: 90, 1h30, 1:30 sau 2h.</p>
         <form
-          className="mt-3 grid gap-2 sm:grid-cols-[8rem_13rem_1fr_6rem_auto_auto]"
+          className="mt-3 grid gap-2 sm:grid-cols-[8rem_13rem_1fr_6rem_auto]"
           onSubmit={(e) => {
             e.preventDefault();
             ruleaza(() => adaugaIntrareAction(org.id, manual), "Intrare adăugată", () => setManual((m) => ({ ...m, descriere: "", minute: "" })));
@@ -225,10 +213,6 @@ export function TimpClient({
           </select>
           <input aria-label="Descriere" placeholder="Ce s-a făcut (vizibil clientului)" maxLength={300} value={manual.descriere} onChange={(e) => setManual((m) => ({ ...m, descriere: e.target.value }))} className={clasaCamp} />
           <input aria-label="Durata" placeholder="1h30" value={manual.minute} onChange={(e) => setManual((m) => ({ ...m, minute: e.target.value }))} className={clasaCamp} />
-          <label className="flex items-center gap-2 text-sm text-ink">
-            <input type="checkbox" checked={manual.cuAi} onChange={(e) => setManual((m) => ({ ...m, cuAi: e.target.checked }))} className="h-4 w-4" />
-            Cu asistență AI
-          </label>
           <button type="submit" disabled={pending} className="rounded-lg border border-line px-4 py-2 text-sm font-semibold text-ink disabled:opacity-50">
             Adaugă
           </button>
@@ -299,7 +283,6 @@ export function TimpClient({
                     <td className="px-3 py-2">{CATEGORII[i.categorie]}</td>
                     <td className="px-3 py-2">
                       {i.descriere}
-                      {i.cuAi && <span className="ml-2 rounded-full bg-panel-2 px-2 py-0.5 text-[11px] text-muted">cu asistență AI</span>}
                     </td>
                     <td className="px-3 py-2 text-right whitespace-nowrap tabular-nums">{formateazaMinute(i.minute)}</td>
                     {tarifActiv && <td className="px-3 py-2 text-right whitespace-nowrap tabular-nums">{bani(sumaPentru(i.minute, tarifActiv.ora))}</td>}

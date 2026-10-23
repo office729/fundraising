@@ -37,8 +37,8 @@ export default async function TimpPage({ params }: { params: Promise<{ orgSlug: 
       </Link>
       <h1 className="mt-2 font-display text-2xl font-bold text-ink">Timp alocat · {org.nume}</h1>
       <p className="mt-1 max-w-3xl text-sm text-muted">
-        Cât timp a alocat echipa pentru această organizație (modificări custom, integrări, suport), cu timer sau intrări manuale; munca făcută cu asistență AI se
-        marchează doar ca indicator. Aici vezi și suma de facturat; clientul vede timpul și banca de ore, nu și tariful.{" "}
+        Cât timp a alocat echipa pentru această organizație (modificări custom, integrări, suport), cu timer sau intrări manuale, inclusiv
+        munca făcută cu asistență AI (e tot timp al echipei). Aici vezi și suma de facturat; clientul vede timpul și banca de ore, nu și tariful.{" "}
         <Link href={`/platform-admin/personalizare/${org.slug}`} className="font-medium text-brand-blue hover:underline">
           Activează pagina „Timp alocat” pentru client din editorul de aspect →
         </Link>
