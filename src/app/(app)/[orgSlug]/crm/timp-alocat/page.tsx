@@ -1,35 +1,61 @@
-import { CATEGORII, EXECUTANTI, formateazaMinute, totaluri, type Categorie, type Executant } from "@/lib/timp-custom";
+import { requireOrgAccess } from "@/lib/auth/guard";
+import { bancaOre, CATEGORII, formateazaMinute, totaluri, type Categorie } from "@/lib/timp-custom";
 
+import { personalizareEfectiva } from "../personalizare-efectiva";
 import { citesteTimpOrg } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-// Timpul alocat organizației pentru modificări custom, integrări și suport: doar timp (nu tarife), cu totaluri și lista intrărilor.
+// Timpul alocat organizației pentru modificări custom, integrări și suport, cu banca de ore (pachet vs folosit). Doar timp: tariful și suma de facturat nu apar niciodată aici.
 export default async function TimpAlocatPage({ params }: { params: Promise<{ orgSlug: string }> }) {
   const { orgSlug } = await params;
-  const intrari = await citesteTimpOrg(orgSlug);
+  const access = await requireOrgAccess(orgSlug);
+  const [intrari, pers] = await Promise.all([citesteTimpOrg(orgSlug), personalizareEfectiva(orgSlug, access.userEmail)]);
   const tot = totaluri(intrari, null);
+  const banca = bancaOre(tot.minute, pers?.orePachet);
+  const culoare = banca.stare === "depasit" ? "var(--ci-danger, #b91c1c)" : banca.stare === "atentie" ? "#d97706" : "var(--ci-accent, #16a34a)";
 
   return (
     <div className="mx-auto max-w-[1000px] space-y-5">
       <div>
         <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">Timp alocat</h1>
         <p className="mt-0.5 max-w-3xl text-[13px] text-[var(--ci-text-muted)]">
-          Cât timp am alocat modificărilor custom, integrărilor cu alte instrumente și suportului pentru organizația ta: timpul lucrat de Claude și de echipa Alexandrit, cu ce s-a făcut.
+          Cât timp a alocat echipa Alexandrit modificărilor custom, integrărilor cu alte instrumente și suportului pentru organizația ta, cu ce s-a făcut. Unele intrări sunt marcate „cu asistență AI”: sunt
+          tot timp al echipei, făcut mai eficient.
         </p>
       </div>
 
-      <section aria-label="Totaluri" className="grid gap-3 sm:grid-cols-3">
-        <div className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4">
-          <p className="text-[12px] text-[var(--ci-text-muted)]">Total timp alocat</p>
-          <p className="mt-1 text-2xl font-bold text-[var(--ci-text)] tabular-nums">{formateazaMinute(tot.minute)}</p>
-        </div>
-        {(Object.keys(EXECUTANTI) as Executant[]).map((e) => (
-          <div key={e} className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4">
-            <p className="text-[12px] text-[var(--ci-text-muted)]">{EXECUTANTI[e]}</p>
-            <p className="mt-1 text-2xl font-bold text-[var(--ci-text)] tabular-nums">{formateazaMinute(tot.peExecutant[e])}</p>
+      <section aria-label="Banca de ore" className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <div>
+            <p className="text-[12px] text-[var(--ci-text-muted)]">{banca.stare === "fara_pachet" ? "Total timp alocat" : "Banca de ore"}</p>
+            <p className="mt-1 text-2xl font-bold text-[var(--ci-text)] tabular-nums">
+              {formateazaMinute(tot.minute)}
+              {banca.stare !== "fara_pachet" && <span className="text-base font-normal text-[var(--ci-text-muted)]"> din {formateazaMinute(banca.minutePachet)} incluse în pachet</span>}
+            </p>
           </div>
-        ))}
+          {tot.minuteCuAi > 0 && <p className="text-[12px] text-[var(--ci-text-muted)]">Din care cu asistență AI: {formateazaMinute(tot.minuteCuAi)}</p>}
+        </div>
+        {banca.stare !== "fara_pachet" && (
+          <>
+            <div
+              className="mt-3 h-2.5 overflow-hidden rounded-full bg-[var(--ci-border)]"
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.round(banca.procent * 100)}
+              aria-label="Pachet de ore folosit"
+            >
+              <div className="h-full rounded-full" style={{ width: `${Math.round(banca.procent * 100)}%`, background: culoare }} />
+            </div>
+            <p className="mt-2 text-[13px] text-[var(--ci-text)]" role={banca.stare === "in_limita" ? undefined : "status"}>
+              {banca.stare === "depasit"
+                ? `Pachetul de ore a fost depășit cu ${formateazaMinute(-banca.minuteRamase)}. Te contactăm pentru pașii următori.`
+                : `Rămase: ${formateazaMinute(banca.minuteRamase)}.`}
+              {banca.stare === "atentie" && " Pachetul se apropie de sfârșit."}
+            </p>
+          </>
+        )}
       </section>
       {tot.minute > 0 && (
         <p className="text-[12px] text-[var(--ci-text-muted)]">
@@ -49,7 +75,6 @@ export default async function TimpAlocatPage({ params }: { params: Promise<{ org
             <thead className="border-b border-[var(--ci-border)] text-[12px] text-[var(--ci-text-muted)]">
               <tr>
                 <th scope="col" className="px-3 py-2 font-medium">Data</th>
-                <th scope="col" className="px-3 py-2 font-medium">Cine</th>
                 <th scope="col" className="px-3 py-2 font-medium">Categorie</th>
                 <th scope="col" className="px-3 py-2 font-medium">Ce s-a făcut</th>
                 <th scope="col" className="px-3 py-2 text-right font-medium">Durată</th>
@@ -59,9 +84,11 @@ export default async function TimpAlocatPage({ params }: { params: Promise<{ org
               {intrari.map((i) => (
                 <tr key={i.id} className="border-b border-[var(--ci-border)] last:border-0">
                   <td className="px-3 py-2 whitespace-nowrap tabular-nums">{new Date(`${i.data}T00:00:00`).toLocaleDateString("ro-RO", { day: "2-digit", month: "short", year: "numeric" })}</td>
-                  <td className="px-3 py-2 whitespace-nowrap">{EXECUTANTI[i.executant]}</td>
                   <td className="px-3 py-2">{CATEGORII[i.categorie]}</td>
-                  <td className="px-3 py-2">{i.descriere}</td>
+                  <td className="px-3 py-2">
+                    {i.descriere}
+                    {i.cuAi && <span className="ml-2 rounded-full border border-[var(--ci-border)] px-2 py-0.5 text-[11px] text-[var(--ci-text-muted)]">cu asistență AI</span>}
+                  </td>
                   <td className="px-3 py-2 text-right whitespace-nowrap tabular-nums">{formateazaMinute(i.minute)}</td>
                 </tr>
               ))}

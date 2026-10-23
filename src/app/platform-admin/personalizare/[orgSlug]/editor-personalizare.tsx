@@ -52,6 +52,7 @@ export function EditorPersonalizare({
   });
   const [variante, setVariante] = useState<Record<string, string>>(configInitiala?.variante ?? {});
   const [arataTimp, setArataTimp] = useState(configInitiala?.arataTimp === true);
+  const [orePachet, setOrePachet] = useState(configInitiala?.orePachet ? String(configInitiala.orePachet).replace(".", ",") : "");
   const [latime, setLatime] = useState<"desktop" | "telefon">("desktop");
   const [mesaj, setMesaj] = useState<Mesaj>(null);
   const [pending, startTransition] = useTransition();
@@ -66,11 +67,13 @@ export function EditorPersonalizare({
       ...(Object.keys(eticheteCurate).length ? { navEtichete: eticheteCurate } : {}),
       ...(Object.keys(variante).length ? { variante } : {}),
       ...(arataTimp ? { arataTimp: true } : {}),
+      // Ore incluse în pachet: text în draft ca să fie validat strict (valideazaPersonalizare), nu convertit în tăcere; gol = fără pachet.
+      ...(arataTimp && orePachet.trim() ? { orePachet: orePachet.trim() as unknown as number } : {}),
       ...(blocAscunse.length || ordineDeSalvat.length
         ? { dashboard: { ...(blocAscunse.length ? { ascunse: blocAscunse } : {}), ...(ordineDeSalvat.length ? { ordine: ordineDeSalvat } : {}) } }
         : {}),
     };
-  }, [familie, navAscunse, etichete, blocAscunse, ordine, variante, arataTimp]);
+  }, [familie, navAscunse, etichete, blocAscunse, ordine, variante, arataTimp, orePachet]);
 
   const validare = useMemo(() => valideazaPersonalizare(draft), [draft]);
   // „Ce diferă față de standard”, generat din configurarea din editor (inclusiv modificările nesalvate), și notița internă a echipei.
@@ -269,10 +272,17 @@ export function EditorPersonalizare({
           <label className="mt-2 flex items-start gap-2 text-sm text-ink">
             <input type="checkbox" checked={arataTimp} onChange={(e) => setArataTimp(e.target.checked)} className="mt-1 h-4 w-4" />
             <span>
-              Arată clientului pagina „Timp alocat” (doar timpul lucrat, fără tarife), în meniu, pentru owner și admin.
+              Arată clientului pagina „Timp alocat” (timpul echipei și banca de ore, fără tarife), în meniu, pentru owner și admin.
               <span className="block text-xs text-muted">Timpul se înregistrează din pagina „Timp alocat” a organizației din panoul platformei, cu timer sau manual.</span>
             </span>
           </label>
+          {arataTimp && (
+            <label className="mt-3 block text-xs text-muted">
+              Ore incluse în pachet (opțional, pentru banca de ore)
+              <input inputMode="decimal" placeholder="ex. 10" value={orePachet} onChange={(e) => setOrePachet(e.target.value)} className="mt-1 block w-32 rounded-lg border border-line bg-panel px-2.5 py-1.5 text-sm text-ink" />
+              <span className="mt-1 block">Clientul vede orele folosite și rămase, cu avertizare de la 80%. Lasă gol dacă nu are pachet.</span>
+            </label>
+          )}
           <a href={`/platform-admin/timp/${org.slug}`} className="mt-2 inline-block text-xs font-medium text-brand-blue hover:underline">
             Deschide registrul de timp (timer, tarife, sume) →
           </a>

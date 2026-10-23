@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  bancaOre,
   curataDescriere,
   formateazaMinute,
   MINUTE_MAXIME_INTRARE,
@@ -13,7 +14,7 @@ import {
   valideazaTarife,
 } from "../src/lib/timp-custom.ts";
 
-const baza = { executant: "claude", categorie: "custom", descriere: "Grafic la Decidenți", minute: 45, data: "2026-10-23" };
+const baza = { categorie: "custom", descriere: "Grafic la Decidenți", minute: 45, data: "2026-10-23", cuAi: true };
 
 test("formatarea minutelor", () => {
   assert.equal(formateazaMinute(0), "0m");
@@ -42,20 +43,24 @@ test("durate invalide sau în afara limitelor sunt refuzate", () => {
   assert.equal(parseDurata("0h"), null);
 });
 
-test("o intrare corectă trece, cu minute din număr sau din text", () => {
+test("o intrare corectă trece, cu minute din număr sau din text, iar cuAi lipsă înseamnă fals", () => {
   const r = valideazaIntrare(baza);
   assert.ok(r.ok);
   assert.equal(r.valoare.minute, 45);
+  assert.equal(r.valoare.cuAi, true);
   assert.equal(valideazaIntrare({ ...baza, minute: "1h30" }).valoare.minute, 90);
+  const fara = { ...baza };
+  delete fara.cuAi;
+  assert.equal(valideazaIntrare(fara).valoare.cuAi, false);
+  assert.equal("executant" in valideazaIntrare(baza).valoare, false, "nu mai există „cine a lucrat”: timpul e al echipei");
 });
 
 test("intrări invalide", () => {
   const rau = (o) => assert.equal(valideazaIntrare(o).ok, false, JSON.stringify(o));
   rau(null);
   rau([]);
-  rau({ ...baza, executant: "altcineva" });
-  rau({ ...baza, executant: "constructor" });
   rau({ ...baza, categorie: "inexistenta" });
+  rau({ ...baza, categorie: "constructor" });
   rau({ ...baza, descriere: "ab" });
   rau({ ...baza, descriere: "x".repeat(301) });
   rau({ ...baza, minute: 0 });
@@ -65,6 +70,7 @@ test("intrări invalide", () => {
   rau({ ...baza, data: "2026-02-30" });
   rau({ ...baza, data: "23.10.2026" });
   rau({ ...baza, data: "1999-01-01" });
+  rau({ ...baza, cuAi: "da" });
 });
 
 test("descrierea se curăță: spații, rânduri noi, caractere de control", () => {
@@ -81,11 +87,10 @@ test("timerul: rotunjire în sus, minimum 1 minut, plafon 24 de ore", () => {
   assert.equal(minuteDinTimer(t0, t0 + 3 * 86_400_000), MINUTE_MAXIME_INTRARE);
 });
 
-test("tarife: numere pozitive cu 2 zecimale, virgulă acceptată, monedă RON/EUR", () => {
-  const r = valideazaTarife({ claude: "150,50", echipa: 200, moneda: "EUR" });
-  assert.deepEqual(r.valoare, { claude: 150.5, echipa: 200, moneda: "EUR" });
-  assert.equal(valideazaTarife({ claude: 0, echipa: 0, moneda: "RON" }).ok, true);
-  for (const o of [null, {}, { claude: -1, echipa: 1, moneda: "RON" }, { claude: "abc", echipa: 1, moneda: "RON" }, { claude: 1, echipa: 1, moneda: "USD" }, { claude: 1.234, echipa: 1, moneda: "RON" }, { claude: 1e9, echipa: 1, moneda: "RON" }]) {
+test("tariful: un singur număr pe oră, cu 2 zecimale, virgulă acceptată, monedă RON/EUR", () => {
+  assert.deepEqual(valideazaTarife({ ora: "150,50", moneda: "EUR" }).valoare, { ora: 150.5, moneda: "EUR" });
+  assert.equal(valideazaTarife({ ora: 0, moneda: "RON" }).ok, true);
+  for (const o of [null, {}, { ora: -1, moneda: "RON" }, { ora: "abc", moneda: "RON" }, { ora: 1, moneda: "USD" }, { ora: 1.234, moneda: "RON" }, { ora: 1e9, moneda: "RON" }, { claude: 1, echipa: 1, moneda: "RON" }]) {
     assert.equal(valideazaTarife(o).ok, false, JSON.stringify(o));
   }
 });
@@ -97,18 +102,30 @@ test("sume: minute × tarif pe oră, rotunjite la 2 zecimale", () => {
   assert.equal(sumaPentru(0, 100), 0);
 });
 
-test("totaluri: pe executant și categorie, cu sau fără sume", () => {
+test("totaluri: pe categorie, cu minutele cu AI ca indicator, cu sau fără sumă", () => {
   const intrari = [
-    { executant: "claude", categorie: "custom", minute: 60 },
-    { executant: "echipa", categorie: "integrare", minute: 30 },
-    { executant: "echipa", categorie: "suport", minute: 90 },
+    { categorie: "custom", minute: 60, cuAi: true },
+    { categorie: "integrare", minute: 30 },
+    { categorie: "suport", minute: 90, cuAi: false },
   ];
   const fara = totaluri(intrari, null);
   assert.equal(fara.minute, 180);
-  assert.deepEqual(fara.peExecutant, { claude: 60, echipa: 120 });
+  assert.equal(fara.minuteCuAi, 60);
   assert.deepEqual(fara.peCategorie, { custom: 60, integrare: 30, suport: 90, altele: 0 });
   assert.equal(fara.suma, null, "clientul nu primește sume");
-  const cu = totaluri(intrari, { claude: 100, echipa: 200, moneda: "RON" });
-  assert.deepEqual(cu.suma, { claude: 100, echipa: 400, total: 500, moneda: "RON" });
-  assert.deepEqual(totaluri([], null).peExecutant, { claude: 0, echipa: 0 });
+  assert.deepEqual(totaluri(intrari, { ora: 200, moneda: "RON" }).suma, { total: 600, moneda: "RON" });
+  assert.equal(totaluri([], null).minute, 0);
+});
+
+test("banca de ore: fără pachet, în limită, atenție de la 80%, depășit peste 100%", () => {
+  assert.equal(bancaOre(120, null).stare, "fara_pachet");
+  assert.equal(bancaOre(120, 0).stare, "fara_pachet");
+  const ok = bancaOre(60, 10);
+  assert.deepEqual([ok.stare, ok.minutePachet, ok.minuteRamase, ok.procent], ["in_limita", 600, 540, 0.1]);
+  assert.equal(bancaOre(479, 10).stare, "in_limita");
+  assert.equal(bancaOre(480, 10).stare, "atentie");
+  assert.equal(bancaOre(600, 10).stare, "atentie", "exact 100% nu e încă depășit");
+  const dep = bancaOre(660, 10);
+  assert.deepEqual([dep.stare, dep.minuteRamase, dep.procent], ["depasit", -60, 1], "bara se plafonează la 100%, dar rămase e negativ");
+  assert.equal(bancaOre(0, 2.5).minutePachet, 150);
 });

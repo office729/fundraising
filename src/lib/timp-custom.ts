@@ -1,9 +1,7 @@
-// Registrul de timp pentru munca custom și suportul unei organizații: cine a lucrat, la ce, cât. Echipa platformei îl completează (manual sau cu timer), clientul își vede
-// doar timpul (dacă pagina „Timp alocat” e activată pentru el), iar tarifele și suma de facturat rămân doar la echipa platformei. Funcții pure, fără importuri externe,
-// ca să se poată folosi în pagini, în acțiuni și în teste.
-
-export const EXECUTANTI = { claude: "Claude", echipa: "Echipa noastră" } as const;
-export type Executant = keyof typeof EXECUTANTI;
+// Registrul de timp alocat unei organizații pentru munca custom, integrări și suport: cât timp a alocat echipa (nu cât a „calculat” un instrument AI), la ce, cu ce rezultat.
+// Echipa platformei îl completează (manual sau cu timer); clientul își vede doar timpul și banca de ore (dacă pagina „Timp alocat” e activată pentru el), iar tariful și suma
+// de facturat rămân doar la echipa platformei. Timpul e al echipei: munca cu asistență AI se marchează cu un indicator (cuAi), nu se numără separat. Funcții pure, fără
+// importuri externe, ca să se poată folosi în pagini, în acțiuni și în teste.
 
 export const CATEGORII = {
   custom: "Modificare custom",
@@ -16,10 +14,12 @@ export type Categorie = keyof typeof CATEGORII;
 export const MINUTE_MAXIME_INTRARE = 24 * 60;
 export const LUNGIME_MINIMA_DESCRIERE = 3;
 export const LUNGIME_MAXIMA_DESCRIERE = 300;
+// Pragul de la care clientul e avertizat că pachetul de ore se apropie de sfârșit (orele din pachet se setează în configurarea de aspect: lib/personalizare-org.ts).
+export const PRAG_ATENTIE_PACHET = 0.8;
 
 const are = (obiect: object, cheie: string) => Object.prototype.hasOwnProperty.call(obiect, cheie);
 
-export type IntrareTimp = { executant: Executant; categorie: Categorie; descriere: string; minute: number; data: string };
+export type IntrareTimp = { categorie: Categorie; descriere: string; minute: number; data: string; cuAi: boolean };
 export type RezultatIntrare = { ok: true; valoare: IntrareTimp } | { ok: false; eroare: string };
 
 // „2h 30m”, „45m”, „1h”. Minute întregi, nenegative.
@@ -68,7 +68,6 @@ export function curataDescriere(brut: unknown): string | null {
 export function valideazaIntrare(brut: unknown): RezultatIntrare {
   if (typeof brut !== "object" || brut === null || Array.isArray(brut)) return { ok: false, eroare: "Intrare invalidă." };
   const o = brut as Record<string, unknown>;
-  if (typeof o.executant !== "string" || !are(EXECUTANTI, o.executant)) return { ok: false, eroare: "Alege cine a lucrat." };
   if (typeof o.categorie !== "string" || !are(CATEGORII, o.categorie)) return { ok: false, eroare: "Alege categoria." };
   const descriere = curataDescriere(o.descriere);
   if (descriere === null) return { ok: false, eroare: `Descrierea trebuie să aibă între ${LUNGIME_MINIMA_DESCRIERE} și ${LUNGIME_MAXIMA_DESCRIERE} de caractere.` };
@@ -76,7 +75,8 @@ export function valideazaIntrare(brut: unknown): RezultatIntrare {
   if (minute === null) return { ok: false, eroare: "Durată invalidă (de exemplu 90, 1h30, 1:30 sau 2h; maximum 24 de ore)." };
   const data = dataValida(o.data);
   if (data === null) return { ok: false, eroare: "Dată invalidă." };
-  return { ok: true, valoare: { executant: o.executant as Executant, categorie: o.categorie as Categorie, descriere, minute, data } };
+  if (o.cuAi !== undefined && typeof o.cuAi !== "boolean") return { ok: false, eroare: "Indicatorul „cu asistență AI” trebuie să fie da sau nu." };
+  return { ok: true, valoare: { categorie: o.categorie as Categorie, descriere, minute, data, cuAi: o.cuAi === true } };
 }
 
 // Timerul: minutele între pornire și oprire, rotunjite în sus (un timer oprit imediat tot înseamnă 1 minut), cu plafon de 24 de ore ca să nu rămână un timer uitat pornit
@@ -87,25 +87,25 @@ export function minuteDinTimer(pornitMs: number, opritMs: number): number {
 }
 
 export type Moneda = "RON" | "EUR";
-export type Tarife = { claude: number; echipa: number; moneda: Moneda };
+// Un singur tarif pe oră pentru timpul echipei.
+export type Tarife = { ora: number; moneda: Moneda };
 export type RezultatTarife = { ok: true; valoare: Tarife } | { ok: false; eroare: string };
 
 const TARIF_MAXIM = 100_000;
 
-// Tarife pe oră, pozitive sau zero, cu cel mult 2 zecimale. Acceptă și text cu virgulă („150,50”).
+// Număr nenegativ cu cel mult 2 zecimale, din număr sau din text cu virgulă („150,50”); null dacă nu e valid sau depășește maximul.
+function numarCuDouaZecimale(x: unknown, maxim: number): number | null {
+  const n = typeof x === "number" ? x : typeof x === "string" && /^\d{1,6}(?:[.,]\d{1,2})?$/.test(x.trim()) ? Number(x.trim().replace(",", ".")) : NaN;
+  return Number.isFinite(n) && n >= 0 && n <= maxim && Math.abs(n * 100 - Math.round(n * 100)) < 1e-6 ? Math.round(n * 100) / 100 : null;
+}
+
 export function valideazaTarife(brut: unknown): RezultatTarife {
-  if (typeof brut !== "object" || brut === null || Array.isArray(brut)) return { ok: false, eroare: "Tarife invalide." };
+  if (typeof brut !== "object" || brut === null || Array.isArray(brut)) return { ok: false, eroare: "Tarif invalid." };
   const o = brut as Record<string, unknown>;
-  const numar = (x: unknown): number | null => {
-    const n = typeof x === "number" ? x : typeof x === "string" && /^\d{1,6}(?:[.,]\d{1,2})?$/.test(x.trim()) ? Number(x.trim().replace(",", ".")) : NaN;
-    // cel mult 2 zecimale și pentru numere (nu rotunjim în tăcere o valoare cu mai multe)
-    return Number.isFinite(n) && n >= 0 && n <= TARIF_MAXIM && Math.abs(n * 100 - Math.round(n * 100)) < 1e-6 ? Math.round(n * 100) / 100 : null;
-  };
-  const claude = numar(o.claude);
-  const echipa = numar(o.echipa);
-  if (claude === null || echipa === null) return { ok: false, eroare: `Tarifele pe oră trebuie să fie numere între 0 și ${TARIF_MAXIM}, cu cel mult 2 zecimale.` };
+  const ora = numarCuDouaZecimale(o.ora, TARIF_MAXIM);
+  if (ora === null) return { ok: false, eroare: `Tariful pe oră trebuie să fie un număr între 0 și ${TARIF_MAXIM}, cu cel mult 2 zecimale.` };
   if (o.moneda !== "RON" && o.moneda !== "EUR") return { ok: false, eroare: "Moneda trebuie să fie RON sau EUR." };
-  return { ok: true, valoare: { claude, echipa, moneda: o.moneda } };
+  return { ok: true, valoare: { ora, moneda: o.moneda } };
 }
 
 // Suma pentru un număr de minute la un tarif pe oră, rotunjită la 2 zecimale (se rotunjește suma, nu minutele).
@@ -113,26 +113,41 @@ export const sumaPentru = (minute: number, tarifOra: number): number => Math.rou
 
 export type Totaluri = {
   minute: number;
-  peExecutant: Record<Executant, number>;
+  // din care cu asistență AI (indicator, nu timp separat)
+  minuteCuAi: number;
   peCategorie: Record<Categorie, number>;
-  // Doar când se dau tarife (echipa platformei): suma de facturat pe executant și totală.
-  suma: { claude: number; echipa: number; total: number; moneda: Moneda } | null;
+  // Doar când se dă tariful (echipa platformei): suma de facturat.
+  suma: { total: number; moneda: Moneda } | null;
 };
 
-export function totaluri(intrari: { executant: Executant; categorie: Categorie; minute: number }[], tarife: Tarife | null): Totaluri {
-  const peExecutant: Record<Executant, number> = { claude: 0, echipa: 0 };
+export function totaluri(intrari: { categorie: Categorie; minute: number; cuAi?: boolean }[], tarife: Tarife | null): Totaluri {
   const peCategorie: Record<Categorie, number> = { custom: 0, integrare: 0, suport: 0, altele: 0 };
+  let minute = 0;
+  let minuteCuAi = 0;
   for (const i of intrari) {
-    peExecutant[i.executant] += i.minute;
     peCategorie[i.categorie] += i.minute;
+    minute += i.minute;
+    if (i.cuAi) minuteCuAi += i.minute;
   }
-  const minute = peExecutant.claude + peExecutant.echipa;
-  const suma = tarife
-    ? (() => {
-        const claude = sumaPentru(peExecutant.claude, tarife.claude);
-        const echipa = sumaPentru(peExecutant.echipa, tarife.echipa);
-        return { claude, echipa, total: Math.round((claude + echipa) * 100) / 100, moneda: tarife.moneda };
-      })()
-    : null;
-  return { minute, peExecutant, peCategorie, suma };
+  return { minute, minuteCuAi, peCategorie, suma: tarife ? { total: sumaPentru(minute, tarife.ora), moneda: tarife.moneda } : null };
+}
+
+export type StareBanca = "fara_pachet" | "in_limita" | "atentie" | "depasit";
+export type BancaOre = {
+  stare: StareBanca;
+  minutePachet: number;
+  minuteFolosite: number;
+  // negativ când pachetul a fost depășit
+  minuteRamase: number;
+  // 0–1 (plafonat la 1 pentru bara de progres)
+  procent: number;
+};
+
+// Banca de ore: ore incluse în pachet vs timp folosit. „atentie” de la 80%, „depasit” peste 100%.
+export function bancaOre(minuteFolosite: number, orePachet: number | null | undefined): BancaOre {
+  const minutePachet = orePachet && orePachet > 0 ? Math.round(orePachet * 60) : 0;
+  if (minutePachet === 0) return { stare: "fara_pachet", minutePachet: 0, minuteFolosite, minuteRamase: 0, procent: 0 };
+  const raport = minuteFolosite / minutePachet;
+  const stare: StareBanca = raport > 1 ? "depasit" : raport >= PRAG_ATENTIE_PACHET ? "atentie" : "in_limita";
+  return { stare, minutePachet, minuteFolosite, minuteRamase: minutePachet - minuteFolosite, procent: Math.min(1, Math.max(0, raport)) };
 }

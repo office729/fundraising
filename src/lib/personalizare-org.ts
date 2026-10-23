@@ -59,6 +59,8 @@ export type PersonalizareOrg = {
   variante?: Record<string, string>;
   // true = organizația vede în meniu pagina „Timp alocat” (registrul de timp al muncii custom și al suportului, fără tarife); vezi lib/timp-custom.ts.
   arataTimp?: boolean;
+  // Banca de ore: ore incluse în pachet (cu cel mult 2 zecimale); clientul vede cât a folosit și cât a rămas. Lipsa înseamnă fără pachet.
+  orePachet?: number;
 };
 
 export type RezultatValidare = { ok: true; valoare: PersonalizareOrg } | { ok: false; eroare: string };
@@ -76,7 +78,7 @@ function curataEticheta(x: unknown): string | null {
 // Validează și normalizează o configurare primită de la client sau citită din baza de date. Refuză orice nu e recunoscut, în loc să ignore în tăcere.
 export function valideazaPersonalizare(brut: unknown): RezultatValidare {
   if (!esteObiect(brut)) return { ok: false, eroare: "Configurarea trebuie să fie un obiect." };
-  const permise = new Set(["v", "familie", "navAscunse", "navEtichete", "dashboard", "variante", "arataTimp"]);
+  const permise = new Set(["v", "familie", "navAscunse", "navEtichete", "dashboard", "variante", "arataTimp", "orePachet"]);
   for (const k of Object.keys(brut)) if (!permise.has(k)) return { ok: false, eroare: `Câmp necunoscut: ${k}.` };
   if (brut.v !== VERSIUNE_PERSONALIZARE) return { ok: false, eroare: "Versiune de configurare necunoscută." };
 
@@ -154,6 +156,11 @@ export function valideazaPersonalizare(brut: unknown): RezultatValidare {
     if (typeof brut.arataTimp !== "boolean") return { ok: false, eroare: "Setarea „Timp alocat” trebuie să fie da sau nu." };
     if (brut.arataTimp) rez.arataTimp = true;
   }
+  if (brut.orePachet !== undefined) {
+    const ore = valideazaOrePachet(brut.orePachet);
+    if (ore === null) return { ok: false, eroare: `Orele din pachet trebuie să fie un număr între 0,01 și ${ORE_PACHET_MAXIME}, cu cel mult 2 zecimale.` };
+    rez.orePachet = ore;
+  }
 
   return { ok: true, valoare: rez };
 }
@@ -179,6 +186,7 @@ export function combinaPersonalizari(
     ...(dinBaza?.dashboard ? { dashboard: dinBaza.dashboard } : {}),
     ...(dinBaza?.variante ? { variante: dinBaza.variante } : {}),
     ...(dinBaza?.arataTimp ? { arataTimp: true } : {}),
+    ...(dinBaza?.orePachet ? { orePachet: dinBaza.orePachet } : {}),
   };
 }
 
@@ -210,6 +218,13 @@ export function decodeazaDinAdresa(cod: string): RezultatValidare {
   }
 }
 
+// Orele incluse în pachet (banca de ore): număr între 0,01 și maxim, cu cel mult 2 zecimale, din număr sau din text cu virgulă („12,5”). Zero sau orice altceva dă null.
+export const ORE_PACHET_MAXIME = 10_000;
+export function valideazaOrePachet(x: unknown): number | null {
+  const n = typeof x === "number" ? x : typeof x === "string" && /^\d{1,5}(?:[.,]\d{1,2})?$/.test(x.trim()) ? Number(x.trim().replace(",", ".")) : NaN;
+  return Number.isFinite(n) && n > 0 && n <= ORE_PACHET_MAXIME && Math.abs(n * 100 - Math.round(n * 100)) < 1e-6 ? Math.round(n * 100) / 100 : null;
+}
+
 // „Ce diferă față de standard” pentru o organizație, într-o listă de propoziții scurte, generată din configurare (deci nu poate rămâne în urma realității).
 // Listă goală = aspectul standard. Folosită în panoul platformei, la lista de personalizări și în editor.
 export function rezumatPersonalizare(pers: PersonalizareOrg | null | undefined): string[] {
@@ -221,7 +236,7 @@ export function rezumatPersonalizare(pers: PersonalizareOrg | null | undefined):
     const optiuni: Record<string, string> = reg.optiuni;
     linii.push(`Variantă la ${reg.eticheta}: ${are(optiuni, varianta) ? optiuni[varianta] : varianta}`);
   }
-  if (pers.arataTimp) linii.push("Pagina „Timp alocat” vizibilă clientului (fără tarife)");
+  if (pers.arataTimp) linii.push(`Pagina „Timp alocat” vizibilă clientului (fără tarife)${pers.orePachet ? `, pachet de ${pers.orePachet} ore` : ""}`);
   if (pers.familie) linii.push(`Familie de dashboard: ${ETICHETE_FAMILIE[pers.familie]}`);
   if (pers.navAscunse?.length) linii.push(`Meniu: intrări ascunse (${pers.navAscunse.join(", ")})`);
   const redenumite = Object.entries(pers.navEtichete ?? {});

@@ -1,4 +1,4 @@
-import { date, integer, jsonb, numeric, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, date, integer, jsonb, numeric, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 import { appUsers } from "./app-users";
 import { organizations } from "./organizations";
@@ -32,7 +32,9 @@ export const orgTimp = pgTable("org_timp", {
   orgId: uuid("org_id")
     .notNull()
     .references(() => organizations.id, { onDelete: "cascade" }),
-  executant: text("executant").notNull(),
+  // Vechi („claude” / „echipa”): timpul e acum al echipei, iar munca cu asistență AI se marchează în cu_ai. Coloana rămâne doar ca să nu se piardă istoricul; nu se mai citește.
+  executant: text("executant").default("echipa"),
+  cuAi: boolean("cu_ai").notNull().default(false),
   categorie: text("categorie").notNull(),
   descriere: text("descriere").notNull(),
   minute: integer("minute"),
@@ -43,7 +45,7 @@ export const orgTimp = pgTable("org_timp", {
   creatLa: timestamp("creat_la", { withTimezone: true }).defaultNow().notNull(),
 }).enableRLS();
 
-// Tarifele pe oră ale muncii custom: doar echipa platformei, clientul nu le vede niciodată.
+// Tariful pe oră al timpului echipei: doar echipa platformei, clientul nu îl vede niciodată. Tariful unic e în tarif_echipa; tarif_claude e vechi și rămâne 0.
 export const orgTimpTarife = pgTable("org_timp_tarife", {
   orgId: uuid("org_id")
     .primaryKey()

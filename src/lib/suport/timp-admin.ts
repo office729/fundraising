@@ -4,16 +4,17 @@ import { and, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { appUsers, orgTimp, orgTimpTarife } from "@/lib/db/schema";
-import { minuteDinTimer, type Categorie, type Executant, type IntrareTimp, type Moneda, type Tarife } from "@/lib/timp-custom";
+import { minuteDinTimer, type Categorie, type IntrareTimp, type Moneda, type Tarife } from "@/lib/timp-custom";
 
 // Operații ale echipei platformei asupra registrului de timp al unei organizații (vezi lib/timp-custom.ts). Apelantul a verificat deja isPlatformAdmin
 // (lib/auth/platform-admin.ts). Citesc și scriu DOAR tabelele de timp; politicile RLS cer app.platform_admin.
 
 export type RandTimp = {
   id: string;
-  executant: Executant;
   categorie: Categorie;
   descriere: string;
+  // Lucrat cu asistență AI (indicator, nu timp separat).
+  cuAi: boolean;
   // null cât timp timerul rulează.
   minute: number | null;
   data: string;
@@ -35,9 +36,9 @@ const AZI_BUCURESTI = sql`(now() at time zone 'Europe/Bucharest')::date`;
 
 const comuna = {
   id: orgTimp.id,
-  executant: orgTimp.executant,
   categorie: orgTimp.categorie,
   descriere: orgTimp.descriere,
+  cuAi: orgTimp.cuAi,
   minute: orgTimp.minute,
   data: orgTimp.data,
   pornitLa: orgTimp.pornitLa,
@@ -53,7 +54,7 @@ export async function citesteTimp(orgId: string, actorEmail: string): Promise<Da
     const [actor] = await tx.select({ id: appUsers.id }).from(appUsers).where(eq(appUsers.email, actorEmail)).limit(1);
     return {
       intrari,
-      tarife: t ? { claude: Number(t.tarifClaude), echipa: Number(t.tarifEchipa), moneda: t.moneda as Moneda } : null,
+      tarife: t ? { ora: Number(t.tarifEchipa), moneda: t.moneda as Moneda } : null,
       actorId: actor?.id ?? null,
     };
   });
@@ -75,7 +76,7 @@ export async function stergeIntrare(orgId: string, id: string): Promise<void> {
 }
 
 // Pornește un timer: un rând cu pornit_la setat și minute null. Un singur timer pornit pe administrator (index unic): al doilea e refuzat cu un mesaj clar.
-export async function porneste(orgId: string, intrare: Pick<IntrareTimp, "executant" | "categorie" | "descriere">, actorEmail: string): Promise<{ ok: true } | { ok: false; eroare: string }> {
+export async function porneste(orgId: string, intrare: Pick<IntrareTimp, "categorie" | "descriere" | "cuAi">, actorEmail: string): Promise<{ ok: true } | { ok: false; eroare: string }> {
   return db.transaction(async (tx) => {
     await contextPlatforma(tx);
     const [actor] = await tx.select({ id: appUsers.id }).from(appUsers).where(eq(appUsers.email, actorEmail)).limit(1);
@@ -109,7 +110,7 @@ export async function scrieTarife(orgId: string, tarife: Tarife, actorEmail: str
   await db.transaction(async (tx) => {
     await contextPlatforma(tx);
     const [actor] = await tx.select({ id: appUsers.id }).from(appUsers).where(eq(appUsers.email, actorEmail)).limit(1);
-    const valori = { tarifClaude: tarife.claude.toFixed(2), tarifEchipa: tarife.echipa.toFixed(2), moneda: tarife.moneda };
+    const valori = { tarifClaude: "0.00", tarifEchipa: tarife.ora.toFixed(2), moneda: tarife.moneda };
     await tx
       .insert(orgTimpTarife)
       .values({ orgId, ...valori, actualizatDe: actor?.id ?? null })

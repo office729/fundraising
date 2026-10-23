@@ -2,7 +2,7 @@
 
 import { cerePlatformAdminActiune } from "@/lib/auth/platform-admin";
 import { adaugaIntrare, opreste, porneste, scrieTarife, stergeIntrare } from "@/lib/suport/timp-admin";
-import { curataDescriere, EXECUTANTI, CATEGORII, valideazaIntrare, valideazaTarife } from "@/lib/timp-custom";
+import { curataDescriere, CATEGORII, valideazaIntrare, valideazaTarife } from "@/lib/timp-custom";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const orgOk = (x: unknown): x is string => typeof x === "string" && UUID.test(x);
@@ -41,11 +41,11 @@ export async function pornesteTimerAction(orgId: string, brut: unknown): Promise
   if (!orgOk(orgId)) return { ok: false, eroare: "Organizație invalidă." };
   const o = typeof brut === "object" && brut !== null ? (brut as Record<string, unknown>) : {};
   const descriere = curataDescriere(o.descriere);
-  if (typeof o.executant !== "string" || !Object.prototype.hasOwnProperty.call(EXECUTANTI, o.executant)) return { ok: false, eroare: "Alege cine lucrează." };
   if (typeof o.categorie !== "string" || !Object.prototype.hasOwnProperty.call(CATEGORII, o.categorie)) return { ok: false, eroare: "Alege categoria." };
   if (descriere === null) return { ok: false, eroare: "Scrie o descriere de 3–300 de caractere." };
+  if (o.cuAi !== undefined && typeof o.cuAi !== "boolean") return { ok: false, eroare: "Indicatorul „cu asistență AI” trebuie să fie da sau nu." };
   try {
-    return await porneste(orgId, { executant: o.executant as keyof typeof EXECUTANTI, categorie: o.categorie as keyof typeof CATEGORII, descriere }, actor);
+    return await porneste(orgId, { categorie: o.categorie as keyof typeof CATEGORII, descriere, cuAi: o.cuAi === true }, actor);
   } catch (e) {
     console.error("[platform-admin] pornirea timerului a eșuat:", e);
     return { ok: false, eroare: "Nu am putut porni timerul. Verifică dacă tabelele de timp au fost create în baza de date." };

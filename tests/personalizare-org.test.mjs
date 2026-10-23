@@ -9,6 +9,7 @@ import {
   LUNGIME_MAXIMA_NOTA,
   decodeazaDinAdresa,
   rezumatPersonalizare,
+  valideazaOrePachet,
   valideazaPersonalizare,
   variantaPagina,
 } from "../src/lib/personalizare-org.ts";
@@ -180,4 +181,15 @@ test("arataTimp: doar boolean; fals înseamnă „fără”; apare în rezumat �
   assert.ok(rezumatPersonalizare({ v: 1, arataTimp: true }).some((l) => l.includes("Timp alocat")));
   assert.equal(combinaPersonalizari(undefined, { v: 1, arataTimp: true }).arataTimp, true);
   assert.equal(combinaPersonalizari(undefined, { v: 1 }).arataTimp, undefined);
+});
+
+test("orele din pachet: pozitive, cu 2 zecimale, maximum; în configurare, rezumat și combinare", () => {
+  assert.equal(valideazaOrePachet(40), 40);
+  assert.equal(valideazaOrePachet("12,5"), 12.5);
+  for (const x of [0, "0", -1, "abc", 10_001, 1.234, null, undefined, {}]) assert.equal(valideazaOrePachet(x), null, String(x));
+  assert.equal(ok({ v: 1, arataTimp: true, orePachet: 40 }).orePachet, 40);
+  refuza({ v: 1, arataTimp: true, orePachet: 0 });
+  refuza({ v: 1, arataTimp: true, orePachet: "mult" });
+  assert.ok(rezumatPersonalizare({ v: 1, arataTimp: true, orePachet: 40 }).some((l) => l.includes("pachet de 40 ore")));
+  assert.equal(combinaPersonalizari(undefined, { v: 1, arataTimp: true, orePachet: 40 }).orePachet, 40);
 });

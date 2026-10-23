@@ -37,14 +37,14 @@ export default async function TimpPage({ params }: { params: Promise<{ orgSlug: 
       </Link>
       <h1 className="mt-2 font-display text-2xl font-bold text-ink">Timp alocat · {org.nume}</h1>
       <p className="mt-1 max-w-3xl text-sm text-muted">
-        Cât timp s-a lucrat pentru această organizație (modificări custom, integrări, suport), de Claude și de echipa ta, cu timer sau intrări manuale. Aici vezi și suma de
-        facturat; clientul vede doar timpul, nu și tarifele.{" "}
+        Cât timp a alocat echipa pentru această organizație (modificări custom, integrări, suport), cu timer sau intrări manuale; munca făcută cu asistență AI se
+        marchează doar ca indicator. Aici vezi și suma de facturat; clientul vede timpul și banca de ore, nu și tariful.{" "}
         <Link href={`/platform-admin/personalizare/${org.slug}`} className="font-medium text-brand-blue hover:underline">
           Activează pagina „Timp alocat” pentru client din editorul de aspect →
         </Link>
       </p>
       {date ? (
-        <TimpClient org={{ id: org.id, slug: org.slug, nume: org.nume }} date={date} arataClientului={org.config?.arataTimp === true} />
+        <TimpClient org={{ id: org.id, slug: org.slug, nume: org.nume }} date={date} arataClientului={org.config?.arataTimp === true} orePachet={org.config?.orePachet ?? null} />
       ) : (
         <p role="alert" className="mt-6 rounded-xl border border-line bg-panel p-4 text-sm text-red-700">
           Nu am putut citi registrul de timp. Verifică dacă tabelele <code>org_timp</code> și <code>org_timp_tarife</code> au fost create în baza de date (vezi
