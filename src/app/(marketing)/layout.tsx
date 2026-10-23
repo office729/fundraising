@@ -5,6 +5,7 @@ import { MARKETING_DICT } from "@/lib/i18n/dictionaries/marketing";
 
 import { BaraPrelansare } from "./bara-prelansare";
 import { SiteFooter, SiteHeader, TopBar } from "./chrome";
+import { PopupInscriere } from "./popup-inscriere";
 
 export default async function MarketingLayout({ children }: { children: React.ReactNode }) {
   const locale = await getLocale();
@@ -20,6 +21,8 @@ export default async function MarketingLayout({ children }: { children: React.Re
       <SiteHeader dict={dict} panouHref={orgSlug ? `/${orgSlug}/crm` : null} />
       {children}
       <SiteFooter dict={dict} />
+      {/* Pop-up de înscriere pentru ONG-uri: după lansare și 20 de secunde pe site; nu apare utilizatorilor autentificați. */}
+      <PopupInscriere ascuns={Boolean(authUser)} />
     </div>
   );
 }
