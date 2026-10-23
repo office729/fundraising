@@ -24,8 +24,10 @@ export type RandTimp = {
 
 export type DateTimp = { intrari: RandTimp[]; tarife: Tarife | null; actorId: string | null };
 
+// `app.public_lookup` pe lângă `app.platform_admin`: fără el, căutarea contului administratorului în app_users (RLS) nu găsește nimic, iar timerul nu poate fi pornit.
 async function contextPlatforma(tx: Pick<typeof db, "execute">) {
   await tx.execute(sql`select set_config('app.platform_admin', 'true', true)`);
+  await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
 }
 
 // Ziua de azi în România (nu în UTC): o intrare scrisă la 00:30 e din ziua nouă.
