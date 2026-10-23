@@ -14,12 +14,12 @@ const ADRESA_CONTACT = DESTINATAR_IMPLICIT; // adresă existentă pe pagina de c
 
 export type RezultatInteres = { ok: true } | { ok: false; eroare: string; campuri?: EroriInteres };
 
-export async function trimiteInteresAction(intrare: { nume: string; organizatie: string; email: string; telefon: string; acord: boolean; website?: string; cale?: string; previzualizare?: boolean }): Promise<RezultatInteres> {
+export async function trimiteInteresAction(intrare: { nume: string; organizatie: string; email: string; telefon: string; acord: boolean; capcana?: string; cale?: string; campanie?: string; previzualizare?: boolean }): Promise<RezultatInteres> {
   const v = valideazaInteres(intrare ?? {});
   if (!v.ok) return { ok: false, eroare: "Verifică câmpurile marcate.", campuri: v.erori };
 
-  // Capcană pentru roboți: câmpul „website” e ascuns oamenilor. Dacă are conținut, răspundem ca la succes și nu trimitem nimic.
-  if (typeof intrare.website === "string" && intrare.website.trim() !== "") return { ok: true };
+  // Capcană pentru roboți: un câmp ascuns oamenilor. Dacă are conținut, răspundem ca la succes și nu trimitem nimic.
+  if (typeof intrare.capcana === "string" && intrare.capcana.trim() !== "") return { ok: true };
 
   if (esteEmailTemporar(v.date.email)) return { ok: false, eroare: "Folosește o adresă de e-mail a organizației, nu una temporară.", campuri: { email: "Folosește o adresă de e-mail a organizației." } };
 
@@ -31,6 +31,8 @@ export async function trimiteInteresAction(intrare: { nume: string; organizatie:
 
   const test = intrare.previzualizare === true;
   const cale = typeof intrare.cale === "string" && intrare.cale.startsWith("/") ? intrare.cale.slice(0, 120) : "/";
+  // De unde a venit (utm_source / utm_medium / utm_campaign din adresa paginii): doar caractere simple, scurt.
+  const campanie = typeof intrare.campanie === "string" ? intrare.campanie.replace(/[^\p{L}\p{N} _.,:=@/+-]/gu, "").slice(0, 120) : "";
   const rand = (eticheta: string, valoare: string) => paragraf(`<strong>${escHtml(eticheta)}:</strong> ${valoare}`);
   const html = layoutEmail({
     previzualizare: `${v.date.nume}, ${v.date.organizatie}`,
@@ -41,6 +43,7 @@ export async function trimiteInteresAction(intrare: { nume: string; organizatie:
       rand("E-mail", emailFaraLink(v.date.email)),
       rand("Telefon", v.date.telefon ? escHtml(v.date.telefon) : "nu a lăsat"),
       rand("Pagina de pe care a scris", escHtml(cale)),
+      ...(campanie ? [rand("Campanie", escHtml(campanie))] : []),
       paragraf("A bifat că a citit Politica de confidențialitate. Datele au fost trimise doar prin acest e-mail; nu sunt păstrate în altă parte. Răspunde direct la acest mesaj ca să-i scrii."),
     ].join(""),
   });

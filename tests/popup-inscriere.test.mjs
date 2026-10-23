@@ -76,3 +76,8 @@ test("formular: valori ne-text (obiecte, liste) sunt respinse, nu arată ca text
   assert.equal(r.ok, false);
   assert.ok(r.erori.nume && r.erori.organizatie && r.erori.email);
 });
+
+test("/descopera e adresă rezervată: niciun slug de organizație n-o poate umbri", async () => {
+  const { esteSlugRezervat } = await import("../src/lib/reserved-slugs.ts");
+  assert.equal(esteSlugRezervat("descopera"), true);
+});

@@ -68,6 +68,7 @@ export async function updateSession(request: NextRequest, rewriteTo?: URL) {
     "/gdpr",
     "/dpa",
     "/cookies",
+    "/descopera",
   ];
   const isPublicRoute =
     MARKETING_ROUTES.includes(path) ||

@@ -18,6 +18,7 @@ const RESERVED_SLUGS = new Set([
   "contact",
   "coordonator",
   "cookies",
+  "descopera",
   "dezabonare",
   ".well-known",
   "f230",
