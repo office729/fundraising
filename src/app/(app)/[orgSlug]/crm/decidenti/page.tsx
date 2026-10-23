@@ -1,9 +1,12 @@
 import Link from "next/link";
 
 import { requireOrgAccess } from "@/lib/auth/guard";
+import { variantaPagina } from "@/lib/personalizare-org";
 
-import { coadaAzi, deAprobat, firmeDeCautat } from "./actions";
+import { personalizareEfectiva } from "../personalizare-efectiva";
+import { coadaAzi, deAprobat, firmeDeCautat, getStatisticaDecidenti } from "./actions";
 import { CautareMasa, CoadaAzi, DeAprobatGlobal } from "./decidenti-client";
+import { GraficDecidenti } from "./grafic-decidenti";
 
 export const dynamic = "force-dynamic";
 
@@ -12,13 +15,20 @@ const unu = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) 
 // Decidenți: ce ai de făcut cu persoanele găsite prin prospectare — de contactat azi, de aprobat, căutare în masă.
 export default async function DecidentiPage({ params, searchParams }: { params: Promise<{ orgSlug: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { orgSlug } = await params;
-  await requireOrgAccess(orgSlug);
+  const access = await requireOrgAccess(orgSlug);
   const sp = await searchParams;
   const tab = unu(sp.tab) === "aprobare" ? "aprobare" : unu(sp.tab) === "masa" ? "masa" : "azi";
   const toate = unu(sp.al) === "toate";
   const benzi = unu(sp.benzi) === "A" ? "A" : "AB";
 
-  const [coada, aprobare, masa] = await Promise.all([coadaAzi(orgSlug, toate), deAprobat(orgSlug), tab === "masa" ? firmeDeCautat(orgSlug, benzi) : Promise.resolve(null)]);
+  // Varianta „grafic”, activată doar pentru organizațiile cărora le-a fost aleasă în editorul de aspect (vezi VARIANTE_PAGINI).
+  const arataGrafic = variantaPagina(await personalizareEfectiva(orgSlug, access.userEmail), "decidenti") === "grafic";
+  const [coada, aprobare, masa, etape] = await Promise.all([
+    coadaAzi(orgSlug, toate),
+    deAprobat(orgSlug),
+    tab === "masa" ? firmeDeCautat(orgSlug, benzi) : Promise.resolve(null),
+    arataGrafic ? getStatisticaDecidenti(orgSlug).catch(() => null) : Promise.resolve(null),
+  ]);
   const scadente = coada ? coada.rows.filter((r) => !r.urmatorPasLa || r.urmatorPasLa <= coada.azi).length : 0;
 
   const tabs = [
@@ -73,6 +83,7 @@ export default async function DecidentiPage({ params, searchParams }: { params: 
             Nu am putut încărca firmele. Reîncarcă pagina.
           </p>
         ))}
+      {etape && <GraficDecidenti etape={etape} />}
     </div>
   );
 }

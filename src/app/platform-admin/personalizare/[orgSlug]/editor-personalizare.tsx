@@ -10,6 +10,7 @@ import {
   BLOCURI_ORDONABILE,
   FAMILII_DASHBOARD,
   NAV_PROTEJATE,
+  VARIANTE_PAGINI,
   VERSIUNE_PERSONALIZARE,
   codeazaPentruAdresa,
   valideazaPersonalizare,
@@ -58,6 +59,7 @@ export function EditorPersonalizare({
     const dinConfig = configInitiala?.dashboard?.ordine ?? [];
     return [...dinConfig, ...BLOCURI_ORDONABILE.filter((b) => !dinConfig.includes(b))];
   });
+  const [variante, setVariante] = useState<Record<string, string>>(configInitiala?.variante ?? {});
   const [latime, setLatime] = useState<"desktop" | "telefon">("desktop");
   const [mesaj, setMesaj] = useState<Mesaj>(null);
   const [pending, startTransition] = useTransition();
@@ -70,11 +72,12 @@ export function EditorPersonalizare({
       ...(familie ? { familie } : {}),
       ...(navAscunse.length ? { navAscunse } : {}),
       ...(Object.keys(eticheteCurate).length ? { navEtichete: eticheteCurate } : {}),
+      ...(Object.keys(variante).length ? { variante } : {}),
       ...(blocAscunse.length || ordineDeSalvat.length
         ? { dashboard: { ...(blocAscunse.length ? { ascunse: blocAscunse } : {}), ...(ordineDeSalvat.length ? { ordine: ordineDeSalvat } : {}) } }
         : {}),
     };
-  }, [familie, navAscunse, etichete, blocAscunse, ordine]);
+  }, [familie, navAscunse, etichete, blocAscunse, ordine, variante]);
 
   const validare = useMemo(() => valideazaPersonalizare(draft), [draft]);
 
@@ -140,6 +143,7 @@ export function EditorPersonalizare({
         setEtichete({});
         setBlocAscunse([]);
         setOrdine([...BLOCURI_ORDONABILE]);
+        setVariante({});
         setMesaj({ tip: "ok", text: "Aspectul standard a fost restabilit." });
       } else setMesaj({ tip: "eroare", text: r.eroare });
     });
@@ -196,6 +200,41 @@ export function EditorPersonalizare({
                 </li>
               );
             })}
+          </ul>
+        </section>
+
+        <section className="rounded-xl border border-line bg-panel p-4">
+          <h2 className="text-sm font-semibold text-ink">Variante de pagini</h2>
+          <p className="mt-1 text-xs text-muted">
+            Versiuni alternative ale unor pagini, scrise în cod și activate doar pentru această organizație. Fără o variantă aleasă, organizația vede pagina standard.
+          </p>
+          <ul className="mt-3 space-y-2">
+            {(Object.keys(VARIANTE_PAGINI) as (keyof typeof VARIANTE_PAGINI)[]).map((pagina) => (
+              <li key={pagina} className="flex items-center gap-2">
+                <label htmlFor={`varianta-${pagina}`} className="w-28 shrink-0 text-sm font-medium text-ink">
+                  {VARIANTE_PAGINI[pagina].eticheta}
+                </label>
+                <select
+                  id={`varianta-${pagina}`}
+                  value={variante[pagina] ?? ""}
+                  onChange={(e) =>
+                    setVariante((v) => {
+                      const { [pagina]: _scoasa, ...rest } = v;
+                      void _scoasa;
+                      return e.target.value ? { ...rest, [pagina]: e.target.value } : rest;
+                    })
+                  }
+                  className="min-w-0 flex-1 rounded-lg border border-line bg-panel px-2.5 py-1.5 text-sm"
+                >
+                  <option value="">Standard</option>
+                  {Object.entries(VARIANTE_PAGINI[pagina].optiuni).map(([cheie, eticheta]) => (
+                    <option key={cheie} value={cheie}>
+                      {eticheta}
+                    </option>
+                  ))}
+                </select>
+              </li>
+            ))}
           </ul>
         </section>
 

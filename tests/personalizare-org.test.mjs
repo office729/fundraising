@@ -7,6 +7,7 @@ import {
   combinaPersonalizari,
   decodeazaDinAdresa,
   valideazaPersonalizare,
+  variantaPagina,
 } from "../src/lib/personalizare-org.ts";
 
 const ok = (brut) => {
@@ -109,4 +110,26 @@ test("un cod stricat sau nevalid e refuzat, nu aruncă", () => {
   // JSON valid, dar cu un câmp necunoscut
   const rau = btoa(JSON.stringify({ v: 1, hack: 1 })).replace(/=+$/, "");
   assert.equal(decodeazaDinAdresa(rau).ok, false);
+});
+
+test("variantele: doar pagini și opțiuni din registru", () => {
+  assert.deepEqual(ok({ v: 1, variante: { decidenti: "grafic" } }).variante, { decidenti: "grafic" });
+  refuza({ v: 1, variante: { decidenti: "inexistenta" } });
+  refuza({ v: 1, variante: { pagina_inventata: "grafic" } });
+  refuza({ v: 1, variante: { decidenti: 5 } });
+  refuza({ v: 1, variante: [] });
+  refuza({ v: 1, variante: { constructor: "grafic" } });
+  refuza({ v: 1, variante: { decidenti: "constructor" } });
+});
+
+test("variantaPagina: întoarce varianta activă sau null", () => {
+  assert.equal(variantaPagina({ v: 1, variante: { decidenti: "grafic" } }, "decidenti"), "grafic");
+  assert.equal(variantaPagina({ v: 1 }, "decidenti"), null);
+  assert.equal(variantaPagina(null, "decidenti"), null);
+  // o valoare rămasă în baza de date dintr-o variantă scoasă din cod nu activează nimic
+  assert.equal(variantaPagina({ v: 1, variante: { decidenti: "veche" } }, "decidenti"), null);
+});
+
+test("combinarea păstrează variantele din baza de date", () => {
+  assert.deepEqual(combinaPersonalizari(undefined, { v: 1, variante: { decidenti: "grafic" } }).variante, { decidenti: "grafic" });
 });

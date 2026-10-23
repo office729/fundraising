@@ -37,6 +37,30 @@ export type RandCoada = {
   esteAlMeu: boolean;
 };
 
+export type EtapaDecidenti = { cheie: string; eticheta: string; n: number };
+
+// Numărătoare pe etape pentru varianta „grafic” a paginii (vezi VARIANTE_PAGINI în lib/personalizare-org.ts): doar cifre agregate, pe organizația curentă.
+export const getStatisticaDecidenti = withOrgSession(
+  async (ctx): Promise<EtapaDecidenti[]> => {
+    const randuri = await ctx.db
+      .select({ stare: prospectareCandidati.stare, stadiu: prospectareCandidati.stadiu, n: count() })
+      .from(prospectareCandidati)
+      .where(eq(prospectareCandidati.orgId, ctx.orgId))
+      .groupBy(prospectareCandidati.stare, prospectareCandidati.stadiu);
+    const suma = (potrivit: (r: (typeof randuri)[number]) => boolean) => randuri.filter(potrivit).reduce((s, r) => s + Number(r.n), 0);
+    const aprobat = (stadiu: StadiuUrmarire) => suma((r) => r.stare === "aprobat" && r.stadiu === stadiu);
+    return [
+      { cheie: "de_aprobat", eticheta: "De aprobat", n: suma((r) => r.stare === "nou") },
+      { cheie: "de_contactat", eticheta: "De contactat", n: aprobat("de_contactat") },
+      { cheie: "contactat", eticheta: "Contactate", n: aprobat("contactat") },
+      { cheie: "raspuns", eticheta: "Au răspuns", n: aprobat("raspuns") },
+      { cheie: "inchis", eticheta: "Închise", n: aprobat("inchis") },
+      { cheie: "respins", eticheta: "Respinse", n: suma((r) => r.stare === "respins") },
+    ];
+  },
+  OPTIUNI,
+);
+
 export type DateCoada = {
   azi: string;
   rows: RandCoada[];

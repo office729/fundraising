@@ -16,6 +16,18 @@ export type BlocDashboard = (typeof BLOCURI_DASHBOARD)[number];
 // Intrări de meniu care nu se pot ascunde: fără ele, utilizatorul nu mai găsește pagina de start și nici setările sau facturarea.
 export const NAV_PROTEJATE: readonly string[] = ["", "setari", "facturare"];
 
+// Variante de pagini: versiuni alternative ale unei pagini, scrise în cod (cu teste) și activate per organizație din editorul de aspect. Registrul de aici e singura sursă:
+// o variantă nouă se adaugă întâi aici, apoi în pagina respectivă. Fără ea, orice organizație vede pagina standard.
+export const VARIANTE_PAGINI = {
+  decidenti: {
+    eticheta: "Decidenți",
+    optiuni: { grafic: "Cu grafic al persoanelor pe etape, sub liste" },
+  },
+} as const satisfies Record<string, { eticheta: string; optiuni: Record<string, string> }>;
+export type PaginaCuVarianta = keyof typeof VARIANTE_PAGINI;
+
+const are = (obiect: object, cheie: string) => Object.prototype.hasOwnProperty.call(obiect, cheie);
+
 const MAX_ELEMENTE = 80;
 const MAX_ETICHETA = 40;
 // href-urile din meniu: litere mici, cifre, „-”, „/”, „?”, „=”, „&”. Orice altceva e refuzat (nu ajunge niciodată în HTML ca atare, dar rămâne strict).
@@ -27,6 +39,8 @@ export type PersonalizareOrg = {
   navAscunse?: string[];
   navEtichete?: Record<string, string>;
   dashboard?: { ascunse?: BlocDashboard[]; ordine?: BlocDashboard[] };
+  // pagină → varianta activă (vezi VARIANTE_PAGINI); lipsa înseamnă pagina standard.
+  variante?: Record<string, string>;
 };
 
 export type RezultatValidare = { ok: true; valoare: PersonalizareOrg } | { ok: false; eroare: string };
@@ -44,7 +58,7 @@ function curataEticheta(x: unknown): string | null {
 // Validează și normalizează o configurare primită de la client sau citită din baza de date. Refuză orice nu e recunoscut, în loc să ignore în tăcere.
 export function valideazaPersonalizare(brut: unknown): RezultatValidare {
   if (!esteObiect(brut)) return { ok: false, eroare: "Configurarea trebuie să fie un obiect." };
-  const permise = new Set(["v", "familie", "navAscunse", "navEtichete", "dashboard"]);
+  const permise = new Set(["v", "familie", "navAscunse", "navEtichete", "dashboard", "variante"]);
   for (const k of Object.keys(brut)) if (!permise.has(k)) return { ok: false, eroare: `Câmp necunoscut: ${k}.` };
   if (brut.v !== VERSIUNE_PERSONALIZARE) return { ok: false, eroare: "Versiune de configurare necunoscută." };
 
@@ -106,7 +120,25 @@ export function valideazaPersonalizare(brut: unknown): RezultatValidare {
     if (dash.ascunse || dash.ordine) rez.dashboard = dash;
   }
 
+  if (brut.variante !== undefined) {
+    if (!esteObiect(brut.variante)) return { ok: false, eroare: "Lista de variante e invalidă." };
+    const variante: Record<string, string> = {};
+    for (const [pagina, varianta] of Object.entries(brut.variante)) {
+      if (!are(VARIANTE_PAGINI, pagina)) return { ok: false, eroare: `Pagină necunoscută la variante: ${pagina}.` };
+      const optiuni = VARIANTE_PAGINI[pagina as PaginaCuVarianta].optiuni;
+      if (typeof varianta !== "string" || !are(optiuni, varianta)) return { ok: false, eroare: `Variantă necunoscută pentru ${pagina}.` };
+      variante[pagina] = varianta;
+    }
+    if (Object.keys(variante).length) rez.variante = variante;
+  }
+
   return { ok: true, valoare: rez };
+}
+
+// Varianta activă a unei pagini pentru o organizație, sau null pentru pagina standard. Valorile necunoscute (de exemplu o variantă scoasă din cod) dau null.
+export function variantaPagina(pers: PersonalizareOrg | null | undefined, pagina: PaginaCuVarianta): string | null {
+  const v = pers?.variante?.[pagina];
+  return v && are(VARIANTE_PAGINI[pagina].optiuni, v) ? v : null;
 }
 
 // Configurarea efectivă: cea din baza de date, peste cea veche din fișier (lib/org-customizations.ts), care rămâne valabilă pentru conturile care o au.
@@ -122,6 +154,7 @@ export function combinaPersonalizari(
     ...(navAscunse.length ? { navAscunse } : {}),
     ...(Object.keys(navEtichete).length ? { navEtichete } : {}),
     ...(dinBaza?.dashboard ? { dashboard: dinBaza.dashboard } : {}),
+    ...(dinBaza?.variante ? { variante: dinBaza.variante } : {}),
   };
 }
 
