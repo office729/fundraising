@@ -42,6 +42,9 @@ const csp = [
 // Conține doar formularul unei campanii active; toate celelalte pagini rămân cu `frame-ancestors 'none'`.
 const cspWidget = csp.replace("frame-ancestors 'none'", "frame-ancestors *");
 
+// Previzualizarea de suport (app/platform-admin/previzualizare) se arată în iframe în editorul de aspect, deci doar de pe același site (nu de pe alt domeniu).
+const cspPrevizualizare = csp.replace("frame-ancestors 'none'", "frame-ancestors 'self'");
+
 const securityHeaders = [
   { key: "Content-Security-Policy", value: csp },
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
@@ -70,7 +73,14 @@ const nextConfig: NextConfig = {
     const cacheStatic = [{ key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" }];
     return [
       // Toate paginile, în afară de widget: cu X-Frame-Options și frame-ancestors 'none'.
-      { source: "/:path((?!strangere-fonduri/[^/]+/[^/]+/embed$).*)", headers: securityHeaders },
+      { source: "/:path((?!strangere-fonduri/[^/]+/[^/]+/embed$|platform-admin/previzualizare/[^/]+$).*)", headers: securityHeaders },
+      // Previzualizarea de suport: încorporabilă doar din același site (SAMEORIGIN / frame-ancestors 'self').
+      {
+        source: "/platform-admin/previzualizare/:org",
+        headers: securityHeaders.map((h) =>
+          h.key === "X-Frame-Options" ? { ...h, value: "SAMEORIGIN" } : h.key === "Content-Security-Policy" ? { ...h, value: cspPrevizualizare } : h,
+        ),
+      },
       // Widgetul: aceleași antete, dar fără X-Frame-Options și cu frame-ancestors deschis.
       {
         source: "/strangere-fonduri/:org/:page/embed",
