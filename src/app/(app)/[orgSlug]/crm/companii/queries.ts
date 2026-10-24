@@ -1,3 +1,4 @@
+import { listeazaDefinitii } from "@/lib/campuri-personalizate-server";
 import { and, desc, eq, inArray, or, sql, type SQL } from "drizzle-orm";
 
 import { withOrgSession, type OrgContext } from "@/lib/auth/guard";
@@ -368,7 +369,8 @@ export const getCompanieDetaliu = withOrgSession(async (ctx, segment: string) =>
         .limit(100),
     [],
   );
-  return { companie, sponsorizari, notite, contacte: contacteFirma, responsabili, jurnalEtape, campanii, segmentCanonic, orgNume: ctx.orgName, userEmail: ctx.userEmail };
+  const campuriDefs = await listeazaDefinitii(ctx.db, ctx.orgId, "companie", true).catch(() => []);
+  return { companie, sponsorizari, notite, contacte: contacteFirma, responsabili, jurnalEtape, campanii, campuriDefs, segmentCanonic, orgNume: ctx.orgName, userEmail: ctx.userEmail };
 });
 
 

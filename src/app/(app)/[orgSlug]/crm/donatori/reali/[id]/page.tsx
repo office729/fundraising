@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 
-import { analizeazaDonator } from "@/lib/analiza-donator";
+import { analizeazaDonator, type NivelRisc } from "@/lib/analiza-donator";
 import { requireOrgAccess } from "@/lib/auth/guard";
 import { areModul } from "@/lib/billing/packages";
 import { pachetPentruModule } from "@/lib/billing/trial";
@@ -19,17 +19,27 @@ import { titluAbsolut } from "@/lib/page-titles";
 import { getDonatorRealDetaliu } from "../../queries";
 import { DonatorTabs } from "./donator-tabs";
 import { GdprPanelDonator } from "./gdpr-panel";
+import { esteStareAdresa } from "@/lib/igiena-email";
+
+import { CampuriPersonalizateCard } from "../../../components/campuri-personalizate-card";
+import { valoriDinJson } from "@/lib/campuri-personalizate";
+
+import { AdresaEmailPanel } from "./adresa-panel";
+import { CronologiePanel } from "./cronologie-panel";
 import { NotitePanelDonatorReal } from "./notite-panel";
 
 const STATUS_TONE: Record<string, StatusTone> = { in_asteptare: "amber", reusita: "green", esuata: "red", rambursata: "orange" };
+const TON_RISC: Record<NivelRisc, StatusTone> = { scazut: "green", mediu: "amber", ridicat: "red", necunoscut: "neutral" };
+const ETICHETA_RISC: Record<NivelRisc, string> = { scazut: "Risc scăzut", mediu: "Risc mediu", ridicat: "Risc ridicat", necunoscut: "Risc necunoscut" };
 
 export default async function DonatorRealProfilPage({ params }: { params: Promise<{ orgSlug: string; id: string }> }) {
   const { orgSlug, id } = await params;
   const data = await getDonatorRealDetaliu(orgSlug, id);
   if (!data) notFound();
-  const { donator, donatii, notite, poateAdministra } = data;
+  const { donator, donatii, notite, cronologie, campuriDefs, poateAdministra } = data;
   const access = await requireOrgAccess(orgSlug);
   const areAnaliza = areModul(pachetPentruModule(access.orgPackage, access.userEmail), "analiza-donator");
+  const areCampuri = areModul(pachetPentruModule(access.orgPackage, access.userEmail), "campuri-personalizate");
   const analiza = areAnaliza ? analizeazaDonator({ primaAt: donator.primaDonatieLa, ultimaAt: donator.ultimaDonatieLa, nr: donator.numarDonatii, total: donator.totalDonat }) : null;
   const locale = await getLocale();
   const dict = DONATORI_REALI_DICT[locale].detail;
@@ -52,6 +62,21 @@ export default async function DonatorRealProfilPage({ params }: { params: Promis
                 {donator.consimtamantWhatsapp && (
                   <Badge tone="green" icon={false}>
                     WhatsApp
+                  </Badge>
+                )}
+                {analiza && analiza.risc !== "necunoscut" && (
+                  <Badge tone={TON_RISC[analiza.risc]} icon={false}>
+                    {ETICHETA_RISC[analiza.risc]}
+                  </Badge>
+                )}
+                {donator.emailStare !== "ok" && (
+                  <Badge tone="amber" icon={false}>
+                    {donator.emailStare === "reclamat" ? "A marcat mesajul ca spam" : "Adresă respinsă"}
+                  </Badge>
+                )}
+                {donator.dezabonatEmailLa && (
+                  <Badge tone="amber" icon={false}>
+                    Dezabonat
                   </Badge>
                 )}
               </div>
@@ -90,16 +115,32 @@ export default async function DonatorRealProfilPage({ params }: { params: Promis
         </p>
       </Card>
 
+      <AdresaEmailPanel
+        donatorId={donator.id}
+        email={donator.email}
+        stare={esteStareAdresa(donator.emailStare) ? donator.emailStare : "ok"}
+        motiv={donator.emailStareMotiv}
+        acord={donator.consimtamantEmail}
+        acordSursa={donator.consimtamantEmailSursa}
+        dezabonat={donator.dezabonatEmailLa !== null}
+        frecventa={donator.frecventaEmail === "rara" ? "rara" : "normala"}
+        poateAdministra={poateAdministra}
+      />
+
+      {areCampuri && <CampuriPersonalizateCard entitate="donator" idEntitate={donator.id} defs={campuriDefs} valori={valoriDinJson(donator.campuri)} />}
+
       {poateAdministra && <GdprPanelDonator donatorId={donator.id} nume={donator.nume} />}
 
       {/* Panourile se randează pe server și se trimit ca noduri gata făcute — Tabs (client) nu poate
           primi o funcție ca `children` dintr-o componentă server (eroare 500 în Next). */}
       <DonatorTabs
         tabs={[
+          { key: "cronologie", label: `Cronologie (${cronologie.length})` },
           { key: "donatii", label: dict.tabs.donatii(donatii.length) },
-          { key: "notite", label: dict.tabs.notite(notite.length) },
+          { key: "notite", label: `Notițe și apeluri${notite.length ? ` (${notite.length})` : ""}` },
         ]}
         panels={{
+          cronologie: <CronologiePanel evenimente={cronologie} />,
           donatii: (
             donatii.length ? (
               <Card padded={false}>
@@ -117,6 +158,7 @@ export default async function DonatorRealProfilPage({ params }: { params: Promis
                         <td className="px-4 py-2.5 text-[var(--ci-text-muted)]">{formatDataOra(d.createdAt.toISOString())}</td>
                         <td className="ci-tabular px-4 py-2.5 font-medium text-[var(--ci-text)]">
                           {d.suma.toLocaleString("ro-RO")} lei{d.recurenta ? ` · ${dict.donatii.recurenta}` : ""}
+                          {d.proiect && <span className="block text-[12px] font-normal text-[var(--ci-text-muted)]">{d.proiect}</span>}
                         </td>
                         <td className="px-4 py-2.5">
                           <Badge tone={STATUS_TONE[d.status]} icon={false}>

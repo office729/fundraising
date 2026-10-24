@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import StripeSDK from "stripe";
 import type Stripe from "stripe";
 
+import { proceseazaLivrari } from "@/lib/api-publica-server";
 import { raporteazaAvertisment, raporteazaAvertismentLimitat, raporteazaEroare } from "@/lib/monitoring";
 import { stripeOrgDupaId, stripeOrgDupaSlug } from "@/lib/org-stripe";
 import { proceseazaEvenimentDonatie } from "@/lib/stripe-donation-events";
@@ -54,6 +55,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ orgSlug
 
   const ok = await proceseazaEvenimentDonatie(event, { orgId: stripeOrg.orgId, stripe: stripeOrg.stripe });
   if (!ok) return NextResponse.json({ error: "processing_failed" }, { status: 500 });
+
+  // Webhook-urile organizației (evenimentul „donatie.reusita” e deja în coadă, în aceeași tranzacție cu donația): prima încercare de trimitere, imediat după răspunsul către Stripe.
+  // Ce nu reușește aici se reia la rularea zilnică (cron webhook-livrari) sau din butonul din Setări.
+  const orgId = stripeOrg.orgId;
+  after(() => proceseazaLivrari(orgId).catch((e) => raporteazaEroare("webhook-livrari", e)));
 
   return NextResponse.json({ received: true });
 }

@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 
 import { and, eq, sql } from "drizzle-orm";
 
+import { emiteEveniment } from "@/lib/api-publica-server";
 import { ACORD_EMAIL_VERSIUNE, type SursaAcord } from "@/lib/consimtamant-email";
 import type { db as Db } from "@/lib/db";
 import { donatoriReali, fundraisingPages, organizations } from "@/lib/db/schema";
@@ -93,6 +94,9 @@ export async function crediteazaPaginaSiDonator(
         },
       });
   }
+
+  // Evenimentul „donatie.reusita” pentru webhook-urile organizației. Savepoint: dacă inserarea eșuează, donația rămâne salvată.
+  await (tx as typeof Db).transaction((sp) => emiteEveniment(sp as never, params.orgId, "donatie.reusita", { suma: params.suma, moneda: "RON", donator_email: params.emailDonator, donator_nume: params.numeDonator, campanie: rezultat[0]?.pageTitlu ?? null, campanie_id: params.pageId })).catch(() => {});
 
   return rezultat[0] ?? null;
 }

@@ -8,6 +8,8 @@ import { emailSuppression, parcursuriDonatori, parcursuriTrimiteri } from "@/lib
 import { hashSuprimare, linkDezabonare } from "@/lib/dezabonare";
 import { trimiteEmail } from "@/lib/email";
 import { anteteDezabonare } from "@/lib/formular230-email-template";
+import { clasificaEroareTrimitere, motivRespingere } from "@/lib/igiena-email";
+import { marcheazaAdresa } from "@/lib/igiena-email-server";
 import { escHtml } from "@/lib/html-escape";
 import { raporteazaAvertisment } from "@/lib/monitoring";
 import {
@@ -101,7 +103,8 @@ export async function citesteConfig(exec: Exec, orgId: string): Promise<Record<C
   return rez;
 }
 
-// Filtrele comune: acord de e-mail dat de donator, nedezabonat, nu „nu contactat”, nu „a răspuns”, nu primit alt parcurs recent, nu depășit plafonul lunar.
+// Filtrele comune: acord de e-mail dat de donator, nedezabonat, adresă în regulă (nu respinsă sau reclamată), nu „nu contactat”, nu „a răspuns”, nu primit alt parcurs recent,
+// nu depășit plafonul lunar (1 la 30 de zile pentru cine a ales „mai rar”, 3 pentru ceilalți).
 function filtreComune(orgId: string, cheie: CheieParcurs, pas: number, acum: Date) {
   const limitaPauza = new Date(acum.getTime() - PAUZA_INTRE_PARCURSURI_ZILE * 86_400_000);
   const limita30 = new Date(acum.getTime() - 30 * 86_400_000);
@@ -112,9 +115,9 @@ function filtreComune(orgId: string, cheie: CheieParcurs, pas: number, acum: Dat
       ? sql`not exists (select 1 from parcursuri_trimiteri x where x.org_id = ${orgId} and x.email = lower(dr.email) and x.stare <> 'control' and x.creat_la > ${dataIso(limitaPauza)}::timestamptz)`
       : sql`not exists (select 1 from parcursuri_trimiteri x where x.org_id = ${orgId} and x.email = lower(dr.email) and x.stare <> 'control' and x.cheie <> ${cheie} and x.creat_la > ${dataIso(limitaPauza)}::timestamptz)`;
   return sql`dr.org_id = ${orgId} and dr.consimtamant_email = true and coalesce(dr.consimtamant_email_sursa, '') <> 'declarat_echipa'
-    and dr.dezabonat_email_la is null and dr.nu_contactat = false and dr.a_raspuns = false
+    and dr.dezabonat_email_la is null and dr.nu_contactat = false and dr.a_raspuns = false and dr.email_stare = 'ok'
     and not exists (select 1 from parcursuri_trimiteri y where y.org_id = ${orgId} and y.cheie = ${cheie} and y.pas = ${pas} and y.email = lower(dr.email))
-    and (select count(*) from parcursuri_trimiteri z where z.org_id = ${orgId} and z.email = lower(dr.email) and z.stare = 'trimis' and z.creat_la > ${dataIso(limita30)}::timestamptz) < ${MAX_EMAILURI_30_ZILE}
+    and (select count(*) from parcursuri_trimiteri z where z.org_id = ${orgId} and z.email = lower(dr.email) and z.stare = 'trimis' and z.creat_la > ${dataIso(limita30)}::timestamptz) < (case when dr.frecventa_email = 'rara' then 1 else ${MAX_EMAILURI_30_ZILE} end)
     and ${pauza}`;
 }
 
@@ -247,7 +250,7 @@ export function htmlParcurs(p: { orgName: string; corp: string; valori: ValoriPa
       ${butonHtml}
       <p style="color:#64748b;font-size:12px;margin-top:28px;border-top:1px solid #e2e8f0;padding-top:14px;line-height:1.5;">
         Primești acest mesaj de la ${identificare}, pentru că ai donat și ai ales să primești mesaje de la ei. Mesajul a fost trimis prin platforma Alexandrit, în numele organizației.
-        Poți să te retragi oricând: <a href="${escHtml(p.linkDezabonare)}" style="color:#64748b;">Nu mai vreau e-mailuri</a>.
+        Poți alege cât de des primești mesaje sau te poți retrage oricând: <a href="${escHtml(p.linkDezabonare)}" style="color:#64748b;">Alege cât de des vrei mesaje</a>.
       </p>
     </div>`;
 }
@@ -336,6 +339,9 @@ export async function ruleazaParcursuriOrg(params: { org: OrganizatieParcursuri;
           // Respins clar: nu a plecat nimic, eliberăm revendicarea. La timeout o lăsăm (poate a plecat): mai bine un pas lipsă decât un mesaj dublu.
           const respins = esteRespingereClara(e);
           if (respins) await elibereaza();
+          // Dovadă clară că adresa nu există (5.1.x, „user unknown”): o marcăm la donator, ca să nu mai fie încercată. O respingere de reputație sau temporară nu o marchează.
+          const fel = clasificaEroareTrimitere(e);
+          if (fel === "adresa_inexistenta") await inOrg((tx) => marcheazaAdresa(tx, org.id, c.email, "respins", motivRespingere(fel))).catch(() => {});
           raporteazaAvertisment("parcursuri", `trimitere eșuată (${cheie}, pas ${c.pas}, ${respins ? "respins" : "necunoscut"})`, { cod: String((e as { code?: unknown })?.code ?? "") });
           rez.esuate++;
           continue;
@@ -355,17 +361,18 @@ export async function ruleazaParcursuriOrg(params: { org: OrganizatieParcursuri;
 
 // Donatorii care pot primi parcursuri automate, din totalul bazei: acord explicit dat de donator, nedezabonat, nemarcat „nu contactat”, cu adresă de forma unui e-mail.
 // „Fără acord” (nu au fost întrebați) și „refuz” sunt separate: primii nu primesc nimic automat, dar pot fi invitați să bifeze la următoarea donație.
-export type ContactabiliParcursuri = { total: number; pot: number; faraAcord: number; refuz: number; dezabonati: number; acordDeclarat: number };
+export type ContactabiliParcursuri = { total: number; pot: number; faraAcord: number; refuz: number; dezabonati: number; acordDeclarat: number; adreseProblematice: number };
 export async function contactabiliParcursuri(exec: Exec, orgId: string): Promise<ContactabiliParcursuri> {
   const [r] = (await exec.execute(sql`
     select count(*)::int as total,
-      (count(*) filter (where consimtamant_email = true and coalesce(consimtamant_email_sursa, '') <> 'declarat_echipa' and dezabonat_email_la is null and nu_contactat = false and email ~ '^[^@[:space:]]+@[^@[:space:]]+[.][^@[:space:]]+$'))::int as pot,
+      (count(*) filter (where consimtamant_email = true and coalesce(consimtamant_email_sursa, '') <> 'declarat_echipa' and dezabonat_email_la is null and nu_contactat = false and email_stare = 'ok' and email ~ '^[^@[:space:]]+@[^@[:space:]]+[.][^@[:space:]]+$'))::int as pot,
       (count(*) filter (where consimtamant_email is null))::int as fara_acord,
       (count(*) filter (where consimtamant_email = false))::int as refuz,
       (count(*) filter (where dezabonat_email_la is not null))::int as dezabonati,
-      (count(*) filter (where consimtamant_email = true and consimtamant_email_sursa = 'declarat_echipa'))::int as acord_declarat
-    from donatori_reali where org_id = ${orgId}`)) as unknown as { total: number; pot: number; fara_acord: number; refuz: number; dezabonati: number; acord_declarat: number }[];
-  return { total: r?.total ?? 0, pot: r?.pot ?? 0, faraAcord: r?.fara_acord ?? 0, refuz: r?.refuz ?? 0, dezabonati: r?.dezabonati ?? 0, acordDeclarat: r?.acord_declarat ?? 0 };
+      (count(*) filter (where consimtamant_email = true and consimtamant_email_sursa = 'declarat_echipa'))::int as acord_declarat,
+      (count(*) filter (where email_stare <> 'ok'))::int as adrese_problematice
+    from donatori_reali where org_id = ${orgId}`)) as unknown as { total: number; pot: number; fara_acord: number; refuz: number; dezabonati: number; acord_declarat: number; adrese_problematice: number }[];
+  return { total: r?.total ?? 0, pot: r?.pot ?? 0, faraAcord: r?.fara_acord ?? 0, refuz: r?.refuz ?? 0, dezabonati: r?.dezabonati ?? 0, acordDeclarat: r?.acord_declarat ?? 0, adreseProblematice: r?.adrese_problematice ?? 0 };
 }
 
 // Conversiile unui grup: donatorii care au un rând cu starea cerută (trimis sau control) și au donat în FEREASTRA_CONVERSIE_ZILE zile de la primul lui rând.

@@ -8,6 +8,8 @@ import { trimiteEmailuriInLot } from "@/lib/email";
 import { hashSuprimare, linkDezabonare } from "@/lib/dezabonare";
 import { SLUG_PRINCIPAL } from "@/lib/formular230-constants";
 import { anteteDezabonare, htmlEmailF230, subiectEmailF230 } from "@/lib/formular230-email-template";
+import { clasificaEroareTrimitere, motivRespingere } from "@/lib/igiena-email";
+import { marcheazaAdresa } from "@/lib/igiena-email-server";
 import { raporteazaAvertisment } from "@/lib/monitoring";
 
 // Trimiterea campaniei de reamintire F230 — comună cron-ului zilnic și
@@ -82,6 +84,8 @@ export async function trimiteCampanieF230(params: {
           eq(donatoriReali.orgId, org.id),
           isNull(donatoriReali.dezabonatEmailLa),
           eq(donatoriReali.consimtamantEmail, true),
+          // Adresele respinse sau reclamate nu primesc nimic (vezi lib/igiena-email.ts).
+          eq(donatoriReali.emailStare, "ok"),
         ),
       );
     const donatori = toti.filter((d) => !suprimati.has(hashSuprimare(org.id, d.email)));
@@ -146,6 +150,11 @@ export async function trimiteCampanieF230(params: {
       html: (d) => htmlEmailF230(org.name, d.nume, link, linkDezabonare(baseUrl, org.id, d.email)),
       headers: (d) => anteteDezabonare(linkDezabonare(baseUrl, org.id, d.email)),
       opreste: () => Date.now() > deadline,
+      // O adresă care nu există se marchează la donator (doar la dovadă clară, nu la o respingere de reputație sau una temporară).
+      laEsec: async (d, e) => {
+        const fel = clasificaEroareTrimitere(e);
+        if (fel === "adresa_inexistenta") await intrucat((tx) => marcheazaAdresa(tx, org.id, d.email, "respins", motivRespingere(fel)));
+      },
       // Jurnalul per email + semnul de viață al revendicării.
       laTrimis: (d) =>
         intrucat(async (tx) => {

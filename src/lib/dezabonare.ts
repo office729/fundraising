@@ -6,6 +6,8 @@ import { and, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { donatoriReali, emailSuppression } from "@/lib/db/schema";
+import { emiteEveniment } from "@/lib/api-publica-server";
+import type { FrecventaEmail } from "@/lib/igiena-email";
 
 // Link de dezabonare din emailurile de campanie (Formular 230 etc.) — semnat
 // HMAC, fără stare: nu ne trebuie un tabel de tokeni. Semnătura leagă
@@ -62,5 +64,29 @@ export async function dezaboneazaDonator(orgId: string, email: string): Promise<
       .insert(emailSuppression)
       .values({ orgId, emailHash: hashSuprimare(orgId, email), motiv: "dezabonare" })
       .onConflictDoNothing();
+    // Eveniment pentru webhook-urile organizației (contextul ei e necesar doar pentru coada de livrări). Savepoint: un eșec aici nu împiedică dezabonarea.
+    await tx.execute(sql`select set_config('app.current_org_id', ${orgId}, true)`);
+    await tx.transaction((sp) => emiteEveniment(sp as never, orgId, "donator.dezabonat", { email: email.toLowerCase() })).catch(() => {});
+  });
+}
+
+// Pagina „Cât de des vrei mesaje”: ce știm despre adresă (numele organizației și alegerea de acum), ca formularul să arate starea curentă. Același context de încredere ca la
+// dezabonare (public_lookup, predicate explicite pe organizație și adresă); linkul semnat e singura cheie de acces.
+export type StarePreferinte = { organizatie: string; frecventa: FrecventaEmail; dezabonat: boolean };
+export async function citestePreferinte(orgId: string, email: string): Promise<StarePreferinte | null> {
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
+    const [org] = (await tx.execute(sql`select name from organizations where id = ${orgId}`)) as unknown as { name: string }[];
+    if (!org) return null;
+    const [d] = (await tx.execute(sql`select frecventa_email, dezabonat_email_la is not null as dezabonat from donatori_reali where org_id = ${orgId} and lower(email) = ${email.toLowerCase()} limit 1`)) as unknown as { frecventa_email: FrecventaEmail; dezabonat: boolean }[];
+    return { organizatie: org.name, frecventa: d?.frecventa_email === "rara" ? "rara" : "normala", dezabonat: Boolean(d?.dezabonat) };
+  });
+}
+
+// „Mai rar”: cel mult un mesaj de parcurs la 30 de zile; „normala”: cum sunt setate parcursurile. Dezabonarea completă rămâne separată (dezaboneazaDonator).
+export async function seteazaFrecventaDonator(orgId: string, email: string, frecventa: FrecventaEmail): Promise<void> {
+  await db.transaction(async (tx) => {
+    await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
+    await tx.execute(sql`update donatori_reali set frecventa_email = ${frecventa}, frecventa_email_la = now() where org_id = ${orgId} and lower(email) = ${email.toLowerCase()}`);
   });
 }

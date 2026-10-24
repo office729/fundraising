@@ -1,6 +1,11 @@
+import { sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 import { withOrgSession } from "@/lib/auth/guard";
+import { areModul } from "@/lib/billing/packages";
+import { pachetPentruModule } from "@/lib/billing/trial";
+import { formateazaValoare, valoriDinJson, type ValoriCamp } from "@/lib/campuri-personalizate";
+import { listeazaDefinitii } from "@/lib/campuri-personalizate-server";
 import { interogareLista, parseFiltruPf } from "@/lib/donatori-pf";
 
 import { contextPf, serializeazaRand } from "../../../(app)/[orgSlug]/crm/donatori/queries-pf";
@@ -20,14 +25,27 @@ const exporta = withOrgSession(async (ctx, url: string) => {
   const c = await contextPf(ctx);
   const brut = (await ctx.db.execute(interogareLista(ctx.orgId, { ...f, pagina: 1 }, c, { paginat: false }))) as unknown as Record<string, unknown>[];
   let randuri = brut.slice(0, MAX_RANDURI).map(serializeazaRand);
-  if (canal === "email") randuri = randuri.filter((r) => r.email && r.consimtamant_email === true && !r.dezabonat_email_la && !r.nu_contactat);
+  if (canal === "email") {
+    // Adresele respinse sau reclamate nu primesc mesaje (vezi lib/igiena-email.ts).
+    const problematice = new Set(((await ctx.db.execute(sql`select lower(email) as email from donatori_reali where org_id = ${ctx.orgId} and email_stare <> 'ok'`)) as unknown as { email: string }[]).map((x) => x.email));
+    randuri = randuri.filter((r) => r.email && r.consimtamant_email === true && !r.dezabonat_email_la && !r.nu_contactat && !problematice.has(String(r.email).toLowerCase()));
+  }
   if (canal === "telefon") randuri = randuri.filter((r) => (r.telefon ?? "").trim() !== "" && !r.nu_contactat);
 
+  // Câmpurile personalizate active ale organizației (dacă pachetul are modulul): câte o coloană, după cele standard.
+  const areCampuri = areModul(pachetPentruModule(ctx.orgPackage, ctx.userEmail), "campuri-personalizate");
+  const defsCampuri = areCampuri ? await listeazaDefinitii(ctx.db, ctx.orgId, "donator", true).catch(() => []) : [];
+  const valoriCampuri = new Map<string, ValoriCamp>();
+  if (defsCampuri.length > 0) {
+    const brute = (await ctx.db.execute(sql`select lower(email) as email, campuri from donatori_reali where org_id = ${ctx.orgId} and campuri <> '{}'::jsonb`)) as unknown as { email: string; campuri: unknown }[];
+    for (const b of brute) valoriCampuri.set(b.email, valoriDinJson(b.campuri));
+  }
+
   const XLSX = await import("xlsx");
-  const antet = ["Email", "Nume", "Telefon", "Localitate", "Județ", "Total (lei)", "Nr. donații", "Ultima donație (lei)", "Data ultimei donații", "Prima donație", "Primul proiect", "Ultimul proiect", "An cohortă", "Lunar", "Sunat", "Mulțumit", "A răspuns", "Reapel până la", "Win-back", "Responsabil"];
+  const antet = ["Email", "Nume", "Telefon", "Localitate", "Județ", "Total (lei)", "Nr. donații", "Ultima donație (lei)", "Data ultimei donații", "Prima donație", "Primul proiect", "Ultimul proiect", "An cohortă", "Lunar", "Sunat", "Mulțumit", "A răspuns", "Reapel până la", "Win-back", "Responsabil", ...defsCampuri.map((d) => d.eticheta)];
   const date: (string | number)[][] = [
     antet,
-    ...randuri.map((r) => [r.email, r.nume, r.telefon ?? "", r.localitate ?? "", r.judet ?? "", r.total, r.nr, r.ultima_suma ?? "", dataRo(r.ultima), dataRo(r.prima), r.primul_proiect ?? "", r.ultimul_proiect ?? "", r.an ?? "", r.lunar ? "Da" : "Nu", dataRo(r.sunat_la), dataRo(r.multumit_la), r.a_raspuns ? "Da" : "Nu", r.reapel_la ?? "", r.wb_stage ?? "", r.responsabil ?? ""]),
+    ...randuri.map((r) => [r.email, r.nume, r.telefon ?? "", r.localitate ?? "", r.judet ?? "", r.total, r.nr, r.ultima_suma ?? "", dataRo(r.ultima), dataRo(r.prima), r.primul_proiect ?? "", r.ultimul_proiect ?? "", r.an ?? "", r.lunar ? "Da" : "Nu", dataRo(r.sunat_la), dataRo(r.multumit_la), r.a_raspuns ? "Da" : "Nu", r.reapel_la ?? "", r.wb_stage ?? "", r.responsabil ?? "", ...defsCampuri.map((d) => formateazaValoare(d, valoriCampuri.get(String(r.email).toLowerCase())?.[d.cheie]))]),
   ];
   const ws = XLSX.utils.aoa_to_sheet(date);
   ws["!cols"] = antet.map((h, i) => ({ wch: i === 0 ? 32 : i === 1 ? 26 : Math.max(12, Math.min(28, h.length + 2)) }));

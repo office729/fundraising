@@ -39,6 +39,8 @@ export const companies = pgTable(
     linkedin: text("linkedin"),
     facebook: text("facebook"),
     administrator: text("administrator"),
+    // Valorile câmpurilor personalizate ale organizației (cheie → valoare); definițiile sunt în campuri_personalizate (lib/campuri-personalizate.ts).
+    campuri: jsonb("campuri").$type<Record<string, string | number | boolean>>().notNull().default({}),
     // Financiar
     ca: bigint("ca", { mode: "number" }),
     profit: bigint("profit", { mode: "number" }),

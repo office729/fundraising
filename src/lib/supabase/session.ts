@@ -99,6 +99,8 @@ export async function updateSession(request: NextRequest, rewriteTo?: URL) {
     // Cron-uri Vercel — invocate de infrastructura Vercel, nu de un vizitator
     // cu sesiune; ruta își face propria verificare (CRON_SECRET).
     path.startsWith("/api/cron/") ||
+    // API-ul public (/api/v1/…): apelat de sisteme, nu de utilizatori cu sesiune; fiecare rută verifică cheia API (Authorization: Bearer) și permisiunea ei.
+    path.startsWith("/api/v1/") ||
     // Formularul 230: link public, distribuit — cine completează NU e
     // autentificat niciodată. Pagina publică (/f230/<orgSlug>/<beneficiarSlug>)
     // și ruta ei de trimitere (/api/<orgSlug>/formular230/<beneficiarSlug>,

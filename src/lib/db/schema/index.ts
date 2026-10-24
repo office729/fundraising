@@ -35,3 +35,4 @@ export * from "./prospectare";
 export * from "./parcursuri";
 export * from "./interese";
 export * from "./dubluri";
+export * from "./api-campuri";

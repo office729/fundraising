@@ -213,6 +213,14 @@ export const donatoriReali = pgTable(
     consimtamantEmailLa: timestamp("consimtamant_email_la", { withTimezone: true }),
     consimtamantEmailSursa: text("consimtamant_email_sursa"),
     consimtamantEmailVersiune: text("consimtamant_email_versiune"),
+    // Starea adresei: ok | respins | reclamat (vezi lib/igiena-email.ts); doar „ok” primește mesaje automate. frecventaEmail: normala | rara (alegerea donatorului).
+    emailStare: text("email_stare").notNull().default("ok"),
+    emailStareLa: timestamp("email_stare_la", { withTimezone: true }),
+    emailStareMotiv: text("email_stare_motiv"),
+    frecventaEmail: text("frecventa_email").notNull().default("normala"),
+    frecventaEmailLa: timestamp("frecventa_email_la", { withTimezone: true }),
+    // Valorile câmpurilor personalizate ale organizației (cheie → valoare); definițiile sunt în campuri_personalizate (lib/campuri-personalizate.ts).
+    campuri: jsonb("campuri").$type<Record<string, string | number | boolean>>().notNull().default({}),
     // Setat când donatorul s-a dezabonat de la emailurile de campanie (link
     // semnat din email — lib/dezabonare.ts). Campaniile îi sar peste, pentru
     // totdeauna; o donație nouă NU îl resetează (webhook-ul nu atinge coloana).
@@ -251,6 +259,9 @@ export const donatorNotite = pgTable(
       .notNull()
       .references(() => donatoriReali.id, { onDelete: "cascade" }),
     text: text("text").notNull(),
+    // nota | apel | intalnire | email; rezultatul apare doar la apeluri (vezi lib/cronologie-donator.ts)
+    tip: text("tip").notNull().default("nota"),
+    rezultat: text("rezultat"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     createdBy: uuid("created_by").references(() => appUsers.id),
     editatLa: timestamp("editat_la", { withTimezone: true }),

@@ -472,6 +472,11 @@ export function ParcursuriClient({ orgSlug, date }: { orgSlug: string; date: Dat
             {c.acordDeclarat > 0 ? `, ${nr(c.acordDeclarat)} au acordul doar declarat de echipă` : ""}). Donatorii importați nu intră până nu donează online și nu bifează.
           </p>
         )}
+        {c && c.adreseProblematice > 0 && (
+          <p className="mt-2 text-[12.5px] text-[var(--ci-text-muted)]">
+            {nr(c.adreseProblematice)} {c.adreseProblematice === 1 ? "adresă respinsă sau reclamată nu primește" : "adrese respinse sau reclamate nu primesc"} mesaje. Le vezi și le poți repara în fișa fiecărui donator.
+          </p>
+        )}
         <details className="mt-3 text-[12.5px] text-[var(--ci-text-muted)]">
           <summary className="min-h-9 cursor-pointer font-semibold text-[var(--ci-text)]">Cum funcționează</summary>
           <ul className="mt-1 list-disc space-y-1 pl-5">

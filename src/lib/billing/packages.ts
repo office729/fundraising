@@ -21,7 +21,7 @@ export type ToolId =
 
 // Module incluse începând cu un anumit pachet (pe lângă cotele din PACKAGE_LIMITS). Ce nu e listat aici (CRM-ul de bază, campaniile,
 // Formularul 230, contractele, newsletterul, rapoartele) e în toate pachetele. Probă și plan personalizat: toate deschise.
-export type ModulPachet = "program-lucru" | "kpi" | "instrumente-design" | "voluntari" | "comunicat-presa" | "analiza-baze" | "granturi" | "calendar" | "reclame" | "analiza-donator" | "prioritizare-firme" | "cai-calde" | "prospectare-multi" | "parcursuri-donatori";
+export type ModulPachet = "program-lucru" | "kpi" | "instrumente-design" | "voluntari" | "comunicat-presa" | "analiza-baze" | "granturi" | "calendar" | "reclame" | "analiza-donator" | "prioritizare-firme" | "cai-calde" | "prospectare-multi" | "parcursuri-donatori" | "campuri-personalizate" | "api-webhooks";
 
 export const MODULE_PACHET: Record<ModulPachet, { minim: "crestere" | "impact"; nume: string }> = {
   "program-lucru": { minim: "crestere", nume: "Program de lucru" },
@@ -41,6 +41,10 @@ export const MODULE_PACHET: Record<ModulPachet, { minim: "crestere" | "impact"; 
   "prospectare-multi": { minim: "impact", nume: "Prospectare de decidenți (Lusha, Apollo, Prospeo, Hunter, Waalaxy)" },
   // Serii automate de e-mailuri către donatori (Welcome, Save, Upgrade), cu textele editabile; trimise zilnic doar celor cu acord de e-mail.
   "parcursuri-donatori": { minim: "crestere", nume: "Parcursuri pentru donatori (Welcome, Save, Upgrade)" },
+  // Câmpuri proprii la donatori și firme, completate de echipă și vizibile și în API.
+  "campuri-personalizate": { minim: "crestere", nume: "Câmpuri personalizate la donatori și firme" },
+  // Chei API (citire donatori și donații, câmpuri personalizate) și webhook-uri către sistemele organizației.
+  "api-webhooks": { minim: "impact", nume: "API și webhook-uri" },
 };
 
 const RANG_PACHET: Record<string, number> = { start: 1, crestere: 2, impact: 3 };

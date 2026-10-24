@@ -108,6 +108,8 @@ export async function trimiteEmailuriInLot(params: {
   // Apelat după fiecare email trimis cu succes (ex. jurnal per destinatar). O
   // eroare AICI se propagă (nu e o eroare de trimitere) — apelantul decide.
   laTrimis?: (d: DestinatarEmail) => Promise<void>;
+  // Apelat când trimiterea către un destinatar eșuează, cu eroarea serverului (ex. adresă inexistentă). Erorile din callback sunt ignorate: nu opresc lotul.
+  laEsec?: (d: DestinatarEmail, eroare: unknown) => Promise<void>;
 }): Promise<{ trimise: number; esuate: number; intrerupt: boolean }> {
   const { transporter, from } = getTransporter("lot");
 
@@ -130,8 +132,9 @@ export async function trimiteEmailuriInLot(params: {
         ...(params.headers ? { headers: params.headers(d) } : {}),
       });
       ok = true;
-    } catch {
+    } catch (e) {
       esuate++;
+      await params.laEsec?.(d, e).catch(() => {});
     }
     if (ok) {
       trimise++;

@@ -28,6 +28,8 @@ import { DocumenteFirma } from "../../instrumente/_comun/documente-firma";
 import { PaginiSociale } from "./pagini-sociale";
 import { PipelineCard } from "./pipeline-card";
 import { ScorCard } from "./scor-card";
+import { CampuriPersonalizateCard } from "../../components/campuri-personalizate-card";
+import { valoriDinJson } from "@/lib/campuri-personalizate";
 import { TagPills } from "./tag-pills";
 
 const CONTRACT_TONE: Record<string, StatusTone> = { trimis: "blue", asteptare: "amber", semnat: "green", anulat: "red" };
@@ -56,7 +58,8 @@ export default async function CompanieProfilPage({
   const areProspectare = areModul(pachetPentruModule(access.orgPackage, access.userEmail), "prospectare-multi");
   const prospectare = areProspectare ? await getStareProspectare(orgSlug, data.companie.id) : null;
 
-  const { companie: c, sponsorizari, notite, contacte, responsabili, jurnalEtape, orgNume, userEmail, campanii } = data;
+  const { companie: c, sponsorizari, notite, contacte, responsabili, jurnalEtape, orgNume, userEmail, campanii, campuriDefs } = data;
+  const areCampuri = areModul(pachetPentruModule(access.orgPackage, access.userEmail), "campuri-personalizate");
   const extra = (c.extra ?? {}) as {
     etapeBifate?: string[];
     deAprobat?: PersoanaDeAprobat[];
@@ -185,6 +188,8 @@ export default async function CompanieProfilPage({
         responsabili={responsabili}
         ownerIdInitial={c.ownerId}
       />
+
+      {areCampuri && <CampuriPersonalizateCard entitate="companie" idEntitate={c.id} defs={campuriDefs} valori={valoriDinJson(c.campuri)} />}
 
       <CompanyTabs
         firma={{

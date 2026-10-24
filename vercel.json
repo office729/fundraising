@@ -44,6 +44,10 @@
     {
       "path": "/api/cron/lead-uri-retentie",
       "schedule": "0 3 1 * *"
+    },
+    {
+      "path": "/api/cron/webhook-livrari",
+      "schedule": "30 7 * * *"
     }
   ],
   "regions": [

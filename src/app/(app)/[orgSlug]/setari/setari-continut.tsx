@@ -62,6 +62,8 @@ export async function SetariContinut({ orgSlug }: { orgSlug: string }) {
             ["recomanda", locale === "ro" ? "Recomandă" : "Refer"],
             ...(DPA_ACTIV ? [["dpa", locale === "ro" ? "Acord date (DPA)" : "Data agreement (DPA)"]] : []),
             ["prospectare", locale === "ro" ? "Prospectare" : "Prospecting"],
+            ["campuri", locale === "ro" ? "Câmpuri personalizate" : "Custom fields"],
+            ["api", locale === "ro" ? "API și webhook-uri" : "API and webhooks"],
             ["suport", locale === "ro" ? "Acces suport" : "Support access"],
             ["roluri-integrari", locale === "ro" ? "Roluri și integrări" : "Roles and integrations"],
           ].map(([id, label]) => (
