@@ -45,6 +45,8 @@ const TITLURI = {
   // Fără numele donatorului: titlurile ajung în istoricul browserului și în rapoartele de analiză.
   crmDonatorProfil: { ro: "Donator — CRM", en: "Donor — CRM" },
   crmCompanii: { ro: "CRM Companii", en: "Companies CRM" },
+  crmDonatoriDubluri: { ro: "Donatori dubli — CRM", en: "Duplicate donors — CRM" },
+  crmDonatoriParcursuri: { ro: "Parcursuri pentru donatori — CRM", en: "Donor journeys — CRM" },
   crmDecidenti: { ro: "Decidenți — CRM", en: "Decision makers — CRM" },
   crmBeneficiari: { ro: "Beneficiari & proiecte — CRM", en: "Beneficiaries & projects — CRM" },
   crmDonatii: { ro: "Donații — CRM", en: "Donations — CRM" },

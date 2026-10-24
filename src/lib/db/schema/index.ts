@@ -32,3 +32,4 @@ export * from "./notificari-oprite";
 export * from "./suport";
 export * from "./org-personalizare";
 export * from "./prospectare";
+export * from "./parcursuri";

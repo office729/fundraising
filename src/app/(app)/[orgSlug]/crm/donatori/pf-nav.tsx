@@ -12,6 +12,8 @@ const FILE = [
   { sub: "/rapoarte", label: "Rapoarte" },
   { sub: "/analize", label: "Analize" },
   { sub: "/importuri", label: "Importuri" },
+  { sub: "/dubluri", label: "Dubluri" },
+  { sub: "/parcursuri", label: "Parcursuri" },
 ];
 
 // Vederile CRM Persoane fizice: lista, tabloul de bord, raportul pe proiecte, rapoartele salvate, analizele și importurile.

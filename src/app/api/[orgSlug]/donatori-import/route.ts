@@ -19,7 +19,7 @@ function curataMapare(brut: unknown): Mapare | undefined {
   return m;
 }
 
-const proceseaza = withOrgSession(async (ctx, date: { buf: Buffer; fisier: string; mod: string; mapare?: Mapare; nume: string }) => {
+const proceseaza = withOrgSession(async (ctx, date: { buf: Buffer; fisier: string; mod: string; mapare?: Mapare; nume: string; corecteaza: boolean }) => {
   if (ctx.role !== "owner" && ctx.role !== "admin") return NextResponse.json({ error: "Doar un administrator poate importa donații." }, { status: 403 });
   let fisier;
   try {
@@ -27,7 +27,7 @@ const proceseaza = withOrgSession(async (ctx, date: { buf: Buffer; fisier: strin
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : "Nu am putut citi fișierul." }, { status: 400 });
   }
-  const plan = await planifica(ctx, fisier, date.mapare);
+  const plan = await planifica(ctx, fisier, date.mapare, { corecteaza: date.corecteaza });
   if (date.mod !== "importa") return NextResponse.json({ ok: true, previzualizare: plan.previzualizare });
   if (plan.previzualizare.lipsa.length > 0) return NextResponse.json({ error: "Alege coloanele obligatorii (email, sumă, dată)." }, { status: 400 });
   try {
@@ -65,5 +65,7 @@ export async function POST(req: Request, { params }: Ctx) {
     mod: form.get("mod") === "importa" ? "importa" : "previzualizare",
     mapare,
     nume: String(form.get("nume") ?? "").trim().slice(0, 200),
+    // Corectarea adreselor de e-mail e activă implicit; se oprește doar cu „corecteaza=0”.
+    corecteaza: form.get("corecteaza") !== "0",
   });
 }

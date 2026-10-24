@@ -6,6 +6,7 @@ import { faraDiacritice } from "@/lib/cautare";
 import { inregistreazaAudit } from "@/lib/audit";
 import type { OrgContext } from "@/lib/auth/guard";
 import { getLimiteleEfective, subCota } from "@/lib/billing/quota";
+import { gasesteDubluri } from "@/lib/curatare-contacte";
 import { cursEurRon } from "@/lib/curs-valutar";
 import { donatiiImportate, donatoriImporturi, donatoriReali, fundraisingPages } from "@/lib/db/schema";
 import { donCte } from "@/lib/donatori-pf";
@@ -72,7 +73,20 @@ export type Previzualizare = {
   suma: number;
   monede: Record<string, number>;
   curs: number | null;
+  curatare: CuratareImport;
 };
+
+// Ce s-a curățat sau ce merită atenție la acest import: adrese corectate, adrese de birou, posibili donatori dubli (aceeași persoană cu altă adresă).
+export type CuratareImport = {
+  corecteaza: boolean; // corecturile de e-mail sunt aplicate (altfel doar raportate)
+  emailuriCorectate: number;
+  exempleCorectate: { rand: number; de: string; la: string; motiv: string }[];
+  generice: number; // rânduri cu adresă de birou (info@, office@…)
+  posibileDubluri: { persoane: { sursa: "fisier" | "existent"; nume: string; email: string; telefon: string | null }[]; motive: string[]; incredere: "mare" | "medie" }[];
+  totalPosibileDubluri: number;
+};
+
+export type OptiuniPlan = { corecteaza?: boolean };
 
 export type Plan = {
   previzualizare: Previzualizare;
@@ -83,12 +97,14 @@ export type Plan = {
 const norm = (s: string) => faraDiacritice(s).toLowerCase().replace(/\s+/g, " ").trim();
 const ziua = (d: Date) => d.toISOString().slice(0, 10);
 
-export async function planifica(ctx: Ctx, fisier: FisierCitit, maparePrimita?: Mapare): Promise<Plan> {
+export async function planifica(ctx: Ctx, fisier: FisierCitit, maparePrimita?: Mapare, optiuni: OptiuniPlan = {}): Promise<Plan> {
+  const corecteaza = optiuni.corecteaza !== false;
   const mapare = maparePrimita && Object.keys(maparePrimita).length ? maparePrimita : detecteazaColoane(fisier.antet);
   const lipsa = OBLIGATORII_IMPORT.filter((c) => mapare[c] === undefined);
   const gol: Previzualizare = {
     antet: fisier.antet, mapare, lipsa, esantion: fisier.randuri.slice(0, 5).map((r) => fisier.antet.map((_, i) => String(r[i] ?? ""))),
     randuri: fisier.randuri.length, valide: 0, invalide: 0, exemple: [], duplicate: 0, deImportat: 0, donatoriNoi: 0, donatoriExistenti: 0, proiecte: [], de: null, pana: null, suma: 0, monede: {}, curs: null,
+    curatare: { corecteaza, emailuriCorectate: 0, exempleCorectate: [], generice: 0, posibileDubluri: [], totalPosibileDubluri: 0 },
   };
   if (lipsa.length > 0) return { previzualizare: gol, deImportat: [], emailuriNoi: new Set() };
 
@@ -97,7 +113,7 @@ export async function planifica(ctx: Ctx, fisier: FisierCitit, maparePrimita?: M
   const motive = new Map<string, number>();
   const exemple: { rand: number; motiv: string }[] = [];
   fisier.randuri.forEach((celule, i) => {
-    const r = normalizeazaRand(celule, mapare, acum);
+    const r = normalizeazaRand(celule, mapare, acum, { corecteazaEmail: corecteaza });
     if (r.ok) valide.push({ rand: r.rand, nr: i + 2 });
     else {
       motive.set(r.motiv, (motive.get(r.motiv) ?? 0) + 1);
@@ -162,9 +178,46 @@ export async function planifica(ctx: Ctx, fisier: FisierCitit, maparePrimita?: M
     peProiect.set(k, c);
   }
   const timpi = deImportat.map((r) => r.data.getTime());
+
+  // Curățare: ce adrese s-au corectat (afișate o singură dată fiecare) și câte rânduri au adrese de birou.
+  const corectate = new Map<string, { rand: number; de: string; la: string; motiv: string }>();
+  let generice = 0;
+  for (const { rand, nr } of valide) {
+    if (rand.emailGeneric) generice++;
+    if (rand.emailOriginal && !corectate.has(rand.emailOriginal.toLowerCase())) corectate.set(rand.emailOriginal.toLowerCase(), { rand: nr, de: rand.emailOriginal, la: rand.email, motiv: rand.emailMotiv ?? "" });
+  }
+  // Posibili donatori dubli: persoane noi din fișier care seamănă cu un donator existent (sau între ele) prin e-mail echivalent, telefon sau nume + localitate.
+  let posibileDubluri: CuratareImport["posibileDubluri"] = [];
+  let totalPosibileDubluri = 0;
+  if (emailuriNoi.size > 0) {
+    const existenti = await ctx.db
+      .select({ id: donatoriReali.id, email: donatoriReali.email, nume: donatoriReali.nume, telefon: donatoriReali.telefon, localitate: donatoriReali.localitate })
+      .from(donatoriReali)
+      .where(eq(donatoriReali.orgId, ctx.orgId))
+      .limit(60_000);
+    const primul = new Map<string, (typeof deImportat)[number]>();
+    for (const r of deImportat) if (emailuriNoi.has(r.email) && !primul.has(r.email)) primul.set(r.email, r);
+    const persoane = [
+      ...existenti.map((e) => ({ id: `e:${e.id}`, nume: e.nume, email: e.email, telefon: e.telefon, localitate: e.localitate })),
+      ...[...primul.values()].map((r) => ({ id: `f:${r.email}`, nume: r.nume, email: r.email, telefon: r.telefon, localitate: r.localitate })),
+    ];
+    const dupaId = new Map(persoane.map((p) => [p.id, p]));
+    const grupuri = gasesteDubluri(persoane).filter((g) => g.ids.some((i) => i.startsWith("f:")));
+    totalPosibileDubluri = grupuri.length;
+    posibileDubluri = grupuri.slice(0, 15).map((g) => ({
+      persoane: g.ids.slice(0, 6).map((i) => {
+        const p = dupaId.get(i)!;
+        return { sursa: i.startsWith("f:") ? ("fisier" as const) : ("existent" as const), nume: p.nume, email: p.email, telefon: p.telefon ?? null };
+      }),
+      motive: g.motive,
+      incredere: g.incredere,
+    }));
+  }
+
   return {
     previzualizare: {
       ...gol,
+      curatare: { corecteaza, emailuriCorectate: corectate.size, exempleCorectate: [...corectate.values()].slice(0, 12), generice, posibileDubluri, totalPosibileDubluri },
       valide: valide.length,
       invalide: nrInvalide,
       exemple,

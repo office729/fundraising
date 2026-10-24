@@ -26,25 +26,27 @@ export function ImporturiClient({ orgSlug, importuri, poateImporta }: { orgSlug:
   const [nume, setNume] = useState("");
   const [prev, setPrev] = useState<Previzualizare | null>(null);
   const [mapare, setMapare] = useState<Mapare>({});
+  const [corecteaza, setCorecteaza] = useState(true); // corectarea adreselor de e-mail evidente (gmial.com → gmail.com)
   const [lucreaza, setLucreaza] = useState<"" | "analiza" | "import">("");
   const [mesaj, setMesaj] = useState<{ tip: "ok" | "eroare"; text: string } | null>(null);
 
-  async function trimite(mod: "previzualizare" | "importa", mapareFolosita?: Mapare) {
+  async function trimite(mod: "previzualizare" | "importa", mapareFolosita?: Mapare, corectarePrimita?: boolean) {
     if (!fisier) return null;
     const form = new FormData();
     form.set("fisier", fisier);
     form.set("mod", mod);
+    form.set("corecteaza", (corectarePrimita ?? corecteaza) ? "1" : "0");
     form.set("nume", nume.trim());
     if (mapareFolosita) form.set("mapare", JSON.stringify(mapareFolosita));
     const r = await fetch(`/api/${orgSlug}/donatori-import`, { method: "POST", body: form });
     return (await r.json().catch(() => ({ error: "Răspuns neașteptat de la server." }))) as Raspuns;
   }
 
-  async function analizeaza(mapareFolosita?: Mapare) {
+  async function analizeaza(mapareFolosita?: Mapare, corectarePrimita?: boolean) {
     setMesaj(null);
     setLucreaza("analiza");
     try {
-      const r = await trimite("previzualizare", mapareFolosita);
+      const r = await trimite("previzualizare", mapareFolosita, corectarePrimita);
       if (!r || r.error || !r.previzualizare) {
         setPrev(null);
         setMesaj({ tip: "eroare", text: r?.error ?? "Nu am putut analiza fișierul." });
@@ -144,6 +146,74 @@ export function ImporturiClient({ orgSlug, importuri, poateImporta }: { orgSlug:
             <Cifra eticheta="Interval" valoare={prev.de ? `${dataRo(prev.de)} – ${dataRo(prev.pana)}` : "—"} />
           </dl>
           {prev.curs && <p className="mt-2 text-[12px] text-[var(--ci-text-muted)]">Sumele în EUR se convertesc în lei la cursul zilei ({prev.curs.toFixed(4)}).</p>}
+
+          <h3 className="mt-5 text-[12px] font-semibold tracking-wide text-[var(--ci-text-faint)] uppercase">Curățarea datelor</h3>
+          <div className="mt-2 space-y-3 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-3 text-[13px] text-[var(--ci-text)]">
+            <label className="flex min-h-9 cursor-pointer items-start gap-2.5">
+              <input
+                type="checkbox"
+                className="mt-0.5 size-4"
+                checked={corecteaza}
+                disabled={lucreaza !== ""}
+                onChange={(e) => {
+                  setCorecteaza(e.target.checked);
+                  void analizeaza(mapare, e.target.checked);
+                }}
+              />
+              <span>
+                <strong>Corectează adresele de e-mail evidente</strong> (gmial.com → gmail.com, spații, semne în plus). Fără corectare, o adresă greșită ajunge ca donator separat și nu primește niciodată mesaje.
+              </span>
+            </label>
+            {prev.curatare.emailuriCorectate > 0 ? (
+              <div>
+                <p className="font-medium">
+                  {prev.curatare.corecteaza ? `${nr(prev.curatare.emailuriCorectate)} adrese corectate` : `${nr(prev.curatare.emailuriCorectate)} adrese par greșite (nu se corectează, ai oprit opțiunea)`}
+                </p>
+                <ul className="mt-1.5 space-y-1 text-[12.5px] text-[var(--ci-text-muted)]">
+                  {prev.curatare.exempleCorectate.map((x) => (
+                    <li key={x.de} className="break-all">
+                      rândul {x.rand}: <span className="line-through">{x.de}</span> → <strong className="text-[var(--ci-text)]">{x.la}</strong> <span>({x.motiv})</span>
+                    </li>
+                  ))}
+                </ul>
+                {prev.curatare.emailuriCorectate > prev.curatare.exempleCorectate.length && <p className="mt-1 text-[12px] text-[var(--ci-text-muted)]">… și încă {nr(prev.curatare.emailuriCorectate - prev.curatare.exempleCorectate.length)}.</p>}
+              </div>
+            ) : (
+              <p className="text-[var(--ci-text-muted)]">Nicio adresă de e-mail nu a avut nevoie de corectare.</p>
+            )}
+            {prev.curatare.generice > 0 && (
+              <p className="text-[12.5px] text-[var(--ci-text-muted)]">
+                {nr(prev.curatare.generice)} rânduri au adrese de birou (info@, office@, contact@…): sunt păstrate, dar nu sunt ale unei persoane, deci mesajele personale nu ajung la un donator anume.
+              </p>
+            )}
+            {prev.curatare.totalPosibileDubluri > 0 && (
+              <div>
+                <p className="font-medium text-[var(--ci-amber)]">
+                  {nr(prev.curatare.totalPosibileDubluri)} {prev.curatare.totalPosibileDubluri === 1 ? "posibil donator dublu" : "posibili donatori dubli"}
+                </p>
+                <p className="text-[12.5px] text-[var(--ci-text-muted)]">Aceeași persoană pare să apară cu adrese diferite. Importul nu îi unește singur; după import îi poți verifica și îmbina din pagina „Dubluri”.</p>
+                <ul className="mt-2 space-y-2">
+                  {prev.curatare.posibileDubluri.map((g, i) => (
+                    <li key={i} className="rounded-[var(--ci-radius-btn)] bg-[var(--ci-surface-2)] px-2.5 py-2 text-[12.5px]">
+                      <span className="mb-1 flex flex-wrap items-center gap-1.5">
+                        <Badge tone={g.incredere === "mare" ? "amber" : "neutral"} icon={false}>
+                          {g.incredere === "mare" ? "probabil aceeași persoană" : "posibil aceeași persoană"}
+                        </Badge>
+                        <span className="text-[var(--ci-text-muted)]">după {g.motive.map((m) => (m === "email" ? "e-mail" : m === "telefon" ? "telefon" : "nume și localitate")).join(", ")}</span>
+                      </span>
+                      {g.persoane.map((x, j) => (
+                        <span key={j} className="block break-all text-[var(--ci-text)]">
+                          {x.sursa === "fisier" ? "din fișier" : "existent"}: {x.nume} · {x.email}
+                          {x.telefon ? ` · ${x.telefon}` : ""}
+                        </span>
+                      ))}
+                    </li>
+                  ))}
+                </ul>
+                {prev.curatare.totalPosibileDubluri > prev.curatare.posibileDubluri.length && <p className="mt-1 text-[12px] text-[var(--ci-text-muted)]">… și încă {nr(prev.curatare.totalPosibileDubluri - prev.curatare.posibileDubluri.length)}.</p>}
+              </div>
+            )}
+          </div>
 
           <h3 className="mt-5 text-[12px] font-semibold tracking-wide text-[var(--ci-text-faint)] uppercase">Coloanele fișierului</h3>
           <div className="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

@@ -1,4 +1,5 @@
 import { faraDiacritice } from "@/lib/cautare";
+import { curataNume, curataTelefon, evalueazaEmail } from "@/lib/curatare-contacte";
 import { EMAIL_RE, normalizeazaEmail } from "@/lib/validation";
 
 // Importul de donații în CRM Persoane fizice — partea pură (fără baza de date): detectarea coloanelor, parsarea sumelor și a datelor,
@@ -121,6 +122,10 @@ export type RandNormalizat = {
   telefon: string | null;
   procesator: string | null;
   idExtern: string | null;
+  // Curățare: adresa corectată (cu forma din fișier și ce s-a schimbat) și semnale despre rând.
+  emailOriginal: string | null;
+  emailMotiv: string | null;
+  emailGeneric: boolean;
 };
 
 const STATUS_BUN = /^(succe|reusit|paid|platit|completed|complet|ok|aprobat|approved|incasat|settled|captured|confirmat)/;
@@ -133,31 +138,53 @@ const text = (v: unknown, max: number) => {
   return s === "" ? null : s;
 };
 
-export function normalizeazaRand(celule: unknown[], m: Mapare, acum: Date = new Date()): RezultatRand {
+export type OptiuniRand = { corecteazaEmail?: boolean };
+
+export function normalizeazaRand(celule: unknown[], m: Mapare, acum: Date = new Date(), optiuni: OptiuniRand = {}): RezultatRand {
   const ia = (c: CampImport) => (m[c] !== undefined ? celule[m[c]!] : undefined);
   const status = cheie(ia("status"));
   if (status && (STATUS_RAU.test(status) || !STATUS_BUN.test(status))) return { ok: false, motiv: "Status care nu e o donație reușită" };
-  const email = normalizeazaEmail(String(ia("email") ?? "").trim());
-  if (!email || !EMAIL_RE.test(email)) return { ok: false, motiv: "Email lipsă sau invalid" };
+  // E-mailul: adresele aproape sigure se corectează (gmial.com → gmail.com) și se raportează; cele imposibile sau fictive se resping cu motivul spus.
+  const brutEmail = String(ia("email") ?? "").trim();
+  const ev = evalueazaEmail(brutEmail);
+  if (ev.stare === "invalid") return { ok: false, motiv: brutEmail ? `Email invalid: ${ev.motiv ?? "adresă imposibilă"}` : "Email lipsă" };
+  let email = ev.email;
+  let emailOriginal: string | null = null;
+  let emailMotiv: string | null = null;
+  if (ev.stare === "corectat") {
+    if (optiuni.corecteazaEmail === false) {
+      // Fără corecturi: rămâne adresa din fișier, dacă măcar are forma unei adrese.
+      email = normalizeazaEmail(brutEmail);
+      if (!EMAIL_RE.test(email)) return { ok: false, motiv: `Email invalid: ${ev.motiv ?? "adresă imposibilă"}` };
+    } else {
+      emailOriginal = brutEmail;
+      emailMotiv = ev.motiv;
+    }
+  }
   const suma = parseSuma(ia("suma"));
   if (suma === null) return { ok: false, motiv: "Sumă lipsă sau invalidă" };
   const data = parseData(ia("data"), acum);
   if (!data) return { ok: false, motiv: "Dată lipsă sau invalidă" };
   const moneda = (text(ia("moneda"), 8) ?? "RON").toUpperCase().replace("LEI", "RON").replace("RON.", "RON");
+  const numeCurat = curataNume(ia("nume")).nume;
+  const telefon = curataTelefon(ia("telefon"));
   return {
     ok: true,
     rand: {
       email,
-      nume: text(ia("nume"), 200) ?? email.split("@")[0],
+      nume: (numeCurat || null)?.slice(0, 200) ?? email.split("@")[0],
       suma,
       moneda,
       data,
       proiect: text(ia("proiect"), 200),
       localitate: text(ia("localitate"), 200),
       judet: text(ia("judet"), 100),
-      telefon: text(ia("telefon"), 200),
+      telefon: telefon.valid ? telefon.afisat : text(ia("telefon"), 200),
       procesator: text(ia("procesator"), 100),
       idExtern: text(ia("idExtern"), 200),
+      emailOriginal,
+      emailMotiv,
+      emailGeneric: ev.generic,
     },
   };
 }
