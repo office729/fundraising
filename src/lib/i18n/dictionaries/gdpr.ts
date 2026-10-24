@@ -9,7 +9,7 @@ export const GDPR_DICT = {
     eyebrow: "Legal",
     titlu: "Politica de confidențialitate (GDPR)",
     actualizatLabel: "Ultima actualizare",
-    actualizat: "12 octombrie 2026",
+    actualizat: "24 octombrie 2026",
     sectiuni: [
       {
         titlu: "1. Cine suntem și în ce calitate prelucrăm date",
@@ -34,6 +34,7 @@ export const GDPR_DICT = {
         paragrafe: ["Pe site și în Platformă, pentru propriile noastre scopuri, prelucrăm date doar în următoarele situații:"],
         puncte: [
           "Formularele de contact și programările: nume, email, telefon, mesaj, intervalul ales — pentru a-ți răspunde și a organiza consilierea;",
+          "Formularul „Descoperă Alexandrit” (fereastra de pe site și pagina /descopera): numele tău, denumirea organizației, adresa de email, telefonul (dacă îl completezi), pagina de pe care ai scris și, dacă ai venit dintr-o campanie, sursa ei (parametrii din link). Le păstrăm într-o listă internă, vizibilă doar echipei Alexandrit, împreună cu starea discuției (nou, contactat, în discuție, înscris, pierdut) și notițe interne despre discuțiile noastre, pentru a te contacta și a ține evidența cererilor. Dacă completezi formularul de mai multe ori cu aceeași adresă, păstrăm o singură înregistrare, cu numărul de completări. Un exemplar al cererii ajunge și prin email la echipă;",
           "Crearea contului și achiziționarea serviciilor: nume, email, rolul în organizație, parola (stocată criptat, prin furnizorul de autentificare), data și versiunea Termenilor și a Politicii de confidențialitate acceptate la înscriere, date de facturare (denumire, CUI, adresă), istoricul facturilor și al abonamentelor; datele cardului sunt prelucrate exclusiv de procesatorul de plăți și nu ajung la noi;",
           "Reînnoirea automată a abonamentului: dacă plătești abonamentul cu cardul, procesatorul de plăți ne poate transmite un token reutilizabil și data expirării cardului (nu numărul cardului). Tokenul îl stocăm criptat, ca să putem încasa automat abonamentul lunar; reînnoirea automată se poate opri oricând din Setări, iar tokenul se șterge după trei încercări de încasare eșuate;",
           "Newsletter și comunicări comerciale: adresa de email și preferințele, doar dacă ți-ai dat consimțământul;",
@@ -52,7 +53,8 @@ export const GDPR_DICT = {
           "facturare, contabilitate și obligații fiscale — obligație legală (art. 6(1)(c));",
           "securitatea Platformei, prevenirea abuzurilor și îmbunătățirea serviciului, inclusiv analiza răspunsurilor la chestionarul de satisfacție și a sugestiilor — interes legitim (art. 6(1)(f)); contactarea ta pe baza unui răspuns se face doar cu acordul bifat de tine (art. 6(1)(a));",
           "comunicări comerciale opționale și cookie-uri de analiză — consimțământ (art. 6(1)(a)), pe care îl poți retrage oricând;",
-          "răspunsul la solicitări și programarea consilierilor — măsuri precontractuale la cererea ta sau interes legitim.",
+          "răspunsul la solicitări și programarea consilierilor — măsuri precontractuale la cererea ta sau interes legitim;",
+          "răspunsul la cererea trimisă prin formularul „Descoperă Alexandrit” — măsuri precontractuale la cererea ta (art. 6(1)(b)); păstrarea cererii în lista internă, cu starea și notițele, ca să nu pierdem solicitări și să nu te contactăm de mai multe ori pentru același lucru — interes legitim (art. 6(1)(f)). Nu folosim aceste date pentru newsletter și nu le dăm altora; mesajele comerciale generale se trimit doar cu consimțământul tău separat.",
         ],
       },
       {
@@ -89,6 +91,7 @@ export const GDPR_DICT = {
           "dovada acceptării Termenilor și a Politicii (data și versiunea): pe durata contului și, după încetare, cât timp pot apărea pretenții legate de contract;",
           "jurnale tehnice și de securitate: pe perioade scurte, strict necesare;",
           "date de contact din solicitări: cât timp este necesar pentru a răspunde și, după aceea, cel mult perioada în care pot apărea pretenții legate de solicitare;",
+          "cererile din formularul „Descoperă Alexandrit”: dacă devii client, datele trec în contul tău și urmează regulile de mai sus; dacă nu, le ștergem după cel mult 24 de luni de la ultima ta completare sau de la ultima discuție, sau mai devreme, la cererea ta;",
           "datele introduse în CRM de către organizațiile client: conform instrucțiunilor și politicilor de retenție ale organizației (operatorul acestor date).",
         ],
       },
@@ -145,7 +148,7 @@ export const GDPR_DICT = {
     eyebrow: "Legal",
     titlu: "Privacy Policy (GDPR)",
     actualizatLabel: "Last updated",
-    actualizat: "October 12, 2026",
+    actualizat: "October 24, 2026",
     sectiuni: [
       {
         titlu: "1. Who we are and in what capacity we process data",
@@ -170,6 +173,7 @@ export const GDPR_DICT = {
         paragrafe: ["On the website and in the Platform, for our own purposes, we process data only in the following situations:"],
         puncte: [
           "Contact forms and bookings: name, email, phone, message, chosen slot — to reply to you and organize the consultation;",
+          "The “Discover Alexandrit” form (the pop-up on the website and the /descopera page): your name, organization name, email address, phone (if you fill it in), the page you wrote from and, if you came from a campaign, its source (parameters in the link). We keep them in an internal list, visible only to the Alexandrit team, together with the status of the conversation (new, contacted, in discussion, signed up, lost) and internal notes about our conversations, so we can contact you and keep track of requests. If you submit the form several times with the same address, we keep a single record with the number of submissions. A copy of the request also reaches the team by email;",
           "Account creation and purchase of services: name, email, role in the organization, password (stored encrypted through the authentication provider), the date and version of the Terms and Privacy Policy you accepted at sign-up, billing details (name, tax ID, address), invoice and subscription history; card data is processed exclusively by the payment processor and never reaches us;",
           "Automatic subscription renewal: if you pay the subscription by card, the payment processor may send us a reusable token and the card's expiry date (not the card number). We store the token encrypted so we can charge the monthly subscription automatically; automatic renewal can be stopped at any time in Settings, and the token is deleted after three failed charge attempts;",
           "Newsletter and marketing communications: email address and preferences, only if you have given consent;",
@@ -186,7 +190,8 @@ export const GDPR_DICT = {
           "invoicing, accounting and tax obligations — legal obligation (Art. 6(1)(c));",
           "Platform security, abuse prevention and service improvement — legitimate interest (Art. 6(1)(f));",
           "optional marketing communications and analytics cookies — consent (Art. 6(1)(a)), which you can withdraw at any time;",
-          "answering requests and booking consultations — pre-contractual steps at your request or legitimate interest.",
+          "answering requests and booking consultations — pre-contractual steps at your request or legitimate interest;",
+          "answering the request sent through the “Discover Alexandrit” form — pre-contractual steps at your request (Art. 6(1)(b)); keeping the request in the internal list, with its status and notes, so we do not lose requests or contact you several times about the same thing — legitimate interest (Art. 6(1)(f)). We do not use this data for the newsletter and do not give it to others; general marketing messages are sent only with your separate consent.",
         ],
       },
       {
@@ -223,6 +228,7 @@ export const GDPR_DICT = {
           "proof of acceptance of the Terms and Policy (date and version): for the life of the account and, afterwards, as long as claims related to the contract could arise;",
           "technical and security logs: for short periods strictly necessary;",
           "contact data from requests: as long as needed to reply and thereafter no longer than claims related to the request could arise;",
+          "requests from the “Discover Alexandrit” form: if you become a customer, the data moves into your account and follows the rules above; if not, we delete it after at most 24 months from your last submission or the last conversation, or sooner at your request;",
           "data entered in the CRM by customer organizations: according to the organization's instructions and retention policies (the controller of that data).",
         ],
       },
