@@ -5,18 +5,14 @@ const P = await import("../src/lib/prelansare.ts");
 
 const utc = (s) => Date.parse(s);
 
-test("25 octombrie 00:00 e încă ora de vară (UTC+3), 26 octombrie 00:00 e ora de iarnă (UTC+2)", () => {
-  assert.equal(P.CRONOMETRU_PANA_MS, utc("2026-10-24T21:00:00Z"));
-  assert.equal(P.LIVE_DE_LA_MS, utc("2026-10-25T22:00:00Z"));
-  // între cele două momente trec 25 de ore: ziua în care se schimbă ora are 25 de ore
-  assert.equal((P.LIVE_DE_LA_MS - P.CRONOMETRU_PANA_MS) / 3_600_000, 25);
+test("lansarea e pe 26 octombrie 2026, ora 06:00 în România (ora de iarnă, UTC+2): 04:00 UTC", () => {
+  assert.equal(P.LIVE_DE_LA_MS, utc("2026-10-26T04:00:00Z"));
 });
 
-test("fazele: numărătoare, ajun (25 octombrie, doar administratorii), live (de pe 26 octombrie)", () => {
+test("fazele: numărătoare până la 06:00 pe 26 octombrie, apoi live (nu mai există o zi „de ajun”)", () => {
   assert.equal(P.starePrelansare(utc("2026-10-17T12:00:00Z")), "numaratoare");
-  assert.equal(P.starePrelansare(P.CRONOMETRU_PANA_MS - 1), "numaratoare");
-  assert.equal(P.starePrelansare(P.CRONOMETRU_PANA_MS), "ajun");
-  assert.equal(P.starePrelansare(P.LIVE_DE_LA_MS - 1), "ajun");
+  assert.equal(P.starePrelansare(utc("2026-10-25T22:00:00Z")), "numaratoare", "26 octombrie, ora 00:00, nu mai e lansarea");
+  assert.equal(P.starePrelansare(P.LIVE_DE_LA_MS - 1), "numaratoare");
   assert.equal(P.starePrelansare(P.LIVE_DE_LA_MS), "live");
   assert.equal(P.starePrelansare(utc("2027-01-01T00:00:00Z")), "live");
 });
@@ -25,9 +21,10 @@ test("întrerupătorul de urgență deschide site-ul pentru toți, oricând", ()
   assert.equal(P.starePrelansare(utc("2026-10-17T12:00:00Z"), true), "live");
 });
 
-test("cronometrul numără spre 25 octombrie, apoi spre 26 octombrie", () => {
-  assert.equal(P.tintaCronometru("numaratoare"), P.CRONOMETRU_PANA_MS);
-  assert.equal(P.tintaCronometru("ajun"), P.LIVE_DE_LA_MS);
+test("cronometrul arată timpul până la lansare: 24 octombrie, ora 09:00 (România) înseamnă 1 zi și 22 de ore", () => {
+  // 24 oct. ora 09:00 în România (ora de vară, UTC+3) = 06:00 UTC
+  const t = P.descompune(P.LIVE_DE_LA_MS - utc("2026-10-24T06:00:00Z"));
+  assert.deepEqual({ zile: t.zile, ore: t.ore, minute: t.minute, secunde: t.secunde }, { zile: 1, ore: 22, minute: 0, secunde: 0 });
 });
 
 test("descompunerea timpului rămas în zile, ore, minute, secunde", () => {

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useSyncExternalStore } from "react";
 
-import { descompune, starePrelansare, tintaCronometru } from "@/lib/prelansare";
+import { descompune, LIVE_DE_LA_MS, starePrelansare } from "@/lib/prelansare";
 
 // O singură sursă de timp pentru toată pagina: un tic pe secundă. Pe server (și la prima randare din browser) valoarea e null, deci se afișează liniuțe, fără
 // nepotrivire la hidratare; imediat după încărcare apar cifrele reale.
@@ -27,7 +27,7 @@ export function Cronometru({ oprit }: { oprit: boolean }) {
   const sec = useSyncExternalStore(aboneaza, secunda, () => null);
   const acum = sec === null ? null : sec * 1000;
   const stare = acum === null ? "numaratoare" : starePrelansare(acum, oprit);
-  const timp = acum === null ? null : descompune(tintaCronometru(stare) - acum);
+  const timp = acum === null ? null : descompune(LIVE_DE_LA_MS - acum);
 
   // La ora lansării, pagina trece singură la site. Spre „/”, nu reload: pe /prelansare (rută publică care rămâne și după lansare) un reload ar reîncărca
   // aceeași pagină la nesfârșit.
@@ -35,7 +35,6 @@ export function Cronometru({ oprit }: { oprit: boolean }) {
     if (acum !== null && stare === "live") window.location.replace("/");
   }, [acum, stare]);
 
-  const ajun = stare === "ajun";
   return (
     <section className="relative z-10 mx-auto flex min-h-screen max-w-4xl flex-col items-center justify-center px-5 py-14 text-center text-white">
       {/* eslint-disable-next-line @next/next/no-img-element -- sigla albă, fișier static mic; pagina e un ecran de așteptare */}
@@ -43,24 +42,24 @@ export function Cronometru({ oprit }: { oprit: boolean }) {
 
       <p className="mt-8 inline-flex items-center gap-2 rounded-full border border-[#3fa85c]/50 bg-[#3fa85c]/15 px-4 py-1.5 text-[12.5px] font-bold tracking-wide text-[#a8e8bb] uppercase sm:text-[13px]">
         <span className="h-2 w-2 rounded-full bg-[#3fa85c] motion-safe:animate-pulse" aria-hidden="true" />
-        Lansare 26 octombrie 2026
+        Lansare 26 octombrie 2026, ora 06:00
       </p>
 
       <h1 className="font-display mt-5 max-w-3xl text-[32px] leading-[1.1] font-extrabold text-balance sm:text-[56px]">
-        {ajun ? "Mâine suntem live" : "Platforma ONG-urilor se deschide în curând"}
+        Platforma ONG-urilor se deschide în curând
       </h1>
       <p className="mt-4 max-w-2xl text-[15.5px] leading-relaxed text-white/80 sm:text-[18px]">
-        Donatori, companii, campanii, granturi, voluntari și reclame, într-un singur loc. Ultimele detalii sunt în lucru, iar de pe 26 octombrie site-ul se deschide pentru toată lumea.
+        Donatori, companii, campanii, granturi, voluntari și reclame, într-un singur loc. Ultimele detalii sunt în lucru, iar pe 26 octombrie, de la ora 06:00, site-ul se deschide pentru toată lumea.
       </p>
 
-      <div role="timer" aria-label={ajun ? "Timp rămas până la deschiderea pentru toți" : "Timp rămas până la lansare"} className="mt-9 flex w-full max-w-2xl gap-2.5 sm:gap-4">
+      <div role="timer" aria-label="Timp rămas până la lansare" className="mt-9 flex w-full max-w-2xl gap-2.5 sm:gap-4">
         <Casuta valoare={timp ? pe2(timp.zile) : "––"} eticheta="Zile" />
         <Casuta valoare={timp ? pe2(timp.ore) : "––"} eticheta="Ore" />
         <Casuta valoare={timp ? pe2(timp.minute) : "––"} eticheta="Minute" />
         <Casuta valoare={timp ? pe2(timp.secunde) : "––"} eticheta="Secunde" />
       </div>
       <p className="mt-4 text-[13px] text-white/60">
-        {ajun ? "Deschiderea pentru toți: 26 octombrie 2026, ora 00:00 (ora României)" : "Cronometrul se oprește pe 25 octombrie 2026, ora 00:00 (ora României)"}
+        Site-ul se deschide pe 26 octombrie 2026, ora 06:00 (ora României)
       </p>
 
       <div className="mt-10 w-full max-w-2xl rounded-2xl border border-white/10 bg-white/[0.05] px-5 py-4 text-[14px] leading-relaxed text-white/80 backdrop-blur-sm">

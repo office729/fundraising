@@ -17,7 +17,7 @@ export function BaraPrelansare({ admin }: { admin: boolean }) {
   if (!admin || !inPrelansare) return null;
   return (
     <div role="status" className="bg-amber-100 px-4 py-2 text-center text-[13px] text-amber-950">
-      Previzualizare pentru administratori: publicul vede cronometrul până pe 26 octombrie 2026, ora 00:00.{" "}
+      Previzualizare pentru administratori: publicul vede cronometrul până pe 26 octombrie 2026, ora 06:00.{" "}
       <Link prefetch={false} href="/prelansare" className="font-semibold underline">
         Vezi pagina de așteptare
       </Link>

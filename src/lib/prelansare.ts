@@ -1,25 +1,17 @@
-// Pre-lansarea site-ului: cronometru pe prima pagină până pe 25 octombrie 2026, ora 00:00 (ora României); ziua de 25 e deschisă doar administratorilor
-// platformei; de pe 26 octombrie 2026, ora 00:00, site-ul e live pentru toți. Fără importuri, ca să se poată folosi în proxy și în teste.
+// Pre-lansarea site-ului: cronometru pe prima pagină până la lansare, pe 26 octombrie 2026, ora 06:00 (ora României); de atunci site-ul e live pentru toți.
+// Până atunci doar administratorii platformei văd site-ul real. Fără importuri, ca să se poată folosi în proxy și în teste.
 //
-// Atenție la fusul orar: în România ora de vară se termină pe 25 octombrie 2026 la 04:00 (ceasurile se dau înapoi). La 25 octombrie 00:00 e încă ora de vară
-// (UTC+3), iar la 26 octombrie 00:00 e deja ora de iarnă (UTC+2); de aceea cele două momente au offset-uri diferite.
+// Atenție la fusul orar: în România ora de vară se termină pe 25 octombrie 2026 la 04:00 (ceasurile se dau înapoi), deci la 26 octombrie e ora de iarnă (UTC+2).
 
-export const CRONOMETRU_PANA_ISO = "2026-10-25T00:00:00+03:00";
-export const LIVE_DE_LA_ISO = "2026-10-26T00:00:00+02:00";
-export const CRONOMETRU_PANA_MS = Date.parse(CRONOMETRU_PANA_ISO);
+export const LIVE_DE_LA_ISO = "2026-10-26T06:00:00+02:00";
 export const LIVE_DE_LA_MS = Date.parse(LIVE_DE_LA_ISO);
 
-export type StarePrelansare = "numaratoare" | "ajun" | "live";
+export type StarePrelansare = "numaratoare" | "live";
 
 // `oprita`: întrerupător de urgență (variabila PRELANSARE_OPRITA=1 pe Vercel) care deschide site-ul pentru toți, fără o nouă publicare.
 export function starePrelansare(acumMs: number, oprita = false): StarePrelansare {
   if (oprita || acumMs >= LIVE_DE_LA_MS) return "live";
-  return acumMs >= CRONOMETRU_PANA_MS ? "ajun" : "numaratoare";
-}
-
-// Momentul spre care numără cronometrul: lansarea de pe 25 la 00:00; după ce a trecut, deschiderea pentru toți, pe 26 la 00:00.
-export function tintaCronometru(stare: StarePrelansare): number {
-  return stare === "numaratoare" ? CRONOMETRU_PANA_MS : LIVE_DE_LA_MS;
+  return "numaratoare";
 }
 
 export type TimpRamas = { zile: number; ore: number; minute: number; secunde: number; total: number };

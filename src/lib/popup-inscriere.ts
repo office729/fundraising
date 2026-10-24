@@ -1,7 +1,7 @@
-// Pop-up-ul de înscriere al ONG-urilor de pe site-ul public: apare după lansare (26 octombrie 2026, 00:00, ora României) și după 20 de secunde de stat pe site.
+// Pop-up-ul de înscriere al ONG-urilor de pe site-ul public: apare după lansare (26 octombrie 2026, 06:00, ora României) și după 20 de secunde de stat pe site.
 // Fișier fără importuri, ca să se poată testa direct; momentul lansării e copiat din lib/prelansare.ts (un test verifică să fie același).
 
-export const POPUP_START_MS = Date.parse("2026-10-26T00:00:00+02:00");
+export const POPUP_START_MS = Date.parse("2026-10-26T06:00:00+02:00");
 const LIVE_DE_LA_MS = POPUP_START_MS;
 
 export const POPUP_PRAG_SECUNDE = 20;

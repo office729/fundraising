@@ -10,8 +10,8 @@ test("momentul din pop-up e același cu lansarea site-ului din prelansare.ts", (
   assert.equal(P.POPUP_START_MS, L.LIVE_DE_LA_MS);
 });
 
-test("lansarea e pe 26 octombrie 2026, 00:00 ora României (UTC+2, ora de iarnă)", () => {
-  assert.equal(new Date(LIVE).toISOString(), "2026-10-25T22:00:00.000Z");
+test("lansarea e pe 26 octombrie 2026, ora 06:00 în România (UTC+2, ora de iarnă)", () => {
+  assert.equal(new Date(LIVE).toISOString(), "2026-10-26T04:00:00.000Z");
 });
 
 test("înainte de lansare pop-up-ul nu apare, oricât ar sta vizitatorul", () => {
