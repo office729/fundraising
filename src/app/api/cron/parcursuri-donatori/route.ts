@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { sql } from "drizzle-orm";
 
-import { isAccessBlocked } from "@/lib/billing/trial";
+import { isAccessBlocked, pachetEfectiv } from "@/lib/billing/trial";
 import { cronAutorizat } from "@/lib/cron-auth";
 import { db } from "@/lib/db";
 import { organizations } from "@/lib/db/schema";
@@ -14,7 +14,8 @@ import { MAX_TRIMISE_PE_RULARE, ruleazaParcursuriOrg } from "@/lib/parcursuri-se
 // Rulat zilnic de Vercel Cron (vezi vercel.json): trimite pașii scadenți ai parcursurilor Welcome, Save și Upgrade, pentru organizațiile care le-au pornit.
 // Autentificat prin CRON_SECRET, ca restul cron-urilor. Logica (selecție, revendicare înainte de trimitere, plafoane) e în lib/parcursuri-server.ts.
 export const maxDuration = 300;
-const DEADLINE_MS = 240_000;
+// Sub maxDuration cu o marjă pentru timeouturile serverului de e-mail (până la ~75 s): o funcție oprită de platformă între revendicare și trimitere ar lăsa rânduri „in_curs”.
+const DEADLINE_MS = 180_000;
 
 export async function GET(req: Request) {
   if (!process.env.CRON_SECRET) return NextResponse.json({ error: "cron_neconfigurat" }, { status: 501 });
@@ -40,6 +41,8 @@ export async function GET(req: Request) {
         subscriptionStatus: organizations.subscriptionStatus,
         package: organizations.package,
         currentPeriodEnd: organizations.currentPeriodEnd,
+        telefon: organizations.telefon,
+        adresaSediu: organizations.adresaSediu,
       })
       .from(organizations);
   });
@@ -48,9 +51,19 @@ export async function GET(req: Request) {
   for (const org of orgs) {
     if (Date.now() > deadline) break;
     // Acces blocat (probă expirată, neplătit) sau pachet fără modul: nu mai trimitem donatorilor în numele platformei.
-    if (isAccessBlocked(org) || !areModul(org.package, "parcursuri-donatori")) continue;
+    if (isAccessBlocked(org) || !areModul(pachetEfectiv(org), "parcursuri-donatori")) continue;
     try {
-      const r = await ruleazaParcursuriOrg({ org: { id: org.id, slug: org.slug, name: org.name }, baseUrl, deadline, plafon: MAX_TRIMISE_PE_RULARE });
+      // Adresa de răspuns: contul proprietarului organizației (o persoană reală, nu o adresă „no-reply”); lipsa ei nu oprește trimiterea.
+      const [proprietar] = await db.transaction(async (tx) => {
+        await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
+        return (await tx.execute(sql`select u.email from memberships m join app_users u on u.id = m.user_id where m.org_id = ${org.id} and m.role = 'owner' order by m.created_at limit 1`)) as unknown as { email: string }[];
+      });
+      const r = await ruleazaParcursuriOrg({
+        org: { id: org.id, slug: org.slug, name: org.name, createdAt: org.createdAt, adresa: org.adresaSediu, telefon: org.telefon, emailContact: proprietar?.email ?? null },
+        baseUrl,
+        deadline,
+        plafon: MAX_TRIMISE_PE_RULARE,
+      });
       if (r.trimise || r.esuate) rezultate.push({ orgSlug: org.slug, trimise: r.trimise, esuate: r.esuate, intrerupt: r.intrerupt });
     } catch (e) {
       raporteazaEroare("cron-parcursuri", e, { orgSlug: org.slug });

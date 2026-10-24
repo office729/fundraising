@@ -20,7 +20,7 @@ const exporta = withOrgSession(async (ctx, url: string) => {
   const c = await contextPf(ctx);
   const brut = (await ctx.db.execute(interogareLista(ctx.orgId, { ...f, pagina: 1 }, c, { paginat: false }))) as unknown as Record<string, unknown>[];
   let randuri = brut.slice(0, MAX_RANDURI).map(serializeazaRand);
-  if (canal === "email") randuri = randuri.filter((r) => r.email && r.consimtamant_email !== false && !r.dezabonat_email_la && !r.nu_contactat);
+  if (canal === "email") randuri = randuri.filter((r) => r.email && r.consimtamant_email === true && !r.dezabonat_email_la && !r.nu_contactat);
   if (canal === "telefon") randuri = randuri.filter((r) => (r.telefon ?? "").trim() !== "" && !r.nu_contactat);
 
   const XLSX = await import("xlsx");

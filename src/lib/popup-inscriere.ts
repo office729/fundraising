@@ -34,7 +34,8 @@ export type DateInteres = { nume: string; organizatie: string; email: string; te
 export type CampInteres = keyof DateInteres;
 export type EroriInteres = Partial<Record<CampInteres, string>>;
 
-const RE_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+// Fără caractere care n-au ce căuta într-o adresă (< > , " ' ? & ; : parantezele, backslash): ele ar ajunge în antetul „Reply-To” și în linkul „mailto:” al echipei.
+const RE_EMAIL = /^[^\s@<>,"'`?&;:()[\]\\]+@[^\s@<>,"'`?&;:()[\]\\]+\.[^\s@<>,"'`?&;:()[\]\\]{2,}$/;
 
 // Validare comună clientului (mesaje imediate) și serverului (singura care contează). Întoarce datele curățate sau erorile pe câmpuri.
 export function valideazaInteres(intrare: Partial<Record<CampInteres, unknown>>): { ok: true; date: DateInteres } | { ok: false; erori: EroriInteres } {
@@ -57,4 +58,20 @@ export function valideazaInteres(intrare: Partial<Record<CampInteres, unknown>>)
   if (intrare.acord !== true) erori.acord = "Bifează că ai citit Politica de confidențialitate.";
   if (Object.keys(erori).length > 0) return { ok: false, erori };
   return { ok: true, date: { nume, organizatie, email, telefon, acord: true } };
+}
+
+// Cheia limitei de cereri pe adresă IP: IPv4 așa cum e; IPv6 rotunjit la rețeaua /64 (o singură conexiune primește de obicei un /64 întreg, deci altfel
+// ar avea miliarde de „adrese” diferite și limita n-ar mai opri nimic).
+export function cheieIpPentruLimita(ip: string): string {
+  const x = (ip ?? "").trim().toLowerCase();
+  if (!x.includes(":")) return x || "necunoscut";
+  const mapat = x.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
+  if (mapat) return mapat[1];
+  const parti = x.split("::");
+  if (parti.length > 2) return x;
+  const stanga = parti[0] ? parti[0].split(":") : [];
+  const dreapta = parti.length === 2 && parti[1] ? parti[1].split(":") : [];
+  const lipsa = parti.length === 2 ? Math.max(0, 8 - stanga.length - dreapta.length) : 0;
+  const hextete = [...stanga, ...Array(lipsa).fill("0"), ...dreapta];
+  return hextete.slice(0, 4).map((h) => h.replace(/^0+(?=.)/, "") || "0").join(":") + "::/64";
 }

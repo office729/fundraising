@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertTriangle, CheckCircle2, FileSpreadsheet, Trash2, Upload } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
@@ -29,6 +30,8 @@ export function ImporturiClient({ orgSlug, importuri, poateImporta }: { orgSlug:
   const [corecteaza, setCorecteaza] = useState(true); // corectarea adreselor de e-mail evidente (gmial.com → gmail.com)
   const [lucreaza, setLucreaza] = useState<"" | "analiza" | "import">("");
   const [mesaj, setMesaj] = useState<{ tip: "ok" | "eroare"; text: string } | null>(null);
+  const [deSters, setDeSters] = useState<ImportListat | null>(null); // importul pentru care se cere confirmarea ștergerii
+  const [stergeActiv, setSterge] = useState(false);
 
   async function trimite(mod: "previzualizare" | "importa", mapareFolosita?: Mapare, corectarePrimita?: boolean) {
     if (!fisier) return null;
@@ -48,7 +51,6 @@ export function ImporturiClient({ orgSlug, importuri, poateImporta }: { orgSlug:
     try {
       const r = await trimite("previzualizare", mapareFolosita, corectarePrimita);
       if (!r || r.error || !r.previzualizare) {
-        setPrev(null);
         setMesaj({ tip: "eroare", text: r?.error ?? "Nu am putut analiza fișierul." });
       } else {
         setPrev(r.previzualizare);
@@ -80,10 +82,15 @@ export function ImporturiClient({ orgSlug, importuri, poateImporta }: { orgSlug:
   }
 
   async function sterge(i: ImportListat) {
-    if (!window.confirm(`Ștergi importul „${i.nume}”?\n\nSe șterg ${nr(i.nrImportate)} donații importate și donatorii creați doar de acest import (fără alte donații, notițe sau stare de lucru). Nu se poate anula.`)) return;
-    const r = await stergeImportAction(orgSlug, i.id);
-    setMesaj(r.ok ? { tip: "ok", text: `Import șters: ${nr(r.donatiiSterse)} donatori afectați, ${nr(r.donatoriStersi)} donatori scoși.` } : { tip: "eroare", text: r.eroare });
-    if (r.ok) router.refresh();
+    setSterge(true);
+    try {
+      const r = await stergeImportAction(orgSlug, i.id);
+      setMesaj(r.ok ? { tip: "ok", text: `Import șters: ${nr(r.donatiiSterse)} ${r.donatiiSterse === 1 ? "donație ștearsă" : "donații șterse"}, ${nr(r.donatoriStersi)} ${r.donatoriStersi === 1 ? "donator scos" : "donatori scoși"}.` } : { tip: "eroare", text: r.eroare });
+      setDeSters(null);
+      if (r.ok) router.refresh();
+    } finally {
+      setSterge(false);
+    }
   }
 
   const lipsa = prev ? OBLIGATORII_IMPORT.filter((c) => mapare[c] === undefined) : [];
@@ -92,7 +99,7 @@ export function ImporturiClient({ orgSlug, importuri, poateImporta }: { orgSlug:
   return (
     <div className="space-y-5">
       {mesaj && (
-        <p role={mesaj.tip === "eroare" ? "alert" : "status"} className={`rounded-lg px-3 py-2 text-[13px] ${mesaj.tip === "eroare" ? "bg-[var(--ci-red-soft)] text-[var(--ci-red)]" : "bg-[var(--ci-green-soft)] text-[var(--ci-green)]"}`}>
+        <p role={mesaj.tip === "eroare" ? "alert" : "status"} className={`rounded-lg px-3 py-2 text-[13px] ${mesaj.tip === "eroare" ? "bg-[var(--ci-red-soft)] text-[#9b1c1c]" : "bg-[var(--ci-green-soft)] text-[#17602f]"}`}>
           {mesaj.text}
         </p>
       )}
@@ -135,10 +142,10 @@ export function ImporturiClient({ orgSlug, importuri, poateImporta }: { orgSlug:
       {prev && (
         <Card>
           <CardHeader title="Ce se va întâmpla" subtitle="Nimic nu s-a salvat încă. Verifică și confirmă." />
-          <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <dl aria-live="polite" className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Cifra eticheta="Rânduri în fișier" valoare={nr(prev.randuri)} />
             <Cifra eticheta="Donații de importat" valoare={nr(prev.deImportat)} tona="green" />
-            <Cifra eticheta="Duplicate (sărite)" valoare={nr(prev.duplicate)} />
+            <Cifra eticheta="Donații deja existente (sărite)" valoare={nr(prev.duplicate)} />
             <Cifra eticheta="Rânduri respinse" valoare={nr(prev.invalide)} tona={prev.invalide > 0 ? "amber" : undefined} />
             <Cifra eticheta="Donatori noi" valoare={nr(prev.donatoriNoi)} />
             <Cifra eticheta="Donatori existenți" valoare={nr(prev.donatoriExistenti)} />
@@ -149,10 +156,10 @@ export function ImporturiClient({ orgSlug, importuri, poateImporta }: { orgSlug:
 
           <h3 className="mt-5 text-[12px] font-semibold tracking-wide text-[var(--ci-text-faint)] uppercase">Curățarea datelor</h3>
           <div className="mt-2 space-y-3 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-3 text-[13px] text-[var(--ci-text)]">
-            <label className="flex min-h-9 cursor-pointer items-start gap-2.5">
+            <label className="flex min-h-11 cursor-pointer items-start gap-2.5">
               <input
                 type="checkbox"
-                className="mt-0.5 size-4"
+                className="mt-0.5 size-5"
                 checked={corecteaza}
                 disabled={lucreaza !== ""}
                 onChange={(e) => {
@@ -188,10 +195,15 @@ export function ImporturiClient({ orgSlug, importuri, poateImporta }: { orgSlug:
             )}
             {prev.curatare.totalPosibileDubluri > 0 && (
               <div>
-                <p className="font-medium text-[var(--ci-amber)]">
+                <p className="font-medium text-[#7a3e00]">
                   {nr(prev.curatare.totalPosibileDubluri)} {prev.curatare.totalPosibileDubluri === 1 ? "posibil donator dublu" : "posibili donatori dubli"}
                 </p>
-                <p className="text-[12.5px] text-[var(--ci-text-muted)]">Aceeași persoană pare să apară cu adrese diferite. Importul nu îi unește singur; după import îi poți verifica și îmbina din pagina „Dubluri”.</p>
+                <p className="text-[12.5px] text-[var(--ci-text-muted)]">Aceeași persoană pare să apară cu adrese diferite. Importul nu îi unește singur; după import îi poți verifica și uni din pagina{" "}
+                  <Link href={`/${orgSlug}/crm/donatori/dubluri`} className="font-semibold text-[var(--ci-primary)] underline">
+                    Donatori dubli
+                  </Link>
+                  .
+                </p>
                 <ul className="mt-2 space-y-2">
                   {prev.curatare.posibileDubluri.map((g, i) => (
                     <li key={i} className="rounded-[var(--ci-radius-btn)] bg-[var(--ci-surface-2)] px-2.5 py-2 text-[12.5px]">
@@ -221,7 +233,7 @@ export function ImporturiClient({ orgSlug, importuri, poateImporta }: { orgSlug:
               <label key={c} className="block">
                 <span className="mb-1 block text-[12px] font-medium text-[var(--ci-text-muted)]">
                   {ETICHETE_IMPORT[c]}
-                  {OBLIGATORII_IMPORT.includes(c) && <span className="text-[var(--ci-red)]"> *</span>}
+                  {OBLIGATORII_IMPORT.includes(c) && <span className="text-[#9b1c1c]"> *</span>}
                 </span>
                 <Select
                   value={mapare[c] === undefined ? "" : String(mapare[c])}
@@ -327,6 +339,22 @@ export function ImporturiClient({ orgSlug, importuri, poateImporta }: { orgSlug:
           <h2 className="ci-display text-[15px] font-semibold text-[var(--ci-text)]">Istoricul importurilor</h2>
           <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">Fiecare import e o sursă: poți vedea ce a adus și îl poți șterge dacă a fost greșit.</p>
         </div>
+        {deSters && (
+          <div role="group" aria-label="Confirmă ștergerea importului" className="mx-5 mt-4 rounded-lg bg-[var(--ci-surface-2)] p-3 text-[13px] text-[var(--ci-text)]">
+            <p className="font-semibold">Nu se poate anula. Ștergi importul „{deSters.nume}”?</p>
+            <p className="mt-1 text-[12.5px]">
+              Se șterg {nr(deSters.nrImportate)} donații importate și donatorii creați doar de acest import (fără alte donații, notițe sau stare de lucru).
+            </p>
+            <div className="mt-2 flex gap-2">
+              <Button variant="danger" className="min-h-11" loading={stergeActiv} onClick={() => sterge(deSters)}>
+                Șterge importul
+              </Button>
+              <Button className="min-h-11" disabled={stergeActiv} onClick={() => setDeSters(null)}>
+                Renunță
+              </Button>
+            </div>
+          </div>
+        )}
         {importuri.length === 0 ? (
           <p className="px-5 py-8 text-center text-[13px] text-[var(--ci-text-muted)]">Niciun import încă.</p>
         ) : (
@@ -338,7 +366,7 @@ export function ImporturiClient({ orgSlug, importuri, poateImporta }: { orgSlug:
                   <th className="px-3 py-2 font-semibold">Interval</th>
                   <th className="px-3 py-2 text-right font-semibold">Donații</th>
                   <th className="px-3 py-2 text-right font-semibold">Donatori noi</th>
-                  <th className="px-3 py-2 text-right font-semibold">Duplicate</th>
+                  <th className="px-3 py-2 text-right font-semibold">Deja existente</th>
                   <th className="px-3 py-2 font-semibold">Importat</th>
                   <th className="px-5 py-2" />
                 </tr>
@@ -357,7 +385,7 @@ export function ImporturiClient({ orgSlug, importuri, poateImporta }: { orgSlug:
                     </td>
                     <td className="px-5 py-2.5 text-right">
                       {poateImporta && (
-                        <Button size="sm" variant="ghost" aria-label={`Șterge importul ${i.nume}`} onClick={() => sterge(i)}>
+                        <Button size="sm" variant="ghost" aria-label={`Șterge importul ${i.nume}`} onClick={() => setDeSters(i)}>
                           <Trash2 className="size-4" aria-hidden />
                         </Button>
                       )}
@@ -377,7 +405,7 @@ function Cifra({ eticheta, valoare, tona }: { eticheta: string; valoare: string;
   return (
     <div className="rounded-[var(--ci-radius-btn)] bg-[var(--ci-surface-2)] px-3 py-2.5">
       <dt className="text-[11.5px] text-[var(--ci-text-muted)]">{eticheta}</dt>
-      <dd className={`ci-tabular mt-0.5 flex items-center gap-1 text-[15px] font-bold ${tona === "green" ? "text-[var(--ci-green)]" : tona === "amber" ? "text-[var(--ci-amber)]" : "text-[var(--ci-text)]"}`}>
+      <dd className={`ci-tabular mt-0.5 flex items-center gap-1 text-[15px] font-bold ${tona === "green" ? "text-[#17602f]" : tona === "amber" ? "text-[#7a3e00]" : "text-[var(--ci-text)]"}`}>
         {tona === "green" && <CheckCircle2 className="size-4" aria-hidden />}
         {valoare}
       </dd>

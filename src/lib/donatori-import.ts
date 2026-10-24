@@ -140,6 +140,14 @@ const text = (v: unknown, max: number) => {
 
 export type OptiuniRand = { corecteazaEmail?: boolean };
 
+// Un telefon pe care nu l-am putut valida se păstrează așa cum a fost scris doar dacă arată a număr (cifre, spații, + și paranteze): „7.57E+08” (Excel) sau „-” nu au ce căuta în fișa donatorului.
+function telefonBrutPastrat(t: string | null | undefined): string | null {
+  const brut = (t ?? "").trim();
+  if (!brut) return null;
+  if (!/^[+\d\s().-]{6,25}$/.test(brut) || brut.replace(/\D/g, "").length < 6) return null;
+  return brut;
+}
+
 export function normalizeazaRand(celule: unknown[], m: Mapare, acum: Date = new Date(), optiuni: OptiuniRand = {}): RezultatRand {
   const ia = (c: CampImport) => (m[c] !== undefined ? celule[m[c]!] : undefined);
   const status = cheie(ia("status"));
@@ -179,7 +187,7 @@ export function normalizeazaRand(celule: unknown[], m: Mapare, acum: Date = new 
       proiect: text(ia("proiect"), 200),
       localitate: text(ia("localitate"), 200),
       judet: text(ia("judet"), 100),
-      telefon: telefon.valid ? telefon.afisat : text(ia("telefon"), 200),
+      telefon: telefon.valid ? telefon.afisat : telefonBrutPastrat(text(ia("telefon"), 200)),
       procesator: text(ia("procesator"), 100),
       idExtern: text(ia("idExtern"), 200),
       emailOriginal,

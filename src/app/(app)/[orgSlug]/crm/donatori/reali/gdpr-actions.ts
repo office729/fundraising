@@ -173,6 +173,9 @@ export const stergeDateDonator = withOrgAdmin(
       .delete(formular230Destinatari)
       .where(and(eq(formular230Destinatari.orgId, ctx.orgId), sql`lower(${formular230Destinatari.email}) = ${emailLower}`));
 
+    // Jurnalul parcursurilor automate păstrează adresa de e-mail (pe ea se leagă „o singură dată”): se șterge odată cu donatorul.
+    await ctx.db.execute(sql`delete from parcursuri_trimiteri where org_id = ${ctx.orgId} and email = ${emailLower}`);
+
     let formulareSterse = 0;
     if (inclusiv230) {
       const sterse = await ctx.db

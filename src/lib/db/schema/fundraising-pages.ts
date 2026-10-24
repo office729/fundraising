@@ -208,6 +208,11 @@ export const donatoriReali = pgTable(
     // sar. `true` e "lipicios" (o donație ulterioară nebifată nu-l retrage;
     // retragerea se face prin linkul de dezabonare).
     consimtamantEmail: boolean("consimtamant_email"),
+    // Dovada acordului (art. 7(1) GDPR): când a fost dat, de unde vine (formular_online | declarat_echipa) și ce versiune a textului a fost bifată.
+    // NULL la acordurile dinaintea acestor coloane. Vezi lib/consimtamant-email.ts.
+    consimtamantEmailLa: timestamp("consimtamant_email_la", { withTimezone: true }),
+    consimtamantEmailSursa: text("consimtamant_email_sursa"),
+    consimtamantEmailVersiune: text("consimtamant_email_versiune"),
     // Setat când donatorul s-a dezabonat de la emailurile de campanie (link
     // semnat din email — lib/dezabonare.ts). Campaniile îi sar peste, pentru
     // totdeauna; o donație nouă NU îl resetează (webhook-ul nu atinge coloana).

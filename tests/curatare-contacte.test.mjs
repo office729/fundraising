@@ -153,10 +153,10 @@ test("dubluri: același telefon cu nume asemănătoare = mare; cu nume diferite 
   assert.equal(medie[0].incredere, "medie");
 });
 
-test("dubluri: același nume (în orice ordine) și aceeași localitate = medie; fără localitate sau cu un singur cuvânt nu se propune nimic", () => {
+test("dubluri: același nume (în aceeași ordine) și aceeași localitate = medie; fără localitate sau cu un singur cuvânt nu se propune nimic", () => {
   const g = C.gasesteDubluri([
     { id: "1", nume: "Ion Popescu", localitate: "Cluj-Napoca" },
-    { id: "2", nume: "POPESCU ION", localitate: "cluj napoca" },
+    { id: "2", nume: "ION POPESCU", localitate: "cluj napoca" },
   ]);
   assert.equal(g.length, 1);
   assert.equal(g[0].incredere, "medie");
@@ -172,10 +172,54 @@ test("dubluri: grupurile se leagă în lanț (A=B după e-mail, B=C după telefo
     { id: "B", nume: "Ana Pop", email: "ana+2@x.ro", telefon: "0722 111 222" },
     { id: "C", nume: "Ana Popa", telefon: "0722111222" },
     { id: "D", nume: "Ion Rus", localitate: "Sibiu" },
-    { id: "E", nume: "Rus Ion", localitate: "Sibiu" },
+    { id: "E", nume: "Ion Rus", localitate: "Sibiu" },
   ]);
   assert.equal(g.length, 2);
   assert.deepEqual(g[0].ids.sort(), ["A", "B", "C"]);
   assert.equal(g[0].incredere, "mare");
   assert.equal(g[1].incredere, "medie");
+});
+
+test("dubluri: ordinea inversă a numelui nu e destul (Andrei Radu și Radu Andrei pot fi persoane diferite)", () => {
+  assert.equal(C.gasesteDubluri([{ id: "1", nume: "Andrei Radu", localitate: "Iași" }, { id: "2", nume: "Radu Andrei", localitate: "Iași" }]).length, 0);
+  // dar același telefon le leagă tot
+  const g = C.gasesteDubluri([{ id: "1", nume: "Andrei Radu", telefon: "0757401042" }, { id: "2", nume: "Radu Andrei", telefon: "0757 401 042" }]);
+  assert.equal(g.length, 1);
+});
+
+test("dubluri: două telefoane valide diferite sunt dovada că nu e aceeași persoană (la nume + localitate)", () => {
+  const g = C.gasesteDubluri([
+    { id: "1", nume: "Maria Ionescu", localitate: "Iași", telefon: "0757 401 042" },
+    { id: "2", nume: "Maria Ionescu", localitate: "Iași", telefon: "0722 333 444" },
+  ]);
+  assert.equal(g.length, 0);
+  // un singur telefon cunoscut nu e dovadă negativă
+  assert.equal(C.gasesteDubluri([{ id: "1", nume: "Maria Ionescu", localitate: "Iași", telefon: "0757 401 042" }, { id: "2", nume: "Maria Ionescu", localitate: "Iași" }]).length, 1);
+});
+
+test("dubluri: un nume frecvent în aceeași localitate (5+) și un telefon partajat (5+) nu se propun", () => {
+  const nume = Array.from({ length: 5 }, (_, i) => ({ id: "n" + i, nume: "Ion Popescu", localitate: "București" }));
+  assert.equal(C.gasesteDubluri(nume).length, 0);
+  const telefon = Array.from({ length: 5 }, (_, i) => ({ id: "t" + i, nume: "Persoana " + i, telefon: "0212 000 111" }));
+  assert.equal(C.gasesteDubluri(telefon).length, 0);
+  const patru = Array.from({ length: 4 }, (_, i) => ({ id: "p" + i, nume: "Ion Popescu", telefon: "0757 401 042" }));
+  assert.equal(C.gasesteDubluri(patru).length, 1);
+});
+
+test("telefon: numerele de umplutură nu sunt valide, iar din mai multe numere rămâne primul", () => {
+  for (const x of ["0700 000 000", "0722222222", "0712 345 678", "0723456789", "0798765432"]) assert.equal(C.curataTelefon(x).valid, false, x);
+  assert.equal(C.curataTelefon("0757 401 042").valid, true);
+  const doua = C.curataTelefon("0757 401 042 / 0722 111 333");
+  assert.equal(doua.valid, true);
+  assert.equal(doua.canonic, "+40757401042");
+  assert.equal(C.curataTelefon("0757 401 042 sau 0722 111 333").canonic, "+40757401042");
+});
+
+test("celule enorme nu blochează funcția (ReDoS): e-mail și nume se taie înainte de regexuri", () => {
+  const t0 = Date.now();
+  const mare = "x@" + ".".repeat(500_000) + "a";
+  assert.equal(C.evalueazaEmail(mare).stare === "invalid" || C.evalueazaEmail(mare).stare === "corectat" || C.evalueazaEmail(mare).stare === "valid", true);
+  C.curataNume(" ".repeat(300_000) + "a" + ".".repeat(300_000));
+  C.curataTelefon("1".repeat(1_000_000));
+  assert.ok(Date.now() - t0 < 1500, "durează prea mult: " + (Date.now() - t0) + " ms");
 });

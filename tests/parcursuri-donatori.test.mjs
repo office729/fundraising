@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 
 const P = await import("../src/lib/parcursuri-donatori.ts");
 
-test("cele trei parcursuri există, cu pași valabili și texte care folosesc doar variabile cunoscute", () => {
-  assert.deepEqual(P.CHEI_PARCURS, ["welcome", "save", "upgrade", "reactivare"]);
+test("cele cinci parcursuri există, cu pași valabili și texte care folosesc doar variabile cunoscute", () => {
+  assert.deepEqual(P.CHEI_PARCURS, ["welcome", "save", "upgrade", "reactivare", "a_doua_donatie"]);
   for (const cheie of P.CHEI_PARCURS) {
     const d = P.PARCURSURI[cheie];
     assert.equal(d.cheie, cheie);
@@ -15,8 +15,9 @@ test("cele trei parcursuri există, cu pași valabili și texte care folosesc do
   }
 });
 
-test("Welcome are 2 pași (zi 3, apoi 11 zile după), Save 2 (zi 10, apoi 14 după), Upgrade 1 pas imediat", () => {
-  assert.deepEqual(P.PARCURSURI.welcome.pasi.map((p) => p.zile), [3, 11]);
+test("Welcome are 3 pași (zi 1, apoi +14, apoi +21), Save 2 (zi 10, apoi 14 după), Upgrade 1 pas imediat, A doua donație 1 pas la 2 zile", () => {
+  assert.deepEqual(P.PARCURSURI.welcome.pasi.map((p) => p.zile), [1, 14, 21]);
+  assert.deepEqual(P.PARCURSURI.a_doua_donatie.pasi.map((p) => p.zile), [2]);
   assert.deepEqual(P.PARCURSURI.save.pasi.map((p) => p.zile), [10, 14]);
   assert.deepEqual(P.PARCURSURI.upgrade.pasi.map((p) => p.zile), [0]);
   assert.deepEqual(P.PARCURSURI.reactivare.pasi.map((p) => p.zile), [0, 14]);
@@ -111,4 +112,101 @@ test("ore de liniște: mesaje doar între 9:00 și 19:00, ora României (vară �
   assert.equal(P.inIntervalDeTrimitere(new Date("2026-07-01T05:59:00Z")), false);
   assert.equal(P.inIntervalDeTrimitere(new Date("2026-07-01T16:00:00Z")), false);
   assert.equal(P.inIntervalDeTrimitere(new Date("2026-07-02T00:30:00Z")), false);
+});
+
+test("„de lei”: de la 20 în sus și la sute pline; fără „de” sub 20; un leu", () => {
+  const cazuri = [[0, "0 lei"], [1, "1 leu"], [2, "2 lei"], [12, "12 lei"], [19, "19 lei"], [20, "20 de lei"], [25, "25 de lei"], [60, "60 de lei"], [100, "100 de lei"], [101, "101 lei"], [119, "119 lei"], [120, "120 de lei"], [350, "350 de lei"]];
+  for (const [n, asteptat] of cazuri) assert.equal(P.formatLei(n), asteptat);
+  assert.match(P.formatLei(1200), /de lei$/);
+  assert.equal(P.formatLei(Number.NaN), "0 lei");
+  assert.equal(P.formatLei(-5), "0 lei");
+});
+
+test("suma lunară propusă urmează donația obișnuită, în trepte mici", () => {
+  assert.equal(P.sumaLunaraSugerata(20), 10);
+  assert.equal(P.sumaLunaraSugerata(49.9), 10);
+  assert.equal(P.sumaLunaraSugerata(50), 25);
+  assert.equal(P.sumaLunaraSugerata(199), 25);
+  assert.equal(P.sumaLunaraSugerata(200), 50);
+  assert.equal(P.sumaLunaraSugerata(Number.NaN), 10);
+});
+
+test("grupul de control: stabil pentru aceeași adresă, aproximativ 10%, doar la Upgrade și Reactivare", () => {
+  const emailuri = Array.from({ length: 5000 }, (_, i) => "donator" + i + "@exemplu.ro");
+  for (const cheie of ["upgrade", "reactivare"]) {
+    const control = emailuri.filter((e) => P.esteInGrupDeControl(e, cheie));
+    assert.ok(control.length > 350 && control.length < 650, cheie + ": " + control.length);
+    for (const e of control.slice(0, 50)) assert.equal(P.esteInGrupDeControl(e.toUpperCase(), cheie), true, "majusculele nu schimbă grupul");
+  }
+  for (const cheie of ["welcome", "save", "a_doua_donatie"]) assert.equal(emailuri.some((e) => P.esteInGrupDeControl(e, cheie)), false, cheie);
+});
+
+test("validare: nu se pun adrese web în text și nici {suma}/{total}/{campanie} în subiect", () => {
+  const cu = (parte) => P.valideazaPasi([{ zile: 3, subiect: "Salut", corp: "Text", ...parte }], "welcome");
+  assert.equal(cu({}).ok, true);
+  assert.equal(cu({ corp: "Vezi https://exemplu.ro/x" }).ok, false);
+  assert.equal(cu({ corp: "Vezi www.exemplu.ro" }).ok, false);
+  assert.equal(cu({ subiect: "Vezi http://x.ro" }).ok, false);
+  assert.equal(cu({ corp: "Vezi {link}" }).ok, true);
+  for (const v of ["{suma}", "{total}", "{campanie}"]) assert.equal(cu({ subiect: "Mulțumim pentru " + v }).ok, false, v);
+  assert.equal(cu({ corp: "Ai donat {suma}, total {total}, la {campanie}" }).ok, true, "în text sunt permise");
+  assert.equal(cu({ subiect: "Salut {prenume} de la {organizatie}" }).ok, true);
+});
+
+test("textele implicite respectă regulile: fără sume în subiect, fără „lei” după {suma}, fără adrese web", () => {
+  for (const cheie of P.CHEI_PARCURS) for (const pas of P.PARCURSURI[cheie].pasi) {
+    assert.doesNotMatch(pas.subiect, /\{(suma|total|campanie)\}/, cheie);
+    assert.doesNotMatch(pas.corp, /\{(suma|total)\}\s*lei/i, cheie + ": unitatea e deja în variabilă");
+    assert.doesNotMatch(pas.corp + pas.subiect, /https?:\/\/|www\./i, cheie);
+  }
+});
+
+test("un text vechi cu „{suma} lei” nu produce „lei lei” când variabila include deja unitatea", () => {
+  assert.equal(P.aplicaVariabile("Ai donat {suma} lei.", { suma: "100 de lei" }), "Ai donat 100 de lei.");
+});
+
+test("prenumele care arată a adresă sau a cale nu intră în salut", () => {
+  assert.equal(P.prenumePentruSalut("verifica.contul.ro"), "");
+  assert.equal(P.prenumePentruSalut("https://x.ro"), "");
+  assert.equal(P.prenumePentruSalut("Ana-Maria Pop"), "Ana-maria");
+});
+
+test("linkul de donație: pagina campaniei; la mesajele cu donație lunară, cu ?lunar=1 și suma propusă", () => {
+  assert.equal(P.adresaPagina("https://alexandrit.ro", "asociatia-x", "campania-1"), "https://alexandrit.ro/strangere-fonduri/asociatia-x/campania-1");
+  assert.equal(P.adresaPagina("https://alexandrit.ro", "asociatia-x", "campania-1", { suma: 25 }), "https://alexandrit.ro/strangere-fonduri/asociatia-x/campania-1?lunar=1&suma=25");
+  assert.equal(P.adresaPagina("https://alexandrit.ro", "asociatia-x", "campania-1", {}), "https://alexandrit.ro/strangere-fonduri/asociatia-x/campania-1?lunar=1");
+  assert.equal(P.adresaPagina("https://alexandrit.ro", "asociatia-x", null), null);
+  assert.equal(P.adresaPagina("https://alexandrit.ro", "o rg", "pagină/rea"), "https://alexandrit.ro/strangere-fonduri/o%20rg/pagin%C4%83%2Frea", "segmentele se codifică");
+});
+
+test("mesajul propune donație lunară la Upgrade, A doua donație, Save sau când butonul o spune", () => {
+  assert.equal(P.propuneLunar("upgrade", undefined), true);
+  assert.equal(P.propuneLunar("a_doua_donatie", "Donez"), true);
+  assert.equal(P.propuneLunar("save", "Reiau donația"), true);
+  assert.equal(P.propuneLunar("welcome", "Vreau să donez lunar"), true);
+  assert.equal(P.propuneLunar("welcome", "Vezi noutățile"), false);
+  assert.equal(P.propuneLunar("reactivare", "Vezi ce am făcut"), false);
+});
+
+test("subsolul identifică organizația cu datele ei de contact, fără câmpuri goale", () => {
+  assert.equal(P.subsolOrganizatie({ name: "Asociația X" }), "Asociația X");
+  assert.equal(P.subsolOrganizatie({ name: "Asociația X", adresa: "  Str. Pomului 3, Iași ", telefon: "", emailContact: "contact@x.ro" }), "Asociația X (Str. Pomului 3, Iași · contact@x.ro)");
+  assert.equal(P.subsolOrganizatie({ name: "X", adresa: null, telefon: null, emailContact: null }), "X");
+});
+
+test("trimiterea: respingerea clară a serverului se poate reîncerca, un timeout nu (poate a plecat)", () => {
+  assert.equal(P.esteRespingereClara({ responseCode: 550 }), true);
+  assert.equal(P.esteRespingereClara({ responseCode: 421 }), true);
+  assert.equal(P.esteRespingereClara({ code: "EENVELOPE" }), true);
+  assert.equal(P.esteRespingereClara({ code: "ECONNREFUSED" }), true);
+  assert.equal(P.esteRespingereClara({ code: "ETIMEDOUT" }), false);
+  assert.equal(P.esteRespingereClara({ code: "ESOCKET" }), false);
+  assert.equal(P.esteRespingereClara(new Error("necunoscut")), false);
+  assert.equal(P.esteRespingereClara(null), false);
+});
+
+test("plafoanele sunt în ordine: organizația nouă mai jos decât una obișnuită, global peste ambele", () => {
+  assert.ok(P.PLAFON_ZI_ORGANIZATIE_NOUA < P.PLAFON_ZI_ORGANIZATIE);
+  assert.ok(P.PLAFON_ZI_ORGANIZATIE <= P.PLAFON_ZI_GLOBAL);
+  assert.equal(P.MAX_EMAILURI_30_ZILE, 3);
 });

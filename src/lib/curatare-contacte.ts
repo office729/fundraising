@@ -77,7 +77,8 @@ export function evalueazaEmail(brut: unknown): EvaluareEmail {
   if (!original) return invalid(original, "Adresă de e-mail lipsă");
   const modificari: string[] = [];
 
-  let s = original.replace(/[\u0000-\u001f\u007f]+/g, " ").trim();
+  // Celula se taie înainte de regexuri: o adresă reală are cel mult 254 de caractere, iar o celulă de milioane de puncte ar bloca funcția (timp pătratic).
+  let s = original.slice(0, 320).replace(/[\u0000-\u001f\u007f]+/g, " ").trim();
   s = s.replace(/^mailto:/i, "");
   // Mai multe adrese în aceeași celulă: o păstrăm pe prima care arată a e-mail.
   const bucati = s.split(/[;,\s]+/).filter((b) => b.includes("@"));
@@ -179,7 +180,7 @@ function titluCuvant(cuvant: string): string {
 
 // Numele cu majuscule corecte: „POPESCU ion” → „Popescu Ion”. Un nume deja scris cu litere mari și mici amestecate rămâne cum e.
 export function curataNume(brut: unknown): { nume: string; schimbat: boolean } {
-  const primit = String(brut ?? "").trim();
+  const primit = String(brut ?? "").trim().slice(0, 200);
   const original = primit.replace(/[\u0000-\u001f\u007f]+/g, " ").replace(/\s+/g, " ").trim();
   if (!original) return { nume: "", schimbat: false };
   const fara = original.replace(/^[\s.,;:_-]+|[\s.,;:_-]+$/g, "");
@@ -200,13 +201,23 @@ export function curataNume(brut: unknown): { nume: string; schimbat: boolean } {
 // Telefon (România și număr internațional)
 // ============================================================================
 
+// Numere puse ca să treacă de formular (0700 000 000, 0722 222 222, 0712 345 678): nu identifică pe nimeni și ar lega zeci de persoane într-un singur grup de dubluri.
+function esteNumarDeUmplutura(national: string): boolean {
+  const coada = national.slice(-8);
+  if (/^(\d)\1{7}$/.test(coada)) return true;
+  return "0123456789".includes(coada) || "9876543210".includes(coada);
+}
+
 export type TelefonCurat = { valid: boolean; canonic: string; afisat: string; tip: "mobil" | "fix" | "strain" | null; original: string };
 
 // Forma canonică (+40…) servește la comparare; forma afișată e cea națională pentru România (0757 401 042) sau +… pentru restul.
 export function curataTelefon(brut: unknown): TelefonCurat {
-  const original = String(brut ?? "").trim();
+  const original = String(brut ?? "").trim().slice(0, 60);
   const gol: TelefonCurat = { valid: false, canonic: "", afisat: original, tip: null, original };
   if (!original) return gol;
+  // Mai multe numere în aceeași celulă („0757 401 042 / 0722 111 333”): îl păstrăm pe primul.
+  const parti = original.split(/\s*(?:[\/;,]|\bsau\b|\bsi\b|\bși\b)\s*/i).filter((x) => x.replace(/\D/g, "").length >= 6);
+  if (parti.length > 1) return curataTelefon(parti[0]);
   // „+40 (0) 757…” sau „0040…” aduse la o singură formă; extensiile („int. 12”) se ignoră.
   const s = original.replace(/(int\.?|ext\.?|interior)\s*\d+.*$/i, "").replace(/\(0\)/g, "");
   let plus = s.trim().startsWith("+");
@@ -227,6 +238,7 @@ export function curataTelefon(brut: unknown): TelefonCurat {
   else national = cifre;
 
   if (!/^0[2-3]\d{8}$|^07\d{8}$/.test(national)) return gol;
+  if (esteNumarDeUmplutura(national)) return gol;
   const mobil = national.startsWith("07");
   const afisat = mobil ? `${national.slice(0, 4)} ${national.slice(4, 7)} ${national.slice(7)}` : national;
   return { valid: true, canonic: `+40${national.slice(1)}`, afisat, tip: mobil ? "mobil" : "fix", original };
@@ -320,17 +332,27 @@ export function gasesteDubluri(persoane: readonly PersoanaDubla[]): GrupDubluri[
   };
 
   for (const g of dupa((p) => (p.email ? emailCanonic(p.email) : null))) for (let i = 1; i < g.length; i++) noteaza(g[0].id, g[i].id, "email", true);
+  // Un număr folosit de 5 sau mai multe persoane e un telefon de birou sau de familie: nu propunem îmbinarea pe baza lui.
   for (const g of dupa((p) => {
     const t = curataTelefon(p.telefon);
     return t.valid ? t.canonic : null;
-  })) {
+  }).filter((x) => x.length <= 4)) {
     for (let i = 0; i < g.length; i++) for (let j = i + 1; j < g.length; j++) noteaza(g[i].id, g[j].id, "telefon", numeSemanatoare(g[i].nume, g[j].nume));
   }
+  // Nume + localitate: numele în aceeași ordine (Andrei Radu ≠ Radu Andrei, care pot fi persoane diferite), un nume care apare de 5 ori sau mai mult în aceeași
+  // localitate e prea frecvent ca să fie semnal, iar două telefoane valide diferite sunt dovada că nu e aceeași persoană.
   for (const g of dupa((p) => {
-    const n = cheieNumeDublura(p.nume);
+    const n = faraDiacritice(p.nume).replace(/[^a-z\s-]/g, " ").split(/[\s-]+/).filter(Boolean).join(" ");
     const l = faraDiacritice(p.localitate ?? "").replace(/[^a-z]/g, "");
     return n && n.includes(" ") && l ? `${n}|${l}` : null;
-  })) for (let i = 1; i < g.length; i++) noteaza(g[0].id, g[i].id, "nume+localitate", false);
+  }).filter((x) => x.length <= 4)) {
+    for (let i = 1; i < g.length; i++) {
+      const ta = curataTelefon(g[0].telefon);
+      const tb = curataTelefon(g[i].telefon);
+      if (ta.valid && tb.valid && ta.canonic !== tb.canonic) continue;
+      noteaza(g[0].id, g[i].id, "nume+localitate", false);
+    }
+  }
 
   const grupuri = new Map<string, { ids: Set<string>; motive: Set<"email" | "telefon" | "nume+localitate">; puternica: boolean }>();
   for (const [cheie, l] of legaturi) {

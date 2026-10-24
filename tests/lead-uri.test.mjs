@@ -40,3 +40,11 @@ test("CSV: separator „;”, ghilimele escapate, BOM, iar formulele din text su
   const [, rand] = csv.split("\r\n");
   assert.equal(rand, `2026-10-27;Ana;"ONG; Test";a@b.ro;;Nou;;/descopera;2;'=1+1`);
 });
+
+test("CSV: un număr de telefon cu + nu primește apostrof, dar o formulă care începe cu + da", () => {
+  assert.equal(L.celulaCsv("+40 757 401 042"), "+40 757 401 042");
+  assert.equal(L.celulaCsv("+40757401042"), "+40757401042");
+  assert.equal(L.celulaCsv("+1+1"), "'+1+1");
+  assert.equal(L.celulaCsv("-2+3"), "'-2+3");
+  assert.equal(L.celulaCsv("=SUM(A1)"), "'=SUM(A1)");
+});

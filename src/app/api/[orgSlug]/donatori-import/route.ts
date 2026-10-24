@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { withOrgSession } from "@/lib/auth/guard";
+import { verificaLimitaRata } from "@/lib/auth/rate-limit";
 import { CAMPURI_IMPORT, type CampImport, type Mapare } from "@/lib/donatori-import";
 import { citesteFisier, executaImport, MAX_BYTES_IMPORT, planifica } from "@/lib/donatori-import-server";
 import { origineValida } from "@/lib/verifica-origine";
@@ -21,6 +22,8 @@ function curataMapare(brut: unknown): Mapare | undefined {
 
 const proceseaza = withOrgSession(async (ctx, date: { buf: Buffer; fisier: string; mod: string; mapare?: Mapare; nume: string; corecteaza: boolean }) => {
   if (ctx.role !== "owner" && ctx.role !== "admin") return NextResponse.json({ error: "Doar un administrator poate importa donații." }, { status: 403 });
+  // Citirea unui fișier mare costă; o organizație nu are nevoie de mai mult de câteva zeci de analize pe oră.
+  if (!(await verificaLimitaRata("donatori-import", ctx.orgId, 40, 60))) return NextResponse.json({ error: "Prea multe încercări de import într-o oră. Revino mai târziu." }, { status: 429 });
   let fisier;
   try {
     fisier = await citesteFisier(date.buf, date.fisier);
@@ -40,7 +43,10 @@ const proceseaza = withOrgSession(async (ctx, date: { buf: Buffer; fisier: strin
 
 export async function POST(req: Request, { params }: Ctx) {
   if (!origineValida(req)) return NextResponse.json({ error: "forbidden" }, { status: 403 });
-  if (Number(req.headers.get("content-length") ?? 0) > MAX_BYTES_IMPORT + 50_000) return NextResponse.json({ error: "Fișierul e prea mare (maxim 4 MB)." }, { status: 413 });
+  // Fără Content-Length (transfer în bucăți) nu putem ști cât citim: refuzăm, ca un corp uriaș să nu fie parsat înainte de autentificare.
+  const lungime = req.headers.get("content-length");
+  if (!lungime) return NextResponse.json({ error: "Cerere invalidă." }, { status: 411 });
+  if (Number(lungime) > MAX_BYTES_IMPORT + 50_000) return NextResponse.json({ error: "Fișierul e prea mare (maxim 4 MB)." }, { status: 413 });
   let form: FormData;
   try {
     form = await req.formData();

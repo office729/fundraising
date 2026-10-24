@@ -44,6 +44,7 @@ export type LeadRand = {
   creatLa: string;
   ultimaTrimitereLa: string;
   actualizatDe: string | null;
+  actualizatLa: string | null;
   // Adresa are deja cont în platformă (s-a înscris): lead-ul se poate marca „Înscris”.
   areCont: boolean;
 };
@@ -69,6 +70,7 @@ export async function listeazaLeaduriAction(): Promise<LeadRand[]> {
     creatLa: l.creatLa.toISOString(),
     ultimaTrimitereLa: l.ultimaTrimitereLa.toISOString(),
     actualizatDe: l.actualizatDe,
+    actualizatLa: l.actualizatLa ? l.actualizatLa.toISOString() : null,
     areCont: randuri.conturi.has(l.email.toLowerCase()),
   }));
 }

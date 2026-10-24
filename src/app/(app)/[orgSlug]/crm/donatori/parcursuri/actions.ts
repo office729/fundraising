@@ -14,13 +14,14 @@ import {
   CHEI_PARCURS,
   PARCURSURI,
   subiectRandat,
+  subsolOrganizatie,
   valideazaPasi,
   type CheieParcurs,
   type EroareParcurs,
   type PasParcurs,
   type RezultatParcurs,
 } from "@/lib/parcursuri-donatori";
-import { candidatiPas, citesteConfig, htmlParcurs, rezultateParcurs } from "@/lib/parcursuri-server";
+import { candidatiPas, citesteConfig, contactabiliParcursuri, htmlParcurs, rezultateParcurs, type ContactabiliParcursuri } from "@/lib/parcursuri-server";
 
 // Parcursuri pentru donatori (Welcome, Save, Upgrade): un administrator le pornește, le oprește și le editează; oricine din echipă le vede. Trimiterea o face cron-ul zilnic.
 const OPTIUNI = { modul: "parcursuri-donatori" as const };
@@ -44,7 +45,7 @@ export type ParcursDate = {
   // Ce a adus parcursul (donatori înscriși, conversii, venit); null dacă nu s-a putut calcula.
   rezultate: RezultatParcurs | null;
 };
-export type DateParcursuri = { parcursuri: ParcursDate[]; poateEdita: boolean; emailConfigurat: boolean; organizatie: string };
+export type DateParcursuri = { parcursuri: ParcursDate[]; poateEdita: boolean; emailConfigurat: boolean; organizatie: string; contactabili: ContactabiliParcursuri | null };
 
 export const citesteParcursuri = withOrgSession(async (ctx): Promise<DateParcursuri> => {
   const acum = new Date();
@@ -90,7 +91,13 @@ export const citesteParcursuri = withOrgSession(async (ctx): Promise<DateParcurs
       rezultate,
     });
   }
-  return { parcursuri, poateEdita: ctx.role === "owner" || ctx.role === "admin", emailConfigurat: emailConfigurat(), organizatie: ctx.orgName };
+  let contactabili: ContactabiliParcursuri | null = null;
+  try {
+    contactabili = await contactabiliParcursuri(ctx.db, ctx.orgId);
+  } catch {
+    contactabili = null;
+  }
+  return { parcursuri, poateEdita: ctx.role === "owner" || ctx.role === "admin", emailConfigurat: emailConfigurat(), organizatie: ctx.orgName, contactabili };
 }, OPTIUNI);
 
 export type RezultatSalvare = { ok: true; activ: boolean } | { ok: false; eroare: string; erori?: EroareParcurs[] };
@@ -98,7 +105,7 @@ export type RezultatSalvare = { ok: true; activ: boolean } | { ok: false; eroare
 const esteCheie = (x: unknown): x is CheieParcurs => typeof x === "string" && (CHEI_PARCURS as readonly string[]).includes(x);
 
 // Salvează textele și starea unui parcurs. Pornirea (de la oprit la activ) fixează momentul activării: Welcome pornește doar pentru prime donații de după acest moment.
-export const salveazaParcurs = withOrgAdmin(async (ctx, cheie: string, pasi: unknown, activ: boolean): Promise<RezultatSalvare> => {
+export const salveazaParcurs = withOrgAdmin(async (ctx, cheie: string, pasi: unknown, activ: boolean, confirmaAcord = false): Promise<RezultatSalvare> => {
   if (!esteCheie(cheie)) return { ok: false, eroare: "Parcurs necunoscut." };
   const v = valideazaPasi(pasi, cheie);
   if (!v.ok) return { ok: false, eroare: v.erori[0]?.mesaj ?? "Verifică textele parcursului.", erori: v.erori };
@@ -106,6 +113,8 @@ export const salveazaParcurs = withOrgAdmin(async (ctx, cheie: string, pasi: unk
   if (vrea && !emailConfigurat()) return { ok: false, eroare: "Trimiterea de e-mailuri nu este configurată pe platformă, deci parcursul nu poate porni." };
   const [vechi] = (await ctx.db.execute(sql`select activ from parcursuri_donatori where org_id = ${ctx.orgId} and cheie = ${cheie}`)) as unknown as { activ: boolean }[];
   const pornitAcum = vrea && !vechi?.activ;
+  // Decizia de a trimite mesaje donatorilor e a organizației (operatorul datelor): la pornire confirmă, iar confirmarea rămâne în jurnal.
+  if (pornitAcum && confirmaAcord !== true) return { ok: false, eroare: "Confirmă că donatorii cărora li se trimit aceste mesaje au acceptat să le primească." };
   await ctx.db.execute(sql`
     insert into parcursuri_donatori (org_id, cheie, activ, activ_din, pasi, updated_at, updated_by)
     values (${ctx.orgId}, ${cheie}, ${vrea}, ${pornitAcum ? sql`now()` : sql`null`}, ${JSON.stringify(v.pasi)}::text::jsonb, now(), ${ctx.userId})
@@ -118,7 +127,7 @@ export const salveazaParcurs = withOrgAdmin(async (ctx, cheie: string, pasi: unk
     actorAppUserId: ctx.userId,
     actiune: pornitAcum ? "parcurs_donatori_pornit" : vechi?.activ && !vrea ? "parcurs_donatori_oprit" : "parcurs_donatori_salvat",
     entitate: "parcurs_donatori",
-    detalii: { cheie, pasi: v.pasi.length },
+    detalii: { cheie, pasi: v.pasi.length, ...(pornitAcum ? { confirmareAcordDonatori: true } : {}) },
   });
   revalidatePath(`/${ctx.orgSlug}/crm/donatori/parcursuri`);
   return { ok: true, activ: vrea };
@@ -142,7 +151,7 @@ export const trimiteTestParcurs = withOrgAdmin(async (ctx, cheie: string, pasi: 
     await trimiteEmail({
       to: ctx.userEmail,
       subiect: `[TEST] ${subiectRandat(pas.subiect, valori)}`,
-      html: htmlParcurs({ orgName: ctx.orgName, corp: pas.corp, valori, buton: pas.buton, link: `${baseUrl}/${ctx.orgSlug}`, linkDezabonare: linkDez }),
+      html: htmlParcurs({ orgName: ctx.orgName, corp: pas.corp, valori, buton: pas.buton, link: `${baseUrl}/${ctx.orgSlug}`, linkDezabonare: linkDez, identificare: subsolOrganizatie({ name: ctx.orgName, adresa: ctx.orgAdresaSediu, telefon: null, emailContact: null }) }),
       headers: anteteDezabonare(linkDez),
     });
   } catch (e) {

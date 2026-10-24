@@ -5,8 +5,8 @@
 // Reguli care nu se negociază (aplicate în selecție, nu aici): primesc doar donatorii care au bifat acordul pentru e-mailuri, nu s-au dezabonat și nu sunt pe lista de
 // suprimare; cine a răspuns sau e marcat „nu contactat” iese din serie; un parcurs pornește doar cât timp organizația îl ține activ.
 
-export type CheieParcurs = "welcome" | "save" | "upgrade" | "reactivare";
-export const CHEI_PARCURS: readonly CheieParcurs[] = ["welcome", "save", "upgrade", "reactivare"];
+export type CheieParcurs = "welcome" | "save" | "upgrade" | "reactivare" | "a_doua_donatie";
+export const CHEI_PARCURS: readonly CheieParcurs[] = ["welcome", "save", "upgrade", "reactivare", "a_doua_donatie"];
 
 export type PasParcurs = {
   // Pasul 1: zile de la evenimentul care pornește seria (prima donație la Welcome, ultima plată recurentă la Save, 0 la Upgrade).
@@ -37,25 +37,35 @@ export const PARCURSURI: Record<CheieParcurs, DefinitieParcurs> = {
   welcome: {
     cheie: "welcome",
     nume: "Welcome: după prima donație",
-    descriere: "Donatorii care au donat prima dată: un mulțumesc după câteva zile și o invitație să rămână aproape. Se oprește dacă donează din nou.",
+    descriere: "Donatorii care au donat prima dată: un mulțumesc a doua zi, o invitație să urmărească ce se întâmplă mai departe și, mai târziu, propunerea de a dona lunar. Se oprește dacă donează din nou.",
     eveniment: "prima donație",
     obiectiv: "o nouă donație după primul e-mail",
     pasi: [
       {
-        zile: 3,
-        subiect: "Mulțumim încă o dată, {prenume}",
+        zile: 1,
+        subiect: "Mulțumim, {prenume}",
         corp: `Bună, {prenume}!
 
-Acum câteva zile ne-ai fost alături cu {suma} lei, iar noi nu vrem să te lăsăm doar cu un mesaj automat de confirmare. Mulțumim, de la toată echipa {organizatie}.
+Donația ta de {suma} a ajuns la noi. Voiam să-ți mulțumim noi, nu doar sistemul care trimite confirmarea. Mulțumim, din partea întregii echipe {organizatie}.
 
-Donația ta merge direct în proiectul pe care l-ai ales ({campanie}). Îți vom spune ce s-a făcut cu ea.`,
+Îți mai scriem doar când avem ceva concret de arătat.`,
       },
       {
-        zile: 11,
-        subiect: "Cum poți ajuta mai departe",
+        zile: 14,
+        subiect: "Ce se întâmplă mai departe, {prenume}",
         corp: `Bună, {prenume}!
 
-Mulțumim că ai ales să ne susții. Dacă vrei să faci și mai mult, un gest mic repetat în fiecare lună ne ajută să planificăm: poți deveni donator lunar în doar câteva clipe.
+Te-ai alăturat oamenilor care ne sprijină și vrem să rămânem aproape de tine. Cele mai importante vești le găsești pe pagina de campanie, unde le adăugăm pe măsură ce apar.
+
+Dacă ai o întrebare sau vrei să afli mai mult, răspunde la acest e-mail: îl citește un om.`,
+        buton: "Vezi noutățile",
+      },
+      {
+        zile: 21,
+        subiect: "Un gest mic, în fiecare lună",
+        corp: `Bună, {prenume}!
+
+Mulțumim că ai ales să ne susții. Dacă vrei să faci și mai mult, un gest mic repetat în fiecare lună ne ajută să planificăm: poți deveni donator lunar în doar câteva clipe, cu o sumă mică pe care o poți opri oricând.
 
 Iar dacă nu e momentul, nu e nicio problemă: mulțumim oricum.`,
         buton: "Vreau să donez lunar",
@@ -71,12 +81,12 @@ Iar dacă nu e momentul, nu e nicio problemă: mulțumim oricum.`,
     pasi: [
       {
         zile: 10,
-        subiect: "Ne pare rău că ne-am pierdut, {prenume}",
+        subiect: "{prenume}, donația ta lunară s-a oprit",
         corp: `Bună, {prenume}!
 
-Am văzut că donația ta lunară către {organizatie} s-a oprit. Poate ai vrut asta, poate a fost o problemă cu cardul: oricum, vrem să-ți spunem că cei {total} lei donați până acum au contat.
+Am observat că donația ta lunară către {organizatie} s-a oprit. Dacă ai vrut asta, îți mulțumim pentru tot ce ai făcut până acum. Dacă a fost doar o problemă cu cardul, o poți relua în câteva clipe.
 
-Dacă vrei să reiei, durează un minut. Dacă nu, îți mulțumim din suflet.`,
+Oricare ar fi motivul, ne-ar ajuta să aflăm ce s-a întâmplat: răspunde la acest e-mail, îl citește un om.`,
         buton: "Reiau donația lunară",
       },
       {
@@ -84,27 +94,26 @@ Dacă vrei să reiei, durează un minut. Dacă nu, îți mulțumim din suflet.`,
         subiect: "Un gând de la {organizatie}",
         corp: `Bună, {prenume}!
 
-Nu vrem să insistăm, așa că acesta e ultimul mesaj de acest fel. Dacă te răzgândești, ușa rămâne deschisă oricând, iar dacă nu, rămâne ce ai făcut deja: a contat.
-
-Mulțumim pentru tot ce ai făcut până acum.`,
+Acesta e ultimul mesaj de acest fel. Dacă te răzgândești, poți relua donația oricând, în câteva clipe. Dacă nu, rămâne ce ai făcut deja: a contat, și îți mulțumim.`,
+        buton: "Reiau donația lunară",
       },
     ],
   },
   upgrade: {
     cheie: "upgrade",
     nume: "Upgrade: donatori fideli",
-    descriere: "Donatorii fideli care nu au donat niciodată lunar (cel puțin 3 donații, ultima în ultimele 90 de zile): o propunere de a deveni donatori lunari. Se trimite o singură dată fiecărui donator.",
+    descriere: "Donatorii fideli care nu au donat niciodată lunar (cel puțin 3 donații, ultima în ultimele 90 de zile): o propunere de a deveni donatori lunari. Se trimite o singură dată fiecărui donator. 10% dintre ei nu primesc mesajul, ca să vedem ce aduce el cu adevărat.",
     eveniment: "nu există: se trimite când donatorul devine eligibil",
     obiectiv: "o donație lunară nouă după e-mail",
     pasi: [
       {
         zile: 0,
-        subiect: "{prenume}, ai fost alături de noi de {total} lei",
+        subiect: "{prenume}, mulțumim că ești alături de noi",
         corp: `Bună, {prenume}!
 
 Ai donat de mai multe ori către {organizatie}, iar asta ne arată cât de mult îți pasă. Mulțumim!
 
-Dacă vrei să faci și mai mult fără să te gândești de fiecare dată, poți transforma gestul tău într-o donație lunară, cu o sumă pe care o alegi tu și pe care o poți opri oricând.`,
+Dacă vrei să faci și mai mult fără să te gândești de fiecare dată, poți transforma gestul tău într-o donație lunară, cu o sumă mică pe care o alegi tu și pe care o poți opri oricând.`,
         buton: "Devin donator lunar",
       },
     ],
@@ -112,30 +121,126 @@ Dacă vrei să faci și mai mult fără să te gândești de fiecare dată, poț
   reactivare: {
     cheie: "reactivare",
     nume: "Reactivare: donatori care au tăcut",
-    descriere: "Donatorii a căror ultimă donație a fost acum 12–24 de luni și care nu au o donație lunară activă: un mesaj de reconectare și o amintire după două săptămâni. Se oprește dacă donează. Se trimite o singură dată fiecărui donator.",
+    descriere: "Donatorii a căror ultimă donație a fost acum 12–24 de luni și care nu au o donație lunară activă: un mesaj de reconectare și o amintire după două săptămâni. Se oprește dacă donează. Se trimite o singură dată fiecărui donator. 10% dintre ei nu primesc mesajul, ca să vedem ce aduce el cu adevărat.",
     eveniment: "nu există: se trimite când trec 12 luni de la ultima donație",
     obiectiv: "o nouă donație după primul e-mail",
     pasi: [
       {
         zile: 0,
-        subiect: "{prenume}, ne-a fost dor de tine",
+        subiect: "{prenume}, ce s-a întâmplat de când ne-ai ajutat",
         corp: `Bună, {prenume}!
 
-A trecut ceva timp de când ne-ai fost alături la {organizatie}, cu {total} lei în total, și nu am vrut să lăsăm lucrurile să treacă fără un gând de mulțumire.
+A trecut ceva timp de când ne-ai fost alături la {organizatie} și nu am vrut să lăsăm lucrurile să treacă fără un gând de mulțumire.
 
-Ce ai ajutat atunci a continuat. Dacă vrei să afli ce s-a întâmplat de atunci sau să fii din nou aproape de noi, ne-ar bucura mult.`,
-        buton: "Vezi cum poți ajuta",
+Am adunat pe pagina noastră ce s-a întâmplat între timp. Dacă vrei să vezi sau să fii din nou aproape de noi, ne-ar bucura.`,
+        buton: "Vezi ce am făcut",
       },
       {
         zile: 14,
         subiect: "Un ultim gând de la {organizatie}",
         corp: `Bună, {prenume}!
 
-Nu vrem să insistăm, așa că acesta e ultimul mesaj de acest fel. Dacă ți-a trecut prin cap să ne sprijini din nou, mâna ta întinsă face diferența. Iar dacă nu e momentul, rămâne ce ai făcut deja: mulțumim.`,
+Acesta e ultimul mesaj de acest fel. Dacă îți mai dorești să ne sprijini, ești binevenit oricând; dacă nu, îți mulțumim încă o dată pentru ce ai făcut.`,
+        buton: "Vezi cum poți ajuta",
+      },
+    ],
+  },
+  a_doua_donatie: {
+    cheie: "a_doua_donatie",
+    nume: "A doua donație: ai ales să revii",
+    descriere: "Donatorii care au donat a doua oară (și nu au donație lunară): un mesaj la două zile după donație și propunerea de a dona lunar, cu o sumă mică. Cine donează a doua oară e cel mai bun candidat la o donație lunară. Se trimite o singură dată fiecărui donator.",
+    eveniment: "a doua donație",
+    obiectiv: "o donație lunară nouă după e-mail",
+    pasi: [
+      {
+        zile: 2,
+        subiect: "{prenume}, ai ales să revii",
+        corp: `Bună, {prenume}!
+
+Ai donat a doua oară către {organizatie}. Asta contează mai mult decât orice sumă: înseamnă că ai încredere în noi. Mulțumim!
+
+Dacă vrei să ne sprijini fără să te mai gândești de fiecare dată, poți dona lunar, cu o sumă mică pe care o alegi tu și pe care o poți opri oricând.`,
+        buton: "Donez lunar",
       },
     ],
   },
 };
+
+// Parcursuri la care o parte din donatori (alese stabil, după adresă) NU primesc mesajul: grupul de control. Fără el, „au donat după e-mail” include
+// și donațiile care s-ar fi întâmplat oricum, iar parcursul pare mai bun decât e.
+export const CONTROL_PROCENT: Partial<Record<CheieParcurs, number>> = { upgrade: 10, reactivare: 10 };
+
+// Împărțire stabilă: aceeași adresă cade mereu în aceeași parte (FNV-1a pe adresă și parcurs), deci un donator nu trece din control în trimis între rulări.
+export function esteInGrupDeControl(email: string, cheie: CheieParcurs): boolean {
+  const procent = CONTROL_PROCENT[cheie] ?? 0;
+  if (procent <= 0) return false;
+  let h = 0x811c9dc5;
+  for (const c of `${cheie}:${email.trim().toLowerCase()}`) {
+    h ^= c.codePointAt(0)!;
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h % 100 < procent;
+}
+
+// ===== Linkuri, subsol, erori de trimitere =====
+
+// Pagina de donație: a campaniei ultimei donații (dacă e încă activă) sau, altfel, a celei mai recente campanii active a organizației.
+// Pentru mesajele care propun o donație lunară, linkul deschide formularul cu „lunar” preselectat și o sumă mică propusă.
+export function adresaPagina(baseUrl: string, orgSlug: string, slugPagina: string | null, lunar?: { suma?: number }): string | null {
+  if (!slugPagina) return null;
+  const baza = `${baseUrl}/strangere-fonduri/${encodeURIComponent(orgSlug)}/${encodeURIComponent(slugPagina)}`;
+  if (!lunar) return baza;
+  const parametri = new URLSearchParams({ lunar: "1" });
+  if (lunar.suma) parametri.set("suma", String(lunar.suma));
+  return `${baza}?${parametri.toString()}`;
+}
+
+// Mesajul propune o donație lunară dacă parcursul e despre asta sau dacă textul butonului o spune.
+export function propuneLunar(cheie: CheieParcurs, buton: string | undefined): boolean {
+  return cheie === "upgrade" || cheie === "a_doua_donatie" || cheie === "save" || /lunar/i.test(buton ?? "");
+}
+
+// Ce se vede în subsol: cine trimite, în numele cui, cum se dezabonează. Identificăm organizația cu datele ei de contact (art. 13 GDPR; comunicările comerciale trebuie să arate expeditorul).
+export function subsolOrganizatie(org: { name: string; adresa?: string | null; telefon?: string | null; emailContact?: string | null }): string {
+  const contact = [org.adresa, org.telefon, org.emailContact].map((x) => (x ?? "").trim()).filter(Boolean).join(" · ");
+  return contact ? `${org.name} (${contact})` : org.name;
+}
+
+
+// Serverul de e-mail a respins clar mesajul (cod SMTP 4xx/5xx sau eroare înainte de conectare): nu a plecat nimic, deci se poate reîncerca. La un timeout nu știm dacă a plecat.
+export function esteRespingereClara(e: unknown): boolean {
+  const eroare = e as { responseCode?: unknown; code?: unknown } | null;
+  if (typeof eroare?.responseCode === "number" && eroare.responseCode >= 400) return true;
+  return typeof eroare?.code === "string" && ["EENVELOPE", "EAUTH", "ECONNREFUSED", "ENOTFOUND", "EDNS"].includes(eroare.code);
+}
+
+// ===== Plafoane =====
+
+// Un donator nu primește mai mult de atâtea e-mailuri de parcurs la 30 de zile, oricâte parcursuri ar atinge.
+export const MAX_EMAILURI_30_ZILE = 3;
+// Organizațiile noi (primele 30 de zile) au un plafon zilnic mai mic: un cont nou nu trimite sute de mesaje în numele platformei din prima zi.
+export const ORGANIZATIE_NOUA_ZILE = 30;
+export const PLAFON_ZI_ORGANIZATIE_NOUA = 20;
+export const PLAFON_ZI_ORGANIZATIE = 150;
+// Plafon zilnic pentru toate organizațiile la un loc: apără reputația domeniului de trimitere.
+export const PLAFON_ZI_GLOBAL = 1500;
+
+// Suma lunară propusă în link, în funcție de ce donează de obicei persoana: un pas mic, nu o creștere bruscă.
+export function sumaLunaraSugerata(mediaPeDonatie: number): number {
+  if (!Number.isFinite(mediaPeDonatie) || mediaPeDonatie < 50) return 10;
+  if (mediaPeDonatie < 200) return 25;
+  return 50;
+}
+
+// „100 de lei”, „12 lei”, „1 leu”: în română numerele de la 20 în sus (și sutele pline) cer „de”.
+export function formatLei(n: number): string {
+  const v = Math.max(0, Math.round(Number.isFinite(n) ? n : 0));
+  if (v === 0) return "0 lei";
+  if (v === 1) return "1 leu";
+  const rest = v % 100;
+  const text = new Intl.NumberFormat("ro-RO").format(v);
+  return rest === 0 || rest >= 20 ? `${text} de lei` : `${text} lei`;
+}
 
 // ===== Validare =====
 
@@ -167,6 +272,9 @@ export function valideazaPasi(pasi: unknown, cheie: CheieParcurs): { ok: true; p
     else if (corp.length > LIMITE_PARCURS.maxCorp) erori.push({ pas: i, mesaj: `Textul e prea lung (maximum ${LIMITE_PARCURS.maxCorp} de caractere).` });
     if (buton.length > LIMITE_PARCURS.maxButon) erori.push({ pas: i, mesaj: `Textul butonului e prea lung (maximum ${LIMITE_PARCURS.maxButon} de caractere).` });
     const minZile = (cheie === "upgrade" || cheie === "reactivare") && i === 0 ? 0 : 1;
+    const areLink = /https?:\/\/|www\./i;
+    if (areLink.test(subiect) || areLink.test(corp)) erori.push({ pas: i, mesaj: "Nu pune adrese web în text: folosește butonul sau variabila {link}, ca adresa să fie mereu cea corectă." });
+    if (/\{(suma|total|campanie)\}/.test(subiect)) erori.push({ pas: i, mesaj: "Nu pune {suma}, {total} sau {campanie} în subiect: subiectul se vede pe ecranul blocat al telefonului și ar arăta altora ce a donat persoana. Le poți folosi în text." });
     if (!Number.isFinite(zile) || zile < minZile || zile > LIMITE_PARCURS.maxZile) erori.push({ pas: i, mesaj: `Numărul de zile trebuie să fie între ${minZile} și ${LIMITE_PARCURS.maxZile}.` });
     const necunoscute = [...variabileNecunoscute(subiect), ...variabileNecunoscute(corp)];
     if (necunoscute.length) erori.push({ pas: i, mesaj: `Variabile necunoscute: ${[...new Set(necunoscute)].map((v) => `{${v}}`).join(", ")}. Folosește: ${VARIABILE_PARCURS.map((v) => `{${v}}`).join(", ")}.` });
@@ -183,6 +291,7 @@ const escapeHtml = (v: string) => v.replace(/&/g, "&amp;").replace(/</g, "&lt;")
 export function aplicaVariabile(text: string, valori: ValoriParcurs): string {
   return text
     .replace(RE_VARIABILA, (_, v: string) => valori[v as VariabilaParcurs] ?? "")
+    .replace(/\b(lei|leu)\s+(lei|leu)\b/gi, "$1")
     .replace(/\(\s*\)/g, "")
     .replace(/[ \t]{2,}/g, " ")
     .replace(/ +([.,!?;:])/g, "$1")
@@ -210,7 +319,7 @@ export function subiectRandat(subiect: string, valori: ValoriParcurs): string {
 // Prenumele pentru salut: primul cuvânt al numelui, cu inițială mare; gol dacă numele nu arată a nume.
 export function prenumePentruSalut(nume: string | null | undefined): string {
   const p = (nume ?? "").trim().split(/\s+/)[0] ?? "";
-  if (!p || /[@\d]/.test(p) || p.length > 40) return "";
+  if (!p || /[@\d./\\:]/.test(p) || p.length > 40) return "";
   return p.charAt(0).toLocaleUpperCase("ro") + p.slice(1).toLocaleLowerCase("ro");
 }
 
@@ -226,6 +335,8 @@ export type RezultatParcurs = {
   medianaZile: number | null; // zile de la primul e-mail până la donație, mediana celor convertiți
   venit: number; // lei donați de cei înscriși, în fereastra de conversie
   pasi: RezultatPas[];
+  // Grup de control (doar la parcursurile care au): donatori eligibili care NU au primit mesajul, cu aceeași definiție a donației după; null unde nu există control.
+  control: { inscrisi: number; convertiti: number } | null;
 };
 
 // Procent întreg, fără împărțire la zero (null când nu există nimic de împărțit).

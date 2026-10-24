@@ -10,7 +10,7 @@ export const TERMENI_DONATORI_DICT = {
     eyebrow: "Legal",
     titlu: "Termeni și condiții pentru donatori",
     actualizatLabel: "Ultima actualizare",
-    actualizat: "12 octombrie 2026",
+    actualizat: "24 octombrie 2026",
     sectiuni: [
       {
         titlu: "1. Cine este cine",
@@ -60,7 +60,7 @@ export const TERMENI_DONATORI_DICT = {
       {
         titlu: "8. Comunicări opționale",
         paragrafe: [
-          "Primești mesaje de actualizare sau invitația în grupul de mesagerie doar dacă bifezi opțiunile separate; poți retrage oricând acordul (link de dezabonare în fiecare e-mail).",
+          "Primești mesaje de la organizație (mulțumiri, vești despre proiecte, invitații de a dona din nou sau lunar) sau invitația în grupul de mesagerie doar dacă bifezi opțiunile separate. Unele e-mailuri se trimit automat, în funcție de istoricul donațiilor tale (de exemplu după prima sau a doua donație, sau dacă o donație lunară se oprește). Poți retrage oricând acordul (link de dezabonare în fiecare e-mail).",
         ],
       },
       {
@@ -94,7 +94,7 @@ export const TERMENI_DONATORI_DICT = {
     eyebrow: "Legal",
     titlu: "Terms and conditions for donors",
     actualizatLabel: "Last updated",
-    actualizat: "October 12, 2026",
+    actualizat: "October 24, 2026",
     sectiuni: [
       {
         titlu: "1. Who is who",
@@ -144,7 +144,7 @@ export const TERMENI_DONATORI_DICT = {
       {
         titlu: "8. Optional communications",
         paragrafe: [
-          "You receive update messages or an invitation to the messaging group only if you tick the separate options; you can withdraw consent at any time (every e-mail has an unsubscribe link).",
+          "You receive messages from the organization (thank-yous, project news, invitations to donate again or monthly) or an invitation to the messaging group only if you tick the separate options. Some e-mails are sent automatically, depending on your donation history (for example after your first or second donation, or if a monthly donation stops). You can withdraw consent at any time (every e-mail has an unsubscribe link).",
         ],
       },
       {

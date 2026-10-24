@@ -4,7 +4,8 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 
 import { inregistreazaAudit } from "@/lib/audit";
 import type { OrgContext } from "@/lib/auth/guard";
-import { donatiiImportate, donatorNotite, donatoriReali, fundraisingDonations } from "@/lib/db/schema";
+import { donatiiImportate, donatorNotite, donatoriReali, emailSuppression, fundraisingDonations } from "@/lib/db/schema";
+import { hashSuprimare } from "@/lib/dezabonare";
 import { recalculeazaCacheDonatori } from "@/lib/donatori-import-server";
 
 // Îmbinarea donatorilor care sunt aceeași persoană (apelată din pagina „Dubluri”, după confirmare). Rulează în tranzacția acțiunii: ori se face tot, ori nimic.
@@ -20,7 +21,7 @@ export async function executaImbinare(ctx: Pick<OrgContext, "db" | "orgId" | "us
   if (!UUID.test(String(primarId)) || secundari.length === 0 || secundari.length > 10) return { ok: false, eroare: "Alege donatorul de păstrat și cel puțin un donator de îmbinat (cel mult 10)." };
 
   await ctx.db.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`${ctx.orgId}:donatori-import`}, 0))`);
-  const toti = await ctx.db.select().from(donatoriReali).where(eq(donatoriReali.orgId, ctx.orgId));
+  const toti = await ctx.db.select().from(donatoriReali).where(and(eq(donatoriReali.orgId, ctx.orgId), inArray(donatoriReali.id, [primarId, ...secundari])));
   const primar = toti.find((d) => d.id === primarId);
   const sec = secundari.map((id) => toti.find((d) => d.id === id));
   if (!primar || sec.some((d) => !d)) return { ok: false, eroare: "Unul dintre donatori nu mai există. Reîncarcă pagina." };
@@ -42,7 +43,10 @@ export async function executaImbinare(ctx: Pick<OrgContext, "db" | "orgId" | "us
   };
   const maxData = (f: (d: (typeof toti)[number]) => Date | null) => toate.map(f).filter((x): x is Date => x !== null).sort((a, b) => b.getTime() - a.getTime())[0] ?? null;
   const minData = (f: (d: (typeof toti)[number]) => Date | null) => toate.map(f).filter((x): x is Date => x !== null).sort((a, b) => a.getTime() - b.getTime())[0] ?? null;
-  const consimtamant = toate.some((d) => d.consimtamantEmail === false) ? false : toate.some((d) => d.consimtamantEmail === true) ? true : null;
+  // Acordul e dat de o persoană pentru o adresă: nu trece de la secundar la principal. Un refuz al oricăruia rămâne valabil; altfel rămâne ce are deja donatorul păstrat
+  // (inclusiv data, sursa și versiunea acordului lui). Dacă principalul n-a fost întrebat, rămâne „necunoscut”, chiar dacă secundarul a bifat pe adresa lui.
+  const consimtamant = toate.some((d) => d.consimtamantEmail === false) ? false : primar.consimtamantEmail;
+  const refuzNou = toate.some((d) => d.consimtamantEmail === false) && primar.consimtamantEmail !== false;
   const reapelLa = toate.map((d) => d.reapelLa).filter((x): x is string => x !== null).sort().reverse()[0] ?? null;
 
   let donatiiMutate = 0;
@@ -64,12 +68,31 @@ export async function executaImbinare(ctx: Pick<OrgContext, "db" | "orgId" | "us
     const note = await ctx.db.update(donatorNotite).set({ donatorId: primar.id }).where(and(eq(donatorNotite.orgId, ctx.orgId), eq(donatorNotite.donatorId, s.id))).returning({ id: donatorNotite.id });
     notiteMutate += note.length;
   }
+  // Jurnalul parcursurilor e legat de adresă: îl mutăm pe adresa păstrată (fără să dublăm un pas deja trimis acolo), ca donatorul să nu primească din nou un mesaj „o singură dată”.
+  const emailPrimar = primar.email.toLowerCase();
+  let trimiteriMutate = 0;
+  for (const s of secundariRanduri) {
+    const emailSec = s.email.toLowerCase();
+    const mutate = (await ctx.db.execute(sql`
+      update parcursuri_trimiteri t set email = ${emailPrimar}, donator_id = ${primar.id}
+      where t.org_id = ${ctx.orgId} and t.email = ${emailSec}
+        and not exists (select 1 from parcursuri_trimiteri p where p.org_id = ${ctx.orgId} and p.email = ${emailPrimar} and p.cheie = t.cheie and p.pas = t.pas)
+      returning t.id`)) as unknown as unknown[];
+    trimiteriMutate += mutate.length;
+    await ctx.db.execute(sql`delete from parcursuri_trimiteri where org_id = ${ctx.orgId} and email = ${emailSec}`);
+    // Adresa secundară era pe lista de suprimare: nu mai primește nimic, iar donatorul păstrat nu trebuie să primească mesaje pe care persoana le-a refuzat.
+    const suprimat = await ctx.db.select({ id: emailSuppression.id }).from(emailSuppression).where(and(eq(emailSuppression.orgId, ctx.orgId), eq(emailSuppression.emailHash, hashSuprimare(ctx.orgId, emailSec)))).limit(1);
+    if (suprimat.length > 0) {
+      await ctx.db.insert(emailSuppression).values({ orgId: ctx.orgId, emailHash: hashSuprimare(ctx.orgId, emailPrimar), motiv: "imbinare" }).onConflictDoNothing();
+    }
+  }
   await ctx.db.delete(donatoriReali).where(and(eq(donatoriReali.orgId, ctx.orgId), inArray(donatoriReali.id, secundari)));
   await ctx.db
     .update(donatoriReali)
     .set({
       telefon: prima((d) => d.telefon), localitate: prima((d) => d.localitate), judet: prima((d) => d.judet), responsabil: prima((d) => d.responsabil) ?? primar.responsabil,
-      consimtamantEmail: consimtamant, consimtamantWhatsapp: toate.some((d) => d.consimtamantWhatsapp), dezabonatEmailLa: minData((d) => d.dezabonatEmailLa),
+      consimtamantEmail: consimtamant, consimtamantWhatsapp: primar.consimtamantWhatsapp, dezabonatEmailLa: minData((d) => d.dezabonatEmailLa),
+      ...(refuzNou ? { consimtamantEmailLa: null, consimtamantEmailSursa: null, consimtamantEmailVersiune: null } : {}),
       sunatLa: maxData((d) => d.sunatLa), multumitLa: maxData((d) => d.multumitLa), aRaspuns: toate.some((d) => d.aRaspuns), nuContactat: toate.some((d) => d.nuContactat),
       reapelLa, wbStage: prima((d) => d.wbStage),
       adaugatLa: minData((d) => d.adaugatLa) ?? primar.adaugatLa,
@@ -84,9 +107,10 @@ export async function executaImbinare(ctx: Pick<OrgContext, "db" | "orgId" | "us
     entitate: "donator",
     entitateId: primar.id,
     detalii: {
-      pastrat: primar.email,
-      imbinati: secundariRanduri.map((s) => ({ email: s.email, nume: s.nume, telefon: s.telefon, localitate: s.localitate })),
-      donatiiMutate, importuriMutate, notiteMutate,
+      // Fără nume, e-mail sau telefon: jurnalul n-ar fi curățat la o cerere de ștergere. Rămân identificatori și numărătorile.
+      pastrat: primar.id,
+      imbinati: secundariRanduri.map((s) => ({ id: s.id, acordEmail: s.consimtamantEmail, dezabonat: s.dezabonatEmailLa !== null })),
+      donatiiMutate, importuriMutate, notiteMutate, trimiteriMutate,
     },
   });
   return { ok: true, donatiiMutate, importuriMutate, notiteMutate, imbinati: secundari.length };

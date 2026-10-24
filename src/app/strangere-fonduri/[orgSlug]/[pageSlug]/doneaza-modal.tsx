@@ -38,6 +38,8 @@ export function DoneazaModal({
   metode,
   orgName,
   orgCif,
+  lunarInitial,
+  sumaInitiala,
 }: {
   orgSlug: string;
   pageSlug: string;
@@ -45,6 +47,9 @@ export function DoneazaModal({
   locale: Locale;
   orgName: string;
   orgCif: string | null;
+  // Din linkul ?lunar=1&suma=…: formularul se deschide direct, cu donația lunară preselectată și suma propusă.
+  lunarInitial?: boolean;
+  sumaInitiala?: number;
   publishableKey: string | null;
   // Calculat pe server la randarea paginii (vezi metode-plata-donatii.ts).
   metode: MetodeRedirect;
@@ -56,7 +61,7 @@ export function DoneazaModal({
     preconnect("https://api.stripe.com", { crossOrigin: "anonymous" });
     preconnect("https://m.stripe.network", { crossOrigin: "anonymous" });
   }
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(Boolean(lunarInitial));
   // Deschiderea formularului de donație = pasul dintre vizită și donație în statisticile campaniei.
   useEffect(() => {
     if (open) void inregistreazaEveniment(orgSlug, pageSlug, "deschide_donatia");
@@ -222,7 +227,7 @@ export function DoneazaModal({
                 ✕
               </button>
             </div>
-            <DoneazaForm orgSlug={orgSlug} pageSlug={pageSlug} titlu={titlu} locale={locale} publishableKey={publishableKey} metoda={metoda} cursEur={paypal.curs} orgName={orgName} orgCif={orgCif} key={metoda ?? "card"} />
+            <DoneazaForm orgSlug={orgSlug} pageSlug={pageSlug} titlu={titlu} locale={locale} publishableKey={publishableKey} metoda={metoda} cursEur={paypal.curs} orgName={orgName} orgCif={orgCif} lunarInitial={lunarInitial} sumaInitiala={sumaInitiala} key={metoda ?? "card"} />
           </div>
         </div>
       )}

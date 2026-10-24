@@ -16,7 +16,7 @@ create table if not exists parcursuri_donatori (
 );
 create unique index if not exists parcursuri_donatori_org_cheie on parcursuri_donatori (org_id, cheie);
 alter table parcursuri_donatori drop constraint if exists parcursuri_donatori_cheie_chk;
-alter table parcursuri_donatori add constraint parcursuri_donatori_cheie_chk check (cheie in ('welcome', 'save', 'upgrade', 'reactivare'));
+alter table parcursuri_donatori add constraint parcursuri_donatori_cheie_chk check (cheie in ('welcome', 'save', 'upgrade', 'reactivare', 'a_doua_donatie'));
 
 create table if not exists parcursuri_trimiteri (
   id uuid primary key default gen_random_uuid(),
@@ -32,10 +32,10 @@ create unique index if not exists parcursuri_trimiteri_unic on parcursuri_trimit
 create index if not exists parcursuri_trimiteri_org_idx on parcursuri_trimiteri (org_id, creat_la desc);
 create index if not exists parcursuri_trimiteri_email_idx on parcursuri_trimiteri (org_id, email, creat_la desc);
 alter table parcursuri_trimiteri drop constraint if exists parcursuri_trimiteri_cheie_chk;
-alter table parcursuri_trimiteri add constraint parcursuri_trimiteri_cheie_chk check (cheie in ('welcome', 'save', 'upgrade', 'reactivare'));
-do $$ begin
-  alter table parcursuri_trimiteri add constraint parcursuri_trimiteri_stare_chk check (stare in ('in_curs', 'trimis'));
-exception when duplicate_object then null; end $$;
+alter table parcursuri_trimiteri add constraint parcursuri_trimiteri_cheie_chk check (cheie in ('welcome', 'save', 'upgrade', 'reactivare', 'a_doua_donatie'));
+-- stare: in_curs (revendicat, în trimitere) | trimis | control (donator ales stabil pentru grupul de control: NU primește mesajul, dar îl numărăm ca să comparăm rezultatele)
+alter table parcursuri_trimiteri drop constraint if exists parcursuri_trimiteri_stare_chk;
+alter table parcursuri_trimiteri add constraint parcursuri_trimiteri_stare_chk check (stare in ('in_curs', 'trimis', 'control'));
 
 grant select, insert, update, delete on parcursuri_donatori to app_user;
 grant select, insert, update, delete on parcursuri_trimiteri to app_user;

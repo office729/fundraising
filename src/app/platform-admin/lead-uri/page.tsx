@@ -21,7 +21,7 @@ export default async function LeaduriPage() {
       <Link href="/platform-admin" className="text-[13px] font-medium text-muted transition hover:text-brand-blue">
         ← Panou platformă
       </Link>
-      <h1 className="font-display mt-2 text-2xl font-bold text-ink">Lead-uri de pe site</h1>
+      <h1 className="font-display mt-2 text-2xl font-bold text-ink">Cereri de la ONG-uri</h1>
       <p className="mt-1 max-w-3xl text-sm text-muted">
         ONG-urile care au completat formularul „Descoperă Alexandrit” din pop-up sau de pe pagina /descopera. Primești și un e-mail la fiecare completare; aici le ții în ordine: stare, notițe, export. Vizibil doar contului platformei.
       </p>

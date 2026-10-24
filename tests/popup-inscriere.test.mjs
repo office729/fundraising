@@ -81,3 +81,25 @@ test("/descopera e adresă rezervată: niciun slug de organizație n-o poate umb
   const { esteSlugRezervat } = await import("../src/lib/reserved-slugs.ts");
   assert.equal(esteSlugRezervat("descopera"), true);
 });
+
+test("e-mailul respinge caracterele care ar strica antetul Reply-To sau linkul mailto", () => {
+  const bun = { nume: "Ana Pop", organizatie: "Asociația Test", email: "ana@asociatia.ro", telefon: "", acord: true };
+  assert.equal(P.valideazaInteres(bun).ok, true);
+  for (const rau of ["a<b>@x.ro", 'a"b@x.ro', "a,b@x.ro", "a?subject=x@x.ro", "a&b@x.ro", "a;b@x.ro", "(a)@x.ro", "a@x.ro?cc=y@z.ro", "a@x,y.ro"]) {
+    assert.equal(P.valideazaInteres({ ...bun, email: rau }).ok, false, rau);
+  }
+  assert.equal(P.valideazaInteres({ ...bun, email: "ana.pop+test@asociatia.ro" }).ok, true);
+});
+
+test("limita pe IP: IPv4 neschimbat, IPv6 rotunjit la rețeaua /64", () => {
+  assert.equal(P.cheieIpPentruLimita("203.0.113.9"), "203.0.113.9");
+  assert.equal(P.cheieIpPentruLimita("necunoscut"), "necunoscut");
+  assert.equal(P.cheieIpPentruLimita(""), "necunoscut");
+  assert.equal(P.cheieIpPentruLimita("::ffff:203.0.113.9"), "203.0.113.9");
+  const a = P.cheieIpPentruLimita("2001:db8:1:2:aaaa:bbbb:cccc:dddd");
+  const b = P.cheieIpPentruLimita("2001:0DB8:0001:0002:1111:2222:3333:4444");
+  assert.equal(a, "2001:db8:1:2::/64");
+  assert.equal(a, b, "aceeași rețea /64 = aceeași cheie");
+  assert.notEqual(a, P.cheieIpPentruLimita("2001:db8:1:3::1"));
+  assert.equal(P.cheieIpPentruLimita("2001:db8::1"), "2001:db8:0:0::/64");
+});

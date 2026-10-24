@@ -27,6 +27,7 @@ import { sqlArray } from "@/lib/sql-array";
 // și execuția. Planul se calculează la fel la previzualizare și la import, deci ce vezi e ce se întâmplă.
 
 export const MAX_RANDURI_IMPORT = 20_000;
+export const MAX_COLOANE_IMPORT = 100;
 export const MAX_BYTES_IMPORT = 4 * 1024 * 1024;
 
 type Ctx = Pick<OrgContext, "db" | "orgId" | "userId" | "orgPackage" | "orgCustomPlanConfig">;
@@ -38,13 +39,18 @@ export async function citesteFisier(buf: Buffer, numeFisier: string): Promise<Fi
   const ext = numeFisier.toLowerCase().split(".").pop() ?? "";
   let wb;
   if (ext === "xlsx" || ext === "xls" || ext === "xlsm") {
-    wb = XLSX.read(buf, { type: "buffer", cellDates: true });
+    wb = XLSX.read(buf, { type: "buffer", cellDates: true, sheetRows: MAX_RANDURI_IMPORT + 50 });
   } else {
     const text = buf.toString("utf8").replace(/^﻿/, "");
     wb = XLSX.read(text, { type: "string", FS: detecteazaSeparator(text), raw: true });
   }
   const ws = wb.Sheets[wb.SheetNames[0]];
   if (!ws) throw new Error("Fișierul nu conține nicio foaie.");
+  // O foaie mică poate declara un interval uriaș (A1:XFD1048576): verificăm dimensiunea declarată înainte să o parcurgem.
+  const interval = ws["!ref"] ? XLSX.utils.decode_range(ws["!ref"]) : null;
+  if (interval && (interval.e.c - interval.s.c + 1 > MAX_COLOANE_IMPORT || interval.e.r - interval.s.r + 1 > MAX_RANDURI_IMPORT + 50)) {
+    throw new Error(`Foaia e prea mare (maximum ${MAX_RANDURI_IMPORT.toLocaleString("ro-RO")} de rânduri și ${MAX_COLOANE_IMPORT} de coloane).`);
+  }
   const toate = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, raw: true, defval: "", blankrows: false });
   // Antetul = primul rând cu cel puțin 2 celule completate.
   const iAntet = toate.findIndex((r) => r.filter((c) => String(c ?? "").trim() !== "").length >= 2);

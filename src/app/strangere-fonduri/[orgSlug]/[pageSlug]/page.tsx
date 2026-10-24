@@ -133,10 +133,14 @@ export default async function PaginaStrangereFonduriPage({
   searchParams,
 }: {
   params: Promise<{ orgSlug: string; pageSlug: string }>;
-  searchParams: Promise<{ multumim?: string; session_id?: string; payment_intent?: string; redirect_status?: string }>;
+  searchParams: Promise<{ multumim?: string; session_id?: string; payment_intent?: string; redirect_status?: string; lunar?: string; suma?: string }>;
 }) {
   const { orgSlug, pageSlug } = await params;
   const sp = await searchParams;
+  // Linkurile din e-mailurile de parcurs (Upgrade, Save etc.) deschid formularul cu donația lunară preselectată și o sumă mică propusă: ?lunar=1&suma=20.
+  const lunarInitial = sp.lunar === "1";
+  const sumaPropusa = Number(sp.suma);
+  const sumaInitiala = lunarInitial && Number.isInteger(sumaPropusa) && sumaPropusa >= 5 && sumaPropusa <= 1000 ? sumaPropusa : undefined;
   // Metodele cu redirect (Revolut/PayPal) se verifică în paralel cu încărcarea paginii.
   const [data, locale, metode] = await Promise.all([getPaginaPublica(orgSlug, pageSlug), getLocale(), metodeRedirect(orgSlug)]);
   if (!data) notFound();
@@ -240,6 +244,8 @@ export default async function PaginaStrangereFonduriPage({
               metode={org.donationStripePublishableKey ? metode : FARA_METODE_REDIRECT}
               orgName={org.name}
               orgCif={org.cif}
+              lunarInitial={lunarInitial}
+              sumaInitiala={sumaInitiala}
             />
             <p className="mt-3 flex items-start gap-2 text-[12.5px] leading-relaxed text-muted-2">
               <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />

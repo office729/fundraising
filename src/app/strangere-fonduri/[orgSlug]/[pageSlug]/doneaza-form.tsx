@@ -35,6 +35,8 @@ export function DoneazaForm({
   orgName,
   orgCif,
   embed,
+  lunarInitial,
+  sumaInitiala,
 }: {
   orgSlug: string;
   pageSlug: string;
@@ -53,11 +55,13 @@ export function DoneazaForm({
   cursEur?: number | null;
   // Widgetul din iframe de pe site-ul organizației: serverul întoarce adresa Stripe, iar pagina părinte (public/embed.js) face navigarea.
   embed?: boolean;
+  lunarInitial?: boolean;
+  sumaInitiala?: number;
 }) {
   const action = (embed ? doneazaEmbedAction : doneazaAction).bind(null, orgSlug, pageSlug);
   const [state, formAction, pending, valori] = useActionStatePastrat(action, INITIAL);
-  const [suma, setSuma] = useState(50);
-  const [recurenta, setRecurenta] = useState(false);
+  const [suma, setSuma] = useState(sumaInitiala ?? 50);
+  const [recurenta, setRecurenta] = useState(Boolean(lunarInitial));
   // De unde a venit donatorul: eticheta din parametrii utm_* ai linkului (newsletter, rețele sociale, one-pager). Se citește din adresa paginii la
   // trimitere, nu se păstrează nimic pe dispozitiv, iar eticheta nu identifică persoana.
   const sursaMarketing = useSyncExternalStore(abonareNula, eticheta, () => "");

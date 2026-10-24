@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 
 import { and, eq, sql } from "drizzle-orm";
 
+import { ACORD_EMAIL_VERSIUNE, type SursaAcord } from "@/lib/consimtamant-email";
 import type { db as Db } from "@/lib/db";
 import { donatoriReali, fundraisingPages, organizations } from "@/lib/db/schema";
 
@@ -35,6 +36,8 @@ export async function crediteazaPaginaSiDonator(
     // (nu schimbă starea donatorului: un donator nou rămâne NULL, un existent
     // își păstrează valoarea).
     consimtamantEmail: boolean | null;
+    // De unde vine bifa de e-mail: implicit formularul public al donatorului; donațiile introduse de echipă o declară ca „declarat_echipa”.
+    sursaAcordEmail?: SursaAcord;
   },
 ): Promise<{ pageTitlu: string; orgName: string; orgSlug: string } | null> {
   const rezultat = await tx
@@ -65,6 +68,7 @@ export async function crediteazaPaginaSiDonator(
         numarDonatii: 1,
         consimtamantWhatsapp: params.consimtamantWhatsapp,
         consimtamantEmail: params.consimtamantEmail,
+        ...(params.consimtamantEmail === true ? { consimtamantEmailLa: new Date(), consimtamantEmailSursa: params.sursaAcordEmail ?? "formular_online", consimtamantEmailVersiune: ACORD_EMAIL_VERSIUNE } : {}),
       })
       .onConflictDoUpdate({
         target: [donatoriReali.orgId, donatoriReali.email],
@@ -82,6 +86,10 @@ export async function crediteazaPaginaSiDonator(
           // rămâne (retragerea se face prin linkul de dezabonare din email).
           // Fără răspuns (null) valoarea existentă rămâne neschimbată.
           consimtamantEmail: sql`case when ${donatoriReali.consimtamantEmail} is true then true else coalesce(${params.consimtamantEmail}::boolean, ${donatoriReali.consimtamantEmail}) end`,
+          // Dovada se scrie doar când acordul devine „true” acum; un acord dat înainte își păstrează data, sursa și versiunea.
+          consimtamantEmailLa: sql`case when ${donatoriReali.consimtamantEmail} is true then ${donatoriReali.consimtamantEmailLa} when ${params.consimtamantEmail}::boolean is true then now() else ${donatoriReali.consimtamantEmailLa} end`,
+          consimtamantEmailSursa: sql`case when ${donatoriReali.consimtamantEmail} is true then ${donatoriReali.consimtamantEmailSursa} when ${params.consimtamantEmail}::boolean is true then ${params.sursaAcordEmail ?? "formular_online"}::text else ${donatoriReali.consimtamantEmailSursa} end`,
+          consimtamantEmailVersiune: sql`case when ${donatoriReali.consimtamantEmail} is true then ${donatoriReali.consimtamantEmailVersiune} when ${params.consimtamantEmail}::boolean is true then ${ACORD_EMAIL_VERSIUNE}::text else ${donatoriReali.consimtamantEmailVersiune} end`,
         },
       });
   }

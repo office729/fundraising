@@ -40,6 +40,10 @@
     {
       "path": "/api/cron/parcursuri-donatori",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/lead-uri-retentie",
+      "schedule": "0 3 1 * *"
     }
   ],
   "regions": [

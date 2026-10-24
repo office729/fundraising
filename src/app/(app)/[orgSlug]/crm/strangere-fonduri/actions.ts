@@ -467,6 +467,8 @@ export const adaugaDonatieOfflineAction = withOrgAdmin(
       // Înainte era null, iar null înseamnă „donator dinainte de bifă — primește", deci un
       // donator offline fără acord ar fi primit reamintiri. Organizația bifează dacă are acordul.
       consimtamantEmail,
+      // Bifa o pune un om din organizație, nu donatorul: acordul e „declarat de echipă”, iar parcursurile automate nu îl socotesc.
+      sursaAcordEmail: "declarat_echipa",
     });
 
     if (emailDonator && info && emailConfigurat()) {

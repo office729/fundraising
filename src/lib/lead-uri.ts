@@ -41,7 +41,8 @@ export function potriveste(lead: LeadCautabil, cautare: string): boolean {
 // Celulă CSV: ghilimele duble escapate; o valoare care începe cu = + - @ (sau tab/CR) primește un apostrof în față, ca Excel să n-o execute ca formulă.
 export function celulaCsv(v: string | number | null | undefined): string {
   let t = v === null || v === undefined ? "" : String(v);
-  if (/^[=+\-@\t\r]/.test(t)) t = `'${t}`;
+  // Un număr de telefon („+40 757 401 042”) nu e formulă și nu primește apostrof; orice altceva care începe cu = + - @ (sau tab/CR) da.
+  if (/^[=+\-@\t\r]/.test(t) && !/^\+\d[\d\s().-]{5,}$/.test(t)) t = `'${t}`;
   return /[",\n\r;]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
 }
 
