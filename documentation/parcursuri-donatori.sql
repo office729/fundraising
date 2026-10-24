@@ -15,9 +15,8 @@ create table if not exists parcursuri_donatori (
   updated_by uuid references app_users(id) on delete set null
 );
 create unique index if not exists parcursuri_donatori_org_cheie on parcursuri_donatori (org_id, cheie);
-do $$ begin
-  alter table parcursuri_donatori add constraint parcursuri_donatori_cheie_chk check (cheie in ('welcome', 'save', 'upgrade'));
-exception when duplicate_object then null; end $$;
+alter table parcursuri_donatori drop constraint if exists parcursuri_donatori_cheie_chk;
+alter table parcursuri_donatori add constraint parcursuri_donatori_cheie_chk check (cheie in ('welcome', 'save', 'upgrade', 'reactivare'));
 
 create table if not exists parcursuri_trimiteri (
   id uuid primary key default gen_random_uuid(),
@@ -32,9 +31,8 @@ create table if not exists parcursuri_trimiteri (
 create unique index if not exists parcursuri_trimiteri_unic on parcursuri_trimiteri (org_id, cheie, pas, email);
 create index if not exists parcursuri_trimiteri_org_idx on parcursuri_trimiteri (org_id, creat_la desc);
 create index if not exists parcursuri_trimiteri_email_idx on parcursuri_trimiteri (org_id, email, creat_la desc);
-do $$ begin
-  alter table parcursuri_trimiteri add constraint parcursuri_trimiteri_cheie_chk check (cheie in ('welcome', 'save', 'upgrade'));
-exception when duplicate_object then null; end $$;
+alter table parcursuri_trimiteri drop constraint if exists parcursuri_trimiteri_cheie_chk;
+alter table parcursuri_trimiteri add constraint parcursuri_trimiteri_cheie_chk check (cheie in ('welcome', 'save', 'upgrade', 'reactivare'));
 do $$ begin
   alter table parcursuri_trimiteri add constraint parcursuri_trimiteri_stare_chk check (stare in ('in_curs', 'trimis'));
 exception when duplicate_object then null; end $$;

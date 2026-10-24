@@ -11,6 +11,7 @@ import { escHtml } from "@/lib/html-escape";
 import {
   CHEI_PARCURS,
   corpHtml,
+  FEREASTRA_CONVERSIE_ZILE,
   FEREASTRA_ZILE,
   PARCURSURI,
   pasScadent,
@@ -18,10 +19,11 @@ import {
   subiectRandat,
   type CheieParcurs,
   type PasParcurs,
+  type RezultatParcurs,
   type ValoriParcurs,
 } from "@/lib/parcursuri-donatori";
 
-// Selecția donatorilor și trimiterea parcursurilor automate (Welcome, Save, Upgrade). Rulează zilnic din cron (/api/cron/parcursuri-donatori), în contextul
+// Selecția donatorilor și trimiterea parcursurilor automate (Welcome, Save, Upgrade, Reactivare). Rulează zilnic din cron (/api/cron/parcursuri-donatori), în contextul
 // organizației (app.current_org_id), nu cu o sesiune de utilizator.
 //
 // Garanții:
@@ -150,7 +152,7 @@ export async function candidatiPas(exec: Exec, org: OrganizatieParcursuri, cheie
         select ${COLOANE}, t.creat_la as ancora from parcursuri_trimiteri t join sub s on s.email = t.email join donatori_reali dr on dr.org_id = t.org_id and lower(dr.email) = t.email left join ultima u on u.email = lower(dr.email)
         where ${comune} and t.org_id = ${org.id} and t.cheie = 'save' and t.pas = ${pas - 1} and t.stare = 'trimis' and s.are_activ = false and dr.ultima_donatie_la <= s.ultima_plata + interval '1 day'`)) as unknown as RandBrut[];
     }
-  } else {
+  } else if (cheie === "upgrade") {
     // Upgrade: donatori fideli care n-au donat niciodată lunar (cei care au avut o donație lunară, activă sau oprită, țin de Save); se trimite o singură dată fiecăruia.
     const limita = new Date(acum.getTime() - 90 * 86_400_000);
     randuri = (await exec.execute(sql`
@@ -159,12 +161,28 @@ export async function candidatiPas(exec: Exec, org: OrganizatieParcursuri, cheie
       where ${comune} and dr.numar_donatii >= 3 and dr.ultima_donatie_la >= ${dataIso(limita)}::timestamptz
         and not exists (select 1 from fundraising_donations f where f.org_id = ${org.id} and lower(f.email_donator) = lower(dr.email) and f.recurenta)
       order by dr.total_donat desc limit 500`)) as unknown as RandBrut[];
+  } else if (pas === 1) {
+    // Reactivare: ultima donație acum 12–24 de luni, fără donație lunară activă; se trimite o singură dată fiecăruia, cei mai generoși întâi.
+    const dinaintea = new Date(acum.getTime() - 365 * 86_400_000);
+    const pana = new Date(acum.getTime() - 730 * 86_400_000);
+    randuri = (await exec.execute(sql`
+      with ${ULTIMA(org.id)}
+      select ${COLOANE}, ${dataIso(acum)}::timestamptz as ancora from donatori_reali dr left join ultima u on u.email = lower(dr.email)
+      where ${comune} and dr.numar_donatii >= 1 and dr.ultima_donatie_la <= ${dataIso(dinaintea)}::timestamptz and dr.ultima_donatie_la >= ${dataIso(pana)}::timestamptz
+        and not exists (select 1 from fundraising_donations f where f.org_id = ${org.id} and lower(f.email_donator) = lower(dr.email) and f.recurenta and f.abonament_activ)
+      order by dr.total_donat desc limit 500`)) as unknown as RandBrut[];
+  } else {
+    // Pașii următori: doar cei care n-au donat de la primul e-mail.
+    randuri = (await exec.execute(sql`
+      with ${ULTIMA(org.id)}
+      select ${COLOANE}, t.creat_la as ancora from parcursuri_trimiteri t join donatori_reali dr on dr.org_id = t.org_id and lower(dr.email) = t.email left join ultima u on u.email = lower(dr.email)
+      where ${comune} and t.org_id = ${org.id} and t.cheie = 'reactivare' and t.pas = ${pas - 1} and t.stare = 'trimis' and dr.ultima_donatie_la < t.creat_la`)) as unknown as RandBrut[];
   }
 
   return randuri
     .filter((r) => {
       const ancora = new Date(r.ancora);
-      return pas === 1 && cheie === "upgrade" ? true : pasScadent(ancora, def.zile, acum, fereastra);
+      return pas === 1 && (cheie === "upgrade" || cheie === "reactivare") ? true : pasScadent(ancora, def.zile, acum, fereastra);
     })
     .map((r) => ({
       donatorId: r.id,
@@ -267,4 +285,44 @@ export async function ruleazaParcursuriOrg(params: { org: OrganizatieParcursuri;
     }
   }
   return rez;
+}
+
+// Ce a adus un parcurs: din donatorii care au primit cel puțin un e-mail din serie, câți au donat în FEREASTRA_CONVERSIE_ZILE zile de la primul e-mail (la Upgrade: o donație
+// lunară), după cât timp (mediana) și cât au donat. Fiecare conversie se atribuie ultimului pas trimis înainte de donație. Numără donațiile online reușite (nu importurile).
+export async function rezultateParcurs(exec: Exec, orgId: string, cheie: CheieParcurs, nrPasi: number): Promise<RezultatParcurs> {
+  const doarLunare = cheie === "upgrade" ? sql`and d.recurenta` : sql``;
+  const randuri = (await exec.execute(sql`
+    with prim as (
+      select email, min(creat_la) as prima from parcursuri_trimiteri
+      where org_id = ${orgId} and cheie = ${cheie} and stare = 'trimis' group by email
+    ),
+    conv as (
+      select p.email, p.prima,
+        (select min(d.created_at) from fundraising_donations d where d.org_id = ${orgId} and lower(d.email_donator) = p.email and d.status = 'reusita' ${doarLunare}
+          and d.created_at > p.prima and d.created_at <= p.prima + ${FEREASTRA_CONVERSIE_ZILE} * interval '1 day') as la,
+        (select coalesce(sum(d.suma), 0) from fundraising_donations d where d.org_id = ${orgId} and lower(d.email_donator) = p.email and d.status = 'reusita' ${doarLunare}
+          and d.created_at > p.prima and d.created_at <= p.prima + ${FEREASTRA_CONVERSIE_ZILE} * interval '1 day') as suma
+      from prim p
+    )
+    select c.la is not null as convertit, c.suma::int as suma, extract(epoch from (c.la - c.prima)) / 86400.0 as zile,
+      (select max(t.pas) from parcursuri_trimiteri t where t.org_id = ${orgId} and t.cheie = ${cheie} and t.email = c.email and t.stare = 'trimis' and (c.la is null or t.creat_la <= c.la)) as pas_atribuit
+    from conv c`)) as unknown as { convertit: boolean; suma: number; zile: number | null; pas_atribuit: number | null }[];
+
+  const trimisePePas = (await exec.execute(sql`
+    select pas, count(*)::int as n from parcursuri_trimiteri where org_id = ${orgId} and cheie = ${cheie} and stare = 'trimis' group by pas`)) as unknown as { pas: number; n: number }[];
+
+  const convertitii = randuri.filter((r) => r.convertit);
+  const zile = convertitii.map((r) => Number(r.zile)).filter((z) => Number.isFinite(z)).sort((a, b) => a - b);
+  const mediana = zile.length === 0 ? null : zile.length % 2 === 1 ? zile[(zile.length - 1) / 2] : (zile[zile.length / 2 - 1] + zile[zile.length / 2]) / 2;
+  return {
+    inscrisi: randuri.length,
+    convertiti: convertitii.length,
+    medianaZile: mediana === null ? null : Math.round(mediana * 10) / 10,
+    venit: convertitii.reduce((s, r) => s + Number(r.suma), 0),
+    pasi: Array.from({ length: nrPasi }, (_, i) => ({
+      pas: i + 1,
+      trimise: trimisePePas.find((x) => x.pas === i + 1)?.n ?? 0,
+      convertiti: convertitii.filter((r) => r.pas_atribuit === i + 1).length,
+    })),
+  };
 }

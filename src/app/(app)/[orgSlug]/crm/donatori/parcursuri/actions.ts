@@ -18,8 +18,9 @@ import {
   type CheieParcurs,
   type EroareParcurs,
   type PasParcurs,
+  type RezultatParcurs,
 } from "@/lib/parcursuri-donatori";
-import { candidatiPas, citesteConfig, htmlParcurs } from "@/lib/parcursuri-server";
+import { candidatiPas, citesteConfig, htmlParcurs, rezultateParcurs } from "@/lib/parcursuri-server";
 
 // Parcursuri pentru donatori (Welcome, Save, Upgrade): un administrator le pornește, le oprește și le editează; oricine din echipă le vede. Trimiterea o face cron-ul zilnic.
 const OPTIUNI = { modul: "parcursuri-donatori" as const };
@@ -31,6 +32,7 @@ export type ParcursDate = {
   nume: string;
   descriere: string;
   eveniment: string;
+  obiectiv: string;
   activ: boolean;
   activDin: string | null;
   pasi: PasParcurs[];
@@ -39,6 +41,8 @@ export type ParcursDate = {
   statistici: PasStatistica[];
   // Câți donatori ar primi pasul 1 la următoarea rulare (estimare la momentul deschiderii paginii); null = nu se poate estima.
   eligibiliPas1: number | null;
+  // Ce a adus parcursul (donatori înscriși, conversii, venit); null dacă nu s-a putut calcula.
+  rezultate: RezultatParcurs | null;
 };
 export type DateParcursuri = { parcursuri: ParcursDate[]; poateEdita: boolean; emailConfigurat: boolean; organizatie: string };
 
@@ -61,11 +65,18 @@ export const citesteParcursuri = withOrgSession(async (ctx): Promise<DateParcurs
     } catch {
       eligibili = null;
     }
+    let rezultate: RezultatParcurs | null = null;
+    try {
+      rezultate = await rezultateParcurs(ctx.db, ctx.orgId, cheie, cfg.pasi.length);
+    } catch {
+      rezultate = null;
+    }
     parcursuri.push({
       cheie,
       nume: def.nume,
       descriere: def.descriere,
       eveniment: def.eveniment,
+      obiectiv: def.obiectiv,
       activ: cfg.activ,
       activDin: cfg.activDin ? cfg.activDin.toISOString() : null,
       pasi: cfg.pasi,
@@ -76,6 +87,7 @@ export const citesteParcursuri = withOrgSession(async (ctx): Promise<DateParcurs
         return { trimiseTotal: r?.total ?? 0, trimiseUltimele30Zile: r?.recente ?? 0 };
       }),
       eligibiliPas1: eligibili,
+      rezultate,
     });
   }
   return { parcursuri, poateEdita: ctx.role === "owner" || ctx.role === "admin", emailConfigurat: emailConfigurat(), organizatie: ctx.orgName };

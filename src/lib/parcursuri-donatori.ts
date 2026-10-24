@@ -5,8 +5,8 @@
 // Reguli care nu se negociază (aplicate în selecție, nu aici): primesc doar donatorii care au bifat acordul pentru e-mailuri, nu s-au dezabonat și nu sunt pe lista de
 // suprimare; cine a răspuns sau e marcat „nu contactat” iese din serie; un parcurs pornește doar cât timp organizația îl ține activ.
 
-export type CheieParcurs = "welcome" | "save" | "upgrade";
-export const CHEI_PARCURS: readonly CheieParcurs[] = ["welcome", "save", "upgrade"];
+export type CheieParcurs = "welcome" | "save" | "upgrade" | "reactivare";
+export const CHEI_PARCURS: readonly CheieParcurs[] = ["welcome", "save", "upgrade", "reactivare"];
 
 export type PasParcurs = {
   // Pasul 1: zile de la evenimentul care pornește seria (prima donație la Welcome, ultima plată recurentă la Save, 0 la Upgrade).
@@ -22,6 +22,7 @@ export type DefinitieParcurs = {
   nume: string;
   descriere: string; // cui i se trimite și când
   eveniment: string; // ce numără zilele primului pas
+  obiectiv: string; // ce socotim „reușită” după ce donatorul a primit un e-mail din serie (vezi lib/parcursuri-server.ts, rezultateParcurs)
   pasi: PasParcurs[];
 };
 
@@ -38,6 +39,7 @@ export const PARCURSURI: Record<CheieParcurs, DefinitieParcurs> = {
     nume: "Welcome: după prima donație",
     descriere: "Donatorii care au donat prima dată: un mulțumesc după câteva zile și o invitație să rămână aproape. Se oprește dacă donează din nou.",
     eveniment: "prima donație",
+    obiectiv: "o nouă donație după primul e-mail",
     pasi: [
       {
         zile: 3,
@@ -65,6 +67,7 @@ Iar dacă nu e momentul, nu e nicio problemă: mulțumim oricum.`,
     nume: "Save: o donație lunară s-a oprit",
     descriere: "Donatorii lunari al căror abonament s-a oprit (anulat sau plată eșuată): un mesaj prietenos și o cale simplă de a relua. Se oprește dacă donează din nou.",
     eveniment: "ultima plată lunară",
+    obiectiv: "o nouă donație după primul e-mail (donatorul a revenit)",
     pasi: [
       {
         zile: 10,
@@ -92,6 +95,7 @@ Mulțumim pentru tot ce ai făcut până acum.`,
     nume: "Upgrade: donatori fideli",
     descriere: "Donatorii fideli care nu au donat niciodată lunar (cel puțin 3 donații, ultima în ultimele 90 de zile): o propunere de a deveni donatori lunari. Se trimite o singură dată fiecărui donator.",
     eveniment: "nu există: se trimite când donatorul devine eligibil",
+    obiectiv: "o donație lunară nouă după e-mail",
     pasi: [
       {
         zile: 0,
@@ -102,6 +106,32 @@ Ai donat de mai multe ori către {organizatie}, iar asta ne arată cât de mult 
 
 Dacă vrei să faci și mai mult fără să te gândești de fiecare dată, poți transforma gestul tău într-o donație lunară, cu o sumă pe care o alegi tu și pe care o poți opri oricând.`,
         buton: "Devin donator lunar",
+      },
+    ],
+  },
+  reactivare: {
+    cheie: "reactivare",
+    nume: "Reactivare: donatori care au tăcut",
+    descriere: "Donatorii a căror ultimă donație a fost acum 12–24 de luni și care nu au o donație lunară activă: un mesaj de reconectare și o amintire după două săptămâni. Se oprește dacă donează. Se trimite o singură dată fiecărui donator.",
+    eveniment: "nu există: se trimite când trec 12 luni de la ultima donație",
+    obiectiv: "o nouă donație după primul e-mail",
+    pasi: [
+      {
+        zile: 0,
+        subiect: "{prenume}, ne-a fost dor de tine",
+        corp: `Bună, {prenume}!
+
+A trecut ceva timp de când ne-ai fost alături la {organizatie}, cu {total} lei în total, și nu am vrut să lăsăm lucrurile să treacă fără un gând de mulțumire.
+
+Ce ai ajutat atunci a continuat. Dacă vrei să afli ce s-a întâmplat de atunci sau să fii din nou aproape de noi, ne-ar bucura mult.`,
+        buton: "Vezi cum poți ajuta",
+      },
+      {
+        zile: 14,
+        subiect: "Un ultim gând de la {organizatie}",
+        corp: `Bună, {prenume}!
+
+Nu vrem să insistăm, așa că acesta e ultimul mesaj de acest fel. Dacă ți-a trecut prin cap să ne sprijini din nou, mâna ta întinsă face diferența. Iar dacă nu e momentul, rămâne ce ai făcut deja: mulțumim.`,
       },
     ],
   },
@@ -136,7 +166,7 @@ export function valideazaPasi(pasi: unknown, cheie: CheieParcurs): { ok: true; p
     if (!corp) erori.push({ pas: i, mesaj: "Textul mesajului e obligatoriu." });
     else if (corp.length > LIMITE_PARCURS.maxCorp) erori.push({ pas: i, mesaj: `Textul e prea lung (maximum ${LIMITE_PARCURS.maxCorp} de caractere).` });
     if (buton.length > LIMITE_PARCURS.maxButon) erori.push({ pas: i, mesaj: `Textul butonului e prea lung (maximum ${LIMITE_PARCURS.maxButon} de caractere).` });
-    const minZile = cheie === "upgrade" && i === 0 ? 0 : 1;
+    const minZile = (cheie === "upgrade" || cheie === "reactivare") && i === 0 ? 0 : 1;
     if (!Number.isFinite(zile) || zile < minZile || zile > LIMITE_PARCURS.maxZile) erori.push({ pas: i, mesaj: `Numărul de zile trebuie să fie între ${minZile} și ${LIMITE_PARCURS.maxZile}.` });
     const necunoscute = [...variabileNecunoscute(subiect), ...variabileNecunoscute(corp)];
     if (necunoscute.length) erori.push({ pas: i, mesaj: `Variabile necunoscute: ${[...new Set(necunoscute)].map((v) => `{${v}}`).join(", ")}. Folosește: ${VARIABILE_PARCURS.map((v) => `{${v}}`).join(", ")}.` });
@@ -182,6 +212,37 @@ export function prenumePentruSalut(nume: string | null | undefined): string {
   const p = (nume ?? "").trim().split(/\s+/)[0] ?? "";
   if (!p || /[@\d]/.test(p) || p.length > 40) return "";
   return p.charAt(0).toLocaleUpperCase("ro") + p.slice(1).toLocaleLowerCase("ro");
+}
+
+// ===== Rezultate =====
+
+// Un donator „a convertit” dacă a făcut o donație (de tipul cerut de obiectivul parcursului) în cel mult atâtea zile de la primul e-mail din serie.
+export const FEREASTRA_CONVERSIE_ZILE = 30;
+
+export type RezultatPas = { pas: number; trimise: number; convertiti: number };
+export type RezultatParcurs = {
+  inscrisi: number; // donatori care au primit cel puțin un e-mail din serie
+  convertiti: number;
+  medianaZile: number | null; // zile de la primul e-mail până la donație, mediana celor convertiți
+  venit: number; // lei donați de cei înscriși, în fereastra de conversie
+  pasi: RezultatPas[];
+};
+
+// Procent întreg, fără împărțire la zero (null când nu există nimic de împărțit).
+export function procentConversie(convertiti: number, inscrisi: number): number | null {
+  if (!Number.isFinite(convertiti) || !Number.isFinite(inscrisi) || inscrisi <= 0) return null;
+  return Math.round((convertiti / inscrisi) * 100);
+}
+
+// ===== Ore de liniște =====
+
+export const ORA_START_TRIMITERE = 9;
+export const ORA_SFARSIT_TRIMITERE = 19;
+
+// E-mailurile pleacă doar între 9:00 și 19:00, ora României: un mesaj de mulțumire primit noaptea sună automat.
+export function inIntervalDeTrimitere(acum: Date): boolean {
+  const ora = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Bucharest", hour: "2-digit", hour12: false }).format(acum));
+  return ora >= ORA_START_TRIMITERE && ora < ORA_SFARSIT_TRIMITERE;
 }
 
 // ===== Termene =====

@@ -8,6 +8,7 @@ import { organizations } from "@/lib/db/schema";
 import { emailConfigurat } from "@/lib/email";
 import { raporteazaAvertisment, raporteazaEroare } from "@/lib/monitoring";
 import { areModul } from "@/lib/billing/packages";
+import { inIntervalDeTrimitere } from "@/lib/parcursuri-donatori";
 import { MAX_TRIMISE_PE_RULARE, ruleazaParcursuriOrg } from "@/lib/parcursuri-server";
 
 // Rulat zilnic de Vercel Cron (vezi vercel.json): trimite pașii scadenți ai parcursurilor Welcome, Save și Upgrade, pentru organizațiile care le-au pornit.
@@ -18,6 +19,8 @@ const DEADLINE_MS = 240_000;
 export async function GET(req: Request) {
   if (!process.env.CRON_SECRET) return NextResponse.json({ error: "cron_neconfigurat" }, { status: 501 });
   if (!cronAutorizat(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  // Ore de liniște: mesaje doar între 9:00 și 19:00, ora României (cron-ul rulează la 08:00 UTC, deci în interval; paza oprește o rulare întârziată sau manuală de noapte).
+  if (!inIntervalDeTrimitere(new Date())) return NextResponse.json({ ok: true, trimise: 0, motiv: "in_afara_orelor" });
   if (!emailConfigurat()) {
     raporteazaAvertisment("cron-parcursuri", "email neconfigurat — parcursurile donatorilor nu pleacă");
     return NextResponse.json({ ok: true, trimise: 0, motiv: "email_neconfigurat" });

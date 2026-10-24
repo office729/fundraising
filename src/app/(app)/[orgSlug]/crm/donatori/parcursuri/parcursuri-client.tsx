@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
-import { corpHtml, LIMITE_PARCURS, subiectRandat, VARIABILE_PARCURS, type PasParcurs } from "@/lib/parcursuri-donatori";
+import { corpHtml, FEREASTRA_CONVERSIE_ZILE, LIMITE_PARCURS, procentConversie, subiectRandat, VARIABILE_PARCURS, type PasParcurs } from "@/lib/parcursuri-donatori";
 
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
@@ -17,7 +17,7 @@ const dataRo = (iso: string) => new Date(iso).toLocaleDateString("ro-RO", { time
 
 // Cât de târziu e „zile”: la primul pas se numără de la eveniment, la următorii de la trimiterea pasului anterior.
 function etichetaZile(cheie: string, index: number, zile: number): string {
-  if (cheie === "upgrade" && index === 0) return "imediat ce donatorul devine eligibil";
+  if ((cheie === "upgrade" || cheie === "reactivare") && index === 0) return "imediat ce donatorul devine eligibil";
   if (index === 0) return `${zile} zile după ${cheie === "welcome" ? "prima donație" : "ultima plată lunară"}`;
   return `${zile} zile după pasul anterior`;
 }
@@ -83,6 +83,38 @@ function Parcurs({ p, orgSlug, poateEdita, emailOk, organizatie }: { p: ParcursD
         )}
       </div>
 
+      {p.rezultate && p.rezultate.inscrisi > 0 ? (
+        <div className="mt-4 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface-2)] p-3">
+          <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--ci-text-muted)]">Ce a adus până acum</p>
+          <dl className="mt-2 grid grid-cols-2 gap-3 md:grid-cols-4">
+            <div>
+              <dt className="text-[12px] text-[var(--ci-text-muted)]">Au primit e-mailuri</dt>
+              <dd className="text-[18px] font-bold tabular-nums text-[var(--ci-text)]">{nr(p.rezultate.inscrisi)}</dd>
+            </div>
+            <div>
+              <dt className="text-[12px] text-[var(--ci-text-muted)]">Au donat după</dt>
+              <dd className="text-[18px] font-bold tabular-nums text-[var(--ci-text)]">
+                {nr(p.rezultate.convertiti)} <span className="text-[13px] font-semibold text-[var(--ci-text-muted)]">({procentConversie(p.rezultate.convertiti, p.rezultate.inscrisi) ?? 0}%)</span>
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[12px] text-[var(--ci-text-muted)]">Zile până la donație (mediană)</dt>
+              <dd className="text-[18px] font-bold tabular-nums text-[var(--ci-text)]">{p.rezultate.medianaZile === null ? "—" : p.rezultate.medianaZile.toLocaleString("ro-RO")}</dd>
+            </div>
+            <div>
+              <dt className="text-[12px] text-[var(--ci-text-muted)]">Donat în total</dt>
+              <dd className="text-[18px] font-bold tabular-nums text-[var(--ci-text)]">{nr(p.rezultate.venit)} lei</dd>
+            </div>
+          </dl>
+          <p className="mt-2 text-[12px] text-[var(--ci-text-muted)]">
+            Reușită = {p.obiectiv}, în cel mult {FEREASTRA_CONVERSIE_ZILE} de zile de la primul e-mail. Se numără donațiile online reușite, nu importurile. Pe pași:{" "}
+            {p.rezultate.pasi.map((x) => `pasul ${x.pas}: ${nr(x.trimise)} trimise, ${nr(x.convertiti)} au donat după el`).join("; ")}.
+          </p>
+        </div>
+      ) : (
+        <p className="mt-3 text-[12.5px] text-[var(--ci-text-muted)]">Rezultatele (câți donatori au donat după e-mailuri, cât și după cât timp) apar aici după primele e-mailuri trimise.</p>
+      )}
+
       {confirmaPornire && !p.activ && (
         <div role="alertdialog" aria-label="Confirmă pornirea" className="mt-3 rounded-lg bg-[var(--ci-surface-2)] p-3 text-[13px] text-[var(--ci-text)]">
           <p className="font-semibold">Pornești „{p.nume}”?</p>
@@ -127,7 +159,7 @@ function Parcurs({ p, orgSlug, poateEdita, emailOk, organizatie }: { p: ParcursD
                 <div className="grid gap-4 border-t border-[var(--ci-border)] p-3 md:grid-cols-2">
                   {poateEdita ? (
                     <div className="space-y-3">
-                      {!(p.cheie === "upgrade" && i === 0) && (
+                      {!((p.cheie === "upgrade" || p.cheie === "reactivare") && i === 0) && (
                         <div>
                           <Label htmlFor={`zile-${p.cheie}-${i}`}>Trimite după (zile)</Label>
                           <Input id={`zile-${p.cheie}-${i}`} type="number" min={1} max={LIMITE_PARCURS.maxZile} value={Number.isFinite(pas.zile) ? pas.zile : ""} onChange={(e) => schimba(i, { zile: e.target.value === "" ? Number.NaN : Number(e.target.value) })} className="max-w-28" />

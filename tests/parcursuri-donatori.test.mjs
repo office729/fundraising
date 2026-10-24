@@ -4,10 +4,11 @@ import assert from "node:assert/strict";
 const P = await import("../src/lib/parcursuri-donatori.ts");
 
 test("cele trei parcursuri există, cu pași valabili și texte care folosesc doar variabile cunoscute", () => {
-  assert.deepEqual(P.CHEI_PARCURS, ["welcome", "save", "upgrade"]);
+  assert.deepEqual(P.CHEI_PARCURS, ["welcome", "save", "upgrade", "reactivare"]);
   for (const cheie of P.CHEI_PARCURS) {
     const d = P.PARCURSURI[cheie];
     assert.equal(d.cheie, cheie);
+    assert.ok(d.obiectiv.length > 5, "fiecare parcurs are un obiectiv spus în cuvinte");
     const v = P.valideazaPasi(d.pasi, cheie);
     assert.equal(v.ok, true, `${cheie}: ${JSON.stringify(v.erori)}`);
     for (const pas of d.pasi) assert.deepEqual([...P.variabileNecunoscute(pas.subiect), ...P.variabileNecunoscute(pas.corp)], [], cheie);
@@ -18,6 +19,7 @@ test("Welcome are 2 pași (zi 3, apoi 11 zile după), Save 2 (zi 10, apoi 14 dup
   assert.deepEqual(P.PARCURSURI.welcome.pasi.map((p) => p.zile), [3, 11]);
   assert.deepEqual(P.PARCURSURI.save.pasi.map((p) => p.zile), [10, 14]);
   assert.deepEqual(P.PARCURSURI.upgrade.pasi.map((p) => p.zile), [0]);
+  assert.deepEqual(P.PARCURSURI.reactivare.pasi.map((p) => p.zile), [0, 14]);
 });
 
 test("variabile necunoscute (greșeli de scriere) sunt prinse la salvare", () => {
@@ -86,4 +88,27 @@ test("termene: un pas e scadent după N zile și rămâne valabil 14 zile, apoi 
   assert.equal(P.pasScadent(ancora, 0, ancora), true, "Upgrade: imediat");
   assert.equal(P.pasScadent(ancora, 10, zi(55), 50), true, "Save: abonamentul oprit e observat târziu, fereastră de 50 de zile");
   assert.equal(P.pasScadent(ancora, 10, zi(61), 50), false);
+});
+
+test("procentul de conversie: rotunjit, fără împărțire la zero", () => {
+  assert.equal(P.procentConversie(1, 3), 33);
+  assert.equal(P.procentConversie(2, 3), 67);
+  assert.equal(P.procentConversie(0, 10), 0);
+  assert.equal(P.procentConversie(5, 0), null);
+  assert.equal(P.procentConversie(Number.NaN, 4), null);
+  assert.equal(P.FEREASTRA_CONVERSIE_ZILE, 30);
+});
+
+test("ore de liniște: mesaje doar între 9:00 și 19:00, ora României (vară și iarnă)", () => {
+  // Iarnă (UTC+2): 08:00 UTC = 10:00 la București; 06:59 UTC = 08:59; 16:59 UTC = 18:59; 17:00 UTC = 19:00.
+  assert.equal(P.inIntervalDeTrimitere(new Date("2026-12-01T08:00:00Z")), true);
+  assert.equal(P.inIntervalDeTrimitere(new Date("2026-12-01T06:59:00Z")), false);
+  assert.equal(P.inIntervalDeTrimitere(new Date("2026-12-01T07:00:00Z")), true);
+  assert.equal(P.inIntervalDeTrimitere(new Date("2026-12-01T16:59:00Z")), true);
+  assert.equal(P.inIntervalDeTrimitere(new Date("2026-12-01T17:00:00Z")), false);
+  // Vară (UTC+3): 08:00 UTC = 11:00; 05:59 UTC = 08:59; 16:00 UTC = 19:00.
+  assert.equal(P.inIntervalDeTrimitere(new Date("2026-07-01T08:00:00Z")), true);
+  assert.equal(P.inIntervalDeTrimitere(new Date("2026-07-01T05:59:00Z")), false);
+  assert.equal(P.inIntervalDeTrimitere(new Date("2026-07-01T16:00:00Z")), false);
+  assert.equal(P.inIntervalDeTrimitere(new Date("2026-07-02T00:30:00Z")), false);
 });
