@@ -924,6 +924,9 @@ const POLICIES = [
   ...["prospectare_chei", "prospectare_candidati", "prospectare_jurnal", "prospectare_suprimati", "parcursuri_donatori", "parcursuri_trimiteri"].map(
     (t) => `create policy ${t}_tenant_isolation on ${t} using (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid) with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
   ),
+  // Lead-uri de pe site (documentation/interese-ong.sql): formularul public (app.interes_site) și echipa platformei (app.platform_admin).
+  `create policy interese_ong_site on interese_ong using (nullif(current_setting('app.interes_site', true), '') = 'true') with check (nullif(current_setting('app.interes_site', true), '') = 'true')`,
+  `create policy interese_ong_admin on interese_ong using (nullif(current_setting('app.platform_admin', true), '') = 'true') with check (nullif(current_setting('app.platform_admin', true), '') = 'true')`,
 ];
 
 const FORCE_TABLES = [
@@ -1032,6 +1035,7 @@ const FORCE_TABLES = [
   "prospectare_suprimati",
   "parcursuri_donatori",
   "parcursuri_trimiteri",
+  "interese_ong",
 ];
 
 try {

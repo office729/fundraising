@@ -1,16 +1,38 @@
 "use server";
 
+import { sql } from "drizzle-orm";
+
 import { verificaLimitaRata, obtineIpClient } from "@/lib/auth/rate-limit";
+import { db } from "@/lib/db";
 import { emailConfigurat, trimiteEmail } from "@/lib/email";
 import { emailFaraLink, layoutEmail, paragraf } from "@/lib/email-layout";
 import { esteEmailTemporar } from "@/lib/email-temporar";
 import { escHtml } from "@/lib/html-escape";
 import { valideazaInteres, type EroriInteres } from "@/lib/popup-inscriere";
 
-// Formularul „Descoperă Alexandrit” din pop-up: un ONG își lasă datele și echipa îl contactează. Datele nu se păstrează în baza de date: ajung pe e-mail
-// la echipă (cu răspuns direct către persoană). Dacă trimiterea eșuează, persoana primește un mesaj clar cu adresa de contact, nu o confirmare falsă.
+// Formularul „Descoperă Alexandrit” din pop-up și de pe /descopera: un ONG își lasă datele și echipa îl contactează. Datele se salvează în lista de lead-uri
+// (tabelul interese_ong, vizibil doar echipei platformei: Panou platformă → Lead-uri) și ajung și pe e-mail la echipă, cu răspuns direct către persoană.
+// Cererea reușește dacă s-a făcut măcar una dintre cele două; dacă niciuna, persoana primește un mesaj clar cu adresa de contact, nu o confirmare falsă.
 const DESTINATAR_IMPLICIT = "vlad.placinta@alexandrit.ro";
 const ADRESA_CONTACT = DESTINATAR_IMPLICIT; // adresă existentă pe pagina de contact
+
+// O adresă apare o singură dată în listă: o nouă completare crește numărul de trimiteri și redeschide un lead marcat „pierdut”; sursa (pagina, campania) rămâne cea
+// de la prima completare. Scrierea trece prin politica interese_ong_site (GUC app.interes_site), setat doar aici, după validare și limitarea cererilor.
+async function salveazaLead(d: { nume: string; organizatie: string; email: string; telefon: string }, cale: string, campanie: string): Promise<void> {
+  await db.transaction(async (tx) => {
+    await tx.execute(sql`select set_config('app.interes_site', 'true', true)`);
+    await tx.execute(sql`
+      insert into interese_ong (nume, organizatie, email, telefon, cale, campanie)
+      values (${d.nume}, ${d.organizatie}, ${d.email}, ${d.telefon || null}, ${cale}, ${campanie || null})
+      on conflict (lower(email)) do update set
+        nume = excluded.nume,
+        organizatie = excluded.organizatie,
+        telefon = coalesce(excluded.telefon, interese_ong.telefon),
+        nr_trimiteri = interese_ong.nr_trimiteri + 1,
+        ultima_trimitere_la = now(),
+        stare = case when interese_ong.stare = 'pierdut' then 'nou' else interese_ong.stare end`);
+  });
+}
 
 export type RezultatInteres = { ok: true } | { ok: false; eroare: string; campuri?: EroriInteres };
 
@@ -27,8 +49,6 @@ export async function trimiteInteresAction(intrare: { nume: string; organizatie:
   const [okIp, okEmail] = await Promise.all([verificaLimitaRata("interes-site-ip", ip, 5, 60), verificaLimitaRata("interes-site-email", v.date.email, 2, 24 * 60)]);
   if (!okIp || !okEmail) return { ok: false, eroare: `Am primit deja cereri de la tine. Dacă e urgent, scrie-ne la ${ADRESA_CONTACT}.` };
 
-  if (!emailConfigurat()) return { ok: false, eroare: `Nu am putut trimite acum. Scrie-ne la ${ADRESA_CONTACT} și te contactăm.` };
-
   const test = intrare.previzualizare === true;
   const cale = typeof intrare.cale === "string" && intrare.cale.startsWith("/") ? intrare.cale.slice(0, 120) : "/";
   // De unde a venit (utm_source / utm_medium / utm_campaign din adresa paginii): doar caractere simple, scurt.
@@ -44,19 +64,33 @@ export async function trimiteInteresAction(intrare: { nume: string; organizatie:
       rand("Telefon", v.date.telefon ? escHtml(v.date.telefon) : "nu a lăsat"),
       rand("Pagina de pe care a scris", escHtml(cale)),
       ...(campanie ? [rand("Campanie", escHtml(campanie))] : []),
-      paragraf("A bifat că a citit Politica de confidențialitate. Datele au fost trimise doar prin acest e-mail; nu sunt păstrate în altă parte. Răspunde direct la acest mesaj ca să-i scrii."),
+      paragraf("A bifat că a citit Politica de confidențialitate. Datele sunt salvate și în lista de lead-uri din Panou platformă. Răspunde direct la acest mesaj ca să-i scrii."),
     ].join(""),
   });
-  try {
-    await trimiteEmail({
-      to: process.env.INTERES_EMAIL_TO?.trim() || DESTINATAR_IMPLICIT,
-      subiect: `${test ? "[TEST] " : ""}Interes Alexandrit: ${v.date.organizatie}`,
-      html,
-      replyTo: v.date.email,
-    });
-    return { ok: true };
-  } catch (e) {
-    console.error("interes-site: trimitere eșuată", e instanceof Error ? e.name : "eroare");
-    return { ok: false, eroare: `Nu am putut trimite acum. Scrie-ne la ${ADRESA_CONTACT} și te contactăm.` };
+  // Întâi salvăm (lead-ul nu se pierde nici dacă e-mailul eșuează), apoi trimitem e-mailul. Testele din previzualizare nu se salvează.
+  let salvat = false;
+  if (!test) {
+    try {
+      await salveazaLead(v.date, cale, campanie);
+      salvat = true;
+    } catch (e) {
+      console.error("interes-site: salvare eșuată", e instanceof Error ? e.name : "eroare");
+    }
   }
+  let trimis = false;
+  if (emailConfigurat()) {
+    try {
+      await trimiteEmail({
+        to: process.env.INTERES_EMAIL_TO?.trim() || DESTINATAR_IMPLICIT,
+        subiect: `${test ? "[TEST] " : ""}Interes Alexandrit: ${v.date.organizatie}`,
+        html,
+        replyTo: v.date.email,
+      });
+      trimis = true;
+    } catch (e) {
+      console.error("interes-site: trimitere eșuată", e instanceof Error ? e.name : "eroare");
+    }
+  }
+  if (salvat || trimis) return { ok: true };
+  return { ok: false, eroare: `Nu am putut trimite acum. Scrie-ne la ${ADRESA_CONTACT} și te contactăm.` };
 }

@@ -33,3 +33,4 @@ export * from "./suport";
 export * from "./org-personalizare";
 export * from "./prospectare";
 export * from "./parcursuri";
+export * from "./interese";
