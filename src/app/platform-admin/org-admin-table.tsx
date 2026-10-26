@@ -5,7 +5,7 @@ import { useState, useTransition } from "react";
 
 import { TRIAL_DAYS } from "@/lib/billing/trial";
 
-import { ajusteazaOrgAction, type OrgRand } from "./actions";
+import { ajusteazaOrgAction, stergeOrgExpirataAction, type OrgRand } from "./actions";
 
 const PACHETE = ["trial", "start", "crestere", "impact", "custom"];
 const STATUSURI = ["trialing", "active", "past_due", "canceled", "incomplete"];
@@ -66,6 +66,23 @@ export function OrgAdminTable({ initial, personalizari = {}, timp = {} }: { init
   });
   const [eroare, setEroare] = useState<string | null>(null);
   const [pending, start] = useTransition();
+  // Ștergerea definitivă: organizația aleasă și adresa (slug-ul) scrisă de administrator ca să confirme.
+  const [deSters, setDeSters] = useState<string | null>(null);
+  const [confirmare, setConfirmare] = useState("");
+
+  const onSterge = (o: OrgRand) => {
+    start(async () => {
+      setEroare(null);
+      const r = await stergeOrgExpirataAction(o.id, confirmare);
+      if (r.error) {
+        setEroare(r.error);
+        return;
+      }
+      setOrgs((prev) => prev.filter((x) => x.id !== o.id));
+      setDeSters(null);
+      setConfirmare("");
+    });
+  };
 
   const deschideEdit = (o: OrgRand) => {
     setForm({
@@ -184,8 +201,56 @@ export function OrgAdminTable({ initial, personalizari = {}, timp = {} }: { init
                   <button type="button" onClick={() => deschideEdit(o)} className="rounded-lg border border-line px-2.5 py-1 text-xs font-medium text-ink hover:bg-panel-2">
                     Ajustează
                   </button>
+                  {o.poateSterge && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDeSters(o.id);
+                        setConfirmare("");
+                        setEroare(null);
+                      }}
+                      title="Proba de 30 de zile a expirat și nu are abonament: poți șterge organizația"
+                      className="rounded-lg border border-red-300 px-2.5 py-1 text-xs font-medium text-red-700 hover:bg-red-50 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-950"
+                    >
+                      Șterge
+                    </button>
+                  )}
                 </div>
               </div>
+
+              {deSters === o.id && (
+                <div role="alertdialog" aria-label={`Șterge ${o.nume}`} className="mt-3 rounded-lg border border-red-300 bg-red-50 p-3 text-xs text-red-900 dark:border-red-900 dark:bg-red-950 dark:text-red-100">
+                  <p className="font-semibold">Ștergi definitiv „{o.nume}”?</p>
+                  <p className="mt-1">
+                    Proba de 30 de zile a expirat și organizația nu are abonament. Se șterg toate datele ei (contacte, donatori, campanii, setări, fișiere) și nu se mai pot recupera. Contul de utilizator al proprietarului ({o.proprietarEmail ?? "—"}) rămâne.
+                  </p>
+                  <div className="mt-2 flex flex-wrap items-end gap-2">
+                    <div>
+                      <label htmlFor={`sterge-${o.id}`} className="mb-1 block">
+                        Scrie adresa organizației ca să confirmi: <span className="font-mono font-semibold">{o.slug}</span>
+                      </label>
+                      <input
+                        id={`sterge-${o.id}`}
+                        value={confirmare}
+                        onChange={(e) => setConfirmare(e.target.value)}
+                        autoComplete="off"
+                        className="h-8 w-72 max-w-full rounded-md border border-red-300 bg-white px-2 font-mono text-xs text-ink dark:bg-panel"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onSterge(o)}
+                      disabled={pending || confirmare.trim() !== o.slug}
+                      className="h-8 rounded-md bg-red-600 px-3 text-xs font-semibold text-white disabled:opacity-50"
+                    >
+                      {pending ? "Se șterge…" : "Șterge definitiv"}
+                    </button>
+                    <button type="button" onClick={() => setDeSters(null)} disabled={pending} className="h-8 rounded-md px-2 text-xs hover:underline">
+                      Anulează
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {editId === o.id && (
                 <div className="mt-3 flex flex-wrap items-end gap-2.5 rounded-lg border border-line bg-panel-2 p-3">
