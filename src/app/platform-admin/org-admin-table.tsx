@@ -15,6 +15,39 @@ function zileRamaseProba(createdAt: Date): number {
   return Math.max(0, Math.ceil((sfarsit.getTime() - Date.now()) / (24 * 60 * 60 * 1000)));
 }
 
+const DOMENII: Record<string, string> = {
+  copii: "Copii",
+  animale: "Animale",
+  mediu: "Mediu",
+  educatie: "Educație",
+  sanatate: "Sănătate",
+  social_incluziune: "Social și incluziune",
+  cultura: "Cultură",
+  sport: "Sport",
+  altele: "Altele",
+};
+
+// Telefonul pentru linkul tel: (cifre și + inițial, fără spații).
+const telefonLink = (t: string) => t.replace(/[^\d+]/g, "");
+
+// Contactele organizațiilor ca CSV (cu BOM, ca Excel să citească diacriticele); celulele care încep cu = + - @ se prefixează, ca să nu fie citite ca formule.
+function exportaCsv(orgs: OrgRand[]) {
+  const celula = (v: string | null) => {
+    let t = (v ?? "").replace(/[\r\n]+/g, " ");
+    if (/^[=+\-@\t]/.test(t)) t = `'${t}`;
+    return `"${t.replace(/"/g, '""')}"`;
+  };
+  const antet = ["Organizație", "Adresa în platformă", "Nume contact", "E-mail", "Telefon", "CIF", "Județ", "Domeniu", "Pachet", "Status", "Creat la", "Ultima autentificare"];
+  const randuri = orgs.map((o) => [o.nume, o.slug, o.proprietarNume, o.proprietarEmail, o.telefon, o.cif, o.judet, o.domeniuActivitate ? (DOMENII[o.domeniuActivitate] ?? o.domeniuActivitate) : null, o.package, o.subscriptionStatus, formatData(o.createdAt), formatData(o.proprietarUltimaAutentificare)]);
+  const csv = "\uFEFF" + [antet, ...randuri].map((r) => r.map(celula).join(",")).join("\r\n");
+  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `organizatii-alexandrit-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 function formatData(d: Date | null): string {
   if (!d) return "—";
   return new Date(d).toLocaleDateString("ro-RO", { day: "2-digit", month: "short", year: "numeric" });
@@ -65,6 +98,11 @@ export function OrgAdminTable({ initial, personalizari = {}, timp = {} }: { init
   return (
     <div>
       {eroare && <p className="mb-2 text-xs text-red-600">{eroare}</p>}
+      <div className="mb-2 flex justify-end">
+        <button type="button" onClick={() => exportaCsv(orgs)} className="rounded-lg border border-line px-2.5 py-1 text-xs font-medium text-ink hover:bg-panel-2">
+          Exportă contactele (CSV)
+        </button>
+      </div>
       <div className="divide-y divide-line rounded-xl border border-line bg-panel">
         {orgs.map((o) => {
           const inProba = o.package === "trial";
@@ -78,6 +116,24 @@ export function OrgAdminTable({ initial, personalizari = {}, timp = {} }: { init
                   </p>
                   <p className="text-xs text-muted">
                     {o.proprietarEmail ?? "fără proprietar"} · ultima autentificare: {formatData(o.proprietarUltimaAutentificare)} · creat {formatData(o.createdAt)}
+                  </p>
+                  <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted">
+                    {o.proprietarNume && <span className="font-medium text-ink">{o.proprietarNume}</span>}
+                    {o.proprietarEmail && (
+                      <a href={`mailto:${o.proprietarEmail}`} className="text-brand-blue hover:underline">
+                        {o.proprietarEmail}
+                      </a>
+                    )}
+                    {o.telefon ? (
+                      <a href={`tel:${telefonLink(o.telefon)}`} className="text-brand-blue hover:underline">
+                        {o.telefon}
+                      </a>
+                    ) : (
+                      <span>telefon necompletat</span>
+                    )}
+                    {o.cif && <span>CIF {o.cif}</span>}
+                    {o.judet && <span>{o.judet}</span>}
+                    {o.domeniuActivitate && <span>{DOMENII[o.domeniuActivitate] ?? o.domeniuActivitate}</span>}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">

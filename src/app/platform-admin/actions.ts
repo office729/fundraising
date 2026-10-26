@@ -29,7 +29,13 @@ export type OrgRand = {
   currentPeriodEnd: Date | null;
   createdAt: Date;
   proprietarEmail: string | null;
+  proprietarNume: string | null;
   proprietarUltimaAutentificare: Date | null;
+  // Datele de contact și de identificare completate la înscriere (telefonul organizației, CIF, județ, domeniu).
+  telefon: string | null;
+  cif: string | null;
+  judet: string | null;
+  domeniuActivitate: string | null;
   // Până când are organizația un acces de suport activ (null = nu a acordat accesul).
   suportExpiraLa: Date | null;
 };
@@ -55,7 +61,12 @@ export async function listeazaOrganizatiiAction(): Promise<OrgRand[]> {
         currentPeriodEnd: organizations.currentPeriodEnd,
         createdAt: organizations.createdAt,
         proprietarEmail: appUsers.email,
+        proprietarNume: appUsers.name,
         proprietarUltimaAutentificare: appUsers.lastLoginAt,
+        telefon: organizations.telefon,
+        cif: organizations.cif,
+        judet: organizations.judet,
+        domeniuActivitate: organizations.domeniuActivitate,
       })
       .from(organizations)
       .leftJoin(
