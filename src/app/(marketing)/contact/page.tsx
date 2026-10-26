@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { CONTACT_DICT } from "@/lib/i18n/dictionaries/contact";
 import { metadatePagina } from "@/lib/page-titles";
+import { FirituriJsonLd } from "@/components/seo/firituri-json-ld";
 
 function initiale(nume: string) {
   return nume
@@ -20,6 +21,7 @@ export default async function ContactPage() {
 
   return (
     <main>
+      <FirituriJsonLd pagina="contact" cale="/contact" />
       <section className="bg-brand-blue px-[6%] pt-14 pb-28 text-white">
         <div className="mx-auto max-w-3xl text-center">
           <div className="text-sm text-white/60">

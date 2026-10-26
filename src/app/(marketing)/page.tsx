@@ -12,6 +12,9 @@ import { PanouPreview } from "./panou-preview";
 import { NotaCrmMarketing } from "./nota-crm-marketing";
 import { CampaniiSectiune } from "./campanii-sectiune";
 import { getCampaniiLanding, PRAG_ORGANIZATII } from "@/lib/campanii-publice";
+import { JsonLd } from "@/components/seo/json-ld";
+import { NUME_PACHET_FIX, PACKAGE_LIMITS } from "@/lib/billing/packages";
+import { schemaAplicatie, schemaOrganizatie, schemaSite } from "@/lib/seo-schema";
 
 export default async function LandingPage({
   searchParams,
@@ -67,6 +70,18 @@ export default async function LandingPage({
 
   return (
     <main>
+      <JsonLd date={schemaOrganizatie()} />
+      <JsonLd date={schemaSite(locale)} />
+      <JsonLd
+        date={schemaAplicatie(
+          [
+            { nume: NUME_PACHET_FIX.start, pretLunar: PACKAGE_LIMITS.start.pretLunar! },
+            { nume: NUME_PACHET_FIX.crestere, pretLunar: PACKAGE_LIMITS.crestere.pretLunar! },
+            { nume: NUME_PACHET_FIX.impact, pretLunar: PACKAGE_LIMITS.impact.pretLunar! },
+          ],
+          locale === "ro" ? "Platformă de fundraising pentru ONG-uri: CRM pentru donatori și companii, pagini de donații, Formular 230 și Declarația 177." : "Fundraising platform for NGOs: CRM for donors and companies, donation pages, Form 230 and Declaration 177.",
+        )}
+      />
       {/* Hero */}
       <section className="relative overflow-hidden bg-brand-blue px-[6%] pt-12 pb-10 text-center text-white md:pt-14 md:pb-12">
         {/* Textură de fundal — pete de lumină + grilă fină de puncte, fără nicio imagine */}

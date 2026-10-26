@@ -7,6 +7,7 @@ import { metadatePagina } from "@/lib/page-titles";
 
 import { FluxPasi } from "../flux-pasi";
 import { Reveal } from "../reveal";
+import { FirituriJsonLd } from "@/components/seo/firituri-json-ld";
 
 // Pictogramele, în ordinea din dicționar.
 const PICTOGRAME_PASI: LucideIcon[] = [UserPlus, Users, Megaphone, BarChart3];
@@ -23,6 +24,7 @@ export default async function CumFunctioneazaPage() {
 
   return (
     <main>
+      <FirituriJsonLd pagina="cum-functioneaza" cale="/cum-functioneaza" />
       {/* Antet: mesajul + cele patru etape, aprinse pe rând */}
       <section className="fa-pe-albastru relative overflow-hidden bg-brand-blue px-[6%] py-16 text-white sm:py-20">
         <span className="fa-lumina pointer-events-none absolute -top-24 -left-24 hidden h-80 w-80 rounded-full bg-brand-green/40 blur-3xl sm:block" aria-hidden="true" />

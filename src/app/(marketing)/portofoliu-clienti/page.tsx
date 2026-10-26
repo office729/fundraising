@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { PORTOFOLIU_CLIENTI_DICT } from "@/lib/i18n/dictionaries/portofoliu-clienti";
 import { metadatePagina } from "@/lib/page-titles";
+import { FirituriJsonLd } from "@/components/seo/firituri-json-ld";
 
 export default async function PortofoliuClientiPage() {
   const locale = await getLocale();
@@ -10,6 +11,7 @@ export default async function PortofoliuClientiPage() {
 
   return (
     <main>
+      <FirituriJsonLd pagina="portofoliu-clienti" cale="/portofoliu-clienti" />
       <div className="px-[6%] pt-8 text-sm text-muted-2">
         <Link href="/" className="hover:text-brand-blue">
           {locale === "ro" ? "Acasă" : "Home"}

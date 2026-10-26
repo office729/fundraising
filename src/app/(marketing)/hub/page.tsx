@@ -9,6 +9,7 @@ import { HUB_DICT } from "@/lib/i18n/dictionaries/hub";
 import { CustomPlanCalculator } from "./custom-plan-calculator";
 import { PlansSection } from "./plans-section";
 import { metadatePagina } from "@/lib/page-titles";
+import { FirituriJsonLd } from "@/components/seo/firituri-json-ld";
 
 // Calculatorul „Ai nevoie de altceva?" (plan personalizat) e ascuns momentan; pune true ca să reapară.
 const AFISEAZA_PLAN_PERSONALIZAT = false;
@@ -21,6 +22,7 @@ export default async function HubPage() {
 
   return (
     <main>
+      <FirituriJsonLd pagina="hub" cale="/hub" />
       {/* Hero */}
       <section className="grid grid-cols-1 items-center gap-8 bg-brand-blue px-[6%] py-12 text-white md:grid-cols-[1.1fr_0.9fr] md:gap-12 md:py-14">
         <div>

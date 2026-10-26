@@ -4,6 +4,7 @@ import Link from "next/link";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { VLAD_PLACINTA_DICT } from "@/lib/i18n/dictionaries/vlad-placinta";
 import { metadatePagina } from "@/lib/page-titles";
+import { FirituriJsonLd } from "@/components/seo/firituri-json-ld";
 
 export default async function VladPlacintaPage() {
   const locale = await getLocale();
@@ -11,6 +12,7 @@ export default async function VladPlacintaPage() {
 
   return (
     <main>
+      <FirituriJsonLd pagina="vlad-placinta" cale="/vlad-placinta" />
       <div className="px-[6%] pt-8 text-sm text-muted-2">
         <Link href="/" className="hover:text-brand-blue">
           {dict.homeLabel}

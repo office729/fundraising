@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { MARKETING_DICT } from "@/lib/i18n/dictionaries/marketing";
 import { metadatePagina } from "@/lib/page-titles";
+import { FirituriJsonLd } from "@/components/seo/firituri-json-ld";
 
 // Întrebările frecvente stau pe pagina lor, sub „Cine suntem” în meniu — <details>/<summary> nativ: accesibil din cutie
 // (tastatură, cititoare de ecran), fără stare React necesară.
@@ -13,6 +14,7 @@ export default async function IntrebariFrecventePage() {
 
   return (
     <main>
+      <FirituriJsonLd pagina="intrebari-frecvente" cale="/intrebari-frecvente" />
       <div className="px-[6%] pt-8 text-sm text-muted-2">
         <Link href="/" className="hover:text-brand-blue">
           {locale === "ro" ? "Acasă" : "Home"}

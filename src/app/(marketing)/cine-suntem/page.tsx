@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { CINE_SUNTEM_DICT } from "@/lib/i18n/dictionaries/cine-suntem";
 import { metadatePagina } from "@/lib/page-titles";
+import { FirituriJsonLd } from "@/components/seo/firituri-json-ld";
 
 export default async function CineSuntemPage() {
   const locale = await getLocale();
@@ -10,6 +11,7 @@ export default async function CineSuntemPage() {
 
   return (
     <main>
+      <FirituriJsonLd pagina="cine-suntem" cale="/cine-suntem" />
       <div className="px-[6%] pt-8 text-sm text-muted-2">
         <Link href="/" className="hover:text-brand-blue">
           {dict.homeLabel}

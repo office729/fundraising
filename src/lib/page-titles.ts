@@ -218,6 +218,9 @@ const CALE_CANONICA: Partial<Record<PaginaCuTitlu, string>> = {
 
 const FARA_INDEXARE: ReadonlySet<PaginaCuTitlu> = new Set<PaginaCuTitlu>(["login", "signup", "forgot-password", "reset-password", "blog", "studii-de-caz"]);
 
+// Imaginea de previzualizare (app/opengraph-image.tsx). O punem explicit, fiindcă un `openGraph` definit pe pagină înlocuiește cel moștenit din fișier.
+const IMAGINE_PREVIZUALIZARE = { url: "/opengraph-image", width: 1200, height: 630, alt: "Alexandrit: platformă de fundraising pentru ONG-uri din România" };
+
 export async function metadatePagina(pagina: PaginaCuTitlu): Promise<Metadata> {
   const locale = await getLocale();
   const titlu = TITLURI[pagina][locale];
@@ -231,8 +234,8 @@ export async function metadatePagina(pagina: PaginaCuTitlu): Promise<Metadata> {
     ...(FARA_INDEXARE.has(pagina) ? { robots: { index: false, follow: true } } : {}),
     ...(descriere && cale
       ? {
-          openGraph: { title: titluComplet, description: descriere, url: cale, type: "website" as const, siteName: "Alexandrit", locale: locale === "ro" ? "ro_RO" : "en_US" },
-          twitter: { card: "summary" as const, title: titluComplet, description: descriere },
+          openGraph: { title: titluComplet, description: descriere, url: cale, type: "website" as const, siteName: "Alexandrit", locale: locale === "ro" ? "ro_RO" : "en_US", images: [IMAGINE_PREVIZUALIZARE] },
+          twitter: { card: "summary_large_image" as const, title: titluComplet, description: descriere, images: [IMAGINE_PREVIZUALIZARE.url] },
         }
       : {}),
   };

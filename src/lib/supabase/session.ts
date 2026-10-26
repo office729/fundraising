@@ -77,6 +77,9 @@ export async function updateSession(request: NextRequest, rewriteTo?: URL) {
     path === "/robots.txt" ||
     path === "/embed.js" ||
     path === "/sitemap.xml" ||
+    // Imaginea de previzualizare (Open Graph): o cer rețelele sociale și Google fără sesiune.
+    path === "/opengraph-image" ||
+    path === "/twitter-image" ||
     path === "/login" ||
     path === "/signup" ||
     path === "/forgot-password" ||

@@ -39,6 +39,8 @@ export const metadata: Metadata = {
   // Fiecare pagină își pune titlul propriu (lib/page-titles.ts); sufixul e adăugat aici.
   title: { default: "Alexandrit", template: `%s${SUFIX_TITLU}` },
   description: "Instrumente de fundraising pentru ONG-uri din România",
+  // Verificarea proprietății în Google Search Console (metaetichetă în <head>, pe toate paginile, inclusiv pe cea principală).
+  verification: { google: "eyWXp1uGFzqtkTQLShIfDjAzauBOqJg2Y3s1V7U2re0" },
 };
 
 export default async function RootLayout({

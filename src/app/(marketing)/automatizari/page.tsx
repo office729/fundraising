@@ -7,6 +7,7 @@ import { metadatePagina } from "@/lib/page-titles";
 
 import { FluxPasi } from "../flux-pasi";
 import { Reveal } from "../reveal";
+import { FirituriJsonLd } from "@/components/seo/firituri-json-ld";
 
 // Cele două acțiuni au destinații diferite: programarea unei întâlniri (secțiunea de consiliere) și pagina de contact.
 const DEMO = "/hub#consultanta";
@@ -28,6 +29,7 @@ export default async function AutomatizarePage() {
 
   return (
     <main>
+      <FirituriJsonLd pagina="automatizari" cale="/automatizari" />
       {/* Antet: mesajul + un flux automat care se construiește pas cu pas */}
       <section className="fa-pe-albastru relative overflow-hidden bg-brand-blue px-[6%] py-16 text-white sm:py-20">
         <span className="fa-lumina pointer-events-none absolute -top-24 -right-24 hidden h-80 w-80 rounded-full bg-brand-green/40 blur-3xl sm:block" aria-hidden="true" />
