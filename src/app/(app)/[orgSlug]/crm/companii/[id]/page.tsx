@@ -25,8 +25,6 @@ import { ContractSponsorizareSection } from "./contract-sponsorizare-section";
 import { bifeDinEtapa } from "@/lib/etape-companie";
 import { ferestreFiscale } from "@/lib/ferestre-fiscale";
 import { segmentFirma } from "@/lib/id-scurt";
-import { aiConfigurat } from "@/lib/ai";
-import { aSponsorizatConformProfilului, profilDinExtra } from "@/lib/profil-firma";
 import { sumaEfectiva } from "@/lib/prioritizare-firme";
 import { mecanismDinMarcaje, propozitieSezon, scriptApel } from "@/lib/script-apel";
 import { urlsSemnate } from "@/lib/fisiere-private";
@@ -35,7 +33,6 @@ import type { PersoanaDeAprobat } from "../actions";
 import { DocumenteFirma } from "../../instrumente/_comun/documente-firma";
 import { PaginiSociale } from "./pagini-sociale";
 import { PipelineCard } from "./pipeline-card";
-import { ProfilAiCard } from "./profil-ai-card";
 import { ScorCard } from "./scor-card";
 import { ScriptTelefon } from "./script-telefon";
 import { CampuriPersonalizateCard } from "../../components/campuri-personalizate-card";
@@ -45,9 +42,6 @@ import { TagPills } from "./tag-pills";
 const CONTRACT_TONE: Record<string, StatusTone> = { trimis: "blue", asteptare: "amber", semnat: "green", anulat: "red" };
 
 const TABURI_VALIDE = ["prezentare", "contacte", "financiar", "sponsorizari", "contract", "notite", "activitate", "documente", "editare"];
-
-// Cercetarea firmei cu AI (acțiunea din ProfilAiCard) poate dura până la ~2 minute: acțiunile de server moștenesc durata maximă a paginii.
-export const maxDuration = 180;
 
 export default async function CompanieProfilPage({
   params,
@@ -75,7 +69,6 @@ export default async function CompanieProfilPage({
 
   const { companie: c, sponsorizari, notite, contacte, responsabili, jurnalEtape, orgNume, userEmail, campanii, campuriDefs } = data;
   // Suma cu care se lucrează: cea introdusă de mână, altfel estimarea din bilanț (nu se scrie în baza de date).
-  const profilAi = profilDinExtra(c.extra);
   const sumaCuEstimare = sumaEfectiva(c.sumaDisponibila, { regimFiscal: c.regimFiscal, profit: c.profit, ca: c.ca, impozit: c.impozit });
   const areCampuri = areModul(pachetPentruModule(access.orgPackage, access.userEmail), "campuri-personalizate");
   const extra = (c.extra ?? {}) as {
@@ -165,7 +158,7 @@ export default async function CompanieProfilPage({
         locale={locale}
         input={{
           sumaDisponibila: sumaCuEstimare.suma > 0 || c.sumaDisponibila != null ? sumaCuEstimare.suma || c.sumaDisponibila : null, sumaEstimata: sumaCuEstimare.estimata,
-          cald: (cai?.length ?? 0) > 0, aiSponsor: aSponsorizatConformProfilului(profilAi), ca: c.ca, profit: c.profit, nrAngajati: c.nrAngajati,
+          cald: (cai?.length ?? 0) > 0, ca: c.ca, profit: c.profit, nrAngajati: c.nrAngajati,
           recurent: c.recurent, temperatura: c.temperatura, sumaSponsorizata: c.sumaSponsorizata, stage: c.stage,
           contacte: contacte.map((ct) => ({ dept: ct.dept, cheie: ct.cheie })),
         }}
@@ -183,8 +176,6 @@ export default async function CompanieProfilPage({
           })}
         />
       )}
-
-      {arePrioritizare && <ProfilAiCard orgSlug={orgSlug} companyId={c.id} profil={profilAi} aiActiv={aiConfigurat()} />}
 
       {cai ? (
         <CaiCaldeCard orgSlug={orgSlug} cai={cai} />

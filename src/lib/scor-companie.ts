@@ -16,7 +16,6 @@ export type ScorInput = {
   luna?: number; // 1-12; implicit luna curentă
   sumaEstimata?: boolean; // suma disponibilă vine din estimarea din bilanț (nu e introdusă de mână)
   cald?: boolean; // are o cale caldă: o persoană de contact deja donator, voluntar sau contact la un sponsor
-  aiSponsor?: boolean; // profilul AI arată că firma a mai sponsorizat ONG-uri sau are program de sponsorizări
 };
 
 export type ScorCheie = "capacitate" | "marime" | "relatie" | "contact" | "moment";
@@ -80,9 +79,6 @@ export function calculeazaScor(i: ScorInput): { total: number; linii: ScorLinie[
   } else if ((i.sumaSponsorizata ?? 0) > 0) {
     relatie = 8;
     detRelatie = "a mai sponsorizat";
-  } else if (i.aiSponsor) {
-    relatie = 7;
-    detRelatie = "a mai sponsorizat ONG-uri (profil AI)";
   } else if (i.temperatura === "rece") {
     relatie = 2;
     detRelatie = "relație rece";

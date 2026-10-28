@@ -2,7 +2,6 @@ import "server-only";
 
 import { raporteazaEroare } from "@/lib/monitoring";
 import { extrageApeluri, normalizeazaUrl, type ApelGasit } from "@/lib/granturi/stari";
-import { parseazaProfilFirma, type ProfilFirma, type SursaWeb } from "@/lib/profil-firma";
 import type { ContinutCanal, DateCampanie } from "@/lib/promovare/generator";
 
 // Integrare AI (Anthropic) pentru generarea de conținut de promovare — inițializare
@@ -380,77 +379,4 @@ export async function genereazaCalendarZilnicAI(date: DateCampanie, zile = 7): P
     raporteazaEroare("ai", e);
     return null;
   }
-}
-
-// Cercetarea unei firme pe web, pentru „Pregătirea de apel” (CRM Companii, pachetul IMPACT): a sponsorizat ONG-uri? ce mecanism preferă? de ce ar sponsoriza organizația ta?
-// Garda: rămân doar exemplele cu link apărut într-un rezultat real al căutării, iar o afirmație „da” fără un astfel de exemplu devine „necunoscut” (vezi lib/profil-firma.ts).
-export type RezultatCercetareFirma = { ok: true; profil: ProfilFirma } | { ok: false; eroare: string };
-
-export async function cercetaFirmaAI(p: { firma: string; cui: string | null; localizare: string; site: string | null; caen: string | null; ong: string; azi: string }): Promise<RezultatCercetareFirma> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return { ok: false, eroare: "Cercetarea cu AI nu e configurată pe această platformă." };
-  const model = process.env.ANTHROPIC_MODEL || DEFAULT_MODEL;
-  const system = [
-    `Ești cercetător de fundraising pentru ${p.ong} (organizație non-profit din România). Cercetezi o companie ca să știm dacă merită abordată pentru sponsorizare.`,
-    "Folosește căutarea web ca să afli: (1) a sponsorizat ONG-uri sau cauze caritabile (care, când, pentru ce); (2) are program de sponsorizări sau CSR (buget, campanii, voluntariat); (3) ce mecanism preferă: sponsorizare directă (contract), redirecționarea impozitului pe profit (Declarația 177) sau ambele.",
-    "REGULI STRICTE:",
-    "- Folosește DOAR ce ai găsit în surse. Ce nu găsești rămâne „necunoscut”. NU inventa ONG-uri, sume, ani sau declarații.",
-    "- Fiecare exemplu trebuie să aibă un link care a apărut într-un rezultat real al căutării. Fără link real, nu pune exemplul.",
-    "- Verifică orașul, domeniul și CUI-ul ca să nu confunzi firma cu una cu nume asemănător.",
-    "- Pregătirea de apel: „deCe” = de ce ar sponsoriza TOCMAI ea (legătură reală: istoric, domeniu, CSR, context local; 1-2 propoziții); „unghi” = cu ce o abordezi; „cuiScriem” = rolul sau departamentul potrivit (sau o persoană numită, dacă apare într-o sursă).",
-    "- Răspunde DOAR cu un obiect JSON, fără alt text, de forma: {\"aSponsorizatOng\":\"da|nu|necunoscut\",\"faceSponsorizari\":\"da|nu|necunoscut\",\"preferinta\":\"d177|directa|ambele|necunoscut\",\"domenii\":[string],\"exemple\":[{\"ong\":string,\"an\":string|null,\"detaliu\":string,\"url\":string}],\"rezumat\":string,\"recomandare\":string,\"pregatireApel\":{\"deCe\":string,\"unghi\":string,\"cuiScriem\":string},\"incredere\":\"mare|medie|mica\"}",
-    "- Scrie în română. Rezumatul: 2-4 propoziții. Cel mult 6 exemple.",
-  ].join("\n");
-  const prompt = [
-    `Data de azi: ${p.azi}`,
-    `Companie: ${p.firma}`,
-    p.cui ? `CUI: ${p.cui}` : "",
-    p.localizare ? `Localizare: ${p.localizare}` : "",
-    p.site ? `Website: ${p.site}` : "",
-    p.caen ? `CAEN: ${p.caen}` : "",
-    "Cercetează această companie conform instrucțiunilor.",
-  ]
-    .filter(Boolean)
-    .join("\n");
-
-  const messages: unknown[] = [{ role: "user", content: prompt }];
-  const surse: SursaWeb[] = [];
-  let text = "";
-  try {
-    // „pause_turn”: căutarea lungă e întreruptă de API și se continuă retrimițând răspunsul parțial (cel mult trei ture de câte 55 s).
-    for (let tura = 0; tura < 3; tura++) {
-      const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), 55_000);
-      let res: Response;
-      try {
-        res = await fetch(ANTHROPIC_URL, {
-          method: "POST",
-          headers: { "content-type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
-          body: JSON.stringify({ model, max_tokens: 4000, system, messages, tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 6 }] }),
-          signal: ctrl.signal,
-        });
-      } finally {
-        clearTimeout(t);
-      }
-      if (!res.ok) {
-        const detaliu = await res.text().catch(() => "");
-        if (res.status === 400 && /web.?search/i.test(detaliu)) return { ok: false, eroare: "Căutarea web nu e activată pentru contul Anthropic al platformei." };
-        throw new Error(`AI a răspuns ${res.status}. ${detaliu.slice(0, 200)}`);
-      }
-      const data = (await res.json()) as { content?: Array<{ type: string; text?: string; content?: unknown }>; stop_reason?: string };
-      for (const b of data.content ?? []) {
-        if (b.type === "text" && typeof b.text === "string") text += b.text;
-        if (b.type === "web_search_tool_result" && Array.isArray(b.content)) {
-          for (const r of b.content as Array<{ url?: string; title?: string }>) if (r.url) surse.push({ titlu: r.title ?? "", url: r.url });
-        }
-      }
-      if (data.stop_reason !== "pause_turn") break;
-      messages.push({ role: "assistant", content: data.content });
-    }
-  } catch (e) {
-    raporteazaEroare("ai-cercetare-firma", e);
-    return { ok: false, eroare: "Cercetarea nu a reușit acum. Încearcă din nou în câteva momente." };
-  }
-  const profil = parseazaProfilFirma(text, surse);
-  return profil ? { ok: true, profil } : { ok: false, eroare: "Nu am primit un rezultat utilizabil. Încearcă din nou." };
 }
