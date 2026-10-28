@@ -36,19 +36,19 @@ export function TopBar({ dict, locale }: { dict: MarketingDict; locale: Locale }
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2">
         <span>
           {dict.topbar.help}{" "}
-          <a href="mailto:vlad.placinta@alexandrit.ro" className="inline-block py-1.5 font-medium text-white hover:underline">
+          <a href="mailto:vlad.placinta@alexandrit.ro" className="inline-block py-2.5 font-medium text-white hover:underline sm:py-1.5">
             vlad.placinta@alexandrit.ro
           </a>{" "}
-          · <a href="tel:0757401042" className="inline-block py-1.5 font-medium text-white hover:underline">0757 401 042</a>
+          · <a href="tel:0757401042" className="inline-block py-2.5 font-medium text-white hover:underline sm:py-1.5">0757 401 042</a>
         </span>
         <div className="flex items-center gap-4">
-          <Link prefetch={false} href="/studii-de-caz" className="inline-block px-1 py-1.5 hover:text-white">
+          <Link prefetch={false} href="/studii-de-caz" className="inline-block px-1 py-2.5 hover:text-white sm:py-1.5">
             {dict.topbar.caseStudies}
           </Link>
-          <Link prefetch={false} href="/blog" className="inline-block px-1 py-1.5 hover:text-white">
+          <Link prefetch={false} href="/blog" className="inline-block px-1 py-2.5 hover:text-white sm:py-1.5">
             {dict.topbar.blog}
           </Link>
-          <a href="mailto:vlad.placinta@alexandrit.ro" className="inline-block px-1 py-1.5 hover:text-white">
+          <a href="mailto:vlad.placinta@alexandrit.ro" className="inline-block px-1 py-2.5 hover:text-white sm:py-1.5">
             {dict.topbar.contact}
           </a>
           <LanguageSwitcher locale={locale} dark />
@@ -262,7 +262,7 @@ export function SiteFooter({ dict }: { dict: MarketingDict }) {
           <p className="text-xs font-bold tracking-wide text-white/50 uppercase">{dict.footer.navTitle}</p>
           <div className="mt-3 flex flex-col gap-2">
             {dict.footer.nav.map((item) => (
-              <Link prefetch={false} key={item.label} href={item.href} className="inline-block py-1 text-sm text-white/75 hover:text-white">
+              <Link prefetch={false} key={item.label} href={item.href} className="inline-block py-2.5 text-sm text-white/75 hover:text-white sm:py-1">
                 {item.label}
               </Link>
             ))}
@@ -273,19 +273,19 @@ export function SiteFooter({ dict }: { dict: MarketingDict }) {
           <div className="mt-3 flex flex-col gap-2">
             {/* Draft-uri, marcate vizibil pe fiecare pagină — vezi nota din
                 fiecare fișier. Nu sunt text juridic final. */}
-            <Link prefetch={false} href="/termeni" className="inline-block py-1 text-sm text-white/75 hover:text-white">
+            <Link prefetch={false} href="/termeni" className="inline-block py-2.5 text-sm text-white/75 hover:text-white sm:py-1">
               {dict.footer.terms}
             </Link>
-            <Link prefetch={false} href="/termeni-donatori" className="inline-block py-1 text-sm text-white/75 hover:text-white">
+            <Link prefetch={false} href="/termeni-donatori" className="inline-block py-2.5 text-sm text-white/75 hover:text-white sm:py-1">
               {dict.footer.termsDonors}
             </Link>
-            <Link prefetch={false} href="/gdpr" className="inline-block py-1 text-sm text-white/75 hover:text-white">
+            <Link prefetch={false} href="/gdpr" className="inline-block py-2.5 text-sm text-white/75 hover:text-white sm:py-1">
               {dict.footer.gdpr}
             </Link>
-            <Link prefetch={false} href="/dpa" className="inline-block py-1 text-sm text-white/75 hover:text-white">
+            <Link prefetch={false} href="/dpa" className="inline-block py-2.5 text-sm text-white/75 hover:text-white sm:py-1">
               {dict.footer.dpa}
             </Link>
-            <Link prefetch={false} href="/cookies" className="inline-block py-1 text-sm text-white/75 hover:text-white">
+            <Link prefetch={false} href="/cookies" className="inline-block py-2.5 text-sm text-white/75 hover:text-white sm:py-1">
               {dict.footer.cookies}
             </Link>
           </div>
@@ -308,10 +308,10 @@ export function SiteFooter({ dict }: { dict: MarketingDict }) {
                 <span className="text-[12px] text-white/50">
                   {c.nume} · {c.rol}
                 </span>
-                <a href={`mailto:${c.email}`} className="inline-block py-1 hover:text-white">
+                <a href={`mailto:${c.email}`} className="inline-block py-2.5 hover:text-white sm:py-1">
                   {c.email}
                 </a>
-                <a href={`tel:${c.tel}`} className="inline-block py-1 hover:text-white">
+                <a href={`tel:${c.tel}`} className="inline-block py-2.5 hover:text-white sm:py-1">
                   {c.telefon}
                 </a>
               </div>

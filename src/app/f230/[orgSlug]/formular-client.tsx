@@ -181,7 +181,7 @@ export function Formular230Client({
                   <p className="truncate text-sm font-semibold text-ink">{c.titlu}</p>
                   {c.judet && <p className="text-xs text-muted-2">{c.judet}</p>}
                 </div>
-                <a href={c.href} target="_blank" rel="noopener noreferrer" className="shrink-0 text-xs font-semibold hover:underline" style={{ color: accent }}>
+                <a href={c.href} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 shrink-0 items-center px-1 text-xs font-semibold hover:underline" style={{ color: accent }}>
                   Vezi campania
                   <span className="sr-only"> {c.titlu} (se deschide în filă nouă)</span>
                 </a>

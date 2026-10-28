@@ -46,7 +46,7 @@ const Tag = ({ children, tone }: { children: ReactNode; tone: Ton }) => {
     red: "bg-[#fde4e4] text-[#b42323]",
     gray: "bg-panel-2 text-muted",
   }[tone];
-  return <span className={`inline-flex rounded-full px-2 py-0.5 text-[10.5px] font-semibold whitespace-nowrap ${c}`}>{children}</span>;
+  return <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap ${c}`}>{children}</span>;
 };
 
 const Bara = ({ v, tone = "blue" }: { v: number; tone?: "blue" | "green" | "amber" | "red" }) => (
@@ -64,7 +64,7 @@ const Antet = ({ t, s }: { t: string; s: string }) => (
 
 const Stat = ({ l, v, c = "text-ink" }: { l: string; v: string; c?: string }) => (
   <Card className="px-3 py-2.5">
-    <p className="truncate text-[10px] font-semibold tracking-wide text-muted-2 uppercase">{l}</p>
+    <p className="truncate text-[11px] font-semibold tracking-wide text-muted-2 uppercase">{l}</p>
     <p className={`font-display mt-1 truncate text-[16px] leading-none font-extrabold tabular-nums ${c}`}>{v}</p>
   </Card>
 );
@@ -107,7 +107,7 @@ function Acasa({ L }: { L: L }) {
           [L("Închise", "Closed"), "1", "text-brand-green"],
         ].map(([l, v, c]) => (
           <Card key={l} className="px-3 py-2.5">
-            <p className="truncate text-[10.5px] text-muted-2">{l}</p>
+            <p className="truncate text-[11px] text-muted-2">{l}</p>
             <p className={`font-display mt-0.5 text-[22px] leading-none font-extrabold ${c}`}>{v}</p>
           </Card>
         ))}
@@ -121,7 +121,7 @@ function Acasa({ L }: { L: L }) {
                 <div className="flex w-full flex-1 items-end">
                   <div className={`w-full rounded-t-md ${i === bare.length - 1 ? "bg-brand-green" : "bg-brand-blue/25"}`} style={{ height: `${h}%` }} />
                 </div>
-                <span className="text-[10px] text-muted-2">{luni[i]}</span>
+                <span className="text-[11px] text-muted-2">{luni[i]}</span>
               </div>
             ))}
           </div>

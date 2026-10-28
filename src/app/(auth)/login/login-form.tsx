@@ -85,8 +85,8 @@ function LoginFormInner({ dict }: { dict: Dict }) {
           {dict.login.uitatParola}
         </Link>
 
-        <label className="flex items-center gap-2 text-sm text-body">
-          <input type="checkbox" name="ramaiConectat" defaultChecked className="h-4 w-4 rounded border-line" />
+        <label className="flex min-h-11 items-center gap-2.5 text-sm text-body">
+          <input type="checkbox" name="ramaiConectat" defaultChecked className="h-5 w-5 rounded border-line" />
           {dict.login.ramaiConectat}
         </label>
 

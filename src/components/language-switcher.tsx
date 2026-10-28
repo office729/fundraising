@@ -43,7 +43,7 @@ export function LanguageSwitcher({ locale, dark = false }: { locale: Locale; dar
           onClick={() => comuta(o.value)}
           disabled={pending}
           aria-pressed={local === o.value}
-          className={`rounded-md px-2 py-1 transition ${
+          className={`rounded-md px-3 py-3 transition sm:px-2 sm:py-1 ${
             local === o.value
               ? dark
                 ? "bg-white text-brand-blue"
