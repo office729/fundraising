@@ -53,7 +53,7 @@ export function Dialog({
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="max-h-[70vh] overflow-y-auto p-5">{children}</div>
+        <div className="max-h-[70vh] max-h-[70dvh] overflow-y-auto overscroll-contain p-5">{children}</div>
       </div>
     </div>
   );

@@ -25,6 +25,7 @@ export function StatsChartCard({ beneficiari }: { beneficiari: Rand[] }) {
               key={b.id}
               className="group"
               onMouseEnter={() => setHover(b.id)}
+              onClick={() => setHover((h) => (h === b.id ? null : b.id))}
               onMouseLeave={() => setHover((h) => (h === b.id ? null : h))}
             >
               <div className="mb-1 flex items-baseline justify-between gap-2">

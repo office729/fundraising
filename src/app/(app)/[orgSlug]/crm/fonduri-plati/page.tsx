@@ -76,13 +76,13 @@ export default function FonduriPlatiPage() {
           : "Demo data: the allocations and payments on this page are examples, not your organization's real figures. Real invoices and payments are on each campaign's page under Fundraising pages."}
       </DemoBanner>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Card><p className="text-[12px] text-[var(--ci-text-muted)]">{dict.totalIncasat}</p><p className="ci-tabular mt-1 text-lg font-bold text-[var(--ci-text)]">{formatSuma(totale.incasat)}</p></Card>
         <Card><p className="text-[12px] text-[var(--ci-text-muted)]">{dict.totalAlocat}</p><p className="ci-tabular mt-1 text-lg font-bold text-[var(--ci-text)]">{formatSuma(totale.alocat)}</p></Card>
         <Card><p className="text-[12px] text-[var(--ci-text-muted)]">{dict.totalAchitat}</p><p className="ci-tabular mt-1 text-lg font-bold text-[var(--ci-text)]">{formatSuma(totale.achitat)}</p></Card>
       </div>
 
-      <Select value={status} onChange={(e) => setStatus(e.target.value)} className="w-44">
+      <Select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full sm:w-44">
         <option value="toate">{dict.toateStatusurile}</option>
         {Object.entries(STATUS_LABEL).map(([k, v]) => (
           <option key={k} value={k}>{v}</option>

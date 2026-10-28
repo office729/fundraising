@@ -109,7 +109,7 @@ export function AddCompanyDialog({
           <Label>Industrie</Label>
           <Input value={industrie} onChange={(e) => setIndustrie(e.target.value)} placeholder="ex. IT & Software" />
         </div>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <div>
             <Label>Județ</Label>
             <Input value={judet} onChange={(e) => setJudet(e.target.value)} placeholder="ex. Cluj" />
@@ -152,7 +152,7 @@ export function AddCompanyDialog({
               <Label>Nume și prenume</Label>
               <Input value={numeContact} onChange={(e) => setNumeContact(e.target.value)} placeholder="ex. Mihaela Ciotlaus" />
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <div>
                 <Label>Telefon</Label>
                 <Input value={telefonContact} onChange={(e) => setTelefonContact(e.target.value)} placeholder="+40..." />
@@ -162,7 +162,7 @@ export function AddCompanyDialog({
                 <Input type="email" value={emailContact} onChange={(e) => setEmailContact(e.target.value)} placeholder="nume@firma.ro" />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <div>
                 <Label>Facebook (opțional)</Label>
                 <Input value={facebookContact} onChange={(e) => setFacebookContact(e.target.value)} placeholder="link profil / pagină" />

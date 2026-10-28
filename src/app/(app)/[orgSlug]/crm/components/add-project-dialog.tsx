@@ -62,7 +62,7 @@ export function AddProjectDialog({
           <Label>Descriere proiect</Label>
           <Textarea value={descriere} onChange={(e) => setDescriere(e.target.value)} rows={3} placeholder="Despre ce e vorba, cine e beneficiarul…" />
         </div>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <div>
             <Label>Obiectiv proiect</Label>
             <Input type="number" min="0" step="1" value={obiectiv} onChange={(e) => setObiectiv(e.target.value)} placeholder="ex. 50000" />

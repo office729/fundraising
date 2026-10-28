@@ -58,10 +58,10 @@ export function OnboardingCallPrompt({
 
       {open && (
         <div
-          className="fixed inset-0 z-[70] flex items-center justify-center bg-ink/50 p-4 backdrop-blur-[1px]"
+          className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-ink/50 p-4 backdrop-blur-[1px] sm:items-center"
           onClick={() => setOpen(false)}
         >
-          <div className="w-full max-w-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="my-auto w-full max-w-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="mb-2 flex justify-end">
               <button
                 type="button"

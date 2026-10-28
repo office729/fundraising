@@ -108,7 +108,7 @@ export function FilterBar({
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder={dict.cautaPlaceholder}
-          className="h-9 w-72"
+          className="h-9 w-full sm:w-72"
         />
         <button type="submit" className="h-9 rounded-[var(--ci-radius-btn)] bg-[var(--ci-primary)] px-4 text-[13px] font-semibold text-white hover:opacity-90">
           {dict.cauta}
@@ -199,7 +199,7 @@ export function FilterBar({
         <button type="button" onClick={() => push({ responsabil: null })} className={pill(f.responsabil === "toti")}>
           {dict.toti}
         </button>
-        <Select value={f.responsabil === "toti" ? "" : f.responsabil} onChange={(e) => push({ responsabil: e.target.value || null })} className="h-8 w-52 text-[12px]">
+        <Select value={f.responsabil === "toti" ? "" : f.responsabil} onChange={(e) => push({ responsabil: e.target.value || null })} className="h-8 w-full text-[12px] sm:w-52">
           <option value="">{dict.alegeResponsabil}</option>
           {responsabili.map((r) => (
             <option key={r.id} value={r.id}>
@@ -210,7 +210,7 @@ export function FilterBar({
 
         <span className="mx-1 text-[var(--ci-border)]">|</span>
         <span className="text-[12px] font-semibold text-[var(--ci-text-muted)]">{dict.judet}</span>
-        <Select value={f.judet} onChange={(e) => push({ judet: e.target.value === "toate" ? null : e.target.value })} className="h-8 w-40 text-[12px]">
+        <Select value={f.judet} onChange={(e) => push({ judet: e.target.value === "toate" ? null : e.target.value })} className="h-8 w-full text-[12px] sm:w-40">
           <option value="toate">{dict.toateJudetele}</option>
           {JUDETE.map((j) => (
             <option key={j} value={j}>
@@ -250,7 +250,7 @@ export function FilterBar({
             push({ functieq: functieText.trim() || null });
           }}
         >
-          <Input value={functieText} onChange={(e) => setFunctieText(e.target.value)} placeholder={dict.altaFunctie} maxLength={60} className="h-8 w-48 text-[12px]" />
+          <Input value={functieText} onChange={(e) => setFunctieText(e.target.value)} placeholder={dict.altaFunctie} maxLength={60} className="h-8 w-full text-[12px] sm:w-48" />
           <button type="submit" className="h-8 rounded-[var(--ci-radius-btn)] bg-[var(--ci-primary)] px-3 text-[12px] font-semibold text-white hover:opacity-90">
             {dict.aplicaFunctie}
           </button>

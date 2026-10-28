@@ -64,6 +64,7 @@
   color: var(--ci-text);
   font-family: var(--ci-font-body);
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .ci-root[data-brand] {
@@ -206,11 +207,13 @@
    de ordine dintre utilitarele Tailwind translate-x-0 / -translate-x-full. */
 .ci-sidebar {
   transform: translateX(-100%);
-  transition: transform 200ms;
+  visibility: hidden;
+  transition: transform 200ms, visibility 0s linear 200ms;
 }
 @media (min-width: 768px) {
   .ci-sidebar {
     transform: none;
+    visibility: visible;
     transition: width 150ms;
   }
 }
@@ -243,4 +246,31 @@
 /* Legenda graficelor: textul în culoarea seriei (ex. #16a34a, 3,3:1) devine neutru; pătratul colorat rămâne. */
 .ci-root .recharts-legend-item-text {
   color: var(--ci-text-muted) !important;
+}
+
+/* Telefon / tabletă (cursor „grosier"): ținte de atingere de ≥40px la comenzile mici din panou (butoane-pictogramă, închideri
+   de ferestre, paginare) fără să stricăm densitatea de pe desktop. Câmpurile primesc 16px ca iOS să nu mărească pagina la focus. */
+@media (pointer: coarse) {
+  .ci-root button:not([data-ci-compact]),
+  .ci-root [role="button"]:not([data-ci-compact]),
+  .ci-root select {
+    min-height: 40px;
+  }
+  .ci-root button[aria-label]:not([data-ci-compact]):not(:has(span:not([aria-hidden]))) {
+    min-width: 40px;
+  }
+  .ci-root input:not([type="checkbox"]):not([type="radio"]),
+  .ci-root select,
+  .ci-root textarea {
+    font-size: 16px;
+  }
+  .ci-root input[type="checkbox"],
+  .ci-root input[type="radio"] {
+    width: 20px;
+    height: 20px;
+  }
+  .ci-root .ci-scrollbar,
+  .ci-root [role="dialog"] {
+    overscroll-behavior: contain;
+  }
 }

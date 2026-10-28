@@ -120,7 +120,7 @@ export default async function OrgLayout({
               </p>
             </Link>
           </div>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 sm:gap-4">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 sm:gap-4 [@media(pointer:coarse)]:[&_a]:inline-flex [@media(pointer:coarse)]:[&_a]:min-h-10 [@media(pointer:coarse)]:[&_a]:items-center [@media(pointer:coarse)]:[&_button]:min-h-10">
             {zileProba != null && (
               // Culori FIXE (nu --brand-amber/-soft) — indicator de status, nu
               // element de branding: cele două variante domeniu erau aceeași

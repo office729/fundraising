@@ -242,7 +242,7 @@ export function ImportDialog({ open, onClose, tip }: { open: boolean; onClose: (
               <p className="mb-2.5 text-[12px] text-[var(--ci-text-faint)]">
                 Am ghicit automat potrivirile de mai jos din antetul fișierului — corectează-le dacă nu sunt bune.
               </p>
-              <div className="grid grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                 {campuri.map((f) => {
                   const valoareExemplu = mapping[f.key] ? rows[0]?.[mapping[f.key] as string] : "";
                   return (

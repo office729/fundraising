@@ -256,7 +256,7 @@ export function CrmShell({
     <PersonalizareProvider personalizare={personalizare ?? null}>
     <div
       ref={radacina}
-      className="ci-root flex min-h-[calc(100vh-73px)]"
+      className="ci-root flex min-h-[calc(100vh-73px)] min-h-[calc(100dvh-73px)]"
       data-brand
       data-forma={orgDomeniuActivitate ?? undefined}
     >
@@ -268,9 +268,9 @@ export function CrmShell({
         />
       )}
       <aside
-        style={mobileOpen ? { transform: "translateX(0)" } : undefined}
+        style={mobileOpen ? { transform: "translateX(0)", visibility: "visible", transitionDelay: "0s" } : undefined}
         className={cn(
-          "ci-sidebar fixed inset-y-0 left-0 z-50 w-64 overflow-hidden border-r border-[var(--ci-border)] bg-[var(--ci-surface)] duration-200 md:sticky md:top-0 md:z-auto md:h-[var(--ci-inaltime-bara,calc(100vh-73px))] md:shrink-0 md:self-start md:transition-[width]",
+          "ci-sidebar fixed inset-y-0 left-0 z-50 w-64 overflow-hidden border-r border-[var(--ci-border)] bg-[var(--ci-surface)] duration-200 md:sticky md:top-0 md:z-auto md:h-[var(--ci-inaltime-bara,calc(100dvh-73px))] md:shrink-0 md:self-start md:transition-[width]",
           collapsed ? "md:w-16" : "md:w-52",
         )}
       >
@@ -356,7 +356,7 @@ export function CrmShell({
         {!previzualizare && <FeedbackInvitatie orgSlug={orgSlug} />}
 
         {/* Nu <main>: layout-ul organizației (app/[orgSlug]/layout.tsx) are deja reperul „main"; două ar fi invalide. */}
-        <div className="ci-scrollbar relative flex-1 overflow-y-auto px-6 py-6">
+        <div className="ci-scrollbar relative flex-1 overflow-y-auto px-3 py-4 sm:px-6 sm:py-6">
           <DomeniuProvider domeniu={orgDomeniuActivitate}>
             <UtilizatorProvider prenume={userName.includes("@") ? "" : userName.split(" ")[0]}>
               <LocaleProvider locale={locale}>{children}</LocaleProvider>
@@ -669,8 +669,15 @@ function AvatarMenu({ userName, orgSlug, role }: { userName: string; orgSlug: st
     function onDocClick(e: MouseEvent) {
       if (!(e.target as HTMLElement).closest("[data-avatar-menu]")) setOpen(false);
     }
-    document.addEventListener("click", onDocClick);
-    return () => document.removeEventListener("click", onDocClick);
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("pointerdown", onDocClick as EventListener);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onDocClick as EventListener);
+      document.removeEventListener("keydown", onKey);
+    };
   }, [open]);
 
   return (
@@ -744,8 +751,15 @@ function NotificationsButton({ base, orgSlug }: { base: string; orgSlug: string 
     function onDocClick(e: MouseEvent) {
       if (!(e.target as HTMLElement).closest("[data-notificari]")) setOpen(false);
     }
-    document.addEventListener("click", onDocClick);
-    return () => document.removeEventListener("click", onDocClick);
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("pointerdown", onDocClick as EventListener);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onDocClick as EventListener);
+      document.removeEventListener("keydown", onKey);
+    };
   }, [open]);
 
   return (
@@ -774,12 +788,12 @@ function NotificationsButton({ base, orgSlug }: { base: string; orgSlug: string 
         )}
       </button>
       {open && (
-        <div className="absolute top-full right-0 z-50 mt-1.5 w-80 rounded-xl border border-[var(--ci-border)] bg-[var(--ci-surface)] p-2 shadow-[var(--ci-shadow-md)]">
+        <div className="fixed top-14 right-2 left-2 z-50 mt-1.5 w-auto rounded-xl sm:absolute sm:top-full sm:right-0 sm:left-auto sm:w-80 border border-[var(--ci-border)] bg-[var(--ci-surface)] p-2 shadow-[var(--ci-shadow-md)]">
           <p className="px-2 py-1.5 text-[12px] font-semibold text-[var(--ci-text)]">
             {intarziate.length > 0 ? `${intarziate.length} task-uri întârziate` : "Nicio notificare"}
           </p>
           {intarziate.length > 0 ? (
-            <div className="max-h-72 space-y-0.5 overflow-y-auto">
+            <div className="max-h-[50dvh] space-y-0.5 overflow-y-auto sm:max-h-72">
               {intarziate.slice(0, 8).map((t) => (
                 <Link prefetch={false}
                   key={t.id}

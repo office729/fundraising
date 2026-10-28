@@ -22,8 +22,14 @@ export function useFocusTrap(open: boolean, ref: RefObject<HTMLElement | null>, 
     const vizibile = () =>
       el ? Array.from(el.querySelectorAll<HTMLElement>(SELECTOR_FOCUSABIL)).filter((x) => x.offsetParent !== null) : [];
     // Focus inițial pe PRIMUL câmp de formular, altfel pe primul element focusabil, altfel pe dialogul însuși.
-    const camp = el?.querySelector<HTMLElement>("input:not([disabled]), textarea:not([disabled]), select:not([disabled])");
-    (camp ?? vizibile()[0] ?? el)?.focus();
+    // Pe ecran tactil focusul pe un câmp ridică tastatura din prima și acoperă jumătate din dialog: acolo focusul intră
+    // pe dialogul însuși (cititoarele de ecran tot îl anunță), iar câmpul se alege cu degetul.
+    const tactil = typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches;
+    const camp = tactil ? null : el?.querySelector<HTMLElement>("input:not([disabled]), textarea:not([disabled]), select:not([disabled])");
+    (camp ?? (tactil ? el : vizibile()[0]) ?? el)?.focus({ preventScroll: true });
+    // Pagina din spate nu mai derulează cât timp dialogul e deschis (pe telefon, derularea „scăpa" pe fundal).
+    const overflowAnterior = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
 
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
@@ -47,6 +53,7 @@ export function useFocusTrap(open: boolean, ref: RefObject<HTMLElement | null>, 
     document.addEventListener("keydown", onKeyDown);
     return () => {
       document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = overflowAnterior;
       anterior?.focus?.();
     };
   }, [open, ref]);

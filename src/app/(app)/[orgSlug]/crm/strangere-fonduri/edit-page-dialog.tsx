@@ -120,7 +120,7 @@ export function EditPageDialog({
             <Label>{dict.termen}</Label>
             <Input type="date" name="termen" defaultValue={pagina.termen ?? ""} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label>{dict.judet}</Label>
               <Input name="judet" placeholder={dict.judetPlaceholder} defaultValue={pagina.judet ?? ""} />

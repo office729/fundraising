@@ -40,8 +40,8 @@ export function OnboardingBrandingGate({
   if (!show || dismissed) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-ink/40 p-4 backdrop-blur-[1px]">
-      <div className="w-full max-w-lg rounded-2xl border border-line bg-panel p-6 shadow-2xl">
+    <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-ink/40 p-4 backdrop-blur-[1px] sm:items-center">
+      <div className="my-auto w-full max-w-lg rounded-2xl border border-line bg-panel p-4 shadow-2xl sm:p-6">
         <h2 className="font-display text-xl font-bold text-ink">{dict.title(orgName)}</h2>
         <p className="mt-1.5 text-sm text-muted">{dict.description}</p>
         <BrandingForm
