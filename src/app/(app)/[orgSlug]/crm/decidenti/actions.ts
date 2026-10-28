@@ -8,6 +8,7 @@ import { appUsers, companies, organizations, prospectareCandidati, prospectareCh
 import { EroareUtilizator, mesajSigur } from "@/lib/erori";
 import { bandaFirma, type Banda } from "@/lib/prioritizare-firme";
 import { adaugaZileLucratoare, aziBucuresti, COOLDOWN_CAUTARE_ORE, LIMITA_APELURI_PE_ZI, REZERVARE_EXPIRA_MIN } from "@/lib/prospectare/limite";
+import { listeUrmarire, palnieOutreach } from "@/lib/waalaxy-server";
 import { aprobaCandidat } from "../companii/[id]/prospectare-actions";
 
 // Pagina „Decidenți”: ce ai de făcut cu persoanele găsite prin prospectare, într-un singur loc (pachetul IMPACT).
@@ -279,7 +280,17 @@ export const getFirmeDeCautat = withOrgSession(
   OPTIUNI,
 );
 
+// Pâlnia și listele LinkedIn (Waalaxy): invitați → conectați → răspunsuri (refuzuri), plus „conectați necontactați” și „invitați fără accept”.
+export const getUrmarireLinkedin = withOrgSession(async (ctx) => ({ palnie: await palnieOutreach(ctx.db, ctx.orgId), liste: await listeUrmarire(ctx.db, ctx.orgId, 14) }), OPTIUNI);
+
 // Wrapper-e care nu aruncă (pagina arată un mesaj, nu o eroare).
+export async function urmarireLinkedin(orgSlug: string): Promise<Awaited<ReturnType<typeof getUrmarireLinkedin>> | null> {
+  try {
+    return await getUrmarireLinkedin(orgSlug);
+  } catch {
+    return null;
+  }
+}
 export async function coadaAzi(orgSlug: string, toate: boolean): Promise<DateCoada | null> {
   try {
     return await getCoadaAzi(orgSlug, toate === true);

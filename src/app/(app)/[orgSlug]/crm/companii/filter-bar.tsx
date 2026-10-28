@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown, Settings } from "lucide-react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import { Input, Select } from "../components/ui/input";
@@ -9,6 +9,7 @@ import { useLocale } from "../lib/locale-context";
 import { COMPANII_DICT } from "@/lib/i18n/dictionaries/companii";
 import { CHEI_FUNCTII, FUNCTIE_NESPECIFICATA } from "@/lib/functii-contact";
 import { BENZI, type Banda } from "@/lib/prioritizare-firme";
+import { recalculeazaCaiCaldeAction } from "./cai-calde-actions";
 import { JUDETE, numarFiltreActive, parseFiltru, type PerioadaTip } from "./lib/filters";
 
 const PERIOADA_KEYS = ["toate", "q1", "q2", "q3", "q4", "an", "luna", "saptamana"] as const satisfies readonly PerioadaTip[];
@@ -28,11 +29,13 @@ export function FilterBar({
   functiiNr,
   prioritizare,
   benziNr,
+  caiCalde,
 }: {
   responsabili: { id: string; name: string | null }[];
   functiiNr: Record<string, number>;
   prioritizare: boolean; // pachetul include prioritizarea pe benzi A/B/C
-  benziNr: Record<Banda, number>;
+  benziNr: Record<Banda, number> & { eligibile: number; sprint: number };
+  caiCalde: { n: number; la: string } | null; // câte firme au o cale caldă la ultima recalculare
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -50,6 +53,17 @@ export function FilterBar({
   // de filtre active apare lângă rotiță, ca să se vadă că sunt aplicate.
   const filtreActive = numarFiltreActive(f);
   const [extins, setExtins] = useState(false);
+  const { orgSlug } = useParams<{ orgSlug: string }>();
+  const [recalculeaza, setRecalculeaza] = useState(false);
+  async function recalculeazaCai() {
+    setRecalculeaza(true);
+    try {
+      await recalculeazaCaiCaldeAction(orgSlug);
+      router.refresh();
+    } finally {
+      setRecalculeaza(false);
+    }
+  }
 
   function push(next: Record<string, string | string[] | null>) {
     const sp = new URLSearchParams(searchParams.toString());
@@ -255,6 +269,24 @@ export function FilterBar({
                 <span className="ci-tabular ml-1.5 font-normal opacity-70">{(benziNr[b] ?? 0).toLocaleString("ro-RO")}</span>
               </button>
             ))}
+            <button type="button" onClick={() => push({ elig: f.eligibil ? null : "1" })} aria-pressed={f.eligibil} title={dict.eligibilHint} className={pill(f.eligibil)}>
+              {dict.eligibil}
+              <span className="ci-tabular ml-1.5 font-normal opacity-70">{(benziNr.eligibile ?? 0).toLocaleString("ro-RO")}</span>
+            </button>
+            <button type="button" onClick={() => push({ sprint: f.sprint ? null : "1" })} aria-pressed={f.sprint} title={dict.sprintHint} className={pill(f.sprint)}>
+              {dict.sprint}
+              <span className="ci-tabular ml-1.5 font-normal opacity-70">{(benziNr.sprint ?? 0).toLocaleString("ro-RO")}</span>
+            </button>
+            <button type="button" onClick={() => push({ cald: f.cald ? null : "1" })} aria-pressed={f.cald} title={dict.caldHint} className={pill(f.cald)}>
+              {dict.cald}
+              <span className="ci-tabular ml-1.5 font-normal opacity-70">{caiCalde ? caiCalde.n.toLocaleString("ro-RO") : "?"}</span>
+            </button>
+            <button type="button" disabled={recalculeaza} onClick={recalculeazaCai} title={caiCalde ? `Ultima recalculare: ${new Date(caiCalde.la).toLocaleDateString("ro-RO")}` : dict.caldNecalculat} className={`${pill(false)} disabled:opacity-60`}>
+              ↻ {recalculeaza ? "…" : dict.recalculeaza}
+            </button>
+            <button type="button" onClick={() => push({ imbogatit: f.imbogatit ? null : "1" })} aria-pressed={f.imbogatit} title={dict.imbogatitHint} className={pill(f.imbogatit)}>
+              {dict.imbogatit}
+            </button>
             <button type="button" onClick={() => push({ ordine: f.ordine === "contactabilitate" ? null : "contactabilitate" })} aria-pressed={f.ordine === "contactabilitate"} className={pill(f.ordine === "contactabilitate")}>
               {dict.ordineContactabilitate}
             </button>

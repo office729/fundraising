@@ -4,7 +4,8 @@ import { requireOrgAccess } from "@/lib/auth/guard";
 import { variantaPagina } from "@/lib/personalizare-org";
 
 import { personalizareEfectiva } from "../personalizare-efectiva";
-import { coadaAzi, deAprobat, firmeDeCautat, getStatisticaDecidenti } from "./actions";
+import { coadaAzi, deAprobat, firmeDeCautat, getStatisticaDecidenti, urmarireLinkedin } from "./actions";
+import { UrmarireLinkedin } from "./linkedin-urmarire";
 import { CautareMasa, CoadaAzi, DeAprobatGlobal } from "./decidenti-client";
 import { GraficDecidenti } from "./grafic-decidenti";
 
@@ -17,17 +18,18 @@ export default async function DecidentiPage({ params, searchParams }: { params: 
   const { orgSlug } = await params;
   const access = await requireOrgAccess(orgSlug);
   const sp = await searchParams;
-  const tab = unu(sp.tab) === "aprobare" ? "aprobare" : unu(sp.tab) === "masa" ? "masa" : "azi";
+  const tab = unu(sp.tab) === "aprobare" ? "aprobare" : unu(sp.tab) === "masa" ? "masa" : unu(sp.tab) === "linkedin" ? "linkedin" : "azi";
   const toate = unu(sp.al) === "toate";
   const benzi = unu(sp.benzi) === "A" ? "A" : "AB";
 
   // Varianta „grafic”, activată doar pentru organizațiile cărora le-a fost aleasă în editorul de aspect (vezi VARIANTE_PAGINI).
   const arataGrafic = variantaPagina(await personalizareEfectiva(orgSlug, access.userEmail), "decidenti") === "grafic";
-  const [coada, aprobare, masa, etape] = await Promise.all([
+  const [coada, aprobare, masa, etape, linkedin] = await Promise.all([
     coadaAzi(orgSlug, toate),
     deAprobat(orgSlug),
     tab === "masa" ? firmeDeCautat(orgSlug, benzi) : Promise.resolve(null),
     arataGrafic ? getStatisticaDecidenti(orgSlug).catch(() => null) : Promise.resolve(null),
+    tab === "linkedin" ? urmarireLinkedin(orgSlug) : Promise.resolve(null),
   ]);
   const scadente = coada ? coada.rows.filter((r) => !r.urmatorPasLa || r.urmatorPasLa <= coada.azi).length : 0;
 
@@ -35,6 +37,7 @@ export default async function DecidentiPage({ params, searchParams }: { params: 
     { k: "azi", eticheta: "De contactat azi", n: coada ? scadente : null, href: `/${orgSlug}/crm/decidenti` },
     { k: "aprobare", eticheta: "De aprobat", n: aprobare ? aprobare.rows.length : null, href: `/${orgSlug}/crm/decidenti?tab=aprobare` },
     { k: "masa", eticheta: "Căutare în masă", n: null, href: `/${orgSlug}/crm/decidenti?tab=masa` },
+    { k: "linkedin", eticheta: "LinkedIn", n: null, href: `/${orgSlug}/crm/decidenti?tab=linkedin` },
   ] as const;
 
   return (
@@ -73,6 +76,14 @@ export default async function DecidentiPage({ params, searchParams }: { params: 
         ) : (
           <p role="alert" className="rounded-lg bg-[var(--ci-red-soft)] px-3 py-2 text-[13px] text-[#9b1c1c]">
             Nu am putut încărca lista. Reîncarcă pagina.
+          </p>
+        ))}
+      {tab === "linkedin" &&
+        (linkedin ? (
+          <UrmarireLinkedin orgSlug={orgSlug} palnie={linkedin.palnie} liste={linkedin.liste} />
+        ) : (
+          <p role="alert" className="rounded-lg bg-[var(--ci-red-soft)] px-3 py-2 text-[13px] text-[#9b1c1c]">
+            Nu am putut încărca datele. Reîncarcă pagina.
           </p>
         ))}
       {tab === "masa" &&

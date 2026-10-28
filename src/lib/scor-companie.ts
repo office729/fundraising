@@ -14,6 +14,9 @@ export type ScorInput = {
   stage: string;
   contacte: { dept: string | null; cheie: boolean }[];
   luna?: number; // 1-12; implicit luna curentă
+  sumaEstimata?: boolean; // suma disponibilă vine din estimarea din bilanț (nu e introdusă de mână)
+  cald?: boolean; // are o cale caldă: o persoană de contact deja donator, voluntar sau contact la un sponsor
+  aiSponsor?: boolean; // profilul AI arată că firma a mai sponsorizat ONG-uri sau are program de sponsorizări
 };
 
 export type ScorCheie = "capacitate" | "marime" | "relatie" | "contact" | "moment";
@@ -36,7 +39,7 @@ export function calculeazaScor(i: ScorInput): { total: number; linii: ScorLinie[
     cheie: "capacitate",
     puncte: Math.min(35, Math.round(disp / 14286)),
     max: 35,
-    detaliu: i.sumaDisponibila != null ? `~${fmt(disp)} lei disponibili` : "fără date",
+    detaliu: i.sumaDisponibila != null && disp > 0 ? `~${fmt(disp)} lei disponibili${i.sumaEstimata ? " (estimat din bilanț)" : ""}` : i.sumaDisponibila != null ? `~${fmt(disp)} lei disponibili` : "fără date",
   };
 
   // 2. Mărime și profitabilitate (max 20)
@@ -71,9 +74,15 @@ export function calculeazaScor(i: ScorInput): { total: number; linii: ScorLinie[
   } else if (i.temperatura === "cald") {
     relatie = 12;
     detRelatie = "relație caldă";
+  } else if (i.cald) {
+    relatie = 12;
+    detRelatie = "cale caldă (o persoană de contact e deja în organizație)";
   } else if ((i.sumaSponsorizata ?? 0) > 0) {
     relatie = 8;
     detRelatie = "a mai sponsorizat";
+  } else if (i.aiSponsor) {
+    relatie = 7;
+    detRelatie = "a mai sponsorizat ONG-uri (profil AI)";
   } else if (i.temperatura === "rece") {
     relatie = 2;
     detRelatie = "relație rece";

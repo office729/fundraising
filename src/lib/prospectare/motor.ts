@@ -298,6 +298,47 @@ export async function apolloImbogateste(cheie: string, ids: string[], f: FetchFn
   }
 }
 
+// Îmbogățirea firmei (nu a persoanelor): industria și numărul estimat de angajați, din contul Apollo al organizației. Se folosește doar pentru ce lipsește la firmă.
+type OrganizatieApollo = { name?: string | null; industry?: string | null; estimated_num_employees?: number | null; primary_domain?: string | null; website_url?: string | null };
+export type DateFirmaApollo = { industrie: string; nrAngajati: number | null };
+
+// Organizația potrivită din răspuns: după domeniu (dacă îl cunoaștem), altfel doar după nume identic și unic. Niciodată „prima din listă”: o firmă omonimă ar aduce date străine.
+export function alegeOrganizatieApollo(orgs: readonly OrganizatieApollo[], firma: { nume: string; domeniu: string | null }): OrganizatieApollo | null {
+  if (firma.domeniu) {
+    const d = firma.domeniu.toLowerCase();
+    return orgs.find((o) => domeniuDinSite(o.primary_domain || o.website_url) === d) ?? null;
+  }
+  const k = cheieNume(firma.nume);
+  if (!k) return null;
+  const potriviri = orgs.filter((o) => cheieNume(o.name || "") === k);
+  return potriviri.length === 1 ? potriviri[0] : null;
+}
+
+export function dateFirmaApollo(o: OrganizatieApollo): DateFirmaApollo {
+  const n = Number(o.estimated_num_employees);
+  return { industrie: (o.industry || "").trim().slice(0, 80), nrAngajati: Number.isFinite(n) && n > 0 ? Math.round(n) : null };
+}
+
+export async function apolloImbogatesteFirma(cheie: string, firma: { nume: string; domeniu: string | null }, f: FetchFn): Promise<Rezultat<DateFirmaApollo | null>> {
+  const corp: Record<string, unknown> = { page: 1, per_page: 5 };
+  if (firma.domeniu) corp.q_organization_domains_list = [firma.domeniu];
+  else {
+    corp.q_organization_name = firma.nume;
+    corp.organization_locations = ["Romania"];
+  }
+  try {
+    const res = await f(`${APOLLO}/mixed_companies/search`, { method: "POST", headers: headereApollo(cheie), body: JSON.stringify(corp), signal: AbortSignal.timeout(15000), cache: "no-store", redirect: "error" });
+    const j = (await res.json().catch(() => ({}))) as { organizations?: OrganizatieApollo[]; accounts?: OrganizatieApollo[]; error?: string; error_message?: string };
+    if (!res.ok) return { ok: false, eroare: eroareHttp("apollo", res.status, j.error_message || j.error), status: res.status };
+    const gasita = alegeOrganizatieApollo([...(j.organizations ?? []), ...(j.accounts ?? [])], firma);
+    if (!gasita) return { ok: true, date: null };
+    const date = dateFirmaApollo(gasita);
+    return { ok: true, date: date.industrie || date.nrAngajati ? date : null };
+  } catch (e) {
+    return { ok: false, eroare: eroareRetea("apollo", e) };
+  }
+}
+
 // ===== Hunter =====
 type EmailHunter = { value?: string; first_name?: string; last_name?: string; position?: string; department?: string; seniority?: string; confidence?: number; linkedin?: string; verification?: { status?: string } };
 const headereHunter = (cheie: string) => ({ "X-API-KEY": cheie });

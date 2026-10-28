@@ -30,6 +30,10 @@ export const contacts = pgTable(
     consentAt: timestamp("consent_at", { withTimezone: true }),
     consentSource: text("consent_source"),
     consentBy: uuid("consent_by").references(() => appUsers.id),
+    // Outreach pe LinkedIn (Waalaxy): invitat | conectat | a_raspuns | refuz; nu se retrogradează (lib/waalaxy-evenimente.ts). Starea e-mailului după verificare: valid | risky | invalid.
+    outreachStare: text("outreach_stare"),
+    outreachStareLa: timestamp("outreach_stare_la", { withTimezone: true }),
+    emailStatus: text("email_status"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     createdBy: uuid("created_by").references(() => appUsers.id),
   },

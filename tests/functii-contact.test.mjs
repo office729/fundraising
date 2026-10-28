@@ -60,3 +60,27 @@ test("selecția din adresă păstrează doar chei valide, fără dubluri", () =>
 test("fiecare categorie are o expresie regulată validă", () => {
   for (const c of F.CHEI_FUNCTII) assert.doesNotThrow(() => new RegExp(F.regexFunctie(c)), c);
 });
+
+test("senioritatea din titlu: C-level, Director, Manager; primul care se potrivește câștigă", () => {
+  assert.equal(F.senioritate("CEO"), "c-level");
+  assert.equal(F.senioritate("Director General"), "c-level");
+  assert.equal(F.senioritate("Fondator & administrator"), "c-level");
+  assert.equal(F.senioritate("Director Marketing"), "director");
+  assert.equal(F.senioritate("Șef departament financiar"), "director");
+  assert.equal(F.senioritate("Head of CSR"), "director");
+  assert.equal(F.senioritate("Marketing Manager"), "manager");
+  assert.equal(F.senioritate("Coordonator comunicare"), "manager");
+  assert.equal(F.senioritate("Contabil"), null);
+  assert.equal(F.senioritate(""), null);
+  assert.equal(F.senioritate(null), null);
+  assert.equal(F.senioritate("Directorii"), null, "cuvânt întreg: nu „directorii”");
+});
+
+test("departamentul: cel scris la persoană, altfel dedus din funcție", () => {
+  assert.equal(F.departamentDinFunctie("Marketing Manager", "Comunicare"), "Comunicare");
+  assert.equal(F.departamentDinFunctie("Marketing Manager", ""), "Marketing");
+  assert.equal(F.departamentDinFunctie("Director financiar", null), "Financiar");
+  assert.equal(F.departamentDinFunctie("Responsabil CSR", undefined), "CSR");
+  assert.equal(F.departamentDinFunctie("Specialist HR", null), "HR");
+  assert.equal(F.departamentDinFunctie("Om bun la toate", null), "");
+});

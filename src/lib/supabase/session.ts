@@ -104,6 +104,8 @@ export async function updateSession(request: NextRequest, rewriteTo?: URL) {
     path.startsWith("/api/cron/") ||
     // API-ul public (/api/v1/…): apelat de sisteme, nu de utilizatori cu sesiune; fiecare rută verifică cheia API (Authorization: Bearer) și permisiunea ei.
     path.startsWith("/api/v1/") ||
+    // Webhook-ul Waalaxy (răspunsuri și acceptări de invitație pe LinkedIn): apelat de serverele lor, fără sesiune; adresa e secretă (?t=…) și se verifică în rută.
+    path.startsWith("/api/waalaxy/webhook") ||
     // Formularul 230: link public, distribuit — cine completează NU e
     // autentificat niciodată. Pagina publică (/f230/<orgSlug>/<beneficiarSlug>)
     // și ruta ei de trimitere (/api/<orgSlug>/formular230/<beneficiarSlug>,

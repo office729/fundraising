@@ -69,3 +69,40 @@ export function curataSelectieFunctii(brut: string[]): string[] {
 }
 
 export { esteCheie as esteCheieFunctie };
+
+// ===== Senioritate și departament dedus din funcție (pentru insigna din fișa persoanei) =====
+export type Senioritate = "c-level" | "director" | "manager";
+export const ETICHETE_SENIORITATE: Record<Senioritate, string> = { "c-level": "C-level", director: "Director", manager: "Manager" };
+
+const RE_C_LEVEL = /(^|[^a-z0-9])(ceo|cfo|coo|cmo|cto|cio|chief|owner|co-?founder|founder|fondator|administrator|director general|general manager|managing director|country manager|presedinte|president|vicepresedinte|vp|board|asociat|partner|partener)(?![a-z0-9])/;
+const RE_DIRECTOR = /(^|[^a-z0-9])(director|head of|sef|lead)(?![a-z0-9])/;
+const RE_MANAGER = /(^|[^a-z0-9])(manager|coordonator|responsabil|supervisor)(?![a-z0-9])/;
+
+// C-level (conducere), Director sau Manager, dedus din titlu; null când titlul nu spune nimic despre nivel. Primul care se potrivește câștigă („director general” e C-level).
+export function senioritate(rol: string | null | undefined): Senioritate | null {
+  const t = faraDiacriticeMinuscule((rol ?? "").trim());
+  if (!t) return null;
+  if (RE_C_LEVEL.test(t)) return "c-level";
+  if (RE_DIRECTOR.test(t)) return "director";
+  if (RE_MANAGER.test(t)) return "manager";
+  return null;
+}
+
+const ETICHETE_DEPARTAMENT: Record<CheieFunctie, string> = {
+  conducere: "Conducere",
+  financiar: "Financiar",
+  marketing: "Marketing",
+  csr: "CSR",
+  hr: "HR",
+  vanzari: "Vânzări",
+  operatiuni: "Operațiuni",
+  juridic: "Juridic",
+  secretariat: "Secretariat",
+};
+
+// Departamentul scris la persoană, dacă există; altfel cel dedus din funcție (prima categorie potrivită, în ordinea listei). Gol când nu se poate deduce.
+export function departamentDinFunctie(rol: string | null | undefined, dept: string | null | undefined): string {
+  if ((dept ?? "").trim()) return (dept as string).trim();
+  const cat = categoriiPersoana(rol, null)[0];
+  return cat ? ETICHETE_DEPARTAMENT[cat] : "";
+}

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 
 import { NUME_CONECTOR, type Conector, type ElementWaalaxy } from "@/lib/prospectare/motor";
+import { WaalaxyWebhookCard } from "./waalaxy-webhook-card";
 
 import { creditePrelucrare } from "../crm/companii/[id]/prospectare-actions";
 import {
@@ -393,6 +394,8 @@ export function ProspectareSection({ orgSlug, stare, limitaZilnica }: { orgSlug:
           );
         })}
       </div>
+
+      {waalaxyConectat && <WaalaxyWebhookCard orgSlug={orgSlug} />}
 
       <div className="mt-4 space-y-2 text-xs leading-relaxed text-muted">
         <p>

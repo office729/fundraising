@@ -8,16 +8,27 @@ import { citesteSegment, hexFaraCratime, LUNGIME_SUFIX, segmentFirma, slugFirma 
 import { cifreCui, patternLike, sqlFaraDiacritice } from "@/lib/cautare";
 import { codJudetDinTextLiber } from "@/lib/judete";
 import { CHEI_FUNCTII, esteCheieFunctie, FUNCTIE_NESPECIFICATA, regexFunctie } from "@/lib/functii-contact";
-import { PRAG_BANDA_B, PRAG_MICRO_CA } from "@/lib/prioritizare-firme";
+import { COTA_IMPOZIT_PROFIT, PLAFON_SPONSORIZARE_CA, PLAFON_SPONSORIZARE_IMPOZIT, PRAG_BANDA_B, PRAG_MICRO_CA } from "@/lib/prioritizare-firme";
 import { sectiuneSigura } from "@/lib/sectiune-sigura";
+import { citesteSet } from "./cai-calde-global";
 import { calculeazaInterval, type FiltruCompanii, RECENTE_LIMIT, TOP_LIMIT } from "./lib/filters";
 
 const PAGE_SIZE = 25;
 
 // Benzile A/B/C (lib/prioritizare-firme.ts): aceleași reguli, scrise în SQL ca să se poată filtra și sorta pe ele.
 const eligibilaD177Sql = sql`(${companies.regimFiscal} = 'profit' or (${companies.regimFiscal} = 'necunoscut' and coalesce(${companies.profit}, 0) > 0 and coalesce(${companies.ca}, 0) >= ${PRAG_MICRO_CA}))`;
+// Suma sponsorizabilă estimată din bilanț (aceeași formulă ca sumaSponsorizabilaEstimata din lib/prioritizare-firme.ts): doar pentru firmele eligibile, min(0,75% din CA, 20% din impozit),
+// impozitul fiind cel din bilanț sau 16% din profit. Constantele se inserează ca literali numerici (un parametru fără tip ar fi citit ca întreg). Nu se scrie în baza de date.
+const lit = (n: number) => sql.raw(String(n));
+const sumaEstimataSql = sql`(case when ${eligibilaD177Sql} then round(least(coalesce(${companies.ca}, 0) * ${lit(PLAFON_SPONSORIZARE_CA)}, (case when coalesce(${companies.impozit}, 0) > 0 then ${companies.impozit} else greatest(coalesce(${companies.profit}, 0), 0) * ${lit(COTA_IMPOZIT_PROFIT)} end) * ${lit(PLAFON_SPONSORIZARE_IMPOZIT)}))::bigint else 0 end)`;
+// Suma cu care se lucrează: cea introdusă de mână dacă e pozitivă, altfel estimarea.
+const sumaEfectivaSql = sql`coalesce(nullif(${companies.sumaDisponibila}, 0), ${sumaEstimataSql})`;
+// Pentru sortare: firmele fără nicio sumă (nici de mână, nici estimată) merg la urmă.
+const sumaOrdineSql = sql`coalesce(nullif(${companies.sumaDisponibila}, 0), nullif(${sumaEstimataSql}, 0), -1)`;
+// „Sprint fiscal”: firme cu capacitate, deschise sau în așteptare și fără contract semnat sau sponsorizare încheiată.
+const sprintSql = sql`(${sumaEfectivaSql} > 0 and ${companies.status} in ('open', 'parked') and ${companies.stage} not in ('contract_semnat', 'sponsorizat'))`;
 const areUrmaSql = sql`(coalesce(${companies.site}, '') <> '' or coalesce(${companies.linkedin}, '') <> '' or coalesce(${companies.facebook}, '') <> '' or exists (select 1 from ${contacts} ct where ct.company_id = ${companies.id}))`;
-const bandaSql = sql<"A" | "B" | "C">`(case when not ${eligibilaD177Sql} then 'C' when ${areUrmaSql} then 'A' when coalesce(${companies.sumaDisponibila}, 0) >= ${PRAG_BANDA_B} then 'B' else 'C' end)`;
+const bandaSql = sql<"A" | "B" | "C">`(case when not ${eligibilaD177Sql} then 'C' when ${areUrmaSql} then 'A' when ${sumaEfectivaSql} >= ${PRAG_BANDA_B} then 'B' else 'C' end)`;
 const contactabilitateSql = sql<number>`(
   (case when coalesce(${companies.site}, '') <> '' then 2 else 0 end)
   + (case when coalesce(${companies.linkedin}, '') <> '' or coalesce(${companies.facebook}, '') <> '' then 2 else 0 end)
@@ -66,6 +77,10 @@ function conditiiComune(f: FiltruCompanii, userId: string) {
   const dupaFunctie = conditieContactFunctie(f);
   if (dupaFunctie) cond.push(sql`exists (select 1 from ${contacts} where ${contacts.companyId} = ${companies.id} and ${dupaFunctie})`);
   if (f.banda) cond.push(sql`${bandaSql} = ${f.banda}`);
+  if (f.eligibil) cond.push(eligibilaD177Sql);
+  if (f.sprint) cond.push(sprintSql);
+  if (f.cald) cond.push(sql`exists (select 1 from crm_kv k where k.org_id = ${companies.orgId} and k.path = 'cai-calde-set' and jsonb_exists(k.data->'ids', ${companies.id}::text))`);
+  if (f.imbogatit) cond.push(sql`(coalesce((${companies.extra}->>'imbogatitLa')::timestamptz, 'epoch'::timestamptz) > now() - interval '30 days' and not (${companies.status} = 'won' or coalesce(${companies.sumaSponsorizata}, 0) > 0))`);
   for (const m of f.marcaje) {
     if (m === "d177") cond.push(eq(companies.d177, true));
     else if (m === "decembrie") cond.push(eq(companies.decembrie, true));
@@ -101,6 +116,7 @@ export type RandCompanie = {
   decembrie: boolean;
   mec20: boolean;
   banda: "A" | "B" | "C";
+  caldMotiv: string | null; // donator | sponsor | voluntar, din căile calde calculate la nivelul bazei
   temperatura: "cald" | "rece" | null;
   updatedAt: Date;
   lastViewedAt: Date | null;
@@ -132,6 +148,7 @@ const getCompaniiListaImpl = async (ctx: OrgContext, filtru: FiltruCompanii) => 
       decembrie: companies.decembrie,
       mec20: companies.mec20,
       banda: bandaSql,
+      caldMotiv: sql<string | null>`(select k.data->'motive'->>(${companies.id}::text) from crm_kv k where k.org_id = ${companies.orgId} and k.path = 'cai-calde-set')`,
       temperatura: companies.temperatura,
       updatedAt: companies.updatedAt,
       lastViewedAt: companies.lastViewedAt,
@@ -147,11 +164,11 @@ const getCompaniiListaImpl = async (ctx: OrgContext, filtru: FiltruCompanii) => 
         : filtru.top
         ? [desc(sql`coalesce(${companies.sumaSponsorizata}, 0)`)]
         : filtru.ordine === "contactabilitate"
-        ? [sql`${contactabilitateSql} desc`, sql`coalesce(${companies.sumaDisponibila}, -1) desc`, desc(companies.id)]
+        ? [sql`${contactabilitateSql} desc`, sql`${sumaOrdineSql} desc`, desc(companies.id)]
         : [
             sql`(case when (${companies.ownerId} is not null or ${companies.stage} <> 'nou' or ${companies.status} <> 'open' or coalesce(${companies.sumaSponsorizata}, 0) > 0) then 1 else 0 end) desc`,
             sql`coalesce(${companies.sumaSponsorizata}, -1) desc`,
-            sql`coalesce(${companies.sumaDisponibila}, -1) desc`,
+            sql`${sumaOrdineSql} desc`,
             desc(companies.id),
           ]),
     )
@@ -267,14 +284,17 @@ const getFunctiiNrImpl = async (ctx: OrgContext) => {
   return (row ?? {}) as Record<string, number>;
 };
 
-// Câte firme sunt în fiecare bandă (toată baza), pentru etichetele din filtru.
+// Câte firme sunt în fiecare bandă (toată baza), plus câte sunt eligibile D177 și câte intră în „sprint fiscal”, pentru etichetele din filtru.
 const getBenziNrImpl = async (ctx: OrgContext) => {
   const rows = (await ctx.db.execute(
     sql`select ${bandaSql} as banda, count(*)::int as nr from ${companies} where ${companies.orgId} = ${ctx.orgId} and ${companies.deletedAt} is null group by 1`,
   )) as unknown as { banda: "A" | "B" | "C"; nr: number }[];
   const rezultat: Record<"A" | "B" | "C", number> = { A: 0, B: 0, C: 0 };
   for (const r of rows) rezultat[r.banda] = r.nr;
-  return rezultat;
+  const [extra] = (await ctx.db.execute(
+    sql`select count(*) filter (where ${eligibilaD177Sql})::int as eligibile, count(*) filter (where ${sprintSql})::int as sprint from ${companies} where ${companies.orgId} = ${ctx.orgId} and ${companies.deletedAt} is null`,
+  )) as unknown as { eligibile: number; sprint: number }[];
+  return { ...rezultat, eligibile: extra?.eligibile ?? 0, sprint: extra?.sprint ?? 0 };
 };
 
 const getResponsabiliOrgImpl = async (ctx: OrgContext) => {
@@ -377,7 +397,7 @@ export const getCompanieDetaliu = withOrgSession(async (ctx, segment: string) =>
 // Pagina cere toate patru într-o SINGURĂ tranzacție (o conexiune din pool, un singur set de verificări de acces),
 // nu patru tranzacții paralele — pool-ul are doar 5 conexiuni și layout-urile mai folosesc și ele.
 export const getPaginaCompanii = withOrgSession(async (ctx, filtru: FiltruCompanii) => {
-  const [totalFirme, stats, lista, responsabili, dupaJudet, functiiNr, benziNr] = await Promise.all([
+  const [totalFirme, stats, lista, responsabili, dupaJudet, functiiNr, benziNr, caiCalde] = await Promise.all([
     getTotalFirmeImpl(ctx),
     getStatisticiCompaniiImpl(ctx, filtru),
     getCompaniiListaImpl(ctx, filtru),
@@ -385,6 +405,22 @@ export const getPaginaCompanii = withOrgSession(async (ctx, filtru: FiltruCompan
     getFirmeDupaJudetImpl(ctx),
     getFunctiiNrImpl(ctx),
     getBenziNrImpl(ctx),
+    citesteSet(ctx),
   ]);
-  return { totalFirme, stats, lista, responsabili, dupaJudet, functiiNr, benziNr };
+  return { totalFirme, stats, lista, responsabili, dupaJudet, functiiNr, benziNr, caiCalde };
+});
+
+// Firme similare: același cod CAEN (primele 4 cifre). Cele care n-au sponsorizat vin primele, apoi după suma cu care se lucrează (de mână sau estimată).
+export type SimilarRand = { id: string; nume: string; judet: string | null; banda: "A" | "B" | "C"; suma: number; esteSponsor: boolean };
+export const getCompaniiSimilare = withOrgSession(async (ctx, companyId: string, caen: string | null): Promise<SimilarRand[]> => {
+  const cod = (caen ?? "").replace(/[^0-9]/g, "").slice(0, 4);
+  if (cod.length < 3) return [];
+  const esteSponsorSql = sql<boolean>`(${companies.status} = 'won' or coalesce(${companies.sumaSponsorizata}, 0) > 0)`;
+  const rows = await ctx.db
+    .select({ id: companies.id, nume: companies.nume, judet: companies.judet, banda: bandaSql, suma: sql<number>`coalesce(${sumaEfectivaSql}, 0)::int`, esteSponsor: esteSponsorSql })
+    .from(companies)
+    .where(and(eq(companies.orgId, ctx.orgId), sql`${companies.deletedAt} is null`, sql`${companies.id} <> ${companyId}`, sql`left(regexp_replace(coalesce(${companies.caen}, ''), '[^0-9]', '', 'g'), 4) = ${cod}`))
+    .orderBy(sql`${esteSponsorSql} asc`, sql`${sumaOrdineSql} desc`, desc(companies.id))
+    .limit(200);
+  return rows;
 });

@@ -6,6 +6,7 @@ import { Tabs } from "../../components/ui/tabs";
 import { formatDataOra } from "../../lib/format";
 import { useLocale } from "../../lib/locale-context";
 import { COMPANII_DICT } from "@/lib/i18n/dictionaries/companii";
+import { sumaEfectiva } from "@/lib/prioritizare-firme";
 import { ContactePanel } from "./contacte-panel";
 import { ContractPanel } from "./contract-panel";
 import { D177StadiuCard } from "./d177-stadiu-card";
@@ -58,6 +59,7 @@ export function CompanyTabs({
 }) {
   const locale = useLocale();
   const dict = COMPANII_DICT[locale].detail;
+  const estimare = sumaEfectiva(c.sumaDisponibila, c);
   return (
     <Tabs
       accent="primary"
@@ -103,7 +105,7 @@ export function CompanyTabs({
               <InfoRow label={dict.info.regimFiscal} value={c.regimFiscal} />
               <InfoRow label={dict.info.anBilant} value={c.anBilant != null ? String(c.anBilant) : null} />
               <InfoRow label={dict.info.nrAngajati} value={c.nrAngajati != null ? String(c.nrAngajati) : null} />
-              <InfoRow label={dict.info.sumaDisponibila} value={c.sumaDisponibila != null ? `${c.sumaDisponibila.toLocaleString("ro-RO")} RON` : null} />
+              <InfoRow label={dict.info.sumaDisponibila} value={c.sumaDisponibila != null && c.sumaDisponibila > 0 ? `${c.sumaDisponibila.toLocaleString("ro-RO")} RON` : estimare.estimata ? `~${estimare.suma.toLocaleString("ro-RO")} RON (estimat din bilanț)` : c.sumaDisponibila != null ? `${c.sumaDisponibila.toLocaleString("ro-RO")} RON` : null} />
               <InfoRow label={dict.info.sumaPropusa} value={c.sumaPropusa != null ? `${c.sumaPropusa.toLocaleString("ro-RO")} RON` : null} />
               <InfoRow label={dict.info.sumaSponsorizataTotal} value={`${(c.sumaSponsorizata ?? 0).toLocaleString("ro-RO")} RON`} />
               </Card>

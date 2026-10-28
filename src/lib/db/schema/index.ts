@@ -36,3 +36,4 @@ export * from "./parcursuri";
 export * from "./interese";
 export * from "./dubluri";
 export * from "./api-campuri";
+export * from "./outreach";

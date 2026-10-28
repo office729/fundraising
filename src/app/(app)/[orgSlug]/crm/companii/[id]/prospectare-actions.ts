@@ -8,10 +8,12 @@ import { withOrgFaze, withOrgSession } from "@/lib/auth/guard";
 import { appUsers, companies, companyNotite, contacts, prospectareCandidati, prospectareChei, prospectareJurnal, prospectareSuprimati } from "@/lib/db/schema";
 import { EroareUtilizator, mesajSigur } from "@/lib/erori";
 import {
+  apolloImbogatesteFirma,
   cautaDecidenti,
   cheieNume,
   crediteFurnizor,
   domeniuDinEmail,
+  domeniuDinSite,
   FURNIZORI,
   grupRol,
   linkedinNormalizat,
@@ -20,12 +22,15 @@ import {
   prenumeSiNume,
   waalaxyTrimite,
   type Credite,
+  type DateFirmaApollo,
   type Furnizor,
   type ProspectWaalaxy,
+  type Rezultat,
   type RezultatCautare,
 } from "@/lib/prospectare/motor";
 import { adaugaZileLucratoare, APELURI_REZERVATE_PER_CAUTARE, aziBucuresti, COOLDOWN_CAUTARE_ORE, LIMITA_APELURI_PE_ZI, REZERVARE_EXPIRA_MIN } from "@/lib/prospectare/limite";
 import { decripteaza } from "@/lib/secret-box";
+import { noteazaInvitatie } from "@/lib/waalaxy-server";
 
 // Prospectare de decidenți pentru o firmă (pachetul IMPACT). Folosește cheile PROPRII ale organizației la Lusha, Apollo, Prospeo și Hunter (Setări → Prospectare).
 // Persoanele găsite stau în cutia „De aprobat” până le aprobă cineva din echipă; abia atunci devin contacte ale firmei, cu un responsabil și un prim pas cu termen.
@@ -414,6 +419,8 @@ export const aprobaCandidat = withOrgFaze<[string, boolean], PregatitAprobare, E
       })
       .returning({ id: contacts.id });
     await ctx.db.update(prospectareCandidati).set({ contactId: contact.id }).where(eq(prospectareCandidati.id, c.id));
+    // Ajunsă în Waalaxy, persoana e „invitat” (pâlnia și listele de urmărit pornesc de aici); răspunsurile vin apoi prin webhook.
+    if (p.waalaxy && extern.trimis) await noteazaInvitatie(ctx.db, ctx.orgId, { contactId: contact.id, companyId: c.companyId, campanie: p.waalaxy.campanieId || null });
     // Notă pe firmă, ca echipa să vadă de unde vine contactul și care e următorul pas.
     await ctx.db.insert(companyNotite).values({
       orgId: ctx.orgId,
@@ -492,5 +499,66 @@ export async function cautaDecidentiPentruFirma(orgSlug: string, companyId: stri
     return await cautaDecidentiAction(orgSlug, companyId, forteaza === true);
   } catch (e) {
     return { ok: false, eroare: mesajSigur(e, "Căutarea nu a reușit. Încearcă din nou în câteva minute.", "prospectare-cautare") };
+  }
+}
+
+export type RezultatImbogatire = { ok: boolean; eroare?: string; completat?: string[]; mesaj?: string };
+
+// Îmbogățirea firmei la Apollo (cu cheia ORGANIZAȚIEI): completează industria și numărul de angajați DOAR unde lipsesc, fără să atingă datele introduse de mână sau cele din ANAF.
+// Se notează când s-a făcut (extra.imbogatitLa), ca firma să apară în lista „îmbogățite recent, de abordat”. Fără cheie Apollo, nu se întâmplă nimic.
+export const imbogatesteFirmaAction = withOrgFaze<[string], { companyId: string; firma: { nume: string; site: string | null; industrie: string | null; nrAngajati: number | null; domeniuEmail: string | null }; cheie: string }, Rezultat<DateFirmaApollo | null>, RezultatImbogatire>({
+  opts: OPTIUNI,
+  pregateste: async (ctx, companyId) => {
+    if (!UUID.test(companyId)) throw new EroareUtilizator("Firma nu a fost găsită.");
+    const [firma] = await ctx.db
+      .select({ nume: companies.nume, site: companies.site, industrie: companies.industrie, nrAngajati: companies.nrAngajati })
+      .from(companies)
+      .where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId), sql`${companies.deletedAt} is null`))
+      .limit(1);
+    if (!firma) throw new EroareUtilizator("Firma nu a fost găsită.");
+    if ((firma.industrie ?? "").trim() && firma.nrAngajati != null) return { gata: { ok: true, completat: [], mesaj: "Firma are deja industria și numărul de angajați; nu e nimic de completat." } };
+    const [rand] = await ctx.db.select({ enc: prospectareChei.cheieEnc }).from(prospectareChei).where(and(eq(prospectareChei.orgId, ctx.orgId), eq(prospectareChei.provider, "apollo"))).limit(1);
+    if (!rand) return { gata: { ok: false, eroare: "Conectează întâi cheia Apollo (Setări → Prospectare)." } };
+    let cheie: string;
+    try {
+      cheie = decripteaza(rand.enc);
+    } catch {
+      return { gata: { ok: false, eroare: "Cheia Apollo nu poate fi citită. Un administrator o poate adăuga din nou în Setări → Prospectare." } };
+    }
+    const [contactEmail] = await ctx.db.select({ email: contacts.email }).from(contacts).where(and(eq(contacts.companyId, companyId), eq(contacts.orgId, ctx.orgId), sql`coalesce(${contacts.email}, '') <> ''`)).limit(1);
+    return { pregatit: { companyId, firma: { ...firma, domeniuEmail: domeniuDinEmail(contactEmail?.email) }, cheie } };
+  },
+  extern: async ({ firma, cheie }) => apolloImbogatesteFirma(cheie, { nume: firma.nume, domeniu: domeniuDinSite(firma.site) ?? firma.domeniuEmail }, fetch),
+  salveaza: async (ctx, { companyId, firma }, rezultat): Promise<RezultatImbogatire> => {
+    if (!rezultat.ok) return { ok: false, eroare: rezultat.eroare };
+    await ctx.db.insert(prospectareJurnal).values({ orgId: ctx.orgId, provider: "apollo", operatie: "imbogatire_firma", ok: true, unitati: 1, companyId, userId: ctx.userId });
+    if (!rezultat.date) return { ok: true, completat: [], mesaj: "Apollo nu a găsit sigur această firmă (se potrivește doar după domeniu sau după nume identic). Completează site-ul firmei și încearcă din nou." };
+    const completat: string[] = [];
+    const seteaza: { industrie?: string; nrAngajati?: number } = {};
+    if (!(firma.industrie ?? "").trim() && rezultat.date.industrie) {
+      seteaza.industrie = rezultat.date.industrie;
+      completat.push("industrie");
+    }
+    if (firma.nrAngajati == null && rezultat.date.nrAngajati != null) {
+      seteaza.nrAngajati = rezultat.date.nrAngajati;
+      completat.push("număr de angajați");
+    }
+    if (completat.length === 0) return { ok: true, completat, mesaj: "Firma avea deja aceste date; n-am suprascris nimic." };
+    // Doar ce lipsea (condițiile din WHERE repetă verificarea, ca o modificare făcută între timp să nu fie suprascrisă) + data îmbogățirii.
+    await ctx.db.execute(sql`
+      update companies set
+        industrie = case when coalesce(btrim(industrie), '') = '' then coalesce(${seteaza.industrie ?? null}, industrie) else industrie end,
+        nr_angajati = coalesce(nr_angajati, ${seteaza.nrAngajati ?? null}),
+        extra = coalesce(extra, '{}'::jsonb) || jsonb_build_object('imbogatitLa', ${new Date().toISOString()}::text)
+      where id = ${companyId} and org_id = ${ctx.orgId}`);
+    return { ok: true, completat, mesaj: `Am completat: ${completat.join(" și ")}.` };
+  },
+});
+
+export async function imbogatesteFirma(orgSlug: string, companyId: string): Promise<RezultatImbogatire> {
+  try {
+    return await imbogatesteFirmaAction(orgSlug, companyId);
+  } catch (e) {
+    return { ok: false, eroare: mesajSigur(e, "Nu am putut îmbogăți firma. Încearcă din nou.", "prospectare-imbogatire-firma") };
   }
 }

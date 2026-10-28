@@ -17,6 +17,7 @@ import { getLocale } from "@/lib/i18n/get-locale";
 import { COMPANII_DICT } from "@/lib/i18n/dictionaries/companii";
 import { D177Badge } from "./d177-badge";
 import { AddCompanyButton, CalendarLucruButton, ImportCsvButton, TopButton } from "./header-actions";
+import { FereastraFiscala } from "./fereastra-fiscala";
 import { FilterBar } from "./filter-bar";
 import { numarFiltreActive, parseFiltru } from "./lib/filters";
 import { PaginaNav } from "./pagina-nav";
@@ -53,11 +54,15 @@ async function CompaniiContent({
   if (!areBenzi) {
     filtru.banda = "";
     filtru.ordine = "";
+    filtru.eligibil = false;
+    filtru.sprint = false;
+    filtru.cald = false;
+    filtru.imbogatit = false;
   }
   const locale = await getLocale();
   const dict = COMPANII_DICT[locale].page;
 
-  const { totalFirme, stats, lista, responsabili, dupaJudet, functiiNr, benziNr } = await getPaginaCompanii(orgSlug, filtru);
+  const { totalFirme, stats, lista, responsabili, dupaJudet, functiiNr, benziNr, caiCalde } = await getPaginaCompanii(orgSlug, filtru);
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-5">
@@ -67,6 +72,8 @@ async function CompaniiContent({
       </div>
 
       <NotaCrm id="companii" />
+
+      {areBenzi && <FereastraFiscala orgSlug={orgSlug} />}
 
       <HartaJudeteCard
         dupaJudet={dupaJudet}
@@ -92,7 +99,7 @@ async function CompaniiContent({
         <StatCard label={dict.stats.medieCompanie} value={`${stats.medieCompanie.toLocaleString("ro-RO")} RON`} />
       </div>
 
-      <FilterBar responsabili={responsabili} functiiNr={functiiNr} prioritizare={areBenzi} benziNr={benziNr} />
+      <FilterBar responsabili={responsabili} functiiNr={functiiNr} prioritizare={areBenzi} benziNr={benziNr} caiCalde={caiCalde} />
 
       <Card padded={false}>
         {lista.rows.length === 0 ? (
@@ -152,6 +159,11 @@ async function CompaniiContent({
                   {areBenzi && (
                     <Badge tone={c.banda === "A" ? "green" : c.banda === "B" ? "amber" : "neutral"} icon={false}>
                       {COMPANII_DICT[locale].filterBar.benzi[c.banda].split(" · ")[0]}
+                    </Badge>
+                  )}
+                  {areBenzi && c.caldMotiv && (
+                    <Badge tone="orange" icon={false}>
+                      🔥 {c.caldMotiv}
                     </Badge>
                   )}
                   {c.temperatura === "cald" && <Badge tone="red" icon={false}>{dict.cald}</Badge>}

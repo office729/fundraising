@@ -15,19 +15,29 @@ import { COMPANII_DICT } from "@/lib/i18n/dictionaries/companii";
 import { getCaiCalde } from "../cai-calde";
 import { DecidentiCard } from "./decidenti-card";
 import { getStareProspectare } from "./prospectare-actions";
-import { getCompanieDetaliu } from "../queries";
+import { getCompaniiSimilare, getCompanieDetaliu } from "../queries";
 import { CaiCaldeCard } from "./cai-calde-card";
+import { CompaniiSimilare } from "./companii-similare";
+import { ImbogatesteFirma } from "./imbogateste-firma";
 import { CompanyTabs } from "./company-tabs";
 import { IstoricEtape } from "./istoric-etape";
 import { ContractSponsorizareSection } from "./contract-sponsorizare-section";
 import { bifeDinEtapa } from "@/lib/etape-companie";
+import { ferestreFiscale } from "@/lib/ferestre-fiscale";
+import { segmentFirma } from "@/lib/id-scurt";
+import { aiConfigurat } from "@/lib/ai";
+import { aSponsorizatConformProfilului, profilDinExtra } from "@/lib/profil-firma";
+import { sumaEfectiva } from "@/lib/prioritizare-firme";
+import { mecanismDinMarcaje, propozitieSezon, scriptApel } from "@/lib/script-apel";
 import { urlsSemnate } from "@/lib/fisiere-private";
 import { stadiuD177Valid } from "@/lib/stadii-d177";
 import type { PersoanaDeAprobat } from "../actions";
 import { DocumenteFirma } from "../../instrumente/_comun/documente-firma";
 import { PaginiSociale } from "./pagini-sociale";
 import { PipelineCard } from "./pipeline-card";
+import { ProfilAiCard } from "./profil-ai-card";
 import { ScorCard } from "./scor-card";
+import { ScriptTelefon } from "./script-telefon";
 import { CampuriPersonalizateCard } from "../../components/campuri-personalizate-card";
 import { valoriDinJson } from "@/lib/campuri-personalizate";
 import { TagPills } from "./tag-pills";
@@ -35,6 +45,9 @@ import { TagPills } from "./tag-pills";
 const CONTRACT_TONE: Record<string, StatusTone> = { trimis: "blue", asteptare: "amber", semnat: "green", anulat: "red" };
 
 const TABURI_VALIDE = ["prezentare", "contacte", "financiar", "sponsorizari", "contract", "notite", "activitate", "documente", "editare"];
+
+// Cercetarea firmei cu AI (acțiunea din ProfilAiCard) poate dura până la ~2 minute: acțiunile de server moștenesc durata maximă a paginii.
+export const maxDuration = 180;
 
 export default async function CompanieProfilPage({
   params,
@@ -55,10 +68,15 @@ export default async function CompanieProfilPage({
   const access = await requireOrgAccess(orgSlug);
   const areCaiCalde = areModul(pachetPentruModule(access.orgPackage, access.userEmail), "cai-calde");
   const cai = areCaiCalde ? await getCaiCalde(orgSlug, data.companie.id) : null;
+  const arePrioritizare = areModul(pachetPentruModule(access.orgPackage, access.userEmail), "prioritizare-firme");
+  const similare = arePrioritizare && data.companie.caen ? await getCompaniiSimilare(orgSlug, data.companie.id, data.companie.caen).catch(() => []) : [];
   const areProspectare = areModul(pachetPentruModule(access.orgPackage, access.userEmail), "prospectare-multi");
   const prospectare = areProspectare ? await getStareProspectare(orgSlug, data.companie.id) : null;
 
   const { companie: c, sponsorizari, notite, contacte, responsabili, jurnalEtape, orgNume, userEmail, campanii, campuriDefs } = data;
+  // Suma cu care se lucrează: cea introdusă de mână, altfel estimarea din bilanț (nu se scrie în baza de date).
+  const profilAi = profilDinExtra(c.extra);
+  const sumaCuEstimare = sumaEfectiva(c.sumaDisponibila, { regimFiscal: c.regimFiscal, profit: c.profit, ca: c.ca, impozit: c.impozit });
   const areCampuri = areModul(pachetPentruModule(access.orgPackage, access.userEmail), "campuri-personalizate");
   const extra = (c.extra ?? {}) as {
     etapeBifate?: string[];
@@ -134,7 +152,7 @@ export default async function CompanieProfilPage({
 
         <div className="mt-5 grid grid-cols-2 gap-4 border-t border-[var(--ci-border)] pt-4 sm:grid-cols-4">
           <Stat label={dict.stats.totalSponsorizat} value={`${(c.sumaSponsorizata ?? 0).toLocaleString("ro-RO")} RON`} />
-          <Stat label={dict.stats.soldDisponibil} value={c.sumaDisponibila != null ? `${c.sumaDisponibila.toLocaleString("ro-RO")} RON` : "—"} />
+          <Stat label={dict.stats.soldDisponibil} value={sumaCuEstimare.estimata ? `~${sumaCuEstimare.suma.toLocaleString("ro-RO")} RON (estimat)` : c.sumaDisponibila != null ? `${c.sumaDisponibila.toLocaleString("ro-RO")} RON` : "—"} />
           <Stat label={dict.stats.sponsorizari} value={String(sponsorizari.length)} />
           <Stat label={dict.stats.ultimaActivitate} value={activitate[0] ? formatDataRelativa(activitate[0].la) : "—"} />
         </div>
@@ -146,11 +164,27 @@ export default async function CompanieProfilPage({
         base={`/${orgSlug}/crm`}
         locale={locale}
         input={{
-          sumaDisponibila: c.sumaDisponibila, ca: c.ca, profit: c.profit, nrAngajati: c.nrAngajati,
+          sumaDisponibila: sumaCuEstimare.suma > 0 || c.sumaDisponibila != null ? sumaCuEstimare.suma || c.sumaDisponibila : null, sumaEstimata: sumaCuEstimare.estimata,
+          cald: (cai?.length ?? 0) > 0, aiSponsor: aSponsorizatConformProfilului(profilAi), ca: c.ca, profit: c.profit, nrAngajati: c.nrAngajati,
           recurent: c.recurent, temperatura: c.temperatura, sumaSponsorizata: c.sumaSponsorizata, stage: c.stage,
           contacte: contacte.map((ct) => ({ dept: ct.dept, cheie: ct.cheie })),
         }}
       />
+
+      {arePrioritizare && (
+        <ScriptTelefon
+          script={scriptApel({
+            firma: c.nume,
+            ong: orgNume,
+            askLei: sumaCuEstimare.suma,
+            mecanism: mecanismDinMarcaje(c.d177, c.mec20),
+            sezon: propozitieSezon(ferestreFiscale(new Date())),
+            persoana: ((contacte.find((ct) => ct.cheie) ?? contacte[0])?.nume ?? "").trim().split(/\s+/)[0] || null,
+          })}
+        />
+      )}
+
+      {arePrioritizare && <ProfilAiCard orgSlug={orgSlug} companyId={c.id} profil={profilAi} aiActiv={aiConfigurat()} />}
 
       {cai ? (
         <CaiCaldeCard orgSlug={orgSlug} cai={cai} />
@@ -162,6 +196,10 @@ export default async function CompanieProfilPage({
           poateSchimba={access.role === "owner" || access.role === "admin"}
         />
       )}
+
+      {similare.length > 0 && c.caen && <CompaniiSimilare caen={c.caen} judet={c.judet} lista={similare.map((r) => ({ ...r, href: `/${orgSlug}/crm/companii/${segmentFirma(r.nume, r.id)}` }))} />}
+
+      {prospectare?.furnizoriConfigurati.includes("apollo") && (!(c.industrie ?? "").trim() || c.nrAngajati == null) && <ImbogatesteFirma orgSlug={orgSlug} companyId={c.id} />}
 
       {prospectare ? (
         <DecidentiCard orgSlug={orgSlug} companyId={c.id} stare={prospectare} />

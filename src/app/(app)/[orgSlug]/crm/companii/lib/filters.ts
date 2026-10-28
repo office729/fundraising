@@ -27,6 +27,10 @@ export type FiltruCompanii = {
   functieText: string; // text liber căutat în funcția/departamentul aceleiași persoane (ex. „director”)
   banda: Banda | ""; // banda de prioritizare A/B/C (vezi lib/prioritizare-firme.ts); doar pentru pachetul IMPACT
   ordine: "" | "contactabilitate"; // „cele mai ușor de abordat” întâi; doar pentru pachetul IMPACT
+  eligibil: boolean; // doar firmele eligibile pentru D177 (independent de cât de abordabile sunt); doar pentru pachetul IMPACT
+  cald: boolean; // doar firmele cu o cale caldă (vezi cai-calde-global.ts); doar pentru pachetul IMPACT
+  imbogatit: boolean; // îmbogățite la un furnizor în ultimele 30 de zile și încă nesponsorizate; doar pentru pachetul IMPACT
+  sprint: boolean; // „sprint fiscal”: firme cu capacitate (sumă disponibilă sau estimată), încă nesemnate; doar pentru pachetul IMPACT
   marcaje: string[]; // subset din ["d177", "decembrie", "caz"]
   vezi: "toata" | "lucrate" | "recente"; // „recente” = ultimele 20 firme la care a lucrat utilizatorul curent
   q: string;
@@ -49,6 +53,10 @@ export function numarFiltreActive(f: FiltruCompanii): number {
     (f.functie.length > 0 || f.functieText.trim() ? 1 : 0) +
     (f.banda ? 1 : 0) +
     (f.ordine ? 1 : 0) +
+    (f.eligibil ? 1 : 0) +
+    (f.sprint ? 1 : 0) +
+    (f.cald ? 1 : 0) +
+    (f.imbogatit ? 1 : 0) +
     f.marcaje.length +
     (f.vezi !== "toata" ? 1 : 0)
   );
@@ -78,6 +86,10 @@ export function parseFiltru(sp: URLSearchParams): FiltruCompanii {
     functieText: (sp.get("functieq") ?? "").slice(0, 60),
     banda: esteBanda(sp.get("banda")) ? (sp.get("banda") as Banda) : "",
     ordine: sp.get("ordine") === "contactabilitate" ? "contactabilitate" : "",
+    eligibil: sp.get("elig") === "1",
+    sprint: sp.get("sprint") === "1",
+    cald: sp.get("cald") === "1",
+    imbogatit: sp.get("imbogatit") === "1",
     marcaje: marcajeRaw.filter((m) => MARCAJE_VALIDE.has(m)),
     vezi: sp.get("vezi") === "lucrate" ? "lucrate" : sp.get("vezi") === "recente" ? "recente" : "toata",
     q: sp.get("q") ?? "",

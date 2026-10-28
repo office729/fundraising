@@ -168,3 +168,38 @@ test("credite: apelul de cont folosește cheia în header; Apollo nu face niciun
   assert.equal(respinsa.ok, false);
   assert.match(respinsa.eroare, /Cheia Lusha nu mai e acceptată/);
 });
+
+// ===== Îmbogățirea firmei la Apollo =====
+const ORG_ALFA = { name: "Alfa SRL", industry: "Food & Beverages", estimated_num_employees: 120.4, primary_domain: "alfa.ro" };
+
+test("firma Apollo: după domeniu se alege exact organizația cu domeniul respectiv, nu prima din listă", () => {
+  const orgs = [{ name: "Alfa Group", industry: "x", primary_domain: "alfagroup.com" }, ORG_ALFA];
+  assert.equal(S.alegeOrganizatieApollo(orgs, { nume: "Alfa SRL", domeniu: "alfa.ro" }), ORG_ALFA);
+  assert.equal(S.alegeOrganizatieApollo(orgs, { nume: "Alfa SRL", domeniu: "altceva.ro" }), null, "domeniu necunoscut: nu ghicim");
+});
+
+test("firma Apollo: fără domeniu se acceptă doar numele identic și unic", () => {
+  assert.equal(S.alegeOrganizatieApollo([ORG_ALFA, { name: "Beta SRL" }], { nume: "ALFA srl", domeniu: null }), ORG_ALFA);
+  assert.equal(S.alegeOrganizatieApollo([ORG_ALFA, { ...ORG_ALFA, primary_domain: "alfa.com" }], { nume: "Alfa SRL", domeniu: null }), null, "două firme cu același nume: ambiguu");
+  assert.equal(S.alegeOrganizatieApollo([{ name: "Alfa Plus" }], { nume: "Alfa SRL", domeniu: null }), null);
+});
+
+test("firma Apollo: industria curățată și numărul de angajați rotunjit, doar dacă e pozitiv", () => {
+  assert.deepEqual(S.dateFirmaApollo(ORG_ALFA), { industrie: "Food & Beverages", nrAngajati: 120 });
+  assert.deepEqual(S.dateFirmaApollo({ industry: "  ", estimated_num_employees: 0 }), { industrie: "", nrAngajati: null });
+});
+
+test("firma Apollo: cheia în header, domeniul în cerere, date întoarse; fără potrivire = null; eroare 401 explicată", async () => {
+  const { f, apeluri } = furnizoriSimulati({ "mixed_companies/search": raspuns({ organizations: [ORG_ALFA] }) });
+  const r = await S.apolloImbogatesteFirma("kA", { nume: "Alfa SRL", domeniu: "alfa.ro" }, f);
+  assert.deepEqual(r, { ok: true, date: { industrie: "Food & Beverages", nrAngajati: 120 } });
+  assert.equal(apeluri[0].headers["X-Api-Key"], "kA");
+  assert.deepEqual(apeluri[0].corp.q_organization_domains_list, ["alfa.ro"]);
+  const nimic = furnizoriSimulati({ "mixed_companies/search": raspuns({ organizations: [] }) });
+  assert.deepEqual(await S.apolloImbogatesteFirma("kA", { nume: "Alfa SRL", domeniu: "alfa.ro" }, nimic.f), { ok: true, date: null });
+  const fara401 = furnizoriSimulati({ "mixed_companies/search": raspuns({ error: "x" }, 401) });
+  const e = await S.apolloImbogatesteFirma("kA", { nume: "Alfa SRL", domeniu: null }, fara401.f);
+  assert.equal(e.ok, false);
+  assert.ok(e.eroare.includes("Apollo"));
+  assert.deepEqual(fara401.apeluri[0].corp.organization_locations, ["Romania"]);
+});

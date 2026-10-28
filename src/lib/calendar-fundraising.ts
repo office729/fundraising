@@ -82,6 +82,14 @@ export function termeneFiscale(an: number): EvenimentCalendar[] {
       detaliu: "Până la această dată contribuabilii pot depune formularul. Trimite remindere cu 2–3 săptămâni înainte.",
     },
     {
+      id: `fiscal-d177-${an}`,
+      data: dataIso(an, 6, 25),
+      titlu: "Termen D177 (redirecționarea impozitului pe profit)",
+      tip: "fiscal",
+      href: null,
+      detaliu: "Firmele pot redirecționa până la 20% din impozitul pe profit către ONG prin Declarația 177, până la această dată. Abordează-le din timp: lista firmelor eligibile e în CRM Companii.",
+    },
+    {
       id: `fiscal-sfarsit-an-${an}`,
       data: dataIso(an, 12, 31),
       titlu: "Încheierea anului fiscal",

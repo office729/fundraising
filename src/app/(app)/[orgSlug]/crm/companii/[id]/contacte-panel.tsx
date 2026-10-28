@@ -11,7 +11,9 @@ import { Input, Label } from "../../components/ui/input";
 import { EmptyState } from "../../components/ui/states";
 import { useLocale } from "../../lib/locale-context";
 import { COMPANII_DICT } from "@/lib/i18n/dictionaries/companii";
+import { departamentDinFunctie, ETICHETE_SENIORITATE, senioritate } from "@/lib/functii-contact";
 import { urlWebSigur } from "@/lib/validation";
+import { esteStareOutreach, ETICHETE_STARE_OUTREACH } from "@/lib/waalaxy-evenimente";
 import { adaugaContact, comutaContactCheie, stergeContact, type PersoanaDeAprobat } from "../actions";
 import { DeAprobat, InformareGdpr, PasulUrmator, type FirmaGhid } from "./contacte-ghid";
 import { seteazaConsimtamantContact } from "./fisa-actions";
@@ -19,6 +21,7 @@ import { seteazaConsimtamantContact } from "./fisa-actions";
 type Contact = {
   id: string; nume: string; rol: string | null; email: string | null; telefon: string | null; linkedin: string | null;
   dept?: string | null; cheie?: boolean; consentStatus?: string | null;
+  outreachStare?: string | null; emailStatus?: string | null;
 };
 
 type Prefill = { nume: string; rol: string; dept: string };
@@ -130,8 +133,31 @@ export function ContactePanel({
                     {c.consentStatus === "da" && (
                       <span className="rounded-full bg-[var(--ci-green-soft)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--ci-green)]">{locale === "ro" ? "consimț." : "consent"}</span>
                     )}
+                    {c.outreachStare && esteStareOutreach(c.outreachStare) && (
+                      <span title="Starea pe LinkedIn (Waalaxy)" className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${c.outreachStare === "refuz" ? "bg-[var(--ci-red-soft)] text-[var(--ci-red)]" : c.outreachStare === "a_raspuns" ? "bg-[var(--ci-green-soft)] text-[var(--ci-green)]" : c.outreachStare === "conectat" ? "bg-[var(--ci-blue-soft)] text-[var(--ci-blue)]" : "bg-[var(--ci-amber-soft)] text-[var(--ci-text)]"}`}>
+                        in · {ETICHETE_STARE_OUTREACH[c.outreachStare]}
+                      </span>
+                    )}
+                    {c.emailStatus && (
+                      <span title="Rezultatul verificării adresei de e-mail" className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ${c.emailStatus === "valid" ? "bg-[var(--ci-green-soft)] text-[var(--ci-green)]" : c.emailStatus === "invalid" ? "bg-[var(--ci-red-soft)] text-[var(--ci-red)]" : "bg-[var(--ci-amber-soft)] text-[var(--ci-text)]"}`}>
+                        {c.emailStatus === "valid" ? "e-mail valid" : c.emailStatus === "invalid" ? "e-mail invalid" : "e-mail nesigur"}
+                      </span>
+                    )}
                     {c.consentStatus === "nu" && <span className="rounded-full bg-[var(--ci-red-soft)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--ci-red)]">{locale === "ro" ? "a refuzat" : "declined"}</span>}
-                    {c.dept && <span className="rounded-full bg-[var(--ci-blue-soft)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--ci-blue)]">{c.dept}</span>}
+                    {(() => {
+                      const niv = senioritate(c.rol);
+                      const dep = departamentDinFunctie(c.rol, c.dept);
+                      return (
+                        <>
+                          {niv && (
+                            <span title="Nivelul dedus din funcție" className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${niv === "c-level" ? "bg-[var(--ci-green-soft)] text-[var(--ci-green)]" : niv === "director" ? "bg-[var(--ci-blue-soft)] text-[var(--ci-blue)]" : "bg-[var(--ci-amber-soft)] text-[var(--ci-text)]"}`}>
+                              {ETICHETE_SENIORITATE[niv]}
+                            </span>
+                          )}
+                          {dep && <span title={c.dept ? "Departament" : "Departamentul dedus din funcție"} className="rounded-full bg-[var(--ci-blue-soft)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--ci-blue)]">{dep}</span>}
+                        </>
+                      );
+                    })()}
                   </div>
                   <p className="mt-1 text-[13px] break-all text-[var(--ci-text-muted)]">
                     {c.email || dict.faraEmail}

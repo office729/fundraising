@@ -45,3 +45,29 @@ export function scorContactabilitate(x: ContactabilitateInput): number {
 export function esteBanda(v: unknown): v is Banda {
   return v === "A" || v === "B" || v === "C";
 }
+
+// ===== Suma sponsorizabilă estimată din bilanț =====
+// Fallback pentru firmele la care suma disponibilă nu e completată de mână: o firmă care plătește impozit pe profit poate sponsoriza (sau redirecționa prin D177)
+// cel mult 20% din impozitul pe profit, dar nu mai mult de 0,75% din cifra de afaceri. Impozitul e cel din bilanț, dacă există, altfel 16% din profit.
+// Valoarea estimată NU se scrie în baza de date și nu înlocuiește una introdusă de mână. Procentele sunt estimări de lucru: confirmă-le cu contabilul înainte să te bazezi pe ele.
+export const COTA_IMPOZIT_PROFIT = 0.16;
+export const PLAFON_SPONSORIZARE_CA = 0.0075;
+export const PLAFON_SPONSORIZARE_IMPOZIT = 0.2;
+
+export type IntrareEstimare = { regimFiscal: string | null; profit: number | null; ca: number | null; impozit: number | null };
+
+// 0 când firma nu e eligibilă (micro, cu pierdere, fără date) sau când lipsesc cifra de afaceri ori impozitul.
+export function sumaSponsorizabilaEstimata(x: IntrareEstimare): number {
+  if (!esteEligibilaD177(x)) return 0;
+  const ca = x.ca ?? 0;
+  const impozit = (x.impozit ?? 0) > 0 ? (x.impozit as number) : Math.max(0, x.profit ?? 0) * COTA_IMPOZIT_PROFIT;
+  if (ca <= 0 || impozit <= 0) return 0;
+  return Math.max(0, Math.round(Math.min(ca * PLAFON_SPONSORIZARE_CA, impozit * PLAFON_SPONSORIZARE_IMPOZIT)));
+}
+
+// Suma cu care se lucrează (scor, benzi, sortare): cea introdusă de mână dacă e pozitivă, altfel estimarea. `estimata` = true când suma vine din bilanț.
+export function sumaEfectiva(manual: number | null | undefined, x: IntrareEstimare): { suma: number; estimata: boolean } {
+  if ((manual ?? 0) > 0) return { suma: manual as number, estimata: false };
+  const e = sumaSponsorizabilaEstimata(x);
+  return { suma: e, estimata: e > 0 };
+}
