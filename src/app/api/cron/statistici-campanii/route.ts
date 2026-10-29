@@ -59,5 +59,16 @@ export async function GET(req: Request) {
   } catch (e) {
     raporteazaEroare("statistici-campanii-retentie", e, {});
   }
-  return NextResponse.json({ ok: true, evenimenteSterse: sterse, atribuireSterse: atribSterse });
+  // Programările (calendarul intern): datele persoanelor se păstrează 24 de luni de la data întâlnirii, apoi se șterg.
+  let programariSterse = 0;
+  try {
+    programariSterse = await db.transaction(async (tx) => {
+      await tx.execute(sql`select set_config('app.platform_admin', 'true', true)`);
+      const r = await tx.execute(sql`delete from programari where start_la < now() - interval '24 months' returning id`);
+      return r.length;
+    });
+  } catch (e) {
+    raporteazaEroare("programari-retentie", e, {});
+  }
+  return NextResponse.json({ ok: true, evenimenteSterse: sterse, atribuireSterse: atribSterse, programariSterse });
 }

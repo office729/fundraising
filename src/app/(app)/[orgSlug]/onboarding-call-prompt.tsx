@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 
-import { CalendlyInlineWidget } from "@/components/calendly-inline-widget";
-import { CALENDLY_CONSULTANTA_URL } from "@/lib/calendly";
+import { RezervareIncarcata } from "@/components/programari/rezervare-incarcata";
 import type { DashboardDict } from "@/lib/i18n/dictionaries/dashboard";
 import { usePersistentDismiss } from "./use-persistent-dismiss";
 
@@ -71,7 +70,7 @@ export function OnboardingCallPrompt({
                 {dict.close} ✕
               </button>
             </div>
-            <CalendlyInlineWidget url={CALENDLY_CONSULTANTA_URL} loadingLabel={dict.loading} />
+            <RezervareIncarcata sursa="onboarding" textIncarcare={dict.loading} />
           </div>
         </div>
       )}

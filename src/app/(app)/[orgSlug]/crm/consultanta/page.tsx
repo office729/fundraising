@@ -1,5 +1,6 @@
-import { CalendlyInlineWidget } from "@/components/calendly-inline-widget";
-import { CALENDLY_CONSULTANTA_URL } from "@/lib/calendly";
+import { Rezervare } from "@/components/programari/rezervare";
+import { requireOrgAccess } from "@/lib/auth/guard";
+import { paginaPublica } from "@/lib/programari/server";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { titluAbsolut } from "@/lib/page-titles";
 
@@ -19,8 +20,11 @@ const TEXT = {
   },
 } as const;
 
-export default async function ConsultantaPage() {
+export default async function ConsultantaPage({ params }: { params: Promise<{ orgSlug: string }> }) {
+  const { orgSlug } = await params;
+  const access = await requireOrgAccess(orgSlug);
   const t = TEXT[await getLocale()];
+  const programari = await paginaPublica().catch(() => null);
   return (
     <div className="mx-auto max-w-3xl space-y-5">
       <div>
@@ -32,7 +36,7 @@ export default async function ConsultantaPage() {
           ))}
         </ul>
       </div>
-      <CalendlyInlineWidget url={CALENDLY_CONSULTANTA_URL} loadingLabel={t.loading} />
+      <Rezervare tipuri={programari?.tipuri ?? []} cereTelefon={programari?.setari.cereTelefon ?? false} sursa="consultanta" prefill={{ nume: access.userName ?? "", email: access.userEmail, organizatie: access.orgName }} />
     </div>
   );
 }

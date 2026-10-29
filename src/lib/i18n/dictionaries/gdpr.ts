@@ -69,7 +69,6 @@ export const GDPR_DICT = {
           "serviciul de email al domeniului alexandrit.ro, găzduit la furnizorul de web hosting al platformei (romania-webhosting.com) — emailuri de cont, factură, mulțumire și reamintire, cererile din formularul „Descoperă Alexandrit” către echipă și, ca persoană împuternicită, mesajele automate ale organizațiilor către donatorii lor (parcursuri);",
           "Google — autentificarea cu contul Google, dacă alegi această metodă;",
           "Twilio — apeluri și mesaje, unde funcția este activată;",
-          "Calendly — programarea consilierilor 1 la 1;",
           "Google Analytics — statistici de utilizare, doar cu consimțământul tău;",
           "Sentry — monitorizarea erorilor tehnice ale aplicației (mesaje de eroare și informații despre dispozitiv/browser; adresele paginilor sunt curățate de parametri și tokenuri, iar emailurile și datele din formulare nu se trimit);",
           "Google Fonts și Cloudflare (cdnjs) — fonturi și biblioteci încărcate de unele instrumente din zona autentificată a platformei (primesc adresa IP a utilizatorului la încărcare);",
@@ -80,7 +79,7 @@ export const GDPR_DICT = {
       },
       {
         titlu: "5. Transferuri în afara Spațiului Economic European",
-        paragrafe: ["Unii furnizori (de exemplu Stripe, Google, Twilio, Vercel, Calendly, Anthropic) pot prelucra date și în afara SEE, în special în SUA. În aceste cazuri ne bazăm pe garanții prevăzute de GDPR: decizia de adecvare privind Cadrul UE–SUA de confidențialitate a datelor pentru furnizorii certificați sau clauzele contractuale standard, împreună cu măsuri suplimentare atunci când este necesar. Datele din baza de date a Platformei sunt găzduite în UE."],
+        paragrafe: ["Unii furnizori (de exemplu Stripe, Google, Twilio, Vercel, Anthropic) pot prelucra date și în afara SEE, în special în SUA. În aceste cazuri ne bazăm pe garanții prevăzute de GDPR: decizia de adecvare privind Cadrul UE–SUA de confidențialitate a datelor pentru furnizorii certificați sau clauzele contractuale standard, împreună cu măsuri suplimentare atunci când este necesar. Datele din baza de date a Platformei sunt găzduite în UE."],
       },
       {
         titlu: "6. Cât timp păstrăm datele",
@@ -209,7 +208,6 @@ export const GDPR_DICT = {
           "the email service of the alexandrit.ro domain, hosted by the platform's web hosting provider (romania-webhosting.com) — account, invoice, thank-you and reminder emails, requests from the “Discover Alexandrit” form to the team and, as data processor, organizations' automated messages to their donors (journeys);",
           "Google — sign-in with your Google account, if you choose that method;",
           "Twilio — calls and messages, where the feature is enabled;",
-          "Calendly — booking 1-on-1 consultations;",
           "Google Analytics — usage statistics, only with your consent;",
           "Sentry — monitoring of the application's technical errors (error messages and device/browser information; page addresses are stripped of parameters and tokens, and emails and form data are not sent);",
           "Google Fonts and Cloudflare (cdnjs) — fonts and libraries loaded by some tools in the platform's signed-in area (they receive the user's IP address when loading);",
@@ -220,7 +218,7 @@ export const GDPR_DICT = {
       },
       {
         titlu: "5. Transfers outside the European Economic Area",
-        paragrafe: ["Some providers (for example Stripe, Google, Twilio, Vercel, Calendly, Anthropic) may also process data outside the EEA, in particular in the USA. In these cases we rely on GDPR safeguards: the adequacy decision on the EU–US Data Privacy Framework for certified providers or standard contractual clauses, together with supplementary measures where necessary. The Platform's database is hosted in the EU."],
+        paragrafe: ["Some providers (for example Stripe, Google, Twilio, Vercel, Anthropic) may also process data outside the EEA, in particular in the USA. In these cases we rely on GDPR safeguards: the adequacy decision on the EU–US Data Privacy Framework for certified providers or standard contractual clauses, together with supplementary measures where necessary. The Platform's database is hosted in the EU."],
       },
       {
         titlu: "6. How long we keep data",

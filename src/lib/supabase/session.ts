@@ -73,6 +73,9 @@ export async function updateSession(request: NextRequest, rewriteTo?: URL) {
   const isPublicRoute =
     MARKETING_ROUTES.includes(path) ||
     path === "/prelansare" ||
+    // Calendarul intern de programări (/programare) și paginile personale ale unei programări (/programare/<token>): publice, fără cont; accesul la o programare îl dă tokenul.
+    path === "/programare" ||
+    path.startsWith("/programare/") ||
     path === "/api/health" ||
     path === "/robots.txt" ||
     path === "/embed.js" ||

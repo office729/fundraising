@@ -12,7 +12,7 @@ export const POPUP_ZILE_ASCUNS_INCHIS = 14;
 export const POPUP_ZILE_ASCUNS_TRIMIS = 365;
 
 // Pagini pe care pop-up-ul nu apare: textele legale (se citesc în liniște) și paginile de autentificare/înscriere (au deja formularul lor).
-const CAI_EXCLUSE = ["/cookies", "/gdpr", "/termeni", "/termeni-donatori", "/dpa", "/login", "/signup", "/forgot-password", "/prelansare"];
+const CAI_EXCLUSE = ["/cookies", "/gdpr", "/termeni", "/termeni-donatori", "/dpa", "/login", "/signup", "/forgot-password", "/prelansare", "/programare"];
 
 export function caleExclusa(cale: string): boolean {
   const c = cale.length > 1 ? cale.replace(/\/+$/, "") : cale;

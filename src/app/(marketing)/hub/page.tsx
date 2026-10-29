@@ -1,8 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { CalendlyInlineWidget } from "@/components/calendly-inline-widget";
-import { CALENDLY_CONSULTANTA_URL } from "@/lib/calendly";
+import { Rezervare } from "@/components/programari/rezervare";
+import { paginaPublica } from "@/lib/programari/server";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { HUB_DICT } from "@/lib/i18n/dictionaries/hub";
 
@@ -19,6 +19,8 @@ const AFISEAZA_COMPARATIE = false;
 export default async function HubPage() {
   const locale = await getLocale();
   const dict = HUB_DICT[locale];
+  // Calendarul intern de programări (Panou platformă → Programări); dacă baza nu răspunde, apare mesajul „programările nu sunt deschise”.
+  const programari = await paginaPublica().catch(() => null);
 
   return (
     <main>
@@ -181,11 +183,7 @@ export default async function HubPage() {
               </figcaption>
             </figure>
           </div>
-          <CalendlyInlineWidget
-            url={CALENDLY_CONSULTANTA_URL}
-            loadingLabel={dict.consultantaLoading}
-            laClick={{ descriere: dict.consultantaConsimtamant, link: dict.consultantaCookiesLink, buton: dict.consultantaButon }}
-          />
+          <Rezervare tipuri={programari?.tipuri ?? []} cereTelefon={programari?.setari.cereTelefon ?? false} sursa="hub" />
         </div>
       </section>
 

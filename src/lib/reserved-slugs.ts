@@ -37,6 +37,7 @@ const RESERVED_SLUGS = new Set([
   "portofoliu",
   "portofoliu-clienti",
   "premii",
+  "programare",
   "reset-local-data",
   "reset-password",
   "s",

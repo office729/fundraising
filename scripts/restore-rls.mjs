@@ -816,6 +816,17 @@ const POLICIES = [
   `create policy atrib_conversii_platforma on atrib_conversii
     using      (nullif(current_setting('app.platform_admin', true), '') = 'true')
     with check (nullif(current_setting('app.platform_admin', true), '') = 'true')`,
+  // Calendarul intern de programări (tabele ale platformei, fără org_id; vezi documentation/programari.sql).
+  `create policy programari_config_platforma on programari_config using (nullif(current_setting('app.platform_admin', true), '') = 'true') with check (nullif(current_setting('app.platform_admin', true), '') = 'true')`,
+  `create policy programari_config_publica on programari_config for select using (nullif(current_setting('app.programari_public', true), '') = 'true')`,
+  `create policy programari_tipuri_platforma on programari_tipuri using (nullif(current_setting('app.platform_admin', true), '') = 'true') with check (nullif(current_setting('app.platform_admin', true), '') = 'true')`,
+  `create policy programari_tipuri_publica on programari_tipuri for select using (nullif(current_setting('app.programari_public', true), '') = 'true')`,
+  `create policy programari_disponibilitate_platforma on programari_disponibilitate using (nullif(current_setting('app.platform_admin', true), '') = 'true') with check (nullif(current_setting('app.platform_admin', true), '') = 'true')`,
+  `create policy programari_disponibilitate_publica on programari_disponibilitate for select using (nullif(current_setting('app.programari_public', true), '') = 'true')`,
+  `create policy programari_exceptii_platforma on programari_exceptii using (nullif(current_setting('app.platform_admin', true), '') = 'true') with check (nullif(current_setting('app.platform_admin', true), '') = 'true')`,
+  `create policy programari_exceptii_publica on programari_exceptii for select using (nullif(current_setting('app.programari_public', true), '') = 'true')`,
+  `create policy programari_platforma on programari using (nullif(current_setting('app.platform_admin', true), '') = 'true') with check (nullif(current_setting('app.platform_admin', true), '') = 'true')`,
+  `create policy programari_publica on programari using (nullif(current_setting('app.programari_public', true), '') = 'true') with check (nullif(current_setting('app.programari_public', true), '') = 'true')`,
   // Panoul voluntarilor: izolare pe organizație.
   `create policy volunteer_visitors_tenant_isolation on volunteer_visitors
     using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
@@ -1042,6 +1053,11 @@ const FORCE_TABLES = [
   "donatii_importate",
   "campaign_page_events",
   "atrib_evenimente",
+  "programari_config",
+  "programari_tipuri",
+  "programari_disponibilitate",
+  "programari_exceptii",
+  "programari",
   "atrib_conversii",
   "granturi",
   "granturi_dosar",
