@@ -65,8 +65,10 @@ export default async function LandingPage({
 
   const locale = await getLocale();
   const dict = MARKETING_DICT[locale];
+  // Secțiunea „Descoperă campanii” e ascunsă cât timp nu există campanii active (nu mai încărcăm nici datele ei). Pune true ca să reapară.
+  const AFISEAZA_CAMPANII_PE_SITE = false;
   // Dacă baza nu răspunde, pagina de marketing merge mai departe fără secțiunea de campanii.
-  const campanii = await getCampaniiLanding().catch(() => null);
+  const campanii = AFISEAZA_CAMPANII_PE_SITE ? await getCampaniiLanding().catch(() => null) : null;
 
   return (
     <main>
