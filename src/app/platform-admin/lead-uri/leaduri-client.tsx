@@ -84,6 +84,9 @@ function Lead({ l, onSchimbat, onSters }: { l: LeadRand; onSchimbat: (id: string
         {l.cale ? ` · de pe ${l.cale}` : ""}
         {l.campanie ? ` · ${l.campanie}` : ""}
       </p>
+      <p className="mt-0.5 text-xs text-muted">
+        Sursă măsurată: <span className="font-medium text-body">{l.provenienta}</span>
+      </p>
       {l.notita && !deschis && <p className="mt-1.5 text-[13px] whitespace-pre-line text-body">{l.notita.length > 140 ? `${l.notita.slice(0, 140)}…` : l.notita}</p>}
       {l.actualizatLa && (
         <p className="mt-1 text-xs text-muted">
@@ -181,7 +184,7 @@ export function LeaduriClient({ initial }: { initial: LeadRand[] }) {
   const filtrat = filtru !== "toate" || cautare.trim() !== "";
 
   function descarca() {
-    const csv = leaduriCaCsv(vizibile.map((l) => ({ creatLa: l.creatLa, nume: l.nume, organizatie: l.organizatie, email: l.email, telefon: l.telefon, stare: l.stare, campanie: l.campanie, cale: l.cale, nrTrimiteri: l.nrTrimiteri, notita: l.notita })));
+    const csv = leaduriCaCsv(vizibile.map((l) => ({ creatLa: l.creatLa, nume: l.nume, organizatie: l.organizatie, email: l.email, telefon: l.telefon, stare: l.stare, campanie: l.campanie, cale: l.cale, nrTrimiteri: l.nrTrimiteri, notita: l.notita, provenienta: l.provenienta })));
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
     const a = document.createElement("a");
     a.href = url;

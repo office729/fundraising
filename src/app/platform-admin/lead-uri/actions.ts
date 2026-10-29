@@ -4,6 +4,7 @@ import { desc, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { etichetaProvenienta } from "@/lib/atribuire/clasificare";
 import { getAuthUser } from "@/lib/auth/dal";
 import { isPlatformAdmin } from "@/lib/billing/trial";
 import { db } from "@/lib/db";
@@ -47,6 +48,8 @@ export type LeadRand = {
   actualizatLa: string | null;
   // Adresa are deja cont în platformă (s-a înscris): lead-ul se poate marca „Înscris”.
   areCont: boolean;
+  // Sursa completă măsurată la completare („LinkedIn · Social plătit · Plătit · campanie”); „Fără sursă măsurată” pentru cererile dinainte de măsurare.
+  provenienta: string;
 };
 
 export async function listeazaLeaduriAction(): Promise<LeadRand[]> {
@@ -54,7 +57,9 @@ export async function listeazaLeaduriAction(): Promise<LeadRand[]> {
   const randuri = await inContextPlatforma(async (tx) => {
     const lead = await tx.select().from(intereseOng).orderBy(desc(intereseOng.creatLa)).limit(2000);
     const conturi = (await tx.execute(sql`select lower(email) as email from app_users where lower(email) in (select lower(email) from interese_ong)`)) as unknown as { email: string }[];
-    return { lead, conturi: new Set(conturi.map((c) => c.email)) };
+    // Instantaneul de atribuire al fiecărei cereri (ultima sursă nedirectă, altfel sursa sesiunii), salvat la prima completare.
+    const prov = (await tx.execute(sql`select entitate_id::text as id, coalesce(ult_sursa, ses_sursa) as sursa, coalesce(ult_canal, ses_canal) as canal, coalesce(ult_tip, ses_tip) as tip, coalesce(ult_campanie, ses_campanie) as campanie from atrib_conversii where org_id is null and tip = 'lead'`)) as unknown as { id: string; sursa: string | null; canal: string | null; tip: string | null; campanie: string | null }[];
+    return { lead, conturi: new Set(conturi.map((c) => c.email)), prov: new Map(prov.map((p) => [p.id, etichetaProvenienta(p)])) };
   });
   return randuri.lead.map((l) => ({
     id: l.id,
@@ -72,6 +77,7 @@ export async function listeazaLeaduriAction(): Promise<LeadRand[]> {
     actualizatDe: l.actualizatDe,
     actualizatLa: l.actualizatLa ? l.actualizatLa.toISOString() : null,
     areCont: randuri.conturi.has(l.email.toLowerCase()),
+    provenienta: randuri.prov.get(l.id) ?? etichetaProvenienta({ sursa: null, canal: null, tip: null }),
   }));
 }
 

@@ -35,10 +35,11 @@ test("CSV: separator „;”, ghilimele escapate, BOM, iar formulele din text su
   assert.equal(L.celulaCsv("=HYPERLINK(\"x\")"), "\"'=HYPERLINK(\"\"x\"\")\"");
   assert.equal(L.celulaCsv("+40757"), "'+40757");
   assert.equal(L.celulaCsv(null), "");
-  const csv = L.leaduriCaCsv([{ creatLa: "2026-10-27T08:00:00.000Z", nume: "Ana", organizatie: "ONG; Test", email: "a@b.ro", telefon: null, stare: "nou", campanie: null, cale: "/descopera", nrTrimiteri: 2, notita: "=1+1" }]);
+  const csv = L.leaduriCaCsv([{ creatLa: "2026-10-27T08:00:00.000Z", nume: "Ana", organizatie: "ONG; Test", email: "a@b.ro", telefon: null, stare: "nou", campanie: null, cale: "/descopera", nrTrimiteri: 2, notita: "=1+1", provenienta: "LinkedIn · Social plătit · Plătit · ong_toamna" }]);
   assert.ok(csv.startsWith("﻿Data;Nume"));
   const [, rand] = csv.split("\r\n");
-  assert.equal(rand, `2026-10-27;Ana;"ONG; Test";a@b.ro;;Nou;;/descopera;2;'=1+1`);
+  assert.equal(rand, `2026-10-27;Ana;"ONG; Test";a@b.ro;;Nou;;LinkedIn · Social plătit · Plătit · ong_toamna;/descopera;2;'=1+1`);
+  assert.ok(csv.split("\r\n")[0].includes("Sursă măsurată"));
 });
 
 test("CSV: un număr de telefon cu + nu primește apostrof, dar o formulă care începe cu + da", () => {

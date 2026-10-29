@@ -46,11 +46,11 @@ export function celulaCsv(v: string | number | null | undefined): string {
   return /[",\n\r;]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
 }
 
-export type LeadCsv = { creatLa: string; nume: string; organizatie: string; email: string; telefon: string | null; stare: StareLead; campanie: string | null; cale: string | null; nrTrimiteri: number; notita: string | null };
+export type LeadCsv = { creatLa: string; nume: string; organizatie: string; email: string; telefon: string | null; stare: StareLead; campanie: string | null; cale: string | null; nrTrimiteri: number; notita: string | null; provenienta?: string | null };
 
 export function leaduriCaCsv(leaduri: LeadCsv[]): string {
-  const antet = ["Data", "Nume", "Organizație", "E-mail", "Telefon", "Stare", "Campanie", "Pagina", "Trimiteri", "Notiță"];
-  const randuri = leaduri.map((l) => [l.creatLa.slice(0, 10), l.nume, l.organizatie, l.email, l.telefon, ETICHETE_STARE[l.stare], l.campanie, l.cale, l.nrTrimiteri, l.notita].map(celulaCsv).join(";"));
+  const antet = ["Data", "Nume", "Organizație", "E-mail", "Telefon", "Stare", "Campanie", "Sursă măsurată", "Pagina", "Trimiteri", "Notiță"];
+  const randuri = leaduri.map((l) => [l.creatLa.slice(0, 10), l.nume, l.organizatie, l.email, l.telefon, ETICHETE_STARE[l.stare], l.campanie, l.provenienta ?? null, l.cale, l.nrTrimiteri, l.notita].map(celulaCsv).join(";"));
   // BOM la început, ca Excel să citească diacriticele.
   return `﻿${[antet.map(celulaCsv).join(";"), ...randuri].join("\r\n")}\r\n`;
 }
