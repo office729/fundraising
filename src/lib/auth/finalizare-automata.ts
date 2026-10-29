@@ -60,6 +60,7 @@ export async function finalizeazaAutomatDinInscriere(authUser: { email?: string 
     orgName,
     referralCode: text(meta.ref).slice(0, 100),
     planAles: citestePlanulAlesDinFormular(planForm),
+    ctxAtribuire: text(meta.atrib_ctx).slice(0, 900) || null,
   });
   return rezultat.ok ? rezultat.slug : null;
 }

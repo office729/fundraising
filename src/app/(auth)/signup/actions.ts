@@ -41,6 +41,8 @@ export async function signupAction(
   const telefonBrut = String(formData.get("telefon") ?? "").trim();
   const cifBrut = String(formData.get("cif") ?? "").trim();
   const referralCode = String(formData.get("ref") ?? "").trim();
+  // Contextul de provenință (pseudonim): rămâne în metadatele contului ca să ajungă la organizația creată după confirmarea emailului.
+  const ctxAtribuire = String(formData.get("ctxAtribuire") ?? "").slice(0, 900);
   const email = String(formData.get("email") ?? "")
     .trim()
     .toLowerCase();
@@ -108,7 +110,7 @@ export async function signupAction(
     const v = formData.get(key);
     if (typeof v === "string" && v) planQuery[key] = v.slice(0, 200);
   }
-  const metadate = inviteToken || beneficiarInviteToken ? undefined : { org_name: orgName, full_name: numeContact, telefon, cif: cifBrut.toUpperCase().replace(/\s+/g, ""), ref: referralCode.slice(0, 100), plan_query: planQuery };
+  const metadate = inviteToken || beneficiarInviteToken ? undefined : { org_name: orgName, full_name: numeContact, telefon, cif: cifBrut.toUpperCase().replace(/\s+/g, ""), ref: referralCode.slice(0, 100), plan_query: planQuery, atrib_ctx: ctxAtribuire };
 
   const supabase = await createClient();
   // Mesajul Supabase (error.message) vine mereu în engleză, indiferent de
@@ -175,6 +177,7 @@ export async function signupAction(
     orgName,
     referralCode,
     planAles: citestePlanulAlesDinFormular(formData),
+    ctxAtribuire: ctxAtribuire || null,
   });
   if (!rezultat.ok) {
     return { error: rezultat.motiv === "cif_existent" ? errors.cifExistent : errors.limitaOrganizatii };

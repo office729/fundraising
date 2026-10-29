@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useId, useState, useTransition } from "react";
 
 import { trimiteInteresAction } from "@/app/(marketing)/interes-actions";
+import { contextSerializat } from "@/lib/atribuire/client";
 import { valideazaInteres, type CampInteres, type EroriInteres } from "@/lib/popup-inscriere";
 
 const CAMPURI: { cheie: CampInteres; eticheta: string; placeholder: string; tip: string; complet: string }[] = [
@@ -54,7 +55,7 @@ export function FormularInteres({ cale, previzualizare = false, onTrimis, nota =
     setErori({});
     startTransition(async () => {
       try {
-        const r = await trimiteInteresAction({ ...v.date, capcana: valori.capcana, cale, previzualizare, campanie: campanieDinAdresa() });
+        const r = await trimiteInteresAction({ ...v.date, capcana: valori.capcana, cale, previzualizare, campanie: campanieDinAdresa(), ctxAtribuire: contextSerializat() });
         if (r.ok) onTrimis();
         else {
           if (r.campuri) setErori(r.campuri);

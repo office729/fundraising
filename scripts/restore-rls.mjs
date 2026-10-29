@@ -797,6 +797,25 @@ const POLICIES = [
   `create policy campaign_page_events_tenant_isolation on campaign_page_events
     using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
     with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  // Provenința vizitatorilor și atribuirea conversiilor: izolare pe organizație; rândurile fără organizație sunt ale site-ului platformei (vezi documentation/atribuire.sql).
+  `create policy atrib_evenimente_tenant_isolation on atrib_evenimente
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy atrib_evenimente_site on atrib_evenimente
+    using      (org_id is null and nullif(current_setting('app.atribuire_site', true), '') = 'true')
+    with check (org_id is null and nullif(current_setting('app.atribuire_site', true), '') = 'true')`,
+  `create policy atrib_evenimente_platforma on atrib_evenimente
+    using      (nullif(current_setting('app.platform_admin', true), '') = 'true')
+    with check (nullif(current_setting('app.platform_admin', true), '') = 'true')`,
+  `create policy atrib_conversii_tenant_isolation on atrib_conversii
+    using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
+    with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy atrib_conversii_site on atrib_conversii
+    using      (org_id is null and nullif(current_setting('app.atribuire_site', true), '') = 'true')
+    with check (org_id is null and nullif(current_setting('app.atribuire_site', true), '') = 'true')`,
+  `create policy atrib_conversii_platforma on atrib_conversii
+    using      (nullif(current_setting('app.platform_admin', true), '') = 'true')
+    with check (nullif(current_setting('app.platform_admin', true), '') = 'true')`,
   // Panoul voluntarilor: izolare pe organizație.
   `create policy volunteer_visitors_tenant_isolation on volunteer_visitors
     using      (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
@@ -1022,6 +1041,8 @@ const FORCE_TABLES = [
   "donatori_importuri",
   "donatii_importate",
   "campaign_page_events",
+  "atrib_evenimente",
+  "atrib_conversii",
   "granturi",
   "granturi_dosar",
   "feedback_platforma",

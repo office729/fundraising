@@ -13,6 +13,7 @@ import { memberships, orgCreariRegistru, organizations } from "@/lib/db/schema";
 import { formular230Beneficiari } from "@/lib/db/schema/formular230";
 import { SLUG_PRINCIPAL } from "@/lib/formular230-constants";
 import { esteSlugRezervat } from "@/lib/reserved-slugs";
+import { inregistreazaConversie } from "@/lib/atribuire/server";
 import { genereazaCodScurt } from "@/lib/short-code";
 import { DPA_ACTIV, DPA_VERSIUNE } from "@/lib/legal-version";
 import { slugify } from "@/lib/slugify";
@@ -35,7 +36,7 @@ function hashRegistru(email: string): string {
   return createHmac("sha256", process.env.ORG_SECRETS_KEY ?? "").update(`trial:${emailNormalizatPentruRegistru(email)}`).digest("hex");
 }
 
-export type RezultatProvizionare = { ok: true; slug: string } | { ok: false; motiv: "limita_organizatii" | "cif_existent" };
+export type RezultatProvizionare = { ok: true; slug: string; orgId: string } | { ok: false; motiv: "limita_organizatii" | "cif_existent" };
 
 // Același calcul ca indexul unic organizations_cif_norm_unique: fără spații, fără prefixul RO, majuscule.
 function cifNormalizat(cif: string): string {
@@ -64,9 +65,11 @@ export async function creeazaOrganizatieNoua(p: {
   orgName: string;
   referralCode: string;
   planAles: ReturnType<typeof citestePlanulAlesDinFormular>;
+  // Contextul de provenință al înscrierii (vezi lib/atribuire); gol dacă browserul nu l-a trimis.
+  ctxAtribuire?: string | null;
 }): Promise<RezultatProvizionare> {
   const baseSlug = slugify(p.orgName);
-  return db.transaction(async (tx): Promise<RezultatProvizionare> => {
+  const rezultat = await db.transaction(async (tx): Promise<RezultatProvizionare> => {
     await tx.execute(sql`select set_config('app.current_user_email', ${p.email}, true)`);
     const appUser = await ensureAppUser(tx, p.email, p.numeUtilizator ?? null);
     await tx.execute(sql`select set_config('app.current_user_id', ${appUser.id}, true)`);
@@ -127,6 +130,11 @@ export async function creeazaOrganizatieNoua(p: {
     await tx.insert(memberships).values({ orgId, userId: appUser.id, role: "owner" });
     await tx.insert(orgCreariRegistru).values({ emailHash: hashEmail });
     await tx.insert(formular230Beneficiari).values({ orgId, nume: p.orgName, slug: SLUG_PRINCIPAL, shortCode: genereazaCodScurt() });
-    return { ok: true, slug };
+    return { ok: true, slug, orgId };
   });
+  // Proveniența înscrierii se salvează după ce organizația există, în propria tranzacție: o eroare de măsurare nu poate strica crearea contului.
+  if (rezultat.ok) {
+    await inregistreazaConversie({ orgId: null, tip: "cont", entitateId: rezultat.orgId, flux: "platforma", ctx: p.ctxAtribuire ?? null });
+  }
+  return rezultat;
 }

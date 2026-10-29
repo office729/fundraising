@@ -3,8 +3,9 @@
 import { AuthShell } from "../auth-shell";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useRef, useState } from "react";
+import { Suspense, useRef, useState, useSyncExternalStore } from "react";
 
+import { contextSerializat, urmareste } from "@/lib/atribuire/client";
 import { extractPlanQuery, PLAN_QUERY_KEYS } from "@/lib/billing/plan-query";
 import { useAlegerePlan } from "@/lib/billing/use-alegere-plan";
 import type { Locale } from "@/lib/i18n/config";
@@ -21,6 +22,12 @@ type Dict = (typeof AUTH_DICT)[Locale];
 function SignupFormInner({ dict }: { dict: Dict }) {
   const [state, formAction, pending, valori] = useActionStatePastrat(signupAction, { error: null });
   const [accepta, setAccepta] = useState(false);
+  // Provenința înscrierii (vizitator și sesiune pseudonime doar cu acord, semnale UTM/referrer); vezi lib/atribuire/client.ts.
+  const ctxAtribuire = useSyncExternalStore(
+    () => () => {},
+    contextSerializat,
+    () => "",
+  );
   const [acordLipsa, setAcordLipsa] = useState(false);
   const acordRef = useRef<HTMLInputElement>(null);
   // Butonul Google nu e gri: dacă acordul lipsește, ducem utilizatorul la bifa de lângă butonul „Creează cont”.
@@ -76,7 +83,8 @@ function SignupFormInner({ dict }: { dict: Dict }) {
         </div>
       )}
 
-      <form id="signup-form" action={formAction} className="flex flex-col gap-3">
+      <form id="signup-form" action={formAction} onInputCapture={() => urmareste("platforma", "inscriere_pornita")} className="flex flex-col gap-3">
+        <input type="hidden" name="ctxAtribuire" value={ctxAtribuire} />
         <input type="hidden" name="inviteToken" value={inviteToken} />
         <input type="hidden" name="beneficiarInviteToken" value={beneficiarInviteToken} />
         {!areInvitatie && <input type="hidden" name="ref" value={referralCode} />}

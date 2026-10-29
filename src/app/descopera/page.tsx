@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+import { UrmarirePlatforma } from "@/components/atribuire/urmarire-platforma";
+
 import { LandingInteres } from "./landing-interes";
 
 // Pagina de prezentare pentru ONG-uri („Descoperă Alexandrit”): adresa pe care o trimiți potențialilor clienți ca să-și lase datele. Fără meniul și subsolul
@@ -12,5 +14,10 @@ export const metadata: Metadata = {
 };
 
 export default function DescoperaPage() {
-  return <LandingInteres />;
+  return (
+    <>
+      <LandingInteres />
+      <UrmarirePlatforma />
+    </>
+  );
 }

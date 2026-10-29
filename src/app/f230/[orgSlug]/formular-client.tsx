@@ -2,6 +2,7 @@
 
 import { useRef, useState, type CSSProperties } from "react";
 
+import { contextSerializat, urmareste } from "@/lib/atribuire/client";
 import { culoareTextPeFundal } from "@/lib/culoare-text";
 import type { DateBeneficiarPdf } from "@/lib/formular230-pdf";
 import { JUDETE } from "@/lib/judete";
@@ -70,6 +71,8 @@ export function Formular230Client({
   const accent = brandColor || "#154A85";
 
   function setCamp(k: Camp, v: string) {
+    // „Formular început”: prima modificare a unui câmp (nu simpla deschidere a paginii).
+    urmareste("f230", "start_formular", { orgSlug, beneficiarSlug });
     setDate((d) => ({ ...d, [k]: v }));
   }
 
@@ -93,7 +96,7 @@ export function Formular230Client({
       const res = await fetch(`/api/${orgSlug}/formular230/${beneficiarSlug}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...date, distributie2Ani, consimtamant, termeni, semnatura, website }),
+        body: JSON.stringify({ ...date, distributie2Ani, consimtamant, termeni, semnatura, website, ctxAtribuire: contextSerializat() }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));

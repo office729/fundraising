@@ -68,6 +68,9 @@ export default async function PlatformAdminPage() {
         <Link href="/platform-admin/lead-uri" className="inline-flex items-center gap-2 rounded-lg border border-line bg-panel px-4 py-2.5 text-sm font-semibold text-brand-blue transition hover:border-brand-blue">
           Cereri de la ONG-uri: formularul „Descoperă Alexandrit” →
         </Link>
+        <Link href="/platform-admin/surse" className="inline-flex items-center gap-2 rounded-lg border border-line bg-panel px-4 py-2.5 text-sm font-semibold text-brand-blue transition hover:bg-panel-2">
+          De unde vin ONG-urile: surse, organic și plătit →
+        </Link>
         <Link href="/platform-admin/personalizari" className="inline-flex items-center gap-2 rounded-lg border border-line bg-panel px-4 py-2.5 text-sm font-semibold text-brand-blue transition hover:border-brand-blue">
           Ce diferă la fiecare organizație →
         </Link>

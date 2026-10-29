@@ -10,6 +10,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
   ClipboardList,
+  Compass,
   FileSignature,
   Gauge,
   GraduationCap,
@@ -133,6 +134,7 @@ export function buildNav(dict: DashboardDict, orgSlug: string, role: string, per
         { href: "donatii", label: dict.nav.donatii, hint: dict.hints.donatii, icon: Sparkles },
         { href: "strangere-fonduri", label: dict.nav.strangereFonduri, hint: dict.hints.strangereFonduri, icon: HandCoins },
         { href: "statistici-campanii", label: dict.nav.statisticiCampanii, hint: dict.hints.statisticiCampanii, icon: BarChart3 },
+        { href: "surse", label: dict.nav.surse, hint: dict.hints.surse, icon: Compass },
         { href: "reclame", label: dict.nav.reclame, hint: dict.hints.reclame, icon: Megaphone },
         { href: "granturi", label: dict.nav.granturi, hint: dict.hints.granturi, icon: Award },
         { href: "fonduri-plati", label: dict.nav.fonduriPlati, hint: dict.hints.fonduriPlati, icon: Banknote },
@@ -504,7 +506,7 @@ function contextDinPathname(pathname: string | null, base: string): AddContext {
   // Pagina „Voluntari” (și „Link și campanii”), plus CRM Voluntari, care stă lângă /crm: aici se adaugă sarcini online sau activități pe teren.
   if (pathname.startsWith(`${base}/voluntari`) || pathname.startsWith(`${base}-voluntari`)) return "voluntari";
   // Donații, pagini de strângere de fonduri și alocări/plăți: aici se adaugă o pagină de campanie sau un proiect.
-  if (pathname.startsWith(`${base}/donatii`) || pathname.startsWith(`${base}/statistici-campanii`) || pathname.startsWith(`${base}/strangere-fonduri`) || pathname.startsWith(`${base}/fonduri-plati`)) return "fonduri";
+  if (pathname.startsWith(`${base}/donatii`) || pathname.startsWith(`${base}/statistici-campanii`) || pathname.startsWith(`${base}/surse`) || pathname.startsWith(`${base}/strangere-fonduri`) || pathname.startsWith(`${base}/fonduri-plati`)) return "fonduri";
   return null;
 }
 

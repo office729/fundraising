@@ -13,6 +13,7 @@ import { DONATE_ACTION_ERRORS } from "@/lib/i18n/dictionaries/donation";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { raporteazaEroare } from "@/lib/monitoring";
 import { stripeOrgDupaSlug } from "@/lib/org-stripe";
+import { inregistreazaConversie } from "@/lib/atribuire/server";
 import { inregistreazaAtribuireDonatie } from "@/lib/reclame/inregistreaza-atribuire";
 import { EMAIL_RE, normalizeazaEmail } from "@/lib/validation";
 
@@ -38,6 +39,8 @@ export type DateComuneDonatie = {
   sursaMarketing: string | null;
   // Contextul de atribuire trimis de browser (JSON, validat abia în inregistreazaAtribuireDonatie).
   atribuire: string | null;
+  // Contextul de provenință nou (vizitator/sesiune pseudonime + semnale), validat în lib/atribuire; gol dacă browserul nu l-a trimis.
+  ctxAtribuire: string | null;
   orgId: string;
   pageId: string;
   titlu: string;
@@ -160,6 +163,7 @@ export async function pregatesteDonatie(
       consimtamantEmail,
       sursaMarketing: curataSursa(formData.get("sursaMarketing")),
       atribuire: String(formData.get("atribuire") ?? "").slice(0, 400) || null,
+      ctxAtribuire: String(formData.get("ctxAtribuire") ?? "").slice(0, 900) || null,
       orgId: rezolvat.orgId,
       pageId: rezolvat.pageId,
       titlu: rezolvat.titlu,
@@ -192,6 +196,7 @@ async function ruleazaDonatie(orgSlug: string, pageSlug: string, formData: FormD
     consimtamantEmail,
     sursaMarketing,
     atribuire,
+    ctxAtribuire,
     orgId,
     pageId,
     titlu,
@@ -275,6 +280,7 @@ async function ruleazaDonatie(orgSlug: string, pageSlug: string, formData: FormD
       recurenta,
     });
     await inregistreazaAtribuireDonatie(orgId, donationId, atribuire);
+    await inregistreazaConversie({ orgId, tip: "donatie", entitateId: donationId, flux: "campanie", pageId, ctx: ctxAtribuire });
   } catch (e) {
     raporteazaEroare("donatie-sesiune-stripe", e, { orgSlug, pageSlug });
     return { error: errors.plataEsuata };

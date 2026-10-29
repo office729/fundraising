@@ -1,9 +1,10 @@
-import { and, desc, eq, gte, lt, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lt, sql } from "drizzle-orm";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Info } from "lucide-react";
 
 import { withOrgSession } from "@/lib/auth/guard";
-import { formular230Beneficiari, formular230Submissions } from "@/lib/db/schema";
+import { etichetaProvenienta } from "@/lib/atribuire/clasificare";
+import { atribConversii, formular230Beneficiari, formular230Submissions } from "@/lib/db/schema";
 import { SLUG_PRINCIPAL } from "@/lib/formular230-constants";
 import { codJudetDinTextLiber, gasesteJudet } from "@/lib/judete";
 import { getLocale } from "@/lib/i18n/get-locale";
@@ -144,8 +145,24 @@ const getDate = withOrgSession(async (ctx, filtru: { an: string; judet: string; 
   // Către componentele client pleacă DOAR câmpurile de afișare — CNP-ul,
   // adresa completă și semnătura rămân pe server (se cer la click, pe un singur
   // rând, de owner/admin — vezi obtineDatePdf/obtineCnpPentruExport).
+  // Proveniența fiecărui răspuns (instantaneul de atribuire din clipa trimiterii): sursa, tipul promovării și campania de marketing.
+  const idsPagina = submisii.slice(0, 500).map((s) => s.id);
+  const proveniente = idsPagina.length
+    ? await ctx.db
+        .select({
+          id: atribConversii.entitateId,
+          sursa: sql<string | null>`coalesce(${atribConversii.ultSursa}, ${atribConversii.sesSursa})`,
+          canal: sql<string | null>`coalesce(${atribConversii.ultCanal}, ${atribConversii.sesCanal})`,
+          tip: sql<string | null>`coalesce(${atribConversii.ultTip}, ${atribConversii.sesTip})`,
+          campanie: sql<string | null>`coalesce(${atribConversii.ultCampanie}, ${atribConversii.sesCampanie})`,
+        })
+        .from(atribConversii)
+        .where(and(eq(atribConversii.orgId, ctx.orgId), eq(atribConversii.tip, "f230"), inArray(atribConversii.entitateId, idsPagina)))
+    : [];
+  const provPeId = new Map(proveniente.map((x) => [x.id, etichetaProvenienta(x)]));
   const submisiiPublice = submisii.map((s) => ({
     id: s.id,
+    provenienta: provPeId.get(s.id) ?? etichetaProvenienta({ sursa: null, canal: null, tip: null }),
     nume: s.nume,
     prenume: s.prenume,
     email: s.email,
@@ -277,6 +294,7 @@ export default async function Formular230StatsPage({
                 <div className="min-w-0">
                   <p className="truncate text-[13px] font-medium text-[var(--ci-text)]">{s.nume} {s.prenume}</p>
                   <p className="truncate text-[12px] text-[var(--ci-text-muted)]">{s.email} · {s.telefon || dict.raspunsuri.faraTelefon} · {s.judet || dict.raspunsuri.judetNecunoscut}</p>
+                  <p className="truncate text-[11.5px] text-[var(--ci-text-faint)]">Sursă: {s.provenienta}</p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <Badge tone="neutral" icon={false}>

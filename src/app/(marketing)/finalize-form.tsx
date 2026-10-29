@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useSyncExternalStore } from "react";
 
+import { contextSerializat } from "@/lib/atribuire/client";
 import { PLAN_QUERY_KEYS, type PlanQueryValues } from "@/lib/billing/plan-query";
 import { useAlegerePlan } from "@/lib/billing/use-alegere-plan";
 import { COOKIE_ACCEPTARE_TERMENI, DPA_ACTIV } from "@/lib/legal-version";
@@ -28,6 +29,11 @@ export function FinalizeForm({
   cifInitial?: string;
 }) {
   const [state, formAction, pending, valori] = useActionStatePastrat(finalizeazaOrganizatiaAction, { error: null });
+  const ctxAtribuire = useSyncExternalStore(
+    () => () => {},
+    contextSerializat,
+    () => "",
+  );
   const alegerePlan = useAlegerePlan(planValues);
   // Pre-bifat dacă acordul a fost deja dat pe pagina de înscriere (cookie
   // scurt purtat peste redirectul Google) — altfel cere bifa aici.
@@ -62,6 +68,7 @@ export function FinalizeForm({
 
       <form action={formAction} className="mt-6 flex flex-col gap-3">
         <input type="hidden" name="ref" value={referralCode} />
+        <input type="hidden" name="ctxAtribuire" value={ctxAtribuire} />
         {PLAN_QUERY_KEYS.map((key) => (
           <input key={key} type="hidden" name={key} value={planValues[key] ?? ""} />
         ))}

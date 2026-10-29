@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { CONSENT_KEY as STORAGE_KEY, ensureAnalyticsInit, GA_ID } from "@/lib/analytics";
+import { stergeIdentificatori } from "@/lib/atribuire/identificatori";
 import { CONSENT_MARKETING_KEY, initMetaPixel, paginaNouaMeta, pixelConfigurat, revocaMeta } from "@/lib/meta-pixel";
 
 const REOPEN_EVENT = "fa-cookie-consent-reopen";
@@ -111,7 +112,11 @@ export function AnalyticsConsent({ texts }: { texts: BannerTexts }) {
     if (pixelConfigurat()) salveaza(CONSENT_MARKETING_KEY, publicitate ? "granted" : "denied");
     window.dispatchEvent(new Event(CHANGE_EVENT));
     setRedeschis(false);
-    if (!statistici) opresteAnalytics();
+    if (!statistici) {
+      opresteAnalytics();
+      // Identificatorii pseudonimi de vizitator și de sesiune (provenința vizitelor) dispar odată cu acordul.
+      stergeIdentificatori();
+    }
     else (window as unknown as Record<string, unknown>)[`ga-disable-${GA_ID}`] = false;
     if (pixelConfigurat() && !publicitate) revocaMeta();
   }, []);

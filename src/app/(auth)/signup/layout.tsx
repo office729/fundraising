@@ -1,3 +1,4 @@
+import { UrmarirePlatforma } from "@/components/atribuire/urmarire-platforma";
 import { metadatePagina } from "@/lib/page-titles";
 
 // Pagina de aici e componentă client (nu poate exporta metadata) — titlul vine
@@ -7,5 +8,10 @@ export async function generateMetadata() {
 }
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return children;
+  return (
+    <>
+      {children}
+      <UrmarirePlatforma />
+    </>
+  );
 }

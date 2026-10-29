@@ -11,6 +11,7 @@ import { obtineIpClient } from "@/lib/auth/rate-limit";
 import { cursEurRon } from "@/lib/curs-valutar";
 import { DONATE_ACTION_ERRORS } from "@/lib/i18n/dictionaries/donation";
 import { getLocale } from "@/lib/i18n/get-locale";
+import { inregistreazaConversie } from "@/lib/atribuire/server";
 import { inregistreazaAtribuireDonatie } from "@/lib/reclame/inregistreaza-atribuire";
 import { idDin } from "@/lib/stripe-donation-events";
 
@@ -242,6 +243,7 @@ async function creeazaAbonamentRedirect(
     recurenta: true,
   });
   await inregistreazaAtribuireDonatie(date.orgId, donationId, date.atribuire);
+  await inregistreazaConversie({ orgId: date.orgId, tip: "donatie", entitateId: donationId, flux: "campanie", pageId: date.pageId, ctx: date.ctxAtribuire });
 
   return {
     ok: true,
@@ -313,6 +315,7 @@ async function creeazaPlataUnicaExpress(
     recurenta: false,
   });
   await inregistreazaAtribuireDonatie(date.orgId, donationId, date.atribuire);
+  await inregistreazaConversie({ orgId: date.orgId, tip: "donatie", entitateId: donationId, flux: "campanie", pageId: date.pageId, ctx: date.ctxAtribuire });
 
   return {
     ok: true,
@@ -413,6 +416,7 @@ async function creeazaAbonamentExpress(date: DateComuneDonatie, eroareGenerica: 
     recurenta: true,
   });
   await inregistreazaAtribuireDonatie(date.orgId, donationId, date.atribuire);
+  await inregistreazaConversie({ orgId: date.orgId, tip: "donatie", entitateId: donationId, flux: "campanie", pageId: date.pageId, ctx: date.ctxAtribuire });
 
   return { ok: true, clientSecret };
 }

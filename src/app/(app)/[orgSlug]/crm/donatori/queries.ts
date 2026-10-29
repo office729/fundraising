@@ -2,7 +2,7 @@ import { and, desc, eq, sql } from "drizzle-orm";
 
 import { withOrgSession } from "@/lib/auth/guard";
 import { listeazaDefinitii } from "@/lib/campuri-personalizate-server";
-import { appUsers, donatiiImportate, donatorNotite, donatoriReali, fundraisingDonations, fundraisingPages } from "@/lib/db/schema";
+import { appUsers, atribConversii, donatiiImportate, donatorNotite, donatoriReali, fundraisingDonations, fundraisingPages } from "@/lib/db/schema";
 import {
   evenimentDonatie,
   evenimentDonatieImportata,
@@ -36,9 +36,15 @@ export const getDonatorRealDetaliu = withOrgSession(async (ctx, id: string) => {
         recurenta: fundraisingDonations.recurenta,
         createdAt: fundraisingDonations.createdAt,
         proiect: fundraisingPages.titlu,
+        // Proveniența donației (instantaneul de atribuire din clipa donației; ultima sursă nedirectă, altfel sursa sesiunii).
+        provSursa: sql<string | null>`coalesce(${atribConversii.ultSursa}, ${atribConversii.sesSursa})`,
+        provCanal: sql<string | null>`coalesce(${atribConversii.ultCanal}, ${atribConversii.sesCanal})`,
+        provTip: sql<string | null>`coalesce(${atribConversii.ultTip}, ${atribConversii.sesTip})`,
+        provCampanie: sql<string | null>`coalesce(${atribConversii.ultCampanie}, ${atribConversii.sesCampanie})`,
       })
       .from(fundraisingDonations)
       .leftJoin(fundraisingPages, eq(fundraisingPages.id, fundraisingDonations.pageId))
+      .leftJoin(atribConversii, and(eq(atribConversii.entitateId, fundraisingDonations.id), eq(atribConversii.tip, "donatie"), eq(atribConversii.orgId, ctx.orgId)))
       .where(and(eq(fundraisingDonations.orgId, ctx.orgId), sql`lower(${fundraisingDonations.emailDonator}) = ${emailMic}`))
       .orderBy(desc(fundraisingDonations.createdAt)),
     ctx.db

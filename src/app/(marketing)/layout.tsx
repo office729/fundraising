@@ -1,3 +1,4 @@
+import { UrmarirePlatforma } from "@/components/atribuire/urmarire-platforma";
 import { getAuthUser, getMyOrgSlug } from "@/lib/auth/dal";
 import { isPlatformAdmin } from "@/lib/billing/trial";
 import { getLocale } from "@/lib/i18n/get-locale";
@@ -21,6 +22,7 @@ export default async function MarketingLayout({ children }: { children: React.Re
       <SiteHeader dict={dict} panouHref={orgSlug ? `/${orgSlug}/crm` : null} />
       {children}
       <SiteFooter dict={dict} />
+      <UrmarirePlatforma />
       {/* Pop-up de înscriere pentru ONG-uri: după lansare și 20 de secunde pe site; nu apare utilizatorilor autentificați. */}
       <PopupInscriere ascuns={Boolean(authUser)} />
     </div>

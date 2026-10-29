@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { refuzStatistici, urmareste } from "@/lib/atribuire/client";
 import { inregistreazaEveniment } from "@/lib/statistici-campanii/inregistreaza";
 import { preconnect } from "react-dom";
 
@@ -64,7 +65,10 @@ export function DoneazaModal({
   const [open, setOpen] = useState(Boolean(lunarInitial));
   // Deschiderea formularului de donație = pasul dintre vizită și donație în statisticile campaniei.
   useEffect(() => {
-    if (open) void inregistreazaEveniment(orgSlug, pageSlug, "deschide_donatia");
+    if (!open) return;
+    urmareste("campanie", "click_doneaza", { orgSlug, pageSlug });
+    // Cine a refuzat statisticile nu mai e numărat nici anonim.
+    if (!refuzStatistici()) void inregistreazaEveniment(orgSlug, pageSlug, "deschide_donatia");
   }, [open, orgSlug, pageSlug]);
   // Metoda aleasă: Revolut / Google Pay / Apple Pay deschid un modal dedicat (ca pe
   // Nektarios); fără metodă, formularul obișnuit (card, pagina găzduită de Stripe).

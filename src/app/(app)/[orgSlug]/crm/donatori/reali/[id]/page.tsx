@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { analizeazaDonator, type NivelRisc } from "@/lib/analiza-donator";
+import { etichetaProvenienta } from "@/lib/atribuire/clasificare";
 import { requireOrgAccess } from "@/lib/auth/guard";
 import { areModul } from "@/lib/billing/packages";
 import { pachetPentruModule } from "@/lib/billing/trial";
@@ -150,6 +151,7 @@ export default async function DonatorRealProfilPage({ params }: { params: Promis
                       <th className="px-4 py-2 font-semibold">{dict.donatii.columns.data}</th>
                       <th className="px-4 py-2 font-semibold">{dict.donatii.columns.suma}</th>
                       <th className="px-4 py-2 font-semibold">{dict.donatii.columns.status}</th>
+                      <th className="px-4 py-2 font-semibold">{dict.donatii.columns.sursa}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -165,6 +167,7 @@ export default async function DonatorRealProfilPage({ params }: { params: Promis
                             {statusLabel[d.status] ?? d.status}
                           </Badge>
                         </td>
+                        <td className="px-4 py-2.5 text-[12.5px] text-[var(--ci-text-muted)]">{etichetaProvenienta({ sursa: d.provSursa, canal: d.provCanal, tip: d.provTip, campanie: d.provCampanie })}</td>
                       </tr>
                     ))}
                   </tbody>

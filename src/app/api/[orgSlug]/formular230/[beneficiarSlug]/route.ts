@@ -7,6 +7,7 @@ import { obtineIpClient, verificaLimitaRata } from "@/lib/auth/rate-limit";
 import { db } from "@/lib/db";
 import { raporteazaEroare } from "@/lib/monitoring";
 import { formular230Beneficiari, formular230Submissions, organizations } from "@/lib/db/schema";
+import { inregistreazaConversie } from "@/lib/atribuire/server";
 import { cripteaza } from "@/lib/secret-box";
 import { EMAIL_RE } from "@/lib/validation";
 
@@ -86,6 +87,8 @@ export async function POST(req: Request, { params }: Ctx) {
   // Fixat aici, o singură dată — nu recalculat la fiecare descărcare a PDF-ului
   // (vezi comentariul pe coloana `an` din schema formular230Submissions).
   const an = new Date().getFullYear();
+  let orgIdSalvat = null as string | null;
+  let beneficiarIdSalvat = null as string | null;
 
   try {
     await db.transaction(async (tx) => {
@@ -104,6 +107,8 @@ export async function POST(req: Request, { params }: Ctx) {
         .limit(1);
       if (!beneficiar[0]) throw new Error("beneficiar_not_found");
 
+      orgIdSalvat = org[0].id;
+      beneficiarIdSalvat = beneficiar[0].id;
       await tx.insert(formular230Submissions).values({
         id,
         orgId: org[0].id,
@@ -145,5 +150,9 @@ export async function POST(req: Request, { params }: Ctx) {
     return NextResponse.json({ error: "server_error" }, { status: 500 });
   }
 
+  // „Formular trimis” = rândul s-a salvat. Nu înseamnă acceptat de ANAF sau încasat. Proveniența se salvează după, fără să poată strica trimiterea.
+  if (orgIdSalvat) {
+    await inregistreazaConversie({ orgId: orgIdSalvat, tip: "f230", entitateId: id, flux: "f230", beneficiarId: beneficiarIdSalvat, ctx: typeof body.ctxAtribuire === "string" ? body.ctxAtribuire : null });
+  }
   return NextResponse.json({ ok: true, id, an });
 }

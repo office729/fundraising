@@ -52,6 +52,7 @@ const TITLURI = {
   crmDonatii: { ro: "Donații — CRM", en: "Donations — CRM" },
   crmStrangereFonduri: { ro: "Strângere fonduri — CRM", en: "Fundraising pages — CRM" },
   crmStatisticiCampanii: { ro: "Statistici campanii — CRM", en: "Campaign statistics — CRM" },
+  crmSurse: { ro: "Statistici și surse — CRM", en: "Statistics and sources — CRM" },
   crmGranturi: { ro: "Granturi — CRM", en: "Grants — CRM" },
   crmCalendar: { ro: "Calendar de fundraising — CRM", en: "Fundraising calendar — CRM" },
   crmFonduriPlati: { ro: "Fonduri și plăți — CRM", en: "Funds & payments — CRM" },

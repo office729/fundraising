@@ -25,6 +25,7 @@ export * from "./donatori-pf";
 export * from "./performanta";
 export * from "./certificate-verificari";
 export * from "./campanie-evenimente";
+export * from "./atribuire";
 export * from "./granturi";
 export * from "./feedback";
 export * from "./reclame";

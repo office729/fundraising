@@ -36,7 +36,7 @@ export const DONATORI_REALI_DICT = {
       whatsapp: { daText: "A fost de acord cu grupul de WhatsApp", nuText: "Nu a fost de acord (încă) cu grupul de WhatsApp" },
       tabs: { donatii: (n: number) => `Donații${n ? ` (${n})` : ""}`, notite: (n: number) => `Notițe${n ? ` (${n})` : ""}` },
       donatii: {
-        columns: { data: "Data", pagina: "Pagină", suma: "Sumă", status: "Status" },
+        columns: { data: "Data", pagina: "Pagină", suma: "Sumă", status: "Status", sursa: "Sursă" },
         statusLabel: { in_asteptare: "În așteptare", reusita: "Reușită", esuata: "Eșuată", rambursata: "Rambursată" },
         recurenta: "recurentă",
         empty: "Nicio donație înregistrată încă.",
@@ -90,7 +90,7 @@ export const DONATORI_REALI_DICT = {
       whatsapp: { daText: "Agreed to join the WhatsApp group", nuText: "Hasn't agreed (yet) to join the WhatsApp group" },
       tabs: { donatii: (n: number) => `Donations${n ? ` (${n})` : ""}`, notite: (n: number) => `Notes${n ? ` (${n})` : ""}` },
       donatii: {
-        columns: { data: "Date", pagina: "Page", suma: "Amount", status: "Status" },
+        columns: { data: "Date", pagina: "Page", suma: "Amount", status: "Status", sursa: "Source" },
         statusLabel: { in_asteptare: "Pending", reusita: "Successful", esuata: "Failed", rambursata: "Refunded" },
         recurenta: "recurring",
         empty: "No donation recorded yet.",

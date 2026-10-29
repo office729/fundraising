@@ -23,6 +23,7 @@ export async function finalizeazaOrganizatiaAction(
   const numeContact = String(formData.get("numeContact") ?? "").trim();
   const telefonBrut = String(formData.get("telefon") ?? "").trim();
   const cifBrut = String(formData.get("cif") ?? "").trim();
+  const ctxAtribuire = String(formData.get("ctxAtribuire") ?? "").slice(0, 900);
   if (!orgName) {
     return { error: "Completează numele organizației." };
   }
@@ -70,6 +71,7 @@ export async function finalizeazaOrganizatiaAction(
     orgName,
     referralCode,
     planAles: citestePlanulAlesDinFormular(formData),
+    ctxAtribuire: ctxAtribuire || null,
   });
   if (!rezultat.ok && rezultat.motiv === "cif_existent") {
     return { error: "Există deja o organizație înregistrată cu acest CIF. Dacă este a ta, cere un acces de la administratorul ei sau scrie-ne la vlad.placinta@alexandrit.ro." };

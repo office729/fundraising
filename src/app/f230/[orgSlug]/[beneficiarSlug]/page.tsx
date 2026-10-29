@@ -7,6 +7,7 @@ import { formular230Beneficiari, fundraisingPages, organizations } from "@/lib/d
 import { caleCampanie } from "@/lib/link-campanie";
 
 import { Formular230Client } from "../formular-client";
+import { UrmarireF230 } from "../urmarire-f230";
 
 // Pagină PUBLICĂ (fără autentificare) — rezolvă atât organizația, cât și
 // contul/beneficiarul (pentru numele afișat + PDF-ul folosit la generare)
@@ -68,6 +69,8 @@ export default async function Formular230PublicPage({
   if (!rezultat) notFound();
 
   return (
+    <>
+    <UrmarireF230 orgSlug={orgSlug} beneficiarSlug={beneficiarSlug} />
     <Formular230Client
       orgSlug={orgSlug}
       beneficiarSlug={beneficiarSlug}
@@ -76,5 +79,6 @@ export default async function Formular230PublicPage({
       beneficiar={{ nume: rezultat.beneficiar.nume, cif: rezultat.beneficiar.cif ?? "", iban: rezultat.beneficiar.iban ?? "" }}
       cauze={rezultat.cauze.map((c) => ({ titlu: c.titlu, judet: c.judet, href: caleCampanie(orgSlug, c.slug) }))}
     />
+    </>
   );
 }

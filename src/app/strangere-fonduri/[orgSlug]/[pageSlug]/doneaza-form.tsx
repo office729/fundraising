@@ -11,6 +11,7 @@ import { ExpressCheckoutPanel } from "./express-checkout";
 import { creeazaIntentPaypalAction, creeazaIntentRevolutAction } from "./express-checkout-actions";
 import { NotaInformareDonatie } from "./nota-informare-donatie";
 import { useActionStatePastrat } from "@/lib/use-action-state-pastrat";
+import { contextSerializat, urmareste } from "@/lib/atribuire/client";
 import { touchPentruDonatie } from "@/lib/reclame/touch-client";
 
 const INITIAL: DoneazaState = { error: null };
@@ -67,6 +68,8 @@ export function DoneazaForm({
   const sursaMarketing = useSyncExternalStore(abonareNula, eticheta, () => "");
   // Ultimul clic eligibil (utm_*), pentru atribuirea donației reclamelor; vezi lib/reclame/touch-client.ts. Fără utm și fără acord rămâne gol.
   const atribuire = useSyncExternalStore(abonareNula, touchPentruDonatie, () => "");
+  // Contextul de provenință (vizitator și sesiune pseudonime doar cu acord, semnalele UTM/referrer); vezi lib/atribuire/client.ts. Fără el donația rămâne neatribuită.
+  const ctxAtribuire = useSyncExternalStore(abonareNula, contextSerializat, () => "");
   const t = DONATION_DICT[locale].donateForm;
   useEffect(() => {
     if (!embed || !state.url) return;
@@ -124,6 +127,11 @@ export function DoneazaForm({
       ref={formRef}
       action={redirect ? undefined : formAction}
       onSubmit={redirect ? trimiteRevolut : undefined}
+      // „Începerea procesului de donație”: prima modificare a unui câmp sau prima alegere a sumei/frecvenței (nu simpla deschidere a ferestrei).
+      onInputCapture={() => urmareste("campanie", "start_donatie", { orgSlug, pageSlug })}
+      onClickCapture={(e) => {
+        if ((e.target as HTMLElement).closest("button")) urmareste("campanie", "start_donatie", { orgSlug, pageSlug });
+      }}
       className="mt-4 flex flex-col gap-3"
     >
       {/* Honeypot — invizibil pentru oameni. */}
@@ -160,6 +168,7 @@ export function DoneazaForm({
       <input type="hidden" name="recurenta" value={recurenta ? "1" : ""} />
       <input type="hidden" name="sursaMarketing" value={sursaMarketing} />
       <input type="hidden" name="atribuire" value={atribuire} />
+      <input type="hidden" name="ctxAtribuire" value={ctxAtribuire} />
 
       {paypal ? (
         <>

@@ -48,6 +48,7 @@ export const COOKIES_DICT = {
       randuri: [
         { nume: "_ga", scop: "Distinge vizitatorii, pentru statistici agregate (Google Analytics).", durata: "Până la 2 ani" },
         { nume: "_ga_*", scop: "Păstrează starea sesiunii de vizită (Google Analytics).", durata: "Până la 2 ani" },
+        { nume: "fa_vid_v1, fa_sid_v1 (stocare locală)", scop: "Doar cu acordul pentru statistici: un cod aleatoriu de vizitator și unul de sesiune, fără date personale, care ne arată de unde ai ajuns pe paginile de campanie, pe Formularul 230 sau pe site (sursă, canal, campanie de promovare) și dacă o donație sau un formular provine din aceeași vizită. Nu se leagă de adresa IP și nu te recunosc pe alt dispozitiv. Se șterg dacă retragi acordul.", durata: "Rămân în browser până le ștergi sau retragi acordul; evenimentele asociate se păstrează 13 luni" },
       ],
     },
     sPublicitate: {
@@ -122,6 +123,7 @@ export const COOKIES_DICT = {
       randuri: [
         { nume: "_ga", scop: "Distinguishes visitors, for aggregate statistics (Google Analytics).", durata: "Up to 2 years" },
         { nume: "_ga_*", scop: "Keeps the visit session state (Google Analytics).", durata: "Up to 2 years" },
+        { nume: "fa_vid_v1, fa_sid_v1 (local storage)", scop: "Only with your consent to statistics: a random visitor code and a session code, with no personal data, that show us where you came from to campaign pages, Form 230 or the site (source, channel, promotion campaign) and whether a donation or form comes from the same visit. They are not tied to your IP address and do not recognise you on another device. They are deleted if you withdraw consent.", durata: "They stay in your browser until you delete them or withdraw consent; the related events are kept for 13 months" },
       ],
     },
     sPublicitate: {

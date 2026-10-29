@@ -20,9 +20,18 @@ async function getTintaCodScurt(code: string) {
   });
 }
 
-export default async function CodScurtPage({ params }: { params: Promise<{ code: string }> }) {
+// Parametrii de provenință (utm_*, identificatori de reclame) trec mai departe, altfel un link promovat prin linkul scurt și-ar pierde sursa.
+const PARAMETRI_PASTRATI = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "utm_id", "gclid", "gbraid", "wbraid", "fbclid", "ttclid", "msclkid", "li_fat_id"];
+
+export default async function CodScurtPage({ params, searchParams }: { params: Promise<{ code: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { code } = await params;
+  const sp = await searchParams;
   const tinta = await getTintaCodScurt(code);
   if (!tinta) notFound();
-  redirect(`/f230/${tinta.orgSlug}/${tinta.beneficiarSlug}`);
+  const q = new URLSearchParams();
+  for (const k of PARAMETRI_PASTRATI) {
+    const v = Array.isArray(sp[k]) ? sp[k][0] : sp[k];
+    if (typeof v === "string" && v && v.length <= 200) q.set(k, v);
+  }
+  redirect(`/f230/${tinta.orgSlug}/${tinta.beneficiarSlug}${q.size ? `?${q.toString()}` : ""}`);
 }

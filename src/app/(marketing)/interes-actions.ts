@@ -8,6 +8,7 @@ import { emailConfigurat, trimiteEmail } from "@/lib/email";
 import { emailFaraLink, layoutEmail, paragraf } from "@/lib/email-layout";
 import { esteEmailTemporar } from "@/lib/email-temporar";
 import { escHtml } from "@/lib/html-escape";
+import { inregistreazaConversie } from "@/lib/atribuire/server";
 import { cheieIpPentruLimita, valideazaInteres, type EroriInteres } from "@/lib/popup-inscriere";
 
 // Formularul „Descoperă Alexandrit” din pop-up și de pe /descopera: un ONG își lasă datele și echipa îl contactează. Datele se salvează în lista de lead-uri
@@ -18,23 +19,25 @@ const ADRESA_CONTACT = DESTINATAR_IMPLICIT; // adresă existentă pe pagina de c
 
 // O adresă apare o singură dată în listă: o nouă completare crește numărul de trimiteri și redeschide un lead marcat „pierdut”. Numele, organizația și sursa (pagina,
 // campania) rămân cele de la prima completare: adresa nu e verificată, deci cine o știe nu trebuie să poată rescrie datele unui lead real (telefonul se completează doar dacă lipsea). Scrierea trece prin politica interese_ong_site (GUC app.interes_site), setat doar aici, după validare și limitarea cererilor.
-async function salveazaLead(d: { nume: string; organizatie: string; email: string; telefon: string }, cale: string, campanie: string): Promise<void> {
-  await db.transaction(async (tx) => {
+async function salveazaLead(d: { nume: string; organizatie: string; email: string; telefon: string }, cale: string, campanie: string): Promise<string | null> {
+  return db.transaction(async (tx) => {
     await tx.execute(sql`select set_config('app.interes_site', 'true', true)`);
-    await tx.execute(sql`
+    const rez = await tx.execute<{ id: string }>(sql`
       insert into interese_ong (nume, organizatie, email, telefon, cale, campanie)
       values (${d.nume}, ${d.organizatie}, ${d.email}, ${d.telefon || null}, ${cale}, ${campanie || null})
       on conflict (lower(email)) do update set
         telefon = coalesce(interese_ong.telefon, excluded.telefon),
         nr_trimiteri = interese_ong.nr_trimiteri + 1,
         ultima_trimitere_la = now(),
-        stare = case when interese_ong.stare = 'pierdut' then 'nou' else interese_ong.stare end`);
+        stare = case when interese_ong.stare = 'pierdut' then 'nou' else interese_ong.stare end
+      returning id`);
+    return rez[0]?.id ?? null;
   });
 }
 
 export type RezultatInteres = { ok: true } | { ok: false; eroare: string; campuri?: EroriInteres };
 
-export async function trimiteInteresAction(intrare: { nume: string; organizatie: string; email: string; telefon: string; acord: boolean; capcana?: string; cale?: string; campanie?: string; previzualizare?: boolean }): Promise<RezultatInteres> {
+export async function trimiteInteresAction(intrare: { nume: string; organizatie: string; email: string; telefon: string; acord: boolean; capcana?: string; cale?: string; campanie?: string; previzualizare?: boolean; ctxAtribuire?: string }): Promise<RezultatInteres> {
   const v = valideazaInteres(intrare ?? {});
   if (!v.ok) return { ok: false, eroare: "Verifică câmpurile marcate.", campuri: v.erori };
 
@@ -74,8 +77,12 @@ export async function trimiteInteresAction(intrare: { nume: string; organizatie:
   let salvat = false;
   if (!test) {
     try {
-      await salveazaLead(v.date, cale, campanie);
+      const leadId = await salveazaLead(v.date, cale, campanie);
       salvat = true;
+      // Proveniența lead-ului: instantaneu la PRIMA completare cu aceeași adresă (o nouă completare nu rescrie istoricul).
+      if (leadId) {
+        await inregistreazaConversie({ orgId: null, tip: "lead", entitateId: leadId, flux: "platforma", ctx: typeof intrare.ctxAtribuire === "string" ? intrare.ctxAtribuire.slice(0, 900) : null });
+      }
     } catch (e) {
       console.error("interes-site: salvare eșuată", e instanceof Error ? e.name : "eroare");
     }
