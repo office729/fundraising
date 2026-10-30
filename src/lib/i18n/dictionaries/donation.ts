@@ -129,6 +129,8 @@ export const DONATION_DICT = {
       necunoscuta: "Dacă ai finalizat plata, primești confirmarea pe email.",
       spuneMaiDeparte: "Spune și altora despre campanie",
       lunarOferta: "Vrei să rămâi alături de noi? O donație lunară, chiar mică, ne ajută să planificăm ajutorul.",
+      lunarButon: (suma: number) => `Fă-o lunară: ${suma} lei pe lună`,
+      lunarNota: "Alegi tu suma și o poți opri oricând.",
     },
     recentList: {
       donatori: "Donatori",
@@ -274,6 +276,8 @@ export const DONATION_DICT = {
       necunoscuta: "If you completed the payment, you will receive a confirmation by email.",
       spuneMaiDeparte: "Tell others about the campaign",
       lunarOferta: "Want to stay with us? A monthly donation, even a small one, helps us plan our support.",
+      lunarButon: (suma: number) => `Make it monthly: ${suma} lei a month`,
+      lunarNota: "You choose the amount and can stop at any time.",
     },
     recentList: {
       donatori: "Donors",

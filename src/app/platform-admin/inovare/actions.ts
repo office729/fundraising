@@ -15,7 +15,7 @@ async function cerePlatformAdmin(): Promise<void> {
   if (!isPlatformAdmin(authUser.email)) throw new EroareUtilizator("Acces interzis.");
 }
 
-export type RezultatInovare = { ok: true } | { ok: false; eroare: string };
+export type RezultatInovare = { ok: true; anuntati?: number } | { ok: false; eroare: string };
 
 export async function listeazaIdeiAction(): Promise<IdeeAdmin[]> {
   await cerePlatformAdmin();
@@ -26,7 +26,7 @@ export async function actualizeazaIdeeAction(id: string, modificare: ModificareI
   await cerePlatformAdmin();
   const r = await actualizeaza(String(id), modificare ?? {});
   revalidatePath("/platform-admin/inovare");
-  return r.ok ? { ok: true } : { ok: false, eroare: r.eroare ?? "Nu am putut salva." };
+  return r.ok ? { ok: true, anuntati: r.anuntati } : { ok: false, eroare: r.eroare ?? "Nu am putut salva." };
 }
 
 export async function unesteIdeiAction(dublatId: string, inId: string): Promise<RezultatInovare> {

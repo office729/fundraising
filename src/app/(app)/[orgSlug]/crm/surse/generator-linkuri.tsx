@@ -1,10 +1,11 @@
 "use client";
 
-import { Check, Copy } from "lucide-react";
+import { Check, Copy, Download, Maximize2, X } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { clasifica, ETICHETE_CANAL, ETICHETE_TIP } from "@/lib/atribuire/clasificare";
 import { construiesteLinkPromovare, PRESETURI_PROMOVARE, sugereazaCod } from "@/lib/atribuire/linkuri";
+import { qrSvg } from "@/lib/qr";
 
 import { Card, CardHeader } from "../components/ui/card";
 import { Input, Label, Select } from "../components/ui/input";
@@ -20,6 +21,7 @@ export function GeneratorLinkuri({ siteUrl, tinte }: { siteUrl: string; tinte: T
   const [campanie, setCampanie] = useState("");
   const [continut, setContinut] = useState("");
   const [copiat, setCopiat] = useState(false);
+  const [ecranPlin, setEcranPlin] = useState(false);
 
   const p = PRESETURI_PROMOVARE.find((x) => x.cheie === preset) ?? PRESETURI_PROMOVARE[0]!;
   const t = tinte.find((x) => x.cheie === tinta);
@@ -29,6 +31,20 @@ export function GeneratorLinkuri({ siteUrl, tinte }: { siteUrl: string; tinte: T
   }, [t, p, campanie, continut, siteUrl]);
   // Cum va fi clasificată o vizită pe acest link (aceleași reguli ca în rapoarte).
   const clasa = clasifica({ utmSource: p.source, utmMedium: p.medium }, []);
+
+  // Codul QR al linkului: SVG generat local, din adresa de mai sus (nu se trimite nicăieri). Pe tot ecranul, ca să-l scaneze cei din fața standului.
+  const qrMic = useMemo(() => (rezultat.ok ? qrSvg(rezultat.url, "200px") : ""), [rezultat]);
+  const qrMare = useMemo(() => (rezultat.ok && ecranPlin ? qrSvg(rezultat.url, "min(80vw, 60vh)") : ""), [rezultat, ecranPlin]);
+
+  function descarcaQr() {
+    if (!rezultat.ok) return;
+    const blob = new Blob([qrSvg(rezultat.url, "512px")], { type: "image/svg+xml" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `cod-qr-${sugereazaCod(campanie) || "promovare"}.svg`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
 
   async function copiaza() {
     if (!rezultat.ok) return;
@@ -103,6 +119,21 @@ export function GeneratorLinkuri({ siteUrl, tinte }: { siteUrl: string; tinte: T
                 {copiat ? "Copiat" : "Copiază linkul"}
               </button>
             </div>
+            <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-[var(--ci-border)] pt-4">
+              <div className="shrink-0 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-white p-1" dangerouslySetInnerHTML={{ __html: qrMic }} />
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] font-medium text-[var(--ci-text)]">Cod QR pentru acest link</p>
+                <p className="mt-0.5 text-[12.5px] text-[var(--ci-text-muted)]">Pentru afișe, pliante sau un stand. Cine îl scanează ajunge pe aceeași pagină, iar vizita se numără la sursa aleasă.</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <button type="button" onClick={() => setEcranPlin(true)} className="inline-flex min-h-10 items-center gap-1.5 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-3.5 text-[13px] font-medium text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]">
+                    <Maximize2 className="h-4 w-4" aria-hidden="true" /> Afișează pe tot ecranul
+                  </button>
+                  <button type="button" onClick={descarcaQr} className="inline-flex min-h-10 items-center gap-1.5 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-3.5 text-[13px] font-medium text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]">
+                    <Download className="h-4 w-4" aria-hidden="true" /> Descarcă (SVG)
+                  </button>
+                </div>
+              </div>
+            </div>
             <p className="mt-3 text-[12.5px] text-[var(--ci-text-muted)]">
               Vizitele de pe acest link vor apărea ca: <strong className="text-[var(--ci-text)]">{ETICHETE_CANAL[clasa.canal]}</strong> · <strong className="text-[var(--ci-text)]">{ETICHETE_TIP[clasa.tip]}</strong>.
             </p>
@@ -123,6 +154,16 @@ export function GeneratorLinkuri({ siteUrl, tinte }: { siteUrl: string; tinte: T
           <li>Sponsorizarea 20% nu are pagină publică (contractele se generează în CRM Companii), deci nu are link de promovare.</li>
         </ul>
       </Card>
+      {ecranPlin && rezultat.ok && (
+        <div role="dialog" aria-modal="true" aria-label="Cod QR pe tot ecranul" className="fixed inset-0 z-[300] flex flex-col items-center justify-center gap-4 bg-white p-4 text-center">
+          <button type="button" onClick={() => setEcranPlin(false)} aria-label="Închide" className="absolute top-3 right-3 inline-flex h-11 w-11 items-center justify-center rounded-full border border-neutral-300 text-neutral-800">
+            <X className="h-5 w-5" aria-hidden="true" />
+          </button>
+          <p className="text-lg font-semibold text-neutral-900">Scanează codul</p>
+          <div dangerouslySetInnerHTML={{ __html: qrMare }} />
+          <p className="max-w-md text-sm break-all text-neutral-600">{rezultat.url}</p>
+        </div>
+      )}
     </div>
   );
 }

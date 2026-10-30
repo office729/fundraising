@@ -70,6 +70,8 @@ export async function updateSession(request: NextRequest, rewriteTo?: URL) {
     "/cookies",
     "/descopera",
     "/cum-functioneaza/centrul-de-inovare",
+    "/noutati",
+    "/noutati/feed.xml",
   ];
   const isPublicRoute =
     MARKETING_ROUTES.includes(path) ||

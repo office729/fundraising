@@ -824,6 +824,9 @@ const POLICIES = [
   `create policy inovare_voturi_citire on inovare_voturi for select using (nullif(current_setting('app.inovare_citire', true), '') = 'true')`,
   `create policy inovare_voturi_scriere_org on inovare_voturi for insert with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
   `create policy inovare_voturi_sterge_org on inovare_voturi for delete using (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  `create policy inovare_evenimente_platforma on inovare_evenimente using (nullif(current_setting('app.platform_admin', true), '') = 'true') with check (nullif(current_setting('app.platform_admin', true), '') = 'true')`,
+  `create policy inovare_raportari_platforma on inovare_raportari using (nullif(current_setting('app.platform_admin', true), '') = 'true') with check (nullif(current_setting('app.platform_admin', true), '') = 'true')`,
+  `create policy inovare_raportari_scriere_org on inovare_raportari for insert with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
   // Calendarul intern de programări (tabele ale platformei, fără org_id; vezi documentation/programari.sql).
   `create policy programari_config_platforma on programari_config using (nullif(current_setting('app.platform_admin', true), '') = 'true') with check (nullif(current_setting('app.platform_admin', true), '') = 'true')`,
   `create policy programari_config_publica on programari_config for select using (nullif(current_setting('app.programari_public', true), '') = 'true')`,
@@ -1063,6 +1066,8 @@ const FORCE_TABLES = [
   "atrib_evenimente",
   "inovare_propuneri",
   "inovare_voturi",
+  "inovare_evenimente",
+  "inovare_raportari",
   "programari_config",
   "programari_tipuri",
   "programari_disponibilitate",

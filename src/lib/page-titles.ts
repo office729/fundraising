@@ -14,6 +14,7 @@ const TITLURI = {
   automatizari: { ro: "Automatizări", en: "Automations" },
   "cum-functioneaza": { ro: "Cum funcționează", en: "How it works" },
   "centrul-de-inovare": { ro: "Centrul de inovare în fundraising", en: "Fundraising innovation center" },
+  noutati: { ro: "Noutăți în Alexandrit", en: "What's new in Alexandrit" },
   blog: { ro: "Blog", en: "Blog" },
   "ce-facem": { ro: "Ce facem", en: "What we do" },
   "cine-suntem": { ro: "Cine suntem", en: "Who we are" },
@@ -145,6 +146,10 @@ const DESCRIERI: Partial<Record<PaginaCuTitlu, { ro: string; en: string }>> = {
     ro: "Centrul de inovare Alexandrit: propui idei, ONG-urile votează, iar noi le aplicăm în platformă. Vezi drumul unei idei și tot ce am inovat deja.",
     en: "The Alexandrit innovation center: you suggest ideas, NGOs vote, and we build them into the platform. See an idea's journey and everything we have already innovated.",
   },
+  noutati: {
+    ro: "Tot ce am îmbunătățit în Alexandrit, cu cele mai noi primele: funcții noi pentru strângerea de fonduri, multe venite din ideile ONG-urilor.",
+    en: "Everything we have improved in Alexandrit, newest first: new fundraising features, many coming from NGOs' ideas.",
+  },
   automatizari: {
     ro: "Automatizări pentru fundraising: mesaje de mulțumire, reamintiri pentru Formularul 230 și fluxuri care economisesc timp echipei ONG-ului tău.",
     en: "Fundraising automations: thank-you messages, Form 230 reminders and workflows that save your NGO team time.",
@@ -209,6 +214,7 @@ const CALE_CANONICA: Partial<Record<PaginaCuTitlu, string>> = {
   automatizari: "/automatizari",
   "cum-functioneaza": "/cum-functioneaza",
   "centrul-de-inovare": "/cum-functioneaza/centrul-de-inovare",
+  noutati: "/noutati",
   "ce-facem": "/ce-facem",
   "cine-suntem": "/cine-suntem",
   "intrebari-frecvente": "/intrebari-frecvente",

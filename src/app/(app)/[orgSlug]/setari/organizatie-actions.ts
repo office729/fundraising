@@ -46,6 +46,13 @@ const stergeOrganizatia = withOrgSession(
     // owner-ului la organizație).
     const fisiereSterse = await stergeFisiereOrganizatieComun(ctx.orgSlug, ctx.orgId);
 
+    // Centrul de inovare: ideile propuse rămân (le pot folosi alte organizații), dar fără numele organizației, prenumele autorului și legătura cu contul lui.
+    // Voturile și raportările se șterg în cascadă odată cu organizația.
+    await db.transaction(async (tx) => {
+      await tx.execute(sql`select set_config('app.platform_admin', 'true', true)`);
+      await tx.execute(sql`update inovare_propuneri set org_nume = null, autor_nume = null, organizatie_slug = null, user_id = null, afiseaza_organizatia = false where org_id = ${ctx.orgId}::uuid`);
+    });
+
     const sters = await ctx.db.delete(organizations).where(eq(organizations.id, ctx.orgId)).returning({ id: organizations.id });
     if (!sters.length) throw new EroareUtilizator("Nu s-a putut șterge organizația.");
 

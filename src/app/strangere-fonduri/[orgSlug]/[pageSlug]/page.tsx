@@ -21,6 +21,8 @@ import { BaraDoneazaMobil } from "./bara-doneaza-mobil";
 import { getDetaliuDonatie } from "./detaliu-donatie";
 import { DoneazaModal } from "./doneaza-modal";
 import { LogoMultumire } from "./logo-multumire";
+import { sumaLunaraSugerata } from "@/lib/suma-lunara";
+
 import { PopupMultumire } from "./popup-multumire";
 import { RecentDonationsList } from "./recent-donations-list";
 import { ShareLinksClient } from "./share-links";
@@ -283,6 +285,7 @@ export default async function PaginaStrangereFonduriPage({
         <PopupMultumire
           inchide={t.thankYou.inchide}
           asteapta={stareMultumire === "asteapta"}
+          fixa={stareMultumire === "succes" && !!detaliuDonatie && !detaliuDonatie.recurenta}
           intarziere={
             <>
               <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-brand-green-soft text-2xl">⏳</span>
@@ -302,7 +305,18 @@ export default async function PaginaStrangereFonduriPage({
                 </strong>{" "}
                 {t.thankYou.pentru} <strong className="text-ink">{detaliuDonatie.pageTitlu}</strong>.
               </p>
-              {!detaliuDonatie.recurenta && <p className="mt-3 text-[13px] text-muted">{t.thankYou.lunarOferta}</p>}
+              {!detaliuDonatie.recurenta && (
+                <div className="mt-3">
+                  <p className="text-[13px] text-muted">{t.thankYou.lunarOferta}</p>
+                  <a
+                    href={`/strangere-fonduri/${orgSlug}/${pageSlug}?lunar=1&suma=${sumaLunaraSugerata(detaliuDonatie.suma)}#sustine-campania`}
+                    className="mt-3 inline-flex min-h-11 items-center justify-center rounded-md bg-brand-green px-5 py-2.5 text-[14px] font-bold text-white transition hover:bg-brand-green-hover"
+                  >
+                    {t.thankYou.lunarButon(sumaLunaraSugerata(detaliuDonatie.suma))}
+                  </a>
+                  <p className="mt-1.5 text-[12px] text-muted-2">{t.thankYou.lunarNota}</p>
+                </div>
+              )}
             </>
           ) : stareMultumire === "asteapta" ? (
             <>

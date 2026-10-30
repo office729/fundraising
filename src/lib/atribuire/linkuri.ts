@@ -24,6 +24,7 @@ export const PRESETURI_PROMOVARE: PresetPromovare[] = [
   { cheie: "newsletter", eticheta: "Newsletter", source: "newsletter", medium: "email", grup: "Email și mesagerie", platit: false, indiciu: "Mesaje trimise pe email de organizație." },
   { cheie: "whatsapp", eticheta: "WhatsApp", source: "whatsapp", medium: "messaging", grup: "Email și mesagerie", platit: false, indiciu: "Linkuri distribuite în grupuri sau conversații." },
   { cheie: "qr", eticheta: "QR / afiș / material tipărit", source: "qr", medium: "qr", grup: "Offline și parteneri", platit: false, indiciu: "Cod QR pe afișe, pliante sau bannere." },
+  { cheie: "eveniment", eticheta: "Stand sau eveniment (cod QR pe telefon)", source: "eveniment", medium: "qr", grup: "Offline și parteneri", platit: false, indiciu: "Pentru un stand, o gală sau o strângere pe stradă: pui în „numele campaniei” evenimentul (de exemplu targ_mai_2026) și afișezi codul QR pe tot ecranul telefonului." },
   { cheie: "partener", eticheta: "Site partener", source: "partener", medium: "referral", grup: "Offline și parteneri", platit: false, indiciu: "Link plasat pe site-ul unui partener sau al unei firme." },
   { cheie: "voluntari", eticheta: "Voluntari", source: "voluntari", medium: "referral", grup: "Offline și parteneri", platit: false, indiciu: "Linkuri date voluntarilor." },
 ];

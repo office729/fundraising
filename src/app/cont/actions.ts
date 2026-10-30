@@ -47,6 +47,12 @@ export async function stergeContulMeuAction(_prev: StergeContState, formData: Fo
       const rows = await tx.execute<{ id: string }>(sql`select id from app_users where lower(email) = ${email} limit 1`);
       const id = (rows as unknown as { id: string }[])[0]?.id;
       if (!id) throw new Error("utilizator_inexistent");
+      // Centrul de inovare: ideile rămân, dar fără prenumele și legătura cu contul. Rulează în aceeași tranzacție cu ștergerea; indicatorul de platformă se retrage imediat.
+      await tx.execute(sql`select set_config('app.platform_admin', 'true', true)`);
+      await tx.execute(sql`update inovare_propuneri set autor_nume = null, user_id = null where user_id = ${id}::uuid`);
+      await tx.execute(sql`update inovare_voturi set user_id = null where user_id = ${id}::uuid`);
+      await tx.execute(sql`update inovare_raportari set user_id = null where user_id = ${id}::uuid`);
+      await tx.execute(sql`select set_config('app.platform_admin', '', true)`);
       await tx.execute(sql`select app_private.sterge_cont_utilizator(${id}::uuid, ${email})`);
     });
   } catch (e) {

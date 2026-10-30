@@ -17,6 +17,7 @@ export function PopupMultumire({
   inchide,
   asteapta = false,
   intarziere,
+  fixa = false,
 }: {
   children: ReactNode;
   inchide: string;
@@ -24,13 +25,15 @@ export function PopupMultumire({
   asteapta?: boolean;
   // Ce arătăm dacă confirmarea întârzie peste limită.
   intarziere?: ReactNode;
+  // true când fereastra conține o acțiune (de exemplu „Fă-o lunară”): nu se închide singură, ca donatorul să apuce să o apese.
+  fixa?: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const [deschis, setDeschis] = useState(true);
   const butonRef = useRef<HTMLButtonElement>(null);
   const [expirat, setExpirat] = useState(false);
-  const sePoateInchideSingur = !asteapta || expirat;
+  const sePoateInchideSingur = (!asteapta || expirat) && !fixa;
 
   const inchideFereastra = useCallback(() => {
     setDeschis(false);
