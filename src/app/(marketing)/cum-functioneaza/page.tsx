@@ -179,6 +179,21 @@ export default async function CumFunctioneazaPage() {
         </div>
       </section>
 
+      {/* Centrul de inovare: ideile ONG-urilor, votate și aplicate */}
+      <section className="px-[6%] py-12">
+        <Reveal>
+          <div className="mx-auto flex max-w-5xl flex-col items-start gap-5 rounded-2xl border border-line bg-panel p-7 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="font-display text-[22px] leading-tight font-bold text-ink">{dict.inovareTitlu}</h2>
+              <p className="mt-2 max-w-2xl text-[14.5px] leading-relaxed text-muted">{dict.inovareDesc}</p>
+            </div>
+            <Link href="/cum-functioneaza/centrul-de-inovare" className={BUTON_SECUNDAR}>
+              {dict.inovareCta} <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+            </Link>
+          </div>
+        </Reveal>
+      </section>
+
       {/* Invitația finală */}
       <section className="px-[6%] py-16 sm:pb-20">
         <Reveal>

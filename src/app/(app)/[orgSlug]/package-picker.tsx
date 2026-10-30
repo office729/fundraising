@@ -53,6 +53,7 @@ function limiteText(pkg: Exclude<OrgPackage, "trial" | "custom">, locale: Locale
         ...(prioritizareFirme ? ["Prioritizarea firmelor pe benzi A/B/C"] : []),
         ...(caiCalde ? ["Căi calde către firme"] : []),
         ...(prospectareMulti ? ["Prospectare de decidenți, cu cheile tale la Lusha, Apollo, Prospeo, Hunter și Waalaxy"] : []),
+        "Centrul de inovare: propui idei, votezi și vezi noutățile",
         pkg === "impact" ? "Suport prin e-mail și telefon" : "Suport prin e-mail",
       ]
     : [
@@ -69,6 +70,7 @@ function limiteText(pkg: Exclude<OrgPackage, "trial" | "custom">, locale: Locale
         ...(analiza ? ["Individual database analysis"] : []),
         ...(granturi ? ["Grants"] : []),
         ...(calendar ? ["Fundraising calendar"] : []),
+        "Innovation center: suggest ideas, vote and see what's new",
         pkg === "impact" ? "Email and phone support" : "Email support",
       ];
 }

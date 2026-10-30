@@ -126,6 +126,9 @@ export const CUM_FUNCTIONEAZA_DICT = {
     ctaTitlu: "Încearcă platforma cu datele organizației tale",
     ctaDesc: "30 de zile gratuite, fără card. Dacă vrei să vorbim înainte, îți răspundem cu plăcere la întrebări.",
     ctaContact: "Scrie-ne",
+    inovareTitlu: "Platforma se construiește împreună cu ONG-urile",
+    inovareDesc: "În Centrul de inovare propui idei, celelalte organizații votează, iar ce adună cele mai multe voturi ajunge în platformă. Vezi cum funcționează și ce am inovat deja.",
+    inovareCta: "Descoperă Centrul de inovare",
   },
   en: {
     breadcrumb: "How it works",
@@ -251,5 +254,8 @@ export const CUM_FUNCTIONEAZA_DICT = {
     ctaTitlu: "Try the platform with your organisation's data",
     ctaDesc: "30 free days, no card. If you'd like to talk first, we're happy to answer your questions.",
     ctaContact: "Write to us",
+    inovareTitlu: "The platform is built together with NGOs",
+    inovareDesc: "In the Innovation center you suggest ideas, other organizations vote, and what gets the most votes makes it into the platform. See how it works and what we have already built.",
+    inovareCta: "Discover the Innovation center",
   },
 } satisfies Record<Locale, unknown>;

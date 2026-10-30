@@ -17,6 +17,8 @@ export const MARKETING_DICT = {
       { href: "/automatizari", label: "Automatizări" },
       { href: "/contact", label: "Contact" },
     ],
+    // Sub-paginile din „Cum funcționează" (meniu derulant în antet, indentate în meniul de mobil).
+    navCumFunctioneaza: [{ href: "/cum-functioneaza/centrul-de-inovare", label: "Centrul de inovare" }],
     // Sub-paginile din „Cine suntem?" (meniu derulant în antet, indentate în meniul de mobil).
     navCineSuntem: [
       { href: "/vlad-placinta", label: "Vlad Plăcintă" },
@@ -187,6 +189,7 @@ export const MARKETING_DICT = {
       { href: "/automatizari", label: "Automation" },
       { href: "/contact", label: "Contact" },
     ],
+    navCumFunctioneaza: [{ href: "/cum-functioneaza/centrul-de-inovare", label: "Innovation center" }],
     navCineSuntem: [
       { href: "/vlad-placinta", label: "Vlad Plăcintă" },
       { href: "/premii", label: "Vlad Plăcintă Awards" },

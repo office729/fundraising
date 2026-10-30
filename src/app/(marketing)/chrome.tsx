@@ -60,6 +60,8 @@ export function TopBar({ dict, locale }: { dict: MarketingDict; locale: Locale }
 
 export function SiteHeader({ dict, panouHref = null }: { dict: MarketingDict; panouHref?: string | null }) {
   const pathname = usePathname();
+  // Paginile cu submeniu în antet (meniu derulant pe desktop, indentate în meniul de mobil).
+  const submeniuri: Record<string, { href: string; label: string }[]> = { "/cine-suntem": dict.navCineSuntem, "/cum-functioneaza": dict.navCumFunctioneaza };
   const [deschis, setDeschis] = useState(false);
   const seara = useEsteSeara();
 
@@ -81,9 +83,10 @@ export function SiteHeader({ dict, panouHref = null }: { dict: MarketingDict; pa
         <nav aria-label="Principal" className="hidden items-center gap-4 min-[1140px]:flex 2xl:gap-6">
           {/* „Acasă" lipsește de aici: logo-ul duce deja la prima pagină (rămâne în meniul de mobil). */}
           {dict.nav.filter((item) => item.href !== "/").map((item) => {
-            const subPaginiActive = dict.navCineSuntem.some((x) => pathname === x.href);
-            const activ = pathname === item.href || (item.href === "/cine-suntem" && subPaginiActive);
-            if (item.href === "/cine-suntem") {
+            const subPagini = submeniuri[item.href];
+            const subPaginiActive = (subPagini ?? []).some((x) => pathname === x.href);
+            const activ = pathname === item.href || (!!subPagini && subPaginiActive);
+            if (subPagini) {
               return (
                 <div key={item.href} className="group relative">
                   <Link
@@ -98,7 +101,7 @@ export function SiteHeader({ dict, panouHref = null }: { dict: MarketingDict; pa
                   </Link>
                   <div className="invisible absolute top-full left-1/2 z-30 -translate-x-1/2 pt-3 opacity-0 transition group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
                     <div className="min-w-[220px] rounded-xl border border-line bg-panel p-2 shadow-[0_14px_36px_rgba(21,74,133,0.14)]">
-                      {dict.navCineSuntem.map((sub) => (
+                      {subPagini.map((sub) => (
                         <Link
                           prefetch={false}
                           key={sub.href}
@@ -191,8 +194,7 @@ export function SiteHeader({ dict, panouHref = null }: { dict: MarketingDict; pa
               >
                 {item.label}
               </Link>
-              {item.href === "/cine-suntem" &&
-                dict.navCineSuntem.map((sub) => (
+              {(submeniuri[item.href] ?? []).map((sub) => (
                   <Link
                     prefetch={false}
                     key={sub.href}

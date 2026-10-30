@@ -69,6 +69,7 @@ export async function updateSession(request: NextRequest, rewriteTo?: URL) {
     "/dpa",
     "/cookies",
     "/descopera",
+    "/cum-functioneaza/centrul-de-inovare",
   ];
   const isPublicRoute =
     MARKETING_ROUTES.includes(path) ||
