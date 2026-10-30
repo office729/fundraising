@@ -11,6 +11,7 @@ import {
   ChevronsRight,
   ClipboardList,
   Compass,
+  Lightbulb,
   FileSignature,
   Gauge,
   GraduationCap,
@@ -163,6 +164,7 @@ export function buildNav(dict: DashboardDict, orgSlug: string, role: string, per
       items: [
         { href: "instrumente", label: dict.nav.instrumente, hint: dict.hints.instrumente, icon: Wrench },
         { href: "consultanta", label: dict.nav.consultanta, hint: dict.hints.consultanta, icon: GraduationCap },
+        { href: "inovare", label: dict.nav.inovare, hint: dict.hints.inovare, icon: Lightbulb },
         { href: "feedback", label: dict.nav.feedback, hint: dict.hints.feedback, icon: MessageSquareHeart },
         // Registrul de timp al muncii custom și al suportului: doar dacă echipa platformei l-a activat pentru organizație, și doar pentru owner/admin.
         ...(persEfectiva.arataTimp && (role === "owner" || role === "admin") ? [{ href: "timp-alocat", label: "Timp alocat", hint: "Timpul alocat modificărilor custom, integrărilor și suportului", icon: Clock }] : []),
