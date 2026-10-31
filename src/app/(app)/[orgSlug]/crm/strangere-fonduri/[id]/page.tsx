@@ -17,13 +17,14 @@ import { EmptyState } from "../../components/ui/states";
 import { EmbedCard } from "./embed-card";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { STRANGERE_FONDURI_DICT } from "@/lib/i18n/dictionaries/strangere-fonduri";
+import { STRANGERE_FONDURI_UI_DICT } from "@/lib/i18n/dictionaries/strangere-fonduri-ui";
 import { AddOfflineDonationButton, AddUpdateButton, CopyPageLinkButton, DeleteUpdateButton, EditPageButton, EditUpdateButton, ImageUploadCard, ToggleStatusButton } from "../client";
 
 // Pagina campaniei din CRM: doar poza de copertă, povestea și actualizările. (Panourile de beneficiar, agent, mesaje,
 // calendar, conținut, presă, grupuri, facturi, taskuri și top companii au fost scoase — nu mai sunt citite deloc.)
 const getDetaliuCampanie = withOrgSession(async (ctx, id: string) => {
   if (ctx.role !== "owner" && ctx.role !== "admin") {
-    throw new EroareUtilizator("Necesită rol de admin sau owner în organizație.");
+    throw new EroareUtilizator(STRANGERE_FONDURI_UI_DICT[await getLocale()].detail.necesitaAdmin);
   }
   const [pagina, [{ donatiiReusite }], actualizari, [org], surse] = await Promise.all([
     ctx.db
@@ -62,6 +63,8 @@ export default async function PaginaDetaliuPage({ params }: { params: Promise<{ 
   const bazaWidget = (process.env.NEXT_PUBLIC_SITE_URL || `${hdrs.get("x-forwarded-proto") ?? "https"}://${hdrs.get("host")}`).replace(/\/+$/, "");
   const dict = STRANGERE_FONDURI_DICT[locale];
   const dictDetail = dict.detail;
+  const ui = STRANGERE_FONDURI_UI_DICT[locale];
+  const loc = locale === "ro" ? "ro-RO" : "en-GB";
 
   return (
     <div className="mx-auto max-w-[1100px] space-y-5">
@@ -83,7 +86,7 @@ export default async function PaginaDetaliuPage({ params }: { params: Promise<{ 
             href={`/${orgSlug}/crm/statistici-campanii?campanie=${pagina.id}`}
             className="inline-flex h-9 items-center gap-1.5 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 text-[13px] font-medium text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]"
           >
-            <BarChart3 className="h-3.5 w-3.5" aria-hidden="true" /> Statistici
+            <BarChart3 className="h-3.5 w-3.5" aria-hidden="true" /> {ui.detail.statistici}
           </Link>
           <AddOfflineDonationButton orgSlug={orgSlug} pageId={pagina.id} />
           <CopyPageLinkButton orgSlug={orgSlug} pageSlug={pagina.slug} />
@@ -96,12 +99,12 @@ export default async function PaginaDetaliuPage({ params }: { params: Promise<{ 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <Card>
           <p className="text-[12px] text-[var(--ci-text-muted)]">{dictDetail.strans}</p>
-          <p className="ci-tabular mt-1 text-xl font-bold text-[var(--ci-text)]">{pagina.sumaStransa.toLocaleString("ro-RO")} lei</p>
+          <p className="ci-tabular mt-1 text-xl font-bold text-[var(--ci-text)]">{pagina.sumaStransa.toLocaleString(loc)} {ui.lei}</p>
         </Card>
         {pagina.sumaTinta && (
           <Card>
             <p className="text-[12px] text-[var(--ci-text-muted)]">{dictDetail.tinta}</p>
-            <p className="ci-tabular mt-1 text-xl font-bold text-[var(--ci-text)]">{pagina.sumaTinta.toLocaleString("ro-RO")} lei</p>
+            <p className="ci-tabular mt-1 text-xl font-bold text-[var(--ci-text)]">{pagina.sumaTinta.toLocaleString(loc)} {ui.lei}</p>
           </Card>
         )}
         <Card>
@@ -110,57 +113,34 @@ export default async function PaginaDetaliuPage({ params }: { params: Promise<{ 
         </Card>
       </div>
 
-      {locale === "ro" && (
-        <Card>
-          <CardHeader title="De unde vin donațiile" subtitle="După eticheta linkului (utm_source, utm_medium, utm_campaign). Fără etichetă, donația apare ca „direct”." />
-          {surse.length === 0 ? (
-            <p className="text-[13px] text-[var(--ci-text-muted)]">Nicio donație reușită încă.</p>
-          ) : (
-            <ul className="divide-y divide-[var(--ci-border)]">
-              {surse.map((r) => (
-                <li key={r.sursa} className="flex items-center justify-between gap-3 py-2 text-[13px]">
-                  <span className="min-w-0 truncate font-medium text-[var(--ci-text)]">{r.sursa}</span>
-                  <span className="ci-tabular shrink-0 text-[var(--ci-text-muted)]">
-                    {r.donatii} {r.donatii === 1 ? "donație" : "donații"} · {r.suma.toLocaleString("ro-RO")} lei
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-          <p className="mt-3 text-[12px] text-[var(--ci-text-muted)]">Ca să vezi sursa, adaugă la linkul din newsletter sau de pe rețele, de exemplu: <span className="font-mono">?utm_source=newsletter&amp;utm_medium=email&amp;utm_campaign=numele-campaniei</span></p>
-        </Card>
-      )}
+      <Card>
+        <CardHeader title={ui.detail.surse.title} subtitle={ui.detail.surse.subtitle} />
+        {surse.length === 0 ? (
+          <p className="text-[13px] text-[var(--ci-text-muted)]">{ui.detail.surse.empty}</p>
+        ) : (
+          <ul className="divide-y divide-[var(--ci-border)]">
+            {surse.map((r) => (
+              <li key={r.sursa} className="flex items-center justify-between gap-3 py-2 text-[13px]">
+                <span className="min-w-0 truncate font-medium text-[var(--ci-text)]">{r.sursa}</span>
+                <span className="ci-tabular shrink-0 text-[var(--ci-text-muted)]">
+                  {r.donatii} {r.donatii === 1 ? ui.detail.surse.donatie : ui.detail.surse.donatii} · {r.suma.toLocaleString(loc)} {ui.lei}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+        <p className="mt-3 text-[12px] text-[var(--ci-text-muted)]">{ui.detail.surse.hint} <span className="font-mono">?utm_source=newsletter&amp;utm_medium=email&amp;utm_campaign=numele-campaniei</span></p>
+      </Card>
 
       {pagina.status === "activa" && <EmbedCard orgSlug={orgSlug} pageSlug={pagina.slug} baza={bazaWidget} />}
 
       <Card>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <CardHeader title="Povestea campaniei" subtitle="Textul afișat pe pagina publică." />
+          <CardHeader title={ui.detail.poveste.title} subtitle={ui.detail.poveste.subtitle} />
           <EditPageButton orgSlug={orgSlug} pagina={pagina} templateuriDisponibile={templateuriDisponibile} />
         </div>
         <p className="text-[13px] leading-relaxed whitespace-pre-wrap text-[var(--ci-text)]">{pagina.poveste}</p>
       </Card>
-
-      {locale === "ro" && (
-        <Card>
-          <CardHeader title="De unde vin donațiile" subtitle="După eticheta linkului (utm_source, utm_medium, utm_campaign). Fără etichetă, donația apare ca „direct”." />
-          {surse.length === 0 ? (
-            <p className="text-[13px] text-[var(--ci-text-muted)]">Nicio donație reușită încă.</p>
-          ) : (
-            <ul className="divide-y divide-[var(--ci-border)]">
-              {surse.map((r) => (
-                <li key={r.sursa} className="flex items-center justify-between gap-3 py-2 text-[13px]">
-                  <span className="min-w-0 truncate font-medium text-[var(--ci-text)]">{r.sursa}</span>
-                  <span className="ci-tabular shrink-0 text-[var(--ci-text-muted)]">
-                    {r.donatii} {r.donatii === 1 ? "donație" : "donații"} · {r.suma.toLocaleString("ro-RO")} lei
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-          <p className="mt-3 text-[12px] text-[var(--ci-text-muted)]">Ca să vezi sursa, adaugă la linkul din newsletter sau de pe rețele, de exemplu: <span className="font-mono">?utm_source=newsletter&amp;utm_medium=email&amp;utm_campaign=numele-campaniei</span></p>
-        </Card>
-      )}
 
       <Card>
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -175,7 +155,7 @@ export default async function PaginaDetaliuPage({ params }: { params: Promise<{ 
                   <p className="text-[13px] font-medium text-[var(--ci-text)]">{a.titlu}</p>
                   <p className="mt-0.5 whitespace-pre-wrap text-[12px] text-[var(--ci-text-muted)]">{a.continut}</p>
                   <p className="mt-1 text-[11px] text-[var(--ci-text-faint)]">
-                    {a.data.toLocaleDateString("ro-RO", { day: "numeric", month: "long", year: "numeric" })}
+                    {a.data.toLocaleDateString(loc, { day: "numeric", month: "long", year: "numeric" })}
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-1">

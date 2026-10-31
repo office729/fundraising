@@ -4,11 +4,14 @@ import { Check, Copy, ExternalLink, Mail, MessageCircle, Share2 } from "lucide-r
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 
+import type { Locale } from "@/lib/i18n/config";
+import { VOLUNTAR_UI_DICT } from "@/lib/i18n/dictionaries/voluntar-ui";
 import { CANALE_VOLUNTAR, construiesteMesaj, type CanalId } from "@/lib/voluntari-panou";
 
 import { bifeazaAction } from "../../actions";
 
 type Props = {
+  locale: Locale;
   cod: string;
   campaignId: string;
   titlu: string;
@@ -24,6 +27,8 @@ type Props = {
 const buton = "inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-[15px] font-semibold transition active:scale-[.99] focus-visible:ring-2 focus-visible:ring-[var(--vp-brand)] focus-visible:ring-offset-2 focus-visible:outline-none";
 
 export function CampanieClient(p: Props) {
+  const d = VOLUNTAR_UI_DICT[p.locale];
+  const t = d.campanie;
   const router = useRouter();
   const [varianta, setVarianta] = useState(p.variantaInitiala);
   const [copiat, setCopiat] = useState<"mesaj" | "link" | null>(null);
@@ -78,7 +83,7 @@ export function CampanieClient(p: Props) {
       const r = await bifeazaAction(p.cod, p.campaignId, canal, nou);
       if (!r.ok) {
         setBifate(bifate); // revenim
-        setEroare(r.eroare);
+        setEroare(d.mesajeServer[r.eroare] ?? r.eroare);
       } else {
         router.refresh();
       }
@@ -93,7 +98,7 @@ export function CampanieClient(p: Props) {
     <div className="space-y-4">
       <section className={cardPas} aria-labelledby="pas1">
         <h2 id="pas1" className={numarPas}>
-          <span className={bulina}>1</span> Copiază mesajul
+          <span className={bulina}>1</span> {t.pas1}
         </h2>
         <textarea
           ref={areaRef}
@@ -101,26 +106,26 @@ export function CampanieClient(p: Props) {
           rows={7}
           value={mesaj}
           onFocus={(e) => e.currentTarget.select()}
-          aria-label="Mesajul de distribuit"
+          aria-label={t.ariaMesaj}
           className="w-full resize-none rounded-xl border border-[var(--vp-line)] bg-[#f1f5fa] p-3 text-[14.5px] leading-relaxed text-[var(--vp-ink)] focus:ring-2 focus:ring-[var(--vp-brand)]/30 focus:outline-none"
         />
         <div className="mt-3 flex flex-wrap gap-2">
           <button type="button" onClick={() => copiaza(mesaj, "mesaj")} className={`${buton} flex-1 bg-[var(--vp-brand)] text-white`}>
             {copiat === "mesaj" ? <Check className="size-5" aria-hidden /> : <Copy className="size-5" aria-hidden />}
-            {copiat === "mesaj" ? "Copiat" : "Copiază mesajul"}
+            {copiat === "mesaj" ? t.copiat : t.copiaza}
           </button>
           {!p.mesajPropriu?.trim() && (
             <button type="button" onClick={() => setVarianta((v) => v + 1)} className={`${buton} border border-[var(--vp-line)] bg-white`}>
-              Alt început
+              {t.altInceput}
             </button>
           )}
         </div>
-        <p className="mt-2 text-[12.5px] text-[var(--vp-muted)]">La fiecare copiere, mesajul începe diferit, ca să nu pară trimis în serie.</p>
+        <p className="mt-2 text-[12.5px] text-[var(--vp-muted)]">{t.notaInceput}</p>
       </section>
 
       <section className={cardPas} aria-labelledby="pas2">
         <h2 id="pas2" className={numarPas}>
-          <span className={bulina}>2</span> Trimite prietenilor
+          <span className={bulina}>2</span> {t.pas2}
         </h2>
         <div className="grid grid-cols-2 gap-2">
           <a href={`https://wa.me/?text=${encodeURIComponent(cuCanal("whatsapp"))}`} target="_blank" rel="noopener noreferrer" className={`${buton} bg-[#1f9d55] text-white`}>
@@ -134,19 +139,19 @@ export function CampanieClient(p: Props) {
           </a>
           <button type="button" onClick={() => copiaza(linkCanal("alta"), "link")} className={`${buton} border border-[var(--vp-line)] bg-white`}>
             {copiat === "link" ? <Check className="size-5" aria-hidden /> : <Copy className="size-5" aria-hidden />}
-            {copiat === "link" ? "Link copiat" : "Copiază linkul"}
+            {copiat === "link" ? t.linkCopiat : t.copiazaLinkul}
           </button>
         </div>
         <button type="button" onClick={distribuieNativ} className={`${buton} mt-2 w-full border border-[var(--vp-line)] bg-white`}>
-          Distribuie din telefon…
+          {t.distribuieTelefon}
         </button>
       </section>
 
       <section className={cardPas} aria-labelledby="pas3">
         <h2 id="pas3" className={numarPas}>
-          <span className={bulina}>3</span> Bifează unde ai distribuit azi
+          <span className={bulina}>3</span> {t.pas3}
         </h2>
-        <p className="mb-3 text-[13px] text-[var(--vp-muted)]">Bifează după ce ai trimis. Poți debifa oricând, doar pentru azi.</p>
+        <p className="mb-3 text-[13px] text-[var(--vp-muted)]">{t.pas3Desc}</p>
         <ul className="space-y-2">
           {CANALE_VOLUNTAR.map((c) => {
             const bifat = bifate.has(c.id);
@@ -167,9 +172,9 @@ export function CampanieClient(p: Props) {
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-[15px] font-semibold">{c.nume}</span>
-                    <span className="block text-[12.5px] text-[var(--vp-muted)]">{c.actiune}</span>
+                    <span className="block text-[12.5px] text-[var(--vp-muted)]">{d.canaleActiune[c.id] ?? c.actiune}</span>
                   </span>
-                  {vizat && <span className="shrink-0 rounded-full bg-[var(--vp-gold-bg)] px-2 py-0.5 text-[11.5px] font-bold text-[var(--vp-gold)]">în misiune</span>}
+                  {vizat && <span className="shrink-0 rounded-full bg-[var(--vp-gold-bg)] px-2 py-0.5 text-[11.5px] font-bold text-[var(--vp-gold)]">{t.inMisiune}</span>}
                 </button>
               </li>
             );
@@ -183,7 +188,7 @@ export function CampanieClient(p: Props) {
       </section>
 
       <a href={p.linkBaza} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-1.5 text-[13.5px] font-semibold text-[var(--vp-brand)] hover:underline">
-        Vezi pagina campaniei <ExternalLink className="size-4" aria-hidden />
+        {t.veziPagina} <ExternalLink className="size-4" aria-hidden />
       </a>
     </div>
   );

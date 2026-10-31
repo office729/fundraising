@@ -27,7 +27,7 @@ export const NOUTATI_DICT = {
     acasa: "Home",
     eyebrow: "What we innovated",
     h1: "What's new in Alexandrit",
-    subtitlu: "Everything we have improved in the platform, newest first. Many come from ideas suggested and voted on by NGOs in the Innovation Center (entries are in Romanian).",
+    subtitlu: "Everything we have improved in the platform, newest first. Many come from ideas suggested and voted on by NGOs in the Innovation Center.",
     contor: (n: number) => (n === 1 ? "1 improvement in the last 30 days" : `${n} improvements in the last 30 days`),
     contorZero: "The list is updated with every improvement to the platform.",
     nou: "New",

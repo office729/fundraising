@@ -7,20 +7,25 @@ import { useState } from "react";
 
 import type { AnalizePf } from "@/lib/donatori-pf-analiza";
 import { PRAGURI, SEGMENTE_META } from "@/lib/donatori-pf-filtre";
+import { DONATORI_UI_DICT } from "@/lib/i18n/dictionaries/donatori-ui";
 
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Card, CardHeader } from "../../components/ui/card";
 import { Select } from "../../components/ui/input";
+import { useLocale } from "../../lib/locale-context";
 import { seteazaStareDonator, type StarePatch } from "../pf-actions";
-import { dataRo, leiRo, nrRo, procentRo } from "../pf-format";
-
-const R_ETICHETE = ["0–6 luni", "6–12 luni", "12–24 luni", "peste 24 luni"];
-const F_ETICHETE = ["1 donație", "2 donații", "3–4 donații", "5+ donații"];
-const LUNI = ["ian", "feb", "mar", "apr", "mai", "iun", "iul", "aug", "sep", "oct", "nov", "dec"];
+import { formatariPf } from "../pf-format";
 
 export function AnalizeClient({ orgSlug, date }: { orgSlug: string; date: AnalizePf }) {
   const router = useRouter();
+  const locale = useLocale();
+  const ui = DONATORI_UI_DICT[locale];
+  const t = ui.analize;
+  const { nr: nrRo, lei: leiRo, procent: procentRo, data: dataRo } = formatariPf(locale);
+  const R_ETICHETE = t.rEtichete;
+  const F_ETICHETE = t.fEtichete;
+  const LUNI = t.luni;
   const [eroare, setEroare] = useState("");
   const baza = `/${orgSlug}/crm/donatori`;
 
@@ -55,22 +60,22 @@ export function AnalizeClient({ orgSlug, date }: { orgSlug: string; date: Analiz
 
       {/* Churn newsletter */}
       <Card>
-        <CardHeader title="Churn la newsletter" subtitle="Câți donatori s-au dezabonat de la emailurile de campanie și cât au donat până atunci." action={<Link href={`${baza}?seg=dezabonati`} prefetch={false} className="text-[12.5px] font-medium text-[var(--ci-primary)] hover:underline">Vezi dezabonații</Link>} />
+        <CardHeader title={t.churnTitlu} subtitle={t.churnSub} action={<Link href={`${baza}?seg=dezabonati`} prefetch={false} className="text-[12.5px] font-medium text-[var(--ci-primary)] hover:underline">{t.veziDezabonatii}</Link>} />
         <div className="grid gap-4 lg:grid-cols-[auto_1fr]">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:w-[480px]">
-            <Cifra eticheta="Rata de churn" valoare={procentRo(churn.rata, 1)} tona={churn.rata > 0.1 ? "amber" : undefined} hint="Dezabonați din cei care au fost abonați" />
-            <Cifra eticheta="Abonați acum" valoare={nrRo(churn.abonati)} />
-            <Cifra eticheta="Dezabonați" valoare={nrRo(churn.dezabonati)} />
-            <Cifra eticheta="Donat de dezabonați" valoare={leiRo(churn.sumaPierduta)} hint="Suma totală donată de cei care s-au dezabonat" />
-            <Cifra eticheta="Dezabonați recurenți" valoare={nrRo(churn.dezabonatiRecurenti)} />
-            <Cifra eticheta="Fără consimțământ" valoare={nrRo(churn.faraConsimtamant)} />
+            <Cifra eticheta={t.rataChurn} valoare={procentRo(churn.rata, 1)} tona={churn.rata > 0.1 ? "amber" : undefined} hint={t.rataChurnHint} />
+            <Cifra eticheta={t.abonatiAcum} valoare={nrRo(churn.abonati)} />
+            <Cifra eticheta={t.dezabonati} valoare={nrRo(churn.dezabonati)} />
+            <Cifra eticheta={t.donatDeDezabonati} valoare={leiRo(churn.sumaPierduta)} hint={t.donatDeDezabonatiHint} />
+            <Cifra eticheta={t.dezabonatiRecurenti} valoare={nrRo(churn.dezabonatiRecurenti)} />
+            <Cifra eticheta={t.faraConsimtamant} valoare={nrRo(churn.faraConsimtamant)} />
           </div>
           <div>
-            <p className="text-[12px] font-semibold tracking-wide text-[var(--ci-text-faint)] uppercase">Dezabonări pe lună (ultimele 12)</p>
+            <p className="text-[12px] font-semibold tracking-wide text-[var(--ci-text-faint)] uppercase">{t.dezabonariPeLuna}</p>
             {churn.lunar.length === 0 ? (
-              <p className="mt-2 text-[13px] text-[var(--ci-text-muted)]">Nicio dezabonare în ultimele 12 luni.</p>
+              <p className="mt-2 text-[13px] text-[var(--ci-text-muted)]">{t.nicioDezabonare}</p>
             ) : (
-              <div className="mt-3 flex h-28 items-end gap-2" role="img" aria-label="Dezabonări pe lună">
+              <div className="mt-3 flex h-28 items-end gap-2" role="img" aria-label={t.dezabonariAria}>
                 {churn.lunar.map((l) => (
                   <div key={l.luna} className="flex flex-1 flex-col items-center gap-1">
                     <span className="ci-tabular text-[11px] text-[var(--ci-text-muted)]">{l.n}</span>
@@ -84,38 +89,38 @@ export function AnalizeClient({ orgSlug, date }: { orgSlug: string; date: Analiz
         </div>
         <p className="mt-3 flex items-start gap-2 text-[12.5px] text-[var(--ci-text-muted)]">
           <ShieldCheck className="mt-0.5 size-4 shrink-0 text-[var(--ci-green)]" aria-hidden />
-          Dezabonații, cei fără consimțământ și cei marcați „nu contactat” sunt excluși automat de la exporturile pe canal și de la emailurile de campanie, indiferent de segmentul ales.
+          {t.churnNota}
         </p>
       </Card>
 
       {/* Risc de abandon și win-back */}
       <Card>
         <CardHeader
-          title="Risc de abandon și win-back"
-          subtitle={`Donatori recurenți (nu lunari) care au depășit de cel puțin 1,5 ori intervalul lor obișnuit între donații. Scorul crește cu cât întârzie mai mult. Segmentul „Risc de abandon” din listă îi prinde pe cei opriți de ${PRAGURI.riscDeLuni}–${PRAGURI.riscPanaLuni} luni.`}
-          action={<Link href={`${baza}?seg=risc`} prefetch={false} className="text-[12.5px] font-medium text-[var(--ci-primary)] hover:underline">Vezi în listă</Link>}
+          title={t.riscTitlu}
+          subtitle={t.riscSub(PRAGURI.riscDeLuni, PRAGURI.riscPanaLuni)}
+          action={<Link href={`${baza}?seg=risc`} prefetch={false} className="text-[12.5px] font-medium text-[var(--ci-primary)] hover:underline">{t.veziInLista}</Link>}
         />
         <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <Cifra eticheta="În reactivare" valoare={nrRo(winback.reactivare)} />
-          <Cifra eticheta="Reactivați" valoare={nrRo(winback.reactivat)} tona="green" />
-          <Cifra eticheta="Pierduți" valoare={nrRo(winback.pierdut)} />
-          <Cifra eticheta="Rata de reactivare" valoare={winback.rata === null ? "—" : procentRo(winback.rata, 0)} hint="Reactivați din (reactivați + pierduți)" />
+          <Cifra eticheta={t.inReactivare} valoare={nrRo(winback.reactivare)} />
+          <Cifra eticheta={t.reactivati} valoare={nrRo(winback.reactivat)} tona="green" />
+          <Cifra eticheta={t.pierduti} valoare={nrRo(winback.pierdut)} />
+          <Cifra eticheta={t.rataReactivare} valoare={winback.rata === null ? "—" : procentRo(winback.rata, 0)} hint={t.rataReactivareHint} />
         </div>
         {date.lapse.length === 0 ? (
-          <p className="text-[13px] text-[var(--ci-text-muted)]">Niciun donator recurent nu pare să se fi oprit acum.</p>
+          <p className="text-[13px] text-[var(--ci-text-muted)]">{t.niciunRecurent}</p>
         ) : (
           <div className="overflow-x-auto rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)]">
             <table className="w-full min-w-[820px] text-[13px]">
               <thead>
                 <tr className="border-b border-[var(--ci-border)] bg-[var(--ci-surface-2)] text-left text-[12px] text-[var(--ci-text-muted)]">
-                  <th className="px-3 py-2 font-semibold">Donator</th>
-                  <th className="px-3 py-2 text-right font-semibold">Donații</th>
-                  <th className="px-3 py-2 text-right font-semibold">Total</th>
-                  <th className="px-3 py-2 font-semibold">Ultima donație</th>
-                  <th className="px-3 py-2 text-right font-semibold">Interval obișnuit</th>
-                  <th className="px-3 py-2 text-right font-semibold">De la ultima</th>
-                  <th className="px-3 py-2 font-semibold">Risc</th>
-                  <th className="px-3 py-2 font-semibold">Win-back</th>
+                  <th className="px-3 py-2 font-semibold">{t.colDonator}</th>
+                  <th className="px-3 py-2 text-right font-semibold">{t.colDonatii}</th>
+                  <th className="px-3 py-2 text-right font-semibold">{t.colTotal}</th>
+                  <th className="px-3 py-2 font-semibold">{t.colUltima}</th>
+                  <th className="px-3 py-2 text-right font-semibold">{t.colInterval}</th>
+                  <th className="px-3 py-2 text-right font-semibold">{t.colDeLaUltima}</th>
+                  <th className="px-3 py-2 font-semibold">{t.colRisc}</th>
+                  <th className="px-3 py-2 font-semibold">{t.colWinback}</th>
                 </tr>
               </thead>
               <tbody>
@@ -130,19 +135,19 @@ export function AnalizeClient({ orgSlug, date }: { orgSlug: string; date: Analiz
                     <td className="ci-tabular px-3 py-2 text-right">{l.nr}</td>
                     <td className="ci-tabular px-3 py-2 text-right whitespace-nowrap">{leiRo(l.total)}</td>
                     <td className="ci-tabular px-3 py-2 whitespace-nowrap text-[var(--ci-text-muted)]">{dataRo(l.ultima)}</td>
-                    <td className="ci-tabular px-3 py-2 text-right whitespace-nowrap">{l.intervalMediu} zile</td>
-                    <td className="ci-tabular px-3 py-2 text-right whitespace-nowrap">{l.zileDeLaUltima} zile</td>
+                    <td className="ci-tabular px-3 py-2 text-right whitespace-nowrap">{t.zile(l.intervalMediu)}</td>
+                    <td className="ci-tabular px-3 py-2 text-right whitespace-nowrap">{t.zile(l.zileDeLaUltima)}</td>
                     <td className="px-3 py-2">
                       <Badge tone={l.scor >= 70 ? "red" : l.scor >= 45 ? "amber" : "neutral"} icon={false}>
                         {l.scor}/100
                       </Badge>
                     </td>
                     <td className="px-3 py-2">
-                      <Select value={l.wbStage ?? ""} onChange={(e) => seteazaEtapa(l.id, e.target.value)} aria-label={`Etapă win-back pentru ${l.nume}`} className="h-8 text-[12.5px]">
+                      <Select value={l.wbStage ?? ""} onChange={(e) => seteazaEtapa(l.id, e.target.value)} aria-label={t.etapaPentru(l.nume)} className="h-8 text-[12.5px]">
                         <option value="">—</option>
-                        <option value="reactivare">În reactivare</option>
-                        <option value="reactivat">Reactivat</option>
-                        <option value="pierdut">Pierdut</option>
+                        <option value="reactivare">{ui.wbStage.reactivare}</option>
+                        <option value="reactivat">{ui.wbStage.reactivat}</option>
+                        <option value="pierdut">{ui.wbStage.pierdut}</option>
                       </Select>
                     </td>
                   </tr>
@@ -155,19 +160,19 @@ export function AnalizeClient({ orgSlug, date }: { orgSlug: string; date: Analiz
 
       {/* Radar */}
       <Card>
-        <CardHeader title="Radar: segmente ascunse" subtitle="Grupuri pe care o listă obișnuită nu le arată, bune pentru campanii țintite. Fiecare se poate deschide în listă sau exporta în Excel." />
+        <CardHeader title={t.radarTitlu} subtitle={t.radarSub} />
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {date.radar.map((r) => {
             const meta = SEGMENTE_META.find((s) => s.key === r.key)!;
             return (
               <div key={r.key} className="flex flex-col rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] p-4">
-                <p className="text-[14px] font-semibold text-[var(--ci-text)]">{meta.label}</p>
-                <p className="mt-0.5 flex-1 text-[12.5px] text-[var(--ci-text-muted)]">{meta.hint}</p>
+                <p className="text-[14px] font-semibold text-[var(--ci-text)]">{ui.segment[r.key]?.label ?? meta.label}</p>
+                <p className="mt-0.5 flex-1 text-[12.5px] text-[var(--ci-text-muted)]">{ui.segment[r.key]?.hint ?? meta.hint}</p>
                 <p className="ci-tabular mt-3 text-[22px] font-bold text-[var(--ci-text)]">{nrRo(r.count)}</p>
-                <p className="ci-tabular text-[12px] text-[var(--ci-text-muted)]">{leiRo(r.valoare)} donați în total</p>
+                <p className="ci-tabular text-[12px] text-[var(--ci-text-muted)]">{t.donatiInTotal(leiRo(r.valoare))}</p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Link href={`${baza}?seg=${r.key}`} prefetch={false} className="inline-flex h-8 items-center gap-1.5 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-3 text-[13px] font-medium text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]">
-                    <ExternalLink className="size-4" aria-hidden /> Vezi lista
+                    <ExternalLink className="size-4" aria-hidden /> {t.veziLista}
                   </Link>
                   <Button size="sm" disabled={r.count === 0} onClick={() => exporta(`seg=${r.key}`)}>
                     <Download className="size-4" aria-hidden /> Excel
@@ -181,12 +186,12 @@ export function AnalizeClient({ orgSlug, date }: { orgSlug: string; date: Analiz
 
       {/* RFM */}
       <Card>
-        <CardHeader title="RFM: recență × frecvență" subtitle="Câți donatori sunt în fiecare combinație între cât de recent au donat și de câte ori au donat. Mai închis = mai mulți." />
+        <CardHeader title={t.rfmTitlu} subtitle={t.rfmSub} />
         <div className="overflow-x-auto">
           <table className="w-full min-w-[560px] border-separate border-spacing-1 text-[13px]">
             <thead>
               <tr>
-                <th className="px-2 py-1 text-left text-[12px] font-semibold text-[var(--ci-text-muted)]">Ultima donație ↓ / Frecvență →</th>
+                <th className="px-2 py-1 text-left text-[12px] font-semibold text-[var(--ci-text-muted)]">{t.rfmColt}</th>
                 {F_ETICHETE.map((f) => (
                   <th key={f} className="px-2 py-1 text-center text-[12px] font-semibold text-[var(--ci-text-muted)]">
                     {f}
@@ -219,16 +224,16 @@ export function AnalizeClient({ orgSlug, date }: { orgSlug: string; date: Analiz
 
       {/* Cohorte */}
       <Card>
-        <CardHeader title="Cohorte: câți mai donează" subtitle="Pe rânduri: anul primei donații. Pe coloane: ce procent din cohortă a donat în fiecare an." />
+        <CardHeader title={t.cohorteTitlu} subtitle={t.cohorteSub} />
         {date.cohorte.length === 0 ? (
-          <p className="text-[13px] text-[var(--ci-text-muted)]">Nu există încă destule date.</p>
+          <p className="text-[13px] text-[var(--ci-text-muted)]">{t.faraDate}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[520px] border-separate border-spacing-1 text-[13px]">
               <thead>
                 <tr>
-                  <th className="px-2 py-1 text-left text-[12px] font-semibold text-[var(--ci-text-muted)]">Cohorta</th>
-                  <th className="px-2 py-1 text-right text-[12px] font-semibold text-[var(--ci-text-muted)]">Donatori</th>
+                  <th className="px-2 py-1 text-left text-[12px] font-semibold text-[var(--ci-text-muted)]">{t.cohorta}</th>
+                  <th className="px-2 py-1 text-right text-[12px] font-semibold text-[var(--ci-text-muted)]">{t.donatori}</th>
                   {ani.map((a) => (
                     <th key={a} className="px-2 py-1 text-center text-[12px] font-semibold text-[var(--ci-text-muted)]">
                       {a}

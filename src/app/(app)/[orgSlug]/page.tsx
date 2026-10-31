@@ -1,12 +1,15 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import type { Locale } from "@/lib/i18n/config";
+import { getLocale } from "@/lib/i18n/get-locale";
+
 import { TRIAL_DAYS } from "@/lib/billing/trial";
 import { CATEGORY_LABELS, TOOLS, type ToolCategory, type ToolDefinition } from "@/lib/registry";
 
 const CATEGORY_ORDER: ToolCategory[] = ["crm", "documente", "rapoarte", "comunicare", "organizare"];
 
-function ToolCard({ tool, orgSlug }: { tool: ToolDefinition; orgSlug: string }) {
+function ToolCard({ tool, orgSlug, locale }: { tool: ToolDefinition; orgSlug: string; locale: Locale }) {
   const inner = (
     <>
       <div className="flex items-start justify-between">
@@ -15,7 +18,7 @@ function ToolCard({ tool, orgSlug }: { tool: ToolDefinition; orgSlug: string }) 
         </span>
         {!tool.live && (
           <span className="rounded-full bg-panel-2 px-2 py-0.5 text-[11px] font-medium text-muted">
-            În curând
+            {locale === "ro" ? "În curând" : "Coming soon"}
           </span>
         )}
       </div>
@@ -44,6 +47,7 @@ export default async function ControlTowerPage({
   params: Promise<{ orgSlug: string }>;
 }) {
   const { orgSlug } = await params;
+  const locale = await getLocale();
   // Singurul instrument "live" azi e CRM-ul (vezi TOOLS mai jos) — pagina
   // principală a organizației E direct dashboard-ul CRM, nu acest grid de
   // tool-uri (majoritatea marcate "În curând" oricum).
@@ -56,11 +60,11 @@ export default async function ControlTowerPage({
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-bold text-ink">Instrumentele tale</h1>
-          <p className="mt-1 text-muted">Acces complet pe durata perioadei de probă.</p>
+          <h1 className="font-display text-2xl font-bold text-ink">{locale === "ro" ? "Instrumentele tale" : "Your tools"}</h1>
+          <p className="mt-1 text-muted">{locale === "ro" ? "Acces complet pe durata perioadei de probă." : "Full access during the trial period."}</p>
         </div>
         <span className="rounded-full bg-brand-green-soft px-3 py-1.5 text-sm font-medium text-brand-green-hover">
-          Perioadă de probă · {TRIAL_DAYS} de zile
+          {locale === "ro" ? "Perioadă de probă · " + TRIAL_DAYS + " de zile" : "Trial period · " + TRIAL_DAYS + " days"}
         </span>
       </div>
 
@@ -75,7 +79,7 @@ export default async function ControlTowerPage({
               </h2>
               <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {items.map((tool) => (
-                  <ToolCard key={tool.id} tool={tool} orgSlug={orgSlug} />
+                  <ToolCard key={tool.id} tool={tool} orgSlug={orgSlug} locale={locale} />
                 ))}
               </div>
             </section>

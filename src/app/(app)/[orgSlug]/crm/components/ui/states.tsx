@@ -2,6 +2,7 @@ import { AlertCircle, Inbox } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { cn } from "../../lib/cn";
+import { Lt } from "./locale-text";
 
 export function EmptyState({
   icon: Icon = Inbox,
@@ -26,7 +27,7 @@ export function EmptyState({
   );
 }
 
-export function ErrorState({ title = "A apărut o eroare", description, retry }: {
+export function ErrorState({ title, description, retry }: {
   title?: string;
   description?: string;
   retry?: () => void;
@@ -34,14 +35,14 @@ export function ErrorState({ title = "A apărut o eroare", description, retry }:
   return (
     <div className="flex flex-col items-center justify-center rounded-[var(--ci-radius-card)] border border-[var(--ci-red-soft)] bg-[var(--ci-red-soft)] px-6 py-14 text-center">
       <AlertCircle className="mb-3 h-6 w-6 text-[var(--ci-red)]" />
-      <p className="ci-display text-sm font-semibold text-[var(--ci-text)]">{title}</p>
+      <p className="ci-display text-sm font-semibold text-[var(--ci-text)]">{title ?? <Lt ro="A apărut o eroare" en="Something went wrong" />}</p>
       {description && <p className="mt-1 max-w-sm text-[13px] text-[var(--ci-text-muted)]">{description}</p>}
       {retry && (
         <button
           onClick={retry}
           className="mt-4 rounded-[var(--ci-radius-btn)] bg-[var(--ci-red)] px-3.5 h-9 text-sm font-medium text-white hover:opacity-90"
         >
-          Încearcă din nou
+          <Lt ro="Încearcă din nou" en="Try again" />
         </button>
       )}
     </div>

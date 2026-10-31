@@ -2,6 +2,8 @@ import { headers } from "next/headers";
 
 import { requireOrgAccess } from "@/lib/auth/guard";
 import { areModul } from "@/lib/billing/packages";
+import { SETARI_GDPR_UI_DICT } from "@/lib/i18n/dictionaries/setari-gdpr-ui";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { pachetPentruModule } from "@/lib/billing/trial";
 
 import { ApiSection } from "../../setari/api-section";
@@ -17,6 +19,7 @@ import { RoluriIntegrari } from "./roluri-integrari";
 export default async function CrmSetariPage({ params }: { params: Promise<{ orgSlug: string }> }) {
   const { orgSlug } = await params;
   const access = await requireOrgAccess(orgSlug);
+  const d = SETARI_GDPR_UI_DICT[await getLocale()];
   const esteAdmin = access.role === "owner" || access.role === "admin";
   const pachet = pachetPentruModule(access.orgPackage, access.userEmail);
   const areCampuri = areModul(pachet, "campuri-personalizate");
@@ -36,7 +39,7 @@ export default async function CrmSetariPage({ params }: { params: Promise<{ orgS
           {campuri ? (
             <CampuriSection campuri={campuri} />
           ) : (
-            <ModulBlocatInline orgSlug={orgSlug} modul="campuri-personalizate" descriere="Adaugă câmpurile tale la donatori și la firme (text, număr, dată, alegere, da/nu), vizibile în fișe, în export și în API." poateSchimba />
+            <ModulBlocatInline orgSlug={orgSlug} modul="campuri-personalizate" descriere={d.campuriModul} poateSchimba />
           )}
         </div>
       )}
@@ -45,7 +48,7 @@ export default async function CrmSetariPage({ params }: { params: Promise<{ orgS
           {stareApi ? (
             <ApiSection stare={stareApi} baza={origine} />
           ) : (
-            <ModulBlocatInline orgSlug={orgSlug} modul="api-webhooks" descriere="Conectează Alexandrit la alte instrumente: chei API pentru citirea donatorilor și a donațiilor și webhook-uri pentru donații reușite și dezabonări." poateSchimba />
+            <ModulBlocatInline orgSlug={orgSlug} modul="api-webhooks" descriere={d.apiModul} poateSchimba />
           )}
         </div>
       )}

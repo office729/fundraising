@@ -1,9 +1,12 @@
 "use client";
 
+import { COMPONENTE_UI_DICT } from "@/lib/i18n/dictionaries/componente-ui";
 import { useFocusTrap } from "@/lib/use-focus-trap";
 import { X } from "lucide-react";
 import { useId, useRef } from "react";
 import type { ReactNode } from "react";
+
+import { useLocale } from "../../lib/locale-context";
 
 export function Dialog({
   open,
@@ -19,6 +22,7 @@ export function Dialog({
   width?: string;
 }) {
   const dialogRef = useRef<HTMLDivElement>(null);
+  const inchide = COMPONENTE_UI_DICT[useLocale()].dialog.inchide;
   // id unic per instanță: două dialoguri deschise odată nu mai împart același `aria-labelledby`.
   const titluId = useId();
   useFocusTrap(open, dialogRef, onClose);
@@ -28,7 +32,7 @@ export function Dialog({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <button
-        aria-label="Închide"
+        aria-label={inchide}
         tabIndex={-1}
         onClick={onClose}
         className="absolute inset-0 bg-[var(--ci-text)]/40 backdrop-blur-[1px]"
@@ -47,7 +51,7 @@ export function Dialog({
           </h2>
           <button
             onClick={onClose}
-            aria-label="Închide"
+            aria-label={inchide}
             className="rounded-[var(--ci-radius-btn)] p-1.5 text-[var(--ci-text-muted)] transition-colors hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)]"
           >
             <X className="h-4 w-4" />

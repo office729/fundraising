@@ -10,6 +10,11 @@ import { bandaFirma, type Banda } from "@/lib/prioritizare-firme";
 import { adaugaZileLucratoare, aziBucuresti, COOLDOWN_CAUTARE_ORE, LIMITA_APELURI_PE_ZI, REZERVARE_EXPIRA_MIN } from "@/lib/prospectare/limite";
 import { listeUrmarire, palnieOutreach } from "@/lib/waalaxy-server";
 import { aprobaCandidat } from "../companii/[id]/prospectare-actions";
+import { getLocale } from "@/lib/i18n/get-locale";
+import { DECIDENTI_UI_DICT } from "@/lib/i18n/dictionaries/decidenti-ui";
+
+// Mesajele afișate utilizatorului, în limba aleasă (cookie-ul de limbă).
+const mesaje = async () => DECIDENTI_UI_DICT[await getLocale()].msg;
 
 // Pagina „Decidenți”: ce ai de făcut cu persoanele găsite prin prospectare, într-un singur loc (pachetul IMPACT).
 //  - De contactat azi: persoanele aprobate, cu responsabil și termen pentru următorul pas;
@@ -120,7 +125,8 @@ export const getCoadaAzi = withOrgSession(
 type PasUrmarire = "contactat" | "raspuns" | "inchis" | "preia";
 const aplicaPas = withOrgSession(
   async (ctx, id: string, pas: PasUrmarire): Promise<void> => {
-    if (!UUID.test(id)) throw new EroareUtilizator("Persoana nu a fost găsită.");
+    const m = await mesaje();
+    if (!UUID.test(id)) throw new EroareUtilizator(m.persoanaNegasita);
     const deschis = and(
       eq(prospectareCandidati.id, id),
       eq(prospectareCandidati.orgId, ctx.orgId),
@@ -136,19 +142,20 @@ const aplicaPas = withOrgSession(
             ? { stadiu: "inchis", urmatorPasLa: null }
             : { responsabilId: ctx.userId };
     const r = await ctx.db.update(prospectareCandidati).set(set).where(deschis).returning({ id: prospectareCandidati.id });
-    if (r.length === 0) throw new EroareUtilizator("Persoana nu mai e în lista de contactat.");
+    if (r.length === 0) throw new EroareUtilizator(m.nuMaiEInLista);
     revalidatePath(`/${ctx.orgSlug}/crm/decidenti`);
   },
   OPTIUNI,
 );
 
 export async function pasUrmarireAction(orgSlug: string, id: string, pas: string): Promise<{ error: string | null }> {
+  const m = await mesaje();
   try {
-    if (!["contactat", "raspuns", "inchis", "preia"].includes(pas)) throw new EroareUtilizator("Acțiune necunoscută.");
+    if (!["contactat", "raspuns", "inchis", "preia"].includes(pas)) throw new EroareUtilizator(m.actiuneNecunoscuta);
     await aplicaPas(orgSlug, id, pas as PasUrmarire);
     return { error: null };
   } catch (e) {
-    return { error: mesajSigur(e, "Nu am putut salva. Încearcă din nou.", "prospectare-pas") };
+    return { error: mesajSigur(e, m.nuAmPututSalva, "prospectare-pas") };
   }
 }
 
@@ -208,9 +215,10 @@ export type RezultatLot = { aprobati: number; erori: string[]; avertismente: str
 
 // Aprobarea în lot: fiecare persoană trece prin aceeași aprobare ca una singură (suprimări, poartă atomică, responsabil, termen, notă).
 export async function aprobaInLotAction(orgSlug: string, ids: string[], trimiteWaalaxy = false): Promise<RezultatLot> {
+  const m = await mesaje();
   const rezultat: RezultatLot = { aprobati: 0, erori: [], avertismente: [] };
   const curate = [...new Set((Array.isArray(ids) ? ids : []).filter((x): x is string => typeof x === "string" && UUID.test(x)))].slice(0, MAX_IN_LOT);
-  if (curate.length === 0) return { ...rezultat, erori: ["Nu ai selectat nicio persoană."] };
+  if (curate.length === 0) return { ...rezultat, erori: [m.nicioPersoanaSelectata] };
   for (const id of curate) {
     try {
       const r = await aprobaCandidat(orgSlug, id, trimiteWaalaxy === true);
@@ -218,7 +226,7 @@ export async function aprobaInLotAction(orgSlug: string, ids: string[], trimiteW
       else rezultat.aprobati++;
       if (r.avertisment) rezultat.avertismente.push(r.avertisment);
     } catch (e) {
-      rezultat.erori.push(mesajSigur(e, "O persoană nu a putut fi adăugată.", "prospectare-aprobare-lot"));
+      rezultat.erori.push(mesajSigur(e, m.nuAPutut, "prospectare-aprobare-lot"));
     }
   }
   return rezultat;

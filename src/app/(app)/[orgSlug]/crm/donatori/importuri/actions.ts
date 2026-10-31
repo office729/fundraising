@@ -5,6 +5,8 @@ import { desc, eq } from "drizzle-orm";
 import { withOrgSession } from "@/lib/auth/guard";
 import { appUsers, donatoriImporturi } from "@/lib/db/schema";
 import { stergeImport } from "@/lib/donatori-import-server";
+import { DONATORI_UI3_DICT } from "@/lib/i18n/dictionaries/donatori-ui-3";
+import { getLocale } from "@/lib/i18n/get-locale";
 
 export type ImportListat = { id: string; nume: string; de: string | null; pana: string | null; nrImportate: number; nrDuplicate: number; nrDonatoriNoi: number; creatLa: string; autor: string | null };
 
@@ -23,12 +25,13 @@ export const listeazaImporturi = withOrgSession(async (ctx): Promise<ImportLista
 });
 
 export const stergeImportAction = withOrgSession(async (ctx, id: string): Promise<{ ok: true; donatoriStersi: number; donatiiSterse: number } | { ok: false; eroare: string }> => {
-  if (ctx.role !== "owner" && ctx.role !== "admin") return { ok: false, eroare: "Doar un administrator poate șterge un import." };
-  if (!/^[0-9a-f-]{36}$/i.test(String(id))) return { ok: false, eroare: "Import invalid." };
+  const er = DONATORI_UI3_DICT[await getLocale()].importuri.erori;
+  if (ctx.role !== "owner" && ctx.role !== "admin") return { ok: false, eroare: er.doarAdmin };
+  if (!/^[0-9a-f-]{36}$/i.test(String(id))) return { ok: false, eroare: er.importInvalid };
   try {
     const r = await stergeImport(ctx, id);
     return { ok: true, donatoriStersi: r.donatoriStersi, donatiiSterse: r.stersi };
   } catch (e) {
-    return { ok: false, eroare: e instanceof Error ? e.message : "Nu am putut șterge importul." };
+    return { ok: false, eroare: e instanceof Error ? e.message : er.nuAmSters };
   }
 });

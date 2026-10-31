@@ -6,6 +6,8 @@ import { useState } from "react";
 
 import { Button } from "../../components/ui/button";
 import { formatDataOra } from "../../lib/format";
+import { useLocale } from "../../lib/locale-context";
+import { COMPANII_UI_DICT } from "@/lib/i18n/dictionaries/companii-ui";
 import { verificaAnaf } from "../actions";
 
 // Buton „Verifică ANAF" din tabul Financiar — cere datele reale (stare
@@ -24,6 +26,7 @@ export function VerificaAnafButton({
   anafVerificatLa: string | null;
 }) {
   const { orgSlug } = useParams<{ orgSlug: string }>();
+  const ui = COMPANII_UI_DICT[useLocale()].financiar;
   const router = useRouter();
   const [seVerifica, setSeVerifica] = useState(false);
   const [eroare, setEroare] = useState("");
@@ -43,9 +46,9 @@ export function VerificaAnafButton({
   return (
     <div className="mb-4 flex flex-wrap items-center gap-3 rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface-2)] px-3.5 py-3">
       <Button variant="secondary" size="sm" onClick={verifica} loading={seVerifica} disabled={!cui}>
-        <RefreshCw className="h-3.5 w-3.5" /> Verifică ANAF
+        <RefreshCw className="h-3.5 w-3.5" /> {ui.verificaAnaf}
       </Button>
-      {!cui && <span className="text-[12px] text-[var(--ci-text-faint)]">Completează CUI-ul în tabul Editare ca să poți verifica.</span>}
+      {!cui && <span className="text-[12px] text-[var(--ci-text-faint)]">{ui.completeazaCui}</span>}
       {anafVerificatLa && (
         <span className="flex items-center gap-1.5 text-[12px] text-[var(--ci-text-muted)]">
           {anafActiv ? (
@@ -53,12 +56,12 @@ export function VerificaAnafButton({
           ) : (
             <ShieldAlert className="h-3.5 w-3.5 text-[var(--ci-red)]" />
           )}
-          {anafActiv ? "Activă la ANAF" : "Inactivă fiscal la ANAF — verifică înainte să o abordezi"} · verificat {formatDataOra(anafVerificatLa)}
+          {anafActiv ? ui.activa : ui.inactiva} · {ui.verificat(formatDataOra(anafVerificatLa))}
         </span>
       )}
       {!eroare && !anafVerificatLa && cui && (
         <span className="flex items-center gap-1.5 text-[12px] text-[var(--ci-text-faint)]">
-          <CheckCircle2 className="h-3.5 w-3.5" /> Aduce date reale (CA, profit, angajați) direct din bilanțul depus la ANAF
+          <CheckCircle2 className="h-3.5 w-3.5" /> {ui.aduceDate}
         </span>
       )}
       {eroare && <span className="text-[12px] text-[var(--ci-red)]">{eroare}</span>}

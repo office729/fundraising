@@ -5,12 +5,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 
-import { vechime } from "@/lib/prospectare/afisare";
+import { vechime } from "@/lib/i18n/dictionaries/decidenti-ui";
+import { COMPANII_UI_DICT } from "@/lib/i18n/dictionaries/companii-ui";
 import { NUME_FURNIZOR, type Furnizor } from "@/lib/prospectare/motor";
 
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Card, CardHeader } from "../../components/ui/card";
+import { useLocale } from "../../lib/locale-context";
 import { CrediteFurnizori } from "./credite-furnizori";
 import { aprobaCandidatAction, cautaDecidentiPentruFirma, respingeCandidatAction, type RezultatActiune, type StareProspectare } from "./prospectare-actions";
 
@@ -18,6 +20,8 @@ import { aprobaCandidatAction, cautaDecidentiPentruFirma, respingeCandidatAction
 // La aprobare, persoana poate fi trimisă și în lista Waalaxy aleasă de organizație (abordare pe LinkedIn).
 export function DecidentiCard({ orgSlug, companyId, stare }: { orgSlug: string; companyId: string; stare: StareProspectare }) {
   const router = useRouter();
+  const locale = useLocale();
+  const ui = COMPANII_UI_DICT[locale].decidenti;
   const [pending, startTransition] = useTransition();
   const [rezultat, setRezultat] = useState<RezultatActiune | null>(null);
   const [eroare, setEroare] = useState<string | null>(null);
@@ -73,24 +77,24 @@ export function DecidentiCard({ orgSlug, companyId, stare }: { orgSlug: string; 
     <Card>
       <div aria-busy={pending}>
         <CardHeader
-          title={`Decidenți găsiți${stare.candidati.length ? ` (${stare.candidati.length})` : ""}`}
+          title={ui.titlu(stare.candidati.length)}
           subtitle={
             faraChei
               ? stare.esteAdmin
-                ? "Adaugă conturile tale de la Apollo, Prospeo, Hunter sau Lusha ca să cauți decidenți pentru firmă."
-                : "Nicio cheie conectată. Cere unui administrator al organizației să le adauge în Setări → Prospectare."
-              : `Căutare cu conturile tale la ${numeFurnizori.join(", ")}. Persoanele găsite devin contacte abia după ce le aprobi.`
+                ? ui.subtitluAdmin
+                : ui.subtitluMembru
+              : ui.subtitluCautare(numeFurnizori.join(", "))
           }
           action={
             faraChei ? (
               stare.esteAdmin ? (
                 <Link href={`/${orgSlug}/crm/setari#prospectare`} className="inline-flex min-h-10 items-center rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-3 text-sm font-semibold text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]">
-                  Adaugă cheile
+                  {ui.adaugaCheile}
                 </Link>
               ) : null
             ) : (
               <Button variant="primary" className="min-h-10" onClick={() => cauta(false)} loading={pending}>
-                <Search className="h-4 w-4" aria-hidden /> {pending ? "Se caută…" : "Caută decidenți"}
+                <Search className="h-4 w-4" aria-hidden /> {pending ? ui.seCauta : ui.cautaBtn}
               </Button>
             )
           }
@@ -100,12 +104,11 @@ export function DecidentiCard({ orgSlug, companyId, stare }: { orgSlug: string; 
 
         {!faraChei && (
           <p className="mb-3 text-xs leading-relaxed text-[var(--ci-text-muted)]">
-            {pending ? `Se caută la ${numeFurnizori.join(", ")}; poate dura până la un minut.` : "Poate consuma credite din conturile conectate (de regulă câteva)."}
+            {pending ? ui.seCautaLa(numeFurnizori.join(", ")) : ui.poateConsuma}
             {stare.ultimaCautare && !pending && (
               <>
                 {" "}
-                Ultima căutare: {vechime(stare.ultimaCautare.la)}
-                {stare.ultimaCautare.deCine ? `, de ${stare.ultimaCautare.deCine}` : ""}.
+                {ui.ultimaCautare(vechime(stare.ultimaCautare.la, locale), stare.ultimaCautare.deCine)}
               </>
             )}
           </p>
@@ -123,17 +126,14 @@ export function DecidentiCard({ orgSlug, companyId, stare }: { orgSlug: string; 
         )}
         {deja && (
           <div role="status" className="mb-3 rounded-lg bg-[var(--ci-amber-soft)] px-3 py-2 text-[13px] text-[#7a3e00]">
-            <p>
-              Firma a fost căutată {vechime(deja.la)}
-              {deja.deCine ? `, de ${deja.deCine}` : ""}. {deja.poateForta ? "O nouă căutare consumă din nou credite din conturile tale." : "Un administrator poate repeta căutarea dacă e nevoie."}
-            </p>
+            <p>{ui.cautataRecent(vechime(deja.la, locale), deja.deCine, deja.poateForta)}</p>
             {deja.poateForta && (
               <div className="mt-2 flex gap-2">
                 <Button variant="primary" size="sm" className="min-h-10" onClick={() => cauta(true)} disabled={pending}>
-                  Caută din nou
+                  {ui.cautaDinNou}
                 </Button>
                 <Button size="sm" className="min-h-10" onClick={() => setRezultat(null)}>
-                  Renunță
+                  {ui.renunta}
                 </Button>
               </div>
             )}
@@ -141,14 +141,14 @@ export function DecidentiCard({ orgSlug, companyId, stare }: { orgSlug: string; 
         )}
         {rezultat?.ok && cautareEsuata && (
           <div role="alert" className="mb-3 rounded-lg bg-[var(--ci-red-soft)] px-3 py-2 text-[13px] text-[#9b1c1c]">
-            <p className="font-semibold">Căutarea nu a putut fi făcută complet, deci nu înseamnă că firma nu are decidenți.</p>
+            <p className="font-semibold">{ui.cautareIncompleta}</p>
             <ul className="mt-1 list-disc space-y-0.5 pl-5">
               {rezultat.avertismente?.map((a, i) => (
                 <li key={i}>{a}</li>
               ))}
             </ul>
-            <Button size="sm" className="mt-2 min-h-10" onClick={() => cauta(true)} disabled={pending || !stare.esteAdmin} title={stare.esteAdmin ? undefined : "Doar un administrator poate repeta o căutare recentă."}>
-              Încearcă din nou
+            <Button size="sm" className="mt-2 min-h-10" onClick={() => cauta(true)} disabled={pending || !stare.esteAdmin} title={stare.esteAdmin ? undefined : ui.doarAdminRepeta}>
+              {ui.incearcaDinNou}
             </Button>
           </div>
         )}
@@ -156,10 +156,10 @@ export function DecidentiCard({ orgSlug, companyId, stare }: { orgSlug: string; 
           <div role="status" className="mb-3 rounded-lg bg-[var(--ci-surface-2)] px-3 py-2 text-[13px] text-[var(--ci-text-muted)]">
             <p>
               {rezultat.noi
-                ? `Am găsit ${rezultat.noi} ${rezultat.noi === 1 ? "persoană nouă" : "persoane noi"} pentru aprobare.`
+                ? ui.amGasit(rezultat.noi)
                 : rezultat.gasiti
-                  ? "Persoanele găsite erau deja în contacte sau în lista ta."
-                  : "Nu am găsit persoane noi pentru această firmă."}
+                  ? ui.dejaInContacte
+                  : ui.niciuna}
             </p>
             {rezultat.avertismente && rezultat.avertismente.length > 0 && (
               <ul className="mt-1 list-disc space-y-0.5 pl-5 text-[#7a3e00]">
@@ -183,7 +183,7 @@ export function DecidentiCard({ orgSlug, companyId, stare }: { orgSlug: string; 
 
         {stare.candidati.length > 0 ? (
           <>
-            <p className="mb-2 text-xs text-[var(--ci-text-muted)]">De aprobat, ordonate după cât de probabil decid ele sponsorizarea:</p>
+            <p className="mb-2 text-xs text-[var(--ci-text-muted)]">{ui.deAprobatOrdonate}</p>
             <ul className="space-y-2">
               {stare.candidati.map((c) => {
                 const trimiteWaalaxy = Boolean(inWaalaxy[c.id] && c.linkedin);
@@ -210,24 +210,24 @@ export function DecidentiCard({ orgSlug, companyId, stare }: { orgSlug: string; 
                               {c.email}{" "}
                               {c.emailStatus === "valid" && (
                                 <Badge tone="green" icon={false}>
-                                  e-mail verificat
+                                  {ui.emailVerificat}
                                 </Badge>
                               )}
                               {c.emailStatus === "risky" && (
                                 <Badge tone="amber" icon={false}>
-                                  e-mail riscant
+                                  {ui.emailRiscant}
                                 </Badge>
                               )}
                             </span>
                           ) : (
-                            <span>{c.linkedin ? "fără e-mail" : "fără date de contact"}</span>
+                            <span>{c.linkedin ? ui.faraEmail : ui.faraDateContact}</span>
                           )}
                           {c.linkedin && (
                             <a href={c.linkedin} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-0.5 text-[var(--ci-blue)] underline-offset-2 hover:underline">
                               LinkedIn <ExternalLink className="h-3 w-3" aria-hidden />
                             </a>
                           )}
-                          <span>găsit {vechime(c.gasitLa)}</span>
+                          <span>{ui.gasit(vechime(c.gasitLa, locale))}</span>
                         </p>
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
@@ -235,13 +235,13 @@ export function DecidentiCard({ orgSlug, companyId, stare }: { orgSlug: string; 
                           variant="primary"
                           className="min-h-10"
                           disabled={pending}
-                          aria-label={`${trimiteWaalaxy ? "Adaugă la contacte și trimite în Waalaxy" : "Adaugă la contacte"}: ${c.nume}`}
-                          onClick={() => ruleaza(() => aprobaCandidatAction(orgSlug, c.id, trimiteWaalaxy), `${c.nume} a fost adăugat(ă) la contacte${trimiteWaalaxy ? " și trimis(ă) în Waalaxy" : ""}. Primul contact: în 2 zile lucrătoare, vezi „De contactat azi”. Informează persoana despre prelucrarea datelor (art. 14 GDPR).`)}
+                          aria-label={ui.adaugaAria(trimiteWaalaxy, c.nume)}
+                          onClick={() => ruleaza(() => aprobaCandidatAction(orgSlug, c.id, trimiteWaalaxy), ui.adaugat(c.nume, trimiteWaalaxy))}
                         >
-                          <UserCheck className="h-4 w-4" aria-hidden /> {trimiteWaalaxy ? "Adaugă și trimite în Waalaxy" : "Adaugă la contacte"}
+                          <UserCheck className="h-4 w-4" aria-hidden /> {trimiteWaalaxy ? ui.adaugaSiTrimite : ui.adaugaLaContacte}
                         </Button>
-                        <Button className="min-h-10" disabled={pending} aria-label={`Respinge: ${c.nume}`} onClick={() => ruleaza(() => respingeCandidatAction(orgSlug, c.id, false), `${c.nume} a fost respins(ă) și nu mai e propus(ă) pentru această firmă.`)}>
-                          <UserX className="h-4 w-4" aria-hidden /> Respinge
+                        <Button className="min-h-10" disabled={pending} aria-label={ui.respingeAria(c.nume)} onClick={() => ruleaza(() => respingeCandidatAction(orgSlug, c.id, false), ui.respins(c.nume))}>
+                          <UserX className="h-4 w-4" aria-hidden /> {ui.respinge}
                         </Button>
                       </div>
                     </div>
@@ -249,27 +249,27 @@ export function DecidentiCard({ orgSlug, companyId, stare }: { orgSlug: string; 
                     {stare.waalaxyGata && c.linkedin && (
                       <label className="mt-2 flex min-h-8 items-center gap-2 py-1 text-xs text-[var(--ci-text-muted)]">
                         <input type="checkbox" className="h-4 w-4" checked={Boolean(inWaalaxy[c.id])} onChange={(e) => setInWaalaxy((v) => ({ ...v, [c.id]: e.target.checked }))} />
-                        La adăugare: trimite-o și în Waalaxy (abordare pe LinkedIn)
+                        {ui.trimiteWaalaxyBifa}
                       </label>
                     )}
 
                     {confirmaExcludere === c.id ? (
-                      <div role="alertdialog" aria-label={`Exclude ${c.nume} de la prospectare`} className="mt-2 rounded-md bg-[var(--ci-surface-2)] p-3 text-[13px] text-[var(--ci-text)]">
+                      <div role="alertdialog" aria-label={ui.excludeAria(c.nume)} className="mt-2 rounded-md bg-[var(--ci-surface-2)] p-3 text-[13px] text-[var(--ci-text)]">
                         <p>
-                          <strong>{c.nume}</strong> a cerut să nu fie contactată. Nu va mai fi propusă pentru nicio firmă a organizației (poți anula excluderea din Setări → Prospectare).
+                          <strong>{c.nume}</strong> {ui.excludeText}
                         </p>
                         <div className="mt-2 flex gap-2">
-                          <Button variant="danger" size="sm" className="min-h-10" disabled={pending} onClick={() => ruleaza(() => respingeCandidatAction(orgSlug, c.id, true), `${c.nume} a fost exclus(ă) de la prospectare, pentru toate firmele.`)}>
-                            Confirmă excluderea
+                          <Button variant="danger" size="sm" className="min-h-10" disabled={pending} onClick={() => ruleaza(() => respingeCandidatAction(orgSlug, c.id, true), ui.exclus(c.nume))}>
+                            {ui.confirmaExcluderea}
                           </Button>
                           <Button size="sm" className="min-h-10" onClick={() => setConfirmaExcludere(null)}>
-                            Renunță
+                            {ui.renunta}
                           </Button>
                         </div>
                       </div>
                     ) : (
                       <button type="button" disabled={pending} onClick={() => setConfirmaExcludere(c.id)} className="mt-1 min-h-8 text-xs text-[var(--ci-text-muted)] underline underline-offset-2 hover:text-[var(--ci-text)]">
-                        Ea a cerut să nu fie contactată
+                        {ui.ceaCerut}
                       </button>
                     )}
                   </li>
@@ -277,21 +277,20 @@ export function DecidentiCard({ orgSlug, companyId, stare }: { orgSlug: string; 
               })}
             </ul>
             {!stare.waalaxyGata && areLinkedin && stare.esteAdmin && (
-              <p className="mt-2 text-xs text-[var(--ci-text-muted)]">Poți trimite persoanele și în Waalaxy, pentru abordare pe LinkedIn, după ce conectezi contul și alegi o listă în Setări → Prospectare.</p>
+              <p className="mt-2 text-xs text-[var(--ci-text-muted)]">{ui.waalaxyInfo}</p>
             )}
           </>
         ) : (
           !faraChei &&
           !pending && (
             <p className="rounded-lg border border-dashed border-[var(--ci-border)] px-3 py-4 text-center text-[13px] text-[var(--ci-text-muted)]">
-              Nicio persoană de aprobat. Apasă „Caută decidenți” ca să vezi cine decide sponsorizările la această firmă.
+              {ui.nicioPersoana}
             </p>
           )
         )}
 
         <p className="mt-3 text-xs leading-relaxed text-[var(--ci-text-muted)]">
-          <strong className="font-semibold text-[var(--ci-text)]">Informarea persoanelor (art. 14 GDPR).</strong> Datele lor vin de la un terț: după ce le adaugi, informează-le despre prelucrare cât mai repede și în cel mult 30 de zile; la primul contact, spune-le sursa datelor. Azi: {stare.apeluriAzi} din {stare.limitaApeluri}{" "}
-          apeluri către instrumente.
+          <strong className="font-semibold text-[var(--ci-text)]">{ui.informareTitlu}</strong> {ui.informareText(stare.apeluriAzi, stare.limitaApeluri)}
         </p>
       </div>
     </Card>

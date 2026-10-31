@@ -4,6 +4,8 @@ import { and, eq } from "drizzle-orm";
 
 import { withOrgAdmin, withOrgSession } from "@/lib/auth/guard";
 import { fundraisingLocalGroups, fundraisingMediaContacts } from "@/lib/db/schema";
+import { PRESA_GRUPURI_UI_DICT } from "@/lib/i18n/dictionaries/presa-grupuri-ui";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { urlWebSigur } from "@/lib/validation";
 
 const MEDIA_TIPURI = ["publicatie", "tv", "radio", "site"] as const;
@@ -18,14 +20,15 @@ export const listMediaContacts = withOrgSession(async (ctx) => {
 
 export const adaugaMediaContactAction = withOrgAdmin(
   async (ctx, _prevState: FormState, formData: FormData): Promise<FormState> => {
+    const t = PRESA_GRUPURI_UI_DICT[await getLocale()].erori;
     const judet = String(formData.get("judet") ?? "").trim();
     const numeRedactie = String(formData.get("numeRedactie") ?? "").trim();
     const tip = String(formData.get("tip") ?? "");
-    if (!judet) return { error: "Județul este obligatoriu." };
-    if (!numeRedactie) return { error: "Numele redacției este obligatoriu." };
-    if (!MEDIA_TIPURI.includes(tip as (typeof MEDIA_TIPURI)[number])) return { error: "Tip de contact invalid." };
+    if (!judet) return { error: t.judetObligatoriu };
+    if (!numeRedactie) return { error: t.numeRedactieObligatoriu };
+    if (!MEDIA_TIPURI.includes(tip as (typeof MEDIA_TIPURI)[number])) return { error: t.tipInvalid };
     const websiteBrut = String(formData.get("website") ?? "").trim();
-    if (websiteBrut && !urlWebSigur(websiteBrut)) return { error: "Website-ul nu e o adresă web validă (http/https)." };
+    if (websiteBrut && !urlWebSigur(websiteBrut)) return { error: t.websiteInvalid };
 
     await ctx.db.insert(fundraisingMediaContacts).values({
       orgId: ctx.orgId,
@@ -51,16 +54,17 @@ export const listLocalGroups = withOrgSession(async (ctx) => {
 
 export const adaugaLocalGroupAction = withOrgAdmin(
   async (ctx, _prevState: FormState, formData: FormData): Promise<FormState> => {
+    const t = PRESA_GRUPURI_UI_DICT[await getLocale()].erori;
     const judet = String(formData.get("judet") ?? "").trim();
     const nume = String(formData.get("nume") ?? "").trim();
     const link = String(formData.get("link") ?? "").trim();
     const platforma = String(formData.get("platforma") ?? "");
-    if (!judet) return { error: "Județul este obligatoriu." };
-    if (!nume) return { error: "Numele grupului este obligatoriu." };
-    if (!link) return { error: "Link-ul grupului este obligatoriu." };
+    if (!judet) return { error: t.judetObligatoriu };
+    if (!nume) return { error: t.numeGrupObligatoriu };
+    if (!link) return { error: t.linkObligatoriu };
     const linkSigur = urlWebSigur(link);
-    if (!linkSigur) return { error: "Link-ul grupului nu e o adresă web validă (http/https)." };
-    if (!GROUP_PLATFORME.includes(platforma as (typeof GROUP_PLATFORME)[number])) return { error: "Platformă invalidă." };
+    if (!linkSigur) return { error: t.linkInvalid };
+    if (!GROUP_PLATFORME.includes(platforma as (typeof GROUP_PLATFORME)[number])) return { error: t.platformaInvalida };
 
     await ctx.db.insert(fundraisingLocalGroups).values({
       orgId: ctx.orgId,

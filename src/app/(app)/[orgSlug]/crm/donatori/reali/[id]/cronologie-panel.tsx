@@ -4,9 +4,12 @@ import { BadgeCheck, CalendarClock, HandCoins, Mail, MailX, MessageSquareText, P
 import type { LucideIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import { grupeazaPeLuni, type EvenimentCronologie, type TipEveniment, type TonEveniment } from "@/lib/cronologie-donator";
+import type { EvenimentCronologie, TipEveniment, TonEveniment } from "@/lib/cronologie-donator";
+import type { Locale } from "@/lib/i18n/config";
+import { DONATORI_UI2_DICT } from "@/lib/i18n/dictionaries/donatori-ui-2";
 
 import { EmptyState } from "../../../components/ui/states";
+import { useLocale } from "../../../lib/locale-context";
 
 // Cronologia donatorului: tot ce s-a întâmplat cu el, cele mai noi întâi, pe luni. Filtre simple după fel de eveniment.
 const ICOANE: Record<TipEveniment, LucideIcon> = {
@@ -29,27 +32,77 @@ const CULOARE: Record<TonEveniment, string> = {
   rosu: "bg-[var(--ci-red-soft)] text-[#9b1c1c]",
   neutru: "bg-[var(--ci-surface-2)] text-[var(--ci-text-muted)]",
 };
-const FILTRE: { cheie: string; eticheta: string; tipuri: TipEveniment[] | null }[] = [
-  { cheie: "toate", eticheta: "Toate", tipuri: null },
-  { cheie: "donatii", eticheta: "Donații", tipuri: ["donatie", "donatie_importata"] },
-  { cheie: "echipa", eticheta: "Echipa (notițe, apeluri)", tipuri: ["nota", "apel", "intalnire", "email_echipa", "marcaj"] },
-  { cheie: "emailuri", eticheta: "E-mailuri și acord", tipuri: ["parcurs", "acord_email", "dezabonare", "adresa"] },
+const FILTRE: { cheie: string; tipuri: TipEveniment[] | null }[] = [
+  { cheie: "toate", tipuri: null },
+  { cheie: "donatii", tipuri: ["donatie", "donatie_importata"] },
+  { cheie: "echipa", tipuri: ["nota", "apel", "intalnire", "email_echipa", "marcaj"] },
+  { cheie: "emailuri", tipuri: ["parcurs", "acord_email", "dezabonare", "adresa"] },
 ];
 
-const dataOra = (iso: string) => new Date(iso).toLocaleString("ro-RO", { timeZone: "Europe/Bucharest", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+// Evenimentele vin din lib/cronologie-donator.ts cu texte în română; în engleză le traducem după tiparele cunoscute (orice altceva rămâne neschimbat).
+function tradu(e: EvenimentCronologie, locale: Locale): { titlu: string; detaliu: string | null } {
+  const detaliu = e.detaliu ?? null;
+  if (locale === "ro") return { titlu: e.titlu, detaliu };
+  const t = DONATORI_UI2_DICT[locale];
+  const c = t.cronTr;
+  const leiEn = (s: string) => s.replace(/\./g, ",");
+  let m = /^(Donație(?: în așteptare| eșuată| rambursată)?): (.+ lei)( \(lunară\))?$/.exec(e.titlu);
+  if (m) return { titlu: `${c.donatieStatus[m[1]] ?? m[1]}: ${leiEn(m[2])}${m[3] ? ` (${c.lunara})` : ""}`, detaliu: trad230Detaliu(detaliu, c) };
+  m = /^Donație importată: (.+ lei)$/.exec(e.titlu);
+  if (m) return { titlu: `${c.importata}: ${leiEn(m[1])}`, detaliu: trad230Detaliu(detaliu, c) };
+  m = /^Parcurs „(.+)”: în grupul de control \(nu a primit e-mail\)$/.exec(e.titlu);
+  if (m) return { titlu: c.parcursControl(c.parcursNume[m[1]] ?? m[1]), detaliu };
+  m = /^E-mail din parcursul „(.+)”, pasul (\d+)( \(în curs de trimitere\))?$/.exec(e.titlu);
+  if (m) return { titlu: c.parcursEmail(c.parcursNume[m[1]] ?? m[1], m[2], !!m[3]), detaliu };
+  if (e.tip === "nota" || e.tip === "apel" || e.tip === "intalnire" || e.tip === "email_echipa") {
+    const tipuriRo = Object.entries({ nota: "Notiță", apel: "Apel", intalnire: "Întâlnire", email: "E-mail trimis de echipă" });
+    const rezultateRo = Object.entries({ raspuns: "A răspuns", fara_raspuns: "Nu a răspuns", mesaj_vocal: "Mesaj vocal", reapel: "De sunat din nou", refuz: "A refuzat" });
+    const [partea1, ...rest] = e.titlu.split(": ");
+    const tip = tipuriRo.find(([, ro]) => ro === partea1)?.[0];
+    const rez = rest.length ? rezultateRo.find(([, ro]) => ro === rest.join(": "))?.[0] : null;
+    if (tip) return { titlu: rez ? `${t.notite.tipuri[tip]}: ${t.notite.rezultate[rez]}` : t.notite.tipuri[tip], detaliu };
+  }
+  const fix = c.fixe[e.titlu];
+  return { titlu: fix ?? e.titlu, detaliu: detaliu && c.fixe[detaliu] ? c.fixe[detaliu] : detaliu };
+}
+
+// „Proiect: X · Procesator: Y” (detaliul donațiilor) — doar etichetele se traduc, valorile rămân.
+function trad230Detaliu(detaliu: string | null, c: (typeof DONATORI_UI2_DICT)["en"]["cronTr"]): string | null {
+  if (!detaliu) return detaliu;
+  return detaliu
+    .split(" · ")
+    .map((p) => (p.startsWith("Proiect: ") ? `${c.proiect}: ${p.slice(9)}` : p.startsWith("Procesator: ") ? `${c.procesator}: ${p.slice(12)}` : p))
+    .join(" · ");
+}
+
+// Grupare pe luni, pentru titluri de secțiune („octombrie 2026” / „October 2026”), în ordinea primită.
+function grupeaza(evenimente: readonly EvenimentCronologie[], tag: string): { luna: string; evenimente: EvenimentCronologie[] }[] {
+  const grupuri: { luna: string; evenimente: EvenimentCronologie[] }[] = [];
+  for (const e of evenimente) {
+    const luna = new Date(e.la).toLocaleDateString(tag, { timeZone: "Europe/Bucharest", month: "long", year: "numeric" });
+    const ultimul = grupuri[grupuri.length - 1];
+    if (ultimul && ultimul.luna === luna) ultimul.evenimente.push(e);
+    else grupuri.push({ luna, evenimente: [e] });
+  }
+  return grupuri;
+}
 
 export function CronologiePanel({ evenimente }: { evenimente: EvenimentCronologie[] }) {
+  const locale = useLocale();
+  const t = DONATORI_UI2_DICT[locale].cronologie;
+  const tag = locale === "ro" ? "ro-RO" : "en-GB";
+  const dataOra = (iso: string) => new Date(iso).toLocaleString(tag, { timeZone: "Europe/Bucharest", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
   const [filtru, setFiltru] = useState("toate");
   const vizibile = useMemo(() => {
     const tipuri = FILTRE.find((f) => f.cheie === filtru)?.tipuri;
     return tipuri ? evenimente.filter((e) => tipuri.includes(e.tip)) : evenimente;
   }, [evenimente, filtru]);
-  const grupuri = useMemo(() => grupeazaPeLuni(vizibile), [vizibile]);
+  const grupuri = useMemo(() => grupeaza(vizibile, tag), [vizibile, tag]);
 
-  if (evenimente.length === 0) return <EmptyState title="Nimic înregistrat încă" description="Donațiile, e-mailurile trimise, notițele și apelurile apar aici, în ordine." />;
+  if (evenimente.length === 0) return <EmptyState title={t.emptyTitlu} description={t.emptyDescriere} />;
   return (
     <div>
-      <div className="mb-3 flex flex-wrap gap-2" role="group" aria-label="Filtrează cronologia">
+      <div className="mb-3 flex flex-wrap gap-2" role="group" aria-label={t.filtreaza}>
         {FILTRE.map((f) => (
           <button
             key={f.cheie}
@@ -58,12 +111,12 @@ export function CronologiePanel({ evenimente }: { evenimente: EvenimentCronologi
             onClick={() => setFiltru(f.cheie)}
             className={`min-h-10 rounded-full border px-3.5 text-[13px] font-semibold transition focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none ${filtru === f.cheie ? "border-[var(--ci-primary)] bg-[var(--ci-primary)] text-white" : "border-[var(--ci-border)] bg-[var(--ci-surface)] text-[var(--ci-text)] hover:border-[var(--ci-primary)]"}`}
           >
-            {f.eticheta}
+            {t.filtre[f.cheie]}
           </button>
         ))}
       </div>
       {vizibile.length === 0 ? (
-        <p className="text-[13px] text-[var(--ci-text-muted)]">Nimic de acest fel în cronologie.</p>
+        <p className="text-[13px] text-[var(--ci-text-muted)]">{t.nimic}</p>
       ) : (
         <div className="space-y-5">
           {grupuri.map((g) => (
@@ -72,14 +125,15 @@ export function CronologiePanel({ evenimente }: { evenimente: EvenimentCronologi
               <ol className="space-y-2">
                 {g.evenimente.map((e) => {
                   const Icoana = ICOANE[e.tip];
+                  const tr = tradu(e, locale);
                   return (
                     <li key={e.id} className="flex gap-3 rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-3">
                       <span className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full ${CULOARE[e.ton]}`} aria-hidden>
                         <Icoana className="size-4" />
                       </span>
                       <div className="min-w-0">
-                        <p className="text-[13.5px] font-semibold text-[var(--ci-text)]">{e.titlu}</p>
-                        {e.detaliu && <p className="mt-0.5 text-[13px] whitespace-pre-wrap text-[var(--ci-text)]">{e.detaliu}</p>}
+                        <p className="text-[13.5px] font-semibold text-[var(--ci-text)]">{tr.titlu}</p>
+                        {tr.detaliu && <p className="mt-0.5 text-[13px] whitespace-pre-wrap text-[var(--ci-text)]">{tr.detaliu}</p>}
                         <p className="mt-0.5 text-[12px] text-[var(--ci-text-muted)]">
                           <time dateTime={e.la}>{dataOra(e.la)}</time>
                           {e.autor ? ` · ${e.autor}` : ""}

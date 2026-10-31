@@ -24,7 +24,7 @@ export default async function MarketingLayout({ children }: { children: React.Re
       <SiteFooter dict={dict} />
       <UrmarirePlatforma />
       {/* Pop-up de înscriere pentru ONG-uri: după lansare și 20 de secunde pe site; nu apare utilizatorilor autentificați. */}
-      <PopupInscriere ascuns={Boolean(authUser)} />
+      <PopupInscriere ascuns={Boolean(authUser)} locale={locale} />
     </div>
   );
 }

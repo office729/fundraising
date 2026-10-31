@@ -5,7 +5,10 @@ import { useState } from "react";
 
 import { formateazaValoare, type DefinitieCamp, type EntitateCamp, type ValoriCamp } from "@/lib/campuri-personalizate";
 
+import { COMPONENTE_UI_DICT } from "@/lib/i18n/dictionaries/componente-ui";
+
 import { salveazaCampuriFisa } from "../../setari/campuri-actions";
+import { useLocale } from "../lib/locale-context";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import { Input, Label, Select, Textarea } from "./ui/input";
@@ -14,6 +17,7 @@ import { Input, Label, Select, Textarea } from "./ui/input";
 export function CampuriPersonalizateCard({ entitate, idEntitate, defs, valori }: { entitate: EntitateCamp; idEntitate: string; defs: DefinitieCamp[]; valori: ValoriCamp }) {
   const { orgSlug } = useParams<{ orgSlug: string }>();
   const router = useRouter();
+  const t = COMPONENTE_UI_DICT[useLocale()];
   const [editare, setEditare] = useState(false);
   const [ciorna, setCiorna] = useState<Record<string, string>>({});
   const [erori, setErori] = useState<Record<string, string>>({});
@@ -46,10 +50,10 @@ export function CampuriPersonalizateCard({ entitate, idEntitate, defs, valori }:
   return (
     <Card>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="ci-display text-[15px] font-semibold text-[var(--ci-text)]">Câmpuri personalizate</h2>
+        <h2 className="ci-display text-[15px] font-semibold text-[var(--ci-text)]">{t.campuri.titlu}</h2>
         {!editare && (
           <Button className="min-h-10" onClick={deschide}>
-            Editează
+            {t.comun.editeaza}
           </Button>
         )}
       </div>
@@ -81,8 +85,8 @@ export function CampuriPersonalizateCard({ entitate, idEntitate, defs, valori }:
                       <option value="">—</option>
                       {d.tip === "da_nu" ? (
                         <>
-                          <option value="da">Da</option>
-                          <option value="nu">Nu</option>
+                          <option value="da">{t.campuri.da}</option>
+                          <option value="nu">{t.campuri.nu}</option>
                         </>
                       ) : (
                         d.optiuni.map((o) => (
@@ -111,13 +115,13 @@ export function CampuriPersonalizateCard({ entitate, idEntitate, defs, valori }:
           )}
           <div className="flex flex-wrap gap-2">
             <Button variant="primary" className="min-h-11" loading={pending} onClick={salveaza}>
-              Salvează
+              {t.comun.salveaza}
             </Button>
             <Button className="min-h-11" disabled={pending} onClick={() => setEditare(false)}>
-              Renunță
+              {t.comun.renunta}
             </Button>
           </div>
-          <p className="text-[12px] text-[var(--ci-text-muted)]">Un câmp lăsat gol se șterge. Definești câmpurile în Setări → Câmpuri personalizate.</p>
+          <p className="text-[12px] text-[var(--ci-text-muted)]">{t.campuri.nota}</p>
         </div>
       )}
     </Card>

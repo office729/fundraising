@@ -1,6 +1,8 @@
 import { after } from "next/server";
 
 import { requireOrgAccess } from "@/lib/auth/guard";
+import { RECLAME_UI_DICT } from "@/lib/i18n/dictionaries/reclame-ui";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { PRAG_VECHIME_MIN } from "@/lib/reclame/meta-api";
 import { sincronizeazaDacaVeche } from "@/lib/reclame/meta-sync";
 
@@ -17,10 +19,11 @@ export default async function ReclamePage({ params, searchParams }: { params: Pr
   const sp = await searchParams;
   const access = await requireOrgAccess(orgSlug);
   if (access.role !== "owner" && access.role !== "admin") {
+    const dict = RECLAME_UI_DICT[await getLocale()].page;
     return (
       <div className="mx-auto max-w-[900px]">
-        <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">Performanța reclamelor</h1>
-        <p className="mt-2 text-[13px] text-[var(--ci-text-muted)]">Doar proprietarul sau administratorii organizației văd cheltuielile pentru reclame și donațiile atribuite lor.</p>
+        <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">{dict.title}</h1>
+        <p className="mt-2 text-[13px] text-[var(--ci-text-muted)]">{dict.doarAdmin}</p>
       </div>
     );
   }

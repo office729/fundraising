@@ -21,6 +21,7 @@ const PRIORITATE_TONE = { mare: "red", medie: "amber", mica: "neutral" } as cons
 // incluziune/dizabilitate, nu doar decor.
 export function CaldProtectorDashboard({
   base,
+  locale,
   dict,
   domeniu,
   kpis,
@@ -33,6 +34,7 @@ export function CaldProtectorDashboard({
   apeluriReale,
   prioritateLabels,
 }: DashboardData) {
+  const fmtSuma = (v: number) => formatSuma(v, "RON", locale);
   const spatios = domeniu === "social_incluziune";
   const textCard = spatios ? "text-[15px]" : "text-sm";
   const textMic = spatios ? "text-[13px]" : "text-[12px]";
@@ -69,7 +71,7 @@ export function CaldProtectorDashboard({
                 <ProgressBar value={pct} tone={b.statusCampanie === "urgenta" ? "primary" : "blue"} className="h-2.5" />
                 <div className={`mt-2.5 flex items-center justify-between ${textMic} text-[var(--ci-text-muted)]`}>
                   <span className="ci-tabular">
-                    {formatSuma(b.sumaStransa)} {dict.proiecte.din} {formatSuma(b.obiectiv)}
+                    {fmtSuma(b.sumaStransa)} {dict.proiecte.din} {fmtSuma(b.obiectiv)}
                   </span>
                   <span className="ci-tabular font-semibold text-[var(--ci-primary)]">{pct}%</span>
                 </div>
@@ -88,7 +90,7 @@ export function CaldProtectorDashboard({
             className="flex items-center gap-2 rounded-full border border-[var(--ci-border)] bg-[var(--ci-surface)] px-4 py-2 shadow-[var(--ci-shadow-sm)] transition-shadow hover:shadow-[var(--ci-shadow-md)]"
           >
             <span className="ci-display ci-tabular text-[15px] font-bold text-[var(--ci-primary)]">
-              {k.unitate === "count" ? Math.round(k.valoare) : k.unitate === "percent" ? `${Math.round(k.valoare)}%` : formatSuma(k.valoare)}
+              {k.unitate === "count" ? Math.round(k.valoare) : k.unitate === "percent" ? `${Math.round(k.valoare)}%` : fmtSuma(k.valoare)}
             </span>
             <span className={`${textMic} text-[var(--ci-text-muted)]`}>{k.label}</span>
           </Link>
@@ -104,7 +106,7 @@ export function CaldProtectorDashboard({
               <div className="min-w-0 flex-1">
                 <p className={`truncate ${textCard} font-medium text-[var(--ci-text)]`}>{a.motiv}</p>
                 <p className={`mt-0.5 ${textMic} text-[var(--ci-text-muted)]`}>
-                  {a.responsabil} · termen {formatDataRelativa(a.termen)}
+                  {a.responsabil} · {dict.due} {formatDataRelativa(a.termen, locale)}
                 </p>
               </div>
               <Link prefetch={false}
@@ -121,7 +123,7 @@ export function CaldProtectorDashboard({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader title={dict.donationChart.title} subtitle={dict.donationChart.subtitle} />
-          <MiniEvolutie evolutie={evolutie} />
+          <MiniEvolutie evolutie={evolutie} locale={locale} />
         </Card>
         <Card>
           <CardHeader title={dict.pipeline.titlePrefix} subtitle={dict.pipeline.inLucru(inLucruPipeline)} />
@@ -130,7 +132,7 @@ export function CaldProtectorDashboard({
               <div key={p.stage} className="flex items-center justify-between">
                 <span className={`${textMic} text-[var(--ci-text-muted)]`}>{p.label}</span>
                 <span className={`ci-tabular text-sm font-semibold ${p.count > 0 && blocate > 0 && p.stage !== "sponsorizat" ? "text-[var(--ci-amber)]" : "text-[var(--ci-text)]"}`}>
-                  {p.stage === "sponsorizat" ? formatSuma(p.suma) : String(p.count)}
+                  {p.stage === "sponsorizat" ? fmtSuma(p.suma) : String(p.count)}
                 </span>
               </div>
             ))}
@@ -153,7 +155,7 @@ export function CaldProtectorDashboard({
 
 // Grafic simplificat, fără recharts — familia cald-protector nu vrea un
 // grafic tehnic dominant, doar un rezumat vizual discret sub formă de bare.
-function MiniEvolutie({ evolutie }: { evolutie: DashboardData["evolutie"] }) {
+function MiniEvolutie({ evolutie, locale }: { evolutie: DashboardData["evolutie"]; locale: DashboardData["locale"] }) {
   const max = Math.max(1, ...evolutie.map((e) => e.pf + e.pj + e.recurent));
   return (
     <div className="flex h-40 gap-1.5">
@@ -169,7 +171,7 @@ function MiniEvolutie({ evolutie }: { evolutie: DashboardData["evolutie"] }) {
               <div
                 className="w-full rounded-t-md bg-[var(--ci-primary)] opacity-80"
                 style={{ height: `${Math.max(4, (total / max) * 100)}%` }}
-                title={formatSuma(total)}
+                title={formatSuma(total, "RON", locale)}
               />
             </div>
             <span className="mt-1 text-[10px] text-[var(--ci-text-faint)]">{e.label}</span>

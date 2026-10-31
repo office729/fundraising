@@ -6,6 +6,8 @@ import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Card, CardHeader } from "../components/ui/card";
 import { EmptyState } from "../components/ui/states";
+import { PRESA_GRUPURI_UI_DICT } from "@/lib/i18n/dictionaries/presa-grupuri-ui";
+import { useLocale } from "../lib/locale-context";
 import { adaugaMediaContactAction, stergeMediaContactAction, type FormState } from "./actions";
 
 export type MediaContactRow = {
@@ -19,16 +21,11 @@ export type MediaContactRow = {
   persoanaContact: string | null;
 };
 
-const TIP_LABEL: Record<MediaContactRow["tip"], string> = {
-  publicatie: "Publicație",
-  tv: "TV",
-  radio: "Radio",
-  site: "Site",
-};
-
 const INITIAL: FormState = { error: null };
 
 export function MediaContactsCard({ orgSlug, contacte }: { orgSlug: string; contacte: MediaContactRow[] }) {
+  const dict = PRESA_GRUPURI_UI_DICT[useLocale()].media;
+  const TIP_LABEL = dict.tip;
   const [state, formAction, pending] = useActionState(adaugaMediaContactAction.bind(null, orgSlug), INITIAL);
   const submitted = useRef(false);
   useEffect(() => {
@@ -37,16 +34,16 @@ export function MediaContactsCard({ orgSlug, contacte }: { orgSlug: string; cont
   }, [pending, state]);
 
   async function sterge(id: string) {
-    if (!window.confirm("Ștergi acest contact de presă?")) return;
+    if (!window.confirm(dict.confirmaStergere)) return;
     await stergeMediaContactAction(orgSlug, id);
     window.location.reload();
   }
 
   return (
     <Card>
-      <CardHeader title="Contacte de presă locală" subtitle="Bază globală de organizație, filtrată pe județ pentru fiecare campanie" />
+      <CardHeader title={dict.title} subtitle={dict.subtitle} />
       <form action={formAction} className="grid grid-cols-2 gap-2 rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] p-3 sm:grid-cols-3">
-        <input name="judet" required placeholder="Județ (ex. Cluj)" className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
+        <input name="judet" required placeholder={dict.judet} className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
         <select name="tip" defaultValue="publicatie" className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm">
           {Object.entries(TIP_LABEL).map(([v, l]) => (
             <option key={v} value={v}>
@@ -54,13 +51,13 @@ export function MediaContactsCard({ orgSlug, contacte }: { orgSlug: string; cont
             </option>
           ))}
         </select>
-        <input name="numeRedactie" required placeholder="Nume redacție" className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
-        <input name="email" type="email" placeholder="Email (opțional)" className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
-        <input name="telefon" placeholder="Telefon (opțional)" className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
-        <input name="persoanaContact" placeholder="Persoană de contact (opțional)" className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
-        <input name="website" placeholder="Website (opțional)" className="col-span-2 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm sm:col-span-2" />
+        <input name="numeRedactie" required placeholder={dict.numeRedactie} className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
+        <input name="email" type="email" placeholder={dict.email} className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
+        <input name="telefon" placeholder={dict.telefon} className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
+        <input name="persoanaContact" placeholder={dict.persoanaContact} className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
+        <input name="website" placeholder={dict.website} className="col-span-2 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm sm:col-span-2" />
         <Button type="submit" disabled={pending} className="justify-self-start">
-          {pending ? "Se adaugă..." : "Adaugă contact"}
+          {pending ? dict.seAdauga : dict.adauga}
         </Button>
       </form>
       {state.error && <p className="mt-2 text-[13px] text-red-600">{state.error}</p>}
@@ -82,13 +79,13 @@ export function MediaContactsCard({ orgSlug, contacte }: { orgSlug: string; cont
                   </p>
                 </div>
                 <button onClick={() => sterge(c.id)} className="shrink-0 text-[12px] text-red-600 hover:underline">
-                  Șterge
+                  {dict.sterge}
                 </button>
               </div>
             ))}
           </div>
         ) : (
-          <EmptyState title="Niciun contact de presă" description="Adaugă contacte de presă pe județ, pentru distribuirea comunicatelor de campanie." />
+          <EmptyState title={dict.emptyTitle} description={dict.emptyDescription} />
         )}
       </div>
     </Card>

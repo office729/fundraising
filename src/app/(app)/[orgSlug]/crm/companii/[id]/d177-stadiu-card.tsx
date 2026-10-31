@@ -3,10 +3,12 @@
 import { useParams, useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
-import { FAZE_D177, STADII_D177, etichetaStadiuD177 } from "@/lib/stadii-d177";
+import { FAZE_D177, STADII_D177 } from "@/lib/stadii-d177";
 
 import { Card } from "../../components/ui/card";
-import { ProgresPath, StadiiPath } from "../../components/stadii-path";
+import { useLocale } from "../../lib/locale-context";
+import { COMPANII_UI_DICT } from "@/lib/i18n/dictionaries/companii-ui";
+import { ProgresPath, StadiiPath, type FazaPath } from "../../components/stadii-path";
 import { seteazaStadiuD177 } from "./fisa-actions";
 
 // Stadiul contractului D177: Nou → Email trimis → Discuție telefonică → Întâlnire one to one → Trimis → În așteptare → Semnat.
@@ -14,12 +16,15 @@ import { seteazaStadiuD177 } from "./fisa-actions";
 export function D177StadiuCard({ companyId, stadiu: initial }: { companyId: string; stadiu: string }) {
   const { orgSlug } = useParams<{ orgSlug: string }>();
   const router = useRouter();
+  const locale = useLocale();
+  const ui = COMPANII_UI_DICT[locale].d177Stadiu;
   const [pending, start] = useTransition();
   const [stadiu, setStadiu] = useState(initial);
   const [eroare, setEroare] = useState("");
 
   const idx = STADII_D177.indexOf(stadiu);
   const faza = FAZE_D177.find((f) => f.etape.some((e) => e.k === stadiu)) ?? FAZE_D177[0];
+  const faze: FazaPath[] = FAZE_D177.map((f) => ({ k: f.k, titlu: ui.faze[f.k] ?? f.titlu, culoare: f.culoare, etape: f.etape.map((e) => ({ k: e.k, eticheta: ui.etape[e.k] ?? e.eticheta })) }));
 
   function alege(k: string) {
     const nou = k === stadiu ? "nou" : k;
@@ -39,14 +44,14 @@ export function D177StadiuCard({ companyId, stadiu: initial }: { companyId: stri
     <Card>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-[15px] font-bold text-[var(--ci-text)]">Contract D177 — stadiu</h2>
-          <p className="mt-0.5 text-[12px] text-[var(--ci-text-muted)]">Redirecționarea impozitului pe profit. Alege stadiul în care ești acum.</p>
+          <h2 className="text-[15px] font-bold text-[var(--ci-text)]">{ui.titlu}</h2>
+          <p className="mt-0.5 text-[12px] text-[var(--ci-text-muted)]">{ui.descriere}</p>
         </div>
         <p className="flex items-center gap-2 text-[13px] text-[var(--ci-text-muted)]">
           <span className="inline-flex rounded-full px-2.5 py-0.5 text-[12px] font-bold text-white" style={{ background: faza.culoare }}>
-            {etichetaStadiuD177(stadiu)}
+            {ui.etape[stadiu] ?? stadiu}
           </span>
-          <span className="ci-tabular">{`pasul ${idx + 1} din ${STADII_D177.length}`}</span>
+          <span className="ci-tabular">{ui.pas(idx + 1, STADII_D177.length)}</span>
         </p>
       </div>
       <div className="mt-3">
@@ -54,7 +59,7 @@ export function D177StadiuCard({ companyId, stadiu: initial }: { companyId: stri
       </div>
       <div className="mt-4">
         <StadiiPath
-          faze={FAZE_D177}
+          faze={faze}
           dezactivat={pending}
           coloaneMari={3}
           onAlege={alege}

@@ -9,6 +9,7 @@ export * from "./documente";
 export * from "./donatii";
 export * from "./donatori";
 export * from "./taskuri";
+export * from "./traduceri";
 
 import type { Companie, EtapaCompanie } from "./companii";
 import { COMPANII } from "./companii";
@@ -16,6 +17,7 @@ import { CONTRACTE } from "./contracte";
 import { DONATII, lunarEvolutie } from "./donatii";
 import { DONATORI } from "./donatori";
 import { TASKURI } from "./taskuri";
+import { traduMock } from "./traduceri";
 import { DASHBOARD_MOCK_DICT } from "@/lib/i18n/dictionaries/dashboard-mock";
 import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/config";
 
@@ -79,7 +81,7 @@ export function dashboardKpis(perioada?: PerioadaKpi, locale: Locale = DEFAULT_L
     (DONATORI.filter((d) => d.segment === "fidel" || d.segment === "recurent").length / DONATORI.length) * 100,
   );
 
-  const evolutie = lunarEvolutie();
+  const evolutie = lunarEvolutie(locale);
   const spark = (key: "pf" | "pj" | "recurent") => evolutie.map((m) => m[key]);
   const perioadaText = perioada ? perioada.label.toLowerCase() : dict.perioadaImplicita;
 
@@ -162,7 +164,7 @@ export function centruDeActiuni(taskuriLive: typeof TASKURI = TASKURI, locale: L
     .forEach((t) =>
       items.push({
         id: t.id,
-        motiv: dict.actionCenter.taskIntarziat(t.titlu, t.legatDe.nume),
+        motiv: dict.actionCenter.taskIntarziat(traduMock(t.titlu, locale), t.legatDe.nume),
         prioritate: t.prioritate,
         responsabil: t.responsabil,
         termen: t.termenLa,

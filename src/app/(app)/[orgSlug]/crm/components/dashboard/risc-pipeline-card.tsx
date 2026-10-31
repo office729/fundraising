@@ -47,8 +47,8 @@ export function RiscPipelineCard({ orgSlug, ro, rows }: { orgSlug: string; ro: b
                   <p className="truncate text-[13px] font-semibold text-[var(--ci-text)]">{r.nume}</p>
                   <p className="mt-0.5 text-[12px] text-[var(--ci-text-muted)]">
                     {ro
-                      ? `N-a mai donat de ${r.luni} ${r.luni === 1 ? "lună" : "luni"} — ultima oară ${formatData(r.ultimaData)}`
-                      : `No donation in ${r.luni} ${r.luni === 1 ? "month" : "months"} — last on ${formatData(r.ultimaData)}`}
+                      ? `N-a mai donat de ${r.luni} ${r.luni === 1 ? "lună" : "luni"} — ultima oară ${formatData(r.ultimaData, ro ? "ro" : "en")}`
+                      : `No donation in ${r.luni} ${r.luni === 1 ? "month" : "months"} — last on ${formatData(r.ultimaData, "en")}`}
                   </p>
                 </div>
                 <ArrowRight className="h-4 w-4 shrink-0 text-[var(--ci-text-faint)]" />

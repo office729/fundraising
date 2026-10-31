@@ -6,6 +6,8 @@ import { withOrgFaze, withOrgSession } from "@/lib/auth/guard";
 import { formular230CampaniiEmail } from "@/lib/db/schema";
 import { emailConfigurat } from "@/lib/email";
 import { trimiteCampanieF230 } from "@/lib/formular230-campanie";
+import { DONATORI_UI5_DICT } from "@/lib/i18n/dictionaries/donatori-ui-5";
+import { getLocale } from "@/lib/i18n/get-locale";
 
 export type CampanieState = { error: string | null; ok: boolean; nrDestinatari?: number };
 
@@ -29,29 +31,30 @@ export const trimiteCampanieEmailF230 = withOrgFaze<
   // înainte, ctx.db rămânea blocat în tranzacție cât timp helperul folosea alte conexiuni.
   pregateste: async (ctx) => {
     if (!emailConfigurat()) {
-      return { gata: { error: "Trimiterea de email nu e configurată încă (lipsesc variabilele SMTP din mediu).", ok: false } };
+      return { gata: { error: DONATORI_UI5_DICT[await getLocale()].erori.emailNeconfigurat, ok: false } };
     }
     return { pregatit: { org: { id: ctx.orgId, name: ctx.orgName, slug: ctx.orgSlug }, userId: ctx.userId } };
   },
   extern: async ({ org, userId }): Promise<CampanieState> => {
+    const er = DONATORI_UI5_DICT[await getLocale()].erori;
     const an = new Date().getFullYear();
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://alexandrit.ro";
     const r = await trimiteCampanieF230({ org, an, baseUrl, trimisDe: userId, deadline: Date.now() + DEADLINE_MANUAL_MS });
 
     switch (r.stare) {
       case "deja_trimisa":
-        return { error: `Campania pentru ${an} a fost deja trimisă — o singură dată pe an.`, ok: false };
+        return { error: er.dejaTrimisa(an), ok: false };
       case "fara_link":
-        return { error: "Contul principal de Formular 230 nu are un link generat.", ok: false };
+        return { error: er.faraLink, ok: false };
       case "fara_destinatari":
-        return { error: "Nu există încă donatori reali către care să trimitem.", ok: false };
+        return { error: er.faraDestinatari, ok: false };
       case "in_curs_altundeva":
-        return { error: "O trimitere este deja în curs pentru această organizație — așteaptă câteva minute.", ok: false };
+        return { error: er.inCurs, ok: false };
       case "esuata":
-        return { error: "Serverul de email nu a răspuns — nu s-a trimis nimic. Încearcă din nou mai târziu.", ok: false };
+        return { error: er.esuata, ok: false };
       case "partiala":
         return {
-          error: `Trimiterea e în desfășurare: ${r.trimise} emailuri trimise acum, au mai rămas ${r.ramase}. Apasă din nou ca să continui.`,
+          error: er.partiala(r.trimise, r.ramase),
           ok: false,
           nrDestinatari: r.trimise,
         };

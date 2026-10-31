@@ -16,9 +16,14 @@ import { amprentePersoana } from "@/lib/gdpr-persoane";
 import { valideazaFacebook, valideazaLinkedin } from "@/lib/pagini-sociale";
 import { normalizeazaTelefonE164 } from "@/lib/telefon";
 import { urlWebSigur } from "@/lib/validation";
+import { getLocale } from "@/lib/i18n/get-locale";
+import { COMPANII_UI_DICT, traduEroareLib } from "@/lib/i18n/dictionaries/companii-ui";
 import { apeluri, companies, companyNotite, companySponsorizari, companyStageLog, contacts, crmKv } from "@/lib/db/schema";
 
 export type ActionState = { error: string | null };
+
+// Mesajele de eroare întoarse utilizatorului, în limba aleasă (cookie-ul de limbă).
+const mesaje = async () => COMPANII_UI_DICT[await getLocale()].msg;
 
 // „Lucrat de utilizatorul curent” — alimentează butonul „Lucrate recent” din listă (companies.updated_by +
 // updated_at, care se actualizează singur la orice UPDATE).
@@ -48,6 +53,7 @@ export const comutaMarcaj = withOrgSession(
     marcaj: "cald" | "rece" | "recurent" | "d177" | "d177Incasat" | "mec20" | "decembrie",
     activ: boolean,
   ): Promise<ActionState> => {
+    const m = await mesaje();
     const set: Partial<typeof companies.$inferInsert> = { updatedBy: ctx.userId };
     // Debifarea „bani încasați” (D177) șterge și sponsorizarea creată automat din pagina Companii D177, ca totalurile să rămână corecte.
     if (marcaj === "d177Incasat" && !activ) {
@@ -72,18 +78,19 @@ export const comutaMarcaj = withOrgSession(
       .set(set)
       .where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId)))
       .returning({ id: companies.id });
-    if (!r[0]) return { error: "Firma nu a fost găsită." };
+    if (!r[0]) return { error: m.firmaNegasita };
     return { error: null };
   },
 );
 
 export const seteazaResponsabil = withOrgSession(async (ctx, companyId: string, ownerId: string | null): Promise<ActionState> => {
+  const m = await mesaje();
   const r = await ctx.db
     .update(companies)
     .set({ ownerId })
     .where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId)))
     .returning({ id: companies.id });
-  if (!r[0]) return { error: "Firma nu a fost găsită." };
+  if (!r[0]) return { error: m.firmaNegasita };
   return { error: null };
 });
 
@@ -93,12 +100,13 @@ export const actualizeazaContract = withOrgSession(
     companyId: string,
     date: { numarContract: string | null; dataSemnare: string | null; contractStatus: "trimis" | "asteptare" | "semnat" | "anulat" | null },
   ): Promise<ActionState> => {
+    const m = await mesaje();
     const r = await ctx.db
       .update(companies)
       .set({ numarContract: date.numarContract, dataSemnare: date.dataSemnare, contractStatus: date.contractStatus, updatedBy: ctx.userId })
       .where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId)))
       .returning({ id: companies.id });
-    if (!r[0]) return { error: "Firma nu a fost găsită." };
+    if (!r[0]) return { error: m.firmaNegasita };
     return { error: null };
   },
 );
@@ -106,25 +114,26 @@ export const actualizeazaContract = withOrgSession(
 export type AdaugaSponsorizareState = ActionState;
 export const adaugaSponsorizare = withOrgSession(
   async (ctx, _prev: AdaugaSponsorizareState, formData: FormData): Promise<AdaugaSponsorizareState> => {
+    const m = await mesaje();
     const companyId = String(formData.get("companyId") ?? "").trim();
     const suma = Math.round(Number(formData.get("suma")));
     const data = String(formData.get("data") ?? "").trim();
     const proiect = String(formData.get("proiect") ?? "").trim();
     const nota = String(formData.get("nota") ?? "").trim();
 
-    if (!companyId || !Number.isFinite(suma) || suma <= 0) return { error: "Suma trebuie să fie un număr pozitiv." };
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) return { error: "Data e obligatorie." };
+    if (!companyId || !Number.isFinite(suma) || suma <= 0) return { error: m.sumaPozitiva };
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) return { error: m.dataObligatorie };
     let alocariBrut: unknown = [];
     try {
       alocariBrut = JSON.parse(String(formData.get("alocari") ?? "[]"));
     } catch {
-      return { error: "Defalcarea sumei nu a putut fi citită." };
+      return { error: m.defalcareIlizibila };
     }
     const al = valideazaAlocari(suma, alocariBrut);
-    if (!al.ok) return { error: al.eroare };
+    if (!al.ok) return { error: traduEroareLib(await getLocale(), al.eroare) };
 
     const firma = await ctx.db.select({ id: companies.id }).from(companies).where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId))).limit(1);
-    if (!firma[0]) return { error: "Firma nu a fost găsită." };
+    if (!firma[0]) return { error: m.firmaNegasita };
 
     await ctx.db.insert(companySponsorizari).values({
       id: randomUUID(),
@@ -145,14 +154,15 @@ export const adaugaSponsorizare = withOrgSession(
 
 // Defalcarea ulterioară (sau corectarea ei) pe o sponsorizare deja înregistrată.
 export const seteazaAlocariSponsorizare = withOrgSession(async (ctx, id: string, alocari: unknown): Promise<ActionState> => {
+  const m = await mesaje();
   const [s] = await ctx.db
     .select({ suma: companySponsorizari.suma, companyId: companySponsorizari.companyId })
     .from(companySponsorizari)
     .where(and(eq(companySponsorizari.id, id), eq(companySponsorizari.orgId, ctx.orgId)))
     .limit(1);
-  if (!s) return { error: "Sponsorizarea nu a fost găsită." };
+  if (!s) return { error: m.sponsorizareNegasita };
   const al = valideazaAlocari(s.suma, alocari);
-  if (!al.ok) return { error: al.eroare };
+  if (!al.ok) return { error: traduEroareLib(await getLocale(), al.eroare) };
   await ctx.db
     .update(companySponsorizari)
     .set({ alocari: al.alocari.length ? al.alocari : null })
@@ -162,34 +172,37 @@ export const seteazaAlocariSponsorizare = withOrgSession(async (ctx, id: string,
 });
 
 export const stergeSponsorizare = withOrgSession(async (ctx, id: string, companyId: string): Promise<ActionState> => {
+  const m = await mesaje();
   const r = await ctx.db
     .delete(companySponsorizari)
     .where(and(eq(companySponsorizari.id, id), eq(companySponsorizari.orgId, ctx.orgId)))
     .returning({ id: companySponsorizari.id });
-  if (!r[0]) return { error: "Sponsorizarea nu a fost găsită." };
+  if (!r[0]) return { error: m.sponsorizareNegasita };
   await recalculeazaSumaSponsorizata(ctx.db, companyId);
   return { error: null };
 });
 
 export const adaugaNotita = withOrgSession(async (ctx, companyId: string, text: string): Promise<ActionState> => {
+  const m = await mesaje();
   const trimmed = text.trim();
-  if (!trimmed) return { error: "Notița e goală." };
+  if (!trimmed) return { error: m.notitaGoala };
   const firma = await ctx.db.select({ id: companies.id }).from(companies).where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId))).limit(1);
-  if (!firma[0]) return { error: "Firma nu a fost găsită." };
+  if (!firma[0]) return { error: m.firmaNegasita };
   await ctx.db.insert(companyNotite).values({ id: randomUUID(), orgId: ctx.orgId, companyId, text: trimmed, createdBy: ctx.userId });
   await marcheazaLucrat(ctx, companyId);
   return { error: null };
 });
 
 export const editeazaNotita = withOrgSession(async (ctx, id: string, text: string): Promise<ActionState> => {
+  const m = await mesaje();
   const trimmed = text.trim();
-  if (!trimmed) return { error: "Notița e goală." };
+  if (!trimmed) return { error: m.notitaGoala };
   const r = await ctx.db
     .update(companyNotite)
     .set({ text: trimmed, editatLa: new Date() })
     .where(and(eq(companyNotite.id, id), eq(companyNotite.orgId, ctx.orgId)))
     .returning({ id: companyNotite.id });
-  if (!r[0]) return { error: "Notița nu a fost găsită." };
+  if (!r[0]) return { error: m.notitaNegasita };
   return { error: null };
 });
 
@@ -200,6 +213,7 @@ export const stergeNotita = withOrgSession(async (ctx, id: string): Promise<Acti
 
 export type AdaugaContactState = ActionState;
 export const adaugaContact = withOrgSession(async (ctx, _prev: AdaugaContactState, formData: FormData): Promise<AdaugaContactState> => {
+  const m = await mesaje();
   const companyId = String(formData.get("companyId") ?? "").trim();
   const nume = String(formData.get("nume") ?? "").trim();
   const rol = String(formData.get("rol") ?? "").trim();
@@ -208,10 +222,10 @@ export const adaugaContact = withOrgSession(async (ctx, _prev: AdaugaContactStat
   const linkedin = String(formData.get("linkedin") ?? "").trim();
   const dept = String(formData.get("dept") ?? "").trim();
 
-  if (!companyId || !nume) return { error: "Numele contactului e obligatoriu." };
-  if (linkedin && !urlWebSigur(linkedin)) return { error: "Linkul LinkedIn nu e o adresă web validă (http/https)." };
+  if (!companyId || !nume) return { error: m.numeContactObligatoriu };
+  if (linkedin && !urlWebSigur(linkedin)) return { error: m.linkedinInvalid };
   const firma = await ctx.db.select({ id: companies.id }).from(companies).where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId))).limit(1);
-  if (!firma[0]) return { error: "Firma nu a fost găsită." };
+  if (!firma[0]) return { error: m.firmaNegasita };
 
   await ctx.db.insert(contacts).values({
     id: randomUUID(),
@@ -295,9 +309,10 @@ async function jurnalEtapa(ctx: OrgContext, companyId: string, de: { stage: stri
 // (companies.stage) = cea mai avansată bifată, după ordinea din lib/etape-companie.ts — aceeași listă ca în interfață.
 // Clic pe „Nou” șterge toate bifele. O firmă respinsă se redeschide la orice bifare.
 export const comutaEtapaBifata = withOrgSession(async (ctx, companyId: string, etapa: string): Promise<ActionState> => {
-  if (!ETAPE_PATH_KEYS.includes(etapa)) return { error: "Etapă necunoscută." };
+  const m = await mesaje();
+  if (!ETAPE_PATH_KEYS.includes(etapa)) return { error: m.etapaNecunoscuta };
   const firma = await citesteExtra(ctx, companyId);
-  if (!firma) return { error: "Firma nu a fost găsită." };
+  if (!firma) return { error: m.firmaNegasita };
 
   const bifateAcum = new Set(firma.extra.etapeBifate ?? bifeDinEtapa(firma.stage));
   if (etapa === "nou") bifateAcum.clear();
@@ -316,9 +331,10 @@ export const comutaEtapaBifata = withOrgSession(async (ctx, companyId: string, e
 
 // „Sponsorizat” (câștigată) și „Respins” (pierdută) sunt rezultate separate de path; al doilea clic le retrage.
 export const seteazaRezultat = withOrgSession(async (ctx, companyId: string, rezultat: "sponsorizat" | "respins", activ: boolean): Promise<ActionState> => {
-  if (rezultat !== "sponsorizat" && rezultat !== "respins") return { error: "Rezultat necunoscut." };
+  const m = await mesaje();
+  if (rezultat !== "sponsorizat" && rezultat !== "respins") return { error: m.rezultatNecunoscut };
   const firma = await citesteExtra(ctx, companyId);
-  if (!firma) return { error: "Firma nu a fost găsită." };
+  if (!firma) return { error: m.firmaNegasita };
 
   const bifate = firma.extra.etapeBifate ?? bifeDinEtapa(firma.stage === "sponsorizat" ? "contract_semnat" : firma.stage);
   const statusNou = !activ ? "open" : rezultat === "sponsorizat" ? "won" : "lost";
@@ -360,6 +376,7 @@ export const stergeContact = withOrgSession(async (ctx, id: string): Promise<Act
 
 export type AdaugaFirmaState = ActionState & { id?: string };
 export const adaugaFirma = withOrgSession(async (ctx, _prev: AdaugaFirmaState, formData: FormData): Promise<AdaugaFirmaState> => {
+  const m = await mesaje();
   const txt = (k: string) => {
     const v = String(formData.get(k) ?? "").trim();
     return v || null;
@@ -381,13 +398,13 @@ export const adaugaFirma = withOrgSession(async (ctx, _prev: AdaugaFirmaState, f
   const anBilant = numar("anBilant");
   const dataSemnare = txt("dataSemnare");
 
-  if (!nume) return { error: "Numele firmei e obligatoriu." };
-  if (site && !urlWebSigur(site)) return { error: "Site-ul nu e o adresă web validă (http/https)." };
-  if (sumaContract === "invalid" || (sumaContract !== null && sumaContract < 0)) return { error: "Suma contractului trebuie să fie un număr pozitiv." };
-  for (const [n, v] of [["Cifra de afaceri", ca], ["Profitul", profit], ["Numărul de angajați", nrAngajati], ["Anul înființării", anInfiintare]] as const) {
-    if (v === "invalid") return { error: `${n} trebuie să fie un număr.` };
+  if (!nume) return { error: m.numeFirmaObligatoriu };
+  if (site && !urlWebSigur(site)) return { error: m.siteInvalid };
+  if (sumaContract === "invalid" || (sumaContract !== null && sumaContract < 0)) return { error: m.sumaContractInvalida };
+  for (const [n, v] of [[m.campuriNumerice.ca, ca], [m.campuriNumerice.profit, profit], [m.campuriNumerice.nrAngajati, nrAngajati], [m.campuriNumerice.anInfiintare, anInfiintare]] as const) {
+    if (v === "invalid") return { error: m.numarInvalid(n) };
   }
-  if (dataSemnare && !/^\d{4}-\d{2}-\d{2}$/.test(dataSemnare)) return { error: "Data semnării nu e validă." };
+  if (dataSemnare && !/^\d{4}-\d{2}-\d{2}$/.test(dataSemnare)) return { error: m.dataSemnareInvalida };
 
   // Linkurile de pagină de firmă — aceeași validare ca în fișă (lib/pagini-sociale.ts).
   let linkedin: string | null = null;
@@ -395,13 +412,13 @@ export const adaugaFirma = withOrgSession(async (ctx, _prev: AdaugaFirmaState, f
   const li = txt("linkedin");
   if (li) {
     const r = valideazaLinkedin(li);
-    if (!r.ok) return { error: r.eroare };
+    if (!r.ok) return { error: traduEroareLib(await getLocale(), r.eroare) };
     linkedin = r.url;
   }
   const fb = txt("facebook");
   if (fb) {
     const r = valideazaFacebook(fb);
-    if (!r.ok) return { error: r.eroare };
+    if (!r.ok) return { error: traduEroareLib(await getLocale(), r.eroare) };
     facebook = r.url;
   }
 
@@ -413,7 +430,7 @@ export const adaugaFirma = withOrgSession(async (ctx, _prev: AdaugaFirmaState, f
       .where(and(eq(companies.orgId, ctx.orgId), isNull(companies.deletedAt)));
     if (!subCota(firmeCount, limite.companiiPj)) {
       return {
-        error: `Ai atins limita de ${limite.companiiPj} companii a pachetului tău — șterge o firmă existentă sau treci la un pachet mai mare.`,
+        error: m.limitaCompanii(limite.companiiPj),
       };
     }
   }
@@ -498,14 +515,15 @@ export type DateAnaf = {
   anBilant: number | null;
 };
 export const cautaDateAnaf = withOrgSession(async (_ctx, cui: string): Promise<ActionState & { date?: DateAnaf }> => {
-  if (!curataCui(cui)) return { error: "Introdu un CUI valid." };
+  const m = await mesaje();
+  if (!curataCui(cui)) return { error: m.cuiInvalid };
   let stare: Awaited<ReturnType<typeof verificaStareFiscala>>;
   try {
     stare = await verificaStareFiscala(cui);
   } catch {
-    return { error: "ANAF nu a răspuns — încearcă din nou peste puțin timp." };
+    return { error: m.anafNuRaspunde };
   }
-  if (!stare) return { error: `Niciun rezultat ANAF pentru CUI ${curataCui(cui)} — verifică dacă e corect.` };
+  if (!stare) return { error: m.anafNiciunRezultat(String(curataCui(cui))) };
   // Bilanțul se caută pe rând pe ultimii ani, într-un serviciu ANAF uneori lent: nu lăsăm identificarea (deja găsită) să aștepte mai mult de 6 secunde după el.
   const bilant = await Promise.race([celMaiRecentBilant(cui).catch(() => null), new Promise<null>((resolve) => setTimeout(() => resolve(null), 6000))]);
   const anInreg = stare.dataInregistrare ? Number(stare.dataInregistrare.slice(0, 4)) : NaN;
@@ -539,17 +557,18 @@ export type VerificaAnafState = ActionState & {
   anBilant?: number | null;
 };
 export const verificaAnaf = withOrgSession(async (ctx, companyId: string): Promise<VerificaAnafState> => {
+  const m = await mesaje();
   const [firma] = await ctx.db.select({ cui: companies.cui }).from(companies).where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId))).limit(1);
-  if (!firma) return { error: "Firma nu a fost găsită." };
-  if (!firma.cui || !firma.cui.trim()) return { error: "Completează întâi CUI-ul firmei (tab Editare) — ANAF caută firmele după CUI." };
+  if (!firma) return { error: m.firmaNegasita };
+  if (!firma.cui || !firma.cui.trim()) return { error: m.completeazaCuiMai };
 
   let stare: Awaited<ReturnType<typeof verificaStareFiscala>>;
   try {
     stare = await verificaStareFiscala(firma.cui);
   } catch {
-    return { error: "ANAF nu a răspuns — încearcă din nou peste puțin timp." };
+    return { error: m.anafNuRaspunde };
   }
-  if (!stare) return { error: `Niciun rezultat ANAF pentru CUI ${firma.cui} — verifică dacă e corect.` };
+  if (!stare) return { error: m.anafNiciunRezultat(firma.cui) };
 
   const bilant = await celMaiRecentBilant(firma.cui).catch(() => null);
 
@@ -577,6 +596,7 @@ export const verificaAnaf = withOrgSession(async (ctx, companyId: string): Promi
 
 export type EditeazaFirmaState = ActionState;
 export const editeazaFirma = withOrgSession(async (ctx, companyId: string, formData: FormData): Promise<EditeazaFirmaState> => {
+  const m = await mesaje();
   const str = (k: string) => {
     const v = formData.get(k);
     if (v == null) return undefined;
@@ -590,7 +610,7 @@ export const editeazaFirma = withOrgSession(async (ctx, companyId: string, formD
     return Number.isFinite(n) ? n : undefined;
   };
   const nume = str("nume");
-  if (nume === null) return { error: "Numele firmei e obligatoriu." };
+  if (nume === null) return { error: m.numeFirmaObligatoriu };
   // Linkurile ajung în href-uri afișate altor utilizatori — doar http(s).
   const urlCamp = (k: string) => {
     const brut = str(k);
@@ -598,7 +618,7 @@ export const editeazaFirma = withOrgSession(async (ctx, companyId: string, formD
   };
   for (const k of ["site", "linkedin", "facebook"]) {
     const brut = str(k);
-    if (brut && !urlWebSigur(brut)) return { error: `Câmpul „${k}” nu e o adresă web validă (http/https).` };
+    if (brut && !urlWebSigur(brut)) return { error: m.campUrlInvalid(k) };
   }
 
   const r = await ctx.db
@@ -623,19 +643,20 @@ export const editeazaFirma = withOrgSession(async (ctx, companyId: string, formD
     })
     .where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId)))
     .returning({ id: companies.id });
-  if (!r[0]) return { error: "Firma nu a fost găsită." };
+  if (!r[0]) return { error: m.firmaNegasita };
   return { error: null };
 });
 
 // Ștergere = soft-delete (deletedAt), la fel ca /api/[orgSlug]/crm-companies —
 // firma dispare din listă/statistici, dar rândul rămâne pentru audit/CRM PJ.
 export const stergeFirma = withOrgSession(async (ctx, companyId: string): Promise<ActionState> => {
+  const m = await mesaje();
   const r = await ctx.db
     .update(companies)
     .set({ deletedAt: new Date(), updatedBy: ctx.userId })
     .where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId)))
     .returning({ id: companies.id });
-  if (!r[0]) return { error: "Firma nu a fost găsită." };
+  if (!r[0]) return { error: m.firmaNegasita };
   // Raportul de impact salvat pentru firmă (crm_kv) conține date ale ei și ale proiectelor: se șterge odată cu ea.
   await ctx.db.delete(crmKv).where(and(eq(crmKv.orgId, ctx.orgId), eq(crmKv.path, `raport-impact/${companyId}`)));
   // La fel documentele din istoric (scrisori, certificate, rapoarte): conțin numele administratorului și adresa firmei.
@@ -738,16 +759,17 @@ function detecteazaSeparator(antet: string): string {
 // (restul sunt ignorate). Fără fișiere/Storage — textul CSV vine direct din
 // formular (citit client-side cu FileReader, trimis ca string).
 export const importaFirmeCsv = withOrgSession(async (ctx, csvText: string): Promise<ImportCsvState> => {
+  const m = await mesaje();
   const linii = imparteInInregistrari(csvText.replace(/^﻿/, ""));
-  if (linii.length < 2) return { error: "Fișierul CSV e gol sau nu are decât antet." };
+  if (linii.length < 2) return { error: m.csvGol };
   if (linii.length - 1 > MAX_RANDURI_IMPORT) {
-    return { error: `Fișierul are prea multe rânduri (maxim ${MAX_RANDURI_IMPORT} pe import) — împarte-l în mai multe fișiere.` };
+    return { error: m.csvPreaMulte(MAX_RANDURI_IMPORT) };
   }
 
   const sep = detecteazaSeparator(linii[0]);
   const antet = parseCsvLine(linii[0], sep).map((h) => h.trim().toLowerCase());
   const indexNume = antet.indexOf("nume");
-  if (indexNume === -1) return { error: "CSV-ul trebuie să aibă o coloană „nume”." };
+  if (indexNume === -1) return { error: m.csvFaraNume };
 
   const coloaneIndex = CSV_COLOANE.map((c) => ({ col: c, idx: antet.indexOf(c.toLowerCase()) }));
 
@@ -819,7 +841,7 @@ export const importaFirmeCsv = withOrgSession(async (ctx, csvText: string): Prom
 
   if (importate === 0 && pesteCota > 0 && limite.companiiPj !== null) {
     return {
-      error: `Ai atins limita de ${limite.companiiPj} companii a pachetului tău — șterge firme existente sau treci la un pachet mai mare.`,
+      error: m.limitaCompaniiImport(limite.companiiPj),
     };
   }
   return { error: null, importate, ignorate, duplicate, pesteCota };

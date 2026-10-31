@@ -12,11 +12,12 @@ import { Avatar } from "../../../components/ui/avatar";
 import { Badge, type StatusTone } from "../../../components/ui/badge";
 import { Breadcrumb } from "../../../components/ui/breadcrumb";
 import { Card } from "../../../components/ui/card";
-import { formatData, formatDataOra, formatDataRelativa } from "../../../lib/format";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { DONATORI_REALI_DICT } from "@/lib/i18n/dictionaries/donatori-reali";
+import { DONATORI_UI2_DICT } from "@/lib/i18n/dictionaries/donatori-ui-2";
 import { titluAbsolut } from "@/lib/page-titles";
 
+import { formatariPf } from "../../pf-format";
 import { getDonatorRealDetaliu } from "../../queries";
 import { DonatorTabs } from "./donator-tabs";
 import { GdprPanelDonator } from "./gdpr-panel";
@@ -31,7 +32,6 @@ import { NotitePanelDonatorReal } from "./notite-panel";
 
 const STATUS_TONE: Record<string, StatusTone> = { in_asteptare: "amber", reusita: "green", esuata: "red", rambursata: "orange" };
 const TON_RISC: Record<NivelRisc, StatusTone> = { scazut: "green", mediu: "amber", ridicat: "red", necunoscut: "neutral" };
-const ETICHETA_RISC: Record<NivelRisc, string> = { scazut: "Risc scăzut", mediu: "Risc mediu", ridicat: "Risc ridicat", necunoscut: "Risc necunoscut" };
 
 export default async function DonatorRealProfilPage({ params }: { params: Promise<{ orgSlug: string; id: string }> }) {
   const { orgSlug, id } = await params;
@@ -45,6 +45,8 @@ export default async function DonatorRealProfilPage({ params }: { params: Promis
   const locale = await getLocale();
   const dict = DONATORI_REALI_DICT[locale].detail;
   const statusLabel = dict.donatii.statusLabel;
+  const t = DONATORI_UI2_DICT[locale].fisa;
+  const fmt = formatariPf(locale);
 
   return (
     <div className="mx-auto max-w-[1100px] space-y-5">
@@ -67,17 +69,17 @@ export default async function DonatorRealProfilPage({ params }: { params: Promis
                 )}
                 {analiza && analiza.risc !== "necunoscut" && (
                   <Badge tone={TON_RISC[analiza.risc]} icon={false}>
-                    {ETICHETA_RISC[analiza.risc]}
+                    {t.riscEticheta[analiza.risc]}
                   </Badge>
                 )}
                 {donator.emailStare !== "ok" && (
                   <Badge tone="amber" icon={false}>
-                    {donator.emailStare === "reclamat" ? "A marcat mesajul ca spam" : "Adresă respinsă"}
+                    {donator.emailStare === "reclamat" ? t.spam : t.adresaRespinsa}
                   </Badge>
                 )}
                 {donator.dezabonatEmailLa && (
                   <Badge tone="amber" icon={false}>
-                    Dezabonat
+                    {t.dezabonat}
                   </Badge>
                 )}
               </div>
@@ -92,10 +94,10 @@ export default async function DonatorRealProfilPage({ params }: { params: Promis
         </div>
 
         <div className="mt-5 grid grid-cols-2 gap-4 border-t border-[var(--ci-border)] pt-4 sm:grid-cols-4">
-          <Stat label={dict.stats.totalDonat} value={`${donator.totalDonat.toLocaleString("ro-RO")} lei`} />
+          <Stat label={dict.stats.totalDonat} value={fmt.lei(donator.totalDonat)} />
           <Stat label={dict.stats.numarDonatii} value={String(donator.numarDonatii)} />
-          <Stat label={dict.stats.primaDonatie} value={formatData(donator.primaDonatieLa.toISOString())} />
-          <Stat label={dict.stats.ultimaDonatie} value={formatDataRelativa(donator.ultimaDonatieLa.toISOString())} />
+          <Stat label={dict.stats.primaDonatie} value={fmt.dataScurta(donator.primaDonatieLa.toISOString())} />
+          <Stat label={dict.stats.ultimaDonatie} value={fmt.relativa(donator.ultimaDonatieLa.toISOString())} />
         </div>
       </Card>
 
@@ -105,7 +107,7 @@ export default async function DonatorRealProfilPage({ params }: { params: Promis
         <ModulBlocatInline
           orgSlug={orgSlug}
           modul="analiza-donator"
-          descriere="Riscul de pierdere, ritmul donațiilor, data probabilă a următoarei donații și valoarea estimată de viitor, calculate din istoricul donatorului."
+          descriere={t.modulBlocat}
           poateSchimba={access.role === "owner" || access.role === "admin"}
         />
       )}
@@ -136,9 +138,9 @@ export default async function DonatorRealProfilPage({ params }: { params: Promis
           primi o funcție ca `children` dintr-o componentă server (eroare 500 în Next). */}
       <DonatorTabs
         tabs={[
-          { key: "cronologie", label: `Cronologie (${cronologie.length})` },
+          { key: "cronologie", label: t.tabCronologie(cronologie.length) },
           { key: "donatii", label: dict.tabs.donatii(donatii.length) },
-          { key: "notite", label: `Notițe și apeluri${notite.length ? ` (${notite.length})` : ""}` },
+          { key: "notite", label: t.tabNotite(notite.length) },
         ]}
         panels={{
           cronologie: <CronologiePanel evenimente={cronologie} />,
@@ -157,9 +159,9 @@ export default async function DonatorRealProfilPage({ params }: { params: Promis
                   <tbody>
                     {donatii.map((d) => (
                       <tr key={d.id} className="border-b border-[var(--ci-border)] last:border-0">
-                        <td className="px-4 py-2.5 text-[var(--ci-text-muted)]">{formatDataOra(d.createdAt.toISOString())}</td>
+                        <td className="px-4 py-2.5 text-[var(--ci-text-muted)]">{fmt.dataOraScurta(d.createdAt.toISOString())}</td>
                         <td className="ci-tabular px-4 py-2.5 font-medium text-[var(--ci-text)]">
-                          {d.suma.toLocaleString("ro-RO")} lei{d.recurenta ? ` · ${dict.donatii.recurenta}` : ""}
+                          {fmt.lei(d.suma)}{d.recurenta ? ` · ${dict.donatii.recurenta}` : ""}
                           {d.proiect && <span className="block text-[12px] font-normal text-[var(--ci-text-muted)]">{d.proiect}</span>}
                         </td>
                         <td className="px-4 py-2.5">

@@ -31,6 +31,11 @@ import {
 import { adaugaZileLucratoare, APELURI_REZERVATE_PER_CAUTARE, aziBucuresti, COOLDOWN_CAUTARE_ORE, LIMITA_APELURI_PE_ZI, REZERVARE_EXPIRA_MIN } from "@/lib/prospectare/limite";
 import { decripteaza } from "@/lib/secret-box";
 import { noteazaInvitatie } from "@/lib/waalaxy-server";
+import { getLocale } from "@/lib/i18n/get-locale";
+import { COMPANII_UI_DICT } from "@/lib/i18n/dictionaries/companii-ui";
+
+// Mesajele afișate utilizatorului, în limba aleasă (cookie-ul de limbă).
+const mesaje = async () => COMPANII_UI_DICT[await getLocale()].msg;
 
 // Prospectare de decidenți pentru o firmă (pachetul IMPACT). Folosește cheile PROPRII ale organizației la Lusha, Apollo, Prospeo și Hunter (Setări → Prospectare).
 // Persoanele găsite stau în cutia „De aprobat” până le aprobă cineva din echipă; abia atunci devin contacte ale firmei, cu un responsabil și un prim pas cu termen.
@@ -178,13 +183,14 @@ type Pregatit = {
 export const cautaDecidentiAction = withOrgFaze<[string, boolean], Pregatit, RezultatCautare, RezultatActiune>({
   opts: OPTIUNI,
   pregateste: async (ctx, companyId, forteaza) => {
-    if (!UUID.test(companyId)) throw new EroareUtilizator("Firma nu a fost găsită.");
+    const m = await mesaje();
+    if (!UUID.test(companyId)) throw new EroareUtilizator(m.firmaNegasita);
     const [firma] = await ctx.db
       .select({ nume: companies.nume, site: companies.site, angajati: companies.nrAngajati })
       .from(companies)
       .where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId), sql`${companies.deletedAt} is null`))
       .limit(1);
-    if (!firma) throw new EroareUtilizator("Firma nu a fost găsită.");
+    if (!firma) throw new EroareUtilizator(m.firmaNegasita);
 
     const chei: Partial<Record<Furnizor, string>> = {};
     const randuriChei = await ctx.db.select({ furnizor: prospectareChei.provider, enc: prospectareChei.cheieEnc }).from(prospectareChei).where(eq(prospectareChei.orgId, ctx.orgId));
@@ -196,7 +202,7 @@ export const cautaDecidentiAction = withOrgFaze<[string, boolean], Pregatit, Rez
         // cheie ilizibilă (ORG_SECRETS_KEY schimbată): se tratează ca lipsă
       }
     }
-    if (Object.keys(chei).length === 0) return { gata: { ok: false, eroare: "Nu ai adăugat nicio cheie de furnizor. Un administrator le poate adăuga în Setări → Prospectare." } };
+    if (Object.keys(chei).length === 0) return { gata: { ok: false, eroare: m.nicioCheie } };
 
     // Aceeași firmă nu se caută din nou fără confirmare: descoperirea se plătește de fiecare dată. Repetarea o poate cere doar un administrator.
     const [recenta] = await ctx.db
@@ -220,8 +226,8 @@ export const cautaDecidentiAction = withOrgFaze<[string, boolean], Pregatit, Rez
         gata: {
           ok: false,
           eroare: poateForta
-            ? "Firma a fost căutată recent. O nouă căutare consumă din nou credite din conturile tale."
-            : "Firma a fost căutată recent. Un administrator poate repeta căutarea dacă e nevoie.",
+            ? m.cautataRecentAdmin
+            : m.cautataRecentMembru,
           deja: { la: recenta.la.toISOString(), deCine: recenta.nume || (recenta.email ? recenta.email.split("@")[0] : null), poateForta },
         },
       };
@@ -232,7 +238,7 @@ export const cautaDecidentiAction = withOrgFaze<[string, boolean], Pregatit, Rez
     await ctx.db.execute(sql`select pg_advisory_xact_lock(hashtext(${ctx.orgId}))`);
     const folosite = await apeluriFolosite(ctx.db, ctx.orgId);
     const ramase = LIMITA_APELURI_PE_ZI - folosite;
-    if (ramase <= 0) return { gata: { ok: false, eroare: "Limita zilnică de căutări a organizației a fost atinsă; continuă mâine." } };
+    if (ramase <= 0) return { gata: { ok: false, eroare: m.limitaZilnica } };
     const rezerva = Math.min(ramase, APELURI_REZERVATE_PER_CAUTARE);
     const [rezervare] = await ctx.db
       .insert(prospectareJurnal)
@@ -348,7 +354,8 @@ export type RezultatAprobare = { error: string | null; avertisment?: string };
 export const aprobaCandidat = withOrgFaze<[string, boolean], PregatitAprobare, ExternAprobare, RezultatAprobare>({
   opts: OPTIUNI,
   pregateste: async (ctx, candidatId, trimiteWaalaxy) => {
-    if (!UUID.test(candidatId)) throw new EroareUtilizator("Candidatul nu a fost găsit.");
+    const m = await mesaje();
+    if (!UUID.test(candidatId)) throw new EroareUtilizator(m.candidatNegasit);
     const [c] = await ctx.db
       .select({
         stare: prospectareCandidati.stare,
@@ -364,22 +371,22 @@ export const aprobaCandidat = withOrgFaze<[string, boolean], PregatitAprobare, E
       .innerJoin(companies, eq(companies.id, prospectareCandidati.companyId))
       .where(and(eq(prospectareCandidati.id, candidatId), eq(prospectareCandidati.orgId, ctx.orgId)))
       .limit(1);
-    if (!c || c.stare !== "nou") throw new EroareUtilizator("Candidatul nu mai e în lista „De aprobat”.");
+    if (!c || c.stare !== "nou") throw new EroareUtilizator(m.candidatNuMaiEInLista);
     // Cine a cerut să nu mai fie propusă nu se aprobă (nici dacă era deja în listă de la altă căutare); rândul se marchează respins.
     if (await esteSuprimata(ctx.db, ctx.orgId, c)) {
       await ctx.db.update(prospectareCandidati).set({ stare: "respins", hotaratDe: ctx.userId, hotaratLa: new Date() }).where(and(eq(prospectareCandidati.id, candidatId), eq(prospectareCandidati.stare, "nou")));
-      return { gata: { error: "Persoana a cerut să nu mai fie propusă, deci nu a fost adăugată." } };
+      return { gata: { error: m.persoanaCeruta } };
     }
     if (trimiteWaalaxy !== true) return { pregatit: { candidatId, waalaxy: null } };
     const linkedin = linkedinSigur(c.linkedin);
-    if (!linkedin) throw new EroareUtilizator("Persoana nu are un profil LinkedIn valid, deci nu poate fi trimisă în Waalaxy.");
+    if (!linkedin) throw new EroareUtilizator(m.faraLinkedinValid);
     const [w] = await ctx.db.select({ enc: prospectareChei.cheieEnc, setari: prospectareChei.setari }).from(prospectareChei).where(and(eq(prospectareChei.orgId, ctx.orgId), eq(prospectareChei.provider, "waalaxy"))).limit(1);
-    if (!w?.setari?.listaId) throw new EroareUtilizator("Conectează Waalaxy și alege o listă în Setări → Prospectare (cere unui administrator dacă tu nu ai acces).");
+    if (!w?.setari?.listaId) throw new EroareUtilizator(m.conecteazaWaalaxy);
     let cheie: string;
     try {
       cheie = decripteaza(w.enc);
     } catch {
-      throw new EroareUtilizator("Cheia Waalaxy nu mai poate fi citită; un administrator trebuie s-o adauge din nou în Setări → Prospectare.");
+      throw new EroareUtilizator(m.waalaxyIlizibila);
     }
     const grup = grupRol(c.prioritate);
     const campanieId = (grup !== "altul" && w.setari[`campanie_${grup}`]) || w.setari.campanieId || "";
@@ -392,14 +399,15 @@ export const aprobaCandidat = withOrgFaze<[string, boolean], PregatitAprobare, E
     return r.ok ? { trimis: true } : { trimis: false, eroare: r.eroare };
   },
   salveaza: async (ctx, p, extern): Promise<RezultatAprobare> => {
+    const m = await mesaje();
     // Poarta atomică: doar cine trece rândul din „nou” în „aprobat” continuă; un al doilea apel simultan nu găsește nimic și se oprește.
     const [c] = await ctx.db
       .update(prospectareCandidati)
       .set({ stare: "aprobat", hotaratDe: ctx.userId, hotaratLa: new Date(), responsabilId: ctx.userId, stadiu: "de_contactat", urmatorPasLa: adaugaZileLucratoare(aziBucuresti(), 2) })
       .where(and(eq(prospectareCandidati.id, p.candidatId), eq(prospectareCandidati.orgId, ctx.orgId), eq(prospectareCandidati.stare, "nou")))
       .returning();
-    if (!c) throw new EroareUtilizator("Candidatul nu mai e în lista „De aprobat”.");
-    if (await esteSuprimata(ctx.db, ctx.orgId, c)) throw new EroareUtilizator("Persoana a cerut să nu mai fie propusă, deci nu a fost adăugată.");
+    if (!c) throw new EroareUtilizator(m.candidatNuMaiEInLista);
+    if (await esteSuprimata(ctx.db, ctx.orgId, c)) throw new EroareUtilizator(m.persoanaCeruta);
     const prioritar = c.prioritate !== null && c.prioritate <= 2;
     const azi = new Date().toLocaleDateString("ro-RO", { day: "2-digit", month: "2-digit", year: "numeric" });
     const [contact] = await ctx.db
@@ -433,7 +441,7 @@ export const aprobaCandidat = withOrgFaze<[string, boolean], PregatitAprobare, E
     await inregistreazaAudit(ctx.db, { orgId: ctx.orgId, actorAppUserId: ctx.userId, actiune: "prospectare_candidat_aprobat", entitate: "contact", entitateId: contact.id, detalii: { sursa: c.sursa, waalaxy: p.waalaxy ? (extern.trimis ? "trimis" : "esuat") : "nu" } });
     revalidatePath(`/${ctx.orgSlug}/crm/companii`);
     revalidatePath(`/${ctx.orgSlug}/crm/prospectare`);
-    return { error: null, avertisment: p.waalaxy && !extern.trimis ? `Persoana a fost adăugată la contacte, dar nu a ajuns în Waalaxy: ${extern.eroare ?? "eroare necunoscută"}. O poți adăuga acolo manual, din profilul ei LinkedIn.` : undefined };
+    return { error: null, avertisment: p.waalaxy && !extern.trimis ? m.waalaxyNeajuns(extern.eroare ?? m.eroareNecunoscuta) : undefined };
   },
 });
 
@@ -441,9 +449,10 @@ export const aprobaCandidat = withOrgFaze<[string, boolean], PregatitAprobare, E
 // scoate din „De aprobat” și celelalte rânduri ale ei (de la alte firme), ca să nu fie aprobată din greșeală.
 export const respingeCandidat = withOrgSession(
   async (ctx, candidatId: string, nuMaiPropune: boolean): Promise<void> => {
-    if (!UUID.test(candidatId)) throw new EroareUtilizator("Candidatul nu a fost găsit.");
+    const m = await mesaje();
+    if (!UUID.test(candidatId)) throw new EroareUtilizator(m.candidatNegasit);
     const [c] = await ctx.db.select().from(prospectareCandidati).where(and(eq(prospectareCandidati.id, candidatId), eq(prospectareCandidati.orgId, ctx.orgId))).limit(1);
-    if (!c || c.stare !== "nou") throw new EroareUtilizator("Candidatul nu mai e în lista „De aprobat”.");
+    if (!c || c.stare !== "nou") throw new EroareUtilizator(m.candidatNuMaiEInLista);
     await ctx.db.update(prospectareCandidati).set({ stare: "respins", hotaratDe: ctx.userId, hotaratLa: new Date() }).where(and(eq(prospectareCandidati.id, c.id), eq(prospectareCandidati.stare, "nou")));
     if (nuMaiPropune === true) {
       const l = linkedinNormalizat(c.linkedin);
@@ -470,19 +479,21 @@ export const respingeCandidat = withOrgSession(
 );
 
 export async function aprobaCandidatAction(orgSlug: string, candidatId: string, trimiteWaalaxy = false): Promise<RezultatAprobare> {
+  const m = await mesaje();
   try {
     return await aprobaCandidat(orgSlug, candidatId, trimiteWaalaxy === true);
   } catch (e) {
-    return { error: mesajSigur(e, "Nu am putut adăuga persoana. Încearcă din nou.", "prospectare-aprobare") };
+    return { error: mesajSigur(e, m.nuAmPututAdauga, "prospectare-aprobare") };
   }
 }
 
 export async function respingeCandidatAction(orgSlug: string, candidatId: string, nuMaiPropune = false): Promise<{ error: string | null }> {
+  const m = await mesaje();
   try {
     await respingeCandidat(orgSlug, candidatId, nuMaiPropune === true);
     return { error: null };
   } catch (e) {
-    return { error: mesajSigur(e, "Nu am putut respinge persoana. Încearcă din nou.", "prospectare-respingere") };
+    return { error: mesajSigur(e, m.nuAmPututRespinge, "prospectare-respingere") };
   }
 }
 
@@ -495,10 +506,11 @@ export async function creditePrelucrare(orgSlug: string): Promise<CreditFurnizor
 }
 
 export async function cautaDecidentiPentruFirma(orgSlug: string, companyId: string, forteaza = false): Promise<RezultatActiune> {
+  const m = await mesaje();
   try {
     return await cautaDecidentiAction(orgSlug, companyId, forteaza === true);
   } catch (e) {
-    return { ok: false, eroare: mesajSigur(e, "Căutarea nu a reușit. Încearcă din nou în câteva minute.", "prospectare-cautare") };
+    return { ok: false, eroare: mesajSigur(e, m.cautareEsuata, "prospectare-cautare") };
   }
 }
 
@@ -509,41 +521,43 @@ export type RezultatImbogatire = { ok: boolean; eroare?: string; completat?: str
 export const imbogatesteFirmaAction = withOrgFaze<[string], { companyId: string; firma: { nume: string; site: string | null; industrie: string | null; nrAngajati: number | null; domeniuEmail: string | null }; cheie: string }, Rezultat<DateFirmaApollo | null>, RezultatImbogatire>({
   opts: OPTIUNI,
   pregateste: async (ctx, companyId) => {
-    if (!UUID.test(companyId)) throw new EroareUtilizator("Firma nu a fost găsită.");
+    const m = await mesaje();
+    if (!UUID.test(companyId)) throw new EroareUtilizator(m.firmaNegasita);
     const [firma] = await ctx.db
       .select({ nume: companies.nume, site: companies.site, industrie: companies.industrie, nrAngajati: companies.nrAngajati })
       .from(companies)
       .where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId), sql`${companies.deletedAt} is null`))
       .limit(1);
-    if (!firma) throw new EroareUtilizator("Firma nu a fost găsită.");
-    if ((firma.industrie ?? "").trim() && firma.nrAngajati != null) return { gata: { ok: true, completat: [], mesaj: "Firma are deja industria și numărul de angajați; nu e nimic de completat." } };
+    if (!firma) throw new EroareUtilizator(m.firmaNegasita);
+    if ((firma.industrie ?? "").trim() && firma.nrAngajati != null) return { gata: { ok: true, completat: [], mesaj: m.firmaAreDeja } };
     const [rand] = await ctx.db.select({ enc: prospectareChei.cheieEnc }).from(prospectareChei).where(and(eq(prospectareChei.orgId, ctx.orgId), eq(prospectareChei.provider, "apollo"))).limit(1);
-    if (!rand) return { gata: { ok: false, eroare: "Conectează întâi cheia Apollo (Setări → Prospectare)." } };
+    if (!rand) return { gata: { ok: false, eroare: m.conecteazaApollo } };
     let cheie: string;
     try {
       cheie = decripteaza(rand.enc);
     } catch {
-      return { gata: { ok: false, eroare: "Cheia Apollo nu poate fi citită. Un administrator o poate adăuga din nou în Setări → Prospectare." } };
+      return { gata: { ok: false, eroare: m.apolloIlizibila } };
     }
     const [contactEmail] = await ctx.db.select({ email: contacts.email }).from(contacts).where(and(eq(contacts.companyId, companyId), eq(contacts.orgId, ctx.orgId), sql`coalesce(${contacts.email}, '') <> ''`)).limit(1);
     return { pregatit: { companyId, firma: { ...firma, domeniuEmail: domeniuDinEmail(contactEmail?.email) }, cheie } };
   },
   extern: async ({ firma, cheie }) => apolloImbogatesteFirma(cheie, { nume: firma.nume, domeniu: domeniuDinSite(firma.site) ?? firma.domeniuEmail }, fetch),
   salveaza: async (ctx, { companyId, firma }, rezultat): Promise<RezultatImbogatire> => {
+    const m = await mesaje();
     if (!rezultat.ok) return { ok: false, eroare: rezultat.eroare };
     await ctx.db.insert(prospectareJurnal).values({ orgId: ctx.orgId, provider: "apollo", operatie: "imbogatire_firma", ok: true, unitati: 1, companyId, userId: ctx.userId });
-    if (!rezultat.date) return { ok: true, completat: [], mesaj: "Apollo nu a găsit sigur această firmă (se potrivește doar după domeniu sau după nume identic). Completează site-ul firmei și încearcă din nou." };
+    if (!rezultat.date) return { ok: true, completat: [], mesaj: m.apolloNegasit };
     const completat: string[] = [];
     const seteaza: { industrie?: string; nrAngajati?: number } = {};
     if (!(firma.industrie ?? "").trim() && rezultat.date.industrie) {
       seteaza.industrie = rezultat.date.industrie;
-      completat.push("industrie");
+      completat.push(m.industrie);
     }
     if (firma.nrAngajati == null && rezultat.date.nrAngajati != null) {
       seteaza.nrAngajati = rezultat.date.nrAngajati;
-      completat.push("număr de angajați");
+      completat.push(m.nrAngajatiCompletat);
     }
-    if (completat.length === 0) return { ok: true, completat, mesaj: "Firma avea deja aceste date; n-am suprascris nimic." };
+    if (completat.length === 0) return { ok: true, completat, mesaj: m.avea };
     // Doar ce lipsea (condițiile din WHERE repetă verificarea, ca o modificare făcută între timp să nu fie suprascrisă) + data îmbogățirii.
     await ctx.db.execute(sql`
       update companies set
@@ -551,14 +565,15 @@ export const imbogatesteFirmaAction = withOrgFaze<[string], { companyId: string;
         nr_angajati = coalesce(nr_angajati, ${seteaza.nrAngajati ?? null}),
         extra = coalesce(extra, '{}'::jsonb) || jsonb_build_object('imbogatitLa', ${new Date().toISOString()}::text)
       where id = ${companyId} and org_id = ${ctx.orgId}`);
-    return { ok: true, completat, mesaj: `Am completat: ${completat.join(" și ")}.` };
+    return { ok: true, completat, mesaj: m.amCompletat(completat.join(m.si)) };
   },
 });
 
 export async function imbogatesteFirma(orgSlug: string, companyId: string): Promise<RezultatImbogatire> {
+  const m = await mesaje();
   try {
     return await imbogatesteFirmaAction(orgSlug, companyId);
   } catch (e) {
-    return { ok: false, eroare: mesajSigur(e, "Nu am putut îmbogăți firma. Încearcă din nou.", "prospectare-imbogatire-firma") };
+    return { ok: false, eroare: mesajSigur(e, m.nuAmPututImbogati, "prospectare-imbogatire-firma") };
   }
 }

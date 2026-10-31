@@ -8,6 +8,8 @@ import { donatoriReali, dubluriRespinse } from "@/lib/db/schema";
 import { gasesteDubluri } from "@/lib/curatare-contacte";
 import { executaImbinare, type RezultatImbinare } from "@/lib/donatori-imbinare";
 import { EroareUtilizator, mesajSigur } from "@/lib/erori";
+import { DONATORI_UI3_DICT } from "@/lib/i18n/dictionaries/donatori-ui-3";
+import { getLocale } from "@/lib/i18n/get-locale";
 
 // Donatori care par aceeași persoană (e-mail echivalent, același telefon, același nume și aceeași localitate). Nimic nu se unește singur: lista e o propunere,
 // iar îmbinarea cere confirmare și e rezervată administratorilor.
@@ -78,7 +80,7 @@ export async function imbinaDonatoriAction(orgSlug: string, primarId: string, se
   try {
     return await imbinaDonatori(orgSlug, primarId, secundariIds);
   } catch (e) {
-    return { ok: false, eroare: e instanceof EroareUtilizator ? e.message : mesajSigur(e, "Nu am putut îmbina donatorii. Nu s-a schimbat nimic; încearcă din nou.", "imbinare-donatori") };
+    return { ok: false, eroare: e instanceof EroareUtilizator ? e.message : mesajSigur(e, DONATORI_UI3_DICT[await getLocale()].dubluri.erori.nuAmImbinat, "imbinare-donatori") };
   }
 }
 
@@ -86,10 +88,11 @@ export type RezultatRespingere = { ok: true } | { ok: false; eroare: string };
 
 // „Sunt persoane diferite”: grupul nu se mai propune (până apare în el un donator nou). Nu șterge și nu schimbă nimic la donatori. Doar administratorii.
 export const respingeGrupDublu = withOrgAdmin(async (ctx, ids: string[]): Promise<RezultatRespingere> => {
+  const er = DONATORI_UI3_DICT[await getLocale()].dubluri.erori;
   const curate = [...new Set((Array.isArray(ids) ? ids : []).filter((x) => typeof x === "string" && UUID.test(x)))];
-  if (curate.length < 2 || curate.length > 50) return { ok: false, eroare: "Grup invalid. Reîncarcă pagina." };
+  if (curate.length < 2 || curate.length > 50) return { ok: false, eroare: er.grupInvalid };
   const existente = await ctx.db.select({ id: donatoriReali.id }).from(donatoriReali).where(and(eq(donatoriReali.orgId, ctx.orgId), inArray(donatoriReali.id, curate)));
-  if (existente.length !== curate.length) return { ok: false, eroare: "Unul dintre donatori nu mai există. Reîncarcă pagina." };
+  if (existente.length !== curate.length) return { ok: false, eroare: er.donatorInexistent };
   await ctx.db.insert(dubluriRespinse).values({ orgId: ctx.orgId, semnatura: semnaturaGrup(curate), respinsDe: ctx.userId }).onConflictDoNothing();
   revalidatePath(`/${ctx.orgSlug}/crm/donatori/dubluri`);
   return { ok: true };
@@ -99,7 +102,7 @@ export async function respingeGrupDubluAction(orgSlug: string, ids: string[]): P
   try {
     return await respingeGrupDublu(orgSlug, ids);
   } catch (e) {
-    return { ok: false, eroare: e instanceof EroareUtilizator ? e.message : mesajSigur(e, "Nu am putut salva. Încearcă din nou.", "dubluri-respinse") };
+    return { ok: false, eroare: e instanceof EroareUtilizator ? e.message : mesajSigur(e, DONATORI_UI3_DICT[await getLocale()].dubluri.erori.nuAmSalvat, "dubluri-respinse") };
   }
 }
 
@@ -114,6 +117,6 @@ export async function restaureazaDubluriRespinseAction(orgSlug: string): Promise
   try {
     return await restaureazaDubluriRespinse(orgSlug);
   } catch (e) {
-    return { ok: false, eroare: e instanceof EroareUtilizator ? e.message : mesajSigur(e, "Nu am putut salva. Încearcă din nou.", "dubluri-respinse") };
+    return { ok: false, eroare: e instanceof EroareUtilizator ? e.message : mesajSigur(e, DONATORI_UI3_DICT[await getLocale()].dubluri.erori.nuAmSalvat, "dubluri-respinse") };
   }
 }

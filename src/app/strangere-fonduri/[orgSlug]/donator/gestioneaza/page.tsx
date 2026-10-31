@@ -5,13 +5,16 @@ import { abonamenteDupaEmail, verificaLink } from "@/lib/donator-portal";
 import { descrieAbonament, esteAlDonatorului, type DescriereAbonament } from "@/lib/donator-portal-ops";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { PORTAL_DONATOR_DICT } from "@/lib/i18n/dictionaries/portal-donator";
+import { SF_PUBLIC_UI_DICT } from "@/lib/i18n/dictionaries/sf-public-ui";
 import { raporteazaEroare } from "@/lib/monitoring";
 import { stripeOrgDupaSlug } from "@/lib/org-stripe";
 
 import { PortalClient, type ElementPortal } from "./portal-client";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Donația lunară", robots: { index: false, follow: false } };
+export async function generateMetadata() {
+  return { title: SF_PUBLIC_UI_DICT[await getLocale()].metaDonatieLunara, robots: { index: false, follow: false } };
+}
 
 // Pagina cu donațiile lunare ale unui donator, deschisă din linkul primit pe email (semnat, valabil o oră). Starea vine live din Stripe.
 export default async function GestionarePage({ params, searchParams }: { params: Promise<{ orgSlug: string }>; searchParams: Promise<{ e?: string; x?: string; t?: string }> }) {

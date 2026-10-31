@@ -7,6 +7,8 @@ import { ensureAppUser, getAuthUser } from "@/lib/auth/dal";
 import { db } from "@/lib/db";
 import { fundraisingBeneficiaries, fundraisingBeneficiaryInvites } from "@/lib/db/schema";
 import { EroareUtilizator, mesajSigur } from "@/lib/erori";
+import { INVITE_UI_DICT } from "@/lib/i18n/dictionaries/invite-ui";
+import { getLocale } from "@/lib/i18n/get-locale";
 
 export type BeneficiaryInviteLookup = {
   email: string;
@@ -58,6 +60,7 @@ export async function acceptBeneficiaryInviteAction(token: string): Promise<{ er
     redirect(`/login?beneficiarInvite=${token}`);
   }
 
+  const er = INVITE_UI_DICT[await getLocale()].erori;
   try {
     await db.transaction(async (tx) => {
       await tx.execute(sql`select set_config('app.beneficiary_invite_token', ${token}, true)`);
@@ -67,13 +70,11 @@ export async function acceptBeneficiaryInviteAction(token: string): Promise<{ er
         .where(sql`${fundraisingBeneficiaryInvites.token} = ${token}`)
         .limit(1);
       const invite = rows[0];
-      if (!invite) throw new EroareUtilizator("Invitație inexistentă sau expirată.");
-      if (invite.acceptedAt) throw new EroareUtilizator("Invitația a fost deja folosită.");
-      if (invite.expiresAt.getTime() < Date.now()) throw new EroareUtilizator("Invitația a expirat.");
+      if (!invite) throw new EroareUtilizator(er.inexistenta);
+      if (invite.acceptedAt) throw new EroareUtilizator(er.folosita);
+      if (invite.expiresAt.getTime() < Date.now()) throw new EroareUtilizator(er.expirata);
       if (invite.email.toLowerCase() !== authUser.email!.toLowerCase()) {
-        throw new EroareUtilizator(
-          `Invitația e pentru ${invite.email} — ești logat cu alt email. Deconectează-te și intră cu adresa corectă.`,
-        );
+        throw new EroareUtilizator(er.altEmail(invite.email));
       }
 
       await tx.execute(sql`select set_config('app.current_user_email', ${authUser.email}, true)`);
@@ -98,7 +99,7 @@ export async function acceptBeneficiaryInviteAction(token: string): Promise<{ er
       await tx.execute(sql`update app_users set account_type = 'beneficiar' where id = ${appUser.id}`);
     });
   } catch (e) {
-    return { error: mesajSigur(e, "Acceptarea a eșuat.", "invitatie-acceptare") };
+    return { error: mesajSigur(e, er.acceptareEsuata, "invitatie-acceptare") };
   }
 
   // redirect() trebuie apelat DUPĂ ce tranzacția s-a încheiat — aruncă o

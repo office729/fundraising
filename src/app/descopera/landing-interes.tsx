@@ -7,9 +7,12 @@ import { useState } from "react";
 
 import { FormularInteres } from "@/components/interes/formular-interes";
 import { Cristal, Eticheta } from "@/components/interes/ilustratie";
+import type { Locale } from "@/lib/i18n/config";
+import { INTERES_UI_DICT } from "@/lib/i18n/dictionaries/interes-ui";
 
 // Pagina /descopera: același mesaj ca pop-up-ul de pe site, într-o singură coloană (sus mesajul și ilustrația, jos formularul).
-export function LandingInteres() {
+export function LandingInteres({ locale }: { locale: Locale }) {
+  const t = INTERES_UI_DICT[locale];
   const [trimis, setTrimis] = useState(false);
 
   return (
@@ -21,14 +24,14 @@ export function LandingInteres() {
             <div>
               <Image src="/alexandrit-logo-alb.png" alt="Alexandrit" width={1730} height={332} className="h-auto w-[200px] sm:w-[240px]" priority />
               <h1 className="font-display mt-7 text-[40px] leading-[1.02] font-extrabold tracking-tight sm:text-[56px]">
-                Mai mult timp
+                {t.mesaj.titluLinia1}
                 <br />
-                pentru <span className="text-[#2de2a8]">tine.</span>
+                {t.mesaj.titluPentru}<span className="text-[#2de2a8]">{t.mesaj.titluTine}</span>
               </h1>
               <p className="mt-4 text-[19px] leading-snug text-white/90 sm:text-[23px]">
-                Donatorii, campaniile și echipa.
+                {t.mesaj.sub1}
                 <br />
-                Într-un singur loc.
+                {t.mesaj.sub2}
               </p>
             </div>
 
@@ -42,9 +45,9 @@ export function LandingInteres() {
               <div className="absolute top-1/2 left-1/2 h-[210px] w-[185px] -translate-x-1/2 -translate-y-1/2 drop-shadow-[0_0_30px_rgba(60,220,255,.55)] sm:h-[230px] sm:w-[200px]">
                 <Cristal />
               </div>
-              <Eticheta icon={Users} text="Donatori" className="top-0 left-0" />
-              <Eticheta icon={BarChart3} text="Campanii" className="top-[92px] right-0" />
-              <Eticheta icon={UsersRound} text="Echipă" className="bottom-1 left-2" />
+              <Eticheta icon={Users} text={t.ilustratie.donatori} className="top-0 left-0" />
+              <Eticheta icon={BarChart3} text={t.ilustratie.campanii} className="top-[92px] right-0" />
+              <Eticheta icon={UsersRound} text={t.ilustratie.echipa} className="bottom-1 left-2" />
             </div>
           </div>
         </section>
@@ -53,26 +56,26 @@ export function LandingInteres() {
         <section className="px-6 pt-8 pb-7 text-[#0b1f4d] sm:px-10 sm:pt-10">
           {trimis ? (
             <div role="status" className="flex min-h-[320px] flex-col items-start justify-center">
-              <p className="text-xs font-bold tracking-[.18em] uppercase">Mulțumim</p>
+              <p className="text-xs font-bold tracking-[.18em] uppercase">{t.multumim.eticheta}</p>
               <h2 className="font-display mt-3 text-[36px] leading-tight font-extrabold sm:text-[46px]">
-                Am primit datele tale<span className="text-[#06a87b]">.</span>
+                {t.multumim.titlu}<span className="text-[#06a87b]">.</span>
               </h2>
-              <p className="mt-3 max-w-md text-[18px] text-[#0b1f4d]/80">Te vom contacta în curând.</p>
+              <p className="mt-3 max-w-md text-[18px] text-[#0b1f4d]/80">{t.multumim.landing}</p>
               <Link href="/" className="mt-6 inline-flex h-12 items-center rounded-xl bg-[#06a87b] px-6 text-[16px] font-bold text-white hover:bg-[#058f69]">
-                Vezi alexandrit.ro
+                {t.multumim.veziSite}
               </Link>
             </div>
           ) : (
             <>
-              <p className="text-[12px] font-bold tracking-[.2em] uppercase sm:text-[13px]">Pentru organizații care fac bine</p>
+              <p className="text-[12px] font-bold tracking-[.2em] uppercase sm:text-[13px]">{t.formular.pentruOrganizatii}</p>
               <h2 className="font-display mt-3 text-[36px] leading-none font-extrabold tracking-tight sm:text-[54px]">
-                Descoperă Alexandrit<span className="text-[#06a87b]">.</span>
+                {t.formular.descopera}<span className="text-[#06a87b]">.</span>
               </h2>
-              <p className="mt-3 mb-6 text-[18px] text-[#0b1f4d]/85 sm:text-[22px]">Lasă-ne datele tale și te vom contacta.</p>
-              <FormularInteres cale="/descopera" onTrimis={() => setTrimis(true)} nota={false} />
+              <p className="mt-3 mb-6 text-[18px] text-[#0b1f4d]/85 sm:text-[22px]">{t.formular.lasaDatele}</p>
+              <FormularInteres locale={locale} cale="/descopera" onTrimis={() => setTrimis(true)} nota={false} />
               <div className="mt-6 flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
                 <p className="text-[18px] font-bold">alexandrit.ro</p>
-                <p className="text-[15px] text-[#0b1f4d]/65">Fă primul pas spre un ONG mai bine organizat.</p>
+                <p className="text-[15px] text-[#0b1f4d]/65">{t.formular.primulPas}</p>
               </div>
             </>
           )}

@@ -6,6 +6,8 @@ import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 
 import { CONSENT_KEY } from "@/lib/analytics";
+import type { Locale } from "@/lib/i18n/config";
+import { INTERES_UI_DICT } from "@/lib/i18n/dictionaries/interes-ui";
 import { FormularInteres } from "@/components/interes/formular-interes";
 import { Cristal, Eticheta } from "@/components/interes/ilustratie";
 import {
@@ -48,7 +50,8 @@ function bannerCookieDeschis(): boolean {
   }
 }
 
-export function PopupInscriere({ ascuns }: { ascuns: boolean }) {
+export function PopupInscriere({ ascuns, locale }: { ascuns: boolean; locale: Locale }) {
+  const t = INTERES_UI_DICT[locale];
   const cale = usePathname();
   const idTitlu = useId();
   const [deschis, setDeschis] = useState(false);
@@ -156,7 +159,7 @@ export function PopupInscriere({ ascuns }: { ascuns: boolean }) {
           tabIndex={-1}
           className={`relative grid w-full max-w-[980px] overflow-hidden rounded-[22px] bg-white shadow-[0_30px_80px_rgba(0,10,40,.55)] outline-none transition-transform duration-300 motion-reduce:transition-none md:grid-cols-[46fr_54fr] ${vizibil ? "translate-y-0" : "translate-y-3"}`}
         >
-          <button type="button" onClick={() => inchide(POPUP_ZILE_ASCUNS_INCHIS)} aria-label="Închide" className="absolute top-3 right-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-[#0b1f4d] shadow hover:bg-white md:bg-[#eef2f8]">
+          <button type="button" onClick={() => inchide(POPUP_ZILE_ASCUNS_INCHIS)} aria-label={t.inchideAria} className="absolute top-3 right-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-[#0b1f4d] shadow hover:bg-white md:bg-[#eef2f8]">
             <X className="h-5 w-5" aria-hidden />
           </button>
 
@@ -164,14 +167,14 @@ export function PopupInscriere({ ascuns }: { ascuns: boolean }) {
           <div className="relative overflow-hidden bg-[linear-gradient(160deg,#00407a_0%,#001f4d_55%,#001231_100%)] px-7 pt-8 pb-8 text-white md:min-h-[560px] md:px-9 md:pb-[76px]">
             <Image src="/alexandrit-logo-alb.png" alt="Alexandrit" width={1730} height={332} className="h-auto w-[190px] md:w-[230px]" priority={false} />
             <h2 id={idTitlu} className="font-display mt-6 text-[34px] leading-[1.02] font-extrabold tracking-tight md:mt-9 md:text-[50px]">
-              Mai mult timp
+              {t.mesaj.titluLinia1}
               <br />
-              pentru <span className="text-[#2de2a8]">tine.</span>
+              {t.mesaj.titluPentru}<span className="text-[#2de2a8]">{t.mesaj.titluTine}</span>
             </h2>
             <p className="mt-3 max-w-[22rem] text-[17px] leading-snug text-white/90 md:mt-4 md:text-[21px]">
-              Donatorii, campaniile și echipa.
+              {t.mesaj.sub1}
               <br />
-              Într-un singur loc.
+              {t.mesaj.sub2}
             </p>
 
             <div className="relative mx-auto mt-6 hidden h-[260px] w-full max-w-[420px] md:block" aria-hidden>
@@ -184,9 +187,9 @@ export function PopupInscriere({ ascuns }: { ascuns: boolean }) {
               <div className="absolute top-1/2 left-1/2 h-[230px] w-[200px] -translate-x-1/2 -translate-y-1/2 drop-shadow-[0_0_30px_rgba(60,220,255,.55)]">
                 <Cristal />
               </div>
-              <Eticheta icon={Users} text="Donatori" className="top-0 left-0" />
-              <Eticheta icon={BarChart3} text="Campanii" className="top-[96px] right-0" />
-              <Eticheta icon={UsersRound} text="Echipă" className="bottom-0 left-2" />
+              <Eticheta icon={Users} text={t.ilustratie.donatori} className="top-0 left-0" />
+              <Eticheta icon={BarChart3} text={t.ilustratie.campanii} className="top-[96px] right-0" />
+              <Eticheta icon={UsersRound} text={t.ilustratie.echipa} className="bottom-0 left-2" />
             </div>
             <p className="hidden text-[18px] font-semibold md:absolute md:bottom-7 md:left-9 md:mt-0 md:block">alexandrit.ro</p>
           </div>
@@ -195,23 +198,24 @@ export function PopupInscriere({ ascuns }: { ascuns: boolean }) {
           <div className="px-6 pt-8 pb-7 text-[#0b1f4d] md:px-9 md:pt-12">
             {trimis ? (
               <div role="status" className="flex h-full min-h-[320px] flex-col items-start justify-center">
-                <p className="text-xs font-bold tracking-[.18em] uppercase">Mulțumim</p>
+                <p className="text-xs font-bold tracking-[.18em] uppercase">{t.multumim.eticheta}</p>
                 <h3 className="font-display mt-3 text-[34px] leading-tight font-extrabold md:text-[42px]">
-                  Am primit datele tale<span className="text-[#06a87b]">.</span>
+                  {t.multumim.titlu}<span className="text-[#06a87b]">.</span>
                 </h3>
-                <p className="mt-3 max-w-md text-[17px] text-[#0b1f4d]/80">Te vom contacta în curând. Între timp, poți arunca o privire pe site.</p>
+                <p className="mt-3 max-w-md text-[17px] text-[#0b1f4d]/80">{t.multumim.popup}</p>
                 <button type="button" onClick={() => inchide(POPUP_ZILE_ASCUNS_TRIMIS)} className="mt-6 inline-flex h-12 items-center rounded-xl bg-[#06a87b] px-6 text-[16px] font-bold text-white hover:bg-[#058f69]">
-                  Închide
+                  {t.multumim.inchide}
                 </button>
               </div>
             ) : (
               <>
-                <p className="text-[12px] font-bold tracking-[.2em] uppercase md:text-[13px]">Pentru organizații care fac bine</p>
+                <p className="text-[12px] font-bold tracking-[.2em] uppercase md:text-[13px]">{t.formular.pentruOrganizatii}</p>
                 <p className="font-display mt-3 text-[34px] leading-none font-extrabold tracking-tight md:text-[40px]" aria-hidden>
-                  Descoperă Alexandrit<span className="text-[#06a87b]">.</span>
+                  {t.formular.descopera}<span className="text-[#06a87b]">.</span>
                 </p>
-                <p className="mt-3 mb-6 text-[17px] text-[#0b1f4d]/85 md:text-[21px]">Lasă-ne datele tale și te vom contacta.</p>
+                <p className="mt-3 mb-6 text-[17px] text-[#0b1f4d]/85 md:text-[21px]">{t.formular.lasaDatele}</p>
                 <FormularInteres
+                  locale={locale}
                   cale={cale}
                   previzualizare={previzualizare}
                   onTrimis={() => {

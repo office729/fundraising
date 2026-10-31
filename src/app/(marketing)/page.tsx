@@ -52,6 +52,7 @@ export default async function LandingPage({
     const text = (v: unknown) => (typeof v === "string" ? v : "");
     return (
       <FinalizeForm
+        locale={await getLocale()}
         email={authUser.email}
         planValues={planValues}
         referralCode={referralCode}
@@ -148,7 +149,7 @@ export default async function LandingPage({
       <NotaCrmMarketing locale={locale} />
 
       {/* Campanii de strângere de fonduri — se activează după primele PRAG_ORGANIZATII organizații */}
-      {campanii && <CampaniiSectiune stare={{ ...campanii, prag: PRAG_ORGANIZATII }} />}
+      {campanii && <CampaniiSectiune stare={{ ...campanii, prag: PRAG_ORGANIZATII }} locale={locale} />}
 
       {/* De ce Alexandrit */}
       <section className="bg-panel-2 px-[6%] py-16">

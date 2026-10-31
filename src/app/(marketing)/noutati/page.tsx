@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { FirituriJsonLd } from "@/components/seo/firituri-json-ld";
 import { INOVATII } from "@/content/inovatii";
+import { inovatieIn } from "@/content/inovatii-en";
 import { NOUTATI_DICT } from "@/lib/i18n/dictionaries/noutati";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { metadatePagina } from "@/lib/page-titles";
@@ -22,7 +23,8 @@ export default async function NoutatiPage() {
   const locale = await getLocale();
   const dict = NOUTATI_DICT[locale];
   const { nou, luna } = praguri();
-  const ultimaLuna = INOVATII.filter((n) => n.data >= luna).length;
+  const noutati = INOVATII.map((n) => inovatieIn(n, locale));
+  const ultimaLuna = noutati.filter((n) => n.data >= luna).length;
 
   return (
     <main>
@@ -50,7 +52,7 @@ export default async function NoutatiPage() {
 
       <section className="px-[6%] pb-14">
         <ol className="mx-auto flex max-w-3xl flex-col gap-4">
-          {INOVATII.map((n, i) => (
+          {noutati.map((n, i) => (
             <li key={n.id} id={n.id} className="scroll-mt-24">
               <Reveal delay={(i % 4) * 60}>
                 <article className="rounded-2xl border border-line bg-panel p-6">

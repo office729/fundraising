@@ -8,6 +8,8 @@ import { Button } from "../../components/ui/button";
 import { Input, Label } from "../../components/ui/input";
 import { EmptyState } from "../../components/ui/states";
 import { formatDataOra } from "../../lib/format";
+import { useLocale } from "../../lib/locale-context";
+import { COMPANII_UI_DICT } from "@/lib/i18n/dictionaries/companii-ui";
 import { incarcaDocumentFirma, stergeDocumentFirma } from "./documente-actions";
 
 export type DocumentAfisat = { id: string; nume: string; tip: string; marime: number; la: string; deNume: string | null; url: string | null };
@@ -17,6 +19,7 @@ const dimensiune = (b: number) => (b >= 1024 * 1024 ? `${(b / 1024 / 1024).toFix
 export function DocumentePanel({ companyId, documente }: { companyId: string; documente: DocumentAfisat[] }) {
   const { orgSlug } = useParams<{ orgSlug: string }>();
   const router = useRouter();
+  const ui = COMPANII_UI_DICT[useLocale()].documente;
   const formRef = useRef<HTMLFormElement>(null);
   const [pending, setPending] = useState(false);
   const [eroare, setEroare] = useState("");
@@ -36,7 +39,7 @@ export function DocumentePanel({ companyId, documente }: { companyId: string; do
   }
 
   async function onSterge(id: string) {
-    if (!window.confirm("Ștergi acest document?")) return;
+    if (!window.confirm(ui.confirmaStergere)) return;
     setSterge(id);
     await stergeDocumentFirma(orgSlug, companyId, id);
     setSterge(null);
@@ -46,11 +49,11 @@ export function DocumentePanel({ companyId, documente }: { companyId: string; do
   return (
     <div className="space-y-4">
       <form ref={formRef} action={onSubmit} className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4">
-        <p className="text-[13px] font-semibold text-[var(--ci-text)]">Încarcă un document</p>
-        <p className="mt-0.5 text-[12px] text-[var(--ci-text-muted)]">Contracte, rapoarte, corespondență — PDF, imagine, Word, Excel sau text, maxim 10 MB.</p>
+        <p className="text-[13px] font-semibold text-[var(--ci-text)]">{ui.incarca}</p>
+        <p className="mt-0.5 text-[12px] text-[var(--ci-text-muted)]">{ui.descriere}</p>
         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
           <div>
-            <Label>Fișier</Label>
+            <Label>{ui.fisier}</Label>
             <input
               type="file"
               name="fisier"
@@ -60,18 +63,18 @@ export function DocumentePanel({ companyId, documente }: { companyId: string; do
             />
           </div>
           <div>
-            <Label>Denumire (opțional)</Label>
-            <Input name="nume" placeholder="ex. Contract sponsorizare 2026" />
+            <Label>{ui.denumire}</Label>
+            <Input name="nume" placeholder={ui.denumirePh} />
           </div>
           <Button type="submit" variant="primary" disabled={pending}>
-            <Upload className="h-3.5 w-3.5" /> {pending ? "Se încarcă…" : "Încarcă"}
+            <Upload className="h-3.5 w-3.5" /> {pending ? ui.seIncarca : ui.incarcaBtn}
           </Button>
         </div>
         {eroare && <p className="mt-2 text-[13px] text-[var(--ci-red)]">{eroare}</p>}
       </form>
 
       {documente.length === 0 ? (
-        <EmptyState title="Niciun document încă" description="Documentele încărcate apar aici." />
+        <EmptyState title={ui.niciunTitle} description={ui.niciunDescriere} />
       ) : (
         <div className="space-y-2">
           {documente.map((d) => (
@@ -89,12 +92,12 @@ export function DocumentePanel({ companyId, documente }: { companyId: string; do
               <div className="flex shrink-0 items-center gap-3">
                 {d.url ? (
                   <a href={d.url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-8 items-center gap-1 text-[12px] font-medium text-[var(--ci-blue)] hover:underline">
-                    <Download className="h-3.5 w-3.5" /> Deschide
+                    <Download className="h-3.5 w-3.5" /> {ui.deschide}
                   </a>
                 ) : (
-                  <span className="text-[12px] text-[var(--ci-text-faint)]">indisponibil</span>
+                  <span className="text-[12px] text-[var(--ci-text-faint)]">{ui.indisponibil}</span>
                 )}
-                <button type="button" onClick={() => onSterge(d.id)} disabled={sterge === d.id} title="Șterge" className="text-[var(--ci-text-faint)] hover:text-[var(--ci-red)] disabled:opacity-50">
+                <button type="button" onClick={() => onSterge(d.id)} disabled={sterge === d.id} title={ui.sterge} className="text-[var(--ci-text-faint)] hover:text-[var(--ci-red)] disabled:opacity-50">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>

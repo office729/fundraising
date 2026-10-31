@@ -3,6 +3,8 @@ import { asc, eq, inArray } from "drizzle-orm";
 
 import { withBeneficiarSession } from "@/lib/auth/guard";
 import { fundraisingTaskAttachments, fundraisingTasks } from "@/lib/db/schema";
+import { BENEFICIAR_PORTAL_UI_DICT } from "@/lib/i18n/dictionaries/beneficiar-portal-ui";
+import { getLocale } from "@/lib/i18n/get-locale";
 
 import { SarciniList } from "./sarcini-list";
 
@@ -24,16 +26,19 @@ const getSarcini = withBeneficiarSession(async (ctx) => {
 export default async function SarcinileMelePage() {
   const { taskuri, attachments: atasamenteBrute } = await getSarcini();
   const attachments = await urlsSemnate(atasamenteBrute);
+  const locale = await getLocale();
+  const t = BENEFICIAR_PORTAL_UI_DICT[locale].sarcini;
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-xl font-bold text-ink">Sarcinile mele</h1>
-        <p className="mt-1 text-[13px] text-muted-2">Sarcini generale și de sponsorizare primite de la echipă pentru campania ta.</p>
+        <h1 className="font-display text-xl font-bold text-ink">{t.titlu}</h1>
+        <p className="mt-1 text-[13px] text-muted-2">{t.desc}</p>
       </div>
 
       {taskuri.length ? (
         <SarciniList
+          locale={locale}
           taskuri={taskuri.map((t) => ({
             id: t.id,
             tip: t.tip,
@@ -50,7 +55,7 @@ export default async function SarcinileMelePage() {
         />
       ) : (
         <div className="rounded-xl border border-line bg-panel p-6 text-center">
-          <p className="text-[13.5px] text-muted-2">Nu ai sarcini momentan — echipa te va contacta când apare ceva de făcut.</p>
+          <p className="text-[13.5px] text-muted-2">{t.gol}</p>
         </div>
       )}
     </div>

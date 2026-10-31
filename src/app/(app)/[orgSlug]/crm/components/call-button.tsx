@@ -5,7 +5,10 @@ import { Loader2, Mic, MicOff, Phone, PhoneOff } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
+import { COMPONENTE_UI_DICT } from "@/lib/i18n/dictionaries/componente-ui";
 import { normalizeazaTelefonE164 } from "@/lib/telefon";
+
+import { useLocale } from "../lib/locale-context";
 
 type Stare = "idle" | "conectare" | "sunand" | "activ" | "eroare";
 
@@ -20,6 +23,7 @@ function formatDurata(sec: number) {
 // arată eroare clară) până când variabilele TWILIO_* sunt configurate.
 export function CallButton({ telefon, nume, companyId }: { telefon: string; nume?: string; companyId?: string }) {
   const { orgSlug } = useParams<{ orgSlug: string }>();
+  const t = COMPONENTE_UI_DICT[useLocale()].call;
   const [stare, setStare] = useState<Stare>("idle");
   const [durata, setDurata] = useState(0);
   const [muted, setMuted] = useState(false);
@@ -67,7 +71,7 @@ export function CallButton({ telefon, nume, companyId }: { telefon: string; nume
     setEroare("");
     const e164 = normalizeazaTelefonE164(telefon);
     if (!e164) {
-      setEroare("Numărul de telefon nu pare valid.");
+      setEroare(t.telefonInvalid);
       pornitRef.current = false;
       setStare("eroare");
       return;
@@ -78,9 +82,7 @@ export function CallButton({ telefon, nume, companyId }: { telefon: string; nume
       const data = await r.json();
       if (!r.ok || !data.token) {
         setEroare(
-          data.error === "twilio_neconfigurat"
-            ? "Apelarea din CRM nu e încă activată pentru această platformă."
-            : "Nu am putut porni apelul.",
+          data.error === "twilio_neconfigurat" ? t.neactivat : t.nuPornit,
         );
         pornitRef.current = false;
       setStare("eroare");
@@ -103,12 +105,12 @@ export function CallButton({ telefon, nume, companyId }: { telefon: string; nume
       call.on("disconnect", inchide);
       call.on("cancel", inchide);
       call.on("error", (e) => {
-        setEroare(e.message || "Eroare la apel.");
+        setEroare(e.message || t.eroareApel);
         pornitRef.current = false;
       setStare("eroare");
       });
     } catch (e) {
-      setEroare(e instanceof Error ? e.message : "Nu am putut porni apelul.");
+      setEroare(e instanceof Error ? e.message : t.nuPornit);
       pornitRef.current = false;
       setStare("eroare");
     }
@@ -127,7 +129,7 @@ export function CallButton({ telefon, nume, companyId }: { telefon: string; nume
         <button
           type="button"
           onClick={suna}
-          title={`Sună ${telefon}`}
+          title={t.titlu(telefon)}
           className="flex h-7 w-7 items-center justify-center rounded-[var(--ci-radius-btn)] text-[var(--ci-text-faint)] hover:bg-[var(--ci-green-soft)] hover:text-[var(--ci-green)]"
         >
           <Phone className="h-3.5 w-3.5" />
@@ -142,13 +144,13 @@ export function CallButton({ telefon, nume, companyId }: { telefon: string; nume
       {stare === "conectare" && (
         <>
           <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--ci-text-muted)]" />
-          <span className="text-[12px] text-[var(--ci-text-muted)]">Se conectează…</span>
+          <span className="text-[12px] text-[var(--ci-text-muted)]">{t.seConecteaza}</span>
         </>
       )}
       {stare === "sunand" && (
         <>
           <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--ci-amber)]" />
-          <span className="text-[12px] text-[var(--ci-text-muted)]">Sună…</span>
+          <span className="text-[12px] text-[var(--ci-text-muted)]">{t.sunaCeva}</span>
         </>
       )}
       {stare === "activ" && (
@@ -157,7 +159,7 @@ export function CallButton({ telefon, nume, companyId }: { telefon: string; nume
           <button
             type="button"
             onClick={toggleMute}
-            title={muted ? "Activează microfonul" : "Dezactivează microfonul"}
+            title={muted ? t.activeazaMic : t.dezactiveazaMic}
             className="flex h-6 w-6 items-center justify-center rounded-full text-[var(--ci-text-muted)] hover:bg-[var(--ci-surface-2)]"
           >
             {muted ? <MicOff className="h-3.5 w-3.5" /> : <Mic className="h-3.5 w-3.5" />}
@@ -167,7 +169,7 @@ export function CallButton({ telefon, nume, companyId }: { telefon: string; nume
       <button
         type="button"
         onClick={inchide}
-        title="Închide apelul"
+        title={t.inchideApel}
         className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--ci-red-soft)] text-[var(--ci-red)] hover:opacity-80"
       >
         <PhoneOff className="h-3.5 w-3.5" />

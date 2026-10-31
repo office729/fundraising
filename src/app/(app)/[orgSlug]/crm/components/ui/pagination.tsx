@@ -1,4 +1,10 @@
+"use client";
+
 import { ChevronLeft, ChevronRight } from "lucide-react";
+
+import { COMPONENTE_UI_DICT } from "@/lib/i18n/dictionaries/componente-ui";
+
+import { useLocale } from "../../lib/locale-context";
 
 export function Pagination({
   page,
@@ -13,18 +19,19 @@ export function Pagination({
   total: number;
   pageSize: number;
 }) {
+  const t = COMPONENTE_UI_DICT[useLocale()].pagination;
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const to = Math.min(total, page * pageSize);
   return (
     <div className="flex items-center justify-between border-t border-[var(--ci-border)] px-1 pt-3">
       <p className="text-[13px] text-[var(--ci-text-muted)]">
-        {from}–{to} din {total}
+        {t.interval(from, to, total)}
       </p>
       <div className="flex items-center gap-1">
         <button
           onClick={() => onChange(page - 1)}
           disabled={page <= 1}
-          aria-label="Pagina anterioară"
+          aria-label={t.anterioara}
           className="flex h-8 w-8 items-center justify-center rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] text-[var(--ci-text-muted)] transition-colors hover:bg-[var(--ci-surface-2)] disabled:cursor-not-allowed disabled:opacity-40"
         >
           <ChevronLeft className="h-4 w-4" />
@@ -35,7 +42,7 @@ export function Pagination({
         <button
           onClick={() => onChange(page + 1)}
           disabled={page >= pageCount}
-          aria-label="Pagina următoare"
+          aria-label={t.urmatoare}
           className="flex h-8 w-8 items-center justify-center rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] text-[var(--ci-text-muted)] transition-colors hover:bg-[var(--ci-surface-2)] disabled:cursor-not-allowed disabled:opacity-40"
         >
           <ChevronRight className="h-4 w-4" />

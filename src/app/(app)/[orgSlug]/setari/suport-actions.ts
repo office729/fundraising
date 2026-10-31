@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 
 import { inregistreazaAudit } from "@/lib/audit";
 import { withOrgAdmin } from "@/lib/auth/guard";
+import { getTr } from "@/lib/i18n/tr-server";
 import { appUsers, fundraisingAuditLog, suportAcces } from "@/lib/db/schema";
 import { EroareUtilizator, mesajSigur } from "@/lib/erori";
 import { esteDurataSuportValida } from "@/lib/suport/date-personale";
@@ -48,7 +49,7 @@ const citeste = withOrgAdmin(
 
 const acorda = withOrgAdmin(
   async (ctx, zile: number): Promise<void> => {
-    if (!esteDurataSuportValida(zile)) throw new EroareUtilizator("Alege 1, 3 sau 7 zile.");
+    if (!esteDurataSuportValida(zile)) throw new EroareUtilizator((await getTr())("Alege 1, 3 sau 7 zile.", "Choose 1, 3 or 7 days."));
     const acum = new Date();
     // Un singur acces activ la un moment dat: cel anterior se retrage și se înlocuiește.
     await ctx.db
@@ -103,7 +104,7 @@ export async function acordaSuportAction(orgSlug: string, zile: number): Promise
     revalidatePath(`/${orgSlug}/crm/setari`);
     return { error: null };
   } catch (e) {
-    return { error: mesajSigur(e, "Nu am putut acorda accesul. Încearcă din nou.", "suport-acces-acordare") };
+    return { error: mesajSigur(e, (await getTr())("Nu am putut acorda accesul. Încearcă din nou.", "We could not grant the access. Please try again."), "suport-acces-acordare") };
   }
 }
 
@@ -113,6 +114,6 @@ export async function retrageSuportAction(orgSlug: string): Promise<{ error: str
     revalidatePath(`/${orgSlug}/crm/setari`);
     return { error: null };
   } catch (e) {
-    return { error: mesajSigur(e, "Nu am putut retrage accesul. Încearcă din nou.", "suport-acces-retragere") };
+    return { error: mesajSigur(e, (await getTr())("Nu am putut retrage accesul. Încearcă din nou.", "We could not withdraw the access. Please try again."), "suport-acces-retragere") };
   }
 }

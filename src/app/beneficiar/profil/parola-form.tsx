@@ -2,18 +2,22 @@
 
 import { useActionState } from "react";
 
+import type { Locale } from "@/lib/i18n/config";
+import { BENEFICIAR_PORTAL_UI_DICT } from "@/lib/i18n/dictionaries/beneficiar-portal-ui";
+
 import { schimbaParolaBeneficiarAction, type SchimbaParolaState } from "../actions";
 
 const START: SchimbaParolaState = { error: null, ok: false };
 
-export function ParolaForm() {
+export function ParolaForm({ locale }: { locale: Locale }) {
+  const t = BENEFICIAR_PORTAL_UI_DICT[locale].profil;
   const [state, formAction, pending] = useActionState(schimbaParolaBeneficiarAction, START);
 
   return (
     <form action={formAction} className="mt-3 flex flex-col gap-3">
       <div className="flex flex-col gap-1">
         <label htmlFor="parola" className="text-[12px] font-medium text-muted">
-          Parolă nouă
+          {t.parolaNoua}
         </label>
         <input
           id="parola"
@@ -27,7 +31,7 @@ export function ParolaForm() {
       </div>
       <div className="flex flex-col gap-1">
         <label htmlFor="confirmare" className="text-[12px] font-medium text-muted">
-          Confirmă parola
+          {t.confirmaParola}
         </label>
         <input
           id="confirmare"
@@ -40,14 +44,14 @@ export function ParolaForm() {
         />
       </div>
       {state.error && <p className="text-[13px] text-red-600">{state.error}</p>}
-      {state.ok && <p className="text-[13px] text-brand-green">Parola a fost schimbată cu succes.</p>}
+      {state.ok && <p className="text-[13px] text-brand-green">{t.parolaOk}</p>}
       <div>
         <button
           type="submit"
           disabled={pending}
           className="rounded-lg bg-brand-green px-4 py-2 text-[13.5px] font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
         >
-          {pending ? "Se salvează…" : "Schimbă parola"}
+          {pending ? t.seSalveaza : t.schimbaParola}
         </button>
       </div>
     </form>

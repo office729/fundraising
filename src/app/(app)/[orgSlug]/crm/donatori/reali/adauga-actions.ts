@@ -9,6 +9,8 @@ import { getLimiteleEfective, subCota } from "@/lib/billing/quota";
 import { cursEurRon } from "@/lib/curs-valutar";
 import { appUsers, donatoriReali, fundraisingDonations, fundraisingPages, memberships } from "@/lib/db/schema";
 import { crediteazaPaginaSiDonator } from "@/lib/fundraising-credit";
+import { DONATORI_UI2_DICT } from "@/lib/i18n/dictionaries/donatori-ui-2";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { EMAIL_RE, normalizeazaEmail } from "@/lib/validation";
 
 export type OptiuniDonatorNou = { campanii: { id: string; titlu: string }[]; responsabili: string[] };
@@ -19,7 +21,8 @@ export const getOptiuniDonatorNou = withOrgSession(async (ctx): Promise<OptiuniD
     ctx.db.select({ id: fundraisingPages.id, titlu: fundraisingPages.titlu }).from(fundraisingPages).where(eq(fundraisingPages.orgId, ctx.orgId)).orderBy(desc(fundraisingPages.createdAt)).limit(300),
     ctx.db.select({ name: appUsers.name, email: appUsers.email }).from(memberships).innerJoin(appUsers, eq(appUsers.id, memberships.userId)).where(eq(memberships.orgId, ctx.orgId)),
   ]);
-  return { campanii, responsabili: membri.map((m) => m.name || m.email).sort((a, b) => a.localeCompare(b, "ro")) };
+  const loc = await getLocale();
+  return { campanii, responsabili: membri.map((m) => m.name || m.email).sort((a, b) => a.localeCompare(b, loc)) };
 });
 
 export type DonatorNouInput = {
@@ -38,10 +41,11 @@ export type DonatorNouInput = {
 // și donația (offline), pe campania aleasă — aceeași cale ca donația offline din pagina campaniei, deci totalul campaniei și
 // totalul donatorului se actualizează identic. Suma în EUR se reține în lei la cursul zilei (totalurile sunt în lei).
 export const adaugaDonatorNou = withOrgSession(async (ctx, input: DonatorNouInput): Promise<{ error: string | null; id?: string }> => {
+  const er = DONATORI_UI2_DICT[await getLocale()].erori;
   const nume = input.nume.trim().slice(0, 200);
   const email = normalizeazaEmail(input.email.trim());
-  if (!nume) return { error: "Numele e obligatoriu." };
-  if (!email || !EMAIL_RE.test(email)) return { error: "Adaugă o adresă de email validă — donatorii se identifică după email." };
+  if (!nume) return { error: er.numeObligatoriu };
+  if (!email || !EMAIL_RE.test(email)) return { error: er.emailInvalid };
 
   const telefon = input.telefon.trim().slice(0, 200) || null;
   const localitate = input.localitate.trim().slice(0, 200) || null;
@@ -49,9 +53,9 @@ export const adaugaDonatorNou = withOrgSession(async (ctx, input: DonatorNouInpu
   const responsabil = input.responsabil.trim().slice(0, 200) || null;
   const suma = input.suma != null && Number.isFinite(input.suma) ? input.suma : null;
 
-  if (suma !== null && suma <= 0) return { error: "Suma trebuie să fie un număr pozitiv." };
-  if (suma !== null && !input.pageId) return { error: "Alege campania / proiectul pentru care a donat." };
-  if (suma !== null && ctx.role !== "owner" && ctx.role !== "admin") return { error: "Doar un admin poate înregistra o donație." };
+  if (suma !== null && suma <= 0) return { error: er.sumaPozitiva };
+  if (suma !== null && !input.pageId) return { error: er.alegeCampania };
+  if (suma !== null && ctx.role !== "owner" && ctx.role !== "admin") return { error: er.doarAdmin };
 
   // Cota de persoane fizice: doar un donator NOU ocupă un loc.
   const [existent] = await ctx.db.select({ id: donatoriReali.id }).from(donatoriReali).where(and(eq(donatoriReali.orgId, ctx.orgId), eq(donatoriReali.email, email))).limit(1);
@@ -59,25 +63,25 @@ export const adaugaDonatorNou = withOrgSession(async (ctx, input: DonatorNouInpu
     const limite = getLimiteleEfective(ctx.orgPackage, ctx.orgCustomPlanConfig);
     if (limite.contactePf !== null) {
       const [{ n }] = await ctx.db.select({ n: sql<number>`count(*)`.mapWith(Number) }).from(donatoriReali).where(eq(donatoriReali.orgId, ctx.orgId));
-      if (!subCota(n, limite.contactePf)) return { error: `Ai atins limita de ${limite.contactePf} persoane fizice a pachetului tău.` };
+      if (!subCota(n, limite.contactePf)) return { error: er.limitaPf(limite.contactePf) };
     }
   }
 
   if (suma !== null && input.pageId) {
     const [pagina] = await ctx.db.select({ id: fundraisingPages.id }).from(fundraisingPages).where(and(eq(fundraisingPages.id, input.pageId), eq(fundraisingPages.orgId, ctx.orgId))).limit(1);
-    if (!pagina) return { error: "Campania nu a fost găsită." };
+    if (!pagina) return { error: er.campanieNegasita };
 
     let sumaLei = Math.round(suma);
     let sumaBani: number | null = null;
     let moneda: string | null = null;
     if (input.moneda === "EUR") {
       const curs = await cursEurRon();
-      if (!curs) return { error: "Nu am putut afla cursul EUR → RON acum. Încearcă din nou sau înregistrează suma în RON." };
+      if (!curs) return { error: er.cursIndisponibil };
       sumaLei = Math.max(1, Math.round(suma * curs));
       sumaBani = Math.round(suma * 100);
       moneda = "EUR";
     }
-    if (sumaLei < 1) return { error: "Introdu o sumă validă." };
+    if (sumaLei < 1) return { error: er.sumaInvalida };
 
     const donationId = randomUUID();
     await ctx.db.insert(fundraisingDonations).values({

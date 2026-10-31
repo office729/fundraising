@@ -7,6 +7,8 @@ import { notFound } from "next/navigation";
 
 import { db } from "@/lib/db";
 import { fundraisingPages, organizations } from "@/lib/db/schema";
+import { SF_PUBLIC_UI_DICT } from "@/lib/i18n/dictionaries/sf-public-ui";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { genereazaCalendarZilnic, genereazaComunicatPresa, genereazaEtape, genereazaMesajeGrupuri } from "@/lib/promovare/generator";
 
 import { PromovareTabs } from "./promovare-tabs";
@@ -36,7 +38,7 @@ export async function generateMetadata({
   const { orgSlug, pageSlug } = await params;
   const data = await getPaginaPentruPromovare(orgSlug, pageSlug);
   if (!data) return {};
-  return { title: `Instrumente de promovare — ${data.pagina.titlu}` };
+  return { title: SF_PUBLIC_UI_DICT[await getLocale()].promovare.metaTitlu(data.pagina.titlu) };
 }
 
 export default async function PromovarePage({
@@ -49,6 +51,8 @@ export default async function PromovarePage({
   if (!data) notFound();
 
   const { org, pagina } = data;
+  const locale = await getLocale();
+  const t = SF_PUBLIC_UI_DICT[locale].promovare;
   const hdrs = await headers();
   const proto = hdrs.get("x-forwarded-proto") ?? "https";
   const url = `${proto}://${hdrs.get("host")}${caleCampanie(orgSlug, pageSlug)}`;
@@ -71,19 +75,16 @@ export default async function PromovarePage({
     <div className="min-h-screen bg-gradient-to-b from-brand-blue-soft/70 via-panel-2 to-panel-2">
       <main className="mx-auto max-w-3xl px-6 py-12 sm:py-16">
         <Link href={`/strangere-fonduri/${orgSlug}/${pageSlug}`} className="text-[13px] text-muted-2 hover:text-brand-blue">
-          ← Înapoi la pagina campaniei
+          {t.inapoi}
         </Link>
 
         <div className="mt-4 overflow-hidden rounded-3xl border border-line bg-panel shadow-[0_20px_50px_-25px_rgba(21,74,133,0.35)]">
           <div className="px-6 py-7 sm:px-10 sm:py-9">
-            <p className="text-xs font-bold tracking-wide text-brand-green uppercase">Instrumente de promovare</p>
+            <p className="text-xs font-bold tracking-wide text-brand-green uppercase">{t.eticheta}</p>
             <h1 className="font-display mt-1.5 text-[26px] leading-tight font-bold text-ink">{pagina.titlu}</h1>
-            <p className="mt-2 text-[14.5px] leading-relaxed text-muted">
-              Texte gata de folosit ca să ajuți la distribuirea campaniei — pe grupuri, în conversații sau către presa
-              locală. Copiezi și trimiți, fără cont, fără înregistrare.
-            </p>
+            <p className="mt-2 text-[14.5px] leading-relaxed text-muted">{t.intro}</p>
 
-            <PromovareTabs calendar={calendar} mesajeGrupuri={mesajeGrupuri} comunicatPresa={comunicatPresa} etape={etape} />
+            <PromovareTabs locale={locale} calendar={calendar} mesajeGrupuri={mesajeGrupuri} comunicatPresa={comunicatPresa} etape={etape} />
           </div>
         </div>
       </main>

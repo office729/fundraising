@@ -9,6 +9,7 @@ import { SLUG_PRINCIPAL } from "@/lib/formular230-constants";
 import { codJudetDinTextLiber, gasesteJudet } from "@/lib/judete";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { FORMULAR230_DICT } from "@/lib/i18n/dictionaries/formular230";
+import { DONATORI_UI5_DICT } from "@/lib/i18n/dictionaries/donatori-ui-5";
 import { titluAbsolut } from "@/lib/page-titles";
 import { decripteazaSauLegacy } from "@/lib/secret-box";
 import { intervalVarsta, varstaDinCnp, type IntervalVarsta } from "@/lib/varsta-cnp";
@@ -17,7 +18,7 @@ import { Badge } from "../../components/ui/badge";
 import { Breadcrumb } from "../../components/ui/breadcrumb";
 import { Card, CardHeader } from "../../components/ui/card";
 import { EmptyState } from "../../components/ui/states";
-import { formatDataOra } from "../../lib/format";
+import { formatariPf } from "../pf-format";
 import { BeneficiariPanel } from "./beneficiari-panel";
 import { BorderouriCard } from "./borderouri-card";
 import { listeazaBorderouri } from "./borderouri-actions";
@@ -211,16 +212,18 @@ export default async function Formular230StatsPage({
   };
   const { total, lunaAceasta, beneficiari, ani, submisii, poateVedeaDateSensibile, dupaJudet, cnpDuplicat, tainuit } = await getDate(orgSlug, filtru);
   // Atribuirea formularelor la borderouri (max. 50 / borderou) se face aici, pe server, și doar pentru owner/admin.
+  const locale = await getLocale();
+  const dict = FORMULAR230_DICT[locale];
+  const ui5 = DONATORI_UI5_DICT[locale].page;
+  const fmt = formatariPf(locale);
   let eroareBorderouri = "";
   const borderouri = poateVedeaDateSensibile
     ? await listeazaBorderouri(orgSlug).catch((e: unknown) => {
         raporteazaEroare("formular230-borderouri", e);
-        eroareBorderouri = e instanceof Error ? e.message : "eroare necunoscută";
+        eroareBorderouri = e instanceof Error ? e.message : ui5.eroareNecunoscuta;
         return null;
       })
     : null;
-  const locale = await getLocale();
-  const dict = FORMULAR230_DICT[locale];
 
   const totalPagini = Math.max(1, Math.ceil(submisii.length / PE_PAGINA));
   const paginaCuruenta = Math.min(Math.max(1, Number(sp.pagina ?? "1") || 1), totalPagini);
@@ -267,7 +270,7 @@ export default async function Formular230StatsPage({
       {borderouri && <BorderouriCard orgSlug={orgSlug} initial={borderouri} />}
       {poateVedeaDateSensibile && !borderouri && (
         <div id="borderouri-anaf" className="scroll-mt-20 rounded-[var(--ci-radius-card)] bg-[var(--ci-amber-soft)] px-3.5 py-2.5 text-[13px] text-[var(--ci-text)]">
-          <strong>Borderouri ANAF:</strong> nu am putut încărca lista borderourilor ({eroareBorderouri}). Reîncarcă pagina; dacă persistă, trimite-ne mesajul de mai sus.
+          <strong>{ui5.borderouriEticheta}</strong>{ui5.borderouriEroare(eroareBorderouri)}
         </div>
       )}
 
@@ -294,7 +297,7 @@ export default async function Formular230StatsPage({
                 <div className="min-w-0">
                   <p className="truncate text-[13px] font-medium text-[var(--ci-text)]">{s.nume} {s.prenume}</p>
                   <p className="truncate text-[12px] text-[var(--ci-text-muted)]">{s.email} · {s.telefon || dict.raspunsuri.faraTelefon} · {s.judet || dict.raspunsuri.judetNecunoscut}</p>
-                  <p className="truncate text-[11.5px] text-[var(--ci-text-faint)]">Sursă: {s.provenienta}</p>
+                  <p className="truncate text-[11.5px] text-[var(--ci-text-faint)]">{ui5.sursa(s.provenienta)}</p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <Badge tone="neutral" icon={false}>
@@ -308,7 +311,7 @@ export default async function Formular230StatsPage({
                     </span>
                   )}
                   {s.distributie2Ani && <Badge tone="blue" icon={false}>{dict.raspunsuri.doiAni}</Badge>}
-                  <span className="text-[12px] text-[var(--ci-text-faint)]">{formatDataOra(s.createdAt.toISOString())}</span>
+                  <span className="text-[12px] text-[var(--ci-text-faint)]">{fmt.dataOraScurta(s.createdAt.toISOString())}</span>
                   <span title={dict.raspunsuri.procesatAnaf} className="flex items-center">
                     <ProcesatAnafCheckbox orgSlug={orgSlug} id={s.id} initial={s.procesatAnaf} />
                   </span>

@@ -11,16 +11,21 @@ import { EmptyState } from "../../components/ui/states";
 import { formatData } from "../../lib/format";
 import { useLocale } from "../../lib/locale-context";
 import { COMPANII_DICT } from "@/lib/i18n/dictionaries/companii";
+import { COMPANII_UI_DICT, intlLocale } from "@/lib/i18n/dictionaries/companii-ui";
+import type { Locale } from "@/lib/i18n/config";
 import type { AlocareSponsorizare } from "@/lib/alocari-sponsorizare";
 import { adaugaSponsorizare, seteazaAlocariSponsorizare, stergeSponsorizare } from "../actions";
 
 type Sponsorizare = { id: string; suma: number; data: string; proiect: string | null; nota: string | null; alocari: AlocareSponsorizare[] | null };
 export type CampanieOptiune = { id: string; titlu: string };
 
-const lei = (n: number) => `${n.toLocaleString("ro-RO")} RON`;
+const leiLa = (locale: Locale) => (n: number) => `${n.toLocaleString(intlLocale(locale))} RON`;
 
 // Rândurile de defalcare: cui a fost redirecționată suma (o campanie din platformă sau un destinatar liber) și cât.
 function AlocariEditor({ suma, valoare, onChange, campanii }: { suma: number; valoare: AlocareSponsorizare[]; onChange: (v: AlocareSponsorizare[]) => void; campanii: CampanieOptiune[] }) {
+  const locale = useLocale();
+  const ui = COMPANII_UI_DICT[locale].sponsorizari;
+  const lei = leiLa(locale);
   const alocat = valoare.reduce((s, a) => s + (Number(a.suma) || 0), 0);
   const ramas = suma - alocat;
   const schimba = (i: number, patch: Partial<AlocareSponsorizare>) => onChange(valoare.map((a, k) => (k === i ? { ...a, ...patch } : a)));
@@ -39,17 +44,17 @@ function AlocariEditor({ suma, valoare, onChange, campanii }: { suma: number; va
               }}
               className="h-9 w-full text-[13px]"
             >
-              <option value="__altul">Alt destinatar (scriu numele)</option>
+              <option value="__altul">{ui.altDestinatar}</option>
               {campanii.map((c) => (
                 <option key={c.id} value={c.id}>
-                  Campanie: {c.titlu}
+                  {ui.campanie(c.titlu)}
                 </option>
               ))}
             </Select>
-            {a.tip !== "campanie" && <Input value={a.nume} onChange={(e) => schimba(i, { nume: e.target.value })} placeholder="Cui ai redirecționat (nume caz / persoană / proiect)" className="h-9" />}
+            {a.tip !== "campanie" && <Input value={a.nume} onChange={(e) => schimba(i, { nume: e.target.value })} placeholder={ui.cuiPh} className="h-9" />}
           </div>
-          <Input type="number" min={1} value={a.suma || ""} onChange={(e) => schimba(i, { suma: Math.round(Number(e.target.value)) || 0 })} placeholder="RON" className="h-9" aria-label="Suma alocată" />
-          <button type="button" onClick={() => onChange(valoare.filter((_, k) => k !== i))} title="Scoate rândul" className="flex h-9 w-8 items-center justify-center text-[var(--ci-text-faint)] hover:text-[var(--ci-red)]">
+          <Input type="number" min={1} value={a.suma || ""} onChange={(e) => schimba(i, { suma: Math.round(Number(e.target.value)) || 0 })} placeholder="RON" className="h-9" aria-label={ui.sumaAlocata} />
+          <button type="button" onClick={() => onChange(valoare.filter((_, k) => k !== i))} title={ui.scoateRand} className="flex h-9 w-8 items-center justify-center text-[var(--ci-text-faint)] hover:text-[var(--ci-red)]">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -60,10 +65,10 @@ function AlocariEditor({ suma, valoare, onChange, campanii }: { suma: number; va
           onClick={() => onChange([...valoare, { tip: "altul", pageId: null, nume: "", suma: ramas > 0 && valoare.length === 0 ? ramas : 0 }])}
           className="inline-flex min-h-8 items-center gap-1 text-[13px] font-medium text-[var(--ci-primary)] hover:underline"
         >
-          <Plus className="h-3.5 w-3.5" /> Adaugă destinatar
+          <Plus className="h-3.5 w-3.5" /> {ui.adaugaDestinatar}
         </button>
         <p className={`ci-tabular text-[12px] ${ramas < 0 ? "font-semibold text-[var(--ci-red)]" : "text-[var(--ci-text-muted)]"}`}>
-          Alocat {lei(alocat)} din {lei(suma)} · {ramas < 0 ? `cu ${lei(-ramas)} peste` : `nealocat ${lei(ramas)}`}
+          {ui.rezumat(lei(alocat), lei(suma), ramas, lei(Math.abs(ramas)))}
         </p>
       </div>
     </div>
@@ -75,6 +80,8 @@ export function SponsorizariPanel({ companyId, sponsorizari, campanii }: { compa
   const router = useRouter();
   const locale = useLocale();
   const dict = COMPANII_DICT[locale].detail.sponsorizari;
+  const ui = COMPANII_UI_DICT[locale].sponsorizari;
+  const lei = leiLa(locale);
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [eroare, setEroare] = useState("");
@@ -154,10 +161,10 @@ export function SponsorizariPanel({ companyId, sponsorizari, campanii }: { compa
                         setAlocariEdit(s.alocari ?? []);
                         setDeFalcat(s);
                       }}
-                      title="Defalcă suma — cui a fost redirecționată"
+                      title={ui.defalcaTitle}
                       className="flex min-h-8 items-center gap-1 text-[12px] font-medium text-[var(--ci-primary)] hover:underline"
                     >
-                      <Split className="h-3.5 w-3.5" /> Defalcă
+                      <Split className="h-3.5 w-3.5" /> {ui.defalca}
                     </button>
                     <button
                       type="button"
@@ -174,13 +181,13 @@ export function SponsorizariPanel({ companyId, sponsorizari, campanii }: { compa
                   <ul className="mt-2 space-y-0.5 border-t border-[var(--ci-border)] pt-2">
                     {s.alocari.map((a, i) => (
                       <li key={i} className="flex items-center justify-between gap-3 text-[12px] text-[var(--ci-text-muted)]">
-                        <span className="min-w-0 truncate">→ {a.tip === "campanie" ? `Campanie: ${a.nume}` : a.nume}</span>
+                        <span className="min-w-0 truncate">→ {a.tip === "campanie" ? ui.campanie(a.nume) : a.nume}</span>
                         <span className="ci-tabular shrink-0 font-medium text-[var(--ci-text)]">{lei(a.suma)}</span>
                       </li>
                     ))}
                     {s.suma - alocat > 0 && (
                       <li className="flex items-center justify-between gap-3 text-[12px] text-[var(--ci-text-faint)]">
-                        <span>Nealocat</span>
+                        <span>{ui.nealocat}</span>
                         <span className="ci-tabular">{lei(s.suma - alocat)}</span>
                       </li>
                     )}
@@ -208,7 +215,7 @@ export function SponsorizariPanel({ companyId, sponsorizari, campanii }: { compa
             <Input name="proiect" placeholder={dict.proiectPlaceholder} />
           </div>
           <div>
-            <Label>Cui ai redirecționat suma? (opțional — toată sau parțial)</Label>
+            <Label>{ui.cuiLabel}</Label>
             <AlocariEditor suma={Math.round(Number(sumaNoua)) || 0} valoare={alocariNoi} onChange={setAlocariNoi} campanii={campanii} />
           </div>
           <div>
@@ -227,11 +234,11 @@ export function SponsorizariPanel({ companyId, sponsorizari, campanii }: { compa
         </form>
       </Dialog>
 
-      <Dialog open={deFalcat !== null} onClose={() => setDeFalcat(null)} title="Defalcă suma sponsorizării" width="max-w-lg">
+      <Dialog open={deFalcat !== null} onClose={() => setDeFalcat(null)} title={ui.dialogDefalcare} width="max-w-lg">
         {deFalcat && (
           <div className="space-y-3">
             <p className="text-[13px] text-[var(--ci-text-muted)]">
-              {formatData(deFalcat.data)} · {lei(deFalcat.suma)} — adaugă cui ai redirecționat suma, toată sau doar o parte.
+              {formatData(deFalcat.data)} · {lei(deFalcat.suma)} {ui.defalcareIntro}
             </p>
             <AlocariEditor suma={deFalcat.suma} valoare={alocariEdit} onChange={setAlocariEdit} campanii={campanii} />
             {eroare && <p className="text-[13px] text-[var(--ci-red)]">{eroare}</p>}
@@ -240,7 +247,7 @@ export function SponsorizariPanel({ companyId, sponsorizari, campanii }: { compa
                 {dict.anuleaza}
               </Button>
               <Button type="button" variant="primary" onClick={onSalveazaDefalcare} disabled={pending}>
-                {pending ? dict.seSalveaza : "Salvează defalcarea"}
+                {pending ? dict.seSalveaza : ui.salveazaDefalcarea}
               </Button>
             </div>
           </div>

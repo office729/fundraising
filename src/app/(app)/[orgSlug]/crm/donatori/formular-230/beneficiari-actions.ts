@@ -8,15 +8,17 @@ import { withOrgAdmin } from "@/lib/auth/guard";
 import { getLimiteleEfective, mesajeCote, subCota } from "@/lib/billing/quota";
 import { formular230Beneficiari } from "@/lib/db/schema";
 import { EroareUtilizator, mesajSigur } from "@/lib/erori";
+import { DONATORI_UI5_DICT } from "@/lib/i18n/dictionaries/donatori-ui-5";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { SLUG_PRINCIPAL } from "@/lib/formular230-constants";
 import { cifValidFormat, ibanValid } from "@/lib/iban";
 import { genereazaCodScurtUnic } from "@/lib/short-code";
 import { slugify } from "@/lib/slugify";
 import { genereazaSlugUnic } from "@/lib/unique-slug";
 
-function valideazaIbanCif(iban: string, cif: string): string | null {
-  if (iban && !ibanValid(iban)) return "IBAN-ul nu e valid — verifică-l (lipsă/în plus o cifră?).";
-  if (cif && !cifValidFormat(cif)) return "CIF-ul nu e valid — doar cifre, eventual cu prefixul RO.";
+function valideazaIbanCif(iban: string, cif: string, er: (typeof DONATORI_UI5_DICT)["ro" | "en"]["erori"]): string | null {
+  if (iban && !ibanValid(iban)) return er.iban;
+  if (cif && !cifValidFormat(cif)) return er.cif;
   return null;
 }
 
@@ -69,19 +71,20 @@ export async function adaugaBeneficiarAction(
   _prevState: BeneficiarState,
   formData: FormData,
 ): Promise<BeneficiarState> {
+  const er = DONATORI_UI5_DICT[await getLocale()].erori;
   const nume = fara(String(formData.get("nume") ?? "")).trim();
-  if (!nume) return { error: "Denumirea beneficiarului e obligatorie.", ok: false };
+  if (!nume) return { error: er.denumire, ok: false };
   const iban = String(formData.get("iban") ?? "").trim();
   const cif = String(formData.get("cif") ?? "").trim();
   const emailBeneficiar = String(formData.get("emailBeneficiar") ?? "").trim();
-  const eroareValidare = valideazaIbanCif(iban, cif);
+  const eroareValidare = valideazaIbanCif(iban, cif, er);
   if (eroareValidare) return { error: eroareValidare, ok: false };
 
   try {
     const slug = await inserteazaBeneficiar(orgSlug, { nume, iban, cif, emailBeneficiar });
     return { error: null, ok: true, slug };
   } catch (e) {
-    return { error: mesajSigur(e, "Salvarea a eșuat.", "f230-beneficiar"), ok: false };
+    return { error: mesajSigur(e, er.salvareEsuata, "f230-beneficiar"), ok: false };
   }
 }
 
@@ -104,32 +107,34 @@ export async function editeazaBeneficiarAction(
   _prevState: BeneficiarState,
   formData: FormData,
 ): Promise<BeneficiarState> {
+  const er = DONATORI_UI5_DICT[await getLocale()].erori;
   const id = String(formData.get("id") ?? "");
   const nume = fara(String(formData.get("nume") ?? "")).trim();
-  if (!id || !nume) return { error: "Denumirea beneficiarului e obligatorie.", ok: false };
+  if (!id || !nume) return { error: er.denumire, ok: false };
   const iban = String(formData.get("iban") ?? "").trim();
   const cif = String(formData.get("cif") ?? "").trim();
   const emailBeneficiar = String(formData.get("emailBeneficiar") ?? "").trim();
-  const eroareValidare = valideazaIbanCif(iban, cif);
+  const eroareValidare = valideazaIbanCif(iban, cif, er);
   if (eroareValidare) return { error: eroareValidare, ok: false };
 
   try {
     await actualizeazaBeneficiar(orgSlug, id, { nume, iban, cif, emailBeneficiar });
   } catch (e) {
-    return { error: mesajSigur(e, "Salvarea a eșuat.", "f230-beneficiar"), ok: false };
+    return { error: mesajSigur(e, er.salvareEsuata, "f230-beneficiar"), ok: false };
   }
   return { error: null, ok: true };
 }
 
 export const stergeBeneficiarAction = withOrgAdmin(async (ctx, id: string) => {
+  const er = DONATORI_UI5_DICT[await getLocale()].erori;
   const [beneficiar] = await ctx.db
     .select({ slug: formular230Beneficiari.slug })
     .from(formular230Beneficiari)
     .where(and(eq(formular230Beneficiari.id, id), eq(formular230Beneficiari.orgId, ctx.orgId)))
     .limit(1);
-  if (!beneficiar) return { error: "Contul nu a fost găsit." };
+  if (!beneficiar) return { error: er.contNegasit };
   if (beneficiar.slug === SLUG_PRINCIPAL) {
-    return { error: "Contul principal nu poate fi șters — e legat de link-ul public existent." };
+    return { error: er.contPrincipal };
   }
   await ctx.db
     .delete(formular230Beneficiari)

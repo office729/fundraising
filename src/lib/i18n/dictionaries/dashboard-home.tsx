@@ -38,6 +38,9 @@ export const DASHBOARD_HOME_DICT = {
     pipeline: { titlePrefix: "Pipeline D177 / 20%", inLucru: (n: number) => `${n} companii în lucru`, seeAll: "Vezi toate companiile" },
     proiecte: { title: "Proiecte active", subtitle: "Proiecte cu strângere de fonduri în desfășurare", seeAll: "Vezi toate", urgenta: "Urgentă", activa: "Activă", zileActive: (n: number) => `${n} zile active`, din: "din" },
     team: { title: "Activitatea echipei", subtitle: "Ultimele 30 de zile", calls: "Apeluri", emails: "Emailuri", meetings: "Întâlniri", tasksDone: "Taskuri rezolvate" },
+    due: "termen",
+    impactTotal: "Impact total",
+    eyebrow: { featured: "Poveste principală", figures: "Cifre", priorities: "Priorități", pipeline: "Pipeline", team: "Echipă" },
   },
   en: {
     greeting: { morning: "Good morning", afternoon: "Good afternoon", evening: "Good evening" },
@@ -71,6 +74,9 @@ export const DASHBOARD_HOME_DICT = {
     pipeline: { titlePrefix: "D177 / 20% pipeline", inLucru: (n: number) => `${n} companies in progress`, seeAll: "See all companies" },
     proiecte: { title: "Active projects", subtitle: "Projects with fundraising in progress", seeAll: "See all", urgenta: "Urgent", activa: "Active", zileActive: (n: number) => `${n} days active`, din: "of" },
     team: { title: "Team activity", subtitle: "Last 30 days", calls: "Calls", emails: "Emails", meetings: "Meetings", tasksDone: "Tasks completed" },
+    due: "due",
+    impactTotal: "Total impact",
+    eyebrow: { featured: "Featured story", figures: "Figures", priorities: "Priorities", pipeline: "Pipeline", team: "Team" },
   },
 } satisfies Record<Locale, unknown>;
 

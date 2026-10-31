@@ -7,6 +7,8 @@ import { and, desc, eq, sql } from "drizzle-orm";
 import { withOrgAdmin } from "@/lib/auth/guard";
 import { reclameCampanii, reclameConexiuni, reclameCosturi, reclameImporturi, reclameLinkuri } from "@/lib/db/schema";
 import { verificaLimitaRata } from "@/lib/auth/rate-limit";
+import { RECLAME_UI_DICT } from "@/lib/i18n/dictionaries/reclame-ui";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { criptareConfigurata } from "@/lib/secret-box";
 import { curataCod, esteCheiePlatforma, FEREASTRA_IMPLICITA_ZILE, PLATFORME } from "@/lib/reclame/atribuire";
 import { perioadaAnterioara, rezolvaPerioada, type PresetPerioada } from "@/lib/reclame/calcule";
@@ -15,6 +17,7 @@ import { asambleaza, totaluriSimple, type LegaturaCampanie, type Raport, type To
 import { conecteazaMeta, deconecteazaMeta, sincronizeazaMeta, type RezultatConectare, type RezultatSync } from "@/lib/reclame/meta-sync";
 import { construiesteLink } from "@/lib/reclame/utm";
 
+import { traduLib } from "./texte-lib";
 import { calitateDate, costuriPeriodei, donatiiAtribuite, legaturiCampanii, parcursObservat, reinnoiriAbonamenteAtribuite, type CalitateDate, type Parcurs } from "./queries";
 
 // Modulul „Performanța reclamelor” (inclus din pachetul IMPACT, vezi MODULE_PACHET). Doar proprietarul și administratorii: conține cheltuieli și donații.
@@ -70,7 +73,8 @@ export const obtineDateReclame = withOrgAdmin(async (ctx, p: ParametriReclame = 
   const anterioara = perioadaAnterioara(perioada.de, perioada.pana);
   const ferCeruta = Number(p.fer);
   const fereastraZile = FEREASTRE.includes(ferCeruta) ? ferCeruta : FEREASTRA_IMPLICITA_ZILE;
-  const etichetePlatforme = Object.fromEntries(PLATFORME.map((x) => [x.cheie, x.eticheta]));
+  const locale = await getLocale();
+  const etichetePlatforme = Object.fromEntries(PLATFORME.map((x) => [x.cheie, RECLAME_UI_DICT[locale].platforme[x.cheie] ?? x.eticheta]));
 
   const costuri = await costuriPeriodei(ctx, perioada.de, perioada.pana);
   const donatii = await donatiiAtribuite(ctx, perioada.de, perioada.pana, fereastraZile);
@@ -138,14 +142,15 @@ const autorizeaza = withOrgAdmin(async (ctx) => ({ orgId: ctx.orgId, userId: ctx
 
 export async function conecteazaMetaAction(orgSlug: string, input: { contId: string; token: string; cursManual?: number | null }): Promise<RezultatConectare> {
   const { orgId, userId } = await autorizeaza(orgSlug);
+  const t = RECLAME_UI_DICT[await getLocale()].actiuni;
   // Plafon pe organizație: tokenurile greșite încercate la nesfârșit nu trebuie să încarce Meta sau serverul.
-  if (!(await verificaLimitaRata("reclame-meta-conectare", orgId, 10, 60))) return { ok: false, eroare: "Prea multe încercări de conectare. Revino peste o oră." };
+  if (!(await verificaLimitaRata("reclame-meta-conectare", orgId, 10, 60))) return { ok: false, eroare: t.prea };
   return conecteazaMeta(orgId, userId, input);
 }
 
 export async function sincronizeazaMetaAction(orgSlug: string, zile: number): Promise<RezultatSync> {
   const { orgId } = await autorizeaza(orgSlug);
-  if (!(await verificaLimitaRata("reclame-meta-sync", orgId, 8, 60))) return { ok: false, eroare: "Ai sincronizat de prea multe ori într-o oră. Datele se reîmprospătează oricum singure.", clasa: "limita-locala" };
+  if (!(await verificaLimitaRata("reclame-meta-sync", orgId, 8, 60))) return { ok: false, eroare: RECLAME_UI_DICT[await getLocale()].actiuni.preaSync, clasa: "limita-locala" };
   return sincronizeazaMeta(orgId, { zile: [7, 28, 90].includes(zile) ? zile : 7 });
 }
 
@@ -192,12 +197,14 @@ function maparePrimita(brut: unknown, nrColoane: number): Mapare | null {
 }
 
 export const analizeazaCsvAction = withOrgAdmin(async (ctx, input: { text: string; mapare?: Mapare }): Promise<AnalizaCsv> => {
+  const locale = await getLocale();
+  const t = RECLAME_UI_DICT[locale].actiuni;
   const text = typeof input?.text === "string" ? input.text : "";
-  if (!text.trim()) return { ok: false, eroare: "Fișierul e gol." };
-  if (text.length > MAX_TEXT) return { ok: false, eroare: "Fișierul e prea mare (peste 3 MB). Importă-l pe perioade mai scurte." };
+  if (!text.trim()) return { ok: false, eroare: t.fisierGol };
+  if (text.length > MAX_TEXT) return { ok: false, eroare: t.fisierMare };
   const randuri = parseCsv(text);
-  if (randuri.length < 2) return { ok: false, eroare: "Fișierul trebuie să aibă un rând de antet și cel puțin un rând de date." };
-  if (randuri.length - 1 > MAX_RANDURI) return { ok: false, eroare: `Fișierul are peste ${MAX_RANDURI.toLocaleString("ro-RO")} de rânduri. Importă-l pe perioade mai scurte.` };
+  if (randuri.length < 2) return { ok: false, eroare: t.faraDate };
+  if (randuri.length - 1 > MAX_RANDURI) return { ok: false, eroare: t.preaMulteRanduri(MAX_RANDURI.toLocaleString(locale === "ro" ? "ro-RO" : "en-GB")) };
   const antet = randuri[0]!.map((h) => h.trim());
   const mapare = (input.mapare ? maparePrimita(input.mapare, antet.length) : null) ?? detecteazaColoane(antet);
   const norm = normalizeaza(randuri, mapare);
@@ -231,19 +238,20 @@ export const confirmaImportAction = withOrgAdmin(
     ctx,
     input: { text: string; mapare: Mapare; platforma: string; moneda: string; cursRon: number; numeFisier?: string; legaturi: Record<string, string> },
   ): Promise<RezultatImport> => {
-    if (!esteCheiePlatforma(input.platforma)) return { ok: false, eroare: "Alege platforma de reclame." };
+    const t = RECLAME_UI_DICT[await getLocale()].actiuni;
+    if (!esteCheiePlatforma(input.platforma)) return { ok: false, eroare: t.alegePlatforma };
     const moneda = String(input.moneda ?? "").trim().toUpperCase();
-    if (!/^[A-Z]{3}$/.test(moneda)) return { ok: false, eroare: "Moneda trebuie să fie un cod de trei litere (de exemplu RON sau EUR)." };
+    if (!/^[A-Z]{3}$/.test(moneda)) return { ok: false, eroare: t.monedaInvalida };
     const curs = moneda === "RON" ? 1 : Number(input.cursRon);
-    if (!Number.isFinite(curs) || curs <= 0 || curs > 1000) return { ok: false, eroare: `Pentru ${moneda} introdu cursul de conversie în lei (de exemplu 4,97).` };
+    if (!Number.isFinite(curs) || curs <= 0 || curs > 1000) return { ok: false, eroare: t.cursNecesar(moneda) };
     const text = typeof input.text === "string" ? input.text : "";
-    if (!text.trim() || text.length > MAX_TEXT) return { ok: false, eroare: "Fișierul lipsește sau e prea mare." };
+    if (!text.trim() || text.length > MAX_TEXT) return { ok: false, eroare: t.fisierLipsa };
     const rows = parseCsv(text);
-    if (rows.length < 2 || rows.length - 1 > MAX_RANDURI) return { ok: false, eroare: "Fișierul nu are un format acceptat." };
+    if (rows.length < 2 || rows.length - 1 > MAX_RANDURI) return { ok: false, eroare: t.formatNeacceptat };
     const mapare = maparePrimita(input.mapare, rows[0]!.length);
-    if (!mapare) return { ok: false, eroare: "Maparea coloanelor nu e validă." };
+    if (!mapare) return { ok: false, eroare: t.mapareInvalida };
     const norm = normalizeaza(rows, mapare);
-    if (norm.randuri.length === 0) return { ok: false, eroare: norm.erori[0]?.mesaj ?? "Nu am găsit niciun rând valid de importat." };
+    if (norm.randuri.length === 0) return { ok: false, eroare: norm.erori[0]?.mesaj ?? t.niciunRand };
 
     const lotId = randomUUID();
     const platforma = input.platforma;
@@ -334,16 +342,17 @@ export const stergeImportAction = withOrgAdmin(async (ctx, id: string): Promise<
 // ───────────── legături campanie ↔ cod UTM ─────────────
 
 export const salveazaLegaturaAction = withOrgAdmin(async (ctx, input: { platforma: string; campanieCheie: string; utmCampanie: string }): Promise<{ ok: true } | { ok: false; eroare: string }> => {
-  if (!esteCheiePlatforma(input.platforma)) return { ok: false, eroare: "Platformă necunoscută." };
+  const t = RECLAME_UI_DICT[await getLocale()].actiuni;
+  if (!esteCheiePlatforma(input.platforma)) return { ok: false, eroare: t.platformaNecunoscuta };
   const gol = String(input.utmCampanie ?? "").trim() === "";
   const utm = gol ? null : curataCod(input.utmCampanie);
-  if (!gol && !utm) return { ok: false, eroare: "Codul campaniei: doar litere mici, cifre și . _ : - (de exemplu cmp_026)." };
+  if (!gol && !utm) return { ok: false, eroare: t.codInvalid };
   const r = await ctx.db
     .update(reclameCampanii)
     .set({ utmCampanie: utm })
     .where(and(eq(reclameCampanii.orgId, ctx.orgId), eq(reclameCampanii.platforma, input.platforma), eq(reclameCampanii.campanieCheie, String(input.campanieCheie))))
     .returning({ id: reclameCampanii.id });
-  return r.length ? { ok: true } : { ok: false, eroare: "Campania nu a fost găsită." };
+  return r.length ? { ok: true } : { ok: false, eroare: t.campanieNegasita };
 }, OPT);
 
 // ───────────── generator de linkuri UTM ─────────────
@@ -351,7 +360,7 @@ export const salveazaLegaturaAction = withOrgAdmin(async (ctx, input: { platform
 export const salveazaLinkAction = withOrgAdmin(
   async (ctx, input: { url: string; source: string; medium: string; campaign: string; content?: string; eticheta?: string }): Promise<{ ok: true; url: string } | { ok: false; eroare: string }> => {
     const r = construiesteLink(input);
-    if (!r.ok) return r;
+    if (!r.ok) return { ok: false, eroare: traduLib(await getLocale(), r.eroare) };
     await ctx.db.insert(reclameLinkuri).values({
       orgId: ctx.orgId,
       url: r.url.slice(0, 2000),

@@ -12,6 +12,7 @@ import { Card } from "../../components/ui/card";
 import { formatData, formatDataRelativa } from "../../lib/format";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { COMPANII_DICT } from "@/lib/i18n/dictionaries/companii";
+import { COMPANII_UI_DICT, intlLocale } from "@/lib/i18n/dictionaries/companii-ui";
 import { getCaiCalde } from "../cai-calde";
 import { DecidentiCard } from "./decidenti-card";
 import { getStareProspectare } from "./prospectare-actions";
@@ -58,6 +59,8 @@ export default async function CompanieProfilPage({
   if (id !== data.segmentCanonic) redirect(`/${orgSlug}/crm/companii/${data.segmentCanonic}`);
   const locale = await getLocale();
   const dict = COMPANII_DICT[locale].detail;
+  const ui = COMPANII_UI_DICT[locale].fisa;
+  const nf = intlLocale(locale);
   // „Căi calde” sunt incluse din pachetul IMPACT: fără el, în locul cardului apare o notă despre pachet.
   const access = await requireOrgAccess(orgSlug);
   const areCaiCalde = areModul(pachetPentruModule(access.orgPackage, access.userEmail), "cai-calde");
@@ -88,7 +91,7 @@ export default async function CompanieProfilPage({
   const activitate = [
     ...sponsorizari.map((s) => ({
       la: new Date(`${s.data}T12:00:00Z`),
-      text: dict.activitateText.sponsorizare(s.suma.toLocaleString("ro-RO"), s.proiect),
+      text: dict.activitateText.sponsorizare(s.suma.toLocaleString(nf), s.proiect),
     })),
     ...notite.map((n) => ({ la: n.createdAt, text: dict.activitateText.notita(n.text.length > 80 ? n.text.slice(0, 80) + "…" : n.text) })),
     ...contacte.map((ct) => ({ la: ct.createdAt, text: dict.activitateText.contactAdaugat(ct.nume) })),
@@ -127,11 +130,11 @@ export default async function CompanieProfilPage({
               </div>
             </div>
           </div>
-          <nav aria-label="Documente pentru această firmă" className="flex flex-wrap items-center gap-2">
+          <nav aria-label={ui.documenteAria} className="flex flex-wrap items-center gap-2">
             {[
-              { href: `/${orgSlug}/crm/instrumente/raport-companii/impact?firma=${c.id}`, eticheta: "Raport de impact", Icon: FileText },
-              { href: `/${orgSlug}/crm/instrumente/scrisori/generator?firma=${c.id}`, eticheta: "Scrisoare", Icon: Mail },
-              { href: `/${orgSlug}/crm/instrumente/certificate/generator?firma=${c.id}`, eticheta: "Certificat", Icon: Award },
+              { href: `/${orgSlug}/crm/instrumente/raport-companii/impact?firma=${c.id}`, eticheta: ui.raportImpact, Icon: FileText },
+              { href: `/${orgSlug}/crm/instrumente/scrisori/generator?firma=${c.id}`, eticheta: ui.scrisoare, Icon: Mail },
+              { href: `/${orgSlug}/crm/instrumente/certificate/generator?firma=${c.id}`, eticheta: ui.certificat, Icon: Award },
             ].map(({ href, eticheta, Icon }) => (
               <Link key={eticheta} href={href} prefetch={false} className="inline-flex items-center gap-1.5 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-3 py-1.5 text-[12.5px] font-medium text-[var(--ci-text)] hover:bg-black/5 focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
                 <Icon className="h-3.5 w-3.5" aria-hidden />
@@ -144,8 +147,8 @@ export default async function CompanieProfilPage({
         <PaginiSociale companyId={c.id} nume={c.nume} linkedin={c.linkedin} facebook={c.facebook} />
 
         <div className="mt-5 grid grid-cols-2 gap-4 border-t border-[var(--ci-border)] pt-4 sm:grid-cols-4">
-          <Stat label={dict.stats.totalSponsorizat} value={`${(c.sumaSponsorizata ?? 0).toLocaleString("ro-RO")} RON`} />
-          <Stat label={dict.stats.soldDisponibil} value={sumaCuEstimare.estimata ? `~${sumaCuEstimare.suma.toLocaleString("ro-RO")} RON (estimat)` : c.sumaDisponibila != null ? `${c.sumaDisponibila.toLocaleString("ro-RO")} RON` : "—"} />
+          <Stat label={dict.stats.totalSponsorizat} value={`${(c.sumaSponsorizata ?? 0).toLocaleString(nf)} RON`} />
+          <Stat label={dict.stats.soldDisponibil} value={sumaCuEstimare.estimata ? `~${sumaCuEstimare.suma.toLocaleString(nf)} RON ${ui.estimat}` : c.sumaDisponibila != null ? `${c.sumaDisponibila.toLocaleString(nf)} RON` : "—"} />
           <Stat label={dict.stats.sponsorizari} value={String(sponsorizari.length)} />
           <Stat label={dict.stats.ultimaActivitate} value={activitate[0] ? formatDataRelativa(activitate[0].la) : "—"} />
         </div>
@@ -178,12 +181,12 @@ export default async function CompanieProfilPage({
       )}
 
       {cai ? (
-        <CaiCaldeCard orgSlug={orgSlug} cai={cai} />
+        <CaiCaldeCard orgSlug={orgSlug} cai={cai} locale={locale} />
       ) : (
         <ModulBlocatInline
           orgSlug={orgSlug}
           modul="cai-calde"
-          descriere="Arată dacă o persoană de contact a firmei este deja donator, voluntar sau contact la un sponsor, semn că abordarea va fi mai ușoară."
+          descriere={ui.descriereCaiCalde}
           poateSchimba={access.role === "owner" || access.role === "admin"}
         />
       )}
@@ -198,7 +201,7 @@ export default async function CompanieProfilPage({
         <ModulBlocatInline
           orgSlug={orgSlug}
           modul="prospectare-multi"
-          descriere="Caută decidenți pentru firmă cu conturile tale la Lusha, Apollo, Prospeo sau Hunter, apoi aprobă persoanele care devin contacte."
+          descriere={ui.descriereProspectare}
           poateSchimba={access.role === "owner" || access.role === "admin"}
         />
       )}

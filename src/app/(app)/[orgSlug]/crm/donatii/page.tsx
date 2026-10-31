@@ -61,9 +61,9 @@ export default function DonatiiPage() {
     { accessorKey: "sursaNume", header: dict.columns.sursa, cell: ({ row }) => <span className="font-medium">{row.original.sursaNume}</span> },
     { accessorKey: "sursa", header: dict.columns.tip, cell: ({ row }) => <Badge tone={row.original.sursa === "companie" ? "blue" : "neutral"}>{dict.sursaTip[row.original.sursa]}</Badge> },
     { accessorKey: "campanie", header: dict.columns.campanie },
-    { accessorKey: "suma", header: dict.columns.suma, cell: ({ row }) => <span className="ci-tabular font-medium">{formatSuma(row.original.suma, row.original.moneda)}</span> },
+    { accessorKey: "suma", header: dict.columns.suma, cell: ({ row }) => <span className="ci-tabular font-medium">{formatSuma(row.original.suma, row.original.moneda, locale)}</span> },
     { accessorKey: "recurenta", header: dict.columns.recurenta, cell: ({ row }) => (row.original.recurenta ? <Badge tone="green">{dict.recurentaBadge}</Badge> : "—") },
-    { accessorKey: "data", header: dict.columns.data, cell: ({ row }) => formatData(row.original.data) },
+    { accessorKey: "data", header: dict.columns.data, cell: ({ row }) => formatData(row.original.data, locale) },
   ];
 
   return (
@@ -74,7 +74,7 @@ export default function DonatiiPage() {
           <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">{dict.subtitle(filtered.length)}</p>
         </div>
         <div className="flex items-center gap-3">
-          <p className="ci-tabular text-lg font-bold text-[var(--ci-text)]">{dict.totalRon} {formatSuma(total)}</p>
+          <p className="ci-tabular text-lg font-bold text-[var(--ci-text)]">{dict.totalRon} {formatSuma(total, "RON", locale)}</p>
           <button
             type="button"
             onClick={() => setExtins((v) => !v)}

@@ -6,7 +6,10 @@ import { and, eq, ne } from "drizzle-orm";
 
 import { withOrgAdmin } from "@/lib/auth/guard";
 import { getLimiteleEfective, mesajeCote } from "@/lib/billing/quota";
-import { cifFolositDeAltaOrganizatie, MESAJ_CIF_FOLOSIT } from "@/lib/cif";
+import { cifFolositDeAltaOrganizatie } from "@/lib/cif";
+import { getTr } from "@/lib/i18n/tr-server";
+import { ERORI_UI_DICT } from "@/lib/i18n/dictionaries/erori-ui";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { TOATE_DOMENIILE, type DomeniuActivitate } from "@/lib/campaign-templates";
 import { EroareUtilizator, mesajSigur } from "@/lib/erori";
 import { organizations } from "@/lib/db/schema";
@@ -55,14 +58,14 @@ const updateBrandingRow = withOrgAdmin(
     // entități. Verificat aici (mesaj clar) și garantat de indexul unic
     // organizations_cif_norm_unique (curse între cereri simultane).
     if (values.cif && (await cifFolositDeAltaOrganizatie(values.cif, ctx.orgId))) {
-      throw new EroareUtilizator(MESAJ_CIF_FOLOSIT);
+      throw new EroareUtilizator(ERORI_UI_DICT[await getLocale()].cifFolosit);
     }
     try {
       await ctx.db.update(organizations).set(set).where(eq(organizations.id, ctx.orgId));
     } catch (e) {
       if (String((e as { message?: string; cause?: { message?: string } })?.message ?? "").includes("organizations_cif_norm_unique") ||
         String((e as { cause?: { message?: string } })?.cause?.message ?? "").includes("organizations_cif_norm_unique")) {
-        throw new EroareUtilizator(MESAJ_CIF_FOLOSIT);
+        throw new EroareUtilizator(ERORI_UI_DICT[await getLocale()].cifFolosit);
       }
       throw e;
     }
@@ -74,6 +77,7 @@ export async function updateBrandingAction(
   _prevState: BrandingState,
   formData: FormData,
 ): Promise<BrandingState> {
+  const t = await getTr();
   const slogan = String(formData.get("slogan") ?? "").trim();
   const brandColor = String(formData.get("brandColor") ?? "").trim();
   const logo = formData.get("logo");
@@ -83,7 +87,7 @@ export async function updateBrandingAction(
   // doar dacă sunt scrise — folosite la emiterea automată a facturii Oblio.
   const cifRaw = String(formData.get("cif") ?? "").trim();
   if (cifRaw && !cifValidFormat(cifRaw)) {
-    return { error: "CIF invalid — scrie-l cu sau fără prefixul RO (ex. RO12345678).", ok: false };
+    return { error: t("CIF invalid — scrie-l cu sau fără prefixul RO (ex. RO12345678).", "Invalid CIF (tax ID) — enter it with or without the RO prefix (e.g. RO12345678)."), ok: false };
   }
   // .has(): dialogul de onboarding nu randează deloc aceste câmpuri
   // (showDateFacturare=false) — absența lor din formData NU trebuie tratată
@@ -93,7 +97,7 @@ export async function updateBrandingAction(
   const judetRaw = areCampuriFacturare ? String(formData.get("judet") ?? "").trim() : "";
   const judet = judetRaw ? gasesteJudet(judetRaw) : null;
   if (judetRaw && !judet) {
-    return { error: "Județ invalid.", ok: false };
+    return { error: t("Județ invalid.", "Invalid county (județ)."), ok: false };
   }
   const ibanRaw = areCampuriFacturare
     ? String(formData.get("iban") ?? "")
@@ -101,21 +105,21 @@ export async function updateBrandingAction(
         .toUpperCase()
     : undefined;
   if (ibanRaw && !ibanValid(ibanRaw)) {
-    return { error: "IBAN invalid — verifică numărul contului.", ok: false };
+    return { error: t("IBAN invalid — verifică numărul contului.", "Invalid IBAN — check the account number."), ok: false };
   }
   const domeniuActivitate = String(formData.get("domeniuActivitate") ?? "").trim();
   if (domeniuActivitate && !TOATE_DOMENIILE.includes(domeniuActivitate as DomeniuActivitate)) {
-    return { error: "Domeniu de activitate invalid.", ok: false };
+    return { error: t("Domeniu de activitate invalid.", "Invalid field of activity."), ok: false };
   }
 
   let logoUrl: string | undefined;
   if (logo instanceof File && logo.size > 0) {
     if (logo.size > 2 * 1024 * 1024) {
-      return { error: "Logo-ul e prea mare (max 2MB).", ok: false };
+      return { error: t("Logo-ul e prea mare (max 2MB).", "The logo is too large (max 2MB)."), ok: false };
     }
     const ext = extensieImagine(logo.type);
     if (!ext) {
-      return { error: "Format neacceptat — folosește PNG, JPG sau WebP.", ok: false };
+      return { error: t("Format neacceptat — folosește PNG, JPG sau WebP.", "Unsupported format — use PNG, JPG or WebP."), ok: false };
     }
     const supabase = await createClient();
     const path = `${orgSlug}/logo-${randomUUID()}.${ext}`;
@@ -124,7 +128,7 @@ export async function updateBrandingAction(
       upsert: false,
     });
     if (uploadError) {
-      return { error: "Încărcarea logo-ului a eșuat: " + uploadError.message, ok: false };
+      return { error: t("Încărcarea logo-ului a eșuat: ", "The logo upload failed: ") + uploadError.message, ok: false };
     }
     logoUrl = supabase.storage.from("org-branding").getPublicUrl(path).data.publicUrl;
   }
@@ -141,7 +145,7 @@ export async function updateBrandingAction(
       domeniuActivitate,
     });
   } catch (e) {
-    return { error: mesajSigur(e, "Salvarea a eșuat.", "setari-branding"), ok: false };
+    return { error: mesajSigur(e, t("Salvarea a eșuat.", "Saving failed."), "setari-branding"), ok: false };
   }
   return { error: null, ok: true };
 }
@@ -153,13 +157,14 @@ export type SlugState = { error: string | null; slug: string | null };
 const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
 const updateSlugRow = withOrgAdmin(async (ctx, slug: string) => {
+  const t = await getTr();
   const [conflict] = await ctx.db
     .select({ id: organizations.id })
     .from(organizations)
     .where(and(eq(organizations.slug, slug), ne(organizations.id, ctx.orgId)))
     .limit(1);
   if (conflict) {
-    throw new EroareUtilizator("Această adresă e deja folosită de altă organizație.");
+    throw new EroareUtilizator(t("Această adresă e deja folosită de altă organizație.", "This address is already used by another organization."));
   }
   // Webhook-urile Stripe configurate înainte de adresa cu ID au slug-ul în URL: redenumirea ar opri tăcut confirmarea
   // donațiilor (rămân „în așteptare", fără alertă). Se face împreună, ca URL-ul din Stripe să fie mutat întâi.
@@ -170,7 +175,10 @@ const updateSlugRow = withOrgAdmin(async (ctx, slug: string) => {
     .limit(1);
   if (stripe?.webhook) {
     throw new EroareUtilizator(
-      "Ai conectat Stripe pentru donații: schimbarea adresei ar opri confirmarea donațiilor. Scrie-ne la vlad.placinta@alexandrit.ro și o schimbăm împreună, fără pierderi.",
+      t(
+        "Ai conectat Stripe pentru donații: schimbarea adresei ar opri confirmarea donațiilor. Scrie-ne la vlad.placinta@alexandrit.ro și o schimbăm împreună, fără pierderi.",
+        "You have connected Stripe for donations: changing the address would stop donation confirmations. Write to us at vlad.placinta@alexandrit.ro and we will change it together, without losses.",
+      ),
     );
   }
   await ctx.db.update(organizations).set({ slug }).where(eq(organizations.id, ctx.orgId));
@@ -184,16 +192,17 @@ export async function updateSlugAction(
   const slug = String(formData.get("slug") ?? "")
     .trim()
     .toLowerCase();
+  const t = await getTr();
   if (!SLUG_RE.test(slug)) {
-    return { error: "Doar litere mici, cifre și cratime (ex. numele-tau).", slug: null };
+    return { error: t("Doar litere mici, cifre și cratime (ex. numele-tau).", "Only lowercase letters, digits and hyphens (e.g. your-name)."), slug: null };
   }
   if (esteSlugRezervat(slug)) {
-    return { error: "Această adresă e rezervată platformei — alege alta.", slug: null };
+    return { error: t("Această adresă e rezervată platformei — alege alta.", "This address is reserved by the platform — choose another."), slug: null };
   }
   try {
     await updateSlugRow(orgSlug, slug);
   } catch (e) {
-    return { error: mesajSigur(e, "Salvarea a eșuat.", "setari-slug"), slug: null };
+    return { error: mesajSigur(e, t("Salvarea a eșuat.", "Saving failed."), "setari-slug"), slug: null };
   }
   return { error: null, slug };
 }
@@ -204,6 +213,7 @@ export type DomainState = { error: string | null; ok: boolean };
 const DOMAIN_RE = /^(?!-)[a-z0-9-]+(\.[a-z0-9-]+)+$/;
 
 const updateCustomDomainRow = withOrgAdmin(async (ctx, domain: string | null) => {
+  const t = await getTr();
   if (domain) {
     // Domeniul propriu e inclus în IMPACT; cine îl are deja (de dinainte) îl poate păstra.
     const [curent] = await ctx.db.select({ d: organizations.customDomain }).from(organizations).where(eq(organizations.id, ctx.orgId)).limit(1);
@@ -216,7 +226,7 @@ const updateCustomDomainRow = withOrgAdmin(async (ctx, domain: string | null) =>
       .where(and(eq(organizations.customDomain, domain), ne(organizations.id, ctx.orgId)))
       .limit(1);
     if (conflict) {
-      throw new EroareUtilizator("Acest domeniu e deja folosit de altă organizație.");
+      throw new EroareUtilizator(t("Acest domeniu e deja folosit de altă organizație.", "This domain is already used by another organization."));
     }
   }
   await ctx.db.update(organizations).set({ customDomain: domain }).where(eq(organizations.id, ctx.orgId));
@@ -233,16 +243,17 @@ export async function updateCustomDomainAction(
     .replace(/^https?:\/\//, "")
     .replace(/\/+$/, "");
   const domain = raw || null;
+  const t = await getTr();
   if (domain && !DOMAIN_RE.test(domain)) {
-    return { error: "Domeniu invalid — scrie-l fără https:// sau /, ex. susinima.ro", ok: false };
+    return { error: t("Domeniu invalid — scrie-l fără https:// sau /, ex. susinima.ro", "Invalid domain — write it without https:// or /, e.g. susinima.ro"), ok: false };
   }
   if (domain && domeniuRezervatPlatformei(domain)) {
-    return { error: "Acest domeniu aparține platformei — folosește domeniul propriu al organizației.", ok: false };
+    return { error: t("Acest domeniu aparține platformei — folosește domeniul propriu al organizației.", "This domain belongs to the platform — use your organization's own domain."), ok: false };
   }
   try {
     await updateCustomDomainRow(orgSlug, domain);
   } catch (e) {
-    return { error: mesajSigur(e, "Salvarea a eșuat.", "setari-domeniu"), ok: false };
+    return { error: mesajSigur(e, t("Salvarea a eșuat.", "Saving failed."), "setari-domeniu"), ok: false };
   }
   return { error: null, ok: true };
 }

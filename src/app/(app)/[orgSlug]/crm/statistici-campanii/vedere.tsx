@@ -2,6 +2,8 @@ import { BarChart3, Eye, HandCoins, MousePointerClick, Percent, Users, Wallet } 
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import type { Locale } from "@/lib/i18n/config";
+import { STATISTICI_CAMPANII_UI_DICT } from "@/lib/i18n/dictionaries/statistici-campanii-ui";
 import { caleCampanie } from "@/lib/link-campanie";
 
 import { Breadcrumb } from "../components/ui/breadcrumb";
@@ -11,23 +13,8 @@ import { formatSuma } from "../lib/format";
 import { GraficeTrafic, type PunctZi } from "./grafice";
 import type { incarcaStatistici } from "./queries";
 
-export const PERIOADE = [
-  { zile: 7, eticheta: "7 zile" },
-  { zile: 30, eticheta: "30 de zile" },
-  { zile: 90, eticheta: "90 de zile" },
-  { zile: 365, eticheta: "12 luni" },
-] as const;
-
-const SURSE: Record<string, string> = {
-  direct: "Direct (link scris sau copiat, aplicații de mesagerie)",
-  social: "Rețele sociale",
-  cautare: "Căutare (Google, Bing…)",
-  email: "E-mail și newslettere",
-  site: "Site-ul Alexandrit",
-  trimitere: "Alte site-uri",
-};
-const DISPOZITIVE: Record<string, string> = { mobil: "Telefon", tableta: "Tabletă", desktop: "Calculator" };
-const TARI: Record<string, string> = { RO: "România", MD: "Moldova", DE: "Germania", GB: "Marea Britanie", IT: "Italia", ES: "Spania", FR: "Franța", US: "SUA", AT: "Austria", BE: "Belgia", NL: "Țările de Jos", IE: "Irlanda" };
+// Etichetele perioadelor sunt în dicționar (STATISTICI_CAMPANII_UI_DICT.perioade), după număr de zile.
+export const PERIOADE = [{ zile: 7 }, { zile: 30 }, { zile: 90 }, { zile: 365 }] as const;
 
 type Agregat = { vizitatori: number; vizualizari: number; deschideri: number };
 
@@ -39,9 +26,17 @@ function zileDinPerioada(zile: number): string[] {
   return Array.from({ length: zile }, (_, i) => new Date(baza - (zile - 1 - i) * 86_400_000).toISOString().slice(0, 10));
 }
 
-const pct = (a: number, b: number) => (b > 0 ? `${((a / b) * 100).toLocaleString("ro-RO", { maximumFractionDigits: 1 })}%` : "—");
-const nr = (n: number) => n.toLocaleString("ro-RO");
-const dataRo = (iso: string) => iso.split("-").reverse().join(".");
+type Format = { pct: (a: number, b: number) => string; nr: (n: number) => string };
+const formatari = (locale: Locale): Format => {
+  const loc = locale === "ro" ? "ro-RO" : "en-GB";
+  return {
+    pct: (a, b) => (b > 0 ? `${((a / b) * 100).toLocaleString(loc, { maximumFractionDigits: 1 })}%` : "—"),
+    nr: (n) => n.toLocaleString(loc),
+  };
+};
+// „2026-10-31” → „31.10.2026” (română) sau „31 Oct 2026” (engleză).
+const dataLocala = (iso: string, locale: Locale) =>
+  locale === "ro" ? iso.split("-").reverse().join(".") : new Date(`${iso}T12:00:00`).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 
 function Kpi({ icon, eticheta, valoare, nota }: { icon: ReactNode; eticheta: string; valoare: string; nota?: string }) {
   return (
@@ -56,7 +51,8 @@ function Kpi({ icon, eticheta, valoare, nota }: { icon: ReactNode; eticheta: str
   );
 }
 
-function Bare({ randuri, gol }: { randuri: { eticheta: string; valoare: number; nota?: string }[]; gol: string }) {
+function Bare({ randuri, gol, f }: { randuri: { eticheta: string; valoare: number; nota?: string }[]; gol: string; f: Format }) {
+  const { pct, nr } = f;
   const max = Math.max(1, ...randuri.map((r) => r.valoare));
   const total = randuri.reduce((s, r) => s + r.valoare, 0);
   if (randuri.length === 0) return <p className="text-[13px] text-[var(--ci-text-muted)]">{gol}</p>;
@@ -82,7 +78,10 @@ function Bare({ randuri, gol }: { randuri: { eticheta: string; valoare: number; 
 
 export type DateStatistici = Awaited<ReturnType<typeof incarcaStatistici>>;
 
-export function StatisticiVedere({ orgSlug, zile, d, campanieId = null }: { orgSlug: string; zile: number; d: DateStatistici; campanieId?: string | null }) {
+export function StatisticiVedere({ orgSlug, locale, zile, d, campanieId = null }: { orgSlug: string; locale: Locale; zile: number; d: DateStatistici; campanieId?: string | null }) {
+  const t = STATISTICI_CAMPANII_UI_DICT[locale];
+  const f = formatari(locale);
+  const { pct, nr } = f;
   const campanie = d.pagini.find((p) => p.id === campanieId) ?? null;
   const sufixCampanie = campanie ? `&campanie=${campanie.id}` : "";
   const gv = d.global.find((g) => g.tip === "vizita") ?? { vizualizari: 0, unici: 0 };
@@ -120,16 +119,16 @@ export function StatisticiVedere({ orgSlug, zile, d, campanieId = null }: { orgS
 
   return (
     <div className="mx-auto max-w-[1100px] space-y-5">
-      <Breadcrumb items={[{ label: "Strângere de fonduri", href: `/${orgSlug}/crm/strangere-fonduri` }, { label: "Statistici campanii" }]} />
+      <Breadcrumb items={[{ label: t.breadcrumbParinte, href: `/${orgSlug}/crm/strangere-fonduri` }, { label: t.title }]} />
 
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">{campanie ? campanie.titlu : "Statistici campanii"}</h1>
+          <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">{campanie ? campanie.titlu : t.title}</h1>
           <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">
-            {campanie ? "Statisticile acestei campanii: câți oameni o văd, de unde vin și câți donează." : "Câți oameni îți văd campaniile, de unde vin și câți donează."}
+            {campanie ? t.subtitleCampanie : t.subtitleToate}
           </p>
         </div>
-        <nav aria-label="Perioadă" className="flex gap-1 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-1">
+        <nav aria-label={t.perioadaAria} className="flex gap-1 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-1">
           {PERIOADE.map((p) => (
             <Link
               key={p.zile}
@@ -140,7 +139,7 @@ export function StatisticiVedere({ orgSlug, zile, d, campanieId = null }: { orgS
                 p.zile === zile ? "bg-[var(--ci-primary)] text-white" : "text-[var(--ci-text-muted)] hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)]"
               }`}
             >
-              {p.eticheta}
+              {t.perioade[p.zile]}
             </Link>
           ))}
         </nav>
@@ -150,10 +149,10 @@ export function StatisticiVedere({ orgSlug, zile, d, campanieId = null }: { orgS
         <form method="get" className="flex flex-wrap items-center gap-2 text-[13px]">
           <input type="hidden" name="zile" value={zile} />
           <label htmlFor="campanie" className="text-[var(--ci-text-muted)]">
-            Campania:
+            {t.filtru.campania}
           </label>
           <select id="campanie" name="campanie" defaultValue={campanie?.id ?? ""} className="max-w-[320px] rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-2.5 py-1.5 text-[13px] text-[var(--ci-text)]">
-            <option value="">Toate campaniile</option>
+            <option value="">{t.filtru.toate}</option>
             {d.pagini.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.titlu}
@@ -161,11 +160,11 @@ export function StatisticiVedere({ orgSlug, zile, d, campanieId = null }: { orgS
             ))}
           </select>
           <button type="submit" className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-1.5 font-medium text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]">
-            Afișează
+            {t.filtru.afiseaza}
           </button>
           {campanie && (
             <Link prefetch={false} href={`/${orgSlug}/crm/statistici-campanii?zile=${zile}`} className="font-medium text-[var(--ci-primary)] hover:underline">
-              Toate campaniile
+              {t.filtru.toate}
             </Link>
           )}
         </form>
@@ -174,44 +173,44 @@ export function StatisticiVedere({ orgSlug, zile, d, campanieId = null }: { orgS
       <div className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface-2)] px-4 py-3 text-[12.5px] leading-relaxed text-[var(--ci-text-muted)]">
         {incepeMasurarea ? (
           <>
-            Alexandrit măsoară traficul paginilor tale de campanie începând cu <b className="text-[var(--ci-text)]">{dataRo(incepeMasurarea)}</b>.
-            {masuratPartial && " Pentru perioada aleasă, vizitatorii dinainte de această dată nu sunt incluși, dar donațiile și veniturile sunt complete."}
+            {t.masurare.incepe} <b className="text-[var(--ci-text)]">{dataLocala(incepeMasurarea, locale)}</b>.
+            {masuratPartial && ` ${t.masurare.partial}`}
           </>
         ) : (
-          <>Măsurarea traficului a pornit acum: vizitatorii apar aici după prima vizită pe o pagină de campanie. Donațiile și veniturile sunt afișate complet.</>
+          <>{t.masurare.pornit}</>
         )}{" "}
-        Măsurarea nu folosește cookie-uri și nu păstrează adresa IP; fiecare vizitator unic se numără o singură dată pe zi, iar vizitele echipei tale (cu cont autentificat) și ale roboților sunt excluse.
+        {t.masurare.confidentialitate}
       </div>
 
       {faraDate ? (
         <EmptyState
           icon={BarChart3}
-          title="Încă nu sunt date pentru această perioadă"
-          description="Distribuie linkul unei campanii. După primele vizite și donații, aici vezi traficul, sursele și veniturile."
+          title={t.gol.title}
+          description={t.gol.description}
           action={
             <Link prefetch={false} href={`/${orgSlug}/crm/strangere-fonduri`} className="text-[13px] font-medium text-[var(--ci-primary)] hover:underline">
-              Mergi la campanii →
+              {t.gol.actiune}
             </Link>
           }
         />
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-            <Kpi icon={<Users className="h-3.5 w-3.5" />} eticheta="Vizitatori unici" valoare={nr(vizitatori)} nota="o dată pe zi" />
-            <Kpi icon={<Eye className="h-3.5 w-3.5" />} eticheta="Vizualizări" valoare={nr(gv.vizualizari)} />
-            <Kpi icon={<HandCoins className="h-3.5 w-3.5" />} eticheta="Donații" valoare={nr(d.donGlobal.donatii)} nota={d.donGlobal.recurente > 0 ? `${nr(d.donGlobal.recurente)} lunare` : undefined} />
-            <Kpi icon={<Percent className="h-3.5 w-3.5" />} eticheta="Rată de conversie" valoare={pct(donMasurate, vizitatori)} nota="donații / vizitatori" />
-            <Kpi icon={<Wallet className="h-3.5 w-3.5" />} eticheta="Venituri" valoare={formatSuma(d.donGlobal.venituri)} nota="după rambursări" />
-            <Kpi icon={<MousePointerClick className="h-3.5 w-3.5" />} eticheta="Donație medie" valoare={d.donGlobal.donatii > 0 ? formatSuma(Math.round(d.donGlobal.venituri / d.donGlobal.donatii)) : "—"} />
+            <Kpi icon={<Users className="h-3.5 w-3.5" />} eticheta={t.kpi.vizitatoriUnici} valoare={nr(vizitatori)} nota={t.kpi.oDataPeZi} />
+            <Kpi icon={<Eye className="h-3.5 w-3.5" />} eticheta={t.kpi.vizualizari} valoare={nr(gv.vizualizari)} />
+            <Kpi icon={<HandCoins className="h-3.5 w-3.5" />} eticheta={t.kpi.donatii} valoare={nr(d.donGlobal.donatii)} nota={d.donGlobal.recurente > 0 ? `${nr(d.donGlobal.recurente)} ${t.kpi.lunare}` : undefined} />
+            <Kpi icon={<Percent className="h-3.5 w-3.5" />} eticheta={t.kpi.rataConversie} valoare={pct(donMasurate, vizitatori)} nota={t.kpi.donatiiVizitatori} />
+            <Kpi icon={<Wallet className="h-3.5 w-3.5" />} eticheta={t.kpi.venituri} valoare={formatSuma(d.donGlobal.venituri, "RON", locale)} nota={t.kpi.dupaRambursari} />
+            <Kpi icon={<MousePointerClick className="h-3.5 w-3.5" />} eticheta={t.kpi.donatieMedie} valoare={d.donGlobal.donatii > 0 ? formatSuma(Math.round(d.donGlobal.venituri / d.donGlobal.donatii), "RON", locale) : "—"} />
           </div>
 
           <Card>
-            <CardHeader title="Drumul spre donație" subtitle="Din câți oameni ajung pe pagină, câți deschid formularul și câți donează." />
+            <CardHeader title={t.drum.title} subtitle={t.drum.subtitle} />
             <div className="space-y-3">
               {[
-                { eticheta: "Au vizitat o pagină de campanie", valoare: vizitatori, nota: "100%" },
-                { eticheta: "Au deschis formularul de donație", valoare: deschideri, nota: `${pct(deschideri, vizitatori)} dintre vizitatori` },
-                { eticheta: "Au donat", valoare: donMasurate, nota: `${pct(donMasurate, deschideri)} dintre cei care au deschis formularul` },
+                { eticheta: t.drum.vizitat, valoare: vizitatori, nota: "100%" },
+                { eticheta: t.drum.deschis, valoare: deschideri, nota: `${pct(deschideri, vizitatori)} ${t.drum.dintreVizitatori}` },
+                { eticheta: t.drum.donat, valoare: donMasurate, nota: `${pct(donMasurate, deschideri)} ${t.drum.dintreCeiCareAuDeschis}` },
               ].map((p) => (
                 <div key={p.eticheta}>
                   <div className="flex items-baseline justify-between gap-3 text-[13px]">
@@ -229,29 +228,29 @@ export function StatisticiVedere({ orgSlug, zile, d, campanieId = null }: { orgS
           </Card>
 
           <Card>
-            <CardHeader title="Trafic și venituri pe zile" />
+            <CardHeader title={t.grafic.title} />
             <GraficeTrafic date={grafic} />
           </Card>
 
           {!campanie && (
           <Card padded={false}>
             <div className="p-5 pb-3">
-              <CardHeader title="Pe campanii" subtitle="Doar campaniile cu vizite sau donații în perioada aleasă." />
+              <CardHeader title={t.pePagini.title} subtitle={t.pePagini.subtitle} />
             </div>
             {randuriCampanii.length === 0 ? (
-              <p className="px-5 pb-5 text-[13px] text-[var(--ci-text-muted)]">Nicio campanie nu are vizite sau donații în această perioadă.</p>
+              <p className="px-5 pb-5 text-[13px] text-[var(--ci-text-muted)]">{t.pePagini.gol}</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[720px] text-[13px]">
                   <thead>
                     <tr className="border-y border-[var(--ci-border)] bg-[var(--ci-surface-2)] text-left text-[12px] text-[var(--ci-text-muted)]">
-                      <th className="px-5 py-2 font-medium">Campanie</th>
-                      <th className="px-3 py-2 text-right font-medium">Vizitatori</th>
-                      <th className="px-3 py-2 text-right font-medium">Deschid formularul</th>
-                      <th className="px-3 py-2 text-right font-medium">Donații</th>
-                      <th className="px-3 py-2 text-right font-medium">Conversie</th>
-                      <th className="px-3 py-2 text-right font-medium">Venituri</th>
-                      <th className="px-5 py-2 text-right font-medium">Donație medie</th>
+                      <th className="px-5 py-2 font-medium">{t.pePagini.campanie}</th>
+                      <th className="px-3 py-2 text-right font-medium">{t.pePagini.vizitatori}</th>
+                      <th className="px-3 py-2 text-right font-medium">{t.pePagini.deschidFormularul}</th>
+                      <th className="px-3 py-2 text-right font-medium">{t.pePagini.donatii}</th>
+                      <th className="px-3 py-2 text-right font-medium">{t.pePagini.conversie}</th>
+                      <th className="px-3 py-2 text-right font-medium">{t.pePagini.venituri}</th>
+                      <th className="px-5 py-2 text-right font-medium">{t.pePagini.donatieMedie}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -261,14 +260,14 @@ export function StatisticiVedere({ orgSlug, zile, d, campanieId = null }: { orgS
                           <a href={caleCampanie(orgSlug, r.slug)} target="_blank" rel="noopener noreferrer" className="font-medium text-[var(--ci-text)] hover:text-[var(--ci-primary)] hover:underline">
                             {r.titlu}
                           </a>
-                          {r.status !== "activa" && <span className="ml-2 text-[11.5px] text-[var(--ci-text-faint)]">(închisă)</span>}
+                          {r.status !== "activa" && <span className="ml-2 text-[11.5px] text-[var(--ci-text-faint)]">{t.pePagini.inchisa}</span>}
                         </td>
                         <td className="ci-tabular px-3 py-2.5 text-right">{nr(r.vizitatori)}</td>
                         <td className="ci-tabular px-3 py-2.5 text-right">{nr(r.deschideri)}</td>
                         <td className="ci-tabular px-3 py-2.5 text-right">{nr(r.donatii)}</td>
                         <td className="ci-tabular px-3 py-2.5 text-right">{pct(r.donatii, r.vizitatori)}</td>
-                        <td className="ci-tabular px-3 py-2.5 text-right font-medium">{formatSuma(r.venituri)}</td>
-                        <td className="ci-tabular px-5 py-2.5 text-right">{r.donatii > 0 ? formatSuma(Math.round(r.venituri / r.donatii)) : "—"}</td>
+                        <td className="ci-tabular px-3 py-2.5 text-right font-medium">{formatSuma(r.venituri, "RON", locale)}</td>
+                        <td className="ci-tabular px-5 py-2.5 text-right">{r.donatii > 0 ? formatSuma(Math.round(r.venituri / r.donatii), "RON", locale) : "—"}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -280,27 +279,27 @@ export function StatisticiVedere({ orgSlug, zile, d, campanieId = null }: { orgS
 
           <div className="grid gap-5 lg:grid-cols-2">
             <Card>
-              <CardHeader title="De unde vin vizitatorii" />
-              <Bare randuri={d.surse.map((s) => ({ eticheta: SURSE[s.sursa] ?? s.sursa, valoare: s.unici })).sort((a, b) => b.valoare - a.valoare)} gol="Încă nu sunt vizitatori în această perioadă." />
+              <CardHeader title={t.surse.title} />
+              <Bare f={f} randuri={d.surse.map((s) => ({ eticheta: t.surse.etichete[s.sursa] ?? s.sursa, valoare: s.unici })).sort((a, b) => b.valoare - a.valoare)} gol={t.surse.goalVizitatori} />
               {d.sursaDetalii.length > 0 && (
                 <div className="mt-5 border-t border-[var(--ci-border)] pt-4">
-                  <p className="mb-2 text-[12px] font-medium text-[var(--ci-text-muted)]">Cele mai frecvente adrese și etichete</p>
-                  <Bare randuri={d.sursaDetalii.map((s) => ({ eticheta: s.detaliu ?? "", valoare: s.unici }))} gol="" />
+                  <p className="mb-2 text-[12px] font-medium text-[var(--ci-text-muted)]">{t.surse.celeMaiFrecvente}</p>
+                  <Bare f={f} randuri={d.sursaDetalii.map((s) => ({ eticheta: s.detaliu ?? "", valoare: s.unici }))} gol="" />
                 </div>
               )}
             </Card>
             <Card>
-              <CardHeader title="Campanii de promovare (după etichetă)" subtitle="Din linkurile cu parametri utm_campaign și utm_source, ca să vezi ce postare sau ce mesaj aduce donații." />
-              <Bare randuri={d.utm.map((s) => ({ eticheta: s.utm ?? "", valoare: s.unici }))} gol="Nicio etichetă încă. Adaugă la linkul campaniei, de exemplu: ?utm_source=facebook&utm_campaign=numele-postarii" />
+              <CardHeader title={t.utm.title} subtitle={t.utm.subtitle} />
+              <Bare f={f} randuri={d.utm.map((s) => ({ eticheta: s.utm ?? "", valoare: s.unici }))} gol={t.utm.gol} />
               {d.donSursa.length > 0 && (
                 <div className="mt-5 border-t border-[var(--ci-border)] pt-4">
-                  <p className="mb-2 text-[12px] font-medium text-[var(--ci-text-muted)]">Donații după etichetă (număr · venituri)</p>
+                  <p className="mb-2 text-[12px] font-medium text-[var(--ci-text-muted)]">{t.utm.donatiiDupaEticheta}</p>
                   <ul className="space-y-1.5 text-[13px]">
                     {d.donSursa.map((s) => (
                       <li key={s.sursa} className="flex justify-between gap-3">
                         <span className="min-w-0 truncate text-[var(--ci-text)]">{s.sursa}</span>
                         <span className="ci-tabular shrink-0 text-[var(--ci-text-muted)]">
-                          {nr(s.donatii)} · {formatSuma(s.venituri)}
+                          {nr(s.donatii)} · {formatSuma(s.venituri, "RON", locale)}
                         </span>
                       </li>
                     ))}
@@ -309,17 +308,17 @@ export function StatisticiVedere({ orgSlug, zile, d, campanieId = null }: { orgS
               )}
             </Card>
             <Card>
-              <CardHeader title="Dispozitive" />
-              <Bare randuri={d.dispozitive.map((s) => ({ eticheta: DISPOZITIVE[s.dispozitiv] ?? s.dispozitiv, valoare: s.unici })).sort((a, b) => b.valoare - a.valoare)} gol="Încă nu sunt vizitatori în această perioadă." />
+              <CardHeader title={t.dispozitive.title} />
+              <Bare f={f} randuri={d.dispozitive.map((s) => ({ eticheta: t.dispozitive.etichete[s.dispozitiv] ?? s.dispozitiv, valoare: s.unici })).sort((a, b) => b.valoare - a.valoare)} gol={t.surse.goalVizitatori} />
             </Card>
             <Card>
-              <CardHeader title="Țări" subtitle="După locul din care se conectează vizitatorii." />
-              <Bare randuri={d.tari.map((s) => ({ eticheta: TARI[s.tara ?? ""] ?? s.tara ?? "", valoare: s.unici }))} gol="Țările apar după primele vizite pe site-ul publicat." />
+              <CardHeader title={t.tari.title} subtitle={t.tari.subtitle} />
+              <Bare f={f} randuri={d.tari.map((s) => ({ eticheta: t.tari.nume[s.tara ?? ""] ?? s.tara ?? "", valoare: s.unici }))} gol={t.tari.gol} />
             </Card>
           </div>
 
           <p className="text-[12px] leading-relaxed text-[var(--ci-text-faint)]">
-            Nu măsurăm vârsta, genul sau interesele vizitatorilor: Alexandrit nu folosește cookie-uri de urmărire, deci aceste date nu există. „Vizitatori unici” înseamnă persoane diferite într-o zi; același om care revine în zile diferite se numără în fiecare zi.
+            {t.nota}
           </p>
         </>
       )}

@@ -48,6 +48,7 @@ export const DASHBOARD_DICT = {
       inovare: "Centrul de inovare",
       facturare: "Facturare",
       setari: "Setări",
+      timpAlocat: "Timp alocat",
     },
     hints: {
       home: "Privire de ansamblu: ce ai de făcut azi și cum merg donațiile",
@@ -82,6 +83,7 @@ export const DASHBOARD_DICT = {
       inovare: "Propune idei, votează-le pe ale altor ONG-uri și vezi ce am inovat",
       facturare: "Planul activ, metoda de plată și facturile emise de Alexandrit",
       setari: "Datele organizației, echipa, plățile și abonamentul",
+      timpAlocat: "Timpul alocat modificărilor custom, integrărilor și suportului",
     },
     sidebar: {
       restrange: "Restrânge meniul",
@@ -163,6 +165,7 @@ export const DASHBOARD_DICT = {
       inovare: "Innovation center",
       facturare: "Billing",
       setari: "Settings",
+      timpAlocat: "Time allocated",
     },
     hints: {
       home: "Overview: what to do today and how donations are going",
@@ -197,6 +200,7 @@ export const DASHBOARD_DICT = {
       inovare: "Suggest ideas, vote on other NGOs' ideas and see what we have built",
       facturare: "Your plan, payment method and invoices issued by Alexandrit",
       setari: "Organization details, team, payments and subscription",
+      timpAlocat: "Time spent on custom changes, integrations and support",
     },
     sidebar: {
       restrange: "Collapse menu",

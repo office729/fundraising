@@ -70,6 +70,10 @@ function limiteText(pkg: Exclude<OrgPackage, "trial" | "custom">, locale: Locale
         ...(analiza ? ["Individual database analysis"] : []),
         ...(granturi ? ["Grants"] : []),
         ...(calendar ? ["Fundraising calendar"] : []),
+        ...(analizaDonator ? ["Donor analysis: churn risk, giving rhythm, estimated value"] : []),
+        ...(prioritizareFirme ? ["Company prioritisation in A/B/C bands"] : []),
+        ...(caiCalde ? ["Warm paths to companies"] : []),
+        ...(prospectareMulti ? ["Decision-maker prospecting, with your own keys for Lusha, Apollo, Prospeo, Hunter and Waalaxy"] : []),
         "Innovation center: suggest ideas, vote and see what's new",
         pkg === "impact" ? "Email and phone support" : "Email support",
       ];

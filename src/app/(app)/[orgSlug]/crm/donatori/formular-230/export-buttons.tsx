@@ -5,6 +5,7 @@ import { FileSpreadsheet, FileText } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { useLocale } from "../../lib/locale-context";
 import { FORMULAR230_DICT } from "@/lib/i18n/dictionaries/formular230";
+import { DONATORI_UI5_DICT } from "@/lib/i18n/dictionaries/donatori-ui-5";
 import { obtineCnpPentruExport } from "./actions";
 
 type SubmisieExport = {
@@ -75,7 +76,7 @@ export function ExportButtons({
       <Button variant="secondary" size="sm" onClick={exportaExcel} disabled={!submisii.length}>
         <FileSpreadsheet className="h-3.5 w-3.5" /> {dict.excel}
       </Button>
-      <Button variant="secondary" size="sm" onClick={() => document.getElementById("borderouri-anaf")?.scrollIntoView({ behavior: "smooth", block: "start" })} disabled={!submisii.length} title="Borderourile ANAF (max. 50 de formulare) cu PDF inteligent, Excel și XML sunt în cardul de mai jos">
+      <Button variant="secondary" size="sm" onClick={() => document.getElementById("borderouri-anaf")?.scrollIntoView({ behavior: "smooth", block: "start" })} disabled={!submisii.length} title={DONATORI_UI5_DICT[locale].exportBorderouriTitle}>
         <FileText className="h-3.5 w-3.5" /> {dict.borderouAnaf}
       </Button>
     </div>

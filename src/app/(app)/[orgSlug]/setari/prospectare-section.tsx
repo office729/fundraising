@@ -3,10 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 
+import { SETARI_PROSPECTARE_UI_DICT } from "@/lib/i18n/dictionaries/setari-prospectare-ui";
 import { NUME_CONECTOR, type Conector, type ElementWaalaxy } from "@/lib/prospectare/motor";
 import { WaalaxyWebhookCard } from "./waalaxy-webhook-card";
 
 import { creditePrelucrare } from "../crm/companii/[id]/prospectare-actions";
+import { useLocale } from "../crm/lib/locale-context";
 import {
   listaExcluderiProspectare,
   optiuniWaalaxy,
@@ -24,53 +26,20 @@ import {
 // Ordinea: cele gratuite sau ieftine întâi (Apollo, Prospeo, Hunter), apoi Lusha (cea mai scumpă), apoi Waalaxy (abordare pe LinkedIn, nu caută date).
 const ORDINE: readonly Conector[] = ["apollo", "prospeo", "hunter", "lusha", "waalaxy"];
 
-const AJUTOR: Record<Conector, { rol: string; unde: string; plan: string; cost: string; link: string; recomandat?: boolean }> = {
-  apollo: {
-    rol: "Date de contact",
-    unde: "În contul Apollo: Settings → Integrations → API → creează o cheie („master key” sau cu acces la People Search și People Match).",
-    plan: "Funcționează și cu planul gratuit, cu limite.",
-    cost: "Căutarea persoanelor nu consumă credite; obținerea e-mailului consumă credite din contul tău.",
-    link: "https://app.apollo.io/",
-    recomandat: true,
-  },
-  prospeo: {
-    rol: "Date de contact",
-    unde: "În contul Prospeo: secțiunea API → cheia API.",
-    plan: "Verifică în contul tău că planul include accesul API.",
-    cost: "Căutarea consumă 1 credit pe pagină cu rezultate; e-mailul, câte 1 credit pe adresă găsită.",
-    link: "https://app.prospeo.io/",
-  },
-  hunter: {
-    rol: "E-mailuri și verificare",
-    unde: "În contul Hunter: Dashboard → API → cheia ta.",
-    plan: "Funcționează și cu planul gratuit, cu puține credite.",
-    cost: "Fiecare căutare pe domeniu, găsire de e-mail și verificare consumă câte un credit din contul tău.",
-    link: "https://hunter.io/api-keys",
-  },
-  lusha: {
-    rol: "Date de contact",
-    unde: "În contul Lusha: Integrations / API → cheia API.",
-    plan: "Accesul la API depinde de planul tău Lusha; dacă nu apare cheia, scrie-le să-l activeze.",
-    cost: "Căutarea și obținerea e-mailului consumă credite din contul tău Lusha (e cea mai scumpă dintre ele, de aceea e ultima folosită).",
-    link: "https://dashboard.lusha.com/",
-  },
-  waalaxy: {
-    rol: "Abordare pe LinkedIn",
-    unde: "În Waalaxy: Setări → cheie API / integrări.",
-    plan: "Disponibilă doar pe planurile Waalaxy cu acces la API; verifică în contul tău.",
-    cost: "Nu caută date. Trimite persoanele aprobate (cu profil LinkedIn) în lista și campania pe care le alegi mai jos; răspunsurile le vezi în Waalaxy.",
-    link: "https://app.waalaxy.com/",
-  },
+const AJUTOR: Record<Conector, { link: string; recomandat?: boolean }> = {
+  apollo: { link: "https://app.apollo.io/", recomandat: true },
+  prospeo: { link: "https://app.prospeo.io/" },
+  hunter: { link: "https://hunter.io/api-keys" },
+  lusha: { link: "https://dashboard.lusha.com/" },
+  waalaxy: { link: "https://app.waalaxy.com/" },
 };
 
-const ROLURI: { rol: RolCampanie; eticheta: string }[] = [
-  { rol: "decident", eticheta: "Decident final (administrator, CEO)" },
-  { rol: "buget", eticheta: "Decide bugetul (director financiar)" },
-  { rol: "csr", eticheta: "CSR / marketing" },
-];
+const ROLURI: RolCampanie[] = ["decident", "buget", "csr"];
 
 export function ProspectareSection({ orgSlug, stare, limitaZilnica }: { orgSlug: string; stare: StareChei; limitaZilnica: number }) {
   const router = useRouter();
+  const locale = useLocale();
+  const d = SETARI_PROSPECTARE_UI_DICT[locale];
   const [valori, setValori] = useState<Record<string, string>>({});
   const [eroare, setEroare] = useState<{ furnizor: string; mesaj: string } | null>(null);
   const [reusit, setReusit] = useState<{ furnizor: string; mesaj: string } | null>(null);
@@ -88,7 +57,7 @@ export function ProspectareSection({ orgSlug, stare, limitaZilnica }: { orgSlug:
   });
   const [excluderi, setExcluderi] = useState<Excludere[] | null>(null);
   const [deScosExcludere, setDeScosExcludere] = useState<string | null>(null);
-  const fmt = (iso: string) => new Date(iso).toLocaleDateString("ro-RO", { day: "2-digit", month: "short", year: "numeric" });
+  const fmt = (iso: string) => new Date(iso).toLocaleDateString(locale === "ro" ? "ro-RO" : "en-GB", { day: "2-digit", month: "short", year: "numeric" });
   const conectat = (f: Conector) => stare.chei.find((c) => c.furnizor === f);
   const waalaxyConectat = Boolean(conectat("waalaxy"));
 
@@ -138,7 +107,7 @@ export function ProspectareSection({ orgSlug, stare, limitaZilnica }: { orgSlug:
       setLucreaza(furnizor);
       const r = await f();
       setLucreaza(null);
-      if (r.error) setEroare({ furnizor, mesaj: inlocuiesteCheia && conectat(furnizor as Conector) ? `${r.error} Cheia veche a rămas activă.` : r.error });
+      if (r.error) setEroare({ furnizor, mesaj: inlocuiesteCheia && conectat(furnizor as Conector) ? `${r.error} ${d.veche}` : r.error });
       else {
         setValori((v) => ({ ...v, [furnizor]: "" }));
         if (mesajReusit) setReusit({ furnizor, mesaj: mesajReusit });
@@ -152,11 +121,11 @@ export function ProspectareSection({ orgSlug, stare, limitaZilnica }: { orgSlug:
     const gaseste = (id: string) => liste?.campanii.find((c) => c.id === id);
     const campanie = gaseste(campanieAleasa);
     const rol: SetariWaalaxy["campaniiRol"] = {};
-    for (const { rol: r } of ROLURI) {
+    for (const r of ROLURI) {
       const c = gaseste(campaniiRol[r]);
       if (c) rol[r] = { id: c.id, nume: c.nume };
     }
-    ruleaza("waalaxy-lista", () => salveazaAlegereWaalaxy(orgSlug, { listaId: lista.id, listaNume: lista.nume, campanieId: campanie?.id ?? "", campanieNume: campanie?.nume ?? "", campaniiRol: rol }), "Alegerea a fost salvată.");
+    ruleaza("waalaxy-lista", () => salveazaAlegereWaalaxy(orgSlug, { listaId: lista.id, listaNume: lista.nume, campanieId: campanie?.id ?? "", campanieNume: campanie?.nume ?? "", campaniiRol: rol }), d.alegereSalvata);
   };
 
   const deschideExcluderi = () => {
@@ -166,28 +135,26 @@ export function ProspectareSection({ orgSlug, stare, limitaZilnica }: { orgSlug:
 
   return (
     <section id="prospectare" className="mt-8 scroll-mt-4 rounded-xl border border-line bg-panel p-5">
-      <h2 className="font-medium text-ink">Prospectare: conectează-ți conturile la instrumente</h2>
+      <h2 className="font-medium text-ink">{d.titlu}</h2>
       <p className="mt-1 text-xs leading-relaxed text-muted">
-        Pe fișa fiecărei firme, Alexandrit poate căuta persoanele care decid sponsorizările (administrator, director financiar, CSR…), cu e-mail verificat, folosind contul TĂU la unul sau mai multe instrumente de date de contact. Cheile se salvează criptat și nu mai apar niciodată pe ecran.
-        Creditele se consumă din contul tău la instrument: Alexandrit nu le plătește și nu le refacturează.
+        {d.intro1} {d.intro2}
       </p>
 
       <ol className="mt-3 space-y-1.5 rounded-lg bg-panel-2 p-3 text-xs leading-relaxed text-ink">
         <li>
-          <strong>1.</strong> Ai (sau creezi) un cont la unul dintre instrumentele de mai jos.
+          <strong>1.</strong> {d.pas1}
         </li>
         <li>
-          <strong>2.</strong> În contul lui copiezi „cheia API”: un cod lung, care îi permite CRM-ului să caute în numele tău.
+          <strong>2.</strong> {d.pas2}
         </li>
         <li>
-          <strong>3.</strong> O lipești în caseta instrumentului și apeși „Salvează și verifică”. O poți șterge de aici oricând (și o poți anula și din contul instrumentului). Nu o da nimănui altcuiva.
+          <strong>3.</strong> {d.pas3}
         </li>
       </ol>
       <p className="mt-2 text-xs leading-relaxed text-muted">
-        <strong className="text-ink">Nu trebuie să le conectezi pe toate: un singur instrument e suficient ca să începi.</strong> Apoi, pe fișa oricărei firme apare „Decidenți găsiți”, cu persoanele propuse, rolul fiecăreia și e-mailul. Căutarea începe cu instrumentele gratuite sau mai
-        ieftine (Apollo, apoi Prospeo și Hunter, la urmă Lusha) și se oprește când a găsit decidentul și omul de la finanțe. E-mailul se caută doar pentru primele persoane. Limita este de {limitaZilnica} de apeluri pe zi pentru organizație.
+        <strong className="text-ink">{d.unSingur}</strong> {d.explicatie(limitaZilnica)}
       </p>
-      {!stare.criptareActiva && <p role="alert" className="mt-2 rounded-lg bg-amber-100 px-3 py-2 text-xs text-amber-900">Salvarea cheilor nu e activată pe această platformă (lipsește cheia de criptare). Scrie-ne ca s-o activăm.</p>}
+      {!stare.criptareActiva && <p role="alert" className="mt-2 rounded-lg bg-amber-100 px-3 py-2 text-xs text-amber-900">{d.faraCriptare}</p>}
 
       <div className="mt-4 space-y-3">
         {ORDINE.map((f) => {
@@ -198,48 +165,48 @@ export function ProspectareSection({ orgSlug, stare, limitaZilnica }: { orgSlug:
             <details key={f} open={Boolean(salvata) || eroare?.furnizor === f || undefined} className="group rounded-lg border border-line p-3">
               <summary className="flex cursor-pointer flex-wrap items-center justify-between gap-2 text-sm font-semibold text-ink">
                 <span>
-                  {NUME_CONECTOR[f]} <span className="ml-1 text-xs font-normal text-muted">{AJUTOR[f].rol}</span>
-                  {AJUTOR[f].recomandat && <span className="ml-2 rounded-full bg-brand-green/10 px-2 py-0.5 text-xs font-medium text-brand-green">Bun pentru început</span>}
+                  {NUME_CONECTOR[f]} <span className="ml-1 text-xs font-normal text-muted">{d.ajutor[f].rol}</span>
+                  {AJUTOR[f].recomandat && <span className="ml-2 rounded-full bg-brand-green/10 px-2 py-0.5 text-xs font-medium text-brand-green">{d.bunInceput}</span>}
                 </span>
                 {salvata ? (
                   respinsa ? (
-                    <span className="text-xs font-medium text-red-700">cheia a fost respinsă de instrument: înlocuiește-o</span>
+                    <span className="text-xs font-medium text-red-700">{d.respinsa}</span>
                   ) : (
                     <span className="text-xs font-medium text-brand-green">
-                      ✓ conectat · cheia {salvata.amprenta} · {fmt(salvata.adaugatLa)}
+                      {d.conectat(salvata.amprenta, fmt(salvata.adaugatLa))}
                     </span>
                   )
                 ) : (
-                  <span className="text-xs font-normal text-muted">neconectat</span>
+                  <span className="text-xs font-normal text-muted">{d.neconectat}</span>
                 )}
               </summary>
 
               <p className="mt-2 text-xs leading-relaxed text-muted">
-                {AJUTOR[f].unde}{" "}
+                {d.ajutor[f].unde}{" "}
                 <a href={AJUTOR[f].link} target="_blank" rel="noopener noreferrer" className="font-medium text-ink underline">
-                  Deschide contul {NUME_CONECTOR[f]}
+                  {d.deschideContul(NUME_CONECTOR[f])}
                 </a>
                 .
               </p>
-              <p className="text-xs leading-relaxed text-muted">{AJUTOR[f].plan}</p>
-              <p className="text-xs leading-relaxed text-muted">{AJUTOR[f].cost}</p>
+              <p className="text-xs leading-relaxed text-muted">{d.ajutor[f].plan}</p>
+              <p className="text-xs leading-relaxed text-muted">{d.ajutor[f].cost}</p>
 
               <form
                 className="mt-2 flex flex-wrap items-end gap-2"
                 onSubmit={(e) => {
                   e.preventDefault();
-                  if ((valori[f] ?? "").trim() && stare.criptareActiva && !pending) ruleaza(f, () => salveazaCheieProspectare(orgSlug, f, valori[f] ?? ""), `${NUME_CONECTOR[f]} conectat. Cheia a fost acceptată.`, true);
+                  if ((valori[f] ?? "").trim() && stare.criptareActiva && !pending) ruleaza(f, () => salveazaCheieProspectare(orgSlug, f, valori[f] ?? ""), d.conectatOk(NUME_CONECTOR[f]), true);
                 }}
               >
                 <label className="min-w-0 flex-1 text-xs text-muted sm:min-w-[16rem]">
-                  Cheia API {NUME_CONECTOR[f]}
+                  {d.cheiaApi(NUME_CONECTOR[f])}
                   <input
                     type="password"
                     autoComplete="off"
                     spellCheck={false}
                     value={valori[f] ?? ""}
                     onChange={(e) => setValori((v) => ({ ...v, [f]: e.target.value }))}
-                    placeholder={salvata ? "Înlocuiește cheia" : "Lipește cheia API"}
+                    placeholder={salvata ? d.inlocuieste : d.lipeste}
                     className="mt-1 h-10 w-full rounded-md border border-line bg-panel px-2.5 text-sm text-ink"
                   />
                 </label>
@@ -248,20 +215,20 @@ export function ProspectareSection({ orgSlug, stare, limitaZilnica }: { orgSlug:
                   disabled={pending || !(valori[f] ?? "").trim() || !stare.criptareActiva}
                   className="h-10 rounded-md bg-brand-green px-3 text-sm font-semibold text-white transition hover:bg-brand-green-hover disabled:opacity-50"
                 >
-                  {lucreaza === f ? "Se verifică…" : "Salvează și verifică"}
+                  {lucreaza === f ? d.seVerifica : d.salveazaVerifica}
                 </button>
                 {salvata && !confirmaStergere && (
                   <button type="button" disabled={pending} onClick={() => setDeSters(f)} className="h-10 rounded-md border border-line px-3 text-sm font-medium text-ink hover:bg-panel-2 disabled:opacity-50">
-                    Șterge cheia
+                    {d.stergeCheia}
                   </button>
                 )}
               </form>
-              {f === "waalaxy" && salvata && <p className="mt-1 text-xs text-muted">Dacă înlocuiești cheia Waalaxy, trebuie să alegi din nou lista și campaniile.</p>}
+              {f === "waalaxy" && salvata && <p className="mt-1 text-xs text-muted">{d.waalaxyInlocuire}</p>}
 
               {confirmaStergere && (
-                <div role="alertdialog" aria-label={`Ștergi cheia ${NUME_CONECTOR[f]}?`} className="mt-2 rounded-md bg-panel-2 p-3 text-xs text-ink">
+                <div role="alertdialog" aria-label={d.confirmaStergere(NUME_CONECTOR[f])} className="mt-2 rounded-md bg-panel-2 p-3 text-xs text-ink">
                   <p>
-                    Ștergi cheia {NUME_CONECTOR[f]}? {f === "waalaxy" ? "Trimiterea în Waalaxy se oprește și lista aleasă se pierde." : `Căutarea cu ${NUME_CONECTOR[f]} se oprește.`} Cheia rămâne activă în contul tău {NUME_CONECTOR[f]} până o anulezi acolo.
+                    {d.confirmaStergere(NUME_CONECTOR[f])} {f === "waalaxy" ? d.stergiWaalaxy : d.stergiAlt(NUME_CONECTOR[f])} {d.ramaneActiva(NUME_CONECTOR[f])}
                   </p>
                   <div className="mt-2 flex gap-2">
                     <button
@@ -269,14 +236,14 @@ export function ProspectareSection({ orgSlug, stare, limitaZilnica }: { orgSlug:
                       disabled={pending}
                       onClick={() => {
                         setDeSters(null);
-                        ruleaza(f, () => stergeCheieProspectare(orgSlug, f), `Cheia ${NUME_CONECTOR[f]} a fost ștearsă.`);
+                        ruleaza(f, () => stergeCheieProspectare(orgSlug, f), d.stearsa(NUME_CONECTOR[f]));
                       }}
                       className="h-9 rounded-md bg-red-700 px-3 text-sm font-semibold text-white hover:bg-red-800 disabled:opacity-50"
                     >
-                      Șterge
+                      {d.sterge}
                     </button>
                     <button type="button" onClick={() => setDeSters(null)} className="h-9 rounded-md border border-line px-3 text-sm font-medium text-ink hover:bg-panel">
-                      Renunță
+                      {d.renunta}
                     </button>
                   </div>
                 </div>
@@ -292,41 +259,41 @@ export function ProspectareSection({ orgSlug, stare, limitaZilnica }: { orgSlug:
                   {reusit.mesaj}
                 </p>
               )}
-              {(stare.apeluri30Zile[f] ?? 0) > 0 && <p className="mt-1.5 text-xs text-muted">Ultimele 30 de zile: {stare.apeluri30Zile[f]} apeluri făcute cu cheia aceasta.</p>}
+              {(stare.apeluri30Zile[f] ?? 0) > 0 && <p className="mt-1.5 text-xs text-muted">{d.ultimele30(stare.apeluri30Zile[f])}</p>}
 
               {f === "waalaxy" && salvata && (
                 <div className="mt-3 rounded-md bg-panel-2 p-3">
-                  <p className="text-xs font-medium text-ink">Unde trimitem persoanele aprobate</p>
+                  <p className="text-xs font-medium text-ink">{d.unde}</p>
                   {stare.waalaxy ? (
                     <p className="mt-1 text-xs text-muted">
-                      Listă: <strong className="text-ink">{stare.waalaxy.listaNume || stare.waalaxy.listaId}</strong>
+                      {d.lista} <strong className="text-ink">{stare.waalaxy.listaNume || stare.waalaxy.listaId}</strong>
                       {stare.waalaxy.campanieId ? (
                         <>
                           {" "}
-                          · campanie generală: <strong className="text-ink">{stare.waalaxy.campanieNume || stare.waalaxy.campanieId}</strong>
+                          · {d.campGenerala} <strong className="text-ink">{stare.waalaxy.campanieNume || stare.waalaxy.campanieId}</strong>
                         </>
                       ) : (
-                        " · fără campanie generală"
+                        d.faraCampGenerala
                       )}
-                      {ROLURI.filter((r) => stare.waalaxy?.campaniiRol[r.rol]).map((r) => (
-                        <span key={r.rol} className="block">
-                          {r.eticheta}: <strong className="text-ink">{stare.waalaxy?.campaniiRol[r.rol]?.nume || stare.waalaxy?.campaniiRol[r.rol]?.id}</strong>
+                      {ROLURI.filter((r) => stare.waalaxy?.campaniiRol[r]).map((r) => (
+                        <span key={r} className="block">
+                          {d.roluri[r]}: <strong className="text-ink">{stare.waalaxy?.campaniiRol[r]?.nume || stare.waalaxy?.campaniiRol[r]?.id}</strong>
                         </span>
                       ))}
                     </p>
                   ) : (
-                    <p className="mt-1 text-xs text-amber-800">Alege o listă. Până atunci, bifa „trimite și în Waalaxy” nu apare pe fișa firmei.</p>
+                    <p className="mt-1 text-xs text-amber-800">{d.alegeLista}</p>
                   )}
                   {!liste ? (
                     <button type="button" disabled={pending} onClick={incarcaListe} className="mt-2 h-10 rounded-md border border-line bg-panel px-3 text-sm font-medium text-ink hover:bg-panel-2 disabled:opacity-50">
-                      {lucreaza === "waalaxy-liste" ? "Se citesc listele…" : stare.waalaxy ? "Schimbă lista sau campaniile" : "Alege lista și campaniile"}
+                      {lucreaza === "waalaxy-liste" ? d.seCitesc : stare.waalaxy ? d.schimba : d.alegeListaBtn}
                     </button>
                   ) : (
                     <div className="mt-2 grid gap-2 sm:grid-cols-2">
                       <label className="text-xs text-muted">
-                        Lista Waalaxy
+                        {d.listaWaalaxy}
                         <select value={listaAleasa} onChange={(e) => setListaAleasa(e.target.value)} className="mt-1 h-10 w-full rounded-md border border-line bg-panel px-2 text-sm text-ink">
-                          <option value="">Alege lista…</option>
+                          <option value="">{d.alegeListaOpt}</option>
                           {liste.liste.map((l) => (
                             <option key={l.id} value={l.id}>
                               {l.nume}
@@ -335,9 +302,9 @@ export function ProspectareSection({ orgSlug, stare, limitaZilnica }: { orgSlug:
                         </select>
                       </label>
                       <label className="text-xs text-muted">
-                        Campania generală (opțional)
+                        {d.campGeneralaOpt}
                         <select value={campanieAleasa} onChange={(e) => setCampanieAleasa(e.target.value)} className="mt-1 h-10 w-full rounded-md border border-line bg-panel px-2 text-sm text-ink">
-                          <option value="">Fără campanie</option>
+                          <option value="">{d.faraCampanie}</option>
                           {liste.campanii.map((c) => (
                             <option key={c.id} value={c.id}>
                               {c.nume}
@@ -346,14 +313,13 @@ export function ProspectareSection({ orgSlug, stare, limitaZilnica }: { orgSlug:
                         </select>
                       </label>
                       <p className="text-xs leading-relaxed text-muted sm:col-span-2">
-                        Campania e secvența de mesaje LinkedIn din Waalaxy. Fără campanie, persoanele doar intră în listă, iar tu pornești abordarea din Waalaxy. Poți alege și o campanie diferită pentru fiecare rol (mesajul pentru un administrator nu e cel pentru un director
-                        financiar); rolurile fără campanie proprie folosesc campania generală.
+                        {d.explicatieCampanii}
                       </p>
-                      {ROLURI.map(({ rol, eticheta }) => (
+                      {ROLURI.map((rol) => (
                         <label key={rol} className="text-xs text-muted">
-                          Campanie pentru: {eticheta}
+                          {d.campaniePentru} {d.roluri[rol]}
                           <select value={campaniiRol[rol]} onChange={(e) => setCampaniiRol((v) => ({ ...v, [rol]: e.target.value }))} className="mt-1 h-10 w-full rounded-md border border-line bg-panel px-2 text-sm text-ink">
-                            <option value="">La fel ca cea generală</option>
+                            <option value="">{d.laFelCaGenerala}</option>
                             {liste.campanii.map((c) => (
                               <option key={c.id} value={c.id}>
                                 {c.nume}
@@ -364,16 +330,16 @@ export function ProspectareSection({ orgSlug, stare, limitaZilnica }: { orgSlug:
                       ))}
                       <div className="sm:col-span-2">
                         <button type="button" disabled={pending || !listaAleasa} onClick={salveazaAlegerea} className="h-10 rounded-md bg-brand-green px-3 text-sm font-semibold text-white transition hover:bg-brand-green-hover disabled:opacity-50">
-                          Salvează alegerea
+                          {d.salveazaAlegerea}
                         </button>
                       </div>
                       {liste.liste.length === 0 && (
                         <p className="text-xs text-muted sm:col-span-2">
-                          Nu am găsit nicio listă în Waalaxy. Creează una în contul tău{" "}
+                          {d.nuAmGasitLista}{" "}
                           <a href={AJUTOR.waalaxy.link} target="_blank" rel="noopener noreferrer" className="font-medium text-ink underline">
                             Waalaxy
                           </a>{" "}
-                          și reîncarcă această pagină.
+                          {d.sireincarca}
                         </p>
                       )}
                     </div>
@@ -399,24 +365,23 @@ export function ProspectareSection({ orgSlug, stare, limitaZilnica }: { orgSlug:
 
       <div className="mt-4 space-y-2 text-xs leading-relaxed text-muted">
         <p>
-          <strong className="text-ink">După aprobare.</strong> Persoanele găsite stau în „De aprobat” până le aprobă cineva din echipă. Când adaugi o persoană ca contact, datele ei vin de la un terț: informează-o despre prelucrare cât mai repede și în cel mult 30 de zile (art. 14 GDPR). Trimiterea în
-          Waalaxy se face doar la cererea ta, pentru fiecare persoană.
+          <strong className="text-ink">{d.dupaAprobare}</strong> {d.dupaAprobareText}
         </p>
         <details onToggle={(e) => e.currentTarget.open && deschideExcluderi()}>
           <summary className="cursor-pointer font-medium text-ink">
-            Excluse de la prospectare ({stare.suprimate} {stare.suprimate === 1 ? "persoană" : "persoane"})
+            {d.excluse(stare.suprimate)}
           </summary>
-          <p className="mt-1">Persoanele care au cerut să nu mai fie contactate nu mai sunt propuse niciodată pentru nicio firmă. Dacă ai exclus pe cineva din greșeală, o poți scoate din listă.</p>
+          <p className="mt-1">{d.exclusePar}</p>
           {excluderi === null ? (
-            <p className="mt-2">Se încarcă…</p>
+            <p className="mt-2">{d.seIncarca}</p>
           ) : excluderi.length === 0 ? (
-            <p className="mt-2">Nicio persoană exclusă.</p>
+            <p className="mt-2">{d.nicioExclusa}</p>
           ) : (
             <ul className="mt-2 divide-y divide-line rounded-md border border-line">
               {excluderi.map((x) => (
                 <li key={x.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
                   <span className="min-w-0 break-all text-ink">
-                    <span className="mr-2 rounded bg-panel-2 px-1.5 py-0.5 text-xs text-muted">{x.tip === "email" ? "e-mail" : x.tip === "linkedin" ? "LinkedIn" : "nume"}</span>
+                    <span className="mr-2 rounded bg-panel-2 px-1.5 py-0.5 text-xs text-muted">{d.tipExcludere[x.tip] ?? x.tip}</span>
                     {x.valoare}
                     <span className="ml-2 text-muted">
                       {x.motiv ? `${x.motiv} · ` : ""}
@@ -440,15 +405,15 @@ export function ProspectareSection({ orgSlug, stare, limitaZilnica }: { orgSlug:
                         }
                         className="h-9 rounded-md bg-red-700 px-3 text-xs font-semibold text-white hover:bg-red-800 disabled:opacity-50"
                       >
-                        Scoate din listă
+                        {d.scoate}
                       </button>
                       <button type="button" onClick={() => setDeScosExcludere(null)} className="h-9 rounded-md border border-line px-3 text-xs font-medium text-ink hover:bg-panel-2">
-                        Renunță
+                        {d.renunta}
                       </button>
                     </span>
                   ) : (
                     <button type="button" onClick={() => setDeScosExcludere(x.id)} className="h-9 rounded-md border border-line px-3 text-xs font-medium text-ink hover:bg-panel-2">
-                      Scoate din listă
+                      {d.scoate}
                     </button>
                   )}
                 </li>

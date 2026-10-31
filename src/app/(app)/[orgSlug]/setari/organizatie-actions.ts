@@ -6,6 +6,7 @@ import { withOrgSession } from "@/lib/auth/guard";
 import { db } from "@/lib/db";
 import { organizations } from "@/lib/db/schema";
 import { EroareUtilizator, mesajSigur } from "@/lib/erori";
+import { getTr } from "@/lib/i18n/tr-server";
 import { raporteazaAvertisment } from "@/lib/monitoring";
 import { stergeFisiereOrganizatie as stergeFisiereOrganizatieComun } from "@/lib/organizatie-fisiere";
 
@@ -24,8 +25,9 @@ export type RezultatStergere = { error: string | null };
 
 const stergeOrganizatia = withOrgSession(
   async (ctx, confirmare: string): Promise<void> => {
-    if (ctx.role !== "owner") throw new EroareUtilizator("Doar owner-ul poate șterge organizația.");
-    if (confirmare.trim() !== ctx.orgSlug) throw new EroareUtilizator("Confirmarea nu coincide cu numele organizației (slug).");
+    const t = await getTr();
+    if (ctx.role !== "owner") throw new EroareUtilizator(t("Doar owner-ul poate șterge organizația.", "Only the owner can delete the organization."));
+    if (confirmare.trim() !== ctx.orgSlug) throw new EroareUtilizator(t("Confirmarea nu coincide cu numele organizației (slug).", "The confirmation does not match the organization name (slug)."));
 
     // Organizațiile recomandate de aceasta păstrează o referință (FK fără cascadă) —
     // o anulăm înainte, în context de încredere, altfel ștergerea e blocată.
@@ -54,7 +56,7 @@ const stergeOrganizatia = withOrgSession(
     });
 
     const sters = await ctx.db.delete(organizations).where(eq(organizations.id, ctx.orgId)).returning({ id: organizations.id });
-    if (!sters.length) throw new EroareUtilizator("Nu s-a putut șterge organizația.");
+    if (!sters.length) throw new EroareUtilizator(t("Nu s-a putut șterge organizația.", "The organization could not be deleted."));
 
     // Urmă pentru audit — după ștergere nu mai rămâne nimic în baza de date.
     raporteazaAvertisment("organizatie-stearsa", "organizație ștearsă de owner", { orgId: ctx.orgId, orgSlug: ctx.orgSlug, userId: ctx.userId, fisiereSterse });
@@ -67,6 +69,6 @@ export async function stergeOrganizatiaAction(orgSlug: string, confirmare: strin
     await stergeOrganizatia(orgSlug, confirmare);
     return { error: null };
   } catch (e) {
-    return { error: mesajSigur(e, "Nu am putut șterge organizația.", "organizatie-stergere") };
+    return { error: mesajSigur(e, (await getTr())("Nu am putut șterge organizația.", "We could not delete the organization."), "organizatie-stergere") };
   }
 }

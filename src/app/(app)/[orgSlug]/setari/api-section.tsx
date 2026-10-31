@@ -3,26 +3,27 @@
 import { useParams, useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
-import { ETICHETE_EVENIMENT, ETICHETE_SCOP, EVENIMENTE_ABONABILE, SCOPURI, type Eveniment, type Scop } from "@/lib/api-publica";
+import { EVENIMENTE_ABONABILE, SCOPURI, type Eveniment, type Scop } from "@/lib/api-publica";
+import { SETARI_API_UI_DICT } from "@/lib/i18n/dictionaries/setari-api-ui";
 
 import { Badge } from "../crm/components/ui/badge";
 import { Button } from "../crm/components/ui/button";
 import { Card } from "../crm/components/ui/card";
 import { Input, Label } from "../crm/components/ui/input";
+import { useLocale } from "../crm/lib/locale-context";
 
 import { adaugaWebhook, creeazaCheieApi, pregatesteTestWebhook, proceseazaLivrariAcum, retrimiteLivrare, revocaCheieApi, seteazaActivWebhook, stergeWebhook, type StareApi } from "./api-actions";
 
-const dataOra = (iso: string | null) => (iso ? new Date(iso).toLocaleString("ro-RO", { timeZone: "Europe/Bucharest", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "niciodată");
 const TON_STARE: Record<string, "green" | "amber" | "red"> = { trimis: "green", in_asteptare: "amber", esuat: "red" };
-const ETICHETA_STARE: Record<string, string> = { trimis: "Trimis", in_asteptare: "În așteptare", esuat: "Eșuat" };
 
 // Secret arătat o singură dată (cheie API sau secret webhook), cu copiere.
 function SecretUnic({ eticheta, valoare, laInchis }: { eticheta: string; valoare: string; laInchis: () => void }) {
+  const d = SETARI_API_UI_DICT[useLocale()].api;
   const [copiat, setCopiat] = useState(false);
   return (
     <div role="alert" className="rounded-lg border border-[var(--ci-amber)] bg-[var(--ci-amber-soft)] p-3 text-[13px] text-[#7a3e00]">
       <p className="font-semibold">{eticheta}</p>
-      <p className="mt-1">Copiaz-o acum și păstreaz-o într-un loc sigur. Nu o mai poți vedea după ce închizi acest mesaj.</p>
+      <p className="mt-1">{d.secret.copiaza}</p>
       <code className="mt-2 block rounded bg-white/70 px-2 py-2 text-[12.5px] break-all text-[#14213d]">{valoare}</code>
       <div className="mt-2 flex gap-2">
         <Button
@@ -36,10 +37,10 @@ function SecretUnic({ eticheta, valoare, laInchis }: { eticheta: string; valoare
             }
           }}
         >
-          {copiat ? "Copiat" : "Copiază"}
+          {copiat ? d.secret.copiat : d.secret.copiazaBtn}
         </Button>
         <Button variant="primary" className="min-h-11" onClick={laInchis}>
-          Am salvat-o
+          {d.secret.amSalvat}
         </Button>
       </div>
     </div>
@@ -48,6 +49,9 @@ function SecretUnic({ eticheta, valoare, laInchis }: { eticheta: string; valoare
 
 // Setări → API și webhook-uri: chei pentru integrări (Make, Zapier, propriul site) și adrese care primesc evenimente (donație reușită, donator dezabonat).
 export function ApiSection({ stare, baza }: { stare: StareApi; baza: string }) {
+  const locale = useLocale();
+  const d = SETARI_API_UI_DICT[locale].api;
+  const dataOra = (iso: string | null) => (iso ? new Date(iso).toLocaleString(locale === "ro" ? "ro-RO" : "en-GB", { timeZone: "Europe/Bucharest", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : d.niciodata);
   const { orgSlug } = useParams<{ orgSlug: string }>();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -67,7 +71,7 @@ export function ApiSection({ stare, baza }: { stare: StareApi; baza: string }) {
       setMesaj(null);
       const r = await f();
       if (!r.ok) {
-        setEroare(r.mesaj ?? "Nu am putut salva.");
+        setEroare(r.mesaj ?? d.nuAmSalvat);
         return;
       }
       laGata?.();
@@ -77,10 +81,8 @@ export function ApiSection({ stare, baza }: { stare: StareApi; baza: string }) {
   const chei = stare.chei;
   return (
     <Card>
-      <h2 className="ci-display text-[15px] font-semibold text-[var(--ci-text)]">API și webhook-uri</h2>
-      <p className="mt-1 max-w-2xl text-[13px] text-[var(--ci-text-muted)]">
-        Conectează Alexandrit la alte instrumente (Make, Zapier, site-ul tău): le dai o cheie ca să citească donatorii și donațiile, sau o adresă la care îți trimitem un mesaj de fiecare dată când o donație reușește ori un donator se dezabonează.
-      </p>
+      <h2 className="ci-display text-[15px] font-semibold text-[var(--ci-text)]">{d.titlu}</h2>
+      <p className="mt-1 max-w-2xl text-[13px] text-[var(--ci-text-muted)]">{d.intro}</p>
 
       {secret && <div className="mt-3"><SecretUnic eticheta={secret.eticheta} valoare={secret.valoare} laInchis={() => setSecret(null)} /></div>}
       {eroare && (
@@ -94,9 +96,9 @@ export function ApiSection({ stare, baza }: { stare: StareApi; baza: string }) {
         </p>
       )}
 
-      <h3 className="mt-5 text-[13px] font-semibold text-[var(--ci-text)]">Chei API</h3>
+      <h3 className="mt-5 text-[13px] font-semibold text-[var(--ci-text)]">{d.chei.titlu}</h3>
       {chei.length === 0 ? (
-        <p className="mt-1 text-[12.5px] text-[var(--ci-text-muted)]">Nicio cheie încă.</p>
+        <p className="mt-1 text-[12.5px] text-[var(--ci-text-muted)]">{d.chei.nicio}</p>
       ) : (
         <ul className="mt-2 space-y-2">
           {chei.map((c) => (
@@ -106,46 +108,46 @@ export function ApiSection({ stare, baza }: { stare: StareApi; baza: string }) {
                   <p className="text-[13.5px] font-semibold text-[var(--ci-text)]">
                     {c.nume}{" "}
                     <Badge tone={c.revocata ? "neutral" : "green"} icon={false}>
-                      {c.revocata ? "Revocată" : "Activă"}
+                      {c.revocata ? d.chei.revocata : d.chei.activa}
                     </Badge>
                   </p>
                   <p className="text-[12px] text-[var(--ci-text-muted)]">
-                    <code>{c.prefix}</code> · {c.scopuri.map((s) => ETICHETE_SCOP[s]).join("; ")} · creată {dataOra(c.creataLa)} · folosită {dataOra(c.ultimaFolosireLa)}
+                    <code>{c.prefix}</code> · {c.scopuri.map((s) => d.scopuri[s]).join("; ")} · {d.chei.creata} {dataOra(c.creataLa)} · {d.chei.folosita} {dataOra(c.ultimaFolosireLa)}
                   </p>
                 </div>
                 {!c.revocata &&
                   (confirma === c.id ? (
                     <div className="flex gap-2">
                       <Button variant="danger" className="min-h-10" loading={pending} onClick={() => ruleaza(() => revocaCheieApi(orgSlug, c.id), () => setConfirma(null))}>
-                        Revocă acum
+                        {d.chei.revocaAcum}
                       </Button>
                       <Button className="min-h-10" disabled={pending} onClick={() => setConfirma(null)}>
-                        Renunță
+                        {d.chei.renunta}
                       </Button>
                     </div>
                   ) : (
                     <Button className="min-h-10" disabled={pending} onClick={() => setConfirma(c.id)}>
-                      Revocă
+                      {d.chei.revoca}
                     </Button>
                   ))}
               </div>
-              {confirma === c.id && <p className="mt-2 text-[12.5px] text-[var(--ci-text-muted)]">Cheia încetează imediat să funcționeze, iar integrările care o folosesc vor primi eroare. Nu se poate anula.</p>}
+              {confirma === c.id && <p className="mt-2 text-[12.5px] text-[var(--ci-text-muted)]">{d.chei.avertisment}</p>}
             </li>
           ))}
         </ul>
       )}
       <div className="mt-3 rounded-[var(--ci-radius-btn)] border border-dashed border-[var(--ci-border)] p-3">
-        <p className="text-[12.5px] font-semibold text-[var(--ci-text)]">Creează o cheie</p>
+        <p className="text-[12.5px] font-semibold text-[var(--ci-text)]">{d.chei.creeazaTitlu}</p>
         <div className="mt-2">
-          <Label htmlFor="cheie-nume">Nume (pentru ce o folosești)</Label>
-          <Input id="cheie-nume" value={numeCheie} maxLength={60} placeholder="ex. Integrarea cu Make" onChange={(e) => setNumeCheie(e.target.value)} />
+          <Label htmlFor="cheie-nume">{d.chei.numeEticheta}</Label>
+          <Input id="cheie-nume" value={numeCheie} maxLength={60} placeholder={d.chei.numePh} onChange={(e) => setNumeCheie(e.target.value)} />
         </div>
         <fieldset className="mt-2">
-          <legend className="text-[13px] font-medium text-[var(--ci-text)]">Ce are voie să facă</legend>
+          <legend className="text-[13px] font-medium text-[var(--ci-text)]">{d.chei.permisiuni}</legend>
           {SCOPURI.map((s) => (
             <label key={s} className="flex min-h-11 cursor-pointer items-center gap-2 text-[13px] text-[var(--ci-text)]">
               <input type="checkbox" className="size-5" checked={scopuri.includes(s)} onChange={() => comuta(scopuri, s, setScopuri)} />
-              {ETICHETE_SCOP[s]}
+              {d.scopuri[s]}
             </label>
           ))}
         </fieldset>
@@ -162,19 +164,19 @@ export function ApiSection({ stare, baza }: { stare: StareApi; baza: string }) {
                 setEroare(r.mesaj);
                 return;
               }
-              setSecret({ eticheta: "Cheia API nouă", valoare: r.cheie });
+              setSecret({ eticheta: d.chei.cheieNoua, valoare: r.cheie });
               setNumeCheie("");
               router.refresh();
             })
           }
         >
-          Creează cheia
+          {d.chei.creeazaBtn}
         </Button>
       </div>
 
-      <h3 className="mt-6 text-[13px] font-semibold text-[var(--ci-text)]">Adrese pentru evenimente (webhook-uri)</h3>
+      <h3 className="mt-6 text-[13px] font-semibold text-[var(--ci-text)]">{d.hooks.titlu}</h3>
       {stare.webhookuri.length === 0 ? (
-        <p className="mt-1 text-[12.5px] text-[var(--ci-text-muted)]">Nicio adresă încă.</p>
+        <p className="mt-1 text-[12.5px] text-[var(--ci-text-muted)]">{d.hooks.nicio}</p>
       ) : (
         <ul className="mt-2 space-y-2">
           {stare.webhookuri.map((w) => (
@@ -182,13 +184,13 @@ export function ApiSection({ stare, baza }: { stare: StareApi; baza: string }) {
               <p className="text-[13.5px] font-semibold break-all text-[var(--ci-text)]">
                 {w.url}{" "}
                 <Badge tone={w.activ ? "green" : "amber"} icon={false}>
-                  {w.activ ? "Activă" : "Oprită"}
+                  {w.activ ? d.hooks.activa : d.hooks.oprita}
                 </Badge>
               </p>
               <p className="text-[12px] text-[var(--ci-text-muted)]">
-                {w.evenimente.map((e) => ETICHETE_EVENIMENT[e]).join("; ")}
-                {w.esecuriConsecutive > 0 ? ` · ${w.esecuriConsecutive} eșecuri la rând` : ""}
-                {w.dezactivatMotiv ? ` · ${w.dezactivatMotiv}` : ""}
+                {w.evenimente.map((e) => d.evenimente[e]).join("; ")}
+                {w.esecuriConsecutive > 0 ? d.hooks.esecuri(w.esecuriConsecutive) : ""}
+                {w.dezactivatMotiv ? ` · ${d.hooks.motive[w.dezactivatMotiv] ?? w.dezactivatMotiv}` : ""}
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 <Button
@@ -202,28 +204,28 @@ export function ApiSection({ stare, baza }: { stare: StareApi; baza: string }) {
                       if (!p.ok) return setEroare(p.mesaj);
                       const t = await proceseazaLivrariAcum(orgSlug);
                       if (!t.ok) setEroare(t.mesaj);
-                      else setMesaj(t.trimise > 0 ? "Testul a ajuns la adresă." : "Testul nu a ajuns. Vezi motivul în lista de livrări de mai jos.");
+                      else setMesaj(t.trimise > 0 ? d.hooks.testAjuns : d.hooks.testEsuat);
                       router.refresh();
                     })
                   }
                 >
-                  Trimite un test
+                  {d.hooks.trimiteTest}
                 </Button>
                 <Button className="min-h-10" disabled={pending} onClick={() => ruleaza(() => seteazaActivWebhook(orgSlug, w.id, !w.activ))}>
-                  {w.activ ? "Oprește" : "Pornește"}
+                  {w.activ ? d.hooks.opreste : d.hooks.porneste}
                 </Button>
                 {confirma === w.id ? (
                   <>
                     <Button variant="danger" className="min-h-10" loading={pending} onClick={() => ruleaza(() => stergeWebhook(orgSlug, w.id), () => setConfirma(null))}>
-                      Șterge definitiv
+                      {d.hooks.stergeDef}
                     </Button>
                     <Button className="min-h-10" disabled={pending} onClick={() => setConfirma(null)}>
-                      Renunță
+                      {d.hooks.renunta}
                     </Button>
                   </>
                 ) : (
                   <Button className="min-h-10" disabled={pending} onClick={() => setConfirma(w.id)}>
-                    Șterge
+                    {d.hooks.sterge}
                   </Button>
                 )}
               </div>
@@ -232,18 +234,18 @@ export function ApiSection({ stare, baza }: { stare: StareApi; baza: string }) {
         </ul>
       )}
       <div className="mt-3 rounded-[var(--ci-radius-btn)] border border-dashed border-[var(--ci-border)] p-3">
-        <p className="text-[12.5px] font-semibold text-[var(--ci-text)]">Adaugă o adresă</p>
-        {!stare.criptareActiva && <p className="mt-1 text-[12.5px] text-[#7a3e00]">Păstrarea secretelor nu e configurată pe platformă, deci nu poți adăuga adrese încă.</p>}
+        <p className="text-[12.5px] font-semibold text-[var(--ci-text)]">{d.hooks.adaugaTitlu}</p>
+        {!stare.criptareActiva && <p className="mt-1 text-[12.5px] text-[#7a3e00]">{d.hooks.faraCriptare}</p>}
         <div className="mt-2">
-          <Label htmlFor="webhook-url">Adresa (https)</Label>
-          <Input id="webhook-url" value={url} maxLength={300} placeholder="https://exemplu.ro/webhook-alexandrit" onChange={(e) => setUrl(e.target.value)} />
+          <Label htmlFor="webhook-url">{d.hooks.adresa}</Label>
+          <Input id="webhook-url" value={url} maxLength={300} placeholder={locale === "ro" ? "https://exemplu.ro/webhook-alexandrit" : "https://example.org/alexandrit-webhook"} onChange={(e) => setUrl(e.target.value)} />
         </div>
         <fieldset className="mt-2">
-          <legend className="text-[13px] font-medium text-[var(--ci-text)]">Ce evenimente primește</legend>
+          <legend className="text-[13px] font-medium text-[var(--ci-text)]">{d.hooks.evenimente}</legend>
           {EVENIMENTE_ABONABILE.map((e) => (
             <label key={e} className="flex min-h-11 cursor-pointer items-center gap-2 text-[13px] text-[var(--ci-text)]">
               <input type="checkbox" className="size-5" checked={evenimente.includes(e)} onChange={() => comuta(evenimente, e, setEvenimente)} />
-              {ETICHETE_EVENIMENT[e]}
+              {d.evenimente[e]}
             </label>
           ))}
         </fieldset>
@@ -260,29 +262,29 @@ export function ApiSection({ stare, baza }: { stare: StareApi; baza: string }) {
                 setEroare(r.mesaj);
                 return;
               }
-              setSecret({ eticheta: "Secretul de semnare al adresei", valoare: r.secret });
+              setSecret({ eticheta: d.hooks.secretNou, valoare: r.secret });
               setUrl("");
               router.refresh();
             })
           }
         >
-          Adaugă adresa
+          {d.hooks.adaugaBtn}
         </Button>
       </div>
 
-      <h3 className="mt-6 text-[13px] font-semibold text-[var(--ci-text)]">Ultimele livrări</h3>
+      <h3 className="mt-6 text-[13px] font-semibold text-[var(--ci-text)]">{d.livrari.titlu}</h3>
       {stare.livrari.length === 0 ? (
-        <p className="mt-1 text-[12.5px] text-[var(--ci-text-muted)]">Nimic trimis încă.</p>
+        <p className="mt-1 text-[12.5px] text-[var(--ci-text-muted)]">{d.livrari.nimic}</p>
       ) : (
         <div className="mt-2 overflow-x-auto">
           <table className="w-full min-w-[560px] text-[12.5px]">
             <thead>
               <tr className="border-b border-[var(--ci-border)] text-left text-[var(--ci-text-muted)]">
-                <th className="py-1.5 pr-3 font-semibold">Când</th>
-                <th className="py-1.5 pr-3 font-semibold">Eveniment</th>
-                <th className="py-1.5 pr-3 font-semibold">Stare</th>
-                <th className="py-1.5 pr-3 font-semibold">Încercări</th>
-                <th className="py-1.5 pr-3 font-semibold">Răspuns</th>
+                <th className="py-1.5 pr-3 font-semibold">{d.livrari.cand}</th>
+                <th className="py-1.5 pr-3 font-semibold">{d.livrari.eveniment}</th>
+                <th className="py-1.5 pr-3 font-semibold">{d.livrari.stare}</th>
+                <th className="py-1.5 pr-3 font-semibold">{d.livrari.incercari}</th>
+                <th className="py-1.5 pr-3 font-semibold">{d.livrari.raspuns}</th>
                 <th className="py-1.5" />
               </tr>
             </thead>
@@ -293,7 +295,7 @@ export function ApiSection({ stare, baza }: { stare: StareApi; baza: string }) {
                   <td className="py-1.5 pr-3 text-[var(--ci-text)]">{l.eveniment}</td>
                   <td className="py-1.5 pr-3">
                     <Badge tone={TON_STARE[l.stare] ?? "neutral"} icon={false}>
-                      {ETICHETA_STARE[l.stare] ?? l.stare}
+                      {d.stari[l.stare] ?? l.stare}
                     </Badge>
                   </td>
                   <td className="ci-tabular py-1.5 pr-3 text-[var(--ci-text)]">{l.incercari}</td>
@@ -312,7 +314,7 @@ export function ApiSection({ stare, baza }: { stare: StareApi; baza: string }) {
                           })
                         }
                       >
-                        Retrimite
+                        {d.livrari.retrimite}
                       </Button>
                     )}
                   </td>
@@ -322,30 +324,15 @@ export function ApiSection({ stare, baza }: { stare: StareApi; baza: string }) {
           </table>
         </div>
       )}
-      <p className="mt-2 text-[12px] text-[var(--ci-text-muted)]">O livrare nereușită se reia după 1, 6, 24 și 72 de ore (cel mult 5 încercări); o adresă care eșuează 20 de ori la rând se oprește singură.</p>
+      <p className="mt-2 text-[12px] text-[var(--ci-text-muted)]">{d.livrari.notaRetry}</p>
 
       <details className="mt-5 text-[12.5px] text-[var(--ci-text-muted)]">
-        <summary className="min-h-9 cursor-pointer font-semibold text-[var(--ci-text)]">Cum se folosește (pentru cine face integrarea)</summary>
+        <summary className="min-h-9 cursor-pointer font-semibold text-[var(--ci-text)]">{d.docs.sumar}</summary>
         <div className="mt-2 space-y-3">
-          <p>Fiecare cerere poartă cheia în antet: <code>Authorization: Bearer &lt;cheia&gt;</code>. Răspunsurile sunt JSON. Limită: 1.000 de cereri pe oră pe cheie.</p>
-          <pre className="overflow-x-auto rounded bg-[var(--ci-surface-2)] p-2 text-[12px] text-[var(--ci-text)]">{`# donatorii (paginat: ?limit=100&dupa=<id>; filtru ?email=)
-curl -H "Authorization: Bearer <cheia>" "${baza}/api/v1/donatori?limit=100"
-
-# un donator, cu câmpurile personalizate
-curl -H "Authorization: Bearer <cheia>" ${baza}/api/v1/donatori/<id>
-
-# completează câmpuri personalizate (valoare goală = șterge)
-curl -X PATCH -H "Authorization: Bearer <cheia>" -H "Content-Type: application/json" \\
-  -d '{"campuri":{"cum_ne_a_gasit":"Eveniment"}}' ${baza}/api/v1/donatori/<id>
-
-# donațiile reușite (?de_la=2026-01-01)
-curl -H "Authorization: Bearer <cheia>" "${baza}/api/v1/donatii?de_la=2026-01-01"
-
-# marchează o adresă respinsă sau reclamată
-curl -X POST -H "Authorization: Bearer <cheia>" -H "Content-Type: application/json" \\
-  -d '{"email":"nume@exemplu.ro","tip":"respins"}' ${baza}/api/v1/email-evenimente`}</pre>
+          <p>{d.docs.antet} <code>Authorization: Bearer &lt;{d.docs.cheiePh}&gt;</code>. {d.docs.antet2}</p>
+          <pre className="overflow-x-auto rounded bg-[var(--ci-surface-2)] p-2 text-[12px] text-[var(--ci-text)]">{d.docs.curl(baza)}</pre>
           <p>
-            Webhook-urile sunt cereri POST cu corpul JSON <code>{`{ id, tip, creat_la, date }`}</code>. Antetul <code>X-Alexandrit-Semnatura</code> are forma <code>t=&lt;secunde&gt;,v1=&lt;semnătură&gt;</code>, unde semnătura e HMAC-SHA256, în hexazecimal, al textului <code>t + &quot;.&quot; + corpul</code>, cu secretul adresei. Verifică semnătura și refuză cererile cu <code>t</code> mai vechi de 5 minute. Răspunde cu orice cod 2xx ca să confirmi primirea; 410 înseamnă „nu mai trimite”.
+            {d.docs.hooks1} <code>{`{ id, tip, creat_la, date }`}</code>. {d.docs.hooks2} <code>X-Alexandrit-Semnatura</code> {d.docs.hooks3} <code>{d.docs.sigForma}</code>, {d.docs.hooks4} <code>{d.docs.sigText}</code>, {d.docs.hooks5} <code>t</code> {d.docs.hooks6}
           </p>
         </div>
       </details>

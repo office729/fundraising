@@ -4,7 +4,10 @@ import { X } from "lucide-react";
 import { useId, useRef } from "react";
 import type { ReactNode } from "react";
 
+import { COMPONENTE_UI_DICT } from "@/lib/i18n/dictionaries/componente-ui";
 import { useFocusTrap } from "@/lib/use-focus-trap";
+
+import { useLocale } from "../../lib/locale-context";
 
 export function SidePanel({
   open,
@@ -24,6 +27,7 @@ export function SidePanel({
 }) {
   const panouRef = useRef<HTMLDivElement>(null);
   const titluId = useId();
+  const inchide = COMPONENTE_UI_DICT[useLocale()].dialog.inchide;
   useFocusTrap(open, panouRef, onClose);
   return (
     <div
@@ -33,7 +37,7 @@ export function SidePanel({
       aria-hidden={!open}
     >
       <button
-        aria-label="Închide"
+        aria-label={inchide}
         tabIndex={-1}
         onClick={onClose}
         className="absolute inset-0 bg-[var(--ci-text)]/30"
@@ -55,7 +59,7 @@ export function SidePanel({
           </div>
           <button
             onClick={onClose}
-            aria-label="Închide"
+            aria-label={inchide}
             className="rounded-[var(--ci-radius-btn)] p-1.5 text-[var(--ci-text-muted)] transition-colors hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)]"
           >
             <X className="h-4 w-4" />

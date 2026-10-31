@@ -5,25 +5,29 @@ import { useState } from "react";
 
 import { Badge } from "../../components/ui/badge";
 import { Card } from "../../components/ui/card";
+import { useLocale } from "../../lib/locale-context";
+import { COMPANII_UI_DICT, intlLocale } from "@/lib/i18n/dictionaries/companii-ui";
 
 export type FirmaSimilara = { id: string; nume: string; judet: string | null; banda: "A" | "B" | "C"; suma: number; esteSponsor: boolean; href: string };
 
 // Firme din același domeniu (același cod CAEN), cu cele care n-au sponsorizat primele: dacă o firmă ca asta a spus da, merită încercate și celelalte.
 export function CompaniiSimilare({ caen, judet, lista }: { caen: string; judet: string | null; lista: FirmaSimilara[] }) {
+  const locale = useLocale();
+  const ui = COMPANII_UI_DICT[locale].similare;
   const [doarJudet, setDoarJudet] = useState(false);
   const vizibile = (doarJudet && judet ? lista.filter((f) => f.judet === judet) : lista).slice(0, 10);
   return (
     <Card>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-[15px] font-bold text-[var(--ci-text)]">Firme similare</h2>
-          <p className="mt-0.5 text-[12.5px] text-[var(--ci-text-muted)]">Același domeniu de activitate (CAEN {caen.replace(/[^0-9]/g, "").slice(0, 4)}). Cele care n-au sponsorizat încă apar primele.</p>
+          <h2 className="text-[15px] font-bold text-[var(--ci-text)]">{ui.titlu}</h2>
+          <p className="mt-0.5 text-[12.5px] text-[var(--ci-text-muted)]">{ui.descriere(caen.replace(/[^0-9]/g, "").slice(0, 4))}</p>
         </div>
         {judet && (
-          <div role="group" aria-label="Zona" className="flex rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] p-0.5 text-[12px]">
+          <div role="group" aria-label={ui.zona} className="flex rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] p-0.5 text-[12px]">
             {[
-              [false, "Toată țara"],
-              [true, `Doar ${judet}`],
+              [false, ui.toataTara],
+              [true, ui.doar(judet)],
             ].map(([val, eticheta]) => (
               <button key={String(val)} type="button" aria-pressed={doarJudet === val} onClick={() => setDoarJudet(val as boolean)} className={`rounded-[calc(var(--ci-radius-btn)-2px)] px-2.5 py-1 font-medium ${doarJudet === val ? "bg-[var(--ci-surface-2)] text-[var(--ci-text)]" : "text-[var(--ci-text-muted)] hover:text-[var(--ci-text)]"}`}>
                 {eticheta as string}
@@ -33,7 +37,7 @@ export function CompaniiSimilare({ caen, judet, lista }: { caen: string; judet: 
         )}
       </div>
       {vizibile.length === 0 ? (
-        <p className="mt-3 text-[13px] text-[var(--ci-text-muted)]">Nicio firmă similară în această zonă.</p>
+        <p className="mt-3 text-[13px] text-[var(--ci-text-muted)]">{ui.nicio}</p>
       ) : (
         <ul className="mt-3 divide-y divide-[var(--ci-border)]">
           {vizibile.map((f) => (
@@ -47,13 +51,13 @@ export function CompaniiSimilare({ caen, judet, lista }: { caen: string; judet: 
               <div className="flex items-center gap-1.5">
                 {f.esteSponsor && (
                   <Badge tone="purple" icon={false}>
-                    deja sponsor
+                    {ui.dejaSponsor}
                   </Badge>
                 )}
                 <Badge tone={f.banda === "A" ? "green" : f.banda === "B" ? "amber" : "neutral"} icon={false}>
                   {f.banda}
                 </Badge>
-                <span className="ci-tabular w-24 text-right text-[12.5px] text-[var(--ci-text-muted)]">{f.suma > 0 ? `~${f.suma.toLocaleString("ro-RO")} lei` : "—"}</span>
+                <span className="ci-tabular w-24 text-right text-[12.5px] text-[var(--ci-text-muted)]">{f.suma > 0 ? `~${f.suma.toLocaleString(intlLocale(locale))} lei` : "—"}</span>
               </div>
             </li>
           ))}

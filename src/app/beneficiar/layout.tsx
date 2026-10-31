@@ -5,24 +5,26 @@ import { logoutAction } from "@/app/(app)/[orgSlug]/actions";
 import { TermeniGate } from "@/components/termeni-gate";
 import { requireBeneficiarAccess, withBeneficiarSession } from "@/lib/auth/guard";
 import { fundraisingNotifications } from "@/lib/db/schema";
+import { BENEFICIAR_PORTAL_UI_DICT } from "@/lib/i18n/dictionaries/beneficiar-portal-ui";
 import { DASHBOARD_DICT } from "@/lib/i18n/dictionaries/dashboard";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { TERMENI_VERSIUNE } from "@/lib/legal-version";
 
 import { acceptaTermeniBeneficiarAction } from "./actions";
 
 const NAV = [
-  { href: "/beneficiar", label: "Acasă" },
-  { href: "/beneficiar/calendar", label: "Calendar" },
-  { href: "/beneficiar/continut-social", label: "Conținut social media" },
-  { href: "/beneficiar/presa-locala", label: "Presă locală" },
-  { href: "/beneficiar/grupuri", label: "Grupuri recomandate" },
-  { href: "/beneficiar/sarcinile-mele", label: "Sarcinile mele" },
-  { href: "/beneficiar/situatie-financiara", label: "Situație financiară" },
-  { href: "/beneficiar/facturi", label: "Facturi și plăți" },
-  { href: "/beneficiar/agentul-meu", label: "Agentul meu" },
-  { href: "/beneficiar/notificari", label: "Notificări" },
-  { href: "/beneficiar/profil", label: "Profil și securitate" },
-];
+  { href: "/beneficiar", cheie: "acasa" },
+  { href: "/beneficiar/calendar", cheie: "calendar" },
+  { href: "/beneficiar/continut-social", cheie: "continutSocial" },
+  { href: "/beneficiar/presa-locala", cheie: "presaLocala" },
+  { href: "/beneficiar/grupuri", cheie: "grupuri" },
+  { href: "/beneficiar/sarcinile-mele", cheie: "sarcinile" },
+  { href: "/beneficiar/situatie-financiara", cheie: "situatie" },
+  { href: "/beneficiar/facturi", cheie: "facturi" },
+  { href: "/beneficiar/agentul-meu", cheie: "agent" },
+  { href: "/beneficiar/notificari", cheie: "notificari" },
+  { href: "/beneficiar/profil", cheie: "profil" },
+] as const;
 
 const getUnreadCount = withBeneficiarSession(async (ctx) => {
   const rows = await ctx.db
@@ -33,11 +35,12 @@ const getUnreadCount = withBeneficiarSession(async (ctx) => {
 });
 
 export default async function BeneficiarLayout({ children }: { children: React.ReactNode }) {
-  const [access, necitite] = await Promise.all([requireBeneficiarAccess(), getUnreadCount()]);
+  const [access, necitite, locale] = await Promise.all([requireBeneficiarAccess(), getUnreadCount(), getLocale()]);
+  const t = BENEFICIAR_PORTAL_UI_DICT[locale];
 
-  // Poartă de reacceptare a Termenilor/Politicii (portalul e doar în română).
+  // Poartă de reacceptare a Termenilor/Politicii.
   if (access.userTermsVersion !== TERMENI_VERSIUNE) {
-    return <TermeniGate actiune={acceptaTermeniBeneficiarAction} dict={DASHBOARD_DICT.ro.termeniGate} />;
+    return <TermeniGate actiune={acceptaTermeniBeneficiarAction} dict={DASHBOARD_DICT[locale].termeniGate} />;
   }
 
   return (
@@ -50,7 +53,7 @@ export default async function BeneficiarLayout({ children }: { children: React.R
           </div>
           <form action={logoutAction}>
             <button type="submit" className="text-[13px] font-medium text-muted hover:text-brand-blue">
-              Deconectare
+              {t.nav.deconectare}
             </button>
           </form>
         </div>
@@ -61,7 +64,7 @@ export default async function BeneficiarLayout({ children }: { children: React.R
               href={item.href}
               className="shrink-0 rounded-md px-3 py-1.5 text-[13px] font-medium text-body transition hover:bg-panel-2 hover:text-ink"
             >
-              {item.label}
+              {t.nav[item.cheie]}
               {item.href === "/beneficiar/notificari" && necitite > 0 && (
                 <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-green px-1 text-[10px] font-bold text-white">
                   {necitite}

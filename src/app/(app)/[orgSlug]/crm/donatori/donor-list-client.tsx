@@ -195,10 +195,10 @@ export function DonatoriListClient() {
       </div>
 
       <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
-        <StatCard label={dict.stats.donatori} value={stats.unici.toLocaleString("ro-RO")} />
-        <StatCard label={dict.stats.donatii} value={stats.nrDonatii.toLocaleString("ro-RO")} />
+        <StatCard label={dict.stats.donatori} value={stats.unici.toLocaleString(locale === "ro" ? "ro-RO" : "en-GB")} />
+        <StatCard label={dict.stats.donatii} value={stats.nrDonatii.toLocaleString(locale === "ro" ? "ro-RO" : "en-GB")} />
         <StatCard label={dict.stats.totalDonat} value={formatSuma(stats.totalDonat)} tone="primary" />
-        <StatCard label={dict.stats.recurenti} value={stats.recurenti.toLocaleString("ro-RO")} suffix={`${stats.recurentiPct}%`} />
+        <StatCard label={dict.stats.recurenti} value={stats.recurenti.toLocaleString(locale === "ro" ? "ro-RO" : "en-GB")} suffix={`${stats.recurentiPct}%`} />
         <StatCard label={dict.stats.medie} value={formatSuma(stats.medie)} />
       </div>
 

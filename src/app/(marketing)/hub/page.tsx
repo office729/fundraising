@@ -183,7 +183,7 @@ export default async function HubPage() {
               </figcaption>
             </figure>
           </div>
-          <Rezervare tipuri={programari?.tipuri ?? []} cereTelefon={programari?.setari.cereTelefon ?? false} sursa="hub" />
+          <Rezervare tipuri={programari?.tipuri ?? []} cereTelefon={programari?.setari.cereTelefon ?? false} sursa="hub" locale={locale} />
         </div>
       </section>
 

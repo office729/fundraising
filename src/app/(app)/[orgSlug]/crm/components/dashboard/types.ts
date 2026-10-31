@@ -1,4 +1,5 @@
 import type { DomeniuActivitate } from "@/lib/campaign-templates";
+import type { Locale } from "@/lib/i18n/config";
 import type { DashboardHomeDict } from "@/lib/i18n/dictionaries/dashboard-home";
 
 import type { Beneficiar, centruDeActiuni, companiiPipelineStats, dashboardKpis, lunarEvolutie } from "../../mock";
@@ -9,6 +10,7 @@ import type { Beneficiar, centruDeActiuni, companiiPipelineStats, dashboardKpis,
 // repete o listă lungă de props identice.
 export type DashboardData = {
   base: string;
+  locale: Locale;
   dict: DashboardHomeDict;
   domeniu: DomeniuActivitate | null;
   kpis: ReturnType<typeof dashboardKpis>;

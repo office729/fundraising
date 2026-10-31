@@ -1,7 +1,7 @@
 // Insignă circulară de impact — familia natural-ancorat (Animale/Mediu):
 // cifra centrală (ex. suma totală strânsă) devine o "insignă" mare, gen
 // certificare/adopție simbolică (model WWF: nu un card mic într-un grid).
-export function ImpactBadge({ value, label }: { value: string; label: string }) {
+export function ImpactBadge({ value, label, heading }: { value: string; label: string; heading: string }) {
   return (
     <div className="flex items-center gap-4">
       <div className="relative flex h-24 w-24 shrink-0 items-center justify-center rounded-full border-4 border-[var(--ci-primary-soft)] bg-[var(--ci-surface)] shadow-[var(--ci-shadow-md)]">
@@ -11,7 +11,7 @@ export function ImpactBadge({ value, label }: { value: string; label: string }) 
         </span>
       </div>
       <div>
-        <p className="text-[11px] font-semibold tracking-wide text-[var(--ci-text-faint)] uppercase">Impact total</p>
+        <p className="text-[11px] font-semibold tracking-wide text-[var(--ci-text-faint)] uppercase">{heading}</p>
         <p className="mt-0.5 text-[15px] font-medium text-[var(--ci-text)]">{label}</p>
       </div>
     </div>

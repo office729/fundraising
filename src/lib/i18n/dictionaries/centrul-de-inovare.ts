@@ -103,7 +103,7 @@ export const CENTRUL_DE_INOVARE_DICT = {
       { t: "Votes help, the team decides", d: "We choose by three criteria: how many organizations ask for it, how much work it takes and how much it helps raise funds. Votes matter, but they do not decide alone." },
     ],
     noutatiTitlu: "What we innovated recently",
-    noutatiSubtitlu: "The list is updated with every improvement to the platform, newest first (entries are in Romanian).",
+    noutatiSubtitlu: "The list is updated with every improvement to the platform, newest first.",
     noutatiToate: "See all updates",
     noutateNou: "New",
     cumFolosesti: "How to use it to raise more",

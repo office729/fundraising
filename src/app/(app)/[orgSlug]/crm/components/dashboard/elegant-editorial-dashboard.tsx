@@ -17,6 +17,7 @@ const PRIORITATE_TONE = { mare: "red", medie: "amber", mica: "neutral" } as cons
 // tip "capitol" (ChapterHeader) în loc de CardHeader boxat.
 export function ElegantEditorialDashboard({
   base,
+  locale,
   dict,
   domeniu,
   kpis,
@@ -27,6 +28,7 @@ export function ElegantEditorialDashboard({
   apeluriReale,
   prioritateLabels,
 }: DashboardData) {
+  const fmtSuma = (v: number) => formatSuma(v, "RON", locale);
   const itemLabel = domeniu ? CAMPAIGN_TEMPLATES[domeniu].itemLabel : undefined;
   const sorted = [...campaniiActive].sort(
     (a, b) => b.sumaStransa / b.obiectiv - a.sumaStransa / a.obiectiv,
@@ -38,7 +40,7 @@ export function ElegantEditorialDashboard({
     <div className="grid grid-cols-1 gap-x-10 gap-y-8 lg:grid-cols-3">
       <div className="lg:col-span-2">
         <ChapterHeader
-          eyebrow="Poveste principală"
+          eyebrow={dict.eyebrow.featured}
           title={itemLabel ?? dict.proiecte.title}
           action={
             <Link prefetch={false} href={`${base}/beneficiari`} className="text-[13px] font-medium text-[var(--ci-primary)] hover:underline">
@@ -58,7 +60,7 @@ export function ElegantEditorialDashboard({
             <ProgressBar value={Math.round((vedeta.sumaStransa / vedeta.obiectiv) * 100)} className="h-2" />
             <div className="mt-2 flex items-center justify-between text-[13px] text-[var(--ci-text-muted)]">
               <span className="ci-tabular">
-                {formatSuma(vedeta.sumaStransa)} {dict.proiecte.din} {formatSuma(vedeta.obiectiv)}
+                {fmtSuma(vedeta.sumaStransa)} {dict.proiecte.din} {fmtSuma(vedeta.obiectiv)}
               </span>
               <span className="ci-tabular font-medium text-[var(--ci-primary)]">
                 {Math.round((vedeta.sumaStransa / vedeta.obiectiv) * 100)}%
@@ -76,7 +78,7 @@ export function ElegantEditorialDashboard({
                 <Link prefetch={false} key={b.id} href={`${base}/beneficiari/${b.id}`} className="flex items-center justify-between gap-4 py-3">
                   <div className="min-w-0">
                     <p className="truncate text-[14px] font-medium text-[var(--ci-text)]">{b.nume}</p>
-                    <p className="text-[12px] text-[var(--ci-text-muted)]">{formatSuma(b.sumaStransa)} {dict.proiecte.din} {formatSuma(b.obiectiv)}</p>
+                    <p className="text-[12px] text-[var(--ci-text-muted)]">{fmtSuma(b.sumaStransa)} {dict.proiecte.din} {fmtSuma(b.obiectiv)}</p>
                   </div>
                   <span className="ci-tabular shrink-0 text-[13px] font-medium text-[var(--ci-text)]">{pct}%</span>
                 </Link>
@@ -88,13 +90,13 @@ export function ElegantEditorialDashboard({
 
       <div className="space-y-8">
         <div>
-          <ChapterHeader eyebrow="Cifre" title={dict.donationChart.title} />
+          <ChapterHeader eyebrow={dict.eyebrow.figures} title={dict.donationChart.title} />
           <div className="space-y-3">
             {kpis.map((k) => (
               <div key={k.key} className="flex items-center justify-between">
                 <span className="text-[13px] text-[var(--ci-text-muted)]">{k.label}</span>
                 <span className="ci-tabular text-[14px] font-semibold text-[var(--ci-text)]">
-                  {k.unitate === "count" ? Math.round(k.valoare) : k.unitate === "percent" ? `${Math.round(k.valoare)}%` : formatSuma(k.valoare)}
+                  {k.unitate === "count" ? Math.round(k.valoare) : k.unitate === "percent" ? `${Math.round(k.valoare)}%` : fmtSuma(k.valoare)}
                 </span>
               </div>
             ))}
@@ -102,7 +104,7 @@ export function ElegantEditorialDashboard({
         </div>
 
         <div>
-          <ChapterHeader eyebrow="Priorități" title={dict.actionCenter.title} />
+          <ChapterHeader eyebrow={dict.eyebrow.priorities} title={dict.actionCenter.title} />
           <div className="space-y-3">
             {actiuni.map((a) => (
               <div key={a.id} className="flex items-start gap-2">
@@ -114,7 +116,7 @@ export function ElegantEditorialDashboard({
                   <Link prefetch={false} href={`${base}/${a.href}`} className="inline-flex items-center gap-0.5 text-[11px] font-medium text-[var(--ci-primary)] hover:underline">
                     {dict.actionCenter.resolve} <ArrowRight className="h-2.5 w-2.5" />
                   </Link>
-                  <span className="ml-1.5 text-[11px] text-[var(--ci-text-faint)]">· {formatDataRelativa(a.termen)}</span>
+                  <span className="ml-1.5 text-[11px] text-[var(--ci-text-faint)]">· {formatDataRelativa(a.termen, locale)}</span>
                 </div>
               </div>
             ))}
@@ -122,20 +124,20 @@ export function ElegantEditorialDashboard({
         </div>
 
         <div>
-          <ChapterHeader eyebrow="Pipeline" title={dict.pipeline.titlePrefix} />
+          <ChapterHeader eyebrow={dict.eyebrow.pipeline} title={dict.pipeline.titlePrefix} />
           <p className="mb-2 text-[12px] text-[var(--ci-text-muted)]">{dict.pipeline.inLucru(inLucruPipeline)}</p>
           <div className="space-y-2">
             {pipeline.map((p) => (
               <div key={p.stage} className="flex items-center justify-between text-[13px]">
                 <span className="text-[var(--ci-text-muted)]">{p.label}</span>
-                <span className="ci-tabular font-medium text-[var(--ci-text)]">{p.stage === "sponsorizat" ? formatSuma(p.suma) : p.count}</span>
+                <span className="ci-tabular font-medium text-[var(--ci-text)]">{p.stage === "sponsorizat" ? fmtSuma(p.suma) : p.count}</span>
               </div>
             ))}
           </div>
         </div>
 
         <div>
-          <ChapterHeader eyebrow="Echipă" title={dict.team.title} />
+          <ChapterHeader eyebrow={dict.eyebrow.team} title={dict.team.title} />
           <div className="flex flex-wrap gap-x-5 gap-y-1 text-[13px]">
             <span className="text-[var(--ci-text-muted)]">
               {dict.team.calls}: <strong className="ci-tabular text-[var(--ci-text)]">{apeluriReale ?? 0}</strong>

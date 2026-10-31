@@ -1,4 +1,5 @@
 import { withOrgSession } from "@/lib/auth/guard";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { titluAbsolut } from "@/lib/page-titles";
 
 import { incarcaStatistici } from "./queries";
@@ -15,7 +16,8 @@ export default async function StatisticiCampaniiPage({ params, searchParams }: {
   const zile = PERIOADE.find((p) => String(p.zile) === sp.zile)?.zile ?? 30;
   const campanie = sp.campanie && UUID.test(sp.campanie) ? sp.campanie : undefined;
   const d = await getStatistici(orgSlug, zile, campanie);
-  return <StatisticiVedere orgSlug={orgSlug} zile={zile} d={d} campanieId={campanie && d.pagini.some((p) => p.id === campanie) ? campanie : null} />;
+  const locale = await getLocale();
+  return <StatisticiVedere orgSlug={orgSlug} locale={locale} zile={zile} d={d} campanieId={campanie && d.pagini.some((p) => p.id === campanie) ? campanie : null} />;
 }
 
 export async function generateMetadata() {

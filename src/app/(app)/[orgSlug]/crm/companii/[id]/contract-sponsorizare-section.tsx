@@ -8,6 +8,8 @@ import { buildContract, ONG_CAMPURI, type ContractTip, type ContractVals } from 
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
 import { Input, Label } from "../../components/ui/input";
+import { useLocale } from "../../lib/locale-context";
+import { COMPANII_UI_DICT } from "@/lib/i18n/dictionaries/companii-ui";
 import { citesteDateOng, salveazaDateOng } from "./contract-actions";
 
 // Contractul de sponsorizare, precompletat cu datele firmei și afișat în josul paginii:
@@ -32,6 +34,7 @@ export type FirmaContract = {
 
 export function ContractSponsorizareSection({ firma }: { firma: FirmaContract }) {
   const { orgSlug } = useParams<{ orgSlug: string }>();
+  const ui = COMPANII_UI_DICT[useLocale()].contractSectiune;
   const [tip, setTip] = useState<ContractTip>(firma.recurent ? "recurent" : firma.mec20 ? "mec20" : "d177");
   const [v, setV] = useState<ContractVals>({
     nume: firma.nume,
@@ -81,7 +84,7 @@ export function ContractSponsorizareSection({ firma }: { firma: FirmaContract })
   function tipareste() {
     const w = window.open("", "_blank");
     if (!w) {
-      alert("Permite ferestrele pop-up pentru a genera PDF-ul.");
+      alert(ui.popup);
       return;
     }
     w.document.write(html + "<script>window.onload=function(){setTimeout(function(){window.print()},250)}</" + "script>");
@@ -97,9 +100,9 @@ export function ContractSponsorizareSection({ firma }: { firma: FirmaContract })
     setOngSalvat(null);
     try {
       const r = await salveazaDateOng(orgSlug, ong);
-      setOngSalvat(r.ok ? "Salvat ✓" : (r.error ?? "Eroare"));
+      setOngSalvat(r.ok ? ui.salvat : (r.error ?? ui.eroare));
     } catch {
-      setOngSalvat("Doar administratorii pot salva datele ONG-ului.");
+      setOngSalvat(ui.doarAdmin);
     }
   }
 
@@ -107,12 +110,12 @@ export function ContractSponsorizareSection({ firma }: { firma: FirmaContract })
     <Card>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-[15px] font-bold text-[var(--ci-text)]">{tip === "recurent" ? "Angajament de sponsorizare recurentă" : "Contract de sponsorizare"}</h2>
-          <p className="mt-0.5 text-[12px] text-[var(--ci-text-muted)]">Precompletat cu datele firmei — verifică, completează ce lipsește și descarcă.</p>
+          <h2 className="text-[15px] font-bold text-[var(--ci-text)]">{tip === "recurent" ? ui.titluRecurent : ui.titluContract}</h2>
+          <p className="mt-0.5 text-[12px] text-[var(--ci-text-muted)]">{ui.descriere}</p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[12px] text-[var(--ci-text-muted)]">Format:</span>
-          {([["d177", "D177 (redirecționare impozit)"], ["mec20", "20% (sponsorizare directă)"], ["recurent", "Recurent lunar"]] as const).map(([k, label]) => (
+          <span className="text-[12px] text-[var(--ci-text-muted)]">{ui.format}</span>
+          {(["d177", "mec20", "recurent"] as const).map((k) => (
             <button
               key={k}
               type="button"
@@ -121,7 +124,7 @@ export function ContractSponsorizareSection({ firma }: { firma: FirmaContract })
                 tip === k ? "border-[var(--ci-primary)] bg-[var(--ci-primary)] text-white" : "border-[var(--ci-border)] text-[var(--ci-text-muted)] hover:border-[var(--ci-border-strong)]"
               }`}
             >
-              {label}
+              {ui.formate[k]}
             </button>
           ))}
         </div>
@@ -129,10 +132,10 @@ export function ContractSponsorizareSection({ firma }: { firma: FirmaContract })
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {([
-          ["nume", "Denumire sponsor"], ["cui", "CUI"], ["reg", "Nr. Reg. Com."],
-          ["sediu", "Sediu (adresă)"], ["judet", "Județ"], ["iban", "IBAN"],
-          ["banca", "Banca"], ["rep", "Reprezentant legal"], ["fct", "Funcție"],
-          ["suma", tip === "recurent" ? "Sumă lunară (RON)" : "Sumă (RON)"], ["nr", "Nr. contract"],
+          ["nume", ui.camp.nume], ["cui", ui.camp.cui], ["reg", ui.camp.reg],
+          ["sediu", ui.camp.sediu], ["judet", ui.camp.judet], ["iban", ui.camp.iban],
+          ["banca", ui.camp.banca], ["rep", ui.camp.rep], ["fct", ui.camp.fct],
+          ["suma", tip === "recurent" ? ui.camp.sumaLunara : ui.camp.suma], ["nr", ui.camp.nr],
         ] as [keyof ContractVals, string][]).map(([k, label]) => (
           tip === "recurent" && k === "nr" ? null : (
             <div key={k}>
@@ -142,25 +145,25 @@ export function ContractSponsorizareSection({ firma }: { firma: FirmaContract })
           )
         ))}
         <div>
-          <Label>Data</Label>
+          <Label>{ui.data}</Label>
           <Input type="date" value={v.data} onChange={setCamp("data")} />
         </div>
         <div>
-          <Label>Proiect asociat (opțional)</Label>
+          <Label>{ui.proiect}</Label>
           <Input value={v.caz} onChange={setCamp("caz")} />
         </div>
         <div>
-          <Label>Responsabil (opțional)</Label>
+          <Label>{ui.responsabil}</Label>
           <Input value={v.resp} onChange={setCamp("resp")} />
         </div>
         <div>
-          <Label>Email sponsor (semnatar)</Label>
+          <Label>{ui.emailSponsor}</Label>
           <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
       </div>
 
       <details className="mt-4 rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] p-3">
-        <summary className="cursor-pointer text-[13px] font-medium text-[var(--ci-text)]">Datele ONG-ului (beneficiar) — apar în toate contractele</summary>
+        <summary className="cursor-pointer text-[13px] font-medium text-[var(--ci-text)]">{ui.dateOng}</summary>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           {ONG_CAMPURI.map((c) => (
             <div key={c.key}>
@@ -170,19 +173,19 @@ export function ContractSponsorizareSection({ firma }: { firma: FirmaContract })
           ))}
         </div>
         <div className="mt-3 flex items-center gap-2">
-          <Button variant="secondary" onClick={salveazaOng}>Salvează datele ONG-ului</Button>
+          <Button variant="secondary" onClick={salveazaOng}>{ui.salveazaOng}</Button>
           {ongSalvat && <span className="text-[12px] text-[var(--ci-text-muted)]">{ongSalvat}</span>}
         </div>
       </details>
 
       <div className="mt-4 flex flex-wrap gap-2">
-        <Button variant="primary" onClick={descarcaWord}>📄 Descarcă Word</Button>
-        <Button variant="secondary" onClick={tipareste}>🖨 Tipărește / PDF</Button>
-        <Button variant="secondary" onClick={trimiteEmail} disabled={!email}>✉ Pregătește emailul</Button>
+        <Button variant="primary" onClick={descarcaWord}>{ui.descarcaWord}</Button>
+        <Button variant="secondary" onClick={tipareste}>{ui.tipareste}</Button>
+        <Button variant="secondary" onClick={trimiteEmail} disabled={!email}>{ui.pregatesteEmail}</Button>
       </div>
 
-      <p className="mt-5 mb-2 text-[12px] font-bold tracking-wide text-[var(--ci-text-muted)] uppercase">Previzualizare</p>
-      <iframe title="Previzualizare contract" sandbox="" srcDoc={html} className="h-[640px] w-full rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-white" />
+      <p className="mt-5 mb-2 text-[12px] font-bold tracking-wide text-[var(--ci-text-muted)] uppercase">{ui.previzualizare}</p>
+      <iframe title={ui.previzualizareTitle} sandbox="" srcDoc={html} className="h-[640px] w-full rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-white" />
     </Card>
   );
 }

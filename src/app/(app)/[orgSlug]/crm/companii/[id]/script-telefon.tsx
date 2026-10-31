@@ -6,9 +6,13 @@ import { useState } from "react";
 import { scriptCaText, type ScriptApel } from "@/lib/script-apel";
 
 import { Card } from "../../components/ui/card";
+import { useLocale } from "../../lib/locale-context";
+import { COMPANII_UI_DICT } from "@/lib/i18n/dictionaries/companii-ui";
 
 // Scriptul de apel al firmei (lib/script-apel.ts), pliabil, cu buton de copiere. Se calculează pe server, cu datele firmei, și vine aici gata făcut.
 export function ScriptTelefon({ script }: { script: ScriptApel }) {
+  const locale = useLocale();
+  const ui = COMPANII_UI_DICT[locale].script;
   const [deschis, setDeschis] = useState(false);
   const [copiat, setCopiat] = useState(false);
 
@@ -28,14 +32,15 @@ export function ScriptTelefon({ script }: { script: ScriptApel }) {
         <span className="flex items-center gap-2">
           <Phone className="h-4 w-4 text-[var(--ci-primary)]" aria-hidden />
           <span>
-            <span className="block text-[15px] font-bold text-[var(--ci-text)]">Script de apel</span>
-            <span className="block text-[12.5px] text-[var(--ci-text-muted)]">Deschidere, calificare, mecanismul fiscal potrivit firmei, cererea de 15 minute și răspunsuri la obiecții.</span>
+            <span className="block text-[15px] font-bold text-[var(--ci-text)]">{ui.titlu}</span>
+            <span className="block text-[12.5px] text-[var(--ci-text-muted)]">{ui.descriere}</span>
           </span>
         </span>
         <ChevronDown className={`h-4 w-4 shrink-0 text-[var(--ci-text-muted)] transition-transform ${deschis ? "rotate-180" : ""}`} aria-hidden />
       </button>
       {deschis && (
         <div className="mt-4 space-y-4">
+          {locale !== "ro" && <p className="text-[12px] text-[var(--ci-text-muted)]">{ui.scriptInRomana}</p>}
           {script.sectiuni.map((s) => (
             <section key={s.titlu}>
               <h3 className="text-[13px] font-bold text-[var(--ci-text)]">{s.titlu}</h3>
@@ -47,7 +52,7 @@ export function ScriptTelefon({ script }: { script: ScriptApel }) {
             </section>
           ))}
           <section>
-            <h3 className="text-[13px] font-bold text-[var(--ci-text)]">Obiecții rapide</h3>
+            <h3 className="text-[13px] font-bold text-[var(--ci-text)]">{ui.obiectii}</h3>
             <dl className="mt-1 space-y-1.5 text-[13px] leading-relaxed">
               {script.obiectii.map((o) => (
                 <div key={o.obiectie}>
@@ -59,9 +64,9 @@ export function ScriptTelefon({ script }: { script: ScriptApel }) {
           </section>
           <div className="flex flex-wrap items-center gap-3">
             <button type="button" onClick={copiaza} className="inline-flex items-center gap-1.5 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-3 py-1.5 text-[12.5px] font-semibold text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
-              <ClipboardCopy className="h-3.5 w-3.5" aria-hidden /> {copiat ? "Copiat" : "Copiază scriptul"}
+              <ClipboardCopy className="h-3.5 w-3.5" aria-hidden /> {copiat ? ui.copiat : ui.copiaza}
             </button>
-            <p className="text-[12px] text-[var(--ci-text-muted)]">Punct de plecare de adaptat. Sumele, termenele și mecanismele fiscale se confirmă cu contabilul organizației.</p>
+            <p className="text-[12px] text-[var(--ci-text-muted)]">{ui.nota}</p>
           </div>
         </div>
       )}

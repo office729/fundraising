@@ -11,12 +11,9 @@ import { AnulareAbonament } from "./anulare-abonament";
 import { NetopiaCardSection } from "./netopia-card-section";
 import type { StatusReinnoireAutomata } from "./netopia-card-actions";
 
-const NUME_PACHET: Record<OrgPackage, string> = {
-  trial: "Probă",
-  start: "START",
-  crestere: "CREȘTERE",
-  impact: "IMPACT",
-  custom: "Personalizat",
+const NUME_PACHET: Record<Locale, Record<OrgPackage, string>> = {
+  ro: { trial: "Probă", start: "START", crestere: "CREȘTERE", impact: "IMPACT", custom: "Personalizat" },
+  en: { trial: "Trial", start: "START", crestere: "CREȘTERE", impact: "IMPACT", custom: "Custom" },
 };
 
 // Disponibilă oricând (nu doar când organizația e blocată de paywall.tsx) —
@@ -57,7 +54,7 @@ export function AbonamentSection({
     <section id="abonament" className="mt-8 scroll-mt-4 border-t border-line pt-6">
       <h2 className="font-display text-lg font-bold text-ink">{dict.title}</h2>
       <p className="mt-1 text-sm text-muted">
-        {dict.pachetCurent(NUME_PACHET[pachetCurent])}
+        {dict.pachetCurent(NUME_PACHET[locale][pachetCurent])}
         {pachetCurent === "start" && extraUtilizatori > 0 ? ` + ${extraUtilizatori} ${locale === "en" ? "extra users" : extraUtilizatori === 1 ? "utilizator suplimentar" : "utilizatori suplimentari"}` : ""} · {statusLabel}
       </p>
 
@@ -101,7 +98,7 @@ export function AbonamentSection({
             {facturi.map((f) => (
               <li key={f.id} className="flex items-center justify-between gap-3 px-3.5 py-2.5 text-sm">
                 <span className="text-muted">
-                  {f.createdAt.toLocaleDateString(locale === "en" ? "en-GB" : "ro-RO", { day: "2-digit", month: "short", year: "numeric" })} · {f.sumaLei.toLocaleString("ro-RO")} lei
+                  {f.createdAt.toLocaleDateString(locale === "en" ? "en-GB" : "ro-RO", { day: "2-digit", month: "short", year: "numeric" })} · {f.sumaLei.toLocaleString(locale === "en" ? "en-GB" : "ro-RO")} lei
                 </span>
                 {f.facturaLink ? (
                   <a href={f.facturaLink} target="_blank" rel="noopener noreferrer" className="font-medium text-brand-blue hover:underline">

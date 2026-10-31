@@ -7,6 +7,8 @@ import { Button } from "../components/ui/button";
 import { Card, CardHeader } from "../components/ui/card";
 import { EmptyState } from "../components/ui/states";
 import { urlWebSigur } from "@/lib/validation";
+import { PRESA_GRUPURI_UI_DICT } from "@/lib/i18n/dictionaries/presa-grupuri-ui";
+import { useLocale } from "../lib/locale-context";
 import { adaugaLocalGroupAction, stergeLocalGroupAction, actualizeazaStatusGrupAction, type FormState } from "./actions";
 
 export type LocalGroupRow = {
@@ -20,15 +22,11 @@ export type LocalGroupRow = {
   status: "activ" | "inactiv";
 };
 
-const PLATFORMA_LABEL: Record<LocalGroupRow["platforma"], string> = {
-  facebook: "Facebook",
-  whatsapp: "WhatsApp",
-  altul: "Altul",
-};
-
 const INITIAL: FormState = { error: null };
 
 export function LocalGroupsCard({ orgSlug, grupuri }: { orgSlug: string; grupuri: LocalGroupRow[] }) {
+  const dict = PRESA_GRUPURI_UI_DICT[useLocale()].groups;
+  const PLATFORMA_LABEL = dict.platforma;
   const [state, formAction, pending] = useActionState(adaugaLocalGroupAction.bind(null, orgSlug), INITIAL);
   const submitted = useRef(false);
   useEffect(() => {
@@ -37,7 +35,7 @@ export function LocalGroupsCard({ orgSlug, grupuri }: { orgSlug: string; grupuri
   }, [pending, state]);
 
   async function sterge(id: string) {
-    if (!window.confirm("Ștergi acest grup local?")) return;
+    if (!window.confirm(dict.confirmaStergere)) return;
     await stergeLocalGroupAction(orgSlug, id);
     window.location.reload();
   }
@@ -49,10 +47,10 @@ export function LocalGroupsCard({ orgSlug, grupuri }: { orgSlug: string; grupuri
 
   return (
     <Card>
-      <CardHeader title="Grupuri locale" subtitle="Facebook / WhatsApp — bază globală de organizație, filtrată pe județ pentru fiecare campanie" />
+      <CardHeader title={dict.title} subtitle={dict.subtitle} />
       <form action={formAction} className="grid grid-cols-2 gap-2 rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] p-3 sm:grid-cols-3">
-        <input name="judet" required placeholder="Județ (ex. Cluj)" className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
-        <input name="localitate" placeholder="Localitate (opțional)" className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
+        <input name="judet" required placeholder={dict.judet} className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
+        <input name="localitate" placeholder={dict.localitate} className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
         <select name="platforma" defaultValue="facebook" className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm">
           {Object.entries(PLATFORMA_LABEL).map(([v, l]) => (
             <option key={v} value={v}>
@@ -60,11 +58,11 @@ export function LocalGroupsCard({ orgSlug, grupuri }: { orgSlug: string; grupuri
             </option>
           ))}
         </select>
-        <input name="nume" required placeholder="Nume grup" className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
-        <input name="link" required placeholder="Link grup" className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
-        <input name="categorie" placeholder="Categorie (opțional)" className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
+        <input name="nume" required placeholder={dict.nume} className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
+        <input name="link" required placeholder={dict.link} className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
+        <input name="categorie" placeholder={dict.categorie} className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2 text-sm" />
         <Button type="submit" disabled={pending} className="justify-self-start">
-          {pending ? "Se adaugă..." : "Adaugă grup"}
+          {pending ? dict.seAdauga : dict.adauga}
         </Button>
       </form>
       {state.error && <p className="mt-2 text-[13px] text-red-600">{state.error}</p>}
@@ -90,20 +88,20 @@ export function LocalGroupsCard({ orgSlug, grupuri }: { orgSlug: string; grupuri
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <Badge tone={g.status === "activ" ? "green" : "neutral"} icon={false}>
-                    {g.status === "activ" ? "Activ" : "Inactiv"}
+                    {g.status === "activ" ? dict.activ : dict.inactiv}
                   </Badge>
                   <button onClick={() => comutaStatus(g.id, g.status)} className="text-[12px] font-medium text-[var(--ci-primary)] hover:underline">
-                    {g.status === "activ" ? "Dezactivează" : "Activează"}
+                    {g.status === "activ" ? dict.dezactiveaza : dict.activeaza}
                   </button>
                   <button onClick={() => sterge(g.id)} className="text-[12px] text-red-600 hover:underline">
-                    Șterge
+                    {dict.sterge}
                   </button>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <EmptyState title="Niciun grup local" description="Adaugă grupuri Facebook sau WhatsApp relevante pe județ, pentru distribuirea campaniilor." />
+          <EmptyState title={dict.emptyTitle} description={dict.emptyDescription} />
         )}
       </div>
     </Card>

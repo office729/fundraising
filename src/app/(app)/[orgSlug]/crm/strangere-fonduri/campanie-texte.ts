@@ -55,6 +55,7 @@ type Texte = {
     sePublica: string;
     creareEsuata: string;
     reteaEsuata: string;
+    pozaPregatireEsuata: string;
   };
   detalii: {
     titlu: string;
@@ -237,6 +238,7 @@ export const TEXTE_CAMPANIE: Record<"ro" | "en", Texte> = {
       sePublica: "Se publică…",
       creareEsuata: "Campania nu a putut fi creată. Încearcă din nou.",
       reteaEsuata: "Nu am putut ajunge la server. Verifică conexiunea și încearcă din nou. Datele tale sunt păstrate.",
+      pozaPregatireEsuata: "Nu am putut pregăti poza pentru încărcare.",
     },
     detalii: {
       titlu: "Despre ce este campania?",
@@ -425,6 +427,7 @@ export const TEXTE_CAMPANIE: Record<"ro" | "en", Texte> = {
       sePublica: "Publishing…",
       creareEsuata: "The campaign couldn't be created. Please try again.",
       reteaEsuata: "We couldn't reach the server. Check your connection and try again. Your data is kept.",
+      pozaPregatireEsuata: "We couldn't prepare the photo for upload.",
     },
     detalii: {
       titlu: "What is the campaign about?",

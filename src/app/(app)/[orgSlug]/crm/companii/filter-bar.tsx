@@ -7,6 +7,7 @@ import { useState } from "react";
 import { Input, Select } from "../components/ui/input";
 import { useLocale } from "../lib/locale-context";
 import { COMPANII_DICT } from "@/lib/i18n/dictionaries/companii";
+import { COMPANII_UI_DICT, intlLocale } from "@/lib/i18n/dictionaries/companii-ui";
 import { CHEI_FUNCTII, FUNCTIE_NESPECIFICATA } from "@/lib/functii-contact";
 import { BENZI, type Banda } from "@/lib/prioritizare-firme";
 import { recalculeazaCaiCaldeAction } from "./cai-calde-actions";
@@ -42,6 +43,8 @@ export function FilterBar({
   const searchParams = useSearchParams();
   const locale = useLocale();
   const dict = COMPANII_DICT[locale].filterBar;
+  const ui = COMPANII_UI_DICT[locale].lista;
+  const nf = intlLocale(locale);
   const f = parseFiltru(searchParams);
   const [q, setQ] = useState(f.q);
   const [dataStart, setDataStart] = useState(f.dataStart);
@@ -239,7 +242,7 @@ export function FilterBar({
           return (
             <button key={cheie} type="button" onClick={() => toggleFunctie(cheie)} aria-pressed={activ} title={dict.functieHint} className={pill(activ)}>
               {dict.functii[cheie as keyof typeof dict.functii]}
-              <span className="ci-tabular ml-1.5 font-normal opacity-70">{nr.toLocaleString("ro-RO")}</span>
+              <span className="ci-tabular ml-1.5 font-normal opacity-70">{nr.toLocaleString(nf)}</span>
             </button>
           );
         })}
@@ -266,22 +269,22 @@ export function FilterBar({
             {BENZI.map((b) => (
               <button key={b} type="button" onClick={() => push({ banda: f.banda === b ? null : b })} aria-pressed={f.banda === b} title={dict.prioritateHint} className={pill(f.banda === b)}>
                 {dict.benzi[b]}
-                <span className="ci-tabular ml-1.5 font-normal opacity-70">{(benziNr[b] ?? 0).toLocaleString("ro-RO")}</span>
+                <span className="ci-tabular ml-1.5 font-normal opacity-70">{(benziNr[b] ?? 0).toLocaleString(nf)}</span>
               </button>
             ))}
             <button type="button" onClick={() => push({ elig: f.eligibil ? null : "1" })} aria-pressed={f.eligibil} title={dict.eligibilHint} className={pill(f.eligibil)}>
               {dict.eligibil}
-              <span className="ci-tabular ml-1.5 font-normal opacity-70">{(benziNr.eligibile ?? 0).toLocaleString("ro-RO")}</span>
+              <span className="ci-tabular ml-1.5 font-normal opacity-70">{(benziNr.eligibile ?? 0).toLocaleString(nf)}</span>
             </button>
             <button type="button" onClick={() => push({ sprint: f.sprint ? null : "1" })} aria-pressed={f.sprint} title={dict.sprintHint} className={pill(f.sprint)}>
               {dict.sprint}
-              <span className="ci-tabular ml-1.5 font-normal opacity-70">{(benziNr.sprint ?? 0).toLocaleString("ro-RO")}</span>
+              <span className="ci-tabular ml-1.5 font-normal opacity-70">{(benziNr.sprint ?? 0).toLocaleString(nf)}</span>
             </button>
             <button type="button" onClick={() => push({ cald: f.cald ? null : "1" })} aria-pressed={f.cald} title={dict.caldHint} className={pill(f.cald)}>
               {dict.cald}
-              <span className="ci-tabular ml-1.5 font-normal opacity-70">{caiCalde ? caiCalde.n.toLocaleString("ro-RO") : "?"}</span>
+              <span className="ci-tabular ml-1.5 font-normal opacity-70">{caiCalde ? caiCalde.n.toLocaleString(nf) : "?"}</span>
             </button>
-            <button type="button" disabled={recalculeaza} onClick={recalculeazaCai} title={caiCalde ? `Ultima recalculare: ${new Date(caiCalde.la).toLocaleDateString("ro-RO")}` : dict.caldNecalculat} className={`${pill(false)} disabled:opacity-60`}>
+            <button type="button" disabled={recalculeaza} onClick={recalculeazaCai} title={caiCalde ? ui.ultimaRecalculare(new Date(caiCalde.la).toLocaleDateString(nf)) : dict.caldNecalculat} className={`${pill(false)} disabled:opacity-60`}>
               ↻ {recalculeaza ? "…" : dict.recalculeaza}
             </button>
             <button type="button" onClick={() => push({ imbogatit: f.imbogatit ? null : "1" })} aria-pressed={f.imbogatit} title={dict.imbogatitHint} className={pill(f.imbogatit)}>

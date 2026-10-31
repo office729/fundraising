@@ -14,7 +14,8 @@ const PRIORITATE_TONE = { mare: "red", medie: "amber", mica: "neutral" } as cons
 // Layout-ul de azi al panoului, neschimbat — folosit pentru "altele"/fără
 // domeniu ales. Zero regresie: pixel-identic cu dashboard-ul dinaintea
 // redesign-ului per familie.
-export function NeutruDashboard({ base, dict, kpis, actiuni, evolutie, pipeline, inLucruPipeline, campaniiActive, blocate, apeluriReale, prioritateLabels }: DashboardData) {
+export function NeutruDashboard({ base, locale, dict, kpis, actiuni, evolutie, pipeline, inLucruPipeline, campaniiActive, blocate, apeluriReale, prioritateLabels }: DashboardData) {
+  const fmtSuma = (v: number) => formatSuma(v, "RON", locale);
   return (
     <>
       <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
@@ -41,7 +42,7 @@ export function NeutruDashboard({ base, dict, kpis, actiuni, evolutie, pipeline,
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[13px] font-medium text-[var(--ci-text)]">{a.motiv}</p>
                 <p className="mt-0.5 text-[12px] text-[var(--ci-text-muted)]">
-                  {a.responsabil} · termen {formatDataRelativa(a.termen)}
+                  {a.responsabil} · {dict.due} {formatDataRelativa(a.termen, locale)}
                 </p>
               </div>
               <Link prefetch={false}
@@ -64,7 +65,7 @@ export function NeutruDashboard({ base, dict, kpis, actiuni, evolutie, pipeline,
                 <CartesianGrid stroke="var(--ci-border)" vertical={false} />
                 <XAxis dataKey="label" tick={{ fontSize: 12, fill: "var(--ci-text-muted)" }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: "var(--ci-text-muted)" }} axisLine={false} tickLine={false} width={40} />
-                <RTooltip formatter={(v) => formatSuma(Number(v))} contentStyle={{ borderRadius: 8, border: "1px solid var(--ci-border)", fontSize: 12 }} />
+                <RTooltip formatter={(v) => fmtSuma(Number(v))} contentStyle={{ borderRadius: 8, border: "1px solid var(--ci-border)", fontSize: 12 }} />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
                 <Bar dataKey="pf" name={dict.donationChart.pf} stackId="a" fill="#2563EB" radius={[0, 0, 0, 0]} />
                 <Bar dataKey="pj" name={dict.donationChart.pj} stackId="a" fill="#E63946" radius={[0, 0, 0, 0]} />
@@ -79,7 +80,7 @@ export function NeutruDashboard({ base, dict, kpis, actiuni, evolutie, pipeline,
           <CardHeader title={dict.pipeline.titlePrefix} subtitle={dict.pipeline.inLucru(inLucruPipeline)} />
           <div className="space-y-3">
             {pipeline.map((p) => (
-              <Row key={p.stage} label={p.label} value={p.stage === "sponsorizat" ? formatSuma(p.suma) : String(p.count)} tone={p.stage === "sponsorizat" ? undefined : p.count > 0 && blocate > 0 ? "amber" : undefined} />
+              <Row key={p.stage} label={p.label} value={p.stage === "sponsorizat" ? fmtSuma(p.suma) : String(p.count)} tone={p.stage === "sponsorizat" ? undefined : p.count > 0 && blocate > 0 ? "amber" : undefined} />
             ))}
           </div>
           <Link prefetch={false}
@@ -119,7 +120,7 @@ export function NeutruDashboard({ base, dict, kpis, actiuni, evolutie, pipeline,
                 <ProgressBar value={pct} tone={b.statusCampanie === "urgenta" ? "primary" : "blue"} />
                 <div className="mt-2 flex items-center justify-between text-[12px] text-[var(--ci-text-muted)]">
                   <span className="ci-tabular">
-                    {formatSuma(b.sumaStransa)} {dict.proiecte.din} {formatSuma(b.obiectiv)}
+                    {fmtSuma(b.sumaStransa)} {dict.proiecte.din} {fmtSuma(b.obiectiv)}
                   </span>
                   <span className="ci-tabular font-medium text-[var(--ci-text)]">{pct}%</span>
                 </div>

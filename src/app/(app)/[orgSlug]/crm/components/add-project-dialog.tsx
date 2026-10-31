@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 
+import { COMPONENTE_UI_DICT } from "@/lib/i18n/dictionaries/componente-ui";
+
+import { useLocale } from "../lib/locale-context";
 import { addBeneficiarManual } from "../lib/local-store";
 import type { Beneficiar } from "../mock";
 import { Button } from "./ui/button";
@@ -17,6 +20,8 @@ export function AddProjectDialog({
   onClose: () => void;
   onCreated: (beneficiar: Beneficiar) => void;
 }) {
+  const t = COMPONENTE_UI_DICT[useLocale()];
+  const a = t.addProject;
   const [nume, setNume] = useState("");
   const [obiectiv, setObiectiv] = useState("");
   const [descriere, setDescriere] = useState("");
@@ -52,34 +57,34 @@ export function AddProjectDialog({
   }
 
   return (
-    <Dialog open={open} onClose={inchide} title="Proiect nou" width="max-w-sm">
+    <Dialog open={open} onClose={inchide} title={a.titlu} width="max-w-sm">
       <div className="space-y-3">
         <div>
-          <Label>Nume proiect</Label>
-          <Input autoFocus value={nume} onChange={(e) => setNume(e.target.value)} placeholder="ex. Ajutor pentru Maria" />
+          <Label>{a.nume}</Label>
+          <Input autoFocus value={nume} onChange={(e) => setNume(e.target.value)} placeholder={a.numePh} />
         </div>
         <div>
-          <Label>Descriere proiect</Label>
-          <Textarea value={descriere} onChange={(e) => setDescriere(e.target.value)} rows={3} placeholder="Despre ce e vorba, cine e beneficiarul…" />
+          <Label>{a.descriere}</Label>
+          <Textarea value={descriere} onChange={(e) => setDescriere(e.target.value)} rows={3} placeholder={a.descrierePh} />
         </div>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <div>
-            <Label>Obiectiv proiect</Label>
-            <Input type="number" min="0" step="1" value={obiectiv} onChange={(e) => setObiectiv(e.target.value)} placeholder="ex. 50000" />
+            <Label>{a.obiectiv}</Label>
+            <Input type="number" min="0" step="1" value={obiectiv} onChange={(e) => setObiectiv(e.target.value)} placeholder={a.obiectivPh} />
           </div>
           <div>
-            <Label>Sumă strânsă</Label>
+            <Label>{a.sumaStransa}</Label>
             <Input type="number" min="0" step="1" value={sumaStransa} onChange={(e) => setSumaStransa(e.target.value)} placeholder="0" />
           </div>
         </div>
         <div>
-          <Label>Localitate (opțional)</Label>
-          <Input value={localitate} onChange={(e) => setLocalitate(e.target.value)} placeholder="Oraș" />
+          <Label>{a.localitate}</Label>
+          <Input value={localitate} onChange={(e) => setLocalitate(e.target.value)} placeholder={a.localitatePh} />
         </div>
 
         <div className="flex justify-end gap-2 pt-2">
-          <Button variant="secondary" onClick={inchide}>Anulează</Button>
-          <Button variant="primary" onClick={salveaza} disabled={!nume.trim() || !obiectiv}>Salvează</Button>
+          <Button variant="secondary" onClick={inchide}>{t.comun.anuleaza}</Button>
+          <Button variant="primary" onClick={salveaza} disabled={!nume.trim() || !obiectiv}>{t.comun.salveaza}</Button>
         </div>
       </div>
     </Dialog>

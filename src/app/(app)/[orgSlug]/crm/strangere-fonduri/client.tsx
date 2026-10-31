@@ -10,6 +10,7 @@ import { Dialog } from "../components/ui/dialog";
 import { useLocale } from "../lib/locale-context";
 import type { CampaignPageTemplate } from "@/lib/campaign-templates";
 import { STRANGERE_FONDURI_DICT } from "@/lib/i18n/dictionaries/strangere-fonduri";
+import { STRANGERE_FONDURI_UI_DICT } from "@/lib/i18n/dictionaries/strangere-fonduri-ui";
 import { AddOfflineDonationDialog } from "./add-offline-donation-dialog";
 import { CampanieWizard, type CampanieWizardProps } from "./campanie-wizard";
 import { AddUpdateDialog } from "./add-update-dialog";
@@ -212,6 +213,7 @@ export function ToggleStatusButton({ orgSlug, id, status }: { orgSlug: string; i
   const router = useRouter();
   const locale = useLocale();
   const dict = STRANGERE_FONDURI_DICT[locale].client;
+  const ui = STRANGERE_FONDURI_UI_DICT[locale].client;
   const [seSchimba, setSeSchimba] = useState(false);
   const [eroare, setEroare] = useState("");
   const inchide = status === "activa";
@@ -239,10 +241,10 @@ export function ToggleStatusButton({ orgSlug, id, status }: { orgSlug: string; i
         {inchide ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
       </button>
       {eroare && (
-        <Dialog open onClose={() => setEroare("")} title="Limita pachetului" width="max-w-md">
+        <Dialog open onClose={() => setEroare("")} title={ui.limitaPachet} width="max-w-md">
           <p role="alert" className="text-[14px] leading-relaxed text-[var(--ci-text)]">{eroare}</p>
           <div className="mt-4 flex justify-end">
-            <Button variant="primary" onClick={() => setEroare("")}>Am înțeles</Button>
+            <Button variant="primary" onClick={() => setEroare("")}>{ui.amInteles}</Button>
           </div>
         </Dialog>
       )}

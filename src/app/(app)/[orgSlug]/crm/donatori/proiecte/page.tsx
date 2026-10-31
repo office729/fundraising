@@ -1,4 +1,6 @@
 import { requireOrgAccess } from "@/lib/auth/guard";
+import { DONATORI_UI_DICT } from "@/lib/i18n/dictionaries/donatori-ui";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { titluAbsolut } from "@/lib/page-titles";
 
 import { PfNav } from "../pf-nav";
@@ -12,13 +14,14 @@ export const dynamic = "force-dynamic";
 export default async function ProiectePfPage({ params }: { params: Promise<{ orgSlug: string }> }) {
   const { orgSlug } = await params;
   await requireOrgAccess(orgSlug);
+  const t = DONATORI_UI_DICT[await getLocale()].proiecte;
   const randuri = await getProiectePf(orgSlug);
   return (
     <div className="mx-auto max-w-[1400px] space-y-5">
       <div>
-        <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">Proiecte</h1>
+        <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">{t.titlu}</h1>
         <p className="mt-0.5 max-w-3xl text-[13px] text-[var(--ci-text-muted)]">
-          Un proiect e o campanie din platformă sau un nume de proiect din importuri. „Atrași” sunt donatorii al căror prim proiect a fost acesta; vezi apoi câți au mai donat și în alte proiecte.
+          {t.subtitlu}
         </p>
       </div>
       <PfNav orgSlug={orgSlug} />

@@ -11,6 +11,8 @@ import { getTemplatesDisponibile, type CampaignPageTemplate } from "@/lib/campai
 import { obtineIpClient, verificaLimitaRata } from "@/lib/auth/rate-limit";
 import { db } from "@/lib/db";
 import { fundraisingPages, organizations } from "@/lib/db/schema";
+import { SF_PUBLIC_UI_DICT } from "@/lib/i18n/dictionaries/sf-public-ui";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { slugify } from "@/lib/slugify";
 import { genereazaSlugUnic } from "@/lib/unique-slug";
 import { EMAIL_RE } from "@/lib/validation";
@@ -31,6 +33,7 @@ export async function creeazaPaginaAction(
   _prevState: CreeazaPaginaState,
   formData: FormData,
 ): Promise<CreeazaPaginaState> {
+  const er = SF_PUBLIC_UI_DICT[await getLocale()].creeaza.erori;
   // Honeypot.
   if (String(formData.get("website") ?? "").trim()) {
     return { error: null };
@@ -39,7 +42,7 @@ export async function creeazaPaginaAction(
   // Pagina se activează imediat, fără moderare — fără limită, un bot poate crea
   // mii de pagini publice (spam, umplerea bazei). 5 pagini/oră/IP.
   if (!(await verificaLimitaRata("creeaza-pagina", await obtineIpClient(), 5, 60))) {
-    return { error: "Prea multe încercări — te rugăm să aștepți puțin și să încerci din nou." };
+    return { error: er.preaMulte };
   }
 
   const str = (k: string) => String(formData.get(k) ?? "").trim();
@@ -52,25 +55,25 @@ export async function creeazaPaginaAction(
   const consimtamantGdpr = formData.get("consimtamantGdpr") != null;
 
   if (!numeCreator || !emailCreator || !titlu || !poveste) {
-    return { error: "Completează toate câmpurile obligatorii." };
+    return { error: er.completeaza };
   }
   if (numeCreator.length > MAX_LEN || emailCreator.length > MAX_LEN || titlu.length > MAX_LEN) {
-    return { error: "Unul dintre câmpuri e prea lung." };
+    return { error: er.preaLung };
   }
   if (poveste.length > MAX_POVESTE_LEN) {
-    return { error: "Povestea e prea lungă (maximum 5.000 de caractere)." };
+    return { error: er.povestePreaLunga };
   }
   if (!EMAIL_RE.test(emailCreator)) {
-    return { error: "Adresa de email nu e validă." };
+    return { error: er.emailInvalid };
   }
   if (!consimtamantGdpr) {
-    return { error: "Trebuie să fii de acord cu prelucrarea datelor, ca să-ți poți crea pagina." };
+    return { error: er.consimtamant };
   }
   let sumaTinta: number | null = null;
   if (sumaTintaRaw) {
     const n = Math.round(Number(sumaTintaRaw));
     if (!Number.isFinite(n) || n <= 0) {
-      return { error: "Suma țintă trebuie să fie un număr pozitiv." };
+      return { error: er.sumaInvalida };
     }
     sumaTinta = n;
   }
@@ -130,10 +133,10 @@ export async function creeazaPaginaAction(
     });
   } catch (e) {
     if (e instanceof Error && e.message === "org_not_found") {
-      return { error: "Organizația nu a fost găsită." };
+      return { error: er.orgNegasita };
     }
     raporteazaEroare("pagina-campanie-creare", e);
-    return { error: "A apărut o eroare — încearcă din nou." };
+    return { error: er.generica };
   }
 
   redirect(`/strangere-fonduri/${orgSlug}/${pageSlug}`);

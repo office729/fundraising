@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 
+import { SETARI_GDPR_UI_DICT } from "@/lib/i18n/dictionaries/setari-gdpr-ui";
+
+import { useLocale } from "../../crm/lib/locale-context";
 import { cautaPersoanaAction, exportaPersoanaAction, stergePersoanaAction, type RezultatCautare } from "./actions";
 
 function Rand({ eticheta, n }: { eticheta: string; n: number }) {
@@ -15,6 +18,7 @@ function Rand({ eticheta, n }: { eticheta: string; n: number }) {
 }
 
 export function GdprClient({ orgSlug }: { orgSlug: string }) {
+  const d = SETARI_GDPR_UI_DICT[useLocale()];
   const [email, setEmail] = useState("");
   const [rezultat, setRezultat] = useState<RezultatCautare | null>(null);
   const [mesaj, setMesaj] = useState<string | null>(null);
@@ -41,7 +45,7 @@ export function GdprClient({ orgSlug }: { orgSlug: string }) {
     startTransition(async () => {
       const r = await exportaPersoanaAction(orgSlug, rezultat.email);
       if (r.error || !r.date) {
-        setEroare(r.error ?? "Exportul a eșuat.");
+        setEroare(r.error ?? d.exportEsuat);
         return;
       }
       const blob = new Blob([JSON.stringify(r.date, null, 2)], { type: "application/json" });
@@ -56,18 +60,16 @@ export function GdprClient({ orgSlug }: { orgSlug: string }) {
 
   function sterge() {
     if (!rezultat) return;
-    if (!window.confirm(`Ștergi/anonimizezi datele asociate cu ${rezultat.email} din sursele de mai jos? Nu se poate anula.`)) return;
+    if (!window.confirm(d.confirma(rezultat.email))) return;
     setEroare(null);
     startTransition(async () => {
       const r = await stergePersoanaAction(orgSlug, rezultat.email);
       if (r.error || !r.rezumat) {
-        setEroare(r.error ?? "Ștergerea a eșuat.");
+        setEroare(r.error ?? d.stergereEsuata);
         return;
       }
       const x = r.rezumat;
-      setMesaj(
-        `Gata: ${x.contacteSterse} contacte șterse, ${x.voluntariStersi} voluntari scoși${x.panouVoluntariSterse ? ` (și ${x.panouVoluntariSterse} din panou)` : ""}, ${x.paginiAnonimizate} pagini și ${x.mesajeAnonimizate} mesaje anonimizate, ${x.contacteMediaAnonimizate} contacte media anonimizate.`,
-      );
+      setMesaj(d.gata(x));
       const nou = await cautaPersoanaAction(orgSlug, rezultat.email);
       if (nou.rezultat) setRezultat(nou.rezultat);
     });
@@ -77,7 +79,7 @@ export function GdprClient({ orgSlug }: { orgSlug: string }) {
     <div className="mt-6">
       <form onSubmit={cauta} className="flex flex-wrap items-end gap-3">
         <label className="flex-1 text-sm font-medium text-ink" style={{ minWidth: 220 }}>
-          Adresa de email a persoanei
+          {d.email}
           <input
             type="email"
             required
@@ -91,7 +93,7 @@ export function GdprClient({ orgSlug }: { orgSlug: string }) {
           disabled={pending}
           className="rounded-lg bg-brand-green px-4 py-2.5 font-medium text-white transition hover:bg-brand-green-hover disabled:opacity-60"
         >
-          Caută
+          {d.cauta}
         </button>
       </form>
 
@@ -100,24 +102,23 @@ export function GdprClient({ orgSlug }: { orgSlug: string }) {
 
       {rezultat && (
         <div className="mt-5 rounded-xl border border-line bg-panel p-5">
-          <p className="text-sm font-medium text-ink">Date găsite pentru {rezultat.email}</p>
+          <p className="text-sm font-medium text-ink">{d.gasite(rezultat.email)}</p>
           <ul className="mt-2">
-            <Rand eticheta="Persoane de contact la companii (CRM Companii)" n={rezultat.contacte} />
-            <Rand eticheta="Voluntari (CRM Voluntari)" n={rezultat.voluntari} />
-            <Rand eticheta="Pagini de campanie create" n={rezultat.paginiCreate} />
-            <Rand eticheta="Mesaje trimise (portal beneficiari)" n={rezultat.mesaje} />
-            <Rand eticheta="Contacte media" n={rezultat.contacteMedia} />
+            <Rand eticheta={d.randuri.contacte} n={rezultat.contacte} />
+            <Rand eticheta={d.randuri.voluntari} n={rezultat.voluntari} />
+            <Rand eticheta={d.randuri.pagini} n={rezultat.paginiCreate} />
+            <Rand eticheta={d.randuri.mesaje} n={rezultat.mesaje} />
+            <Rand eticheta={d.randuri.media} n={rezultat.contacteMedia} />
           </ul>
 
           {(rezultat.donatorId || rezultat.donatii > 0 || rezultat.formulare230 > 0) && (
             <p className="mt-3 rounded-lg bg-panel-2 p-3 text-xs leading-relaxed text-muted">
-              Persoana apare și ca donator ({rezultat.donatii} donații, {rezultat.formulare230} formulare 230). Datele de donator,
-              donațiile și Formularul 230 au evidență contabilă/legală și se gestionează din panoul GDPR al donatorului
+              {d.ceiDonator(rezultat.donatii, rezultat.formulare230)}
               {rezultat.donatorId && (
                 <>
                   {" — "}
                   <Link prefetch={false} href={`/${orgSlug}/crm/donatori/reali/${rezultat.donatorId}`} className="font-medium text-brand-green underline">
-                    deschide profilul
+                    {d.deschideProfil}
                   </Link>
                 </>
               )}
@@ -132,7 +133,7 @@ export function GdprClient({ orgSlug }: { orgSlug: string }) {
               disabled={pending}
               className="rounded-lg border border-line px-4 py-2 text-sm font-medium text-ink transition hover:bg-panel-2 disabled:opacity-60"
             >
-              Exportă datele (JSON)
+              {d.exporta}
             </button>
             <button
               type="button"
@@ -140,7 +141,7 @@ export function GdprClient({ orgSlug }: { orgSlug: string }) {
               disabled={pending || total === 0}
               className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
             >
-              Șterge / anonimizează
+              {d.sterge}
             </button>
           </div>
         </div>

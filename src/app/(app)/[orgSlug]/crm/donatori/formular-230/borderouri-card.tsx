@@ -4,9 +4,11 @@ import { CheckCircle2, Eye, FileCode2, FileSpreadsheet, FileText, FileSignature 
 import { useState } from "react";
 
 import { PROCENT_IMPLICIT, type DateBorderou } from "@/lib/borderou230";
+import { DONATORI_UI5_DICT } from "@/lib/i18n/dictionaries/donatori-ui-5";
 
 import { Card, CardHeader } from "../../components/ui/card";
 import { Dialog } from "../../components/ui/dialog";
+import { useLocale } from "../../lib/locale-context";
 import { listeazaBorderouri, marcheazaBorderouDepus, obtineDateBorderou, type BorderouSumar } from "./borderouri-actions";
 import { descarcaExcelBorderou, descarcaPdfBorderou, descarcaPdfInteligentBorderou, descarcaXmlBorderou } from "./borderou-fisiere";
 
@@ -17,6 +19,7 @@ type Format = "xlsx" | "pdf" | "xml" | "d230";
 // Lista vine de la server (page.tsx) — o acțiune de server nu poate fi apelată la prima randare a unui component client
 // (eroarea React #441), deci nu o apelăm dintr-un efect la montare.
 export function BorderouriCard({ orgSlug, initial }: { orgSlug: string; initial: BorderouSumar[] }) {
+  const t = DONATORI_UI5_DICT[useLocale()].borderouri;
   const [borderouri, setBorderouri] = useState<BorderouSumar[] | null>(initial);
   const [eroare, setEroare] = useState("");
   const [lucru, setLucru] = useState<string | null>(null);
@@ -34,7 +37,7 @@ export function BorderouriCard({ orgSlug, initial }: { orgSlug: string; initial:
       else if (format === "d230") await descarcaPdfInteligentBorderou(date);
       else descarcaXmlBorderou(date);
     } catch (e) {
-      setEroare(e instanceof Error ? e.message : "Nu am putut genera fișierul.");
+      setEroare(e instanceof Error ? e.message : t.nuAmGenerat);
     } finally {
       setLucru(null);
     }
@@ -47,7 +50,7 @@ export function BorderouriCard({ orgSlug, initial }: { orgSlug: string; initial:
     try {
       setPrevizualizare(await obtineDateBorderou(orgSlug, b.beneficiarId, b.an, b.nr));
     } catch (e) {
-      setEroare(e instanceof Error ? e.message : "Nu am putut deschide borderoul.");
+      setEroare(e instanceof Error ? e.message : t.nuAmDeschis);
     } finally {
       setLucru(null);
     }
@@ -60,7 +63,7 @@ export function BorderouriCard({ orgSlug, initial }: { orgSlug: string; initial:
       await marcheazaBorderouDepus(orgSlug, b.beneficiarId, b.an, b.nr, depus);
       setBorderouri(await listeazaBorderouri(orgSlug));
     } catch (e) {
-      setEroare(e instanceof Error ? e.message : "Eroare.");
+      setEroare(e instanceof Error ? e.message : t.eroare);
     } finally {
       setLucru(null);
     }
@@ -71,16 +74,17 @@ export function BorderouriCard({ orgSlug, initial }: { orgSlug: string; initial:
   return (
     <div id="borderouri-anaf" className="scroll-mt-20">
     <Card>
-      <CardHeader title="Borderouri ANAF" subtitle="Se completează automat, câte 50 de formulare pe borderou; după 50, se trece la borderoul următor." />
+      <CardHeader title={t.titlu} subtitle={t.subtitlu} />
       {eroare && <p className="mb-2 text-[13px] text-[var(--ci-red)]">{eroare}</p>}
       <p className="mb-3 rounded-lg bg-[var(--ci-surface-2)] p-2.5 text-[12px] leading-relaxed text-[var(--ci-text-muted)]">
-        <strong className="text-[var(--ci-text)]">PDF inteligent ANAF:</strong> formularul oficial D230 în modul „Entitate nonprofit”, cu entitatea (denumire, CIF, cont/subcont), borderoul și cei max. 50 de contribuabili deja completați.
-        Deschide-l în <strong>Adobe Acrobat Reader</strong> (nu în browser), apasă <strong>Validare</strong>, apoi semnează-l electronic. Când un borderou se umple, următoarele formulare intră automat într-un borderou nou, cu fișierul lui.
+        <strong className="text-[var(--ci-text)]">{t.info1[0]}</strong>
+        {t.info1[1]}
+        {t.info2[0]}<strong>{t.info2[1]}</strong>{t.info2[2]}<strong>{t.info2[3]}</strong>{t.info2[4]}
       </p>
       {borderouri === null ? (
-        <p className="text-[13px] text-[var(--ci-text-muted)]">Se încarcă…</p>
+        <p className="text-[13px] text-[var(--ci-text-muted)]">{t.seIncarca}</p>
       ) : borderouri.length === 0 ? (
-        <p className="text-[13px] text-[var(--ci-text-muted)]">Niciun formular primit încă — borderoul se creează singur la primul formular.</p>
+        <p className="text-[13px] text-[var(--ci-text-muted)]">{t.niciunFormular}</p>
       ) : (
         <div className="space-y-2">
           {borderouri.map((b) => {
@@ -91,32 +95,32 @@ export function BorderouriCard({ orgSlug, initial }: { orgSlug: string; initial:
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="min-w-0">
                     <p className="text-[13px] font-semibold text-[var(--ci-text)]">
-                      Borderou nr. {b.nr} · {b.an} <span className="font-normal text-[var(--ci-text-muted)]">— {b.beneficiarNume}</span>
+                      {t.borderou(b.nr, b.an)} <span className="font-normal text-[var(--ci-text-muted)]">— {b.beneficiarNume}</span>
                     </p>
                     <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[12px] text-[var(--ci-text-muted)]">
                       <span className="ci-tabular">
-                        {b.nrFormulare} / {b.max} formulare
+                        {t.formulare(b.nrFormulare, b.max)}
                       </span>
-                      <span className={plin ? "font-semibold text-[var(--ci-green)]" : "text-[var(--ci-primary)]"}>{plin ? "plin" : `în completare (${b.max - b.nrFormulare} locuri libere)`}</span>
+                      <span className={plin ? "font-semibold text-[var(--ci-green)]" : "text-[var(--ci-primary)]"}>{plin ? t.plin : t.inCompletare(b.max - b.nrFormulare)}</span>
                       {depus && (
                         <span className="inline-flex items-center gap-1 text-[var(--ci-green)]">
-                          <CheckCircle2 className="h-3 w-3" /> depus la ANAF
+                          <CheckCircle2 className="h-3 w-3" /> {t.depusAnaf}
                         </span>
                       )}
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-1.5">
                     <button type="button" className={`${btn} !border-[var(--ci-primary)] !text-[var(--ci-primary)]`} disabled={lucru !== null} onClick={() => vezi(b)}>
-                      <Eye className="h-3.5 w-3.5" /> Vezi borderoul
+                      <Eye className="h-3.5 w-3.5" /> {t.veziBorderoul}
                     </button>
                     <button
                       type="button"
                       className={`${btn} !border-[var(--ci-primary)] !bg-[var(--ci-primary)] !text-white hover:opacity-90`}
                       disabled={lucru !== null}
                       onClick={() => genereaza(b, "d230")}
-                      title="Formularul oficial D230 (PDF inteligent ANAF), deja completat — rămân doar validarea și semnarea"
+                      title={t.pdfTitle}
                     >
-                      <FileSignature className="h-3.5 w-3.5" /> {lucru === cheie(b, "d230") ? "Se pregătește…" : "PDF inteligent ANAF"}
+                      <FileSignature className="h-3.5 w-3.5" /> {lucru === cheie(b, "d230") ? t.sePregateste : t.pdfInteligent}
                     </button>
                     <button type="button" className={btn} disabled={lucru !== null} onClick={() => genereaza(b, "xlsx")}>
                       <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
@@ -124,11 +128,11 @@ export function BorderouriCard({ orgSlug, initial }: { orgSlug: string; initial:
                     <button type="button" className={btn} disabled={lucru !== null} onClick={() => genereaza(b, "pdf")}>
                       <FileText className="h-3.5 w-3.5" /> PDF
                     </button>
-                    <button type="button" className={btn} disabled={lucru !== null} onClick={() => genereaza(b, "xml")} title="Fișier XML în formatul borderoului ANAF">
+                    <button type="button" className={btn} disabled={lucru !== null} onClick={() => genereaza(b, "xml")} title={t.xmlTitle}>
                       <FileCode2 className="h-3.5 w-3.5" /> XML
                     </button>
                     <button type="button" className={btn} disabled={lucru !== null} onClick={() => comutaDepus(b)}>
-                      {depus ? "Scoate «depus»" : "Marchează depus"}
+                      {depus ? t.scoateDepus : t.marcheazaDepus}
                     </button>
                   </div>
                 </div>
@@ -140,28 +144,28 @@ export function BorderouriCard({ orgSlug, initial }: { orgSlug: string; initial:
           })}
         </div>
       )}
-      <Dialog open={previzualizare !== null} onClose={() => setPrevizualizare(null)} title={previzualizare ? `Borderou nr. ${previzualizare.nr} · ${previzualizare.an}` : "Borderou"} width="max-w-6xl">
+      <Dialog open={previzualizare !== null} onClose={() => setPrevizualizare(null)} title={previzualizare ? t.borderou(previzualizare.nr, previzualizare.an) : t.borderouSimplu} width="max-w-6xl">
         {previzualizare && (
           <div className="space-y-3">
             <div className="grid grid-cols-1 gap-x-6 gap-y-1 rounded-lg bg-[var(--ci-surface-2)] p-3 text-[13px] sm:grid-cols-2">
               <p>
-                <span className="text-[var(--ci-text-muted)]">Entitate beneficiară:</span> <strong>{previzualizare.entitate.den}</strong>
+                <span className="text-[var(--ci-text-muted)]">{t.entitate}</span> <strong>{previzualizare.entitate.den}</strong>
               </p>
               <p>
-                <span className="text-[var(--ci-text-muted)]">CUI / CIF:</span> <strong>{previzualizare.entitate.cui || "—"}</strong>
+                <span className="text-[var(--ci-text-muted)]">{t.cui}</span> <strong>{previzualizare.entitate.cui || "—"}</strong>
               </p>
               <p>
-                <span className="text-[var(--ci-text-muted)]">IBAN:</span> <strong className="break-all">{previzualizare.entitate.iban || "—"}</strong>
+                <span className="text-[var(--ci-text-muted)]">{t.iban}</span> <strong className="break-all">{previzualizare.entitate.iban || "—"}</strong>
               </p>
               <p>
-                <span className="text-[var(--ci-text-muted)]">Data borderoului:</span> <strong>{previzualizare.dataBorderou}</strong> · procent {PROCENT_IMPLICIT}% · <strong>{previzualizare.declaratii.length}</strong> declarații
+                <span className="text-[var(--ci-text-muted)]">{t.dataBorderou}</span> <strong>{previzualizare.dataBorderou}</strong>{t.procent(PROCENT_IMPLICIT)}<strong>{previzualizare.declaratii.length}</strong>{t.declaratii}
               </p>
             </div>
             <div className="max-h-[60vh] overflow-auto rounded-lg border border-[var(--ci-border)]">
               <table className="w-full min-w-[900px] text-[12px]">
                 <thead className="sticky top-0 bg-[var(--ci-surface-2)] text-left text-[11px] tracking-wide text-[var(--ci-text-muted)] uppercase">
                   <tr>
-                    {["Nr.", "Nume", "Ini.", "Prenume", "CNP", "Adresă", "Telefon", "Email", "2 ani", "Acord", "Data"].map((h) => (
+                    {t.coloane.map((h) => (
                       <th key={h} className="px-2.5 py-2 font-semibold">
                         {h}
                       </th>
@@ -179,8 +183,8 @@ export function BorderouriCard({ orgSlug, initial }: { orgSlug: string; initial:
                       <td className="px-2.5 py-1.5">{x.adresa || "—"}</td>
                       <td className="px-2.5 py-1.5 whitespace-nowrap">{x.telefon || "—"}</td>
                       <td className="px-2.5 py-1.5 break-all">{x.email}</td>
-                      <td className="px-2.5 py-1.5">{x.doiAni ? "Da" : "Nu"}</td>
-                      <td className="px-2.5 py-1.5">{x.acord ? "Da" : "Nu"}</td>
+                      <td className="px-2.5 py-1.5">{x.doiAni ? t.da : t.nu}</td>
+                      <td className="px-2.5 py-1.5">{x.acord ? t.da : t.nu}</td>
                       <td className="px-2.5 py-1.5 whitespace-nowrap">{x.dataCompletarii}</td>
                     </tr>
                   ))}
@@ -188,8 +192,8 @@ export function BorderouriCard({ orgSlug, initial }: { orgSlug: string; initial:
               </table>
             </div>
             <div className="flex flex-wrap justify-end gap-2">
-              <button type="button" className={`${btn} !border-[var(--ci-primary)] !text-[var(--ci-primary)]`} onClick={() => descarcaPdfInteligentBorderou(previzualizare).catch((e) => setEroare(e instanceof Error ? e.message : "Nu am putut genera PDF-ul inteligent."))}>
-                <FileSignature className="h-3.5 w-3.5" /> PDF inteligent ANAF
+              <button type="button" className={`${btn} !border-[var(--ci-primary)] !text-[var(--ci-primary)]`} onClick={() => descarcaPdfInteligentBorderou(previzualizare).catch((e) => setEroare(e instanceof Error ? e.message : t.nuAmGeneratPdf))}>
+                <FileSignature className="h-3.5 w-3.5" /> {t.pdfInteligent}
               </button>
               <button type="button" className={btn} onClick={() => descarcaExcelBorderou(previzualizare)}>
                 <FileSpreadsheet className="h-3.5 w-3.5" /> Excel

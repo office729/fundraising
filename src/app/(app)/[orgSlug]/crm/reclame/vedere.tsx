@@ -4,22 +4,9 @@ import { ChevronDown, Download, Info, Megaphone, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 
+import { RECLAME_UI_DICT } from "@/lib/i18n/dictionaries/reclame-ui";
 import { MODEL_ATRIBUIRE } from "@/lib/reclame/atribuire";
-import {
-  calculeazaIndicatori,
-  esteEsantionSuficient,
-  formatLei,
-  formatNumar,
-  formatProcent,
-  formatRoas,
-  PRAG_MINIM_DONATII,
-  PRESETURI,
-  propozitieRezumat,
-  rata,
-  variatie,
-  type Indicatori,
-} from "@/lib/reclame/calcule";
-import { DICTIONAR_METRICI } from "@/lib/reclame/dictionar";
+import { calculeazaIndicatori, esteEsantionSuficient, PRAG_MINIM_DONATII, PRESETURI, rata, variatie, type Indicatori } from "@/lib/reclame/calcule";
 import { baniInLei, construiesteCsv } from "@/lib/reclame/export-csv";
 import type { LinieRaport } from "@/lib/reclame/raport";
 
@@ -30,40 +17,44 @@ import { Dialog } from "../components/ui/dialog";
 import { Input, Label, Select } from "../components/ui/input";
 import { EmptyState } from "../components/ui/states";
 import { Tabs } from "../components/ui/tabs";
+import { useLocale } from "../lib/locale-context";
 
 import { salveazaLegaturaAction, type DateReclame } from "./actions";
+import { formatariReclame, type FormatariReclame } from "./format";
 import { GraficReclame } from "./grafic";
 import { TabConexiuni } from "./tab-conexiuni";
 import { TabImport } from "./tab-import";
 import { TabGhid } from "./tab-ghid";
 import { TabLinkuri } from "./tab-linkuri";
-
-const dataRo = (iso: string) => new Date(`${iso}T00:00:00Z`).toLocaleDateString("ro-RO", { timeZone: "UTC", day: "numeric", month: "short", year: "numeric" });
-const dataOraRo = (iso: string) => new Date(iso).toLocaleString("ro-RO", { timeZone: "Europe/Bucharest", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+import { traduLib } from "./texte-lib";
 
 type Bun = "sus" | "jos" | "neutru"; // ce sens al variației e favorabil
 
 function Variatie({ curent, anterior, bun }: { curent: number | null; anterior: number | null; bun: Bun }) {
+  const locale = useLocale();
+  const t = RECLAME_UI_DICT[locale].variatie;
+  const { procent: formatProcent } = formatariReclame(locale);
   const v = variatie(curent, anterior);
-  if (!v) return <span className="text-[12px] text-[var(--ci-text-faint)]">fără comparație</span>;
-  if (v.sens === "egal") return <span className="text-[12px] text-[var(--ci-text-muted)]">neschimbat față de perioada anterioară</span>;
+  if (!v) return <span className="text-[12px] text-[var(--ci-text-faint)]">{t.faraComparatie}</span>;
+  if (v.sens === "egal") return <span className="text-[12px] text-[var(--ci-text-muted)]">{t.neschimbat}</span>;
   const favorabil = bun === "neutru" ? null : bun === v.sens;
   const clasa = favorabil === null ? "text-[var(--ci-text-muted)]" : favorabil ? "text-[var(--ci-green)]" : "text-[var(--ci-red)]";
-  const text = `${v.sens === "sus" ? "mai mult" : "mai puțin"} cu ${formatProcent(Math.abs(v.procent))}`;
+  const text = `${v.sens === "sus" ? t.maiMult : t.maiPutin} ${t.cu} ${formatProcent(Math.abs(v.procent))}`;
   return (
-    <span className={`text-[12px] font-medium ${clasa}`} aria-label={`${text} față de perioada anterioară`}>
-      {v.sens === "sus" ? "▲" : "▼"} {formatProcent(Math.abs(v.procent))} <span className="font-normal text-[var(--ci-text-muted)]">față de perioada anterioară</span>
+    <span className={`text-[12px] font-medium ${clasa}`} aria-label={`${text} ${t.fataDe}`}>
+      {v.sens === "sus" ? "▲" : "▼"} {formatProcent(Math.abs(v.procent))} <span className="font-normal text-[var(--ci-text-muted)]">{t.fataDe}</span>
     </span>
   );
 }
 
 function Kpi({ titlu, valoare, explicatie, children, definitie }: { titlu: string; valoare: string; explicatie: string; children?: React.ReactNode; definitie?: string }) {
+  const cumSeCalculeaza = RECLAME_UI_DICT[useLocale()].cumSeCalculeaza;
   return (
     <Card>
       <div className="flex items-start justify-between gap-2">
         <p className="text-[13px] font-medium text-[var(--ci-text-muted)]">{titlu}</p>
         {definitie && (
-          <span title={definitie} aria-label={`Cum se calculează: ${definitie}`} role="img" className="cursor-help text-[var(--ci-text-faint)]">
+          <span title={definitie} aria-label={cumSeCalculeaza(definitie)} role="img" className="cursor-help text-[var(--ci-text-faint)]">
             <Info className="h-3.5 w-3.5" />
           </span>
         )}
@@ -75,18 +66,30 @@ function Kpi({ titlu, valoare, explicatie, children, definitie }: { titlu: strin
   );
 }
 
-const def = (cheie: string) => DICTIONAR_METRICI.find((d) => d.cheie === cheie)?.formula;
+function concluzie(l: LinieRaport, ind: Indicatori, t: (typeof RECLAME_UI_DICT)["ro"]["concluzie"]): { text: string; ton: "neutral" | "green" | "amber" } {
+  if (l.totaluri.cheltuieliBani === 0) return { text: t.faraCheltuiala, ton: "neutral" };
+  if (!esteEsantionSuficient(l.totaluri.donatii)) return { text: t.dateInsuficiente, ton: "neutral" };
+  if (ind.roasNet !== null && ind.roasNet >= 1) return { text: t.acoperaCostul, ton: "green" };
+  return { text: t.subCost, ton: "amber" };
+}
 
-function concluzie(l: LinieRaport, ind: Indicatori): { text: string; ton: "neutral" | "green" | "amber" } {
-  if (l.totaluri.cheltuieliBani === 0) return { text: "Fără cheltuială", ton: "neutral" };
-  if (!esteEsantionSuficient(l.totaluri.donatii)) return { text: "Date insuficiente", ton: "neutral" };
-  if (ind.roasNet !== null && ind.roasNet >= 1) return { text: "Acoperă costul", ton: "green" };
-  return { text: "Sub costul reclamei", ton: "amber" };
+// Propoziția de rezumat (aceeași logică ca propozitieRezumat din src/lib/reclame/calcule.ts), în limba platformei.
+function propozitieRezumat(d: (typeof RECLAME_UI_DICT)["ro"]["propozitie"], f: FormatariReclame, t: LinieRaport["totaluri"], ind: Indicatori, cuDateIncomplete: boolean): string {
+  if (t.cheltuieliBani === 0 && t.donatii === 0) return d.gol;
+  if (t.cheltuieliBani === 0) return d.faraCheltuieli;
+  const baza = ind.roasNet === null ? "" : d.baza(f.decimal(ind.roasNet));
+  const limita = cuDateIncomplete ? d.incomplet : "";
+  return `${baza}${limita}`.trim();
 }
 
 type Sortare = "cheltuieli" | "donatii" | "net" | "roas";
 
 export function ReclameVedere({ orgSlug, date }: { orgSlug: string; date: DateReclame }) {
+  const locale = useLocale();
+  const dict = RECLAME_UI_DICT[locale];
+  const f = formatariReclame(locale);
+  const { lei: formatLei, numar: formatNumar, roas: formatRoas, procent: formatProcent, zi: dataRo, dataOra: dataOraRo } = f;
+  const def = (cheie: string) => dict.ghid.metrici[cheie]?.formula;
   const router = useRouter();
   const [pending, start] = useTransition();
   const { perioada, raport, anterior } = date;
@@ -138,7 +141,7 @@ export function ReclameVedere({ orgSlug, date }: { orgSlug: string; date: DateRe
         moneda: "RON",
         model: MODEL_ATRIBUIRE,
         fereastraZile: date.fereastraZile,
-        actualizat: date.calitate.surse.map((s) => `${date.etichetePlatforme[s.platforma] ?? s.platforma}: ${s.ultimaZi ?? "—"}`).join("; ") || "fără costuri importate",
+        actualizat: date.calitate.surse.map((s) => `${date.etichetePlatforme[s.platforma] ?? s.platforma}: ${s.ultimaZi ?? "—"}`).join("; ") || "fără costuri importate", // conținutul fișierului CSV exportat rămâne în română
       },
       linii.map((l) => {
         const i = calculeazaIndicatori(l.totaluri);
@@ -164,7 +167,7 @@ export function ReclameVedere({ orgSlug, date }: { orgSlug: string; date: DateRe
     URL.revokeObjectURL(url);
   }
 
-  const etichetaDonatii = net ? "Donații nete atribuite" : "Donații brute atribuite";
+  const etichetaDonatii = net ? dict.evolutie.donatiiNete : dict.evolutie.donatiiBrute;
   const ultimaActualizare = date.calitate.surse.length ? date.calitate.surse.map((s) => s.actualizatLa).filter(Boolean).sort().at(-1) : null;
 
   return (
@@ -176,13 +179,13 @@ export function ReclameVedere({ orgSlug, date }: { orgSlug: string; date: DateRe
             <Megaphone className="h-5 w-5" />
           </span>
           <div>
-            <h1 className="ci-display text-xl font-bold text-[var(--ci-text)]">Performanța reclamelor</h1>
-            <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">Vezi cât investim și ce donații sunt atribuite reclamelor.</p>
+            <h1 className="ci-display text-xl font-bold text-[var(--ci-text)]">{dict.page.title}</h1>
+            <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">{dict.antet.subtitle}</p>
           </div>
         </div>
         <div className="flex flex-wrap items-end gap-2.5">
           <div>
-            <Label htmlFor="rc-preset">Perioada</Label>
+            <Label htmlFor="rc-preset">{dict.antet.perioada}</Label>
             <Select
               id="rc-preset"
               value={preset}
@@ -193,7 +196,7 @@ export function ReclameVedere({ orgSlug, date }: { orgSlug: string; date: DateRe
             >
               {PRESETURI.map((p) => (
                 <option key={p.cheie} value={p.cheie}>
-                  {p.eticheta}
+                  {dict.presetari[p.cheie] ?? p.eticheta}
                 </option>
               ))}
             </Select>
@@ -201,20 +204,20 @@ export function ReclameVedere({ orgSlug, date }: { orgSlug: string; date: DateRe
           {preset === "personalizat" && (
             <>
               <div>
-                <Label htmlFor="rc-de">De la</Label>
+                <Label htmlFor="rc-de">{dict.antet.deLa}</Label>
                 <Input id="rc-de" type="date" value={de} max={pana} onChange={(e) => setDe(e.target.value)} />
               </div>
               <div>
-                <Label htmlFor="rc-pana">Până la</Label>
+                <Label htmlFor="rc-pana">{dict.antet.panaLa}</Label>
                 <Input id="rc-pana" type="date" value={pana} min={de} onChange={(e) => setPana(e.target.value)} />
               </div>
               <Button variant="primary" disabled={pending || !de || !pana || de > pana} onClick={() => navigheaza({ preset: "personalizat" })}>
-                Aplică
+                {dict.antet.aplica}
               </Button>
             </>
           )}
           <div>
-            <Label htmlFor="rc-fer">Fereastra de atribuire</Label>
+            <Label htmlFor="rc-fer">{dict.antet.fereastra}</Label>
             <Select
               id="rc-fer"
               value={fer}
@@ -223,30 +226,30 @@ export function ReclameVedere({ orgSlug, date }: { orgSlug: string; date: DateRe
                 navigheaza({ fer: e.target.value });
               }}
             >
-              <option value="1">1 zi</option>
-              <option value="7">7 zile</option>
-              <option value="30">30 de zile</option>
+              <option value="1">{dict.antet.ferZi}</option>
+              <option value="7">{dict.antet.ferZile7}</option>
+              <option value="30">{dict.antet.ferZile30}</option>
             </Select>
           </div>
           <Button onClick={exporta} disabled={linii.length === 0}>
-            <Download className="h-3.5 w-3.5" /> Exportă
+            <Download className="h-3.5 w-3.5" /> {dict.antet.exporta}
           </Button>
         </div>
       </div>
 
       <p className="text-[12.5px] text-[var(--ci-text-muted)]">
-        {dataRo(perioada.de)} – {dataRo(perioada.pana)} · comparat cu {dataRo(perioada.anterioara.de)} – {dataRo(perioada.anterioara.pana)} · model: ultimul clic eligibil, fereastră de {date.fereastraZile} {date.fereastraZile === 1 ? "zi" : "zile"} · lei (RON), ora României ·{" "}
-        {ultimaActualizare ? `costuri actualizate ${dataOraRo(ultimaActualizare)}` : "costuri neimportate"}
+        {dataRo(perioada.de)} – {dataRo(perioada.pana)} · {dict.sumar.comparatCu} {dataRo(perioada.anterioara.de)} – {dataRo(perioada.anterioara.pana)} · {dict.sumar.model} {date.fereastraZile} {date.fereastraZile === 1 ? dict.sumar.zi : dict.sumar.zile} · {dict.sumar.monedaFus} ·{" "}
+        {ultimaActualizare ? dict.sumar.costuriActualizate(dataOraRo(ultimaActualizare)) : dict.sumar.costuriNeimportate}
       </p>
-      {perioada.ziuaInCurs && <p className="rounded-[var(--ci-radius-btn)] bg-[var(--ci-amber-soft)] px-3 py-2 text-[13px] text-[var(--ci-text)]">Perioada include ziua în curs, care e incompletă: costurile și donațiile ei se completează în următoarele ore.</p>}
+      {perioada.ziuaInCurs && <p className="rounded-[var(--ci-radius-btn)] bg-[var(--ci-amber-soft)] px-3 py-2 text-[13px] text-[var(--ci-text)]">{dict.sumar.ziuaInCurs}</p>}
 
       <Tabs
         tabs={[
-          { key: "rezumat", label: "Rezumat" },
-          { key: "linkuri", label: "Linkuri UTM" },
-          { key: "conexiuni", label: "Conexiuni" },
-          { key: "import", label: "Import costuri" },
-          { key: "instructiuni", label: "Ghid de pornire" },
+          { key: "rezumat", label: dict.taburi.rezumat },
+          { key: "linkuri", label: dict.taburi.linkuri },
+          { key: "conexiuni", label: dict.taburi.conexiuni },
+          { key: "import", label: dict.taburi.import },
+          { key: "instructiuni", label: dict.taburi.instructiuni },
         ]}
       >
         {(activ) => (
@@ -256,56 +259,56 @@ export function ReclameVedere({ orgSlug, date }: { orgSlug: string; date: DateRe
               {fara ? (
                 <EmptyState
                   icon={Megaphone}
-                  title="Nu există încă date despre reclame"
-                  description="Creează linkuri cu coduri UTM pentru reclamele tale, apoi importă costurile din Ads Manager. Donațiile făcute prin aceste linkuri apar aici după confirmarea plății."
+                  title={dict.gol.title}
+                  description={dict.gol.description}
                 />
               ) : (
                 <>
                   {/* B. Rezumatul principal */}
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    <Kpi titlu="Cheltuieli reclame" valoare={formatLei(t.cheltuieliBani, 0)} explicatie="Costul raportat sau importat" definitie={def("cheltuieli")}>
+                    <Kpi titlu={dict.kpi.cheltuieli} valoare={formatLei(t.cheltuieliBani, 0)} explicatie={dict.kpi.cheltuieliExpl} definitie={def("cheltuieli")}>
                       <Variatie curent={t.cheltuieliBani} anterior={anterior.cheltuieliBani} bun="neutru" />
                     </Kpi>
-                    <Kpi titlu="Donații confirmate atribuite reclamelor" valoare={formatNumar(t.donatii)} explicatie={`${formatNumar(t.donatoriNoi)} donatori noi · plăți confirmate de procesator`} definitie={def("donatii")}>
+                    <Kpi titlu={dict.kpi.donatii} valoare={formatNumar(t.donatii)} explicatie={dict.kpi.donatiiExpl(formatNumar(t.donatoriNoi))} definitie={def("donatii")}>
                       <Variatie curent={t.donatii} anterior={anterior.donatii} bun="sus" />
                     </Kpi>
-                    <Kpi titlu="Donații nete atribuite" valoare={formatLei(ind.netBani, 0)} explicatie={`${formatLei(t.brutBani, 0)} brut, minus ${formatLei(t.rambursatBani, 0)} rambursat`} definitie={def("net")}>
+                    <Kpi titlu={dict.kpi.net} valoare={formatLei(ind.netBani, 0)} explicatie={dict.kpi.netExpl(formatLei(t.brutBani, 0), formatLei(t.rambursatBani, 0))} definitie={def("net")}>
                       <Variatie curent={ind.netBani} anterior={indAnt.netBani} bun="sus" />
                     </Kpi>
-                    <Kpi titlu="Cost per donație" valoare={formatLei(ind.costPerDonatieBani)} explicatie={ind.costPerDonatieBani === null ? "Apare când există donații atribuite" : `Cost per donator nou: ${formatLei(ind.costPerDonatorNouBani)}`} definitie={def("cpa")}>
+                    <Kpi titlu={dict.kpi.costDonatie} valoare={formatLei(ind.costPerDonatieBani)} explicatie={ind.costPerDonatieBani === null ? dict.kpi.costDonatieFara : dict.kpi.costDonatorNou(formatLei(ind.costPerDonatorNouBani))} definitie={def("cpa")}>
                       <Variatie curent={ind.costPerDonatieBani} anterior={indAnt.costPerDonatieBani} bun="jos" />
                     </Kpi>
-                    <Kpi titlu="Lei donați la 1 leu cheltuit (ROAS net)" valoare={formatRoas(ind.roasNet)} explicatie={`ROAS brut ${formatRoas(ind.roasBrut)}`} definitie={def("roas-net")}>
+                    <Kpi titlu={dict.kpi.roasNet} valoare={formatRoas(ind.roasNet)} explicatie={dict.kpi.roasBrut(formatRoas(ind.roasBrut))} definitie={def("roas-net")}>
                       <Variatie curent={ind.roasNet} anterior={indAnt.roasNet} bun="sus" />
                     </Kpi>
-                    <Kpi titlu="Rămas după reclame" valoare={formatLei(ind.ramasBani, 0)} explicatie="Net minus cheltuieli; nu e profit" definitie={def("ramas")}>
+                    <Kpi titlu={dict.kpi.ramas} valoare={formatLei(ind.ramasBani, 0)} explicatie={dict.kpi.ramasExpl} definitie={def("ramas")}>
                       <Variatie curent={ind.ramasBani} anterior={indAnt.ramasBani} bun="sus" />
                     </Kpi>
                   </div>
-                  <p className="text-[14px] text-[var(--ci-text)]">{propozitieRezumat(t, ind, dateIncomplete)}</p>
+                  <p className="text-[14px] text-[var(--ci-text)]">{propozitieRezumat(dict.propozitie, f, t, ind, dateIncomplete)}</p>
 
                   {/* C. Evoluție și comparație între platforme */}
                   <div className="grid gap-5 lg:grid-cols-[1.6fr_1fr]">
                     <Card>
                       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                        <h2 className="text-[15px] font-bold text-[var(--ci-text)]">Evoluție pe zile</h2>
-                        <div role="group" aria-label="Valoarea donațiilor" className="inline-flex overflow-hidden rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] text-[12.5px]">
+                        <h2 className="text-[15px] font-bold text-[var(--ci-text)]">{dict.evolutie.title}</h2>
+                        <div role="group" aria-label={dict.evolutie.valoareaDonatiilor} className="inline-flex overflow-hidden rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] text-[12.5px]">
                           <button type="button" aria-pressed={!net} onClick={() => setNet(false)} className={`px-3 py-1.5 ${!net ? "bg-[var(--ci-primary)] text-white" : "bg-[var(--ci-surface)] text-[var(--ci-text)]"}`}>
-                            Brut
+                            {dict.evolutie.brut}
                           </button>
                           <button type="button" aria-pressed={net} onClick={() => setNet(true)} className={`px-3 py-1.5 ${net ? "bg-[var(--ci-primary)] text-white" : "bg-[var(--ci-surface)] text-[var(--ci-text)]"}`}>
-                            Net
+                            {dict.evolutie.net}
                           </button>
                         </div>
                       </div>
                       <GraficReclame date={grafic} etichetaDonatii={etichetaDonatii} />
                     </Card>
                     <Card>
-                      <h2 className="text-[15px] font-bold text-[var(--ci-text)]">Pe platforme</h2>
-                      <p className="text-[12.5px] text-[var(--ci-text-muted)]">Apasă o platformă ca să filtrezi tabelul de campanii.</p>
+                      <h2 className="text-[15px] font-bold text-[var(--ci-text)]">{dict.pePlatforme.title}</h2>
+                      <p className="text-[12.5px] text-[var(--ci-text-muted)]">{dict.pePlatforme.hint}</p>
                       <div className="mt-3 space-y-2">
                         {raport.pePlatforma.length === 0 ? (
-                          <p className="text-[13px] text-[var(--ci-text-muted)]">Nicio platformă cu date în perioadă.</p>
+                          <p className="text-[13px] text-[var(--ci-text-muted)]">{dict.pePlatforme.nimic}</p>
                         ) : (
                           raport.pePlatforma.map((p) => {
                             const i = calculeazaIndicatori(p.totaluri);
@@ -323,13 +326,13 @@ export function ReclameVedere({ orgSlug, date }: { orgSlug: string; date: DateRe
                                   <span className="ci-tabular text-[13px]">{formatRoas(i.roasNet)}</span>
                                 </span>
                                 <span className="ci-tabular mt-0.5 block text-[12px] text-[var(--ci-text-muted)]">
-                                  {formatLei(p.totaluri.cheltuieliBani, 0)} cheltuiți · {formatNumar(p.totaluri.donatii)} donații · {formatLei(i.netBani, 0)} net
+                                  {formatLei(p.totaluri.cheltuieliBani, 0)} {dict.pePlatforme.cheltuiti} · {formatNumar(p.totaluri.donatii)} {dict.pePlatforme.donatii} · {formatLei(i.netBani, 0)} {dict.pePlatforme.net}
                                 </span>
                                 {raport.pePlasament.filter((x) => x.platforma === p.platforma).length > 1 && (
                                   <span className="ci-tabular mt-1 block text-[11.5px] text-[var(--ci-text-muted)]">
                                     {raport.pePlasament
                                       .filter((x) => x.platforma === p.platforma)
-                                      .map((x) => `${x.eticheta}: ${formatLei(x.totaluri.cheltuieliBani, 0)}, ${formatNumar(x.totaluri.donatii)} donații`)
+                                      .map((x) => `${traduLib(locale, x.eticheta)}: ${formatLei(x.totaluri.cheltuieliBani, 0)}, ${formatNumar(x.totaluri.donatii)} ${dict.pePlatforme.donatii}`)
                                       .join(" · ")}
                                   </span>
                                 )}
@@ -345,57 +348,57 @@ export function ReclameVedere({ orgSlug, date }: { orgSlug: string; date: DateRe
                   <Card padded={false}>
                     <div className="flex flex-wrap items-end justify-between gap-3 p-4 pb-3">
                       <div>
-                        <h2 className="text-[15px] font-bold text-[var(--ci-text)]">Campanii</h2>
+                        <h2 className="text-[15px] font-bold text-[var(--ci-text)]">{dict.tabel.title}</h2>
                         {platformaFiltru && (
                           <button type="button" onClick={() => setPlatformaFiltru(null)} className="text-[12.5px] font-medium text-[var(--ci-primary)] hover:underline">
-                            Filtru: {date.etichetePlatforme[platformaFiltru] ?? platformaFiltru} · șterge filtrul
+                            {dict.tabel.filtru(date.etichetePlatforme[platformaFiltru] ?? platformaFiltru)}
                           </button>
                         )}
                       </div>
                       <div className="flex flex-wrap items-end gap-2.5">
                         <div className="w-56">
-                          <Label htmlFor="rc-cauta">Caută</Label>
-                          <Input id="rc-cauta" icon={<Search className="h-3.5 w-3.5" />} value={cautare} onChange={(e) => setCautare(e.target.value)} placeholder="Campanie sau cod UTM" />
+                          <Label htmlFor="rc-cauta">{dict.tabel.cauta}</Label>
+                          <Input id="rc-cauta" icon={<Search className="h-3.5 w-3.5" />} value={cautare} onChange={(e) => setCautare(e.target.value)} placeholder={dict.tabel.placeholderCauta} />
                         </div>
                         <div>
-                          <Label htmlFor="rc-sort">Sortează după</Label>
+                          <Label htmlFor="rc-sort">{dict.tabel.sorteaza}</Label>
                           <Select id="rc-sort" value={sortare} onChange={(e) => setSortare(e.target.value as Sortare)}>
-                            <option value="cheltuieli">Cheltuieli</option>
-                            <option value="donatii">Număr de donații</option>
-                            <option value="net">Donații nete</option>
-                            <option value="roas">ROAS net</option>
+                            <option value="cheltuieli">{dict.tabel.sortCheltuieli}</option>
+                            <option value="donatii">{dict.tabel.sortDonatii}</option>
+                            <option value="net">{dict.tabel.sortNet}</option>
+                            <option value="roas">{dict.tabel.sortRoas}</option>
                           </Select>
                         </div>
                       </div>
                     </div>
                     {linii.length === 0 ? (
-                      <p className="px-4 pb-5 text-[13px] text-[var(--ci-text-muted)]">Nicio campanie în această selecție.</p>
+                      <p className="px-4 pb-5 text-[13px] text-[var(--ci-text-muted)]">{dict.tabel.gol}</p>
                     ) : (
                       <div className="overflow-x-auto">
                         <table className="w-full min-w-[760px] text-left text-[13px]">
                           <thead className="bg-[var(--ci-surface-2)] text-[11.5px] tracking-wide text-[var(--ci-text-muted)] uppercase">
                             <tr>
-                              <th className="px-4 py-2 font-semibold">Campanie</th>
-                              <th className="px-3 py-2 font-semibold">Platformă</th>
-                              <th className="px-3 py-2 text-right font-semibold">Cheltuieli</th>
-                              <th className="px-3 py-2 text-right font-semibold">Donații</th>
-                              <th className="px-3 py-2 text-right font-semibold">Donații nete</th>
-                              <th className="px-3 py-2 text-right font-semibold">Cost/donație</th>
-                              <th className="px-3 py-2 text-right font-semibold">ROAS net</th>
-                              <th className="px-3 py-2 font-semibold">Concluzie</th>
+                              <th className="px-4 py-2 font-semibold">{dict.tabel.campanie}</th>
+                              <th className="px-3 py-2 font-semibold">{dict.tabel.platforma}</th>
+                              <th className="px-3 py-2 text-right font-semibold">{dict.tabel.cheltuieli}</th>
+                              <th className="px-3 py-2 text-right font-semibold">{dict.tabel.donatii}</th>
+                              <th className="px-3 py-2 text-right font-semibold">{dict.tabel.donatiiNete}</th>
+                              <th className="px-3 py-2 text-right font-semibold">{dict.tabel.costDonatie}</th>
+                              <th className="px-3 py-2 text-right font-semibold">{dict.tabel.roasNet}</th>
+                              <th className="px-3 py-2 font-semibold">{dict.tabel.concluzie}</th>
                             </tr>
                           </thead>
                           <tbody>
                             {linii.map((l) => {
                               const i = calculeazaIndicatori(l.totaluri);
-                              const c = concluzie(l, i);
+                              const c = concluzie(l, i, dict.concluzie);
                               return (
                                 <tr key={l.cheie} className="cursor-pointer border-t border-[var(--ci-border)] hover:bg-[var(--ci-surface-2)]" onClick={() => setDetaliu(l)}>
                                   <td className="px-4 py-2.5">
                                     <button type="button" onClick={(e) => { e.stopPropagation(); setDetaliu(l); }} className="text-left font-semibold text-[var(--ci-text)] hover:underline">
-                                      {l.eticheta}
+                                      {traduLib(locale, l.eticheta)}
                                     </button>
-                                    <span className="block text-[11.5px] text-[var(--ci-text-muted)]">{l.utmCampanie ?? "fără cod UTM"}{!l.legata && " · nelegată"}</span>
+                                    <span className="block text-[11.5px] text-[var(--ci-text-muted)]">{l.utmCampanie ?? dict.tabel.faraCod}{!l.legata && dict.tabel.nelegata}</span>
                                   </td>
                                   <td className="px-3 py-2.5">{date.etichetePlatforme[l.platforma] ?? l.platforma}</td>
                                   <td className="ci-tabular px-3 py-2.5 text-right">{formatLei(l.totaluri.cheltuieliBani, 0)}</td>
@@ -416,36 +419,36 @@ export function ReclameVedere({ orgSlug, date }: { orgSlug: string; date: DateRe
                       </div>
                     )}
                     <p className="border-t border-[var(--ci-border)] px-4 py-2.5 text-[12px] text-[var(--ci-text-muted)]">
-                      Concluzia apare doar cu cel puțin {PRAG_MINIM_DONATII} donații atribuite; sub prag cifrele variază prea mult de la o donație la alta ca să spună ceva. Nu sugerăm creșteri de buget.
+                      {dict.tabel.nota(PRAG_MINIM_DONATII)}
                     </p>
                   </Card>
 
                   {/* E. Parcursul până la donație */}
                   <Card>
-                    <h2 className="text-[15px] font-bold text-[var(--ci-text)]">Parcursul până la donație</h2>
-                    <p className="text-[12.5px] text-[var(--ci-text-muted)]">Doar traficul din campanii legate de un cod UTM. Vizitatorii se numără pe zi, fără cookie-uri, deci pașii nu sunt o cohortă strictă.</p>
+                    <h2 className="text-[15px] font-bold text-[var(--ci-text)]">{dict.parcurs.title}</h2>
+                    <p className="text-[12.5px] text-[var(--ci-text-muted)]">{dict.parcurs.subtitle}</p>
                     <ol className="mt-3 grid gap-3 sm:grid-cols-4">
                       {[
-                        { n: "Vizitatori", v: date.parcurs.vizitatori, r: null as number | null },
-                        { n: "Au deschis formularul", v: date.parcurs.deschideri, r: rata(date.parcurs.deschideri, date.parcurs.vizitatori) },
-                        { n: "Au început o donație", v: date.parcurs.incercari, r: rata(date.parcurs.incercari, date.parcurs.deschideri) },
-                        { n: "Plată confirmată", v: date.parcurs.confirmate, r: rata(date.parcurs.confirmate, date.parcurs.incercari) },
+                        { n: dict.parcurs.vizitatori, v: date.parcurs.vizitatori, r: null as number | null },
+                        { n: dict.parcurs.deschis, v: date.parcurs.deschideri, r: rata(date.parcurs.deschideri, date.parcurs.vizitatori) },
+                        { n: dict.parcurs.inceput, v: date.parcurs.incercari, r: rata(date.parcurs.incercari, date.parcurs.deschideri) },
+                        { n: dict.parcurs.confirmata, v: date.parcurs.confirmate, r: rata(date.parcurs.confirmate, date.parcurs.incercari) },
                       ].map((p) => (
                         <li key={p.n} className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-3 py-2.5">
                           <p className="text-[12px] text-[var(--ci-text-muted)]">{p.n}</p>
                           <p className="ci-display ci-tabular text-[22px] font-bold text-[var(--ci-text)]">{formatNumar(p.v)}</p>
-                          <p className="text-[11.5px] text-[var(--ci-text-muted)]">{p.r === null ? " " : `${formatProcent(p.r)} din pasul anterior`}</p>
+                          <p className="text-[11.5px] text-[var(--ci-text-muted)]">{p.r === null ? " " : `${formatProcent(p.r)} ${dict.parcurs.dinPasulAnterior}`}</p>
                         </li>
                       ))}
                     </ol>
-                    {date.parcurs.vizitatori === 0 && <p className="mt-2 text-[12.5px] text-[var(--ci-text-muted)]">Nu există trafic măsurat din campanii legate. Legarea unei campanii de un cod UTM se face la import.</p>}
+                    {date.parcurs.vizitatori === 0 && <p className="mt-2 text-[12.5px] text-[var(--ci-text-muted)]">{dict.parcurs.faraTrafic}</p>}
                   </Card>
 
                   {date.reinnoiri.abonamente > 0 && (
                     <Card>
-                      <h2 className="text-[15px] font-bold text-[var(--ci-text)]">Abonamente atribuite</h2>
+                      <h2 className="text-[15px] font-bold text-[var(--ci-text)]">{dict.abonamente.title}</h2>
                       <p className="mt-1 text-[13px] text-[var(--ci-text-muted)]">
-                        {date.reinnoiri.abonamente} {date.reinnoiri.abonamente === 1 ? "abonament lunar atribuit" : "abonamente lunare atribuite"} reclamelor; reînnoirile încasate după prima plată: <strong className="ci-tabular text-[var(--ci-text)]">{formatLei(date.reinnoiri.incasatBani, 0)}</strong>. Nu sunt incluse în indicatorii de mai sus.
+                        {date.reinnoiri.abonamente} {date.reinnoiri.abonamente === 1 ? dict.abonamente.unul : dict.abonamente.mai} {dict.abonamente.mijloc} <strong className="ci-tabular text-[var(--ci-text)]">{formatLei(date.reinnoiri.incasatBani, 0)}</strong>. {dict.abonamente.sfarsit}
                       </p>
                     </Card>
                   )}
@@ -455,10 +458,10 @@ export function ReclameVedere({ orgSlug, date }: { orgSlug: string; date: DateRe
                     <details>
                       <summary className="flex cursor-pointer list-none items-center justify-between gap-2 p-4 text-[15px] font-bold text-[var(--ci-text)]">
                         <span>
-                          Calitatea datelor{" "}
+                          {dict.calitate.title}{" "}
                           {dateIncomplete && (
                             <Badge tone="amber" icon={false}>
-                              ceva lipsește
+                              {dict.calitate.cevaLipseste}
                             </Badge>
                           )}
                         </span>
@@ -466,42 +469,42 @@ export function ReclameVedere({ orgSlug, date }: { orgSlug: string; date: DateRe
                       </summary>
                       <div className="space-y-3 border-t border-[var(--ci-border)] p-4 text-[13px] text-[var(--ci-text)]">
                         <div>
-                          <p className="font-semibold">Surse de costuri</p>
+                          <p className="font-semibold">{dict.calitate.surseCosturi}</p>
                           {date.calitate.surse.length === 0 ? (
-                            <p className="text-[var(--ci-text-muted)]">Niciun cost importat. Mergi la „Import costuri”.</p>
+                            <p className="text-[var(--ci-text-muted)]">{dict.calitate.niciunCost}</p>
                           ) : (
                             <ul className="mt-1 space-y-0.5 text-[var(--ci-text-muted)]">
                               {date.calitate.surse.map((s) => (
                                 <li key={s.platforma}>
-                                  {date.etichetePlatforme[s.platforma] ?? s.platforma}: costuri până la {s.ultimaZi ? dataRo(s.ultimaZi) : "—"}
-                                  {s.actualizatLa ? `, actualizate ${dataOraRo(s.actualizatLa)}` : ""} (
-                                  {date.conexiuni.some((c) => c.platforma === s.platforma && c.stare === "activ") ? "sincronizare automată" : "import manual"})
-                                  {date.conexiuni.some((c) => c.platforma === s.platforma && c.stare !== "activ") && " · conexiunea cere atenție, vezi fila Conexiuni"}
+                                  {date.etichetePlatforme[s.platforma] ?? s.platforma}: {dict.calitate.costuriPanaLa} {s.ultimaZi ? dataRo(s.ultimaZi) : "—"}
+                                  {s.actualizatLa ? `, ${dict.calitate.actualizate} ${dataOraRo(s.actualizatLa)}` : ""} (
+                                  {date.conexiuni.some((c) => c.platforma === s.platforma && c.stare === "activ") ? dict.calitate.sincAuto : dict.calitate.importManual})
+                                  {date.conexiuni.some((c) => c.platforma === s.platforma && c.stare !== "activ") && dict.calitate.cereAtentie}
                                 </li>
                               ))}
                             </ul>
                           )}
                         </div>
                         <div>
-                          <p className="font-semibold">Donații în perioadă</p>
+                          <p className="font-semibold">{dict.calitate.donatiiInPerioada}</p>
                           <p className="text-[var(--ci-text-muted)]">
-                            {formatNumar(date.calitate.donatiiConfirmate)} confirmate, din care {formatNumar(date.calitate.cuAtribuire)} au un context de atribuire (orice canal). Restul sunt directe sau fără parametri UTM și rămân neatribuite. {formatNumar(t.donatii)} sunt atribuite reclamelor plătite.
+                            {dict.calitate.donatiiText(formatNumar(date.calitate.donatiiConfirmate), formatNumar(date.calitate.cuAtribuire), formatNumar(t.donatii))}
                           </p>
                         </div>
                         {raport.donatiiFaraCostLegat > 0 && (
                           <p className="rounded-[var(--ci-radius-btn)] bg-[var(--ci-amber-soft)] px-3 py-2">
-                            {raport.donatiiFaraCostLegat} donații vin din reclame al căror cod UTM nu e legat de nicio cheltuială importată. Leagă codul în fereastra campaniei sau reimportă costurile cu codul completat.
+                            {dict.calitate.faraCostLegat(raport.donatiiFaraCostLegat)}
                           </p>
                         )}
                         {raport.costNealocatBani > 0 && (
                           <p className="rounded-[var(--ci-radius-btn)] bg-[var(--ci-amber-soft)] px-3 py-2">
-                            {formatLei(raport.costNealocatBani, 0)} din cheltuieli sunt la campanii fără cod UTM legat (nealocate). Ele intră în totalul cheltuielilor, dar nu pot fi comparate cu donații.
+                            {dict.calitate.costNealocat(formatLei(raport.costNealocatBani, 0))}
                           </p>
                         )}
                         <ul className="list-disc space-y-1 pl-5 text-[var(--ci-text-muted)]">
-                          <li>Valoarea netă scade doar rambursările; comisioanele procesatorului nu sunt păstrate pe donație și nu sunt scăzute.</li>
-                          <li>Conversiile raportate de platformele de reclame (ce spune Meta că a adus) nu sunt incluse: aici contează doar plățile confirmate.</li>
-                          <li>Donațiile fără parametri UTM și fără acord pentru statistici rămân neatribuite: cifrele sunt un minim verificabil.</li>
+                          <li>{dict.calitate.nota1}</li>
+                          <li>{dict.calitate.nota2}</li>
+                          <li>{dict.calitate.nota3}</li>
                         </ul>
                       </div>
                     </details>
@@ -533,20 +536,21 @@ export function ReclameVedere({ orgSlug, date }: { orgSlug: string; date: DateRe
 
 // Lista scurtă de pornire: ce ai făcut deja și ce urmează. Dispare când toți pașii sunt bifați.
 function PasiPornire({ date }: { date: DateReclame }) {
+  const dict = RECLAME_UI_DICT[useLocale()].pornire;
   const costuriAduse = date.conexiuni.some((c) => c.platforma === "meta" && c.stare === "activ") || date.importuri.length > 0;
   const pasi = [
-    { ok: date.linkuri.length > 0, titlu: "Fă un link pentru reclamă", cum: "Fila „Linkuri UTM”: alegi sursa, lipești adresa paginii de donații și copiezi linkul." },
-    { ok: date.parcurs.vizitatori > 0 || date.raport.totaluri.donatii > 0, titlu: "Pune linkul în reclama ta", cum: "În Ads Manager, la adresa site-ului reclamei. Pașii sunt în „Ghid de pornire”." },
-    { ok: costuriAduse, titlu: "Adu cheltuielile din Meta", cum: "Conectezi contul în fila „Conexiuni” sau încarci un raport în „Import costuri”." },
-    { ok: date.raport.totaluri.donatii > 0, titlu: "Vezi prima donație atribuită", cum: "Apare aici singură, după ce o plată venită din reclamă e confirmată." },
+    { ok: date.linkuri.length > 0, ...dict.pasi[0]! },
+    { ok: date.parcurs.vizitatori > 0 || date.raport.totaluri.donatii > 0, ...dict.pasi[1]! },
+    { ok: costuriAduse, ...dict.pasi[2]! },
+    { ok: date.raport.totaluri.donatii > 0, ...dict.pasi[3]! },
   ];
   if (pasi.every((p) => p.ok)) return null;
   const facute = pasi.filter((p) => p.ok).length;
   return (
     <Card>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-[15px] font-bold text-[var(--ci-text)]">Cum pornești</h2>
-        <p className="text-[12.5px] text-[var(--ci-text-muted)]">{facute} din {pasi.length} pași făcuți</p>
+        <h2 className="text-[15px] font-bold text-[var(--ci-text)]">{dict.title}</h2>
+        <p className="text-[12.5px] text-[var(--ci-text-muted)]">{dict.pasiFacuti(facute, pasi.length)}</p>
       </div>
       <ol className="mt-3 space-y-2.5">
         {pasi.map((p, i) => (
@@ -557,7 +561,7 @@ function PasiPornire({ date }: { date: DateReclame }) {
             <div>
               <p className={`text-[13.5px] font-semibold ${p.ok ? "text-[var(--ci-text-muted)] line-through" : "text-[var(--ci-text)]"}`}>
                 {p.titlu}
-                <span className="sr-only">{p.ok ? " (făcut)" : " (de făcut)"}</span>
+                <span className="sr-only">{p.ok ? dict.facut : dict.deFacut}</span>
               </p>
               {!p.ok && <p className="text-[12.5px] text-[var(--ci-text-muted)]">{p.cum}</p>}
             </div>
@@ -570,6 +574,9 @@ function PasiPornire({ date }: { date: DateReclame }) {
 
 // Panoul unei campanii: cifrele complete, explicația atribuirii și, pentru cheltuielile nealocate, legarea de un cod UTM.
 function DetaliuCampanie({ orgSlug, linie, date, onClose }: { orgSlug: string; linie: LinieRaport; date: DateReclame; onClose: () => void }) {
+  const locale = useLocale();
+  const dict = RECLAME_UI_DICT[locale].detaliu;
+  const { lei: formatLei, numar: formatNumar, roas: formatRoas } = formatariReclame(locale);
   const router = useRouter();
   const [pending, start] = useTransition();
   const i = calculeazaIndicatori(linie.totaluri);
@@ -584,28 +591,28 @@ function DetaliuCampanie({ orgSlug, linie, date, onClose }: { orgSlug: string; l
   );
   const clicuri = linie.clicuri;
   return (
-    <Dialog open onClose={onClose} title={linie.eticheta} width="max-w-lg">
+    <Dialog open onClose={onClose} title={traduLib(locale, linie.eticheta)} width="max-w-lg">
       <div className="space-y-4">
         <p className="text-[12.5px] text-[var(--ci-text-muted)]">
-          {date.etichetePlatforme[linie.platforma] ?? linie.platforma} · {linie.utmCampanie ? `cod UTM ${linie.utmCampanie}` : "fără cod UTM"}
+          {date.etichetePlatforme[linie.platforma] ?? linie.platforma} · {linie.utmCampanie ? dict.cod(linie.utmCampanie) : dict.fara}
         </p>
         <dl>
-          {rand("Cheltuieli", formatLei(linie.totaluri.cheltuieliBani))}
-          {rand("Donații confirmate atribuite", formatNumar(linie.totaluri.donatii))}
-          {rand("Valoare brută", formatLei(linie.totaluri.brutBani))}
-          {rand("Rambursat", formatLei(linie.totaluri.rambursatBani))}
-          {rand("Valoare netă", formatLei(i.netBani))}
-          {rand("Cost per donație", formatLei(i.costPerDonatieBani))}
-          {rand("Cost per donator nou", formatLei(i.costPerDonatorNouBani))}
-          {rand("ROAS net", formatRoas(i.roasNet))}
-          {rand("Valoarea medie a donației", formatLei(i.mediaDonatieBani))}
-          {rand("Donatori noi / existenți / neclasificați", `${linie.totaluri.donatoriNoi} / ${linie.totaluri.donatoriExistenti} / ${linie.totaluri.donatoriNeclasificati}`)}
-          {rand("Afișări", formatNumar(linie.afisari))}
-          {rand("Clicuri pe link (raportate de platformă)", formatNumar(clicuri))}
+          {rand(dict.cheltuieli, formatLei(linie.totaluri.cheltuieliBani))}
+          {rand(dict.donatii, formatNumar(linie.totaluri.donatii))}
+          {rand(dict.brut, formatLei(linie.totaluri.brutBani))}
+          {rand(dict.rambursat, formatLei(linie.totaluri.rambursatBani))}
+          {rand(dict.netaVal, formatLei(i.netBani))}
+          {rand(dict.costDonatie, formatLei(i.costPerDonatieBani))}
+          {rand(dict.costDonatorNou, formatLei(i.costPerDonatorNouBani))}
+          {rand(dict.roasNet, formatRoas(i.roasNet))}
+          {rand(dict.media, formatLei(i.mediaDonatieBani))}
+          {rand(dict.donatori, `${linie.totaluri.donatoriNoi} / ${linie.totaluri.donatoriExistenti} / ${linie.totaluri.donatoriNeclasificati}`)}
+          {rand(dict.afisari, formatNumar(linie.afisari))}
+          {rand(dict.clicuri, formatNumar(clicuri))}
         </dl>
         <p className="text-[12.5px] text-[var(--ci-text-muted)]">
-          Atribuire: donațiile de aici au ultimul clic eligibil dintr-o reclamă plătită cu codul {linie.utmCampanie ?? "(fără cod)"}, în fereastra de {date.fereastraZile} {date.fereastraZile === 1 ? "zi" : "zile"}. Un clic ulterior din email sau social organic ar fi mutat donația în alt canal.
-          {linie.nota ? ` ${linie.nota}.` : ""}
+          {dict.atribuire(linie.utmCampanie ?? dict.faraCodParan, date.fereastraZile)}
+          {linie.nota ? ` ${traduLib(locale, linie.nota)}.` : ""}
         </p>
         {legatura && (
           <form
@@ -616,17 +623,17 @@ function DetaliuCampanie({ orgSlug, linie, date, onClose }: { orgSlug: string; l
               start(async () => {
                 const r = await salveazaLegaturaAction(orgSlug, { platforma: legatura.platforma, campanieCheie: legatura.campanieCheie, utmCampanie: cod });
                 if (r.ok) {
-                  setMesaj({ ok: true, text: "Legătura a fost salvată." });
+                  setMesaj({ ok: true, text: dict.legaturaSalvata });
                   router.refresh();
                 } else setMesaj({ ok: false, text: r.eroare });
               });
             }}
           >
-            <Label htmlFor="rc-cod">Codul UTM al acestei campanii</Label>
+            <Label htmlFor="rc-cod">{dict.codulUtm}</Label>
             <div className="flex gap-2">
               <Input id="rc-cod" value={cod} onChange={(e) => setCod(e.target.value)} placeholder="cmp_026" />
               <Button type="submit" variant="primary" loading={pending}>
-                Salvează
+                {dict.salveaza}
               </Button>
             </div>
             {mesaj && (

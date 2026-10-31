@@ -8,6 +8,9 @@ import { verificaCifLaInscriere } from "@/lib/auth/verifica-cif";
 import { cifValidFormat } from "@/lib/iban";
 import { normalizeazaTelefon } from "@/lib/telefon";
 import { citestePlanulAlesDinFormular } from "@/lib/billing/plan-from-form";
+import { AUTH_DICT } from "@/lib/i18n/dictionaries/auth";
+import { FINALIZE_UI_DICT } from "@/lib/i18n/dictionaries/finalize-ui";
+import { getLocale } from "@/lib/i18n/get-locale";
 
 // Pasul de finalizare pentru cine s-a autentificat fără să aibă încă o
 // organizație: prima autentificare cu Google sau prima autentificare după
@@ -18,6 +21,9 @@ export async function finalizeazaOrganizatiaAction(
   _prevState: { error: string | null },
   formData: FormData,
 ): Promise<{ error: string | null }> {
+  const locale = await getLocale();
+  const e = AUTH_DICT[locale].errors;
+  const t = FINALIZE_UI_DICT[locale];
   const orgName = String(formData.get("orgName") ?? "").trim();
   const referralCode = String(formData.get("ref") ?? "").trim();
   const numeContact = String(formData.get("numeContact") ?? "").trim();
@@ -25,24 +31,24 @@ export async function finalizeazaOrganizatiaAction(
   const cifBrut = String(formData.get("cif") ?? "").trim();
   const ctxAtribuire = String(formData.get("ctxAtribuire") ?? "").slice(0, 900);
   if (!orgName) {
-    return { error: "Completează numele organizației." };
+    return { error: t.orgLipsa };
   }
   if (!numeContact || numeContact.length > 120) {
-    return { error: "Scrie-ți numele (și prenumele)." };
+    return { error: e.numeLipsa };
   }
   const telefon = normalizeazaTelefon(telefonBrut);
   if (!telefon) {
-    return { error: "Numărul de telefon nu pare corect — scrie-l cu cifre, de exemplu 0722 123 456." };
+    return { error: e.telefonInvalid };
   }
   if (!cifBrut || !cifValidFormat(cifBrut)) {
-    return { error: "CIF invalid — scrie doar cifrele, cu sau fără prefixul RO (ex. RO12345678)." };
+    return { error: e.cifInvalid };
   }
   if (orgName.length > MAX_LUNGIME_NUME_ORGANIZATIE) {
-    return { error: `Numele organizației e prea lung (maxim ${MAX_LUNGIME_NUME_ORGANIZATIE} de caractere).` };
+    return { error: t.orgPreaLung(MAX_LUNGIME_NUME_ORGANIZATIE) };
   }
   // Validat pe server — bifa se poate ocoli din browser.
   if (formData.get("acceptTermeni") !== "on") {
-    return { error: "Pentru a crea contul trebuie să accepți Termenii și condițiile și Politica de confidențialitate." };
+    return { error: e.termeniNeacceptati };
   }
 
   const anaf = await verificaCifLaInscriere(cifBrut);
@@ -50,8 +56,8 @@ export async function finalizeazaOrganizatiaAction(
     return {
       error:
         anaf.motiv === "negasit"
-          ? "Nu am găsit acest CIF în ANAF. Verifică cifrele (fără spații) sau scrie-ne la vlad.placinta@alexandrit.ro."
-          : "Organizația cu acest CIF figurează ca inactivă sau radiată în ANAF, deci nu putem crea contul. Dacă e o greșeală, scrie-ne la vlad.placinta@alexandrit.ro.",
+          ? e.cifNegasit
+          : e.cifInactiv,
     };
   }
 
@@ -74,10 +80,10 @@ export async function finalizeazaOrganizatiaAction(
     ctxAtribuire: ctxAtribuire || null,
   });
   if (!rezultat.ok && rezultat.motiv === "cif_existent") {
-    return { error: "Există deja o organizație înregistrată cu acest CIF. Dacă este a ta, cere un acces de la administratorul ei sau scrie-ne la vlad.placinta@alexandrit.ro." };
+    return { error: e.cifExistent };
   }
   if (!rezultat.ok) {
-    return { error: "Ai atins numărul maxim de organizații pentru un cont. Scrie-ne la vlad.placinta@alexandrit.ro dacă ai nevoie de mai multe." };
+    return { error: e.limitaOrganizatii };
   }
 
   redirect(`/${rezultat.slug}/crm`);

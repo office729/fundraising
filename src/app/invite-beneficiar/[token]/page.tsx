@@ -1,6 +1,8 @@
 import Link from "next/link";
 
 import { getAuthUser } from "@/lib/auth/dal";
+import { INVITE_UI_DICT } from "@/lib/i18n/dictionaries/invite-ui";
+import { getLocale } from "@/lib/i18n/get-locale";
 
 import { lookupBeneficiaryInviteByToken } from "./actions";
 import { AcceptButton } from "./accept-button";
@@ -13,21 +15,23 @@ export default async function InviteBeneficiarPage({
   const { token } = await params;
   const invite = await lookupBeneficiaryInviteByToken(token);
   const authUser = await getAuthUser();
+  const locale = await getLocale();
+  const t = INVITE_UI_DICT[locale].beneficiar;
 
   if (!invite) {
     return (
       <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-6 text-center">
-        <h1 className="font-display text-xl font-bold text-ink">Invitație inexistentă</h1>
-        <p className="mt-2 text-muted">Linkul nu mai e valid.</p>
+        <h1 className="font-display text-xl font-bold text-ink">{t.inexistentaTitlu}</h1>
+        <p className="mt-2 text-muted">{t.inexistentaDesc}</p>
       </main>
     );
   }
   if (invite.accepted) {
     return (
       <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-6 text-center">
-        <h1 className="font-display text-xl font-bold text-ink">Invitație deja folosită</h1>
+        <h1 className="font-display text-xl font-bold text-ink">{t.folositaTitlu}</h1>
         <p className="mt-2 text-muted">
-          Ai deja acces la panoul tău — <Link href="/login" className="text-brand-green">autentifică-te</Link>.
+          {t.folositaDesc}<Link href="/login" className="text-brand-green">{t.autentificaTe}</Link>.
         </p>
       </main>
     );
@@ -35,8 +39,8 @@ export default async function InviteBeneficiarPage({
   if (invite.expired) {
     return (
       <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-6 text-center">
-        <h1 className="font-display text-xl font-bold text-ink">Invitație expirată</h1>
-        <p className="mt-2 text-muted">Cere echipei asociației să trimită una nouă.</p>
+        <h1 className="font-display text-xl font-bold text-ink">{t.expiratTitlu}</h1>
+        <p className="mt-2 text-muted">{t.expiratDesc}</p>
       </main>
     );
   }
@@ -45,20 +49,20 @@ export default async function InviteBeneficiarPage({
 
   return (
     <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-6 text-center">
-      <h1 className="font-display text-xl font-bold text-ink">Ai fost invitat(ă)</h1>
+      <h1 className="font-display text-xl font-bold text-ink">{t.titlu}</h1>
       <p className="mt-2 text-muted">
-        Panoul tău dedicat pentru campania <b className="text-ink">{invite.campaignTitlu}</b>, susținută de{" "}
+        {t.panou}<b className="text-ink">{invite.campaignTitlu}</b>{t.sustinutaDe}
         <b className="text-ink">{invite.orgName}</b>.
       </p>
       <p className="mt-1 text-sm text-muted">{invite.email}</p>
 
       {loggedInWrongEmail ? (
         <p className="mt-6 rounded-lg bg-brand-amber-soft px-3 py-2 text-sm text-ink">
-          Ești logat cu alt cont ({authUser!.email}). Deconectează-te și intră cu {invite.email}.
+          {t.altCont(authUser!.email!, invite.email)}
         </p>
       ) : authUser ? (
         <div className="mt-6">
-          <AcceptButton token={token} />
+          <AcceptButton token={token} locale={locale} />
         </div>
       ) : (
         <div className="mt-6 flex justify-center gap-3">
@@ -66,13 +70,13 @@ export default async function InviteBeneficiarPage({
             href={`/signup?beneficiarInvite=${token}`}
             className="rounded-lg bg-brand-green px-5 py-2.5 font-medium text-white transition hover:bg-brand-green-hover"
           >
-            Creează cont
+            {t.creeazaCont}
           </Link>
           <Link
             href={`/login?beneficiarInvite=${token}`}
             className="rounded-lg border border-line bg-panel px-5 py-2.5 font-medium text-ink transition hover:bg-panel-2"
           >
-            Autentificare
+            {t.autentificare}
           </Link>
         </div>
       )}

@@ -58,6 +58,7 @@ import { areModul, MODULE_PACHET, type ModulPachet, type OrgPackage } from "@/li
 import { AVATAR_DONATOR_ACTIV, paginaCrmAscunsa } from "@/lib/module-ascunse";
 import { DASHBOARD_DICT, type DashboardDict } from "@/lib/i18n/dictionaries/dashboard";
 import type { Locale } from "@/lib/i18n/config";
+import { SHELL_UI_DICT, type ShellUiDict } from "@/lib/i18n/dictionaries/shell-ui";
 
 import { LogoutForm } from "../logout-form";
 import { FeedbackInvitatie } from "./feedback/feedback-invitatie";
@@ -78,7 +79,7 @@ import {
   setSidebarRestrans,
   useLocalStoreValue,
 } from "./lib/local-store";
-import { TASKURI, type Task } from "./mock";
+import { TASKURI, traduMock, type Task } from "./mock";
 import { idScurt } from "@/lib/id-scurt";
 import { UtilizatorProvider } from "./lib/utilizator-context";
 import { useExempleDemo } from "./lib/exemple-demo";
@@ -167,7 +168,7 @@ export function buildNav(dict: DashboardDict, orgSlug: string, role: string, per
         { href: "inovare", label: dict.nav.inovare, hint: dict.hints.inovare, icon: Lightbulb },
         { href: "feedback", label: dict.nav.feedback, hint: dict.hints.feedback, icon: MessageSquareHeart },
         // Registrul de timp al muncii custom și al suportului: doar dacă echipa platformei l-a activat pentru organizație, și doar pentru owner/admin.
-        ...(persEfectiva.arataTimp && (role === "owner" || role === "admin") ? [{ href: "timp-alocat", label: "Timp alocat", hint: "Timpul alocat modificărilor custom, integrărilor și suportului", icon: Clock }] : []),
+        ...(persEfectiva.arataTimp && (role === "owner" || role === "admin") ? [{ href: "timp-alocat", label: dict.nav.timpAlocat, hint: dict.hints.timpAlocat, icon: Clock }] : []),
         // Facturarea (plan, metodă de plată, facturi) o văd doar proprietarul și administratorii; stă chiar deasupra Setărilor.
         ...(role === "owner" || role === "admin" ? [{ href: "facturare", label: dict.nav.facturare, hint: dict.hints.facturare, icon: Receipt }] : []),
         { href: "setari", label: dict.nav.setari, hint: dict.hints.setari, icon: Settings },
@@ -224,6 +225,7 @@ export function CrmShell({
   const pathname = usePathname();
   const base = `/${orgSlug}/crm`;
   const dict = DASHBOARD_DICT[locale];
+  const ui = SHELL_UI_DICT[locale];
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -257,6 +259,7 @@ export function CrmShell({
   }, []);
 
   return (
+    <LocaleProvider locale={locale}>
     <PersonalizareProvider personalizare={personalizare ?? null}>
     <div
       ref={radacina}
@@ -266,7 +269,7 @@ export function CrmShell({
     >
       {mobileOpen && (
         <button
-          aria-label="Închide meniul"
+          aria-label={ui.closeMenu}
           onClick={() => setMobileOpen(false)}
           className="fixed inset-0 z-40 bg-[var(--ci-text)]/30 md:hidden"
         />
@@ -296,7 +299,7 @@ export function CrmShell({
               </p>
             </Link>
             <button
-              aria-label="Închide meniul"
+              aria-label={ui.closeMenu}
               onClick={() => setMobileOpen(false)}
               className="rounded-[var(--ci-radius-btn)] p-1.5 text-[var(--ci-text-muted)] hover:bg-[var(--ci-surface-2)] md:hidden"
             >
@@ -304,8 +307,8 @@ export function CrmShell({
             </button>
           </div>
           <nav className="ci-scrollbar flex-1 space-y-3 overflow-y-auto px-2">
-            <Suspense fallback={<NavGroups pathname={pathname} base={base} collapsed={collapsed} query="" dict={dict} role={role} orgPackage={pachetModule} onNavigate={() => setMobileOpen(false)} />}>
-              <NavGroupsWithQuery pathname={pathname} base={base} collapsed={collapsed} dict={dict} role={role} orgPackage={pachetModule} onNavigate={() => setMobileOpen(false)} />
+            <Suspense fallback={<NavGroups pathname={pathname} base={base} collapsed={collapsed} query="" dict={dict} ui={ui} role={role} orgPackage={pachetModule} onNavigate={() => setMobileOpen(false)} />}>
+              <NavGroupsWithQuery pathname={pathname} base={base} collapsed={collapsed} dict={dict} ui={ui} role={role} orgPackage={pachetModule} onNavigate={() => setMobileOpen(false)} />
             </Suspense>
             {/* Imediat sub ultimul element din meniu; planul și utilizatorul stau fixate jos, în afara derulării meniului */}
             <div className="hidden border-t border-[var(--ci-border)] pt-2 md:block">
@@ -322,14 +325,14 @@ export function CrmShell({
               </button>
             </div>
           </nav>
-          <ContSiPlan orgSlug={orgSlug} userName={userName} role={role} orgPackage={orgPackage} collapsed={collapsed} />
+          <ContSiPlan orgSlug={orgSlug} userName={userName} role={role} orgPackage={orgPackage} collapsed={collapsed} ui={ui} />
         </div>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-14 shrink-0 items-center gap-2 border-b border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 md:gap-3 md:px-4">
           <button
-            aria-label="Deschide meniul"
+            aria-label={ui.openMenu}
             onClick={() => setMobileOpen(true)}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--ci-radius-btn)] text-[var(--ci-text-muted)] transition-colors hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)] md:hidden"
           >
@@ -343,18 +346,18 @@ export function CrmShell({
             <Plus className="h-4 w-4" />
             {dict.header.add}
           </button>
-          <NotificationsButton base={base} orgSlug={orgSlug} />
+          <NotificationsButton base={base} orgSlug={orgSlug} ui={ui} locale={locale} />
           <a
             href="/contact"
             target="_blank"
             rel="noopener"
-            aria-label="Ajutor"
-            title="Ajutor — contactează echipa Alexandrit"
+            aria-label={ui.help}
+            title={ui.helpTitle}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--ci-radius-btn)] text-[var(--ci-text-muted)] transition-colors hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)]"
           >
             <HelpCircle className="h-4 w-4" />
           </a>
-          <AvatarMenu userName={userName} orgSlug={orgSlug} role={role} />
+          <AvatarMenu userName={userName} orgSlug={orgSlug} role={role} ui={ui} />
         </header>
 
         {!previzualizare && <FeedbackInvitatie orgSlug={orgSlug} />}
@@ -363,24 +366,25 @@ export function CrmShell({
         <div className="ci-scrollbar relative flex-1 overflow-y-auto px-3 py-4 sm:px-6 sm:py-6">
           <DomeniuProvider domeniu={orgDomeniuActivitate}>
             <UtilizatorProvider prenume={userName.includes("@") ? "" : userName.split(" ")[0]}>
-              <LocaleProvider locale={locale}>{children}</LocaleProvider>
+              {children}
             </UtilizatorProvider>
           </DomeniuProvider>
         </div>
       </div>
 
-      <AddDialog open={addOpen} onClose={() => setAddOpen(false)} base={base} pathname={pathname} />
+      <AddDialog open={addOpen} onClose={() => setAddOpen(false)} base={base} pathname={pathname} ui={ui} />
       <span className="sr-only" suppressHydrationWarning>
         {userName.includes("@") ? `${salut}.` : `${salut}, ${userName.split(" ")[0]}.`}
       </span>
     </div>
     </PersonalizareProvider>
+    </LocaleProvider>
   );
 }
 
 // Citește query-ul curent — separat de NavGroups ca boundary-ul de Suspense
 // cerut de useSearchParams() să nu blocheze randarea restului shell-ului.
-function NavGroupsWithQuery(props: { pathname: string | null; base: string; collapsed: boolean; dict: DashboardDict; role: string; orgPackage: OrgPackage; onNavigate: () => void }) {
+function NavGroupsWithQuery(props: { pathname: string | null; base: string; collapsed: boolean; dict: DashboardDict; ui: ShellUiDict; role: string; orgPackage: OrgPackage; onNavigate: () => void }) {
   const searchParams = useSearchParams();
   return <NavGroups {...props} query={searchParams.toString()} />;
 }
@@ -395,6 +399,7 @@ function NavGroups({
   collapsed,
   query,
   dict,
+  ui,
   role,
   orgPackage,
   onNavigate,
@@ -404,6 +409,7 @@ function NavGroups({
   collapsed: boolean;
   query: string;
   dict: DashboardDict;
+  ui: ShellUiDict;
   role: string;
   orgPackage: OrgPackage;
   onNavigate: () => void;
@@ -476,9 +482,9 @@ function NavGroups({
                   {MODUL_PE_INTRARE[item.href] && !areModul(orgPackage, MODUL_PE_INTRARE[item.href]) && (
                     <>
                       <Lock className={cn("ml-auto h-3.5 w-3.5 shrink-0 text-[var(--ci-text-muted)]", collapsed && "md:hidden")} aria-hidden>
-                        <title>{`Inclus începând cu pachetul ${MODULE_PACHET[MODUL_PE_INTRARE[item.href]].minim === "impact" ? "IMPACT" : "CREȘTERE"}`}</title>
+                        <title>{ui.lockedFrom(MODULE_PACHET[MODUL_PE_INTRARE[item.href]].minim === "impact" ? ui.pachetImpact : ui.pachetCrestere)}</title>
                       </Lock>
-                      <span className="sr-only">{`Inclus începând cu pachetul ${MODULE_PACHET[MODUL_PE_INTRARE[item.href]].minim === "impact" ? "IMPACT" : "CREȘTERE"}`}</span>
+                      <span className="sr-only">{ui.lockedFrom(MODULE_PACHET[MODUL_PE_INTRARE[item.href]].minim === "impact" ? ui.pachetImpact : ui.pachetCrestere)}</span>
                     </>
                   )}
                 </Link>
@@ -523,11 +529,13 @@ function AddDialog({
   onClose,
   base,
   pathname,
+  ui,
 }: {
   open: boolean;
   onClose: () => void;
   base: string;
   pathname: string | null;
+  ui: ShellUiDict;
 }) {
   const router = useRouter();
   const [importTip, setImportTip] = useState<"donatori" | "companii" | null>(null);
@@ -546,35 +554,35 @@ function AddDialog({
   const demoPerf = pathname?.startsWith(`${base}/performanta/demo`) ?? false;
   const perf = demoPerf ? `${base}/performanta/demo` : `${base}/performanta`;
   const OPTIUNI = [
-    { context: "performanta" as const, label: "Obiectiv", icon: Target, action: () => router.push(`${perf}/obiective?nou=obiectiv`) },
-    { context: "performanta" as const, label: "Activitate", icon: ClipboardList, action: () => router.push(`${perf}/saptamana?nou=activitate`) },
-    { context: "performanta" as const, label: "Discuție sau evaluare", icon: MessageSquare, action: () => router.push(`${perf}/discutii`) },
-    { context: "organizatie" as const, label: "Departament", icon: Network, action: () => router.push(`${base}/organizatie?nou=departament`) },
-    { context: "organizatie" as const, label: "Rol", icon: ClipboardList, action: () => router.push(`${base}/organizatie?nou=rol`) },
-    { context: "organizatie" as const, label: "Membru în echipă", icon: UserPlus, action: () => router.push(`${base}/organizatie?nou=membru`) },
-    { context: "voluntari" as const, label: "Sarcină online pentru voluntari", icon: Laptop, action: () => router.push(`${base}/voluntari?nou=sarcina`) },
-    { context: "voluntari" as const, label: "Activitate pe teren", icon: MapPin, action: () => router.push(`${base}/voluntari?nou=activitate`) },
-    { context: "fonduri" as const, label: "Pagină de strângere de fonduri (campanie)", icon: HandCoins, action: () => router.push(`${base}/strangere-fonduri?nou=pagina`) },
-    { context: "fonduri" as const, label: "Proiect (beneficiar al fondurilor)", icon: HeartHandshake, action: () => setProjectOpen(true) },
-    { context: "donatori" as const, label: "Donator (persoană fizică)", icon: Users, action: () => setDonorOpen(true) },
-    { context: "beneficiari" as const, label: "Proiect", icon: HeartHandshake, action: () => setProjectOpen(true) },
+    { context: "performanta" as const, label: ui.addOption.obiectiv, icon: Target, action: () => router.push(`${perf}/obiective?nou=obiectiv`) },
+    { context: "performanta" as const, label: ui.addOption.activitate, icon: ClipboardList, action: () => router.push(`${perf}/saptamana?nou=activitate`) },
+    { context: "performanta" as const, label: ui.addOption.discutie, icon: MessageSquare, action: () => router.push(`${perf}/discutii`) },
+    { context: "organizatie" as const, label: ui.addOption.departament, icon: Network, action: () => router.push(`${base}/organizatie?nou=departament`) },
+    { context: "organizatie" as const, label: ui.addOption.rol, icon: ClipboardList, action: () => router.push(`${base}/organizatie?nou=rol`) },
+    { context: "organizatie" as const, label: ui.addOption.membru, icon: UserPlus, action: () => router.push(`${base}/organizatie?nou=membru`) },
+    { context: "voluntari" as const, label: ui.addOption.sarcinaOnline, icon: Laptop, action: () => router.push(`${base}/voluntari?nou=sarcina`) },
+    { context: "voluntari" as const, label: ui.addOption.activitateTeren, icon: MapPin, action: () => router.push(`${base}/voluntari?nou=activitate`) },
+    { context: "fonduri" as const, label: ui.addOption.paginaCampanie, icon: HandCoins, action: () => router.push(`${base}/strangere-fonduri?nou=pagina`) },
+    { context: "fonduri" as const, label: ui.addOption.proiectBeneficiar, icon: HeartHandshake, action: () => setProjectOpen(true) },
+    { context: "donatori" as const, label: ui.addOption.donator, icon: Users, action: () => setDonorOpen(true) },
+    { context: "beneficiari" as const, label: ui.addOption.proiect, icon: HeartHandshake, action: () => setProjectOpen(true) },
     // Companie — server action REALĂ (adaugaFirma), nu mock; vezi
     // companii/add-company-form-dialog.tsx.
-    { context: "companii" as const, label: "Companie", icon: Building2, action: () => {
+    { context: "companii" as const, label: ui.addOption.companie, icon: Building2, action: () => {
         const m = new URLSearchParams(window.location.search).getAll("marcaj").filter((x) => x === "d177" || x === "decembrie" || x === "caz");
         setCompanyMarcaje(m);
         setCompanyOpen(true);
       },
     },
     // „Task” din această pagină ducea la ea însăși; activitățile reale (salvate pe server, cu responsabil și termen) se adaugă din Echipă & Performanță.
-    { context: "taskuri" as const, label: "Activitate (salvată pe server)", icon: ClipboardList, action: () => router.push(`${base}/performanta/saptamana?nou=activitate`) },
-    { context: "donatori" as const, label: "Importă persoane fizice (CSV, Excel, JSON)", icon: Upload, action: () => setImportTip("donatori") },
-    { context: "companii" as const, label: "Importă persoane juridice / companii (CSV, Excel, JSON)", icon: Upload, action: () => setImportTip("companii") },
+    { context: "taskuri" as const, label: ui.addOption.activitateServer, icon: ClipboardList, action: () => router.push(`${base}/performanta/saptamana?nou=activitate`) },
+    { context: "donatori" as const, label: ui.addOption.importPf, icon: Upload, action: () => setImportTip("donatori") },
+    { context: "companii" as const, label: ui.addOption.importPj, icon: Upload, action: () => setImportTip("companii") },
   ].filter((o) => pentru(o.context));
 
   return (
     <>
-      <Dialog open={open} onClose={onClose} title={context === "performanta" ? "Ce vrei să adaugi în echipă?" : context === "organizatie" ? "Ce vrei să adaugi în organizație?" : context === "fonduri" ? "Ce vrei să adaugi la strângerea de fonduri?" : context === "voluntari" ? "Ce vrei să adaugi pentru voluntari?" : "Ce vrei să adaugi?"}>
+      <Dialog open={open} onClose={onClose} title={context === "performanta" ? ui.addTitle.performanta : context === "organizatie" ? ui.addTitle.organizatie : context === "fonduri" ? ui.addTitle.fonduri : context === "voluntari" ? ui.addTitle.voluntari : ui.addTitle.default}>
         <div className="space-y-1.5">
           {OPTIUNI.map((o) => (
             <button
@@ -623,23 +631,20 @@ function AddDialog({
 }
 
 // Jos, în bara laterală: planul activ și cine e autentificat, cu deconectare dintr-un clic.
-const ETICHETA_PLAN: Record<string, string> = { trial: "PROBĂ", start: "START", crestere: "CREȘTERE", impact: "IMPACT", custom: "PERSONALIZAT" };
-const ETICHETA_ROL: Record<string, string> = { owner: "Proprietar", admin: "Administrator", member: "Membru" };
-
-function ContSiPlan({ orgSlug, userName, role, orgPackage, collapsed }: { orgSlug: string; userName: string; role: string; orgPackage: string; collapsed: boolean }) {
+function ContSiPlan({ orgSlug, userName, role, orgPackage, collapsed, ui }: { orgSlug: string; userName: string; role: string; orgPackage: string; collapsed: boolean; ui: ShellUiDict }) {
   const admin = role === "owner" || role === "admin";
   const proba = orgPackage === "trial";
   const insigna = (
     <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-bold tracking-wide", proba ? "bg-[var(--ci-amber-soft)] text-[var(--ci-amber)]" : "bg-[var(--ci-primary)] text-white")}>
-      {ETICHETA_PLAN[orgPackage] ?? orgPackage.toUpperCase()}
+      {ui.plan.etichete[orgPackage] ?? orgPackage.toUpperCase()}
     </span>
   );
   return (
     <div className={cn("border-t border-[var(--ci-border)] px-3 pt-3", collapsed && "md:px-1.5")}>
       <div className={cn("flex items-center justify-between gap-2", collapsed && "md:hidden")}>
-        <span className="text-[10.5px] font-bold tracking-wider text-[var(--ci-text-muted)] uppercase">Plan activ</span>
+        <span className="text-[10.5px] font-bold tracking-wider text-[var(--ci-text-muted)] uppercase">{ui.plan.activ}</span>
         {admin ? (
-          <Link prefetch={false} href={`/${orgSlug}/crm/facturare`} title="Facturare și abonament" className="rounded-full focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
+          <Link prefetch={false} href={`/${orgSlug}/crm/facturare`} title={ui.plan.facturareTitle} className="rounded-full focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
             {insigna}
           </Link>
         ) : (
@@ -652,10 +657,10 @@ function ContSiPlan({ orgSlug, userName, role, orgPackage, collapsed }: { orgSlu
           <p className="truncate text-[13px] font-semibold text-[var(--ci-text)]" title={userName}>
             {userName}
           </p>
-          <p className="truncate text-[11.5px] text-[var(--ci-text-muted)]">{ETICHETA_ROL[role] ?? role}</p>
+          <p className="truncate text-[11.5px] text-[var(--ci-text-muted)]">{ui.roluri[role] ?? role}</p>
         </div>
         <LogoutForm className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--ci-radius-btn)] text-[var(--ci-text-muted)] transition-colors hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-red)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
-          <LogOut className="h-4 w-4" aria-label="Deconectare" />
+          <LogOut className="h-4 w-4" aria-label={ui.logout} />
         </LogoutForm>
       </div>
     </div>
@@ -665,7 +670,7 @@ function ContSiPlan({ orgSlug, userName, role, orgPackage, collapsed }: { orgSlu
 // Antetul CRM (spre deosebire de bara de sus a platformei, din layout.tsx)
 // nu avea nicio cale spre Deconectare — omul trebuia să știe să caute mai sus,
 // într-un link mic de text. Avatarul devine acum un meniu, ca-n orice SaaS.
-function AvatarMenu({ userName, orgSlug, role }: { userName: string; orgSlug: string; role: string }) {
+function AvatarMenu({ userName, orgSlug, role, ui }: { userName: string; orgSlug: string; role: string; ui: ShellUiDict }) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -686,7 +691,7 @@ function AvatarMenu({ userName, orgSlug, role }: { userName: string; orgSlug: st
 
   return (
     <div className="relative" data-avatar-menu>
-      <button aria-label="Cont" onClick={() => setOpen((v) => !v)} className="rounded-full">
+      <button aria-label={ui.account} onClick={() => setOpen((v) => !v)} className="rounded-full">
         <Avatar name={userName} size="sm" />
       </button>
       {open && (
@@ -698,7 +703,7 @@ function AvatarMenu({ userName, orgSlug, role }: { userName: string; orgSlug: st
               onClick={() => setOpen(false)}
               className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13px] text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]"
             >
-              <Users className="h-3.5 w-3.5 text-[var(--ci-text-muted)]" /> Echipă
+              <Users className="h-3.5 w-3.5 text-[var(--ci-text-muted)]" /> {ui.team}
             </Link>
           )}
           {(role === "owner" || role === "admin") && (
@@ -707,7 +712,7 @@ function AvatarMenu({ userName, orgSlug, role }: { userName: string; orgSlug: st
               onClick={() => setOpen(false)}
               className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13px] text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]"
             >
-              <Receipt className="h-3.5 w-3.5 text-[var(--ci-text-muted)]" /> Facturare
+              <Receipt className="h-3.5 w-3.5 text-[var(--ci-text-muted)]" /> {ui.billing}
             </Link>
           )}
           <Link prefetch={false}
@@ -715,11 +720,11 @@ function AvatarMenu({ userName, orgSlug, role }: { userName: string; orgSlug: st
             onClick={() => setOpen(false)}
             className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13px] text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]"
           >
-            <Settings className="h-3.5 w-3.5 text-[var(--ci-text-muted)]" /> Setări
+            <Settings className="h-3.5 w-3.5 text-[var(--ci-text-muted)]" /> {ui.settings}
           </Link>
           <div className="my-1 border-t border-[var(--ci-border)]" />
           <LogoutForm className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[13px] font-medium text-[var(--ci-red)] hover:bg-[var(--ci-surface-2)]">
-            <LogOut className="h-3.5 w-3.5" /> Deconectare
+            <LogOut className="h-3.5 w-3.5" /> {ui.logout}
           </LogoutForm>
         </div>
       )}
@@ -727,7 +732,7 @@ function AvatarMenu({ userName, orgSlug, role }: { userName: string; orgSlug: st
   );
 }
 
-function NotificationsButton({ base, orgSlug }: { base: string; orgSlug: string }) {
+function NotificationsButton({ base, orgSlug, ui, locale }: { base: string; orgSlug: string; ui: ShellUiDict; locale: Locale }) {
   const [open, setOpen] = useState(false);
   const exemple = useExempleDemo(orgSlug);
 
@@ -769,7 +774,7 @@ function NotificationsButton({ base, orgSlug }: { base: string; orgSlug: string 
   return (
     <div className="relative" data-notificari>
       <button
-        aria-label={neVazute.length > 0 ? `Notificări: ${neVazute.length} noi` : "Notificări"}
+        aria-label={neVazute.length > 0 ? ui.notif.labelNoi(neVazute.length) : ui.notif.label}
         onClick={() => {
           setOpen((v) => !v);
           if (intarziate.length) marcheazaNotificariVazute(intarziate.map((t) => t.id));
@@ -794,7 +799,7 @@ function NotificationsButton({ base, orgSlug }: { base: string; orgSlug: string 
       {open && (
         <div className="fixed top-14 right-2 left-2 z-50 mt-1.5 w-auto rounded-xl sm:absolute sm:top-full sm:right-0 sm:left-auto sm:w-80 border border-[var(--ci-border)] bg-[var(--ci-surface)] p-2 shadow-[var(--ci-shadow-md)]">
           <p className="px-2 py-1.5 text-[12px] font-semibold text-[var(--ci-text)]">
-            {intarziate.length > 0 ? `${intarziate.length} task-uri întârziate` : "Nicio notificare"}
+            {intarziate.length > 0 ? ui.notif.intarziate(intarziate.length) : ui.notif.niciuna}
           </p>
           {intarziate.length > 0 ? (
             <div className="max-h-[50dvh] space-y-0.5 overflow-y-auto sm:max-h-72">
@@ -805,23 +810,23 @@ function NotificationsButton({ base, orgSlug }: { base: string; orgSlug: string 
                   onClick={() => setOpen(false)}
                   className="block rounded-[var(--ci-radius-btn)] px-2 py-1.5 hover:bg-[var(--ci-surface-2)]"
                 >
-                  <p className="truncate text-[12.5px] font-medium text-[var(--ci-text)]">{t.titlu}</p>
+                  <p className="truncate text-[12.5px] font-medium text-[var(--ci-text)]">{traduMock(t.titlu, locale)}</p>
                   <p className="truncate text-[11px] text-[var(--ci-text-muted)]">
-                    {t.legatDe.nume} · termen {formatDataRelativa(t.termenLa)}
+                    {t.legatDe.nume} · {ui.notif.termen} {formatDataRelativa(t.termenLa, locale)}
                   </p>
                 </Link>
               ))}
             </div>
           ) : (
-            <p className="px-2 py-2 text-[12px] text-[var(--ci-text-faint)]">Ești la zi cu task-urile.</p>
+            <p className="px-2 py-2 text-[12px] text-[var(--ci-text-faint)]">{ui.notif.laZi}</p>
           )}
-          <p className="px-2 pb-1 text-[11px] text-[var(--ci-text-faint)]">Taskurile din această listă sunt exemple demonstrative, păstrate doar în acest browser.</p>
+          <p className="px-2 pb-1 text-[11px] text-[var(--ci-text-faint)]">{ui.notif.exemple}</p>
           <Link prefetch={false}
             href={`${base}/taskuri`}
             onClick={() => setOpen(false)}
             className="mt-1 block rounded-[var(--ci-radius-btn)] px-2 py-1.5 text-center text-[12px] font-medium text-[var(--ci-primary)] hover:bg-[var(--ci-primary-soft)]"
           >
-            Vezi toate task-urile
+            {ui.notif.vezi}
           </Link>
         </div>
       )}

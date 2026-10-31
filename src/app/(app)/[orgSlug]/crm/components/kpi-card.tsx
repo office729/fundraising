@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Area, AreaChart, ResponsiveContainer } from "recharts";
 
 import { formatSuma } from "../lib/format";
+import { useLocale } from "../lib/locale-context";
 import { Tooltip } from "./ui/tooltip";
 
 export function KpiCard({
@@ -24,9 +25,10 @@ export function KpiCard({
   href: string;
   unitate?: "suma" | "count" | "percent";
 }) {
+  const locale = useLocale();
   const pozitiv = variatie >= 0;
   const display =
-    unitate === "count" ? `${Math.round(valoare)}` : unitate === "percent" ? `${Math.round(valoare)}%` : formatSuma(valoare);
+    unitate === "count" ? `${Math.round(valoare)}` : unitate === "percent" ? `${Math.round(valoare)}%` : formatSuma(valoare, "RON", locale);
   const data = spark.map((v, i) => ({ i, v }));
 
   return (

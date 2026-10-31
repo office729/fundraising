@@ -152,6 +152,18 @@ test("noutăți: id unic, dată validă, cele mai noi primele, câmpuri completa
   }
 });
 
+test("noutăți: fiecare intrare are traducerea în engleză, cu aceleași câmpuri", async () => {
+  const { INOVATII_EN } = await import("../src/content/inovatii-en.ts");
+  for (const i of INOVATII) {
+    const en = INOVATII_EN[i.id];
+    assert.ok(en, `lipsește traducerea EN pentru ${i.id} (src/content/inovatii-en.ts)`);
+    assert.ok(en.titlu.length >= 8 && en.descriere.length >= 40 && en.categorie.length > 2, `EN incomplet: ${i.id}`);
+    assert.equal(Boolean(en.cumFolosesti), Boolean(i.cumFolosesti), `cumFolosesti trebuie să existe în ambele limbi: ${i.id}`);
+    assert.ok(!/[ăâîșțĂÂÎȘȚ]/.test(en.titlu + en.descriere + (en.cumFolosesti ?? "")), `text românesc în traducerea EN: ${i.id}`);
+  }
+  assert.deepEqual(Object.keys(INOVATII_EN).sort(), INOVATII.map((i) => i.id).sort(), "traduceri EN fără intrare în inovatii.ts");
+});
+
 test("noutăți: linkurile duc la pagini reale ale CRM", () => {
   const dir = new URL("../src/app/(app)/[orgSlug]/crm/", import.meta.url);
   const pagini = new Set(readdirSync(dir, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name));

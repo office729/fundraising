@@ -6,6 +6,7 @@ import { withOrgAdmin } from "@/lib/auth/guard";
 import { canvaConfigurat, listeazaSabloaneBrand, type SablonBrand } from "@/lib/canva";
 import { canvaConnections } from "@/lib/db/schema";
 import { EroareUtilizator, mesajSigur } from "@/lib/erori";
+import { getTr } from "@/lib/i18n/tr-server";
 
 export type StatusCanva = {
   configurat: boolean; // CANVA_CLIENT_ID/SECRET setate în mediu
@@ -32,7 +33,7 @@ export const listeazaSabloaneCanvaAction = withOrgAdmin(async (ctx): Promise<Sab
   try {
     return await listeazaSabloaneBrand(ctx.db, ctx.orgId);
   } catch (e) {
-    throw new EroareUtilizator(mesajSigur(e, "Nu am putut lista șabloanele din Canva.", "canva-sabloane"));
+    throw new EroareUtilizator(mesajSigur(e, (await getTr())("Nu am putut lista șabloanele din Canva.", "We could not list the templates from Canva."), "canva-sabloane"));
   }
 });
 

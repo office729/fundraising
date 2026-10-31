@@ -11,9 +11,10 @@ import { Input, Label } from "../../components/ui/input";
 import { EmptyState } from "../../components/ui/states";
 import { useLocale } from "../../lib/locale-context";
 import { COMPANII_DICT } from "@/lib/i18n/dictionaries/companii";
-import { departamentDinFunctie, ETICHETE_SENIORITATE, senioritate } from "@/lib/functii-contact";
+import { COMPANII_UI_DICT } from "@/lib/i18n/dictionaries/companii-ui";
+import { categoriiPersoana, senioritate } from "@/lib/functii-contact";
 import { urlWebSigur } from "@/lib/validation";
-import { esteStareOutreach, ETICHETE_STARE_OUTREACH } from "@/lib/waalaxy-evenimente";
+import { esteStareOutreach } from "@/lib/waalaxy-evenimente";
 import { adaugaContact, comutaContactCheie, stergeContact, type PersoanaDeAprobat } from "../actions";
 import { DeAprobat, InformareGdpr, PasulUrmator, type FirmaGhid } from "./contacte-ghid";
 import { seteazaConsimtamantContact } from "./fisa-actions";
@@ -46,6 +47,8 @@ export function ContactePanel({
   const router = useRouter();
   const locale = useLocale();
   const dict = COMPANII_DICT[locale].detail.contacte;
+  const ui = COMPANII_UI_DICT[locale].contacte;
+  const functii = COMPANII_DICT[locale].filterBar.functii;
   const [open, setOpen] = useState(false);
   const [prefill, setPrefill] = useState<Prefill>(GOL);
   const [pending, setPending] = useState(false);
@@ -99,9 +102,9 @@ export function ContactePanel({
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-[13px] text-[var(--ci-text-muted)]">
-          {locale === "ro" ? "Apasă " : "Tap "}
+          {ui.apasa}
           <Heart className="inline h-3.5 w-3.5 fill-current align-[-2px]" />
-          {locale === "ro" ? " ca să marchezi un contact direct." : " to mark a direct contact."}
+          {ui.apasaSfarsit}
         </p>
         <Button variant="primary" onClick={() => deschide()}>
           + {dict.adaugaContact.replace(/^\+\s*/, "")}
@@ -118,7 +121,7 @@ export function ContactePanel({
                 <button
                   type="button"
                   onClick={() => comutaCheie(c.id, !!c.cheie)}
-                  title={locale === "ro" ? "Contact prioritar / direct" : "Priority / direct contact"}
+                  title={ui.prioritar}
                   aria-pressed={!!c.cheie}
                   className={`mt-0.5 flex min-h-8 min-w-8 shrink-0 items-center justify-center ${c.cheie ? "text-[var(--ci-red)]" : "text-[var(--ci-text-faint)] hover:text-[var(--ci-red)]"}`}
                 >
@@ -131,30 +134,31 @@ export function ContactePanel({
                   </p>
                   <div className="mt-1 flex flex-wrap items-center gap-1.5">
                     {c.consentStatus === "da" && (
-                      <span className="rounded-full bg-[var(--ci-green-soft)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--ci-green)]">{locale === "ro" ? "consimț." : "consent"}</span>
+                      <span className="rounded-full bg-[var(--ci-green-soft)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--ci-green)]">{ui.consimt}</span>
                     )}
                     {c.outreachStare && esteStareOutreach(c.outreachStare) && (
-                      <span title="Starea pe LinkedIn (Waalaxy)" className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${c.outreachStare === "refuz" ? "bg-[var(--ci-red-soft)] text-[var(--ci-red)]" : c.outreachStare === "a_raspuns" ? "bg-[var(--ci-green-soft)] text-[var(--ci-green)]" : c.outreachStare === "conectat" ? "bg-[var(--ci-blue-soft)] text-[var(--ci-blue)]" : "bg-[var(--ci-amber-soft)] text-[var(--ci-text)]"}`}>
-                        in · {ETICHETE_STARE_OUTREACH[c.outreachStare]}
+                      <span title={ui.waalaxyTitle} className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${c.outreachStare === "refuz" ? "bg-[var(--ci-red-soft)] text-[var(--ci-red)]" : c.outreachStare === "a_raspuns" ? "bg-[var(--ci-green-soft)] text-[var(--ci-green)]" : c.outreachStare === "conectat" ? "bg-[var(--ci-blue-soft)] text-[var(--ci-blue)]" : "bg-[var(--ci-amber-soft)] text-[var(--ci-text)]"}`}>
+                        in · {ui.stareOutreach[c.outreachStare] ?? c.outreachStare}
                       </span>
                     )}
                     {c.emailStatus && (
-                      <span title="Rezultatul verificării adresei de e-mail" className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ${c.emailStatus === "valid" ? "bg-[var(--ci-green-soft)] text-[var(--ci-green)]" : c.emailStatus === "invalid" ? "bg-[var(--ci-red-soft)] text-[var(--ci-red)]" : "bg-[var(--ci-amber-soft)] text-[var(--ci-text)]"}`}>
-                        {c.emailStatus === "valid" ? "e-mail valid" : c.emailStatus === "invalid" ? "e-mail invalid" : "e-mail nesigur"}
+                      <span title={ui.emailTitle} className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ${c.emailStatus === "valid" ? "bg-[var(--ci-green-soft)] text-[var(--ci-green)]" : c.emailStatus === "invalid" ? "bg-[var(--ci-red-soft)] text-[var(--ci-red)]" : "bg-[var(--ci-amber-soft)] text-[var(--ci-text)]"}`}>
+                        {c.emailStatus === "valid" ? ui.emailValid : c.emailStatus === "invalid" ? ui.emailInvalid : ui.emailNesigur}
                       </span>
                     )}
-                    {c.consentStatus === "nu" && <span className="rounded-full bg-[var(--ci-red-soft)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--ci-red)]">{locale === "ro" ? "a refuzat" : "declined"}</span>}
+                    {c.consentStatus === "nu" && <span className="rounded-full bg-[var(--ci-red-soft)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--ci-red)]">{ui.refuzat}</span>}
                     {(() => {
                       const niv = senioritate(c.rol);
-                      const dep = departamentDinFunctie(c.rol, c.dept);
+                      const cat = categoriiPersoana(c.rol, null)[0];
+                      const dep = (c.dept ?? "").trim() || (cat ? functii[cat] : "");
                       return (
                         <>
                           {niv && (
-                            <span title="Nivelul dedus din funcție" className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${niv === "c-level" ? "bg-[var(--ci-green-soft)] text-[var(--ci-green)]" : niv === "director" ? "bg-[var(--ci-blue-soft)] text-[var(--ci-blue)]" : "bg-[var(--ci-amber-soft)] text-[var(--ci-text)]"}`}>
-                              {ETICHETE_SENIORITATE[niv]}
+                            <span title={ui.nivelTitle} className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${niv === "c-level" ? "bg-[var(--ci-green-soft)] text-[var(--ci-green)]" : niv === "director" ? "bg-[var(--ci-blue-soft)] text-[var(--ci-blue)]" : "bg-[var(--ci-amber-soft)] text-[var(--ci-text)]"}`}>
+                              {ui.senioritate[niv] ?? niv}
                             </span>
                           )}
-                          {dep && <span title={c.dept ? "Departament" : "Departamentul dedus din funcție"} className="rounded-full bg-[var(--ci-blue-soft)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--ci-blue)]">{dep}</span>}
+                          {dep && <span title={c.dept ? ui.departament : ui.departamentDedus} className="rounded-full bg-[var(--ci-blue-soft)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--ci-blue)]">{dep}</span>}
                         </>
                       );
                     })()}
@@ -173,7 +177,7 @@ export function ContactePanel({
                     href={`tel:${c.telefon.replace(/[^\d+]/g, "")}`}
                     className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-[var(--ci-radius-btn)] bg-[var(--ci-green)] px-4 text-[14px] font-semibold text-white sm:hidden"
                   >
-                    <Phone className="h-4 w-4" /> Sună
+                    <Phone className="h-4 w-4" /> {ui.suna}
                   </a>
                 )}
                 {c.telefon && c.consentStatus !== "nu" && (
@@ -187,15 +191,15 @@ export function ContactePanel({
                   </a>
                 )}
                 <label className="flex min-h-8 items-center gap-1.5 text-[12px] text-[var(--ci-text-muted)]">
-                  Acord
+                  {ui.acord}
                   <select
                     value={c.consentStatus ?? "necunoscut"}
                     onChange={(e) => onConsimtamant(c.id, e.target.value as "da" | "nu" | "necunoscut")}
                     className="h-8 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-1.5 text-[12px] text-[var(--ci-text)]"
                   >
-                    <option value="necunoscut">necunoscut</option>
-                    <option value="da">da</option>
-                    <option value="nu">nu (a refuzat)</option>
+                    <option value="necunoscut">{ui.acordNecunoscut}</option>
+                    <option value="da">{ui.acordDa}</option>
+                    <option value="nu">{ui.acordNu}</option>
                   </select>
                 </label>                <button type="button" onClick={() => onSterge(c.id)} disabled={sterge === c.id} title={dict.stergeContactTitle} className={`${actiune} ml-auto hover:text-[var(--ci-red)] disabled:opacity-50`}>
                   <Trash2 className="h-4 w-4" />

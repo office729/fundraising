@@ -1,0 +1,41 @@
+import type { Locale } from "../config";
+
+// Pagina de rezultat a plății abonamentului (/abonament/[orgSlug]/rezultat), unde Netopia întoarce clientul după plată.
+export const ABONAMENT_REZULTAT_UI_DICT = {
+  ro: {
+    numere: "ro-RO",
+    pachete: { start: "Pachet START", crestere: "Pachet CREȘTERE", impact: "Pachet IMPACT", custom: "Plan personalizat" } as Record<string, string>,
+    negasita: "Nu am găsit această plată",
+    negasitaDesc: "Comanda nu există sau nu aparține acestei organizații. Dacă ai plătit, scrie-ne și verificăm.",
+    verificam: "Verificăm plata…",
+    verificamDesc: "Așteptăm confirmarea de la bancă. De obicei durează câteva secunde; pagina se actualizează singură. Dacă ai anulat plata sau ea a eșuat, poți încerca din nou din Setări.",
+    confirmata: "Plata a fost confirmată",
+    confirmataDesc: (pachet: string, suma: string) => `${pachet} — ${suma} lei. Accesul e activ pentru o lună.`,
+    descarcaFactura: (nr: string | null) => `Descarcă factura ${nr ? `(nr. ${nr})` : ""} ↓`,
+    facturaSeEmite: "Factura se emite automat în câteva secunde — o găsești și în Setări, la Abonament.",
+    esuata: "Plata nu a reușit",
+    esuataDesc: "Nu s-a retras nicio sumă. Poți încerca din nou din Setări, cu același card sau cu altul.",
+    rambursata: "Plata a fost rambursată",
+    rambursataDesc: "Suma a fost returnată, iar luna corespunzătoare nu mai e plătită.",
+    laPlatforma: "Mergi la platformă",
+    inapoiSetari: "Înapoi la Setări",
+  },
+  en: {
+    numere: "en-GB",
+    pachete: { start: "START plan", crestere: "CREȘTERE plan", impact: "IMPACT plan", custom: "Custom plan" } as Record<string, string>,
+    negasita: "We couldn't find this payment",
+    negasitaDesc: "The order doesn't exist or doesn't belong to this organization. If you paid, write to us and we'll check.",
+    verificam: "Checking your payment…",
+    verificamDesc: "We're waiting for confirmation from the bank. It usually takes a few seconds; the page updates by itself. If you cancelled the payment or it failed, you can try again from Settings.",
+    confirmata: "Payment confirmed",
+    confirmataDesc: (pachet: string, suma: string) => `${pachet} — ${suma} lei. Access is active for one month.`,
+    descarcaFactura: (nr: string | null) => `Download the invoice ${nr ? `(no. ${nr})` : ""} ↓`,
+    facturaSeEmite: "The invoice is issued automatically within a few seconds — you'll also find it in Settings, under Subscription.",
+    esuata: "The payment didn't go through",
+    esuataDesc: "No amount was charged. You can try again from Settings, with the same card or another one.",
+    rambursata: "The payment was refunded",
+    rambursataDesc: "The amount was returned, and the corresponding month is no longer paid.",
+    laPlatforma: "Go to the platform",
+    inapoiSetari: "Back to Settings",
+  },
+} satisfies Record<Locale, unknown>;

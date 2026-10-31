@@ -6,6 +6,7 @@ import { withOrgAdmin } from "@/lib/auth/guard";
 import { organizations } from "@/lib/db/schema";
 import { stripePentruCheie } from "@/lib/org-stripe";
 import { criptareConfigurata, cripteaza, decripteaza } from "@/lib/secret-box";
+import { getTr } from "@/lib/i18n/tr-server";
 
 export type StripeDonatiiState = { error: string | null; ok: boolean };
 
@@ -62,10 +63,14 @@ const RE_CHEIE_PUBLICA = /^pk_(live|test)_[A-Za-z0-9]{10,}$/;
 const RE_WEBHOOK = /^whsec_[A-Za-z0-9]{10,}$/;
 
 const salveaza = withOrgAdmin(async (ctx, cheie: string, webhook: string, cheiePublicabila: string): Promise<StripeDonatiiState> => {
+  const t = await getTr();
   if (!criptareConfigurata()) {
     return {
       ok: false,
-      error: "Serverul nu are încă activată criptarea cheilor (ORG_SECRETS_KEY) — cheile nu pot fi salvate în siguranță. Contactează administratorul platformei.",
+      error: t(
+        "Serverul nu are încă activată criptarea cheilor (ORG_SECRETS_KEY) — cheile nu pot fi salvate în siguranță. Contactează administratorul platformei.",
+        "The server does not have key encryption enabled yet (ORG_SECRETS_KEY) — the keys cannot be stored safely. Contact the platform administrator.",
+      ),
     };
   }
 
@@ -82,15 +87,15 @@ const salveaza = withOrgAdmin(async (ctx, cheie: string, webhook: string, cheieP
       .limit(1)
   )[0];
 
-  if (!cheie && !existent?.secret) return { ok: false, error: "Introdu cheia secretă din contul tău Stripe." };
+  if (!cheie && !existent?.secret) return { ok: false, error: t("Introdu cheia secretă din contul tău Stripe.", "Enter the secret key from your Stripe account.") };
   if (cheie && !RE_CHEIE.test(cheie)) {
-    return { ok: false, error: "Cheia nu are formatul corect — trebuie să înceapă cu sk_live_… (sau rk_live_…, pentru o cheie restricționată)." };
+    return { ok: false, error: t("Cheia nu are formatul corect — trebuie să înceapă cu sk_live_… (sau rk_live_…, pentru o cheie restricționată).", "The key is not in the right format — it must start with sk_live_… (or rk_live_… for a restricted key).") };
   }
   if (webhook && !RE_WEBHOOK.test(webhook)) {
-    return { ok: false, error: "Secretul webhook-ului nu are formatul corect — trebuie să înceapă cu whsec_…" };
+    return { ok: false, error: t("Secretul webhook-ului nu are formatul corect — trebuie să înceapă cu whsec_…", "The webhook secret is not in the right format — it must start with whsec_…") };
   }
   if (cheiePublicabila && !RE_CHEIE_PUBLICA.test(cheiePublicabila)) {
-    return { ok: false, error: "Cheia publicabilă nu are formatul corect — trebuie să înceapă cu pk_live_… (sau pk_test_…)." };
+    return { ok: false, error: t("Cheia publicabilă nu are formatul corect — trebuie să înceapă cu pk_live_… (sau pk_test_…).", "The publishable key is not in the right format — it must start with pk_live_… (or pk_test_…).") };
   }
 
   const set: Partial<typeof organizations.$inferInsert> = {};
@@ -105,11 +110,11 @@ const salveaza = withOrgAdmin(async (ctx, cheie: string, webhook: string, cheieP
     } catch (e) {
       const tip = (e as { type?: string }).type;
       if (tip === "StripeAuthenticationError") {
-        return { ok: false, error: "Stripe a respins cheia. Verifică dacă ai copiat-o întreagă și dacă e cheia secretă (nu cea publicabilă)." };
+        return { ok: false, error: t("Stripe a respins cheia. Verifică dacă ai copiat-o întreagă și dacă e cheia secretă (nu cea publicabilă).", "Stripe rejected the key. Check that you copied all of it and that it is the secret key (not the publishable one).") };
       }
       if (tip !== "StripePermissionError") {
         console.error("validare cheie Stripe ONG:", e);
-        return { ok: false, error: "Nu am putut verifica cheia la Stripe acum. Încearcă din nou în câteva momente." };
+        return { ok: false, error: t("Nu am putut verifica cheia la Stripe acum. Încearcă din nou în câteva momente.", "We could not verify the key with Stripe right now. Please try again in a few moments.") };
       }
     }
     set.donationStripeSecretEnc = cripteaza(cheie);
@@ -210,16 +215,17 @@ async function activeazaPortofelele(cheieSecreta: string): Promise<void> {
 }
 
 export const activeazaDomeniuPlataAction = withOrgAdmin(async (ctx): Promise<StripeDonatiiState> => {
+  const t = await getTr();
   const rows = await ctx.db
     .select({ secret: organizations.donationStripeSecretEnc, customDomain: organizations.customDomain })
     .from(organizations)
     .where(eq(organizations.id, ctx.orgId))
     .limit(1);
   const r = rows[0];
-  if (!r?.secret) return { ok: false, error: "Conectează întâi cheia secretă Stripe." };
+  if (!r?.secret) return { ok: false, error: t("Conectează întâi cheia secretă Stripe.", "Connect the Stripe secret key first.") };
 
   if (!(await inregistreazaDomeniiStripe(decripteaza(r.secret), r.customDomain))) {
-    return { ok: false, error: "Nu am putut înregistra domeniul la Stripe acum. Încearcă din nou în câteva momente." };
+    return { ok: false, error: t("Nu am putut înregistra domeniul la Stripe acum. Încearcă din nou în câteva momente.", "We could not register the domain with Stripe right now. Please try again in a few moments.") };
   }
 
   await ctx.db.update(organizations).set({ donationStripeDomainVerifiedAt: new Date() }).where(eq(organizations.id, ctx.orgId));

@@ -1,12 +1,14 @@
 import type { CSSProperties, ReactNode } from "react";
 
+import type { Locale } from "@/lib/i18n/config";
+import { VOLUNTAR_UI_DICT } from "@/lib/i18n/dictionaries/voluntar-ui";
 import type { OrgPublica } from "@/lib/voluntari-panou-server";
 
 // Pagina voluntarilor folosește mereu culorile Alexandrit (albastru + verde, fond rece), indiferent de organizație: unele culori de brand
 // nu se vedeau bine pe alb. Numele variabilelor (--vp-*) rămân, ca să nu schimbăm și paginile de distribuire.
 export const culoareOrg = () => "#154a85";
 
-export function PanouShell({ org, children, antet }: { org: OrgPublica; children: ReactNode; antet?: ReactNode }) {
+export function PanouShell({ org, children, antet, locale }: { org: OrgPublica; children: ReactNode; antet?: ReactNode; locale: Locale }) {
   const stil = {
     "--vp-brand": "#154a85",
     "--vp-brand-2": "#1f64ad",
@@ -34,7 +36,7 @@ export function PanouShell({ org, children, antet }: { org: OrgPublica; children
               <img src={org.logoUrl} alt="" className="size-7 rounded-md bg-white/90 object-contain p-0.5" />
             ) : null}
             <span>{org.nume}</span>
-            <span className="opacity-70">· Voluntari</span>
+            <span className="opacity-70">{VOLUNTAR_UI_DICT[locale].shell.voluntari}</span>
           </div>
           {antet}
         </div>

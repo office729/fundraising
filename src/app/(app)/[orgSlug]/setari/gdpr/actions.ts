@@ -21,6 +21,7 @@ import {
 import { normalizeazaTelefon } from "@/lib/voluntari-panou";
 import { EroareUtilizator, mesajSigur } from "@/lib/erori";
 import { EMAIL_RE, normalizeazaEmail } from "@/lib/validation";
+import { getTr } from "@/lib/i18n/tr-server";
 
 // Cereri ale persoanelor vizate (GDPR art. 15 și 17) pentru PERSOANE CARE NU SUNT DONATORI:
 // persoane de contact la companii, voluntari, creatori de pagini de campanie, expeditori de
@@ -44,9 +45,9 @@ export type RezultatCautare = {
 const ROSTER_PATH = "voluntari-roster";
 type Voluntar = { id?: string; nume?: string; email?: string; [k: string]: unknown };
 
-function emailValid(brut: string): string {
+async function emailValid(brut: string): Promise<string> {
   const email = normalizeazaEmail(brut);
-  if (!email || !EMAIL_RE.test(email)) throw new EroareUtilizator("Adresa de email nu e validă.");
+  if (!email || !EMAIL_RE.test(email)) throw new EroareUtilizator((await getTr())("Adresa de email nu e validă.", "The email address is not valid."));
   return email;
 }
 
@@ -61,7 +62,7 @@ async function citesteVoluntari(ctx: { db: typeof import("@/lib/db").db; orgId: 
 }
 
 const cauta = withOrgAdmin(async (ctx, emailBrut: string): Promise<RezultatCautare> => {
-  const email = emailValid(emailBrut);
+  const email = await emailValid(emailBrut);
   const numara = async (q: Promise<unknown[]>) => (await q).length;
 
   const [contacte, paginiCreate, mesaje, contacteMedia, donator, donatii, formulare, voluntari] = await Promise.all([
@@ -92,13 +93,13 @@ export async function cautaPersoanaAction(orgSlug: string, email: string): Promi
   try {
     return { error: null, rezultat: await cauta(orgSlug, email) };
   } catch (e) {
-    return { error: mesajSigur(e, "Căutarea a eșuat.", "gdpr-cautare"), rezultat: null };
+    return { error: mesajSigur(e, (await getTr())("Căutarea a eșuat.", "The search failed."), "gdpr-cautare"), rezultat: null };
   }
 }
 
 // Export (art. 15): tot ce găsim pentru acea adresă, din sursele acoperite aici + donațiile.
 const exporta = withOrgAdmin(async (ctx, emailBrut: string) => {
-  const email = emailValid(emailBrut);
+  const email = await emailValid(emailBrut);
   const [contacte, pagini, mesaje, media, donatii, formulare, voluntari] = await Promise.all([
     ctx.db.select().from(contacts).where(and(eq(contacts.orgId, ctx.orgId), sql`lower(${contacts.email}) = ${email}`)),
     ctx.db
@@ -141,14 +142,14 @@ export async function exportaPersoanaAction(orgSlug: string, email: string) {
   try {
     return { error: null as string | null, date: await exporta(orgSlug, email) };
   } catch (e) {
-    return { error: mesajSigur(e, "Exportul a eșuat.", "gdpr-export"), date: null };
+    return { error: mesajSigur(e, (await getTr())("Exportul a eșuat.", "The export failed."), "gdpr-export"), date: null };
   }
 }
 
 // Ștergere/anonimizare (art. 17) pentru sursele acoperite aici. Donațiile, Formularul 230 și
 // profilul de donator NU se ating — au evidență contabilă/legală și panoul lor dedicat.
 const sterge = withOrgAdmin(async (ctx, emailBrut: string) => {
-  const email = emailValid(emailBrut);
+  const email = await emailValid(emailBrut);
 
   const contacteSterse = await ctx.db
     .delete(contacts)
@@ -243,6 +244,6 @@ export async function stergePersoanaAction(orgSlug: string, email: string) {
   try {
     return { error: null as string | null, rezumat: await sterge(orgSlug, email) };
   } catch (e) {
-    return { error: mesajSigur(e, "Ștergerea a eșuat.", "gdpr-stergere"), rezumat: null };
+    return { error: mesajSigur(e, (await getTr())("Ștergerea a eșuat.", "The deletion failed."), "gdpr-stergere"), rezumat: null };
   }
 }

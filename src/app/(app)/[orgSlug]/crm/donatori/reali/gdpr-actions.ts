@@ -6,6 +6,8 @@ import { inregistreazaAudit } from "@/lib/audit";
 import { withOrgAdmin } from "@/lib/auth/guard";
 import { donatorNotite, donatoriReali, emailSuppression, formular230Destinatari, formular230Submissions, fundraisingDonations } from "@/lib/db/schema";
 import { hashSuprimare } from "@/lib/dezabonare";
+import { DONATORI_UI2_DICT } from "@/lib/i18n/dictionaries/donatori-ui-2";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { raporteazaEroare } from "@/lib/monitoring";
 import { stripeOrgDupaId } from "@/lib/org-stripe";
 import { decripteazaSauLegacy } from "@/lib/secret-box";
@@ -106,12 +108,13 @@ export type StergereDonatorState = {
 // sunt ale platformei — organizația le șterge din Dashboard-ul ei Stripe.
 export const stergeDateDonator = withOrgAdmin(
   async (ctx, donatorId: string, inclusiv230: boolean): Promise<StergereDonatorState> => {
+    const er = DONATORI_UI2_DICT[await getLocale()].erori;
     const [donator] = await ctx.db
       .select({ id: donatoriReali.id, email: donatoriReali.email, dezabonatEmailLa: donatoriReali.dezabonatEmailLa, consimtamantEmail: donatoriReali.consimtamantEmail })
       .from(donatoriReali)
       .where(and(eq(donatoriReali.id, donatorId), eq(donatoriReali.orgId, ctx.orgId)))
       .limit(1);
-    if (!donator) return { ok: false, error: "Donatorul nu a fost găsit." };
+    if (!donator) return { ok: false, error: er.donatorNegasit };
 
     // Abonamentul lunar rămas activ în Stripe ar continua să-l taxeze și, la fiecare factură plătită, i-ar RECREA datele
     // (nume, email, telefon) din metadata abonamentului — ștergerea s-ar anula singură. Îl anulăm ÎNAINTE de orice
@@ -132,8 +135,7 @@ export const stergeDateDonator = withOrgAdmin(
       if (!stripeOrg) {
         return {
           ok: false,
-          error:
-            "Donatorul are abonament lunar în Stripe, dar contul Stripe al organizației nu e conectat. Anulează abonamentul din Dashboard-ul Stripe, apoi repetă ștergerea.",
+          error: er.stripeNeconectat,
         };
       }
       for (const a of abonamente) {
@@ -145,7 +147,7 @@ export const stergeDateDonator = withOrgAdmin(
           // Deja anulat / inexistent = ce voiam; orice altă eroare oprește ștergerea.
           if (cod === "resource_missing") continue;
           raporteazaEroare("gdpr-anulare-abonament", e, { orgId: ctx.orgId });
-          return { ok: false, error: "Nu am putut anula abonamentul lunar din Stripe, deci nu am șters nimic. Încearcă din nou sau anulează-l din Dashboard-ul Stripe." };
+          return { ok: false, error: er.stripeAnulareEsuata };
         }
       }
     }

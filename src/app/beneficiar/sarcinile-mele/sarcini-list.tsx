@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 
+import type { Locale } from "@/lib/i18n/config";
+import { BENEFICIAR_PORTAL_UI_DICT } from "@/lib/i18n/dictionaries/beneficiar-portal-ui";
+
 import { finalizeazaSarcinaBeneficiarAction } from "../actions";
 
 export type TaskRow = {
@@ -18,7 +21,9 @@ export type TaskRow = {
   attachments: { id: string; fisierUrl: string; denumire: string }[];
 };
 
-export function SarciniList({ taskuri }: { taskuri: TaskRow[] }) {
+export function SarciniList({ taskuri, locale }: { taskuri: TaskRow[]; locale: Locale }) {
+  const d = BENEFICIAR_PORTAL_UI_DICT[locale];
+  const s = d.sarcini;
   const [pending, setPending] = useState<string | null>(null);
   const [finalizate, setFinalizate] = useState<string[]>(taskuri.filter((t) => t.status === "finalizata").map((t) => t.id));
 
@@ -40,15 +45,15 @@ export function SarciniList({ taskuri }: { taskuri: TaskRow[] }) {
                 <div className="flex items-center gap-2">
                   <p className="text-[13.5px] font-semibold text-ink">{t.titlu}</p>
                   {t.tip === "sponsorizare" && (
-                    <span className="rounded-full bg-brand-blue-soft px-2 py-0.5 text-[11px] font-medium text-brand-blue">Sponsorizare</span>
+                    <span className="rounded-full bg-brand-blue-soft px-2 py-0.5 text-[11px] font-medium text-brand-blue">{s.sponsorizare}</span>
                   )}
                 </div>
                 {t.descriere && <p className="mt-1 text-[13px] text-body">{t.descriere}</p>}
                 {t.tip === "sponsorizare" && (
                   <div className="mt-2 rounded-lg bg-panel-2 p-3 text-[12.5px] text-muted">
-                    {t.companie && <p>Companie sponsor: {t.companie}</p>}
-                    {t.suma != null && <p>Sumă: {t.suma.toLocaleString("ro-RO")} lei</p>}
-                    {t.canalRecomandat && <p>Canal recomandat: {t.canalRecomandat}</p>}
+                    {t.companie && <p>{s.companie}{t.companie}</p>}
+                    {t.suma != null && <p>{s.suma(t.suma.toLocaleString(d.numere))}</p>}
+                    {t.canalRecomandat && <p>{s.canal}{t.canalRecomandat}</p>}
                     {t.textMultumire && <p className="mt-1 whitespace-pre-wrap italic">„{t.textMultumire}”</p>}
                   </div>
                 )}
@@ -61,17 +66,17 @@ export function SarciniList({ taskuri }: { taskuri: TaskRow[] }) {
                     ))}
                   </div>
                 )}
-                {t.dataLimita && <p className="mt-2 text-[11.5px] text-muted-2">Termen: {new Date(t.dataLimita).toLocaleDateString("ro-RO")}</p>}
+                {t.dataLimita && <p className="mt-2 text-[11.5px] text-muted-2">{s.termen}{new Date(t.dataLimita).toLocaleDateString(d.numere)}</p>}
               </div>
               {done ? (
-                <span className="shrink-0 rounded-full bg-brand-green-soft px-2.5 py-1 text-[12px] font-medium text-brand-green">Finalizată</span>
+                <span className="shrink-0 rounded-full bg-brand-green-soft px-2.5 py-1 text-[12px] font-medium text-brand-green">{s.finalizata}</span>
               ) : (
                 <button
                   onClick={() => finalizeaza(t.id)}
                   disabled={pending === t.id}
                   className="shrink-0 rounded-lg bg-brand-green px-3 py-1.5 text-[12.5px] font-bold text-white hover:bg-brand-green-hover disabled:opacity-60"
                 >
-                  {pending === t.id ? "..." : "Am finalizat"}
+                  {pending === t.id ? "..." : s.amFinalizat}
                 </button>
               )}
             </div>

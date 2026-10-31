@@ -2,11 +2,15 @@
 
 import { useState } from "react";
 
+import type { Locale } from "@/lib/i18n/config";
+import { BENEFICIAR_PORTAL_UI_DICT } from "@/lib/i18n/dictionaries/beneficiar-portal-ui";
+
 import { marcheazaNotificareCititaAction, marcheazaToateNotificarileCititeAction } from "../actions";
 
 export type NotificareRow = { id: string; titlu: string; continut: string | null; link: string | null; citit: boolean; createdAt: string };
 
-export function NotificariList({ notificari }: { notificari: NotificareRow[] }) {
+export function NotificariList({ notificari, locale }: { notificari: NotificareRow[]; locale: Locale }) {
+  const t = BENEFICIAR_PORTAL_UI_DICT[locale];
   const [citite, setCitite] = useState<string[]>(notificari.filter((n) => n.citit).map((n) => n.id));
 
   async function marcheaza(id: string) {
@@ -26,7 +30,7 @@ export function NotificariList({ notificari }: { notificari: NotificareRow[] }) 
     <div className="space-y-3">
       {necitite > 0 && (
         <button onClick={marcheazaToate} className="text-[12.5px] font-medium text-brand-green hover:underline">
-          Marchează toate ca citite
+          {t.notificari.toateCitite}
         </button>
       )}
       <div className="flex flex-col gap-2">
@@ -39,7 +43,7 @@ export function NotificariList({ notificari }: { notificari: NotificareRow[] }) 
             >
               <div className="flex items-start justify-between gap-2">
                 <p className="text-[13.5px] font-semibold text-ink">{n.titlu}</p>
-                <span className="shrink-0 text-[11px] text-muted-2">{new Date(n.createdAt).toLocaleDateString("ro-RO")}</span>
+                <span className="shrink-0 text-[11px] text-muted-2">{new Date(n.createdAt).toLocaleDateString(t.numere)}</span>
               </div>
               {n.continut && <p className="mt-1 text-[13px] text-body">{n.continut}</p>}
             </div>

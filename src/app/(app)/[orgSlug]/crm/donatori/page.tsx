@@ -7,6 +7,7 @@ import { Card } from "../components/ui/card";
 import { DONATORI } from "../mock";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { DONATORI_REALI_DICT } from "@/lib/i18n/dictionaries/donatori-reali";
+import { DONATORI_UI_DICT } from "@/lib/i18n/dictionaries/donatori-ui";
 
 import { DemoDatasetSection } from "./demo-dataset-section";
 import { ListaPfClient } from "./lista-pf";
@@ -45,6 +46,7 @@ async function DonatoriContent({
   }
   const locale = await getLocale();
   const dict = DONATORI_REALI_DICT[locale];
+  const ui = DONATORI_UI_DICT[locale];
   const lista = await getListaPf(orgSlug, sp.toString());
 
   return (
@@ -59,10 +61,10 @@ async function DonatoriContent({
       {lista.areDonatori && (
         <HartaJudeteCard
           dupaJudet={lista.dupaJudet}
-          titlu="Harta României"
-          subtitlu="Câți donatori din baza ta sunt în fiecare județ. Treci cu mouse-ul peste un județ."
-          unitate="donatori"
-          ariaLabel="Harta României cu numărul de donatori pe județ"
+          titlu={ui.harta.titlu}
+          subtitlu={ui.harta.subtitlu}
+          unitate={ui.harta.unitate}
+          ariaLabel={ui.harta.ariaLabel}
         />
       )}
 
@@ -86,7 +88,7 @@ async function DonatoriContent({
                   </p>
                 </div>
                 <span className="ci-tabular text-[13px] font-semibold text-[var(--ci-text)]">
-                  {d.totalDonat.toLocaleString("ro-RO")} {d.moneda}
+                  {d.totalDonat.toLocaleString(locale === "ro" ? "ro-RO" : "en-GB")} {d.moneda}
                 </span>
               </Link>
             ))}

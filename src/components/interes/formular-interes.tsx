@@ -6,13 +6,15 @@ import { useId, useState, useTransition } from "react";
 
 import { trimiteInteresAction } from "@/app/(marketing)/interes-actions";
 import { contextSerializat } from "@/lib/atribuire/client";
+import type { Locale } from "@/lib/i18n/config";
+import { INTERES_UI_DICT } from "@/lib/i18n/dictionaries/interes-ui";
 import { valideazaInteres, type CampInteres, type EroriInteres } from "@/lib/popup-inscriere";
 
-const CAMPURI: { cheie: CampInteres; eticheta: string; placeholder: string; tip: string; complet: string }[] = [
-  { cheie: "nume", eticheta: "Nume și prenume", placeholder: "Cum te numești?", tip: "text", complet: "name" },
-  { cheie: "organizatie", eticheta: "Organizație", placeholder: "Numele organizației tale", tip: "text", complet: "organization" },
-  { cheie: "email", eticheta: "E-mail", placeholder: "adresa@organizatie.ro", tip: "email", complet: "email" },
-  { cheie: "telefon", eticheta: "Telefon (opțional)", placeholder: "+40", tip: "tel", complet: "tel" },
+const CAMPURI: { cheie: CampInteres; tip: string; complet: string }[] = [
+  { cheie: "nume", tip: "text", complet: "name" },
+  { cheie: "organizatie", tip: "text", complet: "organization" },
+  { cheie: "email", tip: "email", complet: "email" },
+  { cheie: "telefon", tip: "tel", complet: "tel" },
 ];
 
 // Parametrii de campanie din adresa paginii (utm_source / utm_medium / utm_campaign), ca echipa să știe de unde vine fiecare ONG. Citiți doar la trimitere.
@@ -31,7 +33,9 @@ function campanieDinAdresa(): string {
 
 // Formularul „Descoperă Alexandrit”, comun pop-up-ului și paginii /descopera: câmpurile, bifa de confidențialitate, trimiterea și erorile. Antetul și mesajul de
 // mulțumire rămân în pagina care îl folosește; `onTrimis` anunță succesul. Datele ajung pe e-mail la echipă (vezi interes-actions.ts).
-export function FormularInteres({ cale, previzualizare = false, onTrimis, nota = true }: { cale: string; previzualizare?: boolean; onTrimis: () => void; nota?: boolean }) {
+export function FormularInteres({ cale, previzualizare = false, onTrimis, nota = true, locale }: { cale: string; previzualizare?: boolean; onTrimis: () => void; nota?: boolean; locale: Locale }) {
+  const t = INTERES_UI_DICT[locale];
+  const traduEroare = (m: string | undefined) => (m ? (t.validare[m] ?? m) : m);
   const idBaza = useId();
   const [valori, setValori] = useState({ nume: "", organizatie: "", email: "", telefon: "", acord: false, capcana: "" });
   const [erori, setErori] = useState<EroriInteres>({});
@@ -48,7 +52,7 @@ export function FormularInteres({ cale, previzualizare = false, onTrimis, nota =
     setEroareGenerala(null);
     const v = valideazaInteres(valori);
     if (!v.ok) {
-      setErori(v.erori);
+      setErori(Object.fromEntries(Object.entries(v.erori).map(([k, m]) => [k, traduEroare(m)])) as EroriInteres);
       ev.currentTarget.querySelector<HTMLElement>(`[name=${Object.keys(v.erori)[0]}]`)?.focus();
       return;
     }
@@ -62,7 +66,7 @@ export function FormularInteres({ cale, previzualizare = false, onTrimis, nota =
           setEroareGenerala(r.eroare);
         }
       } catch {
-        setEroareGenerala("Nu am putut trimite acum. Încearcă din nou în câteva clipe.");
+        setEroareGenerala(t.eroareTrimitere);
       }
     });
   };
@@ -72,14 +76,14 @@ export function FormularInteres({ cale, previzualizare = false, onTrimis, nota =
       <div className="grid gap-x-4 gap-y-4 sm:grid-cols-2">
         {CAMPURI.map((c) => (
           <label key={c.cheie} className="block">
-            <span className="text-[15px] font-bold">{c.eticheta}</span>
+            <span className="text-[15px] font-bold">{t.campuri[c.cheie as "nume"].eticheta}</span>
             <input
               name={c.cheie}
               type={c.tip}
               autoComplete={c.complet}
               value={valori[c.cheie as "nume"]}
               onChange={(e) => schimba(c.cheie as keyof typeof valori, e.target.value)}
-              placeholder={c.placeholder}
+              placeholder={t.campuri[c.cheie as "nume"].placeholder}
               maxLength={c.cheie === "organizatie" ? 150 : c.cheie === "email" ? 254 : 100}
               aria-invalid={Boolean(erori[c.cheie])}
               aria-describedby={erori[c.cheie] ? `${idBaza}-${c.cheie}` : undefined}
@@ -98,7 +102,7 @@ export function FormularInteres({ cale, previzualizare = false, onTrimis, nota =
           a browserului să nu facă formularul al unui om să pară trimis de robot. */}
       <div aria-hidden className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
         <label>
-          Nu completa acest câmp
+          {t.capcana}
           <input name="alx_extra" tabIndex={-1} autoComplete="off" value={valori.capcana} onChange={(e) => schimba("capcana", e.target.value)} />
         </label>
       </div>
@@ -113,9 +117,9 @@ export function FormularInteres({ cale, previzualizare = false, onTrimis, nota =
           className="mt-0.5 h-6 w-6 shrink-0 cursor-pointer rounded-md border-[#8a96ad] accent-[#06a87b]"
         />
         <span className="text-[16px] leading-snug">
-          Am citit{" "}
+          {t.am_citit}{" "}
           <Link href="/gdpr" target="_blank" rel="noopener noreferrer" prefetch={false} className="inline-block py-1.5 text-[#0b63d6] underline underline-offset-2">
-            Politica de confidențialitate.
+            {t.politica}
           </Link>
         </span>
       </label>
@@ -136,11 +140,11 @@ export function FormularInteres({ cale, previzualizare = false, onTrimis, nota =
         disabled={pending}
         className="mt-5 flex h-14 w-full items-center justify-center gap-3 rounded-xl bg-[#06a87b] text-[18px] font-bold text-white transition hover:bg-[#058f69] focus-visible:ring-2 focus-visible:ring-[#154a85] focus-visible:ring-offset-2 focus-visible:outline-none disabled:opacity-70"
       >
-        {pending ? "Se trimite…" : "Sunt interesat de Alexandrit"}
+        {pending ? t.seTrimite : t.submit}
         {!pending && <ArrowRight className="h-5 w-5" aria-hidden />}
       </button>
-      {nota && <p className="mt-4 text-center text-[15px] text-[#0b1f4d]/65">Fă primul pas spre un ONG mai bine organizat.</p>}
-      {previzualizare && <p className="mt-2 text-center text-xs text-amber-700">Previzualizare: mesajul se trimite marcat [TEST].</p>}
+      {nota && <p className="mt-4 text-center text-[15px] text-[#0b1f4d]/65">{t.nota}</p>}
+      {previzualizare && <p className="mt-2 text-center text-xs text-amber-700">{t.previzualizare}</p>}
     </form>
   );
 }

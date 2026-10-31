@@ -2,72 +2,58 @@ import { Bell, Phone, ThumbsUp } from "lucide-react";
 import Link from "next/link";
 
 import { requireOrgAccess } from "@/lib/auth/guard";
+import { DONATORI_UI_DICT } from "@/lib/i18n/dictionaries/donatori-ui";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { titluAbsolut } from "@/lib/page-titles";
 
 import { Card, CardHeader } from "../../components/ui/card";
 import { EmptyState } from "../../components/ui/states";
-import { dataOraRo, dataRo, leiRo, nrRo, procentRo } from "../pf-format";
+import { formatariPf } from "../pf-format";
 import { PfNav } from "../pf-nav";
 import { listeazaRapoartePf } from "../pf-actions";
 import { getAcasaPf } from "../queries-analiza";
 
 export const dynamic = "force-dynamic";
 
-const ACTIUNI: Record<string, string> = {
-  donator_sunat: "a marcat ca sunat",
-  donator_sunat_anulat: "a anulat „sunat”",
-  donator_multumit: "a marcat ca mulțumit",
-  donator_multumit_anulat: "a anulat mulțumirea",
-  donator_a_raspuns: "a notat că a răspuns",
-  donator_a_raspuns_anulat: "a anulat „a răspuns”",
-  donator_nu_contactat: "a marcat „nu contactat”",
-  donator_contactare_permisa: "a permis din nou contactarea",
-  donator_reapel_programat: "a programat un reapel",
-  donator_reapel_scos: "a scos reapelul",
-  donator_winback_reactivare: "a trecut în reactivare",
-  donator_winback_reactivat: "a marcat reactivat",
-  donator_winback_pierdut: "a marcat pierdut",
-  donator_winback_scos: "a scos din win-back",
-  donatori_import: "a importat donații",
-  donatori_import_sters: "a șters un import",
-};
-
 export default async function AcasaPfPage({ params }: { params: Promise<{ orgSlug: string }> }) {
   const { orgSlug } = await params;
   await requireOrgAccess(orgSlug);
+  const locale = await getLocale();
+  const t = DONATORI_UI_DICT[locale].acasa;
+  const { nr: nrRo, lei: leiRo, procent: procentRo, data: dataRo, dataOra: dataOraRo } = formatariPf(locale);
   const [a, rapoarte] = await Promise.all([getAcasaPf(orgSlug), listeazaRapoartePf(orgSlug)]);
   const baza = `/${orgSlug}/crm/donatori`;
   const maxProiect = Math.max(1, ...a.topProiecte.map((p) => p.total));
   const maxCohorta = Math.max(1, ...a.cohorte.map((c) => c.donatori));
 
   const todo = [
-    { n: a.todo.desunat, eticheta: "de sunat", href: `${baza}?seg=desunat`, icon: <Phone className="size-4" aria-hidden /> },
-    { n: a.todo.demultumit, eticheta: "de mulțumit (au donat în ultimele 30 de zile)", href: `${baza}?seg=demultumit`, icon: <ThumbsUp className="size-4" aria-hidden /> },
-    { n: a.todo.primadeconvertit, eticheta: "prime donații de convertit în recurente", href: `${baza}?seg=primadeconvertit`, icon: null },
-    { n: a.todo.risc, eticheta: "la risc de abandon", href: `${baza}/analize`, icon: null },
-    { n: a.todo.dormanti, eticheta: "dormanți, de reactivat", href: `${baza}?seg=dormanti`, icon: null },
+    { n: a.todo.desunat, eticheta: t.todoDeSunat, href: `${baza}?seg=desunat`, icon: <Phone className="size-4" aria-hidden /> },
+    { n: a.todo.demultumit, eticheta: t.todoDeMultumit, href: `${baza}?seg=demultumit`, icon: <ThumbsUp className="size-4" aria-hidden /> },
+    { n: a.todo.primadeconvertit, eticheta: t.todoPrimaDonatie, href: `${baza}?seg=primadeconvertit`, icon: null },
+    { n: a.todo.risc, eticheta: t.todoRisc, href: `${baza}/analize`, icon: null },
+    { n: a.todo.dormanti, eticheta: t.todoDormanti, href: `${baza}?seg=dormanti`, icon: null },
   ];
 
   return (
     <div className="mx-auto max-w-[1300px] space-y-5">
       <div>
-        <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">Acasă: persoane fizice</h1>
-        <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">Cifrele de ansamblu, ce ai de făcut azi și ce s-a întâmplat recent.</p>
+        <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">{t.titlu}</h1>
+        <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">{t.subtitlu}</p>
       </div>
       <PfNav orgSlug={orgSlug} />
 
       {a.kpi.donatori === 0 ? (
-        <EmptyState title="Niciun donator încă" description="Donatorii apar din paginile de donații, din „Donator nou” sau dintr-un import de donații." />
+        <EmptyState title={t.emptyTitlu} description={t.emptyDescriere} />
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
             {[
-              { e: "Donatori", v: nrRo(a.kpi.donatori) },
-              { e: "Donații", v: nrRo(a.kpi.donatii) },
-              { e: "Suma totală", v: leiRo(a.kpi.suma) },
-              { e: "Donatori lunari", v: nrRo(a.kpi.lunari) },
-              { e: "Recurenți (2+ donații)", v: nrRo(a.kpi.recurenti) },
-              { e: "Activi în ultimele 12 luni", v: `${nrRo(a.kpi.activi12)} · ${procentRo(a.kpi.donatori ? a.kpi.activi12 / a.kpi.donatori : null)}` },
+              { e: t.kpiDonatori, v: nrRo(a.kpi.donatori) },
+              { e: t.kpiDonatii, v: nrRo(a.kpi.donatii) },
+              { e: t.kpiSuma, v: leiRo(a.kpi.suma) },
+              { e: t.kpiLunari, v: nrRo(a.kpi.lunari) },
+              { e: t.kpiRecurenti, v: nrRo(a.kpi.recurenti) },
+              { e: t.kpiActivi, v: `${nrRo(a.kpi.activi12)} · ${procentRo(a.kpi.donatori ? a.kpi.activi12 / a.kpi.donatori : null)}` },
             ].map((x) => (
               <Card key={x.e}>
                 <p className="text-[12px] text-[var(--ci-text-muted)]">{x.e}</p>
@@ -78,7 +64,7 @@ export default async function AcasaPfPage({ params }: { params: Promise<{ orgSlu
 
           <div className="grid gap-4 lg:grid-cols-[1.1fr_1fr]">
             <Card>
-              <CardHeader title="De făcut" subtitle="Ce are nevoie de atenție acum." />
+              <CardHeader title={t.deFacut} subtitle={t.deFacutSub} />
               <ul className="divide-y divide-[var(--ci-border)]">
                 {todo.map((t) => (
                   <li key={t.eticheta}>
@@ -94,10 +80,10 @@ export default async function AcasaPfPage({ params }: { params: Promise<{ orgSlu
               </ul>
               <div className="mt-3 border-t border-[var(--ci-border)] pt-3">
                 <p className="flex items-center gap-1.5 text-[12px] font-semibold tracking-wide text-[var(--ci-text-faint)] uppercase">
-                  <Bell className="size-3.5" aria-hidden /> Reapeluri
+                  <Bell className="size-3.5" aria-hidden /> {t.reapeluri}
                 </p>
                 {a.reapeluri.length === 0 ? (
-                  <p className="mt-1.5 text-[13px] text-[var(--ci-text-muted)]">Niciun reapel programat în următoarele 7 zile.</p>
+                  <p className="mt-1.5 text-[13px] text-[var(--ci-text-muted)]">{t.niciunReapel}</p>
                 ) : (
                   <ul className="mt-1.5 space-y-1">
                     {a.reapeluri.map((r) => (
@@ -114,7 +100,7 @@ export default async function AcasaPfPage({ params }: { params: Promise<{ orgSlu
             </Card>
 
             <Card>
-              <CardHeader title="Top proiecte" subtitle="După suma donată." action={<Link href={`${baza}/proiecte`} prefetch={false} className="text-[12.5px] font-medium text-[var(--ci-primary)] hover:underline">Raport complet</Link>} />
+              <CardHeader title={t.topProiecte} subtitle={t.dupaSuma} action={<Link href={`${baza}/proiecte`} prefetch={false} className="text-[12.5px] font-medium text-[var(--ci-primary)] hover:underline">{t.raportComplet}</Link>} />
               <ul className="space-y-3">
                 {a.topProiecte.map((p) => (
                   <li key={p.proiect}>
@@ -128,7 +114,7 @@ export default async function AcasaPfPage({ params }: { params: Promise<{ orgSlu
                       <div className="h-full rounded-full bg-[var(--ci-primary)]" style={{ width: `${Math.max(3, (p.total / maxProiect) * 100)}%` }} />
                     </div>
                     <p className="mt-0.5 text-[11.5px] text-[var(--ci-text-muted)]">
-                      {nrRo(p.donatori)} donatori · {nrRo(p.donatii)} donații
+                      {nrRo(p.donatori)} {t.donatori} · {nrRo(p.donatii)} {t.donatii}
                     </p>
                   </li>
                 ))}
@@ -138,14 +124,14 @@ export default async function AcasaPfPage({ params }: { params: Promise<{ orgSlu
 
           <div className="grid gap-4 lg:grid-cols-2">
             <Card>
-              <CardHeader title="Cohorte pe an" subtitle="Donatorii grupați după anul primei donații: câți mai sunt activi (au donat în ultimele 12 luni)." />
+              <CardHeader title={t.cohortePeAn} subtitle={t.cohorteSub} />
               <table className="w-full text-[13px]">
                 <thead>
                   <tr className="border-b border-[var(--ci-border)] text-left text-[12px] text-[var(--ci-text-muted)]">
-                    <th className="py-1.5 font-semibold">An</th>
-                    <th className="py-1.5 text-right font-semibold">Donatori</th>
-                    <th className="py-1.5 text-right font-semibold">Total</th>
-                    <th className="py-1.5 pl-4 font-semibold">Activi acum</th>
+                    <th className="py-1.5 font-semibold">{t.colAn}</th>
+                    <th className="py-1.5 text-right font-semibold">{t.colDonatori}</th>
+                    <th className="py-1.5 text-right font-semibold">{t.colTotal}</th>
+                    <th className="py-1.5 pl-4 font-semibold">{t.colActivi}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -176,14 +162,14 @@ export default async function AcasaPfPage({ params }: { params: Promise<{ orgSlu
 
             <div className="space-y-4">
               <Card>
-                <CardHeader title="Activitate recentă" />
+                <CardHeader title={t.activitateRecenta} />
                 {a.feed.length === 0 ? (
-                  <p className="text-[13px] text-[var(--ci-text-muted)]">Încă nimic. Apelurile, mulțumirile și importurile apar aici.</p>
+                  <p className="text-[13px] text-[var(--ci-text-muted)]">{t.inca}</p>
                 ) : (
                   <ul className="space-y-2">
                     {a.feed.map((f, i) => (
                       <li key={i} className="text-[13px] text-[var(--ci-text)]">
-                        <span className="font-medium">{f.autor ?? "Cineva din echipă"}</span> {ACTIUNI[f.actiune] ?? f.actiune}
+                        <span className="font-medium">{f.autor ?? t.cinevaEchipa}</span> {t.actiuni[f.actiune] ?? f.actiune}
                         {f.donator && f.donatorId && (
                           <>
                             {" · "}
@@ -199,9 +185,9 @@ export default async function AcasaPfPage({ params }: { params: Promise<{ orgSlu
                 )}
               </Card>
               <Card>
-                <CardHeader title="Rapoarte salvate" action={<Link href={`${baza}/rapoarte`} prefetch={false} className="text-[12.5px] font-medium text-[var(--ci-primary)] hover:underline">Toate</Link>} />
+                <CardHeader title={t.rapoarteSalvate} action={<Link href={`${baza}/rapoarte`} prefetch={false} className="text-[12.5px] font-medium text-[var(--ci-primary)] hover:underline">{t.toate}</Link>} />
                 {rapoarte.length === 0 ? (
-                  <p className="text-[13px] text-[var(--ci-text-muted)]">Salvează din listă o combinație de segmente și filtre, cu un nume, ca să o redeschizi dintr-un click.</p>
+                  <p className="text-[13px] text-[var(--ci-text-muted)]">{t.rapoarteGol}</p>
                 ) : (
                   <ul className="space-y-1">
                     {rapoarte.slice(0, 6).map((r) => (

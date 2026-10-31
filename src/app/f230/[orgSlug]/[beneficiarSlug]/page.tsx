@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 
 import { db } from "@/lib/db";
 import { formular230Beneficiari, fundraisingPages, organizations } from "@/lib/db/schema";
+import { F230_PUBLIC_UI_DICT } from "@/lib/i18n/dictionaries/f230-public-ui";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { caleCampanie } from "@/lib/link-campanie";
 
 import { Formular230Client } from "../formular-client";
@@ -53,8 +55,9 @@ const getFormularPublic = cache(async function getFormularPublic(orgSlug: string
 export async function generateMetadata({ params }: { params: Promise<{ orgSlug: string; beneficiarSlug: string }> }) {
   const { orgSlug, beneficiarSlug } = await params;
   const rezultat = await getFormularPublic(orgSlug, beneficiarSlug);
+  const titlu = F230_PUBLIC_UI_DICT[await getLocale()].metaTitlu;
   return {
-    title: rezultat ? `Formularul 230 — ${rezultat.beneficiar.nume}` : "Formularul 230",
+    title: rezultat ? `${titlu} — ${rezultat.beneficiar.nume}` : titlu,
     robots: { index: false, follow: false },
   };
 }
@@ -72,6 +75,7 @@ export default async function Formular230PublicPage({
     <>
     <UrmarireF230 orgSlug={orgSlug} beneficiarSlug={beneficiarSlug} />
     <Formular230Client
+      locale={await getLocale()}
       orgSlug={orgSlug}
       beneficiarSlug={beneficiarSlug}
       orgName={rezultat.org.name}

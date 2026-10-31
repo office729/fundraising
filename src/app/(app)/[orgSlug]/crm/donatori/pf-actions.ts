@@ -6,6 +6,8 @@ import { and, desc, eq, sql } from "drizzle-orm";
 
 import { inregistreazaAudit } from "@/lib/audit";
 import { withOrgSession, type OrgContext } from "@/lib/auth/guard";
+import { getLocale } from "@/lib/i18n/get-locale";
+import { DONATORI_UI_DICT } from "@/lib/i18n/dictionaries/donatori-ui";
 import { appUsers, crmKv, donatorNotite, donatoriReali, fundraisingAuditLog } from "@/lib/db/schema";
 import { bazaDonatori, donCte, filtruLaParametri, parseFiltruPf } from "@/lib/donatori-pf";
 
@@ -26,7 +28,8 @@ export type StarePatch = {
 };
 
 export const seteazaStareDonator = withOrgSession(async (ctx, id: string, patch: StarePatch): Promise<Rez> => {
-  if (!UUID_REGEX.test(String(id))) return { ok: false, eroare: "Donator invalid." };
+  const er = DONATORI_UI_DICT[await getLocale()].erori;
+  if (!UUID_REGEX.test(String(id))) return { ok: false, eroare: er.donatorInvalid };
   const set: Partial<typeof donatoriReali.$inferInsert> = {};
   const evenimente: string[] = [];
   if (patch.sunat !== undefined) {
@@ -46,18 +49,18 @@ export const seteazaStareDonator = withOrgSession(async (ctx, id: string, patch:
     evenimente.push(patch.nuContactat ? "nu_contactat" : "contactare_permisa");
   }
   if (patch.reapelLa !== undefined) {
-    if (patch.reapelLa !== null && !DATA_REGEX.test(patch.reapelLa)) return { ok: false, eroare: "Data reapelului nu e validă." };
+    if (patch.reapelLa !== null && !DATA_REGEX.test(patch.reapelLa)) return { ok: false, eroare: er.dataReapel };
     set.reapelLa = patch.reapelLa;
     evenimente.push(patch.reapelLa ? "reapel_programat" : "reapel_scos");
   }
   if (patch.wbStage !== undefined) {
-    if (patch.wbStage !== null && !["reactivare", "reactivat", "pierdut"].includes(patch.wbStage)) return { ok: false, eroare: "Etapă invalidă." };
+    if (patch.wbStage !== null && !["reactivare", "reactivat", "pierdut"].includes(patch.wbStage)) return { ok: false, eroare: er.etapaInvalida };
     set.wbStage = patch.wbStage;
     evenimente.push(patch.wbStage ? `winback_${patch.wbStage}` : "winback_scos");
   }
   if (Object.keys(set).length === 0) return { ok: true };
   const r = await ctx.db.update(donatoriReali).set(set).where(and(eq(donatoriReali.id, id), eq(donatoriReali.orgId, ctx.orgId))).returning({ id: donatoriReali.id });
-  if (!r[0]) return { ok: false, eroare: "Donatorul nu mai există." };
+  if (!r[0]) return { ok: false, eroare: er.donatorInexistent };
   for (const e of evenimente) {
     await inregistreazaAudit(ctx.db, { orgId: ctx.orgId, actorAppUserId: ctx.userId, actiune: `donator_${e}`, entitate: "donator", entitateId: id, detalii: {} });
   }
@@ -123,13 +126,14 @@ async function scrieRapoarte(ctx: Pick<OrgContext, "db" | "orgId">, rapoarte: Ra
 export const listeazaRapoartePf = withOrgSession(async (ctx): Promise<RaportPf[]> => citesteRapoarte(ctx));
 
 export const salveazaRaportPf = withOrgSession(async (ctx, nume: string, qs: string): Promise<Rez> => {
+  const er = DONATORI_UI_DICT[await getLocale()].erori;
   const n = String(nume ?? "").trim().slice(0, 80);
-  if (n.length < 2) return { ok: false, eroare: "Dă raportului un nume (cel puțin 2 caractere)." };
+  if (n.length < 2) return { ok: false, eroare: er.numeRaport };
   // Rămân doar filtrele și segmentele valide, fără pagină.
   const curat = filtruLaParametri(parseFiltruPf(new URLSearchParams(String(qs ?? "")))).toString();
   await ctx.db.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`${ctx.orgId}:${CALE_RAPOARTE}`}, 0))`);
   const lista = await citesteRapoarte(ctx);
-  if (lista.length >= MAX_RAPOARTE) return { ok: false, eroare: `Poți păstra cel mult ${MAX_RAPOARTE} de rapoarte. Șterge unul.` };
+  if (lista.length >= MAX_RAPOARTE) return { ok: false, eroare: er.maxRapoarte(MAX_RAPOARTE) };
   await scrieRapoarte(ctx, [{ id: randomUUID(), nume: n, qs: curat, creat: new Date().toISOString() }, ...lista]);
   return { ok: true };
 });

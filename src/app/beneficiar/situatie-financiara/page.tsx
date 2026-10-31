@@ -3,17 +3,8 @@ import { eq } from "drizzle-orm";
 import { urlsSemnate } from "@/lib/fisiere-private";
 import { requireBeneficiarAccess, withBeneficiarSession } from "@/lib/auth/guard";
 import { fundraisingInvoices } from "@/lib/db/schema";
-
-function formatLei(n: number): string {
-  return `${n.toLocaleString("ro-RO")} lei`;
-}
-
-const CATEGORIE_LABEL: Record<string, string> = {
-  factura: "Factură",
-  plata: "Plată",
-  chitanta: "Chitanță",
-  proforma: "Proformă",
-};
+import { BENEFICIAR_PORTAL_UI_DICT } from "@/lib/i18n/dictionaries/beneficiar-portal-ui";
+import { getLocale } from "@/lib/i18n/get-locale";
 
 const getInvoices = withBeneficiarSession(async (ctx) => {
   return ctx.db
@@ -26,6 +17,9 @@ const getInvoices = withBeneficiarSession(async (ctx) => {
 export default async function SituatieFinanciaraPage() {
   const [access, facturiBrute] = await Promise.all([requireBeneficiarAccess(), getInvoices()]);
   const invoices = await urlsSemnate(facturiBrute);
+  const t = BENEFICIAR_PORTAL_UI_DICT[await getLocale()];
+  const s = t.situatie;
+  const formatLei = (n: number) => `${n.toLocaleString(t.numere)} lei`;
 
   const sumaStransa = access.campaignSumaStransa ?? 0;
   const sumaTinta = access.campaignSumaTinta;
@@ -36,21 +30,21 @@ export default async function SituatieFinanciaraPage() {
   const ramasDeStrans = sumaTinta ? Math.max(0, sumaTinta - sumaStransa) : null;
 
   const randuri = [
-    { label: "Sumă brută strânsă", valoare: sumaStransa, semn: "" },
-    { label: "Contribuție operațională (10%)", valoare: contributieOperationala, semn: "−" },
-    { label: "Sumă netă disponibilă", valoare: sumaNeta, semn: "=" },
-    { label: "Total facturi achitate", valoare: facturiAchitate, semn: "−" },
-    { label: "Sold net disponibil", valoare: soldNet, semn: "=" },
+    { label: s.sumaBruta, valoare: sumaStransa, semn: "" },
+    { label: s.contributie, valoare: contributieOperationala, semn: "−" },
+    { label: s.sumaNeta, valoare: sumaNeta, semn: "=" },
+    { label: s.totalFacturi, valoare: facturiAchitate, semn: "−" },
+    { label: s.soldNet, valoare: soldNet, semn: "=" },
   ];
   if (sumaTinta != null && ramasDeStrans != null) {
-    randuri.push({ label: "Sumă rămasă de strâns (din țintă)", valoare: ramasDeStrans, semn: "" });
+    randuri.push({ label: s.ramasDeStrans, valoare: ramasDeStrans, semn: "" });
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-xl font-bold text-ink">Situație financiară</h1>
-        <p className="mt-1 text-[13.5px] text-muted">Calculul complet, actualizat automat cu fiecare donație și fiecare document încărcat de echipă.</p>
+        <h1 className="font-display text-xl font-bold text-ink">{s.titlu}</h1>
+        <p className="mt-1 text-[13.5px] text-muted">{s.desc}</p>
       </div>
 
       <div className="rounded-xl border border-line bg-panel p-5">
@@ -68,7 +62,7 @@ export default async function SituatieFinanciaraPage() {
       </div>
 
       <div className="rounded-xl border border-line bg-panel p-5">
-        <h2 className="font-display text-sm font-bold text-ink">Documente financiare</h2>
+        <h2 className="font-display text-sm font-bold text-ink">{s.documente}</h2>
         {invoices.length ? (
           <div className="mt-3 flex flex-col gap-2">
             {invoices.map((inv) => (
@@ -76,15 +70,15 @@ export default async function SituatieFinanciaraPage() {
                 <div className="min-w-0">
                   <p className="truncate font-medium text-ink">{inv.denumire}</p>
                   <p className="text-[12px] text-muted-2">
-                    {CATEGORIE_LABEL[inv.categorie] ?? inv.categorie} · {new Date(inv.data).toLocaleDateString("ro-RO")} ·{" "}
-                    {inv.status === "achitata" ? "Achitată" : "În așteptare"}
+                    {t.categorii[inv.categorie] ?? inv.categorie} · {new Date(inv.data).toLocaleDateString(t.numere)} ·{" "}
+                    {inv.status === "achitata" ? t.statusFactura.achitata : t.statusFactura.asteptare}
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-3">
                   <span className="font-semibold text-ink">{formatLei(inv.suma)}</span>
                   {inv.fisierUrl && (
                     <a href={inv.fisierUrl} target="_blank" rel="noreferrer" className="text-brand-green hover:underline">
-                      Descarcă
+                      {t.descarca}
                     </a>
                   )}
                 </div>
@@ -92,7 +86,7 @@ export default async function SituatieFinanciaraPage() {
             ))}
           </div>
         ) : (
-          <p className="mt-2 text-[13px] text-muted-2">Nu există încă documente financiare încărcate pentru această campanie.</p>
+          <p className="mt-2 text-[13px] text-muted-2">{s.golDocumente}</p>
         )}
       </div>
     </div>

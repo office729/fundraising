@@ -7,6 +7,8 @@ import { withOrgAdmin } from "@/lib/auth/guard";
 import { adresaAnaf, atribuieBorderouri, MAX_PE_BORDEROU, type DateBorderou } from "@/lib/borderou230";
 import { formular230Beneficiari, formular230Submissions, organizations } from "@/lib/db/schema";
 import { EroareUtilizator } from "@/lib/erori";
+import { DONATORI_UI5_DICT } from "@/lib/i18n/dictionaries/donatori-ui-5";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { criptareConfigurata, cripteaza, decripteazaSauLegacy } from "@/lib/secret-box";
 
 const F = formular230Submissions;
@@ -91,7 +93,7 @@ export const obtineDateBorderou = withOrgAdmin(async (ctx, beneficiarId: string 
     .where(and(...conditii))
     .orderBy(asc(F.createdAt))
     .limit(MAX_PE_BORDEROU);
-  if (randuri.length === 0) throw new EroareUtilizator("Borderoul nu a fost găsit.");
+  if (randuri.length === 0) throw new EroareUtilizator(DONATORI_UI5_DICT[await getLocale()].erori.borderouNegasit);
 
   let entitate: DateBorderou["entitate"] = { den: ctx.orgName, cui: "", iban: "" };
   let beneficiarCif = "";

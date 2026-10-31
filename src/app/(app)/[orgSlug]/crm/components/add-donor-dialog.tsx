@@ -4,7 +4,9 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { adaugaDonatorNou, getOptiuniDonatorNou, type OptiuniDonatorNou } from "../donatori/reali/adauga-actions";
+import { COMPONENTE_UI_DICT } from "@/lib/i18n/dictionaries/componente-ui";
 import { JUDETE } from "@/lib/judete";
+import { useLocale } from "../lib/locale-context";
 import { Button } from "./ui/button";
 import { Dialog } from "./ui/dialog";
 import { Input, Label, Select } from "./ui/input";
@@ -14,6 +16,8 @@ const GOL = { nume: "", email: "", telefon: "", localitate: "", judet: "", respo
 // Donator REAL (salvat pe server, apare în „Persoane fizice”). Dacă completezi suma, se înregistrează și donația, pe campania aleasă.
 export function AddDonorDialog({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: (id: string | null) => void }) {
   const { orgSlug } = useParams<{ orgSlug: string }>();
+  const t = COMPONENTE_UI_DICT[useLocale()];
+  const a = t.addDonor;
   const [v, setV] = useState(GOL);
   const [optiuni, setOptiuni] = useState<OptiuniDonatorNou | null>(null);
   const [pending, setPending] = useState(false);
@@ -64,27 +68,27 @@ export function AddDonorDialog({ open, onClose, onCreated }: { open: boolean; on
 
   const aSuma = v.suma.trim() !== "";
   return (
-    <Dialog open={open} onClose={inchide} title="Donator nou" width="max-w-md">
+    <Dialog open={open} onClose={inchide} title={a.titlu} width="max-w-md">
       <div className="space-y-3">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <Label>Nume</Label>
-            <Input autoFocus value={v.nume} onChange={(e) => set("nume", e.target.value)} placeholder="Nume și prenume" />
+            <Label>{a.nume}</Label>
+            <Input autoFocus value={v.nume} onChange={(e) => set("nume", e.target.value)} placeholder={a.numePh} />
           </div>
           <div className="sm:col-span-2">
-            <Label>Email</Label>
-            <Input type="email" value={v.email} onChange={(e) => set("email", e.target.value)} placeholder="email@exemplu.ro" />
+            <Label>{a.email}</Label>
+            <Input type="email" value={v.email} onChange={(e) => set("email", e.target.value)} placeholder={a.emailPh} />
           </div>
           <div>
-            <Label>Telefon</Label>
-            <Input value={v.telefon} onChange={(e) => set("telefon", e.target.value)} placeholder="07xx xxx xxx" />
+            <Label>{a.telefon}</Label>
+            <Input value={v.telefon} onChange={(e) => set("telefon", e.target.value)} placeholder={a.telefonPh} />
           </div>
           <div>
-            <Label>Localitate</Label>
-            <Input value={v.localitate} onChange={(e) => set("localitate", e.target.value)} placeholder="Oraș / comună" />
+            <Label>{a.localitate}</Label>
+            <Input value={v.localitate} onChange={(e) => set("localitate", e.target.value)} placeholder={a.localitatePh} />
           </div>
           <div>
-            <Label>Județ</Label>
+            <Label>{a.judet}</Label>
             <Select value={v.judet} onChange={(e) => set("judet", e.target.value)}>
               <option value="">—</option>
               {JUDETE.map((j) => (
@@ -95,7 +99,7 @@ export function AddDonorDialog({ open, onClose, onCreated }: { open: boolean; on
             </Select>
           </div>
           <div>
-            <Label>Responsabil</Label>
+            <Label>{a.responsabil}</Label>
             <Select value={v.responsabil} onChange={(e) => set("responsabil", e.target.value)}>
               <option value="">—</option>
               {(optiuni?.responsabili ?? []).map((r) => (
@@ -108,14 +112,14 @@ export function AddDonorDialog({ open, onClose, onCreated }: { open: boolean; on
         </div>
 
         <div className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] p-3">
-          <p className="mb-2 text-[12px] font-bold tracking-wide text-[var(--ci-text-muted)] uppercase">Donație (opțional)</p>
+          <p className="mb-2 text-[12px] font-bold tracking-wide text-[var(--ci-text-muted)] uppercase">{a.donatie}</p>
           <div className="grid grid-cols-[minmax(0,1fr)_110px] gap-3">
             <div>
-              <Label>Suma</Label>
-              <Input type="number" min="1" step="any" inputMode="decimal" value={v.suma} onChange={(e) => set("suma", e.target.value)} placeholder="ex. 100" />
+              <Label>{a.suma}</Label>
+              <Input type="number" min="1" step="any" inputMode="decimal" value={v.suma} onChange={(e) => set("suma", e.target.value)} placeholder={a.sumaPh} />
             </div>
             <div>
-              <Label>Moneda</Label>
+              <Label>{a.moneda}</Label>
               <Select value={v.moneda} onChange={(e) => set("moneda", e.target.value)}>
                 <option value="RON">RON</option>
                 <option value="EUR">EUR</option>
@@ -123,9 +127,9 @@ export function AddDonorDialog({ open, onClose, onCreated }: { open: boolean; on
             </div>
           </div>
           <div className="mt-3">
-            <Label>Campania / proiectul</Label>
+            <Label>{a.campania}</Label>
             <Select value={v.pageId} onChange={(e) => set("pageId", e.target.value)}>
-              <option value="">{aSuma ? "— alege campania —" : "— fără donație —"}</option>
+              <option value="">{aSuma ? a.alegeCampania : a.faraDonatie}</option>
               {(optiuni?.campanii ?? []).map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.titlu}
@@ -133,16 +137,16 @@ export function AddDonorDialog({ open, onClose, onCreated }: { open: boolean; on
               ))}
             </Select>
           </div>
-          {v.moneda === "EUR" && aSuma && <p className="mt-2 text-[11.5px] text-[var(--ci-text-faint)]">Totalurile se țin în lei: suma în EUR se convertește la cursul de azi.</p>}
+          {v.moneda === "EUR" && aSuma && <p className="mt-2 text-[11.5px] text-[var(--ci-text-faint)]">{a.conversieEur}</p>}
         </div>
 
         {eroare && <p className="text-[13px] text-[var(--ci-red)]">{eroare}</p>}
         <div className="flex justify-end gap-2 pt-1">
           <Button variant="secondary" onClick={inchide}>
-            Anulează
+            {t.comun.anuleaza}
           </Button>
           <Button variant="primary" onClick={salveaza} disabled={pending || !v.nume.trim() || !v.email.trim() || (aSuma && !v.pageId)}>
-            {pending ? "Se salvează…" : "Salvează"}
+            {pending ? t.comun.seSalveaza : t.comun.salveaza}
           </Button>
         </div>
       </div>

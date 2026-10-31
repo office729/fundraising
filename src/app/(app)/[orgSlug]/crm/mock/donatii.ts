@@ -47,12 +47,12 @@ export const DONATII: Donatie[] = Array.from({ length: 128 }, (_, i) => {
   };
 }).sort((a, b) => +new Date(b.data) - +new Date(a.data));
 
-export function lunarEvolutie() {
+export function lunarEvolutie(locale: "ro" | "en" = "ro") {
   const months: { label: string; pf: number; pj: number; recurent: number; anTrecut: number }[] = [];
   const now = new Date();
   for (let i = 11; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const label = d.toLocaleDateString("ro-RO", { month: "short" });
+    const label = d.toLocaleDateString(locale === "ro" ? "ro-RO" : "en-GB", { month: "short" });
     const inMonth = DONATII.filter((x) => {
       const xd = new Date(x.data);
       return xd.getFullYear() === d.getFullYear() && xd.getMonth() === d.getMonth();

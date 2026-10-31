@@ -4,15 +4,16 @@ import { Check, Pencil, Trash2, X as XIcon } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { ETICHETE_REZULTAT_APEL, ETICHETE_TIP_NOTA, REZULTATE_APEL, TIPURI_NOTA, esteTipNota, type RezultatApel, type TipNota } from "@/lib/cronologie-donator";
+import { REZULTATE_APEL, TIPURI_NOTA, esteTipNota, type RezultatApel, type TipNota } from "@/lib/cronologie-donator";
 
 import { Badge } from "../../../components/ui/badge";
 import { Button } from "../../../components/ui/button";
 import { Select, Textarea } from "../../../components/ui/input";
 import { EmptyState } from "../../../components/ui/states";
-import { formatDataOra } from "../../../lib/format";
 import { useLocale } from "../../../lib/locale-context";
 import { DONATORI_REALI_DICT } from "@/lib/i18n/dictionaries/donatori-reali";
+import { DONATORI_UI2_DICT } from "@/lib/i18n/dictionaries/donatori-ui-2";
+import { formatariPf } from "../../pf-format";
 import { adaugaNotitaDonator, editeazaNotitaDonator, stergeNotitaDonator } from "../actions";
 
 type Notita = { id: string; text: string; tip: string; rezultat: string | null; createdAt: Date; editatLa: Date | null; autorNume: string | null };
@@ -22,6 +23,7 @@ export function NotitePanelDonatorReal({ donatorId, notite }: { donatorId: strin
   const router = useRouter();
   const locale = useLocale();
   const dict = DONATORI_REALI_DICT[locale].detail.notite;
+  const u = DONATORI_UI2_DICT[locale].notite;
   const [text, setText] = useState("");
   const [tip, setTip] = useState<TipNota>("nota");
   const [rezultat, setRezultat] = useState<RezultatApel | "">("");
@@ -48,23 +50,23 @@ export function NotitePanelDonatorReal({ donatorId, notite }: { donatorId: strin
       <div className="space-y-2">
         <div className="flex flex-wrap items-end gap-2">
           <label className="block text-[12px] font-semibold text-[var(--ci-text-muted)]">
-            Ce adaugi
+            {u.ceAdaugi}
             <Select value={tip} onChange={(e) => setTip(esteTipNota(e.target.value) ? e.target.value : "nota")} className="mt-1 min-w-44">
               {TIPURI_NOTA.map((t) => (
                 <option key={t} value={t}>
-                  {ETICHETE_TIP_NOTA[t]}
+                  {u.tipuri[t]}
                 </option>
               ))}
             </Select>
           </label>
           {tip === "apel" && (
             <label className="block text-[12px] font-semibold text-[var(--ci-text-muted)]">
-              Cum a decurs
+              {u.cumADecurs}
               <Select value={rezultat} onChange={(e) => setRezultat(e.target.value as RezultatApel | "")} className="mt-1 min-w-44">
-                <option value="">— alege —</option>
+                <option value="">{u.alege}</option>
                 {REZULTATE_APEL.map((r) => (
                   <option key={r} value={r}>
-                    {ETICHETE_REZULTAT_APEL[r]}
+                    {u.rezultate[r]}
                   </option>
                 ))}
               </Select>
@@ -72,7 +74,7 @@ export function NotitePanelDonatorReal({ donatorId, notite }: { donatorId: strin
           )}
         </div>
         <div className="flex gap-2">
-          <Textarea value={text} onChange={(e) => setText(e.target.value)} placeholder={tip === "apel" ? "Ce ați discutat, ce urmează…" : dict.placeholder} rows={2} className="flex-1" aria-label={ETICHETE_TIP_NOTA[tip]} />
+          <Textarea value={text} onChange={(e) => setText(e.target.value)} placeholder={tip === "apel" ? u.placeholderApel : dict.placeholder} rows={2} className="flex-1" aria-label={u.tipuri[tip]} />
           <Button variant="primary" onClick={adauga} disabled={!text.trim() || pending}>
             {pending ? dict.seSalveaza : dict.adauga}
           </Button>
@@ -100,6 +102,8 @@ function NotaCard({ orgSlug, nota }: { orgSlug: string; nota: Notita }) {
   const router = useRouter();
   const locale = useLocale();
   const dict = DONATORI_REALI_DICT[locale].detail.notite;
+  const u = DONATORI_UI2_DICT[locale].notite;
+  const fmt = formatariPf(locale);
   const [editare, setEditare] = useState(false);
   const [text, setText] = useState(nota.text);
   const [pending, setPending] = useState(false);
@@ -155,18 +159,18 @@ function NotaCard({ orgSlug, nota }: { orgSlug: string; nota: Notita }) {
             {(nota.tip !== "nota" || nota.rezultat) && (
               <p className="mb-1 flex flex-wrap items-center gap-1.5">
                 <Badge tone="blue" icon={false}>
-                  {esteTipNota(nota.tip) ? ETICHETE_TIP_NOTA[nota.tip] : "Notiță"}
+                  {esteTipNota(nota.tip) ? u.tipuri[nota.tip] : u.tipuri.nota}
                 </Badge>
                 {nota.rezultat && (
                   <Badge tone={nota.rezultat === "refuz" ? "red" : "neutral"} icon={false}>
-                    {ETICHETE_REZULTAT_APEL[nota.rezultat as RezultatApel] ?? nota.rezultat}
+                    {u.rezultate[nota.rezultat] ?? nota.rezultat}
                   </Badge>
                 )}
               </p>
             )}
             <p className="text-[13px] whitespace-pre-wrap text-[var(--ci-text)]">{nota.text}</p>
             <p className="mt-1 text-[12px] text-[var(--ci-text-faint)]">
-              {nota.autorNume || "—"} · {formatDataOra(nota.createdAt.toISOString())}
+              {nota.autorNume || "—"} · {fmt.dataOraScurta(nota.createdAt.toISOString())}
               {nota.editatLa && dict.editata}
             </p>
           </div>

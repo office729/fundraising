@@ -56,7 +56,7 @@ export default async function PrevizualizareCampanii({ searchParams }: { searchP
         <b>Pagină ascunsă de lucru</b> — nu e legată din site și nu apare în Google. Acum se vede: {sursa}. Praguri: {organizatii} din {PRAG_ORGANIZATII} organizații.{" "}
         <a href="?stare=demo" className="font-semibold underline">demo</a> · <a href="?stare=curand" className="font-semibold underline">în curând</a> · <a href="?" className="font-semibold underline">real</a>
       </div>
-      <CampaniiSectiune stare={{ organizatii, prag: PRAG_ORGANIZATII, ...data }} />
+      <CampaniiSectiune stare={{ organizatii, prag: PRAG_ORGANIZATII, ...data }} locale="ro" />
     </main>
   );
 }

@@ -45,7 +45,7 @@ export function TopSponsoriCard({ orgSlug, ro, rows }: { orgSlug: string; ro: bo
               {rows && rows.length > 0 && (
                 <>
                   {" · "}
-                  <span className="ci-tabular font-semibold text-[var(--ci-text)]">{formatSuma(total)}</span>
+                  <span className="ci-tabular font-semibold text-[var(--ci-text)]">{formatSuma(total, "RON", ro ? "ro" : "en")}</span>
                 </>
               )}
             </p>
@@ -94,7 +94,7 @@ export function TopSponsoriCard({ orgSlug, ro, rows }: { orgSlug: string; ro: bo
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline justify-between gap-3">
                       <p className="truncate text-[13px] font-semibold text-[var(--ci-text)]">{r.nume}</p>
-                      <p className="ci-tabular shrink-0 text-[13px] font-bold text-[var(--ci-text)]">{formatSuma(r.total)}</p>
+                      <p className="ci-tabular shrink-0 text-[13px] font-bold text-[var(--ci-text)]">{formatSuma(r.total, "RON", ro ? "ro" : "en")}</p>
                     </div>
                     <div className="mt-1.5 flex items-center gap-2.5">
                       <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--ci-surface-2)]">

@@ -5,26 +5,31 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import type { RandProiect } from "@/lib/donatori-pf-analiza";
+import { DONATORI_UI_DICT } from "@/lib/i18n/dictionaries/donatori-ui";
 
 import { Card } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
 import { EmptyState } from "../../components/ui/states";
-import { leiRo, nrRo, procentRo } from "../pf-format";
+import { useLocale } from "../../lib/locale-context";
+import { formatariPf } from "../pf-format";
 
 type Cheie = keyof RandProiect;
-const COLOANE: { key: Cheie; label: string; clasa?: string; hint?: string }[] = [
-  { key: "proiect", label: "Proiect" },
-  { key: "donatori", label: "Donatori unici", clasa: "text-right" },
-  { key: "donatii", label: "Donații", clasa: "text-right" },
-  { key: "total", label: "Total", clasa: "text-right" },
-  { key: "recurenti", label: "Recurenți", clasa: "text-right", hint: "Donatori cu cel puțin 2 donații la acest proiect" },
-  { key: "atrasi", label: "Atrași", clasa: "text-right", hint: "Donatori al căror prim proiect a fost acesta" },
-  { key: "atrasiCareAuMaiDonat", label: "Atrași care au donat și în altele", clasa: "text-right" },
-  { key: "sumaInAlteProiecte", label: "Donat de atrași în alte proiecte", clasa: "text-right" },
-  { key: "maxDonatie", label: "Cea mai mare donație", clasa: "text-right" },
+const COLOANE: { key: Cheie; clasa?: string }[] = [
+  { key: "proiect" },
+  { key: "donatori", clasa: "text-right" },
+  { key: "donatii", clasa: "text-right" },
+  { key: "total", clasa: "text-right" },
+  { key: "recurenti", clasa: "text-right" },
+  { key: "atrasi", clasa: "text-right" },
+  { key: "atrasiCareAuMaiDonat", clasa: "text-right" },
+  { key: "sumaInAlteProiecte", clasa: "text-right" },
+  { key: "maxDonatie", clasa: "text-right" },
 ];
 
 export function ProiecteClient({ orgSlug, randuri }: { orgSlug: string; randuri: RandProiect[] }) {
+  const locale = useLocale();
+  const t = DONATORI_UI_DICT[locale].proiecte;
+  const { lei: leiRo, nr: nrRo, procent: procentRo } = formatariPf(locale);
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<Cheie>("total");
   const [dir, setDir] = useState<"asc" | "desc">("desc");
@@ -35,23 +40,23 @@ export function ProiecteClient({ orgSlug, randuri }: { orgSlug: string; randuri:
     l.sort((a, b) => {
       const x = a[sort];
       const y = b[sort];
-      const c = typeof x === "string" ? x.localeCompare(String(y), "ro") : Number(x) - Number(y);
+      const c = typeof x === "string" ? x.localeCompare(String(y), locale) : Number(x) - Number(y);
       return dir === "asc" ? c : -c;
     });
     return l;
-  }, [randuri, q, sort, dir]);
+  }, [randuri, q, sort, dir, locale]);
 
   const tot = useMemo(() => vizibile.reduce((s, r) => ({ donatii: s.donatii + r.donatii, total: s.total + r.total }), { donatii: 0, total: 0 }), [vizibile]);
-  if (randuri.length === 0) return <EmptyState title="Niciun proiect încă" description="Proiectele apar din campaniile cu donații sau din importuri." />;
+  if (randuri.length === 0) return <EmptyState title={t.emptyTitlu} description={t.emptyDescriere} />;
 
   return (
     <Card padded={false}>
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--ci-border)] px-4 py-3">
         <div className="max-w-sm min-w-[220px] flex-1">
-          <Input icon={<Search className="size-4" />} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Caută un proiect…" aria-label="Caută un proiect" />
+          <Input icon={<Search className="size-4" />} value={q} onChange={(e) => setQ(e.target.value)} placeholder={t.cauta} aria-label={t.cautaAria} />
         </div>
         <p className="ci-tabular text-[13px] text-[var(--ci-text-muted)]">
-          {nrRo(vizibile.length)} proiecte · {nrRo(tot.donatii)} donații · {leiRo(tot.total)}
+          {nrRo(vizibile.length)} {t.proiecte} · {nrRo(tot.donatii)} {t.donatii} · {leiRo(tot.total)}
         </p>
       </div>
       <div className="overflow-x-auto">
@@ -61,7 +66,7 @@ export function ProiecteClient({ orgSlug, randuri }: { orgSlug: string; randuri:
               {COLOANE.map((c) => {
                 const activ = sort === c.key;
                 return (
-                  <th key={c.key} scope="col" title={c.hint} aria-sort={activ ? (dir === "asc" ? "ascending" : "descending") : "none"} className={`px-3 py-2 font-semibold ${c.clasa ?? "text-left"}`}>
+                  <th key={c.key} scope="col" title={t.coloane[c.key]?.hint} aria-sort={activ ? (dir === "asc" ? "ascending" : "descending") : "none"} className={`px-3 py-2 font-semibold ${c.clasa ?? "text-left"}`}>
                     <button
                       type="button"
                       onClick={() => {
@@ -73,7 +78,7 @@ export function ProiecteClient({ orgSlug, randuri }: { orgSlug: string; randuri:
                       }}
                       className={`inline-flex items-center gap-1 hover:text-[var(--ci-text)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none ${activ ? "text-[var(--ci-text)]" : ""}`}
                     >
-                      {c.label}
+                      {t.coloane[c.key]?.label}
                       {activ && (dir === "asc" ? <ArrowUp className="size-3" aria-hidden /> : <ArrowDown className="size-3" aria-hidden />)}
                     </button>
                   </th>

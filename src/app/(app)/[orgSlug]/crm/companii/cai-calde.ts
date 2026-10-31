@@ -3,6 +3,8 @@ import { and, eq, gt, inArray, ne, or, sql } from "drizzle-orm";
 import { withOrgSession, type OrgContext } from "@/lib/auth/guard";
 import { deduplicaSiOrdoneaza, persoaneUnice, potriveste, ultimele9, type CaleCalda } from "@/lib/cai-calde";
 import { companies, contacts, crmKv, donatoriReali } from "@/lib/db/schema";
+import { getLocale } from "@/lib/i18n/get-locale";
+import { COMPANII_UI_DICT, intlLocale } from "@/lib/i18n/dictionaries/companii-ui";
 
 // „Căi calde” pentru o firmă: persoanele ei de contact care sunt deja donatori, voluntari sau contacte la ALTĂ firmă care a sponsorizat,
 // din datele aceleiași organizații (toate interogările trec prin RLS-ul organizației). Regulile de potrivire sunt în lib/cai-calde.ts.
@@ -10,6 +12,8 @@ const LIMITA_DONATORI = 500;
 const LIMITA_SPONSORI = 3000;
 
 export async function caiCaldePentru(ctx: Pick<OrgContext, "db" | "orgId">, companyId: string): Promise<CaleCalda[]> {
+  const locale = await getLocale();
+  const t = COMPANII_UI_DICT[locale].caiCalde;
   const deLaFirma = await ctx.db
     .select({ nume: contacts.nume, rol: contacts.rol, email: contacts.email, telefon: contacts.telefon })
     .from(contacts)
@@ -36,7 +40,7 @@ export async function caiCaldePentru(ctx: Pick<OrgContext, "db" | "orgId">, comp
         persoane,
         donatori.map((d) => ({
           e: { nume: d.nume, email: d.email, telefon: d.telefon },
-          detaliu: `Donator · ${d.numarDonatii} ${d.numarDonatii === 1 ? "donație" : "donații"} · ${d.totalDonat.toLocaleString("ro-RO")} lei`,
+          detaliu: t.detaliuDonator(d.numarDonatii, d.totalDonat.toLocaleString(intlLocale(locale))),
         })),
         "donator",
         false,
@@ -52,7 +56,7 @@ export async function caiCaldePentru(ctx: Pick<OrgContext, "db" | "orgId">, comp
       persoane,
       voluntari.map((v) => ({
         e: { nume: v.nume ? String(v.nume) : null, email: v.email ? String(v.email) : null, telefon: v.telefon ? String(v.telefon) : null },
-        detaliu: `Voluntar${v.activ === false ? " (inactiv)" : ""}`,
+        detaliu: t.detaliuVoluntar(v.activ === false),
       })),
       "voluntar",
     ),
@@ -75,7 +79,7 @@ export async function caiCaldePentru(ctx: Pick<OrgContext, "db" | "orgId">, comp
   rezultate.push(
     ...potriveste(
       persoane,
-      sponsori.map((s) => ({ e: { nume: s.nume, email: s.email, telefon: s.telefon }, detaliu: `Contact la „${s.firma || "o firmă"}” (a sponsorizat)`, companyId: s.companyId })),
+      sponsori.map((s) => ({ e: { nume: s.nume, email: s.email, telefon: s.telefon }, detaliu: t.detaliuSponsor(s.firma || t.oFirma), companyId: s.companyId })),
       "sponsor",
     ),
   );

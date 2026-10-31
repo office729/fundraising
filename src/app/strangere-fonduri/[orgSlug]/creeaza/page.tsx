@@ -5,6 +5,7 @@ import type { CustomPlanConfigSaved } from "@/lib/billing/custom-plan";
 import { getTemplatesDisponibile } from "@/lib/campaign-templates";
 import { db } from "@/lib/db";
 import { organizations } from "@/lib/db/schema";
+import { getLocale } from "@/lib/i18n/get-locale";
 
 import { CreeazaPaginaForm } from "./form";
 
@@ -32,5 +33,5 @@ export default async function CreeazaPaginaPage({ params }: { params: Promise<{ 
   const customPlanConfig = org.customPlanConfig as CustomPlanConfigSaved | null;
   const templateuriDisponibile = getTemplatesDisponibile(org.domeniuActivitate, Boolean(customPlanConfig?.accesDesignToate));
 
-  return <CreeazaPaginaForm orgSlug={orgSlug} orgName={org.name} templateuriDisponibile={templateuriDisponibile} />;
+  return <CreeazaPaginaForm locale={await getLocale()} orgSlug={orgSlug} orgName={org.name} templateuriDisponibile={templateuriDisponibile} />;
 }

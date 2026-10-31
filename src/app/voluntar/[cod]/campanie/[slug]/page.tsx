@@ -5,6 +5,8 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { volunteerMissions, volunteerShares } from "@/lib/db/schema";
+import { VOLUNTAR_UI_DICT } from "@/lib/i18n/dictionaries/voluntar-ui";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { esteCanal, ziuaRo, type CanalId } from "@/lib/voluntari-panou";
 import { campaniiVizibile, cuOrg, linkCampanie, progresCampanie, rezolvaCod, vizitatorDinCookie } from "@/lib/voluntari-panou-server";
 
@@ -16,7 +18,8 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ cod: string }> }): Promise<Metadata> {
   const link = await rezolvaCod((await params).cod);
-  return { title: link ? `Distribuie · ${link.org.nume}` : "Panou voluntari" };
+  const t = VOLUNTAR_UI_DICT[await getLocale()];
+  return { title: link ? t.metaDistribuie(link.org.nume) : t.metaPanou };
 }
 
 // Stabilește de la ce frază începe mesajul: diferit între voluntari, între campanii și de la o zi la alta.
@@ -29,6 +32,8 @@ function hash(s: string): number {
 export default async function PaginaCampanie({ params, searchParams }: { params: Promise<{ cod: string; slug: string }>; searchParams: Promise<{ canal?: string }> }) {
   const { cod, slug } = await params;
   const { canal } = await searchParams;
+  const locale = await getLocale();
+  const d = VOLUNTAR_UI_DICT[locale];
   const link = await rezolvaCod(cod);
   if (!link) notFound();
   const { org } = link;
@@ -60,9 +65,9 @@ export default async function PaginaCampanie({ params, searchParams }: { params:
   const mesajPropriu = campanie.mesaj?.trim() || link.mesajImplicit?.trim() || null;
 
   return (
-    <PanouShell org={org}>
+    <PanouShell org={org} locale={locale}>
       <Link href={`/voluntar/${cod}`} className="-mb-2 inline-flex items-center gap-1.5 text-[14px] font-semibold text-[var(--vp-brand)] hover:underline">
-        <ArrowLeft className="size-4" aria-hidden /> Înapoi la campanii
+        <ArrowLeft className="size-4" aria-hidden /> {d.campanie.inapoi}
       </Link>
 
       <article className="overflow-hidden rounded-2xl border border-[var(--vp-line)] bg-white">
@@ -77,7 +82,7 @@ export default async function PaginaCampanie({ params, searchParams }: { params:
             <div className="mt-3">
               <Bara valoare={progres} />
               <p className="mt-1 text-[12.5px] text-[var(--vp-muted)] tabular-nums">
-                {campanie.sumaStransa.toLocaleString("ro-RO")} din {campanie.sumaTinta!.toLocaleString("ro-RO")} lei · {Math.round(progres * 100)}%
+                {d.campanie.dinSuma(campanie.sumaStransa.toLocaleString(d.numere), campanie.sumaTinta!.toLocaleString(d.numere), Math.round(progres * 100))}
               </p>
             </div>
           )}
@@ -85,6 +90,7 @@ export default async function PaginaCampanie({ params, searchParams }: { params:
       </article>
 
       <CampanieClient
+        locale={locale}
         cod={cod}
         campaignId={campanie.id}
         titlu={campanie.titlu}

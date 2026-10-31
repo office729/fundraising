@@ -4,26 +4,30 @@ import { FileUp, Trash2, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
+import { RECLAME_UI_DICT } from "@/lib/i18n/dictionaries/reclame-ui";
 import { PLATFORME } from "@/lib/reclame/atribuire";
-import { formatLei, formatNumar } from "@/lib/reclame/calcule";
-import { ETICHETE_CAMPURI, type CampMapat, type Mapare } from "@/lib/reclame/csv-costuri";
+import type { CampMapat, Mapare } from "@/lib/reclame/csv-costuri";
 
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Input, Label, Select } from "../components/ui/input";
 import { EmptyState } from "../components/ui/states";
+import { useLocale } from "../lib/locale-context";
 
 import { analizeazaCsvAction, confirmaImportAction, stergeImportAction, type AnalizaCsv, type DateReclame } from "./actions";
-
-const dataRo = (iso: string) => new Date(iso).toLocaleDateString("ro-RO", { timeZone: "Europe/Bucharest", day: "numeric", month: "short", year: "numeric" });
-const ziRo = (iso: string) => new Date(`${iso}T00:00:00Z`).toLocaleDateString("ro-RO", { timeZone: "UTC", day: "numeric", month: "short", year: "numeric" });
+import { formatariReclame } from "./format";
+import { Rich } from "./rich";
 
 const ORDINE: CampMapat[] = ["ziua", "cheltuiala", "campanieNume", "campanieCheie", "setNume", "reclamaNume", "afisari", "clicuri", "plasament", "cont"];
 type Ok = Extract<AnalizaCsv, { ok: true }>;
 
 // Import de costuri din CSV (export din Ads Manager), pentru cine nu vrea sau nu poate conecta contul din fila „Conexiuni”. Importul manual e etichetat ca atare.
 export function TabImport({ orgSlug, date }: { orgSlug: string; date: DateReclame }) {
+  const locale = useLocale();
+  const dict = RECLAME_UI_DICT[locale].import;
+  const f = formatariReclame(locale);
+  const { lei: formatLei, numar: formatNumar, data: dataRo, zi: ziRo, decimal } = f;
   const router = useRouter();
   const [pending, start] = useTransition();
   const [platforma, setPlatforma] = useState("meta");
@@ -63,7 +67,7 @@ export function TabImport({ orgSlug, date }: { orgSlug: string; date: DateReclam
     setSucces(null);
     if (!f) return;
     if (f.size > 3_000_000) {
-      setEroare("Fișierul e prea mare (peste 3 MB). Importă-l pe perioade mai scurte.");
+      setEroare(dict.fisierMare);
       return;
     }
     const continut = await f.text();
@@ -91,7 +95,7 @@ export function TabImport({ orgSlug, date }: { orgSlug: string; date: DateReclam
     start(async () => {
       const r = await confirmaImportAction(orgSlug, { text, mapare, platforma, moneda, cursRon: cursNumar, numeFisier, legaturi });
       if (r.ok) {
-        setSucces(`Am importat ${formatNumar(r.randuri)} rânduri, în valoare de ${formatLei(r.totalBani)}. Raportul din „Rezumat” s-a actualizat.`);
+        setSucces(dict.succes(formatNumar(r.randuri), formatLei(r.totalBani)));
         reseteaza();
         router.refresh();
       } else setEroare(r.eroare);
@@ -103,26 +107,28 @@ export function TabImport({ orgSlug, date }: { orgSlug: string; date: DateReclam
       <Card className="space-y-4">
         <div>
           <h2 className="flex items-center gap-2 text-[16px] font-bold text-[var(--ci-text)]">
-            <FileUp className="h-4 w-4 text-[var(--ci-primary)]" aria-hidden /> Import costuri din CSV
+            <FileUp className="h-4 w-4 text-[var(--ci-primary)]" aria-hidden /> {dict.title}
           </h2>
           <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">
-            Varianta fără conectare: descarci din Ads Manager un raport pe zile și îl încarci aici. Reimportul aceleiași perioade înlocuiește rândurile, nu le dublează. Datele importate sunt marcate „import manual”. Dacă preferi să vină singure, conectează contul în fila „Conexiuni”.
+            {dict.descriere}
           </p>
           <details className="mt-2 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-3 py-2">
-            <summary className="cursor-pointer text-[13px] font-semibold text-[var(--ci-text)]">Cum descarc raportul din Ads Manager?</summary>
+            <summary className="cursor-pointer text-[13px] font-semibold text-[var(--ci-text)]">{dict.cumDescarc}</summary>
             <ol className="mt-2 list-decimal space-y-1 pl-5 text-[12.5px] text-[var(--ci-text-muted)]">
-              <li>În Ads Manager alege perioada dorită (de exemplu ultimele 30 de zile).</li>
-              <li>La „Defalcare” alege <strong className="text-[var(--ci-text)]">Timp → Zi</strong>.</li>
-              <li>Din „Coloane” bifează: Numele campaniei, Numele setului de reclame, Numele reclamei, Suma cheltuită, Afișări, Clicuri pe link.</li>
-              <li>Apasă „Rapoarte” → „Exportă datele tabelului” → format CSV, apoi încarcă fișierul aici.</li>
+              <li>{dict.d1}</li>
+              <li>
+                <Rich text={dict.d2} />
+              </li>
+              <li>{dict.d3}</li>
+              <li>{dict.d4}</li>
             </ol>
-            <p className="mt-1.5 text-[12px] text-[var(--ci-text-muted)]">Numele butoanelor din Meta se mai schimbă; important e ca fișierul să aibă o linie pe zi și coloanele de mai sus.</p>
+            <p className="mt-1.5 text-[12px] text-[var(--ci-text-muted)]">{dict.dNota}</p>
           </details>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <Label htmlFor="im-platforma">Platforma</Label>
+            <Label htmlFor="im-platforma">{dict.platforma}</Label>
             <Select
               id="im-platforma"
               value={platforma}
@@ -133,13 +139,13 @@ export function TabImport({ orgSlug, date }: { orgSlug: string; date: DateReclam
             >
               {PLATFORME.map((p) => (
                 <option key={p.cheie} value={p.cheie}>
-                  {p.eticheta}
+                  {RECLAME_UI_DICT[locale].platforme[p.cheie] ?? p.eticheta}
                 </option>
               ))}
             </Select>
           </div>
           <div>
-            <Label htmlFor="im-fisier">Fișier CSV</Label>
+            <Label htmlFor="im-fisier">{dict.fisierCsv}</Label>
             <input id="im-fisier" type="file" accept=".csv,.tsv,.txt,text/csv" onChange={(e) => void alegeFisier(e.target.files?.[0])} className="block w-full text-[13px] text-[var(--ci-text)] file:mr-3 file:rounded-[var(--ci-radius-btn)] file:border file:border-[var(--ci-border)] file:bg-[var(--ci-surface)] file:px-3 file:py-1.5 file:text-[13px] file:font-medium" />
             {numeFisier && <p className="mt-1 text-[12px] text-[var(--ci-text-muted)]">{numeFisier}</p>}
           </div>
@@ -159,20 +165,20 @@ export function TabImport({ orgSlug, date }: { orgSlug: string; date: DateReclam
         {analiza && (
           <div className="space-y-5 border-t border-[var(--ci-border)] pt-4">
             <div>
-              <h3 className="text-[14px] font-bold text-[var(--ci-text)]">1. Coloanele recunoscute</h3>
-              <p className="text-[12.5px] text-[var(--ci-text-muted)]">Verifică potrivirea; ziua și suma cheltuită sunt obligatorii. Poți corecta orice coloană.</p>
+              <h3 className="text-[14px] font-bold text-[var(--ci-text)]">{dict.pas1}</h3>
+              <p className="text-[12.5px] text-[var(--ci-text-muted)]">{dict.pas1Hint}</p>
               <div className="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {ORDINE.map((camp) => (
                   <div key={camp}>
                     <Label htmlFor={`im-col-${camp}`}>
-                      {ETICHETE_CAMPURI[camp]}
+                      {dict.campuri[camp]}
                       {(camp === "ziua" || camp === "cheltuiala") && " *"}
                     </Label>
                     <Select id={`im-col-${camp}`} value={mapare[camp] === undefined ? "" : String(mapare[camp])} onChange={(e) => schimbaColoana(camp, e.target.value)}>
-                      <option value="">— nu există —</option>
+                      <option value="">{dict.nuExista}</option>
                       {analiza.antet.map((h, i) => (
                         <option key={i} value={i}>
-                          {h || `Coloana ${i + 1}`}
+                          {h || dict.coloana(i + 1)}
                         </option>
                       ))}
                     </Select>
@@ -183,69 +189,67 @@ export function TabImport({ orgSlug, date }: { orgSlug: string; date: DateReclam
 
             <div className="grid gap-3 rounded-[var(--ci-radius-btn)] bg-[var(--ci-surface-2)] p-3 text-[13px] sm:grid-cols-4">
               <div>
-                <p className="text-[var(--ci-text-muted)]">Rânduri valide</p>
-                <p className="ci-tabular font-bold text-[var(--ci-text)]">{formatNumar(analiza.randuriValide)} din {formatNumar(analiza.randuriInFisier)}</p>
+                <p className="text-[var(--ci-text-muted)]">{dict.randuriValide}</p>
+                <p className="ci-tabular font-bold text-[var(--ci-text)]">{dict.dinTotal(formatNumar(analiza.randuriValide), formatNumar(analiza.randuriInFisier))}</p>
               </div>
               <div>
-                <p className="text-[var(--ci-text-muted)]">Perioada</p>
+                <p className="text-[var(--ci-text-muted)]">{dict.perioada}</p>
                 <p className="font-bold text-[var(--ci-text)]">{analiza.de && analiza.pana ? `${ziRo(analiza.de)} – ${ziRo(analiza.pana)}` : "—"}</p>
               </div>
               <div>
-                <p className="text-[var(--ci-text-muted)]">Total în fișier ({moneda.toUpperCase()})</p>
-                <p className="ci-tabular font-bold text-[var(--ci-text)]">{new Intl.NumberFormat("ro-RO", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(analiza.totalBani / 100)}</p>
+                <p className="text-[var(--ci-text-muted)]">{dict.totalFisier(moneda.toUpperCase())}</p>
+                <p className="ci-tabular font-bold text-[var(--ci-text)]">{decimal(analiza.totalBani / 100)}</p>
               </div>
               <div>
-                <p className="text-[var(--ci-text-muted)]">Total în lei</p>
+                <p className="text-[var(--ci-text-muted)]">{dict.totalLei}</p>
                 <p className="ci-tabular font-bold text-[var(--ci-text)]">{cursValid ? formatLei(Math.round(analiza.totalBani * cursNumar)) : "—"}</p>
               </div>
             </div>
 
             {analiza.nrErori > 0 && (
               <div className="rounded-[var(--ci-radius-btn)] bg-[var(--ci-amber-soft)] p-3 text-[13px] text-[var(--ci-text)]">
-                <p className="font-semibold">{analiza.nrErori} {analiza.nrErori === 1 ? "rând a fost sărit" : "rânduri au fost sărite"} (restul se importă)</p>
+                <p className="font-semibold">{analiza.nrErori} {analiza.nrErori === 1 ? dict.randSarit : dict.randuriSarite} {dict.restulSeImporta}</p>
                 <ul className="mt-1 list-disc pl-5 text-[12.5px]">
                   {analiza.erori.map((e) => (
                     <li key={e.linie}>
-                      linia {e.linie}: {e.mesaj}
+                      {dict.linia(e.linie, e.mesaj)}
                     </li>
                   ))}
                 </ul>
-                {analiza.nrErori > analiza.erori.length && <p className="mt-1 text-[12px] text-[var(--ci-text-muted)]">… și încă {analiza.nrErori - analiza.erori.length}.</p>}
+                {analiza.nrErori > analiza.erori.length && <p className="mt-1 text-[12px] text-[var(--ci-text-muted)]">{dict.sisincaUnele(analiza.nrErori - analiza.erori.length)}</p>}
               </div>
             )}
-            {analiza.ignorate > 0 && <p className="text-[12.5px] text-[var(--ci-text-muted)]">{analiza.ignorate} rânduri de total sau goale au fost ignorate.</p>}
+            {analiza.ignorate > 0 && <p className="text-[12.5px] text-[var(--ci-text-muted)]">{dict.ignorate(analiza.ignorate)}</p>}
 
             <div>
-              <h3 className="text-[14px] font-bold text-[var(--ci-text)]">2. Moneda</h3>
+              <h3 className="text-[14px] font-bold text-[var(--ci-text)]">{dict.pas2}</h3>
               <div className="mt-2 flex flex-wrap items-end gap-3">
                 <div className="w-28">
-                  <Label htmlFor="im-moneda">Moneda din fișier</Label>
+                  <Label htmlFor="im-moneda">{dict.monedaFisier}</Label>
                   <Input id="im-moneda" value={moneda} maxLength={3} onChange={(e) => setMoneda(e.target.value.toUpperCase())} />
                 </div>
                 {moneda.toUpperCase() !== "RON" && (
                   <div className="w-48">
-                    <Label htmlFor="im-curs">Curs în lei (1 {moneda || "…"} = ? lei)</Label>
-                    <Input id="im-curs" inputMode="decimal" value={curs} onChange={(e) => setCurs(e.target.value)} placeholder="de exemplu 4,97" />
+                    <Label htmlFor="im-curs">{dict.cursLabel(moneda || "…")}</Label>
+                    <Input id="im-curs" inputMode="decimal" value={curs} onChange={(e) => setCurs(e.target.value)} placeholder={dict.cursPlaceholder} />
                   </div>
                 )}
               </div>
               <p className="mt-1 text-[12px] text-[var(--ci-text-muted)]">
-                {analiza.moneda ? `Moneda a fost citită din antetul fișierului (${analiza.moneda}). ` : "Fișierul nu spune moneda; verific-o. "}
-                Cursul folosit se păstrează la fiecare rând, ca raportul să rămână explicabil.
+                {analiza.moneda ? dict.monedaCitita(analiza.moneda) : dict.monedaNecitita}
+                {dict.cursPastrat}
               </p>
             </div>
 
             <div>
-              <h3 className="text-[14px] font-bold text-[var(--ci-text)]">3. Legătura cu codurile UTM</h3>
-              <p className="text-[12.5px] text-[var(--ci-text-muted)]">
-                Scrie codul (utm_campaign) folosit în linkurile fiecărei campanii, ca donațiile să poată fi comparate cu cheltuiala. Lăsat gol, costul rămâne „nealocat”; un cod deja legat nu se șterge.
-              </p>
+              <h3 className="text-[14px] font-bold text-[var(--ci-text)]">{dict.pas3}</h3>
+              <p className="text-[12.5px] text-[var(--ci-text-muted)]">{dict.pas3Hint}</p>
               <div className="mt-2 overflow-x-auto rounded-[var(--ci-radius-card)] border border-[var(--ci-border)]">
                 <table className="w-full min-w-[480px] text-left text-[13px]">
                   <thead className="bg-[var(--ci-surface-2)] text-[11.5px] tracking-wide text-[var(--ci-text-muted)] uppercase">
                     <tr>
-                      <th className="px-3 py-2 font-semibold">Campanie în fișier</th>
-                      <th className="px-3 py-2 font-semibold">Cod UTM</th>
+                      <th className="px-3 py-2 font-semibold">{dict.campanieInFisier}</th>
+                      <th className="px-3 py-2 font-semibold">{dict.codUtm}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -253,7 +257,7 @@ export function TabImport({ orgSlug, date }: { orgSlug: string; date: DateReclam
                       <tr key={c.cheie} className="border-t border-[var(--ci-border)]">
                         <td className="px-3 py-2">{c.nume || c.cheie}</td>
                         <td className="px-3 py-2">
-                          <Input aria-label={`Cod UTM pentru ${c.nume || c.cheie}`} value={legaturi[c.cheie] ?? ""} onChange={(e) => setLegaturi((p) => ({ ...p, [c.cheie]: e.target.value }))} placeholder="cmp_026" className="max-w-[180px]" />
+                          <Input aria-label={dict.codUtmPentru(c.nume || c.cheie)} value={legaturi[c.cheie] ?? ""} onChange={(e) => setLegaturi((p) => ({ ...p, [c.cheie]: e.target.value }))} placeholder="cmp_026" className="max-w-[180px]" />
                         </td>
                       </tr>
                     ))}
@@ -264,17 +268,17 @@ export function TabImport({ orgSlug, date }: { orgSlug: string; date: DateReclam
 
             {analiza.previzualizare.length > 0 && (
               <div>
-                <h3 className="text-[14px] font-bold text-[var(--ci-text)]">Previzualizare (primele {analiza.previzualizare.length} rânduri)</h3>
+                <h3 className="text-[14px] font-bold text-[var(--ci-text)]">{dict.previzualizare(analiza.previzualizare.length)}</h3>
                 <div className="mt-2 overflow-x-auto rounded-[var(--ci-radius-card)] border border-[var(--ci-border)]">
                   <table className="w-full min-w-[560px] text-left text-[12.5px]">
                     <thead className="bg-[var(--ci-surface-2)] text-[11.5px] tracking-wide text-[var(--ci-text-muted)] uppercase">
                       <tr>
-                        <th className="px-3 py-2 font-semibold">Ziua</th>
-                        <th className="px-3 py-2 font-semibold">Campanie</th>
-                        <th className="px-3 py-2 font-semibold">Reclamă</th>
-                        <th className="px-3 py-2 text-right font-semibold">Cheltuială</th>
-                        <th className="px-3 py-2 text-right font-semibold">Afișări</th>
-                        <th className="px-3 py-2 text-right font-semibold">Clicuri</th>
+                        <th className="px-3 py-2 font-semibold">{dict.ziua}</th>
+                        <th className="px-3 py-2 font-semibold">{dict.campanie}</th>
+                        <th className="px-3 py-2 font-semibold">{dict.reclama}</th>
+                        <th className="px-3 py-2 text-right font-semibold">{dict.cheltuiala}</th>
+                        <th className="px-3 py-2 text-right font-semibold">{dict.afisari}</th>
+                        <th className="px-3 py-2 text-right font-semibold">{dict.clicuri}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -283,7 +287,7 @@ export function TabImport({ orgSlug, date }: { orgSlug: string; date: DateReclam
                           <td className="px-3 py-1.5 whitespace-nowrap">{r.ziua}</td>
                           <td className="px-3 py-1.5">{r.campanieNume || "—"}</td>
                           <td className="px-3 py-1.5">{r.reclamaNume || "—"}</td>
-                          <td className="ci-tabular px-3 py-1.5 text-right">{new Intl.NumberFormat("ro-RO", { minimumFractionDigits: 2 }).format(r.cheltuialaMinor / 100)}</td>
+                          <td className="ci-tabular px-3 py-1.5 text-right">{decimal(r.cheltuialaMinor / 100)}</td>
                           <td className="ci-tabular px-3 py-1.5 text-right">{formatNumar(r.afisari)}</td>
                           <td className="ci-tabular px-3 py-1.5 text-right">{formatNumar(r.clicuri)}</td>
                         </tr>
@@ -296,22 +300,22 @@ export function TabImport({ orgSlug, date }: { orgSlug: string; date: DateReclam
 
             <div className="flex flex-wrap items-center gap-3">
               <Button variant="primary" size="lg" loading={pending} disabled={!poateImporta || pending} onClick={importa}>
-                <Upload className="h-4 w-4" /> Importă {formatNumar(analiza.randuriValide)} rânduri
+                <Upload className="h-4 w-4" /> {dict.importa(formatNumar(analiza.randuriValide))}
               </Button>
               <Button type="button" onClick={reseteaza} disabled={pending}>
-                Renunț
+                {dict.renunt}
               </Button>
-              {!cursValid && <span className="text-[12.5px] text-[var(--ci-red)]">Introdu cursul de conversie în lei.</span>}
+              {!cursValid && <span className="text-[12.5px] text-[var(--ci-red)]">{dict.introduCursul}</span>}
             </div>
           </div>
         )}
       </Card>
 
       <Card>
-        <h2 className="text-[15px] font-bold text-[var(--ci-text)]">Istoricul importurilor</h2>
+        <h2 className="text-[15px] font-bold text-[var(--ci-text)]">{dict.istoric}</h2>
         {date.importuri.length === 0 ? (
           <div className="mt-3">
-            <EmptyState icon={FileUp} title="Niciun import încă" description="După primul import, fiecare fișier apare aici, cu perioada și suma." />
+            <EmptyState icon={FileUp} title={dict.niciunImport} description={dict.niciunImportDescriere} />
           </div>
         ) : (
           <ul className="mt-3 divide-y divide-[var(--ci-border)]">
@@ -319,20 +323,20 @@ export function TabImport({ orgSlug, date }: { orgSlug: string; date: DateReclam
               <li key={i.id} className="flex flex-wrap items-center justify-between gap-3 py-2.5 text-[13px]">
                 <div>
                   <p className="font-semibold text-[var(--ci-text)]">
-                    {date.etichetePlatforme[i.platforma] ?? i.platforma} <Badge tone="neutral" icon={false}>import manual</Badge>
+                    {date.etichetePlatforme[i.platforma] ?? i.platforma} <Badge tone="neutral" icon={false}>{dict.importManual}</Badge>
                   </p>
                   <p className="text-[12.5px] text-[var(--ci-text-muted)]">
-                    {i.deLa && i.panaLa ? `${ziRo(i.deLa)} – ${ziRo(i.panaLa)}` : "—"} · {formatNumar(i.randuri)} rânduri · {formatLei(i.totalRonBani)}
-                    {i.moneda !== "RON" ? ` (curs ${i.cursRon.toLocaleString("ro-RO")} ${i.moneda}/lei)` : ""} · importat {dataRo(i.creatLa)}
+                    {i.deLa && i.panaLa ? `${ziRo(i.deLa)} – ${ziRo(i.panaLa)}` : "—"} · {formatNumar(i.randuri)} {dict.randuri} · {formatLei(i.totalRonBani)}
+                    {i.moneda !== "RON" ? dict.curs(i.cursRon.toLocaleString(f.loc), i.moneda) : ""} · {dict.importat} {dataRo(i.creatLa)}
                     {i.numeFisier ? ` · ${i.numeFisier}` : ""}
                   </p>
                 </div>
                 <Button
                   type="button"
                   variant="ghost"
-                  aria-label={`Șterge importul din ${dataRo(i.creatLa)}`}
+                  aria-label={dict.stergeImport(dataRo(i.creatLa))}
                   onClick={() => {
-                    if (!window.confirm("Ștergi costurile aduse de acest import? Rândurile înlocuite ulterior de alt import nu sunt afectate.")) return;
+                    if (!window.confirm(dict.confirmaStergere)) return;
                     start(async () => {
                       await stergeImportAction(orgSlug, i.id);
                       router.refresh();

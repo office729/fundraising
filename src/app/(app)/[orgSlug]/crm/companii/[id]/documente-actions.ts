@@ -8,8 +8,12 @@ import { withOrgSession } from "@/lib/auth/guard";
 import { companies } from "@/lib/db/schema";
 import { BUCKET_PRIVAT, caleDinReferinta, referintaPrivata, stergeFisierePrivate } from "@/lib/fisiere-private";
 import { createClient } from "@/lib/supabase/server";
+import { getLocale } from "@/lib/i18n/get-locale";
+import { COMPANII_UI_DICT } from "@/lib/i18n/dictionaries/companii-ui";
 
 import type { ActionState } from "../actions";
+
+const mesaje = async () => COMPANII_UI_DICT[await getLocale()].msg;
 
 // Documentele unei firme (contracte, rapoarte, corespondență). Fișierele stau în bucket-ul privat (URL semnat la afișare),
 // iar lista lor în companies.extra.documente — fără migrare.
@@ -44,21 +48,22 @@ async function scrieDocumente(ctx: Parameters<Parameters<typeof withOrgSession>[
 }
 
 export const incarcaDocumentFirma = withOrgSession(async (ctx, companyId: string, formData: FormData): Promise<ActionState> => {
+  const m = await mesaje();
   const fisier = formData.get("fisier");
-  if (!(fisier instanceof File) || fisier.size === 0) return { error: "Alege un fișier." };
-  if (fisier.size > MAX_BYTES) return { error: "Fișierul e prea mare (max 10 MB)." };
+  if (!(fisier instanceof File) || fisier.size === 0) return { error: m.alegeFisier };
+  if (fisier.size > MAX_BYTES) return { error: m.fisierPreaMare };
   const ext = TIPURI[fisier.type];
-  if (!ext) return { error: "Tip de fișier neacceptat. Folosește PDF, imagine (jpg/png/webp), Word, Excel sau text." };
+  if (!ext) return { error: m.tipNeacceptat };
 
   const documente = await citesteDocumente(ctx, companyId);
-  if (!documente) return { error: "Firma nu a fost găsită." };
-  if (documente.length >= 100) return { error: "Ai atins limita de 100 de documente pe firmă." };
+  if (!documente) return { error: m.firmaNegasita };
+  if (documente.length >= 100) return { error: m.limitaDocumente };
 
   const id = randomUUID();
   const cale = `${ctx.orgSlug}/companii/${companyId}/${id}.${ext}`;
   const supabase = await createClient();
   const { error: uploadError } = await supabase.storage.from(BUCKET_PRIVAT).upload(cale, fisier, { contentType: fisier.type, upsert: false });
-  if (uploadError) return { error: "Încărcarea a eșuat: " + uploadError.message };
+  if (uploadError) return { error: m.incarcareEsuata(uploadError.message) };
 
   const nume = (String(formData.get("nume") ?? "").trim() || fisier.name || `document.${ext}`).slice(0, 200);
   await scrieDocumente(ctx, companyId, [{ id, nume, ref: referintaPrivata(cale), tip: ext, marime: fisier.size, la: new Date().toISOString(), deNume: ctx.userName ?? null }, ...documente]);
@@ -66,8 +71,9 @@ export const incarcaDocumentFirma = withOrgSession(async (ctx, companyId: string
 });
 
 export const stergeDocumentFirma = withOrgSession(async (ctx, companyId: string, documentId: string): Promise<ActionState> => {
+  const m = await mesaje();
   const documente = await citesteDocumente(ctx, companyId);
-  if (!documente) return { error: "Firma nu a fost găsită." };
+  if (!documente) return { error: m.firmaNegasita };
   const doc = documente.find((d) => d.id === documentId);
   if (!doc) return { error: null };
   // Doar căi din folderul acestei firme, în bucket-ul privat.

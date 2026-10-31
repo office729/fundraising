@@ -7,6 +7,8 @@ import { headers } from "next/headers";
 import { reinnoiesteAcceptareTermeni } from "@/lib/auth/dal";
 import { withBeneficiarSession } from "@/lib/auth/guard";
 import { fundraisingCampaignAgents, fundraisingGroupPostingHistory, fundraisingMessages, fundraisingNotifications, fundraisingTasks } from "@/lib/db/schema";
+import { BENEFICIAR_PORTAL_UI_DICT } from "@/lib/i18n/dictionaries/beneficiar-portal-ui";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { notifica } from "@/lib/notifications";
 import { createClient } from "@/lib/supabase/server";
 
@@ -15,7 +17,7 @@ export type TrimiteMesajBeneficiarState = { error: string | null; ok: boolean };
 export const trimiteMesajBeneficiarAction = withBeneficiarSession(
   async (ctx, _prevState: TrimiteMesajBeneficiarState, formData: FormData): Promise<TrimiteMesajBeneficiarState> => {
     const continut = String(formData.get("continut") ?? "").trim();
-    if (!continut) return { error: "Scrie un mesaj.", ok: false };
+    if (!continut) return { error: BENEFICIAR_PORTAL_UI_DICT[await getLocale()].erori.scrieMesaj, ok: false };
 
     await ctx.db.insert(fundraisingMessages).values({
       campaignPageId: ctx.campaignPageId,
@@ -93,17 +95,18 @@ export async function schimbaParolaBeneficiarAction(
   _prevState: SchimbaParolaState,
   formData: FormData,
 ): Promise<SchimbaParolaState> {
+  const er = BENEFICIAR_PORTAL_UI_DICT[await getLocale()].erori;
   const parola = String(formData.get("parola") ?? "");
   const confirmare = String(formData.get("confirmare") ?? "");
-  if (parola.length < 8) return { error: "Parola trebuie să aibă cel puțin 8 caractere.", ok: false };
-  if (parola !== confirmare) return { error: "Parolele nu coincid.", ok: false };
+  if (parola.length < 8) return { error: er.parolaMinim, ok: false };
+  if (parola !== confirmare) return { error: er.parolaDiferite, ok: false };
 
   const supabase = await createClient();
   const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) return { error: "Sesiune expirată — reconectează-te și încearcă din nou.", ok: false };
+  if (!userData.user) return { error: er.sesiuneExpirata, ok: false };
 
   const { error } = await supabase.auth.updateUser({ password: parola });
-  if (error) return { error: "Nu am putut schimba parola. Încearcă din nou.", ok: false };
+  if (error) return { error: er.parolaNeschimbata, ok: false };
 
   return { error: null, ok: true };
 }

@@ -18,6 +18,7 @@ const PRIORITATE_TONE = { mare: "red", medie: "amber", mica: "neutral" } as cons
 // e o singură bară de progres tip "traseu de cursă" în loc de rânduri.
 export function IndraznetDinamicDashboard({
   base,
+  locale,
   dict,
   domeniu,
   kpis,
@@ -28,6 +29,7 @@ export function IndraznetDinamicDashboard({
   apeluriReale,
   prioritateLabels,
 }: DashboardData) {
+  const fmtSuma = (v: number) => formatSuma(v, "RON", locale);
   const itemLabel = domeniu ? CAMPAIGN_TEMPLATES[domeniu].itemLabel : undefined;
   const totalPipeline = pipeline.reduce((s, p) => s + (p.stage === "sponsorizat" ? 0 : p.count), 1);
 
@@ -45,7 +47,7 @@ export function IndraznetDinamicDashboard({
               key={k.key}
               tone="dark"
               label={k.label}
-              value={k.unitate === "count" ? String(Math.round(k.valoare)) : k.unitate === "percent" ? `${Math.round(k.valoare)}%` : formatSuma(k.valoare)}
+              value={k.unitate === "count" ? String(Math.round(k.valoare)) : k.unitate === "percent" ? `${Math.round(k.valoare)}%` : fmtSuma(k.valoare)}
             />
           ))}
         </div>
@@ -68,7 +70,7 @@ export function IndraznetDinamicDashboard({
         <div className="mt-2 flex flex-wrap justify-between gap-2">
           {pipeline.map((p) => (
             <span key={p.stage} className="text-[11px] text-[var(--ci-text-muted)]">
-              {p.label} · <strong className="text-[var(--ci-text)]">{p.stage === "sponsorizat" ? formatSuma(p.suma) : p.count}</strong>
+              {p.label} · <strong className="text-[var(--ci-text)]">{p.stage === "sponsorizat" ? fmtSuma(p.suma) : p.count}</strong>
             </span>
           ))}
         </div>
@@ -102,7 +104,7 @@ export function IndraznetDinamicDashboard({
                 <ProgressBar value={pct} tone={b.statusCampanie === "urgenta" ? "primary" : "blue"} />
                 <div className="mt-2 flex items-center justify-between text-[12px] text-[var(--ci-text-muted)]">
                   <span className="ci-tabular">
-                    {formatSuma(b.sumaStransa)} {dict.proiecte.din} {formatSuma(b.obiectiv)}
+                    {fmtSuma(b.sumaStransa)} {dict.proiecte.din} {fmtSuma(b.obiectiv)}
                   </span>
                   <span className="ci-tabular font-bold text-[var(--ci-primary)]">{pct}%</span>
                 </div>
@@ -124,7 +126,7 @@ export function IndraznetDinamicDashboard({
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[13px] font-medium text-[var(--ci-text)]">{a.motiv}</p>
                 <p className="mt-0.5 text-[12px] text-[var(--ci-text-muted)]">
-                  {a.responsabil} · termen {formatDataRelativa(a.termen)}
+                  {a.responsabil} · {dict.due} {formatDataRelativa(a.termen, locale)}
                 </p>
               </div>
               <Link prefetch={false}

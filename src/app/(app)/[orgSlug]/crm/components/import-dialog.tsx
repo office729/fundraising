@@ -3,6 +3,9 @@
 import { AlertCircle, FileSpreadsheet, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
+import { COMPONENTE_UI_DICT } from "@/lib/i18n/dictionaries/componente-ui";
+
+import { useLocale } from "../lib/locale-context";
 import { addImportedCompanii, addImportedDonatori, MAX_IMPORT_ROWS } from "../lib/local-store";
 import { parseImportFile } from "../lib/import-parse";
 import {
@@ -23,33 +26,11 @@ type Tip = "donatori" | "companii";
 // Câte rânduri randăm în previzualizare (restul se importă la fel, doar nu se afișează toate).
 const PREVIEW_MAX_ROWS = 200;
 
-const TIP_LABEL: Record<Tip, string> = {
-  donatori: "Persoane fizice (donatori)",
-  companii: "Persoane juridice (companii)",
-};
-
-// Etichetele coloanelor mapabile manual, în ordinea afișată — "nume" e
-// singura obligatorie, restul sunt opționale (rămân goale/implicite dacă
-// fișierul nu le are).
-const FIELD_LABELS: Record<Tip, { key: string; label: string; required?: boolean }[]> = {
-  donatori: [
-    { key: "nume", label: "Nume", required: true },
-    { key: "email", label: "Email" },
-    { key: "telefon", label: "Telefon" },
-    { key: "localitate", label: "Localitate" },
-    { key: "totalDonat", label: "Total donat" },
-    { key: "responsabil", label: "Responsabil" },
-    { key: "consimtamant", label: "Consimțământ GDPR" },
-  ],
-  companii: [
-    { key: "nume", label: "Nume companie", required: true },
-    { key: "cui", label: "CUI" },
-    { key: "industrie", label: "Industrie" },
-    { key: "judet", label: "Județ" },
-    { key: "localitate", label: "Localitate" },
-    { key: "sumaSponsorizata", label: "Sumă sponsorizată" },
-    { key: "responsabil", label: "Responsabil" },
-  ],
+// Cheile coloanelor mapabile manual, în ordinea afișată — "nume" e singura obligatorie, restul sunt opționale (rămân goale/implicite
+// dacă fișierul nu le are). Etichetele vin din dicționar (COMPONENTE_UI_DICT.import.campuri).
+const FIELD_KEYS: Record<Tip, { key: string; required?: boolean }[]> = {
+  donatori: [{ key: "nume", required: true }, { key: "email" }, { key: "telefon" }, { key: "localitate" }, { key: "totalDonat" }, { key: "responsabil" }, { key: "consimtamant" }],
+  companii: [{ key: "nume", required: true }, { key: "cui" }, { key: "industrie" }, { key: "judet" }, { key: "localitate" }, { key: "sumaSponsorizata" }, { key: "responsabil" }],
 };
 
 // Tipul e FIX pentru toată durata dialogului, ales din meniul „Adaugă" —
@@ -57,6 +38,10 @@ const FIELD_LABELS: Record<Tip, { key: string; label: string; required?: boolean
 // importa din greșeală un fișier de companii peste lista de persoane fizice
 // (sau invers) doar pentru că cineva a uitat să comute selectorul.
 export function ImportDialog({ open, onClose, tip }: { open: boolean; onClose: () => void; tip: Tip }) {
+  const locale = useLocale();
+  const t = COMPONENTE_UI_DICT[locale];
+  const d = t.import;
+  const nrLocale = locale === "ro" ? "ro-RO" : "en-GB";
   const [fileName, setFileName] = useState("");
   const [rows, setRows] = useState<Record<string, string>[]>([]);
   const [mapping, setMapping] = useState<ColumnMapping>({});
@@ -92,26 +77,20 @@ export function ImportDialog({ open, onClose, tip }: { open: boolean; onClose: (
     try {
       const parsed = await parseImportFile(file, tip === "donatori");
       if (parsed.length === 0) {
-        setEroare("Nu am găsit rânduri de date în fișier — verifică formatul (CSV/Excel/JSON, cu antet pe primul rând).");
+        setEroare(d.faraRanduri);
         setRows([]);
       } else if (Object.keys(parsed[0]).length <= 1 && parsed.some((r) => Object.values(r)[0]?.includes(","))) {
-        setEroare("Fișierul pare să aibă o singură coloană cu totul înghesuit — verifică separatorul folosit (virgulă, punct și virgulă sau tab) și reîncarcă fișierul.");
+        setEroare(d.oSinguraColoana);
         setRows([]);
       } else {
         setRows(parsed);
         setMapping(tip === "donatori" ? guessDonatorMapping(parsed[0]) : guessCompanieMapping(parsed[0]));
         if (parsed.length > MAX_IMPORT_ROWS) {
-          setEroare(
-            `Fișierul are ${parsed.length.toLocaleString("ro-RO")} rânduri — acest prototip ține datele în browser (localStorage) și suportă cel mult ${MAX_IMPORT_ROWS.toLocaleString("ro-RO")} rânduri importate. Vor fi păstrate doar primele ${MAX_IMPORT_ROWS.toLocaleString("ro-RO")}.`,
-          );
+          setEroare(d.depasireLimita(parsed.length.toLocaleString(nrLocale), MAX_IMPORT_ROWS.toLocaleString(nrLocale)));
         }
       }
     } catch {
-      setEroare(
-        tip === "donatori"
-          ? "Fișierul nu a putut fi citit. Formate acceptate: CSV/TSV, Excel (.xlsx/.xls), OpenDocument (.ods), JSON, contacte (.vcf)."
-          : "Fișierul nu a putut fi citit. Formate acceptate: CSV/TSV, Excel (.xlsx/.xls), OpenDocument (.ods), JSON.",
-      );
+      setEroare(tip === "donatori" ? d.necitibilPf : d.necitibilPj);
       setRows([]);
     } finally {
       setSeParseaza(false);
@@ -137,9 +116,7 @@ export function ImportDialog({ open, onClose, tip }: { open: boolean; onClose: (
       exemple = normalizate.slice(0, 3).map((r) => ({ nume: r.nume }));
     }
     if (!ok) {
-      setRezultatEroare(
-        "Spațiul de stocare al browser-ului (localStorage) e plin — importul NU s-a salvat. Șterge mai întâi datele importate anterior (din Instrumente → Date importate) și încearcă din nou cu un fișier mai mic.",
-      );
+      setRezultatEroare(d.stocarePlina);
       return;
     }
     setTrunchiat(trunchiatRez);
@@ -157,32 +134,28 @@ export function ImportDialog({ open, onClose, tip }: { open: boolean; onClose: (
   // Previzualizarea arată TOATE coloanele și rândurile (cu derulare); doar la fișiere foarte mari afișăm primele PREVIEW_MAX_ROWS.
   const coloanePreview = coloaneFisier;
   const preview = rows.slice(0, PREVIEW_MAX_ROWS);
-  const campuri = FIELD_LABELS[tip];
+  const campuri = FIELD_KEYS[tip];
   const numeMapat = !!mapping.nume;
 
   return (
-    <Dialog open={open} onClose={inchide} title={`Importă ${TIP_LABEL[tip].toLowerCase()}`} width="max-w-lg">
+    <Dialog open={open} onClose={inchide} title={d.titlu(d.tipuri[tip].toLowerCase())} width="max-w-lg">
       <div className="space-y-4">
-        <Badge tone={tip === "donatori" ? "blue" : "green"}>{TIP_LABEL[tip]}</Badge>
-        <DemoBanner>
-          Versiune demonstrativă: datele importate aici se păstrează doar în acest browser, nu pe server — nu apar pe alt dispozitiv și se pierd dacă ștergi datele browserului.
-        </DemoBanner>
+        <Badge tone={tip === "donatori" ? "blue" : "green"}>{d.tipuri[tip]}</Badge>
+        <DemoBanner>{d.demo}</DemoBanner>
 
         {importat === null && (
           <div>
-            <p className="mb-1.5 text-[13px] font-medium text-[var(--ci-text)]">Fișier</p>
+            <p className="mb-1.5 text-[13px] font-medium text-[var(--ci-text)]">{d.fisier}</p>
             <button
               onClick={() => inputRef.current?.click()}
               className="flex w-full flex-col items-center gap-2 rounded-[var(--ci-radius-btn)] border-2 border-dashed border-[var(--ci-border)] px-4 py-8 text-center transition-colors hover:border-[var(--ci-primary)] hover:bg-[var(--ci-primary-soft)]"
             >
               <Upload className="h-5 w-5 text-[var(--ci-text-faint)]" />
               <span className="text-[13px] font-medium text-[var(--ci-text)]">
-                {fileName || "Alege un fișier — orice format"}
+                {fileName || d.alegeFisier}
               </span>
               <span className="text-[12px] text-[var(--ci-text-faint)]">
-                {tip === "donatori"
-                  ? ".csv, .xlsx, .xls, .ods, .json, .tsv, .txt sau contacte .vcf — se convertesc automat"
-                  : ".csv, .xlsx, .xls, .ods, .json, .tsv, .txt — se convertesc automat"}
+                {tip === "donatori" ? d.formatePf : d.formatePj}
               </span>
             </button>
             <input
@@ -195,7 +168,7 @@ export function ImportDialog({ open, onClose, tip }: { open: boolean; onClose: (
           </div>
         )}
 
-        {seParseaza && <p className="text-[13px] text-[var(--ci-text-muted)]">Se citește fișierul…</p>}
+        {seParseaza && <p className="text-[13px] text-[var(--ci-text-muted)]">{d.seCiteste}</p>}
 
         {eroare && (
           <div className="flex items-start gap-2 rounded-[var(--ci-radius-card)] bg-[var(--ci-red-soft)] px-3.5 py-2.5 text-[13px] text-[var(--ci-red)]">
@@ -209,7 +182,7 @@ export function ImportDialog({ open, onClose, tip }: { open: boolean; onClose: (
               <div className="mb-2 flex items-center gap-2">
                 <FileSpreadsheet className="h-4 w-4 text-[var(--ci-green)]" />
                 <p className="text-[13px] font-medium text-[var(--ci-text)]">
-                  {rows.length} {rows.length === 1 ? "rând găsit" : "rânduri găsite"} · {coloaneFisier.length} coloane
+                  {d.randuriGasite(rows.length, coloaneFisier.length)}
                 </p>
               </div>
               <div className="ci-scrollbar max-h-72 overflow-auto rounded-[var(--ci-radius-card)] border border-[var(--ci-border)]">
@@ -233,32 +206,30 @@ export function ImportDialog({ open, onClose, tip }: { open: boolean; onClose: (
                 </table>
               </div>
               {rows.length > PREVIEW_MAX_ROWS && (
-                <p className="mt-1.5 text-[12px] text-[var(--ci-text-faint)]">Se afișează primele {PREVIEW_MAX_ROWS} de rânduri; toate cele {rows.length} se importă.</p>
+                <p className="mt-1.5 text-[12px] text-[var(--ci-text-faint)]">{d.primele(PREVIEW_MAX_ROWS, rows.length)}</p>
               )}
             </div>
 
             <div>
-              <p className="mb-2 text-[13px] font-semibold text-[var(--ci-text)]">Ce înseamnă fiecare coloană?</p>
-              <p className="mb-2.5 text-[12px] text-[var(--ci-text-faint)]">
-                Am ghicit automat potrivirile de mai jos din antetul fișierului — corectează-le dacă nu sunt bune.
-              </p>
+              <p className="mb-2 text-[13px] font-semibold text-[var(--ci-text)]">{d.ceInseamna}</p>
+              <p className="mb-2.5 text-[12px] text-[var(--ci-text-faint)]">{d.ghicit}</p>
               <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                 {campuri.map((f) => {
                   const valoareExemplu = mapping[f.key] ? rows[0]?.[mapping[f.key] as string] : "";
                   return (
                     <div key={f.key}>
-                      <Label>{f.label}{f.required && " *"}</Label>
+                      <Label>{d.campuri[tip][f.key]}{f.required && " *"}</Label>
                       <Select
                         value={mapping[f.key] ?? ""}
                         onChange={(e) => setMapping((m) => ({ ...m, [f.key]: e.target.value }))}
                       >
-                        <option value="">— nicio coloană —</option>
+                        <option value="">{d.nicioColoana}</option>
                         {coloaneFisier.map((c) => (
                           <option key={c} value={c}>{c}</option>
                         ))}
                       </Select>
                       <p className="mt-1 truncate text-[11px] text-[var(--ci-text-faint)]">
-                        {valoareExemplu ? `Exemplu: ${valoareExemplu}` : " "}
+                        {valoareExemplu ? d.exemplu(valoareExemplu) : " "}
                       </p>
                     </div>
                   );
@@ -267,7 +238,7 @@ export function ImportDialog({ open, onClose, tip }: { open: boolean; onClose: (
               {!numeMapat && (
                 <div className="mt-1 flex items-start gap-2 rounded-[var(--ci-radius-card)] bg-[var(--ci-red-soft)] px-3.5 py-2.5 text-[13px] text-[var(--ci-red)]">
                   <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                  Selectează coloana cu numele mai sus — fără ea nu poți importa (rândurile ar fi toate nume identice, ca data trecută).
+                  {d.lipsesteNume}
                 </div>
               )}
             </div>
@@ -283,26 +254,25 @@ export function ImportDialog({ open, onClose, tip }: { open: boolean; onClose: (
         {importat !== null && (
           <div className="space-y-2 rounded-[var(--ci-radius-card)] bg-[var(--ci-green-soft)] px-3.5 py-2.5 text-[13px] text-[var(--ci-green)]">
             <p className="font-medium">
-              {importat} {tip === "donatori" ? "donatori adăugați" : "companii adăugate"} — le vezi în listă.
+              {d.adaugati(importat, tip)}
             </p>
             {previzualizareImportata.length > 0 && (
               <p className="text-[12px] opacity-90">
-                Exemplu chiar din acest import: {previzualizareImportata.map((r) => r.nume).join(" · ")}
+                {d.exempluImport(previzualizareImportata.map((r) => r.nume).join(" · "))}
               </p>
             )}
             {trunchiat && (
               <p className="text-[12px] text-[var(--ci-amber)]">
-                Fișierul avea mai multe rânduri decât limita de {MAX_IMPORT_ROWS.toLocaleString("ro-RO")} pentru acest prototip
-                (localStorage din browser) — s-au păstrat doar primele {MAX_IMPORT_ROWS.toLocaleString("ro-RO")}.
+                {d.trunchiat(MAX_IMPORT_ROWS.toLocaleString(nrLocale))}
               </p>
             )}
           </div>
         )}
 
         <div className="flex justify-end gap-2 border-t border-[var(--ci-border)] pt-3">
-          <Button variant="secondary" onClick={inchide}>{importat !== null ? "Închide" : "Anulează"}</Button>
+          <Button variant="secondary" onClick={inchide}>{importat !== null ? t.comun.inchide : t.comun.anuleaza}</Button>
           {rows.length > 0 && importat === null && (
-            <Button variant="primary" onClick={confirma} disabled={!numeMapat}>Importă {rows.length} rânduri</Button>
+            <Button variant="primary" onClick={confirma} disabled={!numeMapat}>{d.importa(rows.length)}</Button>
           )}
         </div>
       </div>

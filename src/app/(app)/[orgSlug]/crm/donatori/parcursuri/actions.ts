@@ -9,6 +9,8 @@ import { verificaLimitaRata } from "@/lib/auth/rate-limit";
 import { linkDezabonare } from "@/lib/dezabonare";
 import { emailConfigurat, trimiteEmail } from "@/lib/email";
 import { EroareUtilizator, mesajSigur } from "@/lib/erori";
+import { DONATORI_UI4_DICT } from "@/lib/i18n/dictionaries/donatori-ui-4";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { anteteDezabonare } from "@/lib/formular230-email-template";
 import {
   CHEI_PARCURS,
@@ -106,15 +108,16 @@ const esteCheie = (x: unknown): x is CheieParcurs => typeof x === "string" && (C
 
 // Salvează textele și starea unui parcurs. Pornirea (de la oprit la activ) fixează momentul activării: Welcome pornește doar pentru prime donații de după acest moment.
 export const salveazaParcurs = withOrgAdmin(async (ctx, cheie: string, pasi: unknown, activ: boolean, confirmaAcord = false): Promise<RezultatSalvare> => {
-  if (!esteCheie(cheie)) return { ok: false, eroare: "Parcurs necunoscut." };
+  const er = DONATORI_UI4_DICT[await getLocale()].erori;
+  if (!esteCheie(cheie)) return { ok: false, eroare: er.necunoscut };
   const v = valideazaPasi(pasi, cheie);
-  if (!v.ok) return { ok: false, eroare: v.erori[0]?.mesaj ?? "Verifică textele parcursului.", erori: v.erori };
+  if (!v.ok) return { ok: false, eroare: v.erori[0]?.mesaj ?? er.verificaTextele, erori: v.erori };
   const vrea = activ === true;
-  if (vrea && !emailConfigurat()) return { ok: false, eroare: "Trimiterea de e-mailuri nu este configurată pe platformă, deci parcursul nu poate porni." };
+  if (vrea && !emailConfigurat()) return { ok: false, eroare: er.emailNeconfigurat };
   const [vechi] = (await ctx.db.execute(sql`select activ from parcursuri_donatori where org_id = ${ctx.orgId} and cheie = ${cheie}`)) as unknown as { activ: boolean }[];
   const pornitAcum = vrea && !vechi?.activ;
   // Decizia de a trimite mesaje donatorilor e a organizației (operatorul datelor): la pornire confirmă, iar confirmarea rămâne în jurnal.
-  if (pornitAcum && confirmaAcord !== true) return { ok: false, eroare: "Confirmă că donatorii cărora li se trimit aceste mesaje au acceptat să le primească." };
+  if (pornitAcum && confirmaAcord !== true) return { ok: false, eroare: er.confirmaAcord };
   await ctx.db.execute(sql`
     insert into parcursuri_donatori (org_id, cheie, activ, activ_din, pasi, updated_at, updated_by)
     values (${ctx.orgId}, ${cheie}, ${vrea}, ${pornitAcum ? sql`now()` : sql`null`}, ${JSON.stringify(v.pasi)}::text::jsonb, now(), ${ctx.userId})
@@ -137,13 +140,14 @@ export type RezultatTest = { ok: true; catre: string } | { ok: false; eroare: st
 
 // Trimite pasul ales (cu textele nesalvate din editor) la adresa utilizatorului conectat, cu valori de exemplu, ca să vadă exact cum arată e-mailul.
 export const trimiteTestParcurs = withOrgAdmin(async (ctx, cheie: string, pasi: unknown, indexPas: number): Promise<RezultatTest> => {
-  if (!esteCheie(cheie)) return { ok: false, eroare: "Parcurs necunoscut." };
+  const er = DONATORI_UI4_DICT[await getLocale()].erori;
+  if (!esteCheie(cheie)) return { ok: false, eroare: er.necunoscut };
   const v = valideazaPasi(pasi, cheie);
-  if (!v.ok) return { ok: false, eroare: v.erori[0]?.mesaj ?? "Verifică textele parcursului." };
+  if (!v.ok) return { ok: false, eroare: v.erori[0]?.mesaj ?? er.verificaTextele };
   const pas = v.pasi[indexPas];
-  if (!pas) return { ok: false, eroare: "Pas inexistent." };
-  if (!emailConfigurat()) return { ok: false, eroare: "Trimiterea de e-mailuri nu este configurată pe platformă." };
-  if (!(await verificaLimitaRata("parcursuri-test", ctx.orgId, 10, 60))) return { ok: false, eroare: "Ai trimis prea multe teste într-o oră. Revino mai târziu." };
+  if (!pas) return { ok: false, eroare: er.pasInexistent };
+  if (!emailConfigurat()) return { ok: false, eroare: er.emailNeconfiguratTest };
+  if (!(await verificaLimitaRata("parcursuri-test", ctx.orgId, 10, 60))) return { ok: false, eroare: er.preaMulteTeste };
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://alexandrit.ro";
   const valori = { ...VALORI_EXEMPLU, organizatie: ctx.orgName };
   const linkDez = linkDezabonare(baseUrl, ctx.orgId, ctx.userEmail);
@@ -155,7 +159,7 @@ export const trimiteTestParcurs = withOrgAdmin(async (ctx, cheie: string, pasi: 
       headers: anteteDezabonare(linkDez),
     });
   } catch (e) {
-    throw new EroareUtilizator(mesajSigur(e, "Nu am putut trimite e-mailul de test. Încearcă din nou.", "parcursuri-test"));
+    throw new EroareUtilizator(mesajSigur(e, er.nuAmTrimisTest, "parcursuri-test"));
   }
   return { ok: true, catre: ctx.userEmail };
 }, OPTIUNI);

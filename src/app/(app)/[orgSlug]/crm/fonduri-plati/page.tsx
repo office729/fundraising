@@ -51,11 +51,11 @@ export default function FonduriPlatiPage() {
 
   const columns: ColumnDef<AlocarePlata, unknown>[] = [
     { accessorKey: "beneficiarNume", header: dict.columns.beneficiar, cell: ({ row }) => <span className="font-medium">{row.original.beneficiarNume}</span> },
-    { accessorKey: "incasat", header: dict.columns.incasat, cell: ({ row }) => <span className="ci-tabular">{formatSuma(row.original.incasat, row.original.moneda)}</span> },
-    { accessorKey: "alocat", header: dict.columns.alocat, cell: ({ row }) => <span className="ci-tabular">{formatSuma(row.original.alocat, row.original.moneda)}</span> },
-    { accessorKey: "achitat", header: dict.columns.achitat, cell: ({ row }) => <span className="ci-tabular font-medium">{formatSuma(row.original.achitat, row.original.moneda)}</span> },
+    { accessorKey: "incasat", header: dict.columns.incasat, cell: ({ row }) => <span className="ci-tabular">{formatSuma(row.original.incasat, row.original.moneda, locale)}</span> },
+    { accessorKey: "alocat", header: dict.columns.alocat, cell: ({ row }) => <span className="ci-tabular">{formatSuma(row.original.alocat, row.original.moneda, locale)}</span> },
+    { accessorKey: "achitat", header: dict.columns.achitat, cell: ({ row }) => <span className="ci-tabular font-medium">{formatSuma(row.original.achitat, row.original.moneda, locale)}</span> },
     { accessorKey: "status", header: dict.columns.status, cell: ({ row }) => <StatusPill status={row.original.status} label={STATUS_LABEL[row.original.status]} /> },
-    { accessorKey: "la", header: dict.columns.data, cell: ({ row }) => formatData(row.original.la) },
+    { accessorKey: "la", header: dict.columns.data, cell: ({ row }) => formatData(row.original.la, locale) },
   ];
 
   return (
@@ -77,9 +77,9 @@ export default function FonduriPlatiPage() {
       </DemoBanner>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Card><p className="text-[12px] text-[var(--ci-text-muted)]">{dict.totalIncasat}</p><p className="ci-tabular mt-1 text-lg font-bold text-[var(--ci-text)]">{formatSuma(totale.incasat)}</p></Card>
-        <Card><p className="text-[12px] text-[var(--ci-text-muted)]">{dict.totalAlocat}</p><p className="ci-tabular mt-1 text-lg font-bold text-[var(--ci-text)]">{formatSuma(totale.alocat)}</p></Card>
-        <Card><p className="text-[12px] text-[var(--ci-text-muted)]">{dict.totalAchitat}</p><p className="ci-tabular mt-1 text-lg font-bold text-[var(--ci-text)]">{formatSuma(totale.achitat)}</p></Card>
+        <Card><p className="text-[12px] text-[var(--ci-text-muted)]">{dict.totalIncasat}</p><p className="ci-tabular mt-1 text-lg font-bold text-[var(--ci-text)]">{formatSuma(totale.incasat, "RON", locale)}</p></Card>
+        <Card><p className="text-[12px] text-[var(--ci-text-muted)]">{dict.totalAlocat}</p><p className="ci-tabular mt-1 text-lg font-bold text-[var(--ci-text)]">{formatSuma(totale.alocat, "RON", locale)}</p></Card>
+        <Card><p className="text-[12px] text-[var(--ci-text-muted)]">{dict.totalAchitat}</p><p className="ci-tabular mt-1 text-lg font-bold text-[var(--ci-text)]">{formatSuma(totale.achitat, "RON", locale)}</p></Card>
       </div>
 
       <Select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full sm:w-44">
@@ -95,9 +95,9 @@ export default function FonduriPlatiPage() {
         {selected && (
           <div className="space-y-4">
             <div className="space-y-2">
-              <Row label={dict.columns.incasat} value={formatSuma(selected.incasat, selected.moneda)} />
-              <Row label={dict.columns.alocat} value={formatSuma(selected.alocat, selected.moneda)} />
-              <Row label={dict.columns.achitat} value={formatSuma(selected.achitat, selected.moneda)} />
+              <Row label={dict.columns.incasat} value={formatSuma(selected.incasat, selected.moneda, locale)} />
+              <Row label={dict.columns.alocat} value={formatSuma(selected.alocat, selected.moneda, locale)} />
+              <Row label={dict.columns.achitat} value={formatSuma(selected.achitat, selected.moneda, locale)} />
               <Row label={dict.sidePanel.documentJustificativ} value={selected.documentJustificativ ?? "—"} />
             </div>
             <div>
@@ -124,10 +124,11 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 function JournalRow({ text, author, date }: { text: string; author: string; date: string }) {
+  const locale = useLocale();
   return (
     <div className="pb-1">
       <p className="text-[13px] text-[var(--ci-text)]">{text}</p>
-      <p className="text-[12px] text-[var(--ci-text-faint)]">{author} · {formatData(date)}</p>
+      <p className="text-[12px] text-[var(--ci-text-faint)]">{author} · {formatData(date, locale)}</p>
     </div>
   );
 }

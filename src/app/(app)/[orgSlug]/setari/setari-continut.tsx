@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { requireOrgAccess } from "@/lib/auth/guard";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { SETARI_ECHIPA_DICT } from "@/lib/i18n/dictionaries/setari-echipa";
+import { SETARI_GDPR_UI_DICT } from "@/lib/i18n/dictionaries/setari-gdpr-ui";
 
 import { AbonamentSection } from "./abonament-section";
 import { listeazaFacturiAction } from "../billing-actions";
@@ -130,7 +131,7 @@ export async function SetariContinut({ orgSlug }: { orgSlug: string }) {
           <ProspectareSection orgSlug={orgSlug} stare={stareChei} limitaZilnica={LIMITA_APELURI_PE_ZI} />
         ) : (
           <div id="prospectare" className="mt-8 scroll-mt-4">
-            <ModulBlocatInline orgSlug={orgSlug} modul="prospectare-multi" descriere="Caută decidenți pentru firmele tale cu propriile chei la Lusha, Apollo, Prospeo și Hunter, și îi trimite la abordare pe LinkedIn prin Waalaxy." poateSchimba={access.role === "owner" || access.role === "admin"} />
+            <ModulBlocatInline orgSlug={orgSlug} modul="prospectare-multi" descriere={SETARI_GDPR_UI_DICT[locale].prospectareModul} poateSchimba={access.role === "owner" || access.role === "admin"} />
           </div>
         )}
         <SuportSection orgSlug={orgSlug} locale={locale} stare={stareSuport} />

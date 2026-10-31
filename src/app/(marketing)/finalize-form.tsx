@@ -6,12 +6,16 @@ import { useState, useSyncExternalStore } from "react";
 import { contextSerializat } from "@/lib/atribuire/client";
 import { PLAN_QUERY_KEYS, type PlanQueryValues } from "@/lib/billing/plan-query";
 import { useAlegerePlan } from "@/lib/billing/use-alegere-plan";
+import type { Locale } from "@/lib/i18n/config";
+import { AUTH_DICT } from "@/lib/i18n/dictionaries/auth";
+import { FINALIZE_UI_DICT } from "@/lib/i18n/dictionaries/finalize-ui";
 import { COOKIE_ACCEPTARE_TERMENI, DPA_ACTIV } from "@/lib/legal-version";
 
 import { finalizeazaOrganizatiaAction } from "./finalize-actions";
 import { useActionStatePastrat } from "@/lib/use-action-state-pastrat";
 
 export function FinalizeForm({
+  locale,
   email,
   planValues = {},
   referralCode = "",
@@ -20,6 +24,7 @@ export function FinalizeForm({
   telefonInitial = "",
   cifInitial = "",
 }: {
+  locale: Locale;
   email: string;
   planValues?: PlanQueryValues;
   referralCode?: string;
@@ -28,6 +33,8 @@ export function FinalizeForm({
   telefonInitial?: string;
   cifInitial?: string;
 }) {
+  const a = AUTH_DICT[locale];
+  const t = FINALIZE_UI_DICT[locale];
   const [state, formAction, pending, valori] = useActionStatePastrat(finalizeazaOrganizatiaAction, { error: null });
   const ctxAtribuire = useSyncExternalStore(
     () => () => {},
@@ -48,21 +55,21 @@ export function FinalizeForm({
 
   return (
     <main className="mx-auto flex max-w-sm flex-col justify-center px-6 py-24">
-      <h1 className="font-display text-2xl font-bold text-ink">Încă un pas</h1>
+      <h1 className="font-display text-2xl font-bold text-ink">{t.titlu}</h1>
       <p className="mt-1 text-sm text-muted">
-        Ești autentificat(ă) ca <strong>{email}</strong>. Completează datele organizației pentru care creezi contul.
+        {t.autentificatCa}<strong>{email}</strong>{t.completeaza}
       </p>
 
       {alegerePlan && (
         <div className="mt-4 rounded-lg border border-brand-green bg-brand-green-soft px-3.5 py-2.5 text-sm text-ink">
-          Planul ales pe pagina de prețuri: <strong>{alegerePlan.nume}</strong>
-          {alegerePlan.pret != null && ` — ${alegerePlan.pret} lei/lună`}. Îl aplicăm automat organizației tale noi.
+          {t.planAlesPre}<strong>{alegerePlan.nume}</strong>
+          {alegerePlan.pret != null && t.planPret(alegerePlan.pret)}{t.planAplicat}
         </div>
       )}
 
       {referralCode && (
         <div className="mt-4 rounded-lg border border-brand-green bg-brand-green-soft px-3.5 py-2.5 text-sm text-ink">
-          Ai un cod de recomandare — primești <strong>50% reducere</strong> la primul abonament plătit.
+          {a.signup.referralBanner}<strong>{a.signup.referralReducere}</strong>{a.signup.referralSufix}
         </div>
       )}
 
@@ -73,7 +80,7 @@ export function FinalizeForm({
           <input key={key} type="hidden" name={key} value={planValues[key] ?? ""} />
         ))}
         <label className="text-sm font-medium text-ink">
-          Numele tău
+          {a.signup.numeTauLabel}
           <input
             name="numeContact"
             defaultValue={valori.numeContact ?? numeInitial}
@@ -81,23 +88,23 @@ export function FinalizeForm({
             maxLength={120}
             required
             autoFocus
-            placeholder="ex. Maria Popescu"
+            placeholder={a.signup.numeTauPlaceholder}
             className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink"
           />
         </label>
         <label className="text-sm font-medium text-ink">
-          Numele organizației
+          {a.signup.numeOrgLabel}
           <input
             name="orgName"
             defaultValue={valori.orgName ?? orgNameInitial}
             maxLength={120}
             required
-            placeholder="ex. Asociația Sprijin"
+            placeholder={a.signup.numeOrgPlaceholder}
             className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink"
           />
         </label>
         <label className="text-sm font-medium text-ink">
-          Număr de telefon
+          {a.signup.telefonLabel}
           <input
             type="tel"
             name="telefon"
@@ -105,12 +112,12 @@ export function FinalizeForm({
             autoComplete="tel"
             inputMode="tel"
             required
-            placeholder="ex. 0722 123 456"
+            placeholder={a.signup.telefonPlaceholder}
             className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink"
           />
         </label>
         <div className="text-sm font-medium text-ink">
-          <label htmlFor="cif-org-fin">CIF-ul organizației</label>
+          <label htmlFor="cif-org-fin">{a.signup.cifLabel}</label>
           <input
             id="cif-org-fin"
             name="cif"
@@ -119,11 +126,11 @@ export function FinalizeForm({
             autoComplete="off"
             required
             aria-describedby="cif-indiciu-fin"
-            placeholder="ex. RO12345678"
+            placeholder={a.signup.cifPlaceholder}
             className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink"
           />
           <p id="cif-indiciu-fin" className="mt-1 text-xs font-normal text-muted">
-            Îl găsești pe certificatul de înregistrare al organizației (doar cifre, cu sau fără RO).
+            {a.signup.cifIndiciu}
           </p>
         </div>
 
@@ -137,19 +144,19 @@ export function FinalizeForm({
             className="mt-0.5 h-4 w-4 shrink-0 rounded border-line"
           />
           <span>
-            Am citit și sunt de acord cu{" "}
+            {a.signup.acceptPre}{" "}
             <Link href="/termeni" target="_blank" className="font-medium text-brand-green underline">
-              Termenii și condițiile
+              {a.signup.acceptTermeni}
             </Link>{" "}
-            și cu{" "}
+            {a.signup.acceptSi}{" "}
             <Link href="/gdpr" target="_blank" className="font-medium text-brand-green underline">
-              Politica de confidențialitate
+              {a.signup.acceptGdpr}
             </Link>
             {DPA_ACTIV && (
               <>
-                , precum și cu{" "}
+                {a.signup.acceptDpaPre}{" "}
                 <Link href="/dpa" target="_blank" className="font-medium text-brand-green underline">
-                  Acordul de prelucrare a datelor (DPA)
+                  {a.signup.acceptDpa}
                 </Link>
               </>
             )}
@@ -164,7 +171,7 @@ export function FinalizeForm({
           disabled={pending}
           className="mt-2 rounded-lg bg-brand-green px-4 py-2.5 font-medium text-white transition hover:bg-brand-green-hover disabled:opacity-60"
         >
-          {pending ? "Se creează..." : "Continuă"}
+          {pending ? t.seCreeaza : t.continua}
         </button>
       </form>
     </main>

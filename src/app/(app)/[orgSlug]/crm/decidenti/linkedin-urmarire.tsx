@@ -2,22 +2,26 @@ import Link from "next/link";
 
 import { segmentFirma } from "@/lib/id-scurt";
 import type { ListeUrmarire, PalnieOutreach, RandUrmarire } from "@/lib/waalaxy-server";
+import type { Locale } from "@/lib/i18n/config";
+import { DECIDENTI_UI_DICT } from "@/lib/i18n/dictionaries/decidenti-ui";
+import { intlLocale } from "@/lib/i18n/dictionaries/companii-ui";
 
 // „LinkedIn” din Decidenți: pâlnia trimiși → conectați → răspunsuri (din care refuzuri) și două liste de urmărit, pe toate firmele: cei care ți-au acceptat invitația și n-au fost contactați,
 // și cei invitați de mai mult de 14 zile fără să accepte. Datele vin din Waalaxy prin webhook (Setări → Prospectare) și din trimiterile făcute din Alexandrit.
 const procent = (parte: number, total: number) => (total > 0 ? `${Math.round((parte / total) * 100)}%` : "—");
 
-function Pas({ eticheta, valoare, nota }: { eticheta: string; valoare: number; nota?: string }) {
+function Pas({ eticheta, valoare, nota, locale }: { eticheta: string; valoare: number; nota?: string; locale: Locale }) {
   return (
     <div className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4">
       <p className="text-[12px] font-semibold text-[var(--ci-text-muted)]">{eticheta}</p>
-      <p className="ci-display ci-tabular mt-1 text-2xl font-bold text-[var(--ci-text)]">{valoare.toLocaleString("ro-RO")}</p>
+      <p className="ci-display ci-tabular mt-1 text-2xl font-bold text-[var(--ci-text)]">{valoare.toLocaleString(intlLocale(locale))}</p>
       {nota && <p className="mt-0.5 text-[12px] text-[var(--ci-text-muted)]">{nota}</p>}
     </div>
   );
 }
 
-function Lista({ orgSlug, titlu, descriere, randuri, gol, sufixZile }: { orgSlug: string; titlu: string; descriere: string; randuri: RandUrmarire[]; gol: string; sufixZile: string }) {
+function Lista({ orgSlug, titlu, descriere, randuri, gol, sufixZile, locale }: { orgSlug: string; titlu: string; descriere: string; randuri: RandUrmarire[]; gol: string; sufixZile: string; locale: Locale }) {
+  const ui = DECIDENTI_UI_DICT[locale].linkedin;
   return (
     <section className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4">
       <h2 className="text-[14px] font-bold text-[var(--ci-text)]">
@@ -41,11 +45,11 @@ function Lista({ orgSlug, titlu, descriere, randuri, gol, sufixZile }: { orgSlug
               <div className="flex items-center gap-3">
                 {r.linkedin && /^https?:\/\//i.test(r.linkedin) && (
                   <a href={r.linkedin} target="_blank" rel="noopener noreferrer" className="text-[12px] font-medium text-[var(--ci-primary)] hover:underline">
-                    LinkedIn
+                    {ui.linkedin}
                   </a>
                 )}
                 <span className="ci-tabular text-[12px] text-[var(--ci-text-muted)]">
-                  {r.zile} {r.zile === 1 ? "zi" : "zile"} {sufixZile}
+                  {ui.zile(r.zile)} {sufixZile}
                 </span>
               </div>
             </li>
@@ -56,37 +60,40 @@ function Lista({ orgSlug, titlu, descriere, randuri, gol, sufixZile }: { orgSlug
   );
 }
 
-export function UrmarireLinkedin({ orgSlug, palnie, liste }: { orgSlug: string; palnie: PalnieOutreach; liste: ListeUrmarire }) {
+export function UrmarireLinkedin({ orgSlug, palnie, liste, locale }: { orgSlug: string; palnie: PalnieOutreach; liste: ListeUrmarire; locale: Locale }) {
+  const ui = DECIDENTI_UI_DICT[locale].linkedin;
   const bazaConectati = palnie.invitati || palnie.conectati;
   const bazaRaspunsuri = palnie.conectati || palnie.invitati;
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Pas eticheta="Invitați" valoare={palnie.invitati} nota="persoane unice, din Alexandrit și din Waalaxy" />
-        <Pas eticheta="Conectați" valoare={palnie.conectati} nota={`${procent(palnie.conectati, bazaConectati)} din invitați`} />
-        <Pas eticheta="Au răspuns" valoare={palnie.raspunsuri} nota={`${procent(palnie.raspunsuri, bazaRaspunsuri)} din conectați`} />
-        <Pas eticheta="Dintre ei, refuzuri" valoare={palnie.refuzuri} nota={`${procent(palnie.refuzuri, palnie.raspunsuri)} din răspunsuri`} />
+        <Pas locale={locale} eticheta={ui.invitati} valoare={palnie.invitati} nota={ui.invitatiNota} />
+        <Pas locale={locale} eticheta={ui.conectati} valoare={palnie.conectati} nota={ui.dinInvitati(procent(palnie.conectati, bazaConectati))} />
+        <Pas locale={locale} eticheta={ui.auRaspuns} valoare={palnie.raspunsuri} nota={ui.dinConectati(procent(palnie.raspunsuri, bazaRaspunsuri))} />
+        <Pas locale={locale} eticheta={ui.refuzuri} valoare={palnie.refuzuri} nota={ui.dinRaspunsuri(procent(palnie.refuzuri, palnie.raspunsuri))} />
       </div>
       {palnie.invitati + palnie.conectati + palnie.raspunsuri === 0 && (
         <p className="rounded-lg bg-[var(--ci-surface-2)] px-3 py-2 text-[13px] text-[var(--ci-text-muted)]">
-          Încă nu sunt evenimente. Trimite persoane aprobate în Waalaxy și conectează webhook-ul (Setări → Prospectare), ca acceptările și răspunsurile să apară aici.
+          {ui.faraEvenimente}
         </p>
       )}
       <Lista
         orgSlug={orgSlug}
-        titlu="Conectați, încă necontactați"
-        descriere="Au acceptat invitația, dar nu există nicio notă pe firmă după acel moment. Momentul cel mai cald: scrie-le acum."
+        locale={locale}
+        titlu={ui.conectatiTitlu}
+        descriere={ui.conectatiDescriere}
         randuri={liste.conectatiNecontactati}
-        gol="Nimeni nu așteaptă un mesaj de la tine."
-        sufixZile="de la conectare"
+        gol={ui.conectatiGol}
+        sufixZile={ui.conectatiSufix}
       />
       <Lista
         orgSlug={orgSlug}
-        titlu="Invitați fără răspuns de peste 14 zile"
-        descriere="Invitația n-a fost acceptată. Poți încerca alt canal (e-mail sau telefon) sau lăsa persoana în pace."
+        locale={locale}
+        titlu={ui.invitatiTitlu}
+        descriere={ui.invitatiDescriere}
         randuri={liste.invitatiFaraAccept}
-        gol="Nicio invitație fără răspuns mai veche de 14 zile."
-        sufixZile="de la invitație"
+        gol={ui.invitatiGol}
+        sufixZile={ui.invitatiSufix}
       />
     </div>
   );

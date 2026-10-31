@@ -8,6 +8,8 @@ import { emailConfigurat, trimiteEmail } from "@/lib/email";
 import { emailFaraLink, layoutEmail, paragraf } from "@/lib/email-layout";
 import { esteEmailTemporar } from "@/lib/email-temporar";
 import { escHtml } from "@/lib/html-escape";
+import { INTERES_UI_DICT } from "@/lib/i18n/dictionaries/interes-ui";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { inregistreazaConversie } from "@/lib/atribuire/server";
 import { cheieIpPentruLimita, valideazaInteres, type EroriInteres } from "@/lib/popup-inscriere";
 
@@ -38,13 +40,17 @@ async function salveazaLead(d: { nume: string; organizatie: string; email: strin
 export type RezultatInteres = { ok: true } | { ok: false; eroare: string; campuri?: EroriInteres };
 
 export async function trimiteInteresAction(intrare: { nume: string; organizatie: string; email: string; telefon: string; acord: boolean; capcana?: string; cale?: string; campanie?: string; previzualizare?: boolean; ctxAtribuire?: string }): Promise<RezultatInteres> {
+  const t = INTERES_UI_DICT[await getLocale()];
   const v = valideazaInteres(intrare ?? {});
-  if (!v.ok) return { ok: false, eroare: "Verifică câmpurile marcate.", campuri: v.erori };
+  if (!v.ok) {
+    const campuri = Object.fromEntries(Object.entries(v.erori).map(([k, m]) => [k, t.validare[m] ?? m])) as EroriInteres;
+    return { ok: false, eroare: t.server.verificaCampuri, campuri };
+  }
 
   // Capcană pentru roboți: un câmp ascuns oamenilor. Dacă are conținut, răspundem ca la succes și nu trimitem nimic.
   if (typeof intrare.capcana === "string" && intrare.capcana.trim() !== "") return { ok: true };
 
-  if (esteEmailTemporar(v.date.email)) return { ok: false, eroare: "Folosește o adresă de e-mail a organizației, nu una temporară.", campuri: { email: "Folosește o adresă de e-mail a organizației." } };
+  if (esteEmailTemporar(v.date.email)) return { ok: false, eroare: t.server.emailTemporar, campuri: { email: t.server.emailTemporarCamp } };
 
   const ip = cheieIpPentruLimita(await obtineIpClient());
   // Pe lângă limitele pe adresă IP (rețea /64 la IPv6) și pe e-mail, un plafon global: un atacator cu multe adrese nu poate umple lista și căsuța echipei.
@@ -53,7 +59,7 @@ export async function trimiteInteresAction(intrare: { nume: string; organizatie:
     verificaLimitaRata("interes-site-email", v.date.email, 2, 24 * 60),
     verificaLimitaRata("interes-site-global", "toate", 300, 60),
   ]);
-  if (!okIp || !okEmail || !okGlobal) return { ok: false, eroare: `Am primit deja cereri de la tine. Dacă e urgent, scrie-ne la ${ADRESA_CONTACT}.` };
+  if (!okIp || !okEmail || !okGlobal) return { ok: false, eroare: t.server.prea(ADRESA_CONTACT) };
 
   const test = intrare.previzualizare === true;
   const cale = typeof intrare.cale === "string" && intrare.cale.startsWith("/") ? intrare.cale.slice(0, 120) : "/";
@@ -102,5 +108,5 @@ export async function trimiteInteresAction(intrare: { nume: string; organizatie:
     }
   }
   if (salvat || trimis) return { ok: true };
-  return { ok: false, eroare: `Nu am putut trimite acum. Scrie-ne la ${ADRESA_CONTACT} și te contactăm.` };
+  return { ok: false, eroare: t.server.esec(ADRESA_CONTACT) };
 }

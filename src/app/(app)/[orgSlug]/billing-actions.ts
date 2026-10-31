@@ -12,13 +12,15 @@ import { masoaraUtilizarea } from "@/lib/billing/utilizare";
 import { isPlatformAdmin } from "@/lib/billing/trial";
 import { etichetaPachet, facturareValida, luniAcces, pretPerioadaPachet, recomandaPachet, utilizatoriSuplimentariValizi, type Facturare, type OrgPackage, type Recomandare } from "@/lib/billing/packages";
 import { organizations, platformPayments } from "@/lib/db/schema";
-import { cifFolositDeAltaOrganizatie, MESAJ_CIF_FOLOSIT } from "@/lib/cif";
+import { cifFolositDeAltaOrganizatie } from "@/lib/cif";
 import { EroareUtilizator } from "@/lib/erori";
 import { cifValidFormat } from "@/lib/iban";
 import { telefonPlataValid } from "@/lib/billing/date-antifraud";
 import { normalizeazaTelefon } from "@/lib/telefon";
 import { gasesteJudet } from "@/lib/judete";
 import { TERMENI_VERSIUNE } from "@/lib/legal-version";
+import { getLocale } from "@/lib/i18n/get-locale";
+import { ERORI_UI_DICT } from "@/lib/i18n/dictionaries/erori-ui";
 
 // Adresa platformei, pentru notifyUrl/redirectUrl/cancelUrl trimise la Netopia.
 // Sursa e NEXT_PUBLIC_SITE_URL (fixă, din mediu), NU headerele cererii
@@ -36,7 +38,7 @@ async function origin(): Promise<string> {
 // Acordul pentru taxarea automată lunară (plată inițiată de comerciant): fără el nu pornește plata, iar bifa e
 // înregistrată în jurnalul de audit cu versiunea Termenilor, ca dovadă a acordului scris.
 async function inregistreazaAcordReinnoire(ctx: OrgContext, acord: boolean, pachet: string, pretLunar: number, facturare: Facturare = "lunar"): Promise<void> {
-  if (acord !== true) throw new EroareUtilizator("Bifează acordul pentru reînnoirea automată ca să continui la plată.");
+  if (acord !== true) throw new EroareUtilizator(ERORI_UI_DICT[await getLocale()].acordReinnoire);
   await inregistreazaAudit(ctx.db, {
     orgId: ctx.orgId,
     actorAppUserId: ctx.userId,
@@ -57,7 +59,7 @@ export const obtineRecomandareAction = withOrgAdmin(async (ctx): Promise<Recoman
 export const startCheckoutAction = withOrgAdmin(
   async (ctx, pkg: Exclude<OrgPackage, "trial" | "custom">, acordReinnoire: boolean, extraUtilizatori: number = 0, facturareCeruta: string = "lunar") => {
     // Tipurile TypeScript nu protejează o Server Action apelată direct: cu „trial" sau „custom" prețul ar fi null/0.
-    if (pkg !== "start" && pkg !== "crestere" && pkg !== "impact") throw new EroareUtilizator("Pachet invalid.");
+    if (pkg !== "start" && pkg !== "crestere" && pkg !== "impact") throw new EroareUtilizator(ERORI_UI_DICT[await getLocale()].pachetInvalid);
     // Utilizatorii suplimentari există doar la START; numărul și prețul se recalculează AICI, nu se iau de la client.
     const extra = utilizatoriSuplimentariValizi(pkg, extraUtilizatori);
     // Fără schimbare de plan în mijlocul unei perioade plătite (vezi lib/billing/schimbare-plan.ts); administratorii platformei sunt exceptați.
@@ -158,28 +160,29 @@ export const citesteDateFacturareAction = withOrgAdmin(
 
 export const salveazaDateFacturareAction = withOrgAdmin(
   async (ctx, v: { cif: string; adresaSediu: string; judet: string; telefon?: string }): Promise<{ error: string | null }> => {
+    const msg = ERORI_UI_DICT[await getLocale()];
     const cif = v.cif.trim();
     const adresa = v.adresaSediu.trim();
     const judet = gasesteJudet(v.judet.trim());
-    if (!cif || !cifValidFormat(cif)) return { error: "CIF invalid — scrie-l cu sau fără prefixul RO (ex. RO12345678)." };
-    if (adresa.length < 5 || adresa.length > 300) return { error: "Scrie adresa sediului social (strada, număr, localitate)." };
-    if (!judet) return { error: "Alege județul." };
+    if (!cif || !cifValidFormat(cif)) return { error: msg.cifInvalid };
+    if (adresa.length < 5 || adresa.length > 300) return { error: msg.adresaSediu };
+    if (!judet) return { error: msg.alegeJudet };
     // Telefonul plătitorului (cerut de procesatorul de plăți): dacă a fost scris, se validează și se salvează; dacă organizația nu are deja unul valid, e obligatoriu.
     let telefon: string | null = null;
     if (v.telefon !== undefined && v.telefon.trim() !== "") {
       telefon = normalizeazaTelefon(v.telefon);
-      if (!telefon || !telefonPlataValid(telefon)) return { error: "Telefon invalid — scrie un număr românesc (ex. 0722 123 456)." };
+      if (!telefon || !telefonPlataValid(telefon)) return { error: msg.telefonInvalid };
     } else {
       const [org] = await ctx.db.select({ telefon: organizations.telefon }).from(organizations).where(eq(organizations.id, ctx.orgId)).limit(1);
-      if (!telefonPlataValid(org?.telefon)) return { error: "Scrie un număr de telefon valid (ex. 0722 123 456)." };
+      if (!telefonPlataValid(org?.telefon)) return { error: msg.telefonObligatoriu };
     }
     // CIF unic între organizații (vezi lib/cif.ts) — mesaj clar, nu eroarea brută a indexului unic.
-    if (await cifFolositDeAltaOrganizatie(cif, ctx.orgId)) return { error: MESAJ_CIF_FOLOSIT };
+    if (await cifFolositDeAltaOrganizatie(cif, ctx.orgId)) return { error: msg.cifFolosit };
     try {
       await ctx.db.update(organizations).set({ cif, adresaSediu: adresa, judet, ...(telefon ? { telefon } : {}) }).where(eq(organizations.id, ctx.orgId));
     } catch (e) {
       const mesaj = String((e as { message?: string })?.message ?? "") + String((e as { cause?: { message?: string } })?.cause?.message ?? "");
-      if (mesaj.includes("organizations_cif_norm_unique")) return { error: MESAJ_CIF_FOLOSIT };
+      if (mesaj.includes("organizations_cif_norm_unique")) return { error: msg.cifFolosit };
       throw e;
     }
     return { error: null };

@@ -15,45 +15,44 @@ import {
   type Sortare,
 } from "@/lib/donatori-pf-filtre";
 
+import { DONATORI_UI_DICT } from "@/lib/i18n/dictionaries/donatori-ui";
+
+import type { Locale } from "@/lib/i18n/config";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { DropdownItem, DropdownMenu } from "../components/ui/dropdown-menu";
 import { Input, Select } from "../components/ui/input";
 import { EmptyState } from "../components/ui/states";
+import { useLocale } from "../lib/locale-context";
 
 import { PanouDonatorView } from "./panou-donator";
+import { formatariPf } from "./pf-format";
 import { salveazaRaportPf, seteazaStareDonator } from "./pf-actions";
 import type { ListaPf, RandPf } from "./queries-pf";
 
-const dataRo = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("ro-RO", { timeZone: "Europe/Bucharest", day: "2-digit", month: "2-digit", year: "numeric" }) : "—");
-const lei = (n: number | null) => (n === null ? "—" : `${Math.round(n).toLocaleString("ro-RO")} lei`);
-const nr = (n: number) => n.toLocaleString("ro-RO");
-
-const COLOANE: { key: Sortare; label: string; clasa?: string }[] = [
-  { key: "email", label: "Email" },
-  { key: "nume", label: "Nume" },
-  { key: "localitate", label: "Localitate" },
-  { key: "total", label: "Total", clasa: "text-right" },
-  { key: "nr", label: "Nr.", clasa: "text-right" },
-  { key: "ultima_suma", label: "Ultima", clasa: "text-right" },
-  { key: "ultima", label: "Ultima donație" },
-  { key: "primul_proiect", label: "Primul proiect" },
-  { key: "ultimul_proiect", label: "Ultimul proiect" },
-  { key: "an", label: "An", clasa: "text-right" },
+const COLOANE: { key: Sortare; clasa?: string }[] = [
+  { key: "email" },
+  { key: "nume" },
+  { key: "localitate" },
+  { key: "total", clasa: "text-right" },
+  { key: "nr", clasa: "text-right" },
+  { key: "ultima_suma", clasa: "text-right" },
+  { key: "ultima" },
+  { key: "primul_proiect" },
+  { key: "ultimul_proiect" },
+  { key: "an", clasa: "text-right" },
 ];
 
-const GRUPE: { grup: string; titlu: string }[] = [
-  { grup: "donatii", titlu: "Donații" },
-  { grup: "lucru", titlu: "Contactare" },
-  { grup: "recurenta", titlu: "Recurență și risc" },
-  { grup: "email", titlu: "Email" },
-  { grup: "radar", titlu: "Radar" },
-];
+const GRUPE: { grup: string }[] = [{ grup: "donatii" }, { grup: "lucru" }, { grup: "recurenta" }, { grup: "email" }, { grup: "radar" }];
 
 export function ListaPfClient({ orgSlug, lista }: { orgSlug: string; lista: ListaPf }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const locale = useLocale();
+  const ui = DONATORI_UI_DICT[locale];
+  const t = ui.lista;
+  const { lei, nr } = formatariPf(locale);
   const f = parseFiltruPf(searchParams);
   const [, start] = useTransition();
   const [q, setQ] = useState(f.q);
@@ -133,7 +132,7 @@ export function ListaPfClient({ orgSlug, lista }: { orgSlug: string; lista: List
 
   async function salveazaRaport() {
     const rez = await salveazaRaportPf(orgSlug, numeRaport, qsExport);
-    setMesaj(rez.ok ? { tip: "ok", text: "Raportul a fost salvat. Îl găsești în „Rapoarte”." } : { tip: "eroare", text: rez.eroare });
+    setMesaj(rez.ok ? { tip: "ok", text: t.raportSalvat } : { tip: "eroare", text: rez.eroare });
     if (rez.ok) {
       setSalveaza(false);
       setNumeRaport("");
@@ -150,38 +149,38 @@ export function ListaPfClient({ orgSlug, lista }: { orgSlug: string; lista: List
       {/* Segmente: restrânse implicit, se deschid cu rotița; segmentele active rămân vizibile */}
       <Card>
         <div className="flex flex-wrap items-center gap-2">
-          <h2 className="ci-display text-[14px] font-semibold text-[var(--ci-text)]">Segmente</h2>
+          <h2 className="ci-display text-[14px] font-semibold text-[var(--ci-text)]">{t.segmente}</h2>
           <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
             {f.seg.length === 0 ? (
               <span className="text-[12.5px] text-[var(--ci-text-muted)]">
-                Toți donatorii <span className="ci-tabular font-semibold text-[var(--ci-text)]">{nr(lista.toti)}</span>
+                {t.toti} <span className="ci-tabular font-semibold text-[var(--ci-text)]">{nr(lista.toti)}</span>
               </span>
             ) : (
               f.seg.map((cheie) => {
                 const s = SEGMENTE_META.find((x) => x.key === cheie);
-                return <Chip key={cheie} activ onClick={() => comutaSegment(cheie)} eticheta={s?.label ?? cheie} contor={lista.contoare[cheie] ?? 0} titlu="Apasă ca să scoți segmentul" />;
+                return <Chip key={cheie} activ onClick={() => comutaSegment(cheie)} eticheta={ui.segment[cheie]?.label ?? s?.label ?? cheie} contor={lista.contoare[cheie] ?? 0} titlu={t.scoateSegment} locale={locale} />;
               })
             )}
           </div>
-          <Button type="button" onClick={() => setSegDeschis((x) => !x)} aria-expanded={segDeschis} aria-controls="panou-segmente" title={segDeschis ? "Ascunde segmentele" : "Alege segmente"}>
-            <Settings className="size-4" aria-hidden /> {segDeschis ? "Ascunde" : "Alege"}
+          <Button type="button" onClick={() => setSegDeschis((x) => !x)} aria-expanded={segDeschis} aria-controls="panou-segmente" title={segDeschis ? t.ascundeSegmente : t.alegeSegmente}>
+            <Settings className="size-4" aria-hidden /> {segDeschis ? t.ascunde : t.alege}
           </Button>
         </div>
         {segDeschis && (
           <div id="panou-segmente" className="mt-3 space-y-2.5 border-t border-[var(--ci-border)] pt-3">
-            <p className="text-[12px] text-[var(--ci-text-muted)]">Alege mai multe: se combină cu „ȘI”. Contorul arată câți donatori are fiecare, după filtrele de mai jos.</p>
+            <p className="text-[12px] text-[var(--ci-text-muted)]">{t.segmenteNota}</p>
             <div className="flex flex-wrap gap-1.5">
-              <Chip activ={f.seg.length === 0} onClick={() => push({ seg: null })} eticheta="Toți" contor={lista.toti} titlu="Fără segment" />
+              <Chip activ={f.seg.length === 0} onClick={() => push({ seg: null })} eticheta={t.toatiFaraSegment} contor={lista.toti} titlu={t.faraSegment} locale={locale} />
             </div>
             {GRUPE.map((g) => (
               <div key={g.grup} className="flex flex-wrap items-center gap-1.5">
-                <span className="w-[118px] shrink-0 text-[11.5px] font-semibold tracking-wide text-[var(--ci-text-faint)] uppercase">{g.titlu}</span>
+                <span className="w-[118px] shrink-0 text-[11.5px] font-semibold tracking-wide text-[var(--ci-text-faint)] uppercase">{t.grupe[g.grup]}</span>
                 {SEGMENTE_META.filter((s) => s.grup === g.grup).map((s) => (
-                  <Chip key={s.key} activ={f.seg.includes(s.key)} onClick={() => comutaSegment(s.key)} eticheta={s.label} contor={lista.contoare[s.key] ?? 0} titlu={s.hint} />
+                  <Chip key={s.key} activ={f.seg.includes(s.key)} onClick={() => comutaSegment(s.key)} eticheta={ui.segment[s.key]?.label ?? s.label} contor={lista.contoare[s.key] ?? 0} titlu={ui.segment[s.key]?.hint ?? s.hint} locale={locale} />
                 ))}
               </div>
             ))}
-            {lista.importNouId && <p className="text-[12px] text-[var(--ci-text-muted)]">„Noi” = donatorii apăruți la ultimul import.</p>}
+            {lista.importNouId && <p className="text-[12px] text-[var(--ci-text-muted)]">{t.noiNota}</p>}
           </div>
         )}
       </Card>
@@ -196,25 +195,25 @@ export function ListaPfClient({ orgSlug, lista }: { orgSlug: string; lista: List
       >
         <div className="flex flex-wrap items-center gap-2">
           <div className="min-w-[240px] flex-1">
-            <Input icon={<Search className="size-4" />} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Caută: email, nume, proiect, localitate…" aria-label="Căutare" />
+            <Input icon={<Search className="size-4" />} value={q} onChange={(e) => setQ(e.target.value)} placeholder={t.cautaPlaceholder} aria-label={t.cautaAria} />
           </div>
           <Button type="submit" variant="primary">
-            Caută
+            {t.cauta}
           </Button>
           <Button type="button" onClick={() => setExtins((x) => !x)} aria-expanded={extins}>
-            <Filter className="size-4" aria-hidden /> Filtre{nrFiltre > 0 ? ` (${nrFiltre})` : ""}
+            <Filter className="size-4" aria-hidden /> {t.filtre}{nrFiltre > 0 ? ` (${nrFiltre})` : ""}
           </Button>
           {(nrFiltre > 0 || f.q || f.seg.length > 0) && (
             <Button type="button" variant="ghost" onClick={reseteaza}>
-              Resetează
+              {t.reseteaza}
             </Button>
           )}
         </div>
         {extins && (
           <div className="grid gap-3 border-t border-[var(--ci-border)] pt-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Cmp eticheta="An cohortă (prima donație)">
+            <Cmp eticheta={t.anCohorta}>
               <Select value={v.an} onChange={(e) => setCamp("an", e.target.value)}>
-                <option value="">Toți anii</option>
+                <option value="">{t.toataniiAni}</option>
                 {lista.ani.map((a) => (
                   <option key={a} value={a}>
                     {a}
@@ -222,9 +221,9 @@ export function ListaPfClient({ orgSlug, lista }: { orgSlug: string; lista: List
                 ))}
               </Select>
             </Cmp>
-            <Cmp eticheta="A donat pentru proiectul">
+            <Cmp eticheta={t.aDonatPentru}>
               <Select value={v.proiect} onChange={(e) => setCamp("proiect", e.target.value)}>
-                <option value="">Oricare</option>
+                <option value="">{t.oricare}</option>
                 {lista.proiecte.map((p) => (
                   <option key={p} value={p}>
                     {p}
@@ -232,9 +231,9 @@ export function ListaPfClient({ orgSlug, lista }: { orgSlug: string; lista: List
                 ))}
               </Select>
             </Cmp>
-            <Cmp eticheta="Primul proiect">
+            <Cmp eticheta={t.primulProiect}>
               <Select value={v.primProiect} onChange={(e) => setCamp("primProiect", e.target.value)}>
-                <option value="">Oricare</option>
+                <option value="">{t.oricare}</option>
                 {lista.proiecte.map((p) => (
                   <option key={p} value={p}>
                     {p}
@@ -242,46 +241,46 @@ export function ListaPfClient({ orgSlug, lista }: { orgSlug: string; lista: List
                 ))}
               </Select>
             </Cmp>
-            <Cmp eticheta="Județ">
-              <Input value={v.judet} onChange={(e) => setCamp("judet", e.target.value)} placeholder="ex. Cluj" />
+            <Cmp eticheta={t.judet}>
+              <Input value={v.judet} onChange={(e) => setCamp("judet", e.target.value)} placeholder={t.judetPlaceholder} />
             </Cmp>
-            <Cmp eticheta="Localitate">
+            <Cmp eticheta={t.localitate}>
               <Input value={v.localitate} onChange={(e) => setCamp("localitate", e.target.value)} />
             </Cmp>
-            <Cmp eticheta="Suma totală minimă (lei)">
+            <Cmp eticheta={t.sumaMin}>
               <Input inputMode="decimal" value={v.sumaMin} onChange={(e) => setCamp("sumaMin", e.target.value)} />
             </Cmp>
-            <Cmp eticheta="Suma totală maximă (lei)">
+            <Cmp eticheta={t.sumaMax}>
               <Input inputMode="decimal" value={v.sumaMax} onChange={(e) => setCamp("sumaMax", e.target.value)} />
             </Cmp>
-            <Cmp eticheta="Ultima donație minimă (lei)">
+            <Cmp eticheta={t.ultimaMin}>
               <Input inputMode="decimal" value={v.ultimaMin} onChange={(e) => setCamp("ultimaMin", e.target.value)} />
             </Cmp>
-            <Cmp eticheta="Interval de date pe câmpul">
+            <Cmp eticheta={t.intervalPeCamp}>
               <Select value={v.campData} onChange={(e) => setCamp("campData", e.target.value)}>
                 {CAMPURI_DATA.map((c) => (
                   <option key={c} value={c}>
-                    {ETICHETE_CAMP_DATA[c]}
+                    {ui.campData[c] ?? ETICHETE_CAMP_DATA[c]}
                   </option>
                 ))}
               </Select>
             </Cmp>
-            <Cmp eticheta="Din data">
+            <Cmp eticheta={t.dinData}>
               <input type="date" className={campInput} value={v.dataDe} onChange={(e) => setCamp("dataDe", e.target.value)} />
             </Cmp>
-            <Cmp eticheta="Până la data">
+            <Cmp eticheta={t.panaLaData}>
               <input type="date" className={campInput} value={v.dataPana} onChange={(e) => setCamp("dataPana", e.target.value)} />
             </Cmp>
             <div />
-            <Cmp eticheta="Prima donație: din">
+            <Cmp eticheta={t.primaDin}>
               <input type="date" className={campInput} value={v.primaDe} onChange={(e) => setCamp("primaDe", e.target.value)} />
             </Cmp>
-            <Cmp eticheta="Prima donație: până la">
+            <Cmp eticheta={t.primaPanaLa}>
               <input type="date" className={campInput} value={v.primaPana} onChange={(e) => setCamp("primaPana", e.target.value)} />
             </Cmp>
             <div className="flex items-end sm:col-span-2">
               <Button type="submit" variant="primary">
-                Aplică filtrele
+                {t.aplicaFiltrele}
               </Button>
             </div>
           </div>
@@ -299,45 +298,45 @@ export function ListaPfClient({ orgSlug, lista }: { orgSlug: string; lista: List
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--ci-border)] px-4 py-3">
           <p className="ci-tabular text-[13px] text-[var(--ci-text)]">
             {lista.total === 0 ? (
-              "Niciun donator"
+              t.niciunDonator
             ) : (
               <>
                 <strong>
                   {nr(de)}–{nr(pana)}
                 </strong>{" "}
-                din <strong>{nr(lista.total)}</strong> · {lei(lista.suma)} · {nr(lista.donatii)} donații
+                {t.dinTotal} <strong>{nr(lista.total)}</strong> · {lei(lista.suma)} · {nr(lista.donatii)} {t.donatiiSufix}
               </>
             )}
           </p>
           <div className="flex flex-wrap items-center gap-2">
             {salveaza ? (
               <div className="flex items-center gap-1.5">
-                <Input value={numeRaport} onChange={(e) => setNumeRaport(e.target.value)} placeholder="Numele raportului" aria-label="Numele raportului" className="h-8 w-48" maxLength={80} />
+                <Input value={numeRaport} onChange={(e) => setNumeRaport(e.target.value)} placeholder={t.numeleRaportului} aria-label={t.numeleRaportului} className="h-8 w-48" maxLength={80} />
                 <Button size="sm" variant="primary" disabled={numeRaport.trim().length < 2} onClick={salveazaRaport}>
-                  Salvează
+                  {t.salveaza}
                 </Button>
                 <Button size="sm" variant="ghost" onClick={() => setSalveaza(false)}>
-                  Renunță
+                  {t.renunta}
                 </Button>
               </div>
             ) : (
               <Button size="sm" onClick={() => setSalveaza(true)}>
-                <BookmarkPlus className="size-4" aria-hidden /> Salvează raport
+                <BookmarkPlus className="size-4" aria-hidden /> {t.salveazaRaport}
               </Button>
             )}
             <DropdownMenu
               align="end"
               trigger={
                 <Button size="sm">
-                  <Download className="size-4" aria-hidden /> Export Excel
+                  <Download className="size-4" aria-hidden /> {t.exportExcel}
                 </Button>
               }
             >
               {(inchide) => (
                 <>
-                  <DropdownItem onClick={() => { inchide(); exporta("toate"); }}>Toți din vederea curentă</DropdownItem>
-                  <DropdownItem onClick={() => { inchide(); exporta("email"); }}>Doar cu email contactabil</DropdownItem>
-                  <DropdownItem onClick={() => { inchide(); exporta("telefon"); }}>Doar cu telefon de sunat</DropdownItem>
+                  <DropdownItem onClick={() => { inchide(); exporta("toate"); }}>{t.exportToti}</DropdownItem>
+                  <DropdownItem onClick={() => { inchide(); exporta("email"); }}>{t.exportEmail}</DropdownItem>
+                  <DropdownItem onClick={() => { inchide(); exporta("telefon"); }}>{t.exportTelefon}</DropdownItem>
                 </>
               )}
             </DropdownMenu>
@@ -346,26 +345,26 @@ export function ListaPfClient({ orgSlug, lista }: { orgSlug: string; lista: List
 
         {!lista.areDonatori ? (
           <div className="p-5">
-            <EmptyState title="Niciun donator încă" description="Donatorii apar din paginile de donații, din „Donator nou” sau dintr-un import de donații (fila Importuri)." />
+            <EmptyState title={t.emptyNiciunTitlu} description={t.emptyNiciunDescriere} />
           </div>
         ) : lista.rows.length === 0 ? (
           <div className="p-5">
-            <EmptyState title="Niciun donator nu se potrivește" description="Încearcă mai puține segmente sau filtre." />
+            <EmptyState title={t.emptyFaraPotrivireTitlu} description={t.emptyFaraPotrivireDescriere} />
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[1080px] border-collapse text-[13px]">
               <thead>
                 <tr className="border-b border-[var(--ci-border)] text-[12px] text-[var(--ci-text-muted)]">
-                  <th scope="col" className="w-10 px-3 py-2 text-center font-semibold" title="Sunat">
-                    <Phone className="mx-auto size-3.5" aria-label="Sunat" />
+                  <th scope="col" className="w-10 px-3 py-2 text-center font-semibold" title={t.sunat}>
+                    <Phone className="mx-auto size-3.5" aria-label={t.sunat} />
                   </th>
                   {COLOANE.map((c) => {
                     const activ = f.sort === c.key;
                     return (
                       <th key={c.key} scope="col" aria-sort={activ ? (f.dir === "asc" ? "ascending" : "descending") : "none"} className={`px-3 py-2 font-semibold ${c.clasa ?? "text-left"}`}>
                         <button type="button" onClick={() => sorteaza(c.key)} className={`inline-flex items-center gap-1 hover:text-[var(--ci-text)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none ${activ ? "text-[var(--ci-text)]" : ""}`}>
-                          {c.label}
+                          {t.coloane[c.key]}
                           {activ && (f.dir === "asc" ? <ArrowUp className="size-3" aria-hidden /> : <ArrowDown className="size-3" aria-hidden />)}
                         </button>
                       </th>
@@ -375,7 +374,7 @@ export function ListaPfClient({ orgSlug, lista }: { orgSlug: string; lista: List
               </thead>
               <tbody>
                 {lista.rows.map((r) => (
-                  <Rand key={r.id} r={r} sunat={sunatLocal[r.id] ?? r.sunat_la !== null} onSunat={(val) => comutaSunat(r, val)} onDeschide={() => setPanou(r.id)} />
+                  <Rand key={r.id} locale={locale} r={r} sunat={sunatLocal[r.id] ?? r.sunat_la !== null} onSunat={(val) => comutaSunat(r, val)} onDeschide={() => setPanou(r.id)} />
                 ))}
               </tbody>
             </table>
@@ -385,14 +384,14 @@ export function ListaPfClient({ orgSlug, lista }: { orgSlug: string; lista: List
         {lista.pageCount > 1 && (
           <div className="flex items-center justify-between border-t border-[var(--ci-border)] px-4 py-3">
             <p className="text-[13px] text-[var(--ci-text-muted)]">
-              Pagina {lista.pagina} din {nr(lista.pageCount)}
+              {t.pagina(lista.pagina, nr(lista.pageCount))}
             </p>
             <div className="flex gap-1.5">
               <Button size="sm" disabled={lista.pagina <= 1} onClick={() => push({ pagina: lista.pagina - 1 <= 1 ? null : String(lista.pagina - 1) }, true)}>
-                Înapoi
+                {t.inapoi}
               </Button>
               <Button size="sm" disabled={lista.pagina >= lista.pageCount} onClick={() => push({ pagina: String(lista.pagina + 1) }, true)}>
-                Înainte
+                {t.inainte}
               </Button>
             </div>
           </div>
@@ -404,7 +403,7 @@ export function ListaPfClient({ orgSlug, lista }: { orgSlug: string; lista: List
   );
 }
 
-function Chip({ activ, onClick, eticheta, contor, titlu }: { activ: boolean; onClick: () => void; eticheta: string; contor: number; titlu: string }) {
+function Chip({ activ, onClick, eticheta, contor, titlu, locale }: { activ: boolean; onClick: () => void; eticheta: string; contor: number; titlu: string; locale: Locale }) {
   return (
     <button
       type="button"
@@ -416,7 +415,7 @@ function Chip({ activ, onClick, eticheta, contor, titlu }: { activ: boolean; onC
       }`}
     >
       {eticheta}
-      <span className={`ci-tabular rounded-full px-1.5 text-[11px] ${activ ? "bg-white/25" : "bg-[var(--ci-surface-2)] text-[var(--ci-text-muted)]"}`}>{contor.toLocaleString("ro-RO")}</span>
+      <span className={`ci-tabular rounded-full px-1.5 text-[11px] ${activ ? "bg-white/25" : "bg-[var(--ci-surface-2)] text-[var(--ci-text-muted)]"}`}>{contor.toLocaleString(locale === "ro" ? "ro-RO" : "en-GB")}</span>
     </button>
   );
 }
@@ -430,30 +429,32 @@ function Cmp({ eticheta, children }: { eticheta: string; children: React.ReactNo
   );
 }
 
-function Rand({ r, sunat, onSunat, onDeschide }: { r: RandPf; sunat: boolean; onSunat: (v: boolean) => void; onDeschide: () => void }) {
-  const tip = r.lunar ? { c: "var(--ci-green)", t: "Donator lunar" } : r.nr >= 2 ? { c: "var(--ci-blue)", t: "Recurent" } : { c: "var(--ci-text-faint)", t: "O singură donație" };
+function Rand({ r, sunat, onSunat, onDeschide, locale }: { r: RandPf; sunat: boolean; onSunat: (v: boolean) => void; onDeschide: () => void; locale: Locale }) {
+  const t = DONATORI_UI_DICT[locale].lista;
+  const { data: dataRo, lei } = formatariPf(locale);
+  const tip = r.lunar ? { c: "var(--ci-green)", t: t.tipLunar } : r.nr >= 2 ? { c: "var(--ci-blue)", t: t.tipRecurent } : { c: "var(--ci-text-faint)", t: t.tipUnica };
   const abonat = r.consimtamant_email !== false && !r.dezabonat_email_la;
   return (
     <tr onClick={onDeschide} className="cursor-pointer border-b border-[var(--ci-border)] transition-colors last:border-0 hover:bg-[var(--ci-surface-2)]">
       <td className="px-3 py-2 text-center" onClick={(e) => e.stopPropagation()}>
-        <input type="checkbox" checked={sunat} onChange={(e) => onSunat(e.target.checked)} aria-label={`Sunat: ${r.nume}`} className="size-4 cursor-pointer accent-[var(--ci-primary)]" />
+        <input type="checkbox" checked={sunat} onChange={(e) => onSunat(e.target.checked)} aria-label={t.sunatPentru(r.nume)} className="size-4 cursor-pointer accent-[var(--ci-primary)]" />
       </td>
       <td className="px-3 py-2">
         <div className="flex items-center gap-1.5">
           <span className="size-2 shrink-0 rounded-full" style={{ background: tip.c }} title={tip.t} aria-label={tip.t} />
           <span className="max-w-[230px] truncate font-medium text-[var(--ci-text)]">{r.email}</span>
           <span className="flex shrink-0 items-center gap-1 text-[var(--ci-text-muted)]">
-            {r.lunar && <Repeat className="size-3.5 text-[var(--ci-green)]" aria-label="Donator lunar" />}
-            {r.telefon && <Phone className="size-3.5" aria-label="Are telefon" />}
-            {r.multumit_la && <ThumbsUp className="size-3.5 text-[var(--ci-blue)]" aria-label="Mulțumit" />}
-            {abonat ? <Mail className="size-3.5" aria-label="Abonat newsletter" /> : <MailX className="size-3.5 text-[var(--ci-amber)]" aria-label="Dezabonat sau fără consimțământ" />}
-            {r.reapel_la && <Bell className="size-3.5 text-[var(--ci-amber)]" aria-label={`Reapel până la ${dataRo(r.reapel_la)}`} />}
+            {r.lunar && <Repeat className="size-3.5 text-[var(--ci-green)]" aria-label={t.tipLunar} />}
+            {r.telefon && <Phone className="size-3.5" aria-label={t.areTelefon} />}
+            {r.multumit_la && <ThumbsUp className="size-3.5 text-[var(--ci-blue)]" aria-label={t.multumit} />}
+            {abonat ? <Mail className="size-3.5" aria-label={t.abonatNewsletter} /> : <MailX className="size-3.5 text-[var(--ci-amber)]" aria-label={t.dezabonatSauFaraConsimtamant} />}
+            {r.reapel_la && <Bell className="size-3.5 text-[var(--ci-amber)]" aria-label={t.reapelPanaLa(dataRo(r.reapel_la))} />}
           </span>
         </div>
       </td>
       <td className="px-3 py-2">
         <span className="text-[var(--ci-text)]">{r.nume}</span>
-        {r.nr_notite > 0 && <span className="ml-1.5 text-[11.5px] text-[var(--ci-text-muted)]">· {r.nr_notite} notițe</span>}
+        {r.nr_notite > 0 && <span className="ml-1.5 text-[11.5px] text-[var(--ci-text-muted)]">· {t.notite(r.nr_notite)}</span>}
       </td>
       <td className="px-3 py-2 text-[var(--ci-text-muted)]">{r.localitate ?? "—"}</td>
       <td className="ci-tabular px-3 py-2 text-right font-semibold whitespace-nowrap text-[var(--ci-text)]">{lei(r.total)}</td>

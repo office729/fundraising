@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FirituriJsonLd } from "@/components/seo/firituri-json-ld";
 import { JsonLd } from "@/components/seo/json-ld";
 import { INOVATII } from "@/content/inovatii";
+import { inovatieIn } from "@/content/inovatii-en";
 import { CENTRUL_DE_INOVARE_DICT } from "@/lib/i18n/dictionaries/centrul-de-inovare";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { metadatePagina } from "@/lib/page-titles";
@@ -30,8 +31,9 @@ export default async function CentrulDeInovarePage() {
   const locale = await getLocale();
   const dict = CENTRUL_DE_INOVARE_DICT[locale];
   const { nou, luna } = praguri();
-  const noutati = INOVATII.slice(0, NR_NOUTATI);
-  const ultimaLuna = INOVATII.filter((n) => n.data >= luna).length;
+  const toate = INOVATII.map((n) => inovatieIn(n, locale));
+  const noutati = toate.slice(0, NR_NOUTATI);
+  const ultimaLuna = toate.filter((n) => n.data >= luna).length;
 
   return (
     <main>

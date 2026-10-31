@@ -2,6 +2,8 @@ import { desc, eq } from "drizzle-orm";
 
 import { withBeneficiarSession } from "@/lib/auth/guard";
 import { fundraisingCampaignAgents, fundraisingMessages } from "@/lib/db/schema";
+import { BENEFICIAR_PORTAL_UI_DICT } from "@/lib/i18n/dictionaries/beneficiar-portal-ui";
+import { getLocale } from "@/lib/i18n/get-locale";
 
 import { MesajeThread } from "../mesaje-thread";
 
@@ -37,11 +39,13 @@ const getData = withBeneficiarSession(async (ctx) => {
 
 export default async function AgentulMeuPage() {
   const data = await getData();
+  const locale = await getLocale();
+  const t = BENEFICIAR_PORTAL_UI_DICT[locale].agent;
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-xl font-bold text-ink">Agentul tău</h1>
+        <h1 className="font-display text-xl font-bold text-ink">{t.titlu}</h1>
       </div>
 
       {data.agent ? (
@@ -50,17 +54,17 @@ export default async function AgentulMeuPage() {
           <p className="text-[13px] text-muted-2">{data.agent.email}</p>
           {data.agent.bio && <p className="mt-2 text-[13.5px] text-muted">{data.agent.bio}</p>}
           {data.agent.programDisponibilitate && (
-            <p className="mt-1 text-[12.5px] text-muted-2">Program: {data.agent.programDisponibilitate}</p>
+            <p className="mt-1 text-[12.5px] text-muted-2">{t.program}{data.agent.programDisponibilitate}</p>
           )}
-          {data.agent.contactAprobat && <p className="mt-1 text-[12.5px] text-muted-2">Contact: {data.agent.contactAprobat}</p>}
+          {data.agent.contactAprobat && <p className="mt-1 text-[12.5px] text-muted-2">{t.contact}{data.agent.contactAprobat}</p>}
         </div>
       ) : (
         <div className="rounded-xl border border-line bg-panel p-5">
-          <p className="text-[13.5px] text-muted-2">Nu ți-a fost atribuit încă un agent — echipa te va contacta în curând.</p>
+          <p className="text-[13.5px] text-muted-2">{t.faraAgent}</p>
         </div>
       )}
 
-      <MesajeThread mesaje={data.mesaje.map((m) => ({ ...m, createdAt: m.createdAt.toISOString() }))} />
+      <MesajeThread locale={locale} mesaje={data.mesaje.map((m) => ({ ...m, createdAt: m.createdAt.toISOString() }))} />
     </div>
   );
 }

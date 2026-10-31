@@ -4,11 +4,14 @@ import { notFound } from "next/navigation";
 import { organizatiePublica } from "@/lib/donator-portal";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { PORTAL_DONATOR_DICT } from "@/lib/i18n/dictionaries/portal-donator";
+import { SF_PUBLIC_UI_DICT } from "@/lib/i18n/dictionaries/sf-public-ui";
 
 import { CerereLink } from "./cerere-link";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Donația lunară", robots: { index: false, follow: false } };
+export async function generateMetadata() {
+  return { title: SF_PUBLIC_UI_DICT[await getLocale()].metaDonatieLunara, robots: { index: false, follow: false } };
+}
 
 // Pagina publică unde un donator lunar își cere linkul de gestionare (suma, pauză, oprire, card). Fără cont: accesul vine prin email.
 export default async function CerereLinkPage({ params }: { params: Promise<{ orgSlug: string }> }) {

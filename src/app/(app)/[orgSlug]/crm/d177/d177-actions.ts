@@ -7,6 +7,8 @@ import { and, eq, sql } from "drizzle-orm";
 import { type OrgContext, withOrgSession } from "@/lib/auth/guard";
 import { appUsers, companies, companySponsorizari } from "@/lib/db/schema";
 import { etichetaStadiuD177 } from "@/lib/stadii-d177";
+import { getLocale } from "@/lib/i18n/get-locale";
+import { D177_UI_DICT } from "@/lib/i18n/dictionaries/d177-ui";
 
 // Firmele marcate „D177” în CRM Companii (bifa din fișa firmei / din listă) apar AUTOMAT aici — pagina citește marcajul, nu
 // are o listă proprie. Datele specifice D177 (sumă redirecționată, an fiscal, depunere, bani intrați de la ANAF) se păstrează
@@ -93,27 +95,28 @@ const DATA = /^\d{4}-\d{2}-\d{2}$/;
 // Salvează datele D177 ale unei firme. La bifarea „au intrat banii de la ANAF” cu o sumă, suma se înregistrează automat ca
 // sponsorizare („D177 — ANAF”) — apare în tabul Sponsorizări și în totaluri; la debifare, sponsorizarea creată automat se șterge.
 export const salveazaDateD177 = withOrgSession(async (ctx, companyId: string, input: DateD177Input): Promise<{ error: string | null }> => {
+  const m = D177_UI_DICT[await getLocale()].msg;
   const intreg = (v: number | null, nume: string, min = 0) => {
     if (v === null) return null;
-    if (!Number.isFinite(v) || v < min) throw new Error(`${nume} nu e valid(ă).`);
+    if (!Number.isFinite(v) || v < min) throw new Error(m.invalid(nume));
     return Math.round(v);
   };
   let suma: number | null;
   let an: number | null;
   let incasatSuma: number | null;
   try {
-    suma = intreg(input.suma, "Suma D177");
-    an = intreg(input.an, "Anul fiscal", 2000);
-    incasatSuma = intreg(input.incasatSuma, "Suma intrată");
+    suma = intreg(input.suma, m.campuri.suma);
+    an = intreg(input.an, m.campuri.an, 2000);
+    incasatSuma = intreg(input.incasatSuma, m.campuri.incasat);
   } catch (e) {
     return { error: (e as Error).message };
   }
-  if (input.depusLa && !DATA.test(input.depusLa)) return { error: "Data depunerii nu e validă." };
-  if (input.incasatLa && !DATA.test(input.incasatLa)) return { error: "Data intrării banilor nu e validă." };
-  if (input.incasat && (incasatSuma === null || incasatSuma <= 0)) return { error: "Pentru „au intrat banii” completează suma intrată de la ANAF." };
+  if (input.depusLa && !DATA.test(input.depusLa)) return { error: m.dataDepunereInvalida };
+  if (input.incasatLa && !DATA.test(input.incasatLa)) return { error: m.dataIntrareInvalida };
+  if (input.incasat && (incasatSuma === null || incasatSuma <= 0)) return { error: m.completeazaSuma };
 
   const [firma] = await ctx.db.select({ extra: companies.extra }).from(companies).where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId), eq(companies.d177, true))).limit(1);
-  if (!firma) return { error: "Firma nu e marcată D177 sau nu a fost găsită." };
+  if (!firma) return { error: m.firmaNemarcata };
   const veche = ((firma.extra ?? {}) as { d177Date?: Partial<DateD177> }).d177Date ?? {};
 
   let sponsorizareId = veche.sponsorizareId ?? null;

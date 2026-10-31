@@ -14,6 +14,7 @@ import { EmptyState } from "../components/ui/states";
 import { formatDataOra } from "../lib/format";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { STRANGERE_FONDURI_DICT } from "@/lib/i18n/dictionaries/strangere-fonduri";
+import { STRANGERE_FONDURI_UI_DICT } from "@/lib/i18n/dictionaries/strangere-fonduri-ui";
 import { AddPageButton, CopyCreateLinkButton, CopyPageLinkButton, DeletePageButton, EditPageButton, ToggleStatusButton } from "./client";
 import { titluAbsolut } from "@/lib/page-titles";
 
@@ -60,6 +61,8 @@ export default async function StrangereFonduriPage({ params }: { params: Promise
   const { totalStrans, totalDonatii, pagini, topDonatori, rezumat, templateuriDisponibile, contact, orgNume, orgLogoUrl, domeniu } = await getPagini(orgSlug);
   const locale = await getLocale();
   const dict = STRANGERE_FONDURI_DICT[locale].page;
+  const ui = STRANGERE_FONDURI_UI_DICT[locale];
+  const loc = locale === "ro" ? "ro-RO" : "en-GB";
 
   return (
     <div className="mx-auto max-w-[1100px] space-y-5">
@@ -79,7 +82,7 @@ export default async function StrangereFonduriPage({ params }: { params: Promise
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <Card>
           <p className="text-[12px] text-[var(--ci-text-muted)]">{dict.totalStrans}</p>
-          <p className="ci-tabular mt-1 text-xl font-bold text-[var(--ci-text)]">{totalStrans.toLocaleString("ro-RO")} lei</p>
+          <p className="ci-tabular mt-1 text-xl font-bold text-[var(--ci-text)]">{totalStrans.toLocaleString(loc)} {ui.lei}</p>
         </Card>
         <Card>
           <p className="text-[12px] text-[var(--ci-text-muted)]">{dict.donatiiReusite}</p>
@@ -106,7 +109,7 @@ export default async function StrangereFonduriPage({ params }: { params: Promise
                   </span>
                   <span className="truncate text-[12px] text-[var(--ci-text-faint)]">— {d.pageTitlu}</span>
                 </div>
-                <span className="ci-tabular shrink-0 font-semibold text-[var(--ci-text)]">{d.suma.toLocaleString("ro-RO")} lei</span>
+                <span className="ci-tabular shrink-0 font-semibold text-[var(--ci-text)]">{d.suma.toLocaleString(loc)} {ui.lei}</span>
               </div>
             ))}
           </div>
@@ -123,9 +126,9 @@ export default async function StrangereFonduriPage({ params }: { params: Promise
                   <p className="truncate text-[13px] font-medium text-[var(--ci-text)]">{p.titlu}</p>
                   <p className="flex min-w-0 items-center justify-between gap-2 text-[12px] text-[var(--ci-text-muted)]">
                     <span className="truncate">
-                      {p.numeCreator} · {p.emailCreator} · {formatDataOra(p.createdAt.toISOString())}
+                      {p.numeCreator} · {p.emailCreator} · {formatDataOra(p.createdAt.toISOString(), locale)}
                     </span>
-                    <span className={`shrink-0 ${p.judet ? "" : "italic text-[var(--ci-text-faint)]"}`}>{p.judet ? `📍 ${p.judet}` : "județ necompletat"}</span>
+                    <span className={`shrink-0 ${p.judet ? "" : "italic text-[var(--ci-text-faint)]"}`}>{p.judet ? `📍 ${p.judet}` : ui.page.judetNecompletat}</span>
                   </p>
                   {(() => {
                     const z = rezumat.get(p.id);
@@ -133,11 +136,11 @@ export default async function StrangereFonduriPage({ params }: { params: Promise
                       <p className="ci-tabular mt-0.5 text-[12px] text-[var(--ci-text-muted)]">
                         {z && (z.vizitatori > 0 || z.donatii > 0) ? (
                           <>
-                            Ultimele 30 de zile: <b className="font-semibold text-[var(--ci-text)]">{z.vizitatori.toLocaleString("ro-RO")}</b> vizitatori · <b className="font-semibold text-[var(--ci-text)]">{z.donatii.toLocaleString("ro-RO")}</b> donații
-                            {z.vizitatori > 0 ? ` · conversie ${((z.donatii / z.vizitatori) * 100).toLocaleString("ro-RO", { maximumFractionDigits: 1 })}%` : ""}
+                            {ui.page.ultimele30} <b className="font-semibold text-[var(--ci-text)]">{z.vizitatori.toLocaleString(loc)}</b> {ui.page.vizitatori} · <b className="font-semibold text-[var(--ci-text)]">{z.donatii.toLocaleString(loc)}</b> {ui.page.donatii}
+                            {z.vizitatori > 0 ? ` · ${ui.page.conversie} ${((z.donatii / z.vizitatori) * 100).toLocaleString(loc, { maximumFractionDigits: 1 })}%` : ""}
                           </>
                         ) : (
-                          <span className="text-[var(--ci-text-faint)]">Încă nu sunt vizite măsurate în ultimele 30 de zile</span>
+                          <span className="text-[var(--ci-text-faint)]">{ui.page.faraVizite}</span>
                         )}
                       </p>
                     );
@@ -148,7 +151,7 @@ export default async function StrangereFonduriPage({ params }: { params: Promise
                     {p.status === "activa" ? dict.activa : dict.inchisa}
                   </Badge>
                   <span className="ci-tabular text-[13px] font-semibold text-[var(--ci-text)]">
-                    {p.sumaStransa.toLocaleString("ro-RO")} lei{p.sumaTinta ? ` / ${p.sumaTinta.toLocaleString("ro-RO")} lei` : ""}
+                    {p.sumaStransa.toLocaleString(loc)} {ui.lei}{p.sumaTinta ? ` / ${p.sumaTinta.toLocaleString(loc)} ${ui.lei}` : ""}
                   </span>
                   <a
                     href={`/strangere-fonduri/${orgSlug}/${p.slug}`}
@@ -162,8 +165,8 @@ export default async function StrangereFonduriPage({ params }: { params: Promise
                   <Link
                     prefetch={false}
                     href={`/${orgSlug}/crm/statistici-campanii?campanie=${p.id}`}
-                    title="Statistici campanie"
-                    aria-label={`Statistici: ${p.titlu}`}
+                    title={ui.page.statisticiCampanie}
+                    aria-label={ui.page.statisticiAria(p.titlu)}
                     className="flex h-7 w-7 items-center justify-center rounded-[var(--ci-radius-btn)] text-[var(--ci-text-faint)] hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-primary)]"
                   >
                     <BarChart3 className="h-3.5 w-3.5" />

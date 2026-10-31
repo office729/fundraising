@@ -9,6 +9,7 @@ import { Input, Label } from "../components/ui/input";
 import { useLocale } from "../lib/locale-context";
 import { CAMPAIGN_TEMPLATES, type CampaignPageTemplate } from "@/lib/campaign-templates";
 import { STRANGERE_FONDURI_DICT } from "@/lib/i18n/dictionaries/strangere-fonduri";
+import { STRANGERE_FONDURI_UI_DICT } from "@/lib/i18n/dictionaries/strangere-fonduri-ui";
 import { actualizeazaImaginePaginaAction, editeazaPaginaAdminAction } from "./actions";
 
 export type PaginaEditabila = {
@@ -41,6 +42,7 @@ export function EditPageDialog({
   const router = useRouter();
   const locale = useLocale();
   const dict = STRANGERE_FONDURI_DICT[locale].editPageDialog;
+  const teme = STRANGERE_FONDURI_UI_DICT[locale].teme;
   const [pending, setPending] = useState(false);
   const [eroare, setEroare] = useState("");
 
@@ -149,7 +151,7 @@ export function EditPageDialog({
                       />
                       <div className="h-10 w-full rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-gradient-to-br from-brand-blue to-brand-green peer-checked:border-brand-green peer-checked:ring-2 peer-checked:ring-brand-green" />
                       <span className="mt-1 block text-center text-[11px] font-medium text-[var(--ci-text-muted)]">
-                        {tpl.nume}
+                        {teme[id] ?? tpl.nume}
                       </span>
                     </label>
                   );

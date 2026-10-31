@@ -7,6 +7,8 @@ import { cache } from "react";
 
 import { db } from "@/lib/db";
 import { fundraisingPages, organizations } from "@/lib/db/schema";
+import { SF_PUBLIC_UI_DICT } from "@/lib/i18n/dictionaries/sf-public-ui";
+import { getLocale } from "@/lib/i18n/get-locale";
 
 import { CampaignFooter } from "./campaign-footer";
 import { ProgressRing } from "./[pageSlug]/progress-ring";
@@ -47,10 +49,11 @@ export async function generateMetadata({ params }: { params: Promise<{ orgSlug: 
   const { orgSlug } = await params;
   const data = await getOrgSiPaginile(orgSlug);
   if (!data) return {};
+  const t = SF_PUBLIC_UI_DICT[await getLocale()].hub;
   return {
-    title: `Campanii — ${data.org.name}`,
-    description: `Toate campaniile de strângere de fonduri ale ${data.org.name}.`,
-    openGraph: { title: `Campanii — ${data.org.name}`, type: "website" },
+    title: t.metaTitlu(data.org.name),
+    description: t.metaDescriere(data.org.name),
+    openGraph: { title: t.metaTitlu(data.org.name), type: "website" },
   };
 }
 
@@ -59,6 +62,8 @@ export default async function PaginaOrgHub({ params }: { params: Promise<{ orgSl
   const data = await getOrgSiPaginile(orgSlug);
   if (!data) notFound();
   const { org, active, incheiate } = data;
+  const sf = SF_PUBLIC_UI_DICT[await getLocale()];
+  const t = sf.hub;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-brand-blue-soft/70 via-panel-2 to-panel-2">
@@ -70,24 +75,24 @@ export default async function PaginaOrgHub({ params }: { params: Promise<{ orgSl
           <h1 className="font-display mt-4 text-[28px] leading-tight font-bold text-ink sm:text-[32px]">{org.name}</h1>
           {org.slogan && <p className="mt-2 max-w-xl text-[15px] leading-relaxed text-muted-2">{org.slogan}</p>}
           <p className="mt-1 text-[13px] text-muted-2">
-            {active.length === 0 ? "Nicio campanie activă momentan" : `${active.length} ${active.length === 1 ? "campanie activă" : "campanii active"}`}
+            {active.length === 0 ? t.nicioActiva : t.campaniiActive(active.length)}
           </p>
           <Link
             href={`/strangere-fonduri/${orgSlug}/creeaza`}
             className="mt-5 inline-block rounded-md bg-brand-green px-5 py-2.5 text-sm font-bold text-white transition hover:bg-brand-green-hover"
           >
-            Creează propria ta pagină de strângere de fonduri →
+            {t.creeaza}
           </Link>
         </div>
 
         {active.length === 0 ? (
           <p className="mt-10 text-center text-[14px] text-muted-2">
-            Revino curând — {org.name} nu are nicio campanie activă în acest moment.
+            {t.revinoCurand(org.name)}
           </p>
         ) : (
           <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2">
             {active.map((p) => (
-              <CampanieCard key={p.id} orgSlug={orgSlug} pagina={p} />
+              <CampanieCard key={p.id} orgSlug={orgSlug} pagina={p} sf={sf} />
             ))}
           </div>
         )}
@@ -95,11 +100,11 @@ export default async function PaginaOrgHub({ params }: { params: Promise<{ orgSl
         {incheiate.length > 0 && (
           <details className="mt-10 rounded-2xl border border-line bg-panel p-5 sm:p-6">
             <summary className="cursor-pointer font-display text-sm font-bold text-ink">
-              Campanii încheiate ({incheiate.length})
+              {t.incheiate(incheiate.length)}
             </summary>
             <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
               {incheiate.map((p) => (
-                <CampanieCard key={p.id} orgSlug={orgSlug} pagina={p} incheiata />
+                <CampanieCard key={p.id} orgSlug={orgSlug} pagina={p} sf={sf} incheiata />
               ))}
             </div>
           </details>
@@ -115,10 +120,12 @@ function CampanieCard({
   orgSlug,
   pagina,
   incheiata,
+  sf,
 }: {
   orgSlug: string;
   pagina: typeof fundraisingPages.$inferSelect;
   incheiata?: boolean;
+  sf: (typeof SF_PUBLIC_UI_DICT)[keyof typeof SF_PUBLIC_UI_DICT];
 }) {
   const procent = pagina.sumaTinta ? Math.min(100, Math.round((pagina.sumaStransa / pagina.sumaTinta) * 100)) : null;
   return (
@@ -139,13 +146,13 @@ function CampanieCard({
           <p className="font-display truncate text-[15px] font-bold text-ink">{pagina.titlu}</p>
           <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-muted-2">{pagina.poveste}</p>
           <p className="mt-2 text-[13px] font-semibold text-brand-blue">
-            {pagina.sumaStransa.toLocaleString("ro-RO")} lei
-            {pagina.sumaTinta && <span className="font-normal text-muted-2"> din {pagina.sumaTinta.toLocaleString("ro-RO")} lei</span>}
+            {pagina.sumaStransa.toLocaleString(sf.numere)} lei
+            {pagina.sumaTinta && <span className="font-normal text-muted-2">{sf.hub.din(pagina.sumaTinta.toLocaleString(sf.numere))}</span>}
           </p>
         </div>
       </div>
       {incheiata && (
-        <p className="border-t border-line bg-panel-2 px-5 py-2 text-center text-[11px] font-semibold tracking-wide text-muted-2 uppercase">Încheiată</p>
+        <p className="border-t border-line bg-panel-2 px-5 py-2 text-center text-[11px] font-semibold tracking-wide text-muted-2 uppercase">{sf.hub.incheiata}</p>
       )}
     </Link>
   );

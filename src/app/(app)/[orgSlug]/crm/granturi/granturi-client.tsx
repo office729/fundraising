@@ -10,10 +10,10 @@ import { Dialog } from "../components/ui/dialog";
 import { Input, Label, Select, Textarea } from "../components/ui/input";
 import { EmptyState } from "../components/ui/states";
 import { Tabs } from "../components/ui/tabs";
+import { useLocale } from "../lib/locale-context";
+import { GRANTURI_UI_DICT, formatariGranturi } from "@/lib/i18n/dictionaries/granturi-ui";
 import {
   CAMPURI_DOSAR,
-  ETICHETE_STARE,
-  ETICHETE_TIP,
   MONEDE,
   STARI_CU_TERMEN_DEPUNERE,
   STARI_GRANT,
@@ -21,7 +21,6 @@ import {
   domeniuDinUrl,
   progresDosar,
   rezumaRegistru,
-  textTermen,
   urgentaTermen,
   zileLaTermen,
   type ApelGasit,
@@ -30,7 +29,7 @@ import {
   type StareGrant,
   type Urgenta,
 } from "@/lib/granturi/stari";
-import { ETICHETE_FEL, SURSE_FINANTARE, SURSE_VERIFICATE_IN } from "@/lib/granturi/surse";
+import { ETICHETE_FEL, SURSE_FINANTARE } from "@/lib/granturi/surse";
 
 import {
   adaugaSursaInRegistruAction,
@@ -50,55 +49,20 @@ import {
 
 const TON_URGENTA: Record<Urgenta, StatusTone> = { depasit: "red", azi: "red", curand: "amber", ok: "neutral", fara: "neutral" };
 
-const GRUPURI: { key: string; eticheta: string; stari: readonly StareGrant[] | null }[] = [
-  { key: "toate", eticheta: "Toate", stari: null },
-  { key: "lucru", eticheta: "În lucru", stari: ["identificat", "in_pregatire"] },
-  { key: "depuse", eticheta: "Depuse", stari: ["aplicat"] },
-  { key: "finantate", eticheta: "Finanțate", stari: ["castigat", "in_derulare", "raportat"] },
-  { key: "inchise", eticheta: "Închise", stari: ["respins", "renuntat"] },
+const GRUPURI: { key: "toate" | "lucru" | "depuse" | "finantate" | "inchise"; stari: readonly StareGrant[] | null }[] = [
+  { key: "toate", stari: null },
+  { key: "lucru", stari: ["identificat", "in_pregatire"] },
+  { key: "depuse", stari: ["aplicat"] },
+  { key: "finantate", stari: ["castigat", "in_derulare", "raportat"] },
+  { key: "inchise", stari: ["respins", "renuntat"] },
 ];
 
 // Stările care închid o cerere: schimbarea lor dintr-un click greșit e greu de observat, deci cer confirmare.
 const STARI_FINALE: readonly string[] = ["respins", "renuntat"];
 
-// Documentele cerute aproape oriunde; se adaugă dintr-un click, fără să se dubleze.
-const DOCUMENTE_STANDARD = [
-  "Statutul și actul constitutiv",
-  "Certificat de înregistrare fiscală",
-  "Hotărâre de înscriere în Registrul Asociațiilor și Fundațiilor",
-  "Situații financiare ale ultimului an",
-  "Raport de activitate al ultimului an",
-  "CV-urile echipei de proiect",
-  "Buget detaliat al proiectului",
-  "Scrisori de sprijin sau de parteneriat",
-  "Dovada contului bancar",
-];
-
-const ELIGIBILITATE_STANDARD = [
-  "Tipul de organizație acceptat (ONG, fundație, asociație)",
-  "Vechimea minimă a organizației",
-  "Domeniul de activitate finanțat",
-  "Zona geografică acceptată (România / Europa de Est)",
-  "Limita sumei solicitate",
-  "Cofinanțare cerută",
-  "Se acceptă cereri în limba română sau doar în engleză",
-];
-
-const AVERTISMENT_AI =
-  "Textul din dosar și din cerințe este trimis către Anthropic (SUA) ca să se genereze schița. Contactul și IBAN-ul din dosar nu se trimit. Nu introduce nume, adrese sau date de sănătate ale beneficiarilor fără acordul lor; folosește prenume schimbate și detalii generale.";
-
-const formatData = (iso: string | null) =>
-  iso ? new Date(`${iso}T00:00:00`).toLocaleDateString("ro-RO", { day: "numeric", month: "short", year: "numeric" }) : "—";
+// Documentele cerute aproape oriunde (lista standard) și criteriile uzuale de eligibilitate: în dicționar (granturi-ui.ts), se adaugă dintr-un click, fără să se dubleze.
 
 const formatMarime = (b: number) => (b >= 1024 * 1024 ? `${(b / (1024 * 1024)).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`);
-
-const formatSuma = (n: number | null, moneda: string) =>
-  n === null ? "—" : new Intl.NumberFormat("ro-RO", { style: "currency", currency: moneda, maximumFractionDigits: 0 }).format(n);
-
-const formatSume = (pe: Record<string, number>) => {
-  const e = Object.entries(pe);
-  return e.length ? e.map(([m, n]) => formatSuma(n, m)).join(" · ") : "—";
-};
 
 const GOL: GrantInput = {
   id: null,
@@ -163,7 +127,7 @@ function BaraConfirmare({ text, eticheta, periculos, onDa, onNu }: { text: strin
       <p className="min-w-0 flex-1 text-[13px] text-[var(--ci-text)]">{text}</p>
       <div className="flex gap-2">
         <Button size="sm" onClick={onNu}>
-          Nu
+          {GRANTURI_UI_DICT[useLocale()].comun.nu}
         </Button>
         <Button size="sm" variant={periculos ? "danger" : "primary"} onClick={onDa}>
           {eticheta}
@@ -193,6 +157,7 @@ function Camp({ eticheta, ajutor, className, children }: { eticheta: string; aju
 // ---------------------------------------------------------------------------------------------------------------- Pagina
 
 export function GranturiClient({ orgSlug, initial, prefill, esteAdmin }: { orgSlug: string; initial: DateGranturi; prefill: Record<string, string>; esteAdmin: boolean }) {
+  const ui = GRANTURI_UI_DICT[useLocale()];
   const [date, setDate] = useState(initial);
   const reincarca = async () => setDate(await obtineDateGranturi(orgSlug));
 
@@ -208,18 +173,18 @@ export function GranturiClient({ orgSlug, initial, prefill, esteAdmin }: { orgSl
           <Award className="h-5 w-5" />
         </span>
         <div>
-          <h1 className="ci-display text-xl font-bold text-[var(--ci-text)]">Granturi</h1>
+          <h1 className="ci-display text-xl font-bold text-[var(--ci-text)]">{ui.titlu}</h1>
           <p className="mt-0.5 max-w-2xl text-[13px] text-[var(--ci-text-muted)]">
-            De la identificarea finanțatorului la raportare: ține într-un loc cererile, termenele, documentele și dosarul organizației, refolosit la fiecare cerere.
+            {ui.descriere}
           </p>
         </div>
       </div>
 
       <Tabs
         tabs={[
-          { key: "registru", label: `Registru (${date.granturi.length})` },
-          { key: "dosar", label: "Dosarul organizației" },
-          { key: "surse", label: "Surse de finanțare" },
+          { key: "registru", label: ui.taburi.registru(date.granturi.length) },
+          { key: "dosar", label: ui.taburi.dosar },
+          { key: "surse", label: ui.taburi.surse },
         ]}
       >
         {(tab) =>
@@ -249,6 +214,10 @@ function Cifra({ titlu, valoare, nota, ton }: { titlu: string; valoare: string; 
 }
 
 function Registru({ orgSlug, date, rezumat, reincarca, esteAdmin }: { orgSlug: string; date: DateGranturi; rezumat: ReturnType<typeof rezumaRegistru>; reincarca: () => Promise<void>; esteAdmin: boolean }) {
+  const locale = useLocale();
+  const ui = GRANTURI_UI_DICT[locale];
+  const u = ui.registru;
+  const { formatData, formatSuma, formatSume } = formatariGranturi(locale);
   const [grup, setGrup] = useState("toate");
   const [cautare, setCautare] = useState("");
   const [deschis, setDeschis] = useState<GrantInput | null>(null);
@@ -268,13 +237,13 @@ function Registru({ orgSlug, date, rezumat, reincarca, esteAdmin }: { orgSlug: s
       try {
         const r = await schimbaStareGrantAction(orgSlug, id, stare);
         if (!r.ok) {
-          setMesaj({ tip: "eroare", text: "Nu am putut schimba starea. Reîncarcă pagina și încearcă din nou." });
+          setMesaj({ tip: "eroare", text: u.nuSchimbat });
           return;
         }
         await reincarca();
-        setMesaj({ tip: "ok", text: `Starea a fost schimbată în „${ETICHETE_STARE[stare as StareGrant] ?? stare}”.` });
+        setMesaj({ tip: "ok", text: u.schimbata(ui.stari[stare] ?? stare) });
       } catch {
-        setMesaj({ tip: "eroare", text: "Nu am putut schimba starea. Încearcă din nou." });
+        setMesaj({ tip: "eroare", text: u.nuSchimbat2 });
       }
     });
   }
@@ -287,19 +256,19 @@ function Registru({ orgSlug, date, rezumat, reincarca, esteAdmin }: { orgSlug: s
   return (
     <div className="space-y-4 pt-4">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Cifra titlu="În lucru" valoare={String(rezumat.inLucru)} nota="identificate sau în pregătire" />
+        <Cifra titlu={u.inLucru} valoare={String(rezumat.inLucru)} nota={u.inLucruNota} />
         <Cifra
-          titlu="Termene în 7 zile"
+          titlu={u.termene7}
           valoare={String(rezumat.termeneCurand)}
-          nota={rezumat.termeneCurand ? "inclusiv cele depășite" : "nimic urgent"}
+          nota={rezumat.termeneCurand ? u.termeneNota : u.termeneNimic}
           ton={rezumat.termeneCurand ? "alerta" : undefined}
         />
-        <Cifra titlu="Depuse, în așteptare" valoare={String(rezumat.depuse)} nota={formatSume(rezumat.sumaCerutaPeMoneda)} />
-        <Cifra titlu="Finanțate" valoare={String(rezumat.finantate)} nota={formatSume(rezumat.sumaFinantataPeMoneda)} />
+        <Cifra titlu={u.depuse} valoare={String(rezumat.depuse)} nota={formatSume(rezumat.sumaCerutaPeMoneda)} />
+        <Cifra titlu={u.finantate} valoare={String(rezumat.finantate)} nota={formatSume(rezumat.sumaFinantataPeMoneda)} />
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filtrează după stare">
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label={u.filtreaza}>
           {GRUPURI.map((g) => (
             <button
               key={g.key}
@@ -310,22 +279,22 @@ function Registru({ orgSlug, date, rezumat, reincarca, esteAdmin }: { orgSlug: s
                 grup === g.key ? "border-[var(--ci-primary)] bg-[var(--ci-primary-soft)] text-[var(--ci-primary)]" : "border-[var(--ci-border)] text-[var(--ci-text-muted)] hover:bg-[var(--ci-surface-2)]"
               }`}
             >
-              {g.eticheta}
+              {ui.grupuri[g.key]}
             </button>
           ))}
         </div>
         <div className="flex items-center gap-2">
-          {date.granturi.length > 5 && <Input aria-label="Caută după finanțator sau titlu" placeholder="Caută…" value={cautare} onChange={(e) => setCautare(e.target.value)} className="!w-44" />}
+          {date.granturi.length > 5 && <Input aria-label={u.cautaAria} placeholder={u.cauta} value={cautare} onChange={(e) => setCautare(e.target.value)} className="!w-44" />}
           <Button variant="primary" onClick={() => setDeschis({ ...GOL })}>
-            <Plus className="h-4 w-4" /> Adaugă cerere
+            <Plus className="h-4 w-4" /> {u.adaugaCerere}
           </Button>
         </div>
       </div>
 
       {deConfirmat && (
         <BaraConfirmare
-          text={`Muți „${deConfirmat.titlu}” în starea „${ETICHETE_STARE[deConfirmat.stare as StareGrant]}”? Cererea iese din lista celor active.`}
-          eticheta="Da, mută"
+          text={u.confirmaMutare(deConfirmat.titlu, ui.stari[deConfirmat.stare] ?? deConfirmat.stare)}
+          eticheta={u.daMuta}
           onDa={() => aplica(deConfirmat.id, deConfirmat.stare)}
           onNu={() => setDeConfirmat(null)}
         />
@@ -335,11 +304,11 @@ function Registru({ orgSlug, date, rezumat, reincarca, esteAdmin }: { orgSlug: s
       {vizibile.length === 0 ? (
         <EmptyState
           icon={Award}
-          title={date.granturi.length === 0 ? "Nicio cerere de finanțare încă" : "Nicio cerere găsită"}
+          title={date.granturi.length === 0 ? u.golTitlu : u.nicioGasita}
           description={
             date.granturi.length === 0
-              ? "Începe din „Surse de finanțare” ca să adaugi finanțatori de urmărit, sau adaugă direct o cerere. Completează întâi dosarul organizației: o singură dată, apoi îl refolosești."
-              : "Schimbă filtrul sau căutarea ca să vezi celelalte cereri."
+              ? u.golDescriere
+              : u.schimbaFiltrul
           }
         />
       ) : (
@@ -356,14 +325,14 @@ function Registru({ orgSlug, date, rezumat, reincarca, esteAdmin }: { orgSlug: s
                     <button type="button" onClick={() => setDeschis(dinRand(g))} className="min-w-0 flex-1 text-left">
                       <p className="ci-display truncate text-[14px] font-semibold text-[var(--ci-text)]">{g.titlu}</p>
                       <p className="mt-0.5 truncate text-[13px] text-[var(--ci-text-muted)]">
-                        {g.finantator} · {ETICHETE_TIP[g.tipFinantator as keyof typeof ETICHETE_TIP] ?? ETICHETE_TIP.alt}
+                        {g.finantator} · {ui.tipuri[g.tipFinantator] ?? ui.tipuri.alt}
                         {numeMembru(g.responsabilId) ? ` · ${numeMembru(g.responsabilId)}` : ""}
                       </p>
                       {(g.documente.length > 0 || eligibile > 0) && (
                         <p className="mt-1 text-[12px] text-[var(--ci-text-muted)]">
-                          {g.documente.length > 0 ? `Documente ${documenteOk}/${g.documente.length}` : ""}
+                          {g.documente.length > 0 ? u.documente(documenteOk, g.documente.length) : ""}
                           {g.documente.length > 0 && eligibile > 0 ? " · " : ""}
-                          {eligibile > 0 ? `Eligibilitate ${g.eligibilitate.filter((e) => e.ok).length}/${eligibile}` : ""}
+                          {eligibile > 0 ? u.eligibilitate(g.eligibilitate.filter((e) => e.ok).length, eligibile) : ""}
                         </p>
                       )}
                     </button>
@@ -372,13 +341,13 @@ function Registru({ orgSlug, date, rezumat, reincarca, esteAdmin }: { orgSlug: s
                       {zile !== null || g.termen ? (
                         <Badge tone={TON_URGENTA[urgenta]} icon={false}>
                           <CalendarClock className="h-3 w-3" /> {formatData(g.termen)}
-                          {zile !== null ? ` · ${textTermen(zile)}` : ""}
+                          {zile !== null ? ` · ${ui.termen(zile)}` : ""}
                         </Badge>
                       ) : null}
-                      <Select aria-label={`Starea cererii ${g.titlu}`} value={g.stare} onChange={(e) => schimba(g, e.target.value)} className="!h-8 !w-auto !text-[13px]">
+                      <Select aria-label={u.stareAria(g.titlu)} value={g.stare} onChange={(e) => schimba(g, e.target.value)} className="!h-8 !w-auto !text-[13px]">
                         {STARI_GRANT.map((s) => (
                           <option key={s} value={s}>
-                            {ETICHETE_STARE[s]}
+                            {ui.stari[s]}
                           </option>
                         ))}
                       </Select>
@@ -399,6 +368,7 @@ function Registru({ orgSlug, date, rezumat, reincarca, esteAdmin }: { orgSlug: s
 // ---------------------------------------------------------------------------------------------------------------- Fișa unei cereri
 
 function ListaBifabila({ titlu, ajutor, elemente, onChange, standard, etichetaStandard }: { titlu: string; ajutor: string; elemente: ElementLista[]; onChange: (e: ElementLista[]) => void; standard: string[]; etichetaStandard: string }) {
+  const ui = GRANTURI_UI_DICT[useLocale()];
   const [nou, setNou] = useState("");
   const adauga = (text: string) => {
     const t = text.trim();
@@ -429,7 +399,7 @@ function ListaBifabila({ titlu, ajutor, elemente, onChange, standard, etichetaSt
                 className="h-4 w-4 shrink-0"
               />
               <span className={`min-w-0 flex-1 text-[13px] ${e.ok ? "text-[var(--ci-text-muted)] line-through" : "text-[var(--ci-text)]"}`}>{e.text}</span>
-              <button type="button" aria-label={`Șterge: ${e.text}`} className="-m-1.5 p-2 text-[var(--ci-text-faint)] hover:text-[var(--ci-red)]" onClick={() => onChange(elemente.filter((_, j) => j !== i))}>
+              <button type="button" aria-label={ui.lista.stergeAria(e.text)} className="-m-1.5 p-2 text-[var(--ci-text-faint)] hover:text-[var(--ci-red)]" onClick={() => onChange(elemente.filter((_, j) => j !== i))}>
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
             </li>
@@ -438,7 +408,7 @@ function ListaBifabila({ titlu, ajutor, elemente, onChange, standard, etichetaSt
       )}
       <div className="flex gap-2">
         <Input
-          aria-label={`Adaugă la ${titlu.toLowerCase()}`}
+          aria-label={ui.lista.adaugaLa(titlu.toLowerCase())}
           value={nou}
           onChange={(e) => setNou(e.target.value)}
           onKeyDown={(e) => {
@@ -448,7 +418,7 @@ function ListaBifabila({ titlu, ajutor, elemente, onChange, standard, etichetaSt
               setNou("");
             }
           }}
-          placeholder="Adaugă un rând și apasă Enter"
+          placeholder={ui.lista.placeholder}
           maxLength={200}
         />
         <Button
@@ -458,7 +428,7 @@ function ListaBifabila({ titlu, ajutor, elemente, onChange, standard, etichetaSt
             setNou("");
           }}
         >
-          Adaugă
+          {ui.comun.adauga}
         </Button>
       </div>
     </fieldset>
@@ -468,6 +438,8 @@ function ListaBifabila({ titlu, ajutor, elemente, onChange, standard, etichetaSt
 type ConfirmareFisa = { text: string; eticheta: string; periculos?: boolean; actiune: () => void } | null;
 
 function FisaGrant({ orgSlug, date, initial, esteAdmin, onClose, onSaved }: { orgSlug: string; date: DateGranturi; initial: GrantInput; esteAdmin: boolean; onClose: () => void; onSaved: () => Promise<void> }) {
+  const ui = GRANTURI_UI_DICT[useLocale()];
+  const u = ui.fisa;
   const [f, setF] = useState<GrantInput>(initial);
   // Ultima versiune salvată: „nesalvat” = diferența dintre formular și ea.
   const [baza, setBaza] = useState<GrantInput>(initial);
@@ -486,7 +458,7 @@ function FisaGrant({ orgSlug, date, initial, esteAdmin, onClose, onSaved }: { or
 
   // Închiderea (X, fundal, Escape, buton) cu modificări nesalvate cere confirmare: un clic pe lângă nu mai pierde un text lung.
   function inchide() {
-    if (nesalvat) setConfirmare({ text: "Ai modificări nesalvate. Închizi fără să salvezi?", eticheta: "Da, închide", periculos: true, actiune: onClose });
+    if (nesalvat) setConfirmare({ text: u.confirmaInchidere, eticheta: u.daInchide, periculos: true, actiune: onClose });
     else onClose();
   }
 
@@ -510,7 +482,7 @@ function FisaGrant({ orgSlug, date, initial, esteAdmin, onClose, onSaved }: { or
       try {
         if (await salveaza()) onClose();
       } catch {
-        setMesaj({ tip: "eroare", text: "Nu am putut salva acum. Încearcă din nou." });
+        setMesaj({ tip: "eroare", text: u.nuAmPututSalva });
       }
     });
   }
@@ -532,10 +504,10 @@ function FisaGrant({ orgSlug, date, initial, esteAdmin, onClose, onSaved }: { or
         setDraftAnterior(vechi.trim() ? vechi : null);
         setF((x) => ({ ...x, draft: r.draft }));
         setBaza((x) => ({ ...x, draft: r.draft }));
-        setMesaj({ tip: "ok", text: "Schiță generată și salvată. Citește-o atent: completează părțile marcate și verifică fiecare cifră înainte să depui." });
+        setMesaj({ tip: "ok", text: u.schitaGenerata });
         await onSaved();
       } catch {
-        setMesaj({ tip: "eroare", text: "Nu am putut genera schița acum. Încearcă din nou în câteva momente." });
+        setMesaj({ tip: "eroare", text: u.nuAmPututGenera });
       } finally {
         setSeGenereaza(false);
       }
@@ -543,7 +515,7 @@ function FisaGrant({ orgSlug, date, initial, esteAdmin, onClose, onSaved }: { or
   }
 
   function genereaza() {
-    if (f.draft.trim()) setConfirmare({ text: "Schița actuală va fi înlocuită cu una nouă. Poți reveni la cea veche imediat după, dar nu mai târziu. Continui?", eticheta: "Da, regenerează", actiune: genereazaEfectiv });
+    if (f.draft.trim()) setConfirmare({ text: u.confirmaRegenerare, eticheta: u.daRegenereaza, actiune: genereazaEfectiv });
     else genereazaEfectiv();
   }
 
@@ -559,10 +531,10 @@ function FisaGrant({ orgSlug, date, initial, esteAdmin, onClose, onSaved }: { or
         if (r.ok) {
           setBaza((x) => ({ ...x, draft: vechi }));
           await onSaved();
-          setMesaj({ tip: "ok", text: "Am revenit la schița anterioară." });
+          setMesaj({ tip: "ok", text: u.amRevenit });
         } else setMesaj({ tip: "eroare", text: r.eroare });
       } catch {
-        setMesaj({ tip: "eroare", text: "Nu am putut reveni acum. Încearcă din nou." });
+        setMesaj({ tip: "eroare", text: u.nuAmPututReveni });
       }
     });
   }
@@ -582,10 +554,10 @@ function FisaGrant({ orgSlug, date, initial, esteAdmin, onClose, onSaved }: { or
         if (!r.ok) setMesaj({ tip: "eroare", text: r.eroare });
         else {
           await onSaved();
-          setMesaj({ tip: "ok", text: `Fișierul „${fis.name}” a fost încărcat.` });
+          setMesaj({ tip: "ok", text: u.fisierIncarcat(fis.name) });
         }
       } catch {
-        setMesaj({ tip: "eroare", text: "Încărcarea nu a reușit. Verifică mărimea (maximum 4 MB) și încearcă din nou." });
+        setMesaj({ tip: "eroare", text: u.incarcareEsuata });
       } finally {
         setSeIncarca(false);
       }
@@ -606,17 +578,17 @@ function FisaGrant({ orgSlug, date, initial, esteAdmin, onClose, onSaved }: { or
     if (!f.id) return;
     const id = f.id;
     setConfirmare({
-      text: `Ștergi fișierul „${nume}”?`,
-      eticheta: "Da, șterge",
+      text: u.confirmaStergeFisier(nume),
+      eticheta: u.daSterge,
       periculos: true,
       actiune: () => {
         startTransition(async () => {
           try {
             await stergeFisierGrantAction(orgSlug, id, fisierId);
             await onSaved();
-            setMesaj({ tip: "ok", text: "Fișierul a fost șters." });
+            setMesaj({ tip: "ok", text: u.fisierSters });
           } catch {
-            setMesaj({ tip: "eroare", text: "Nu am putut șterge fișierul. Încearcă din nou." });
+            setMesaj({ tip: "eroare", text: u.nuAmPututStergeFisier });
           }
         });
       },
@@ -627,8 +599,8 @@ function FisaGrant({ orgSlug, date, initial, esteAdmin, onClose, onSaved }: { or
     if (!f.id) return;
     const id = f.id;
     setConfirmare({
-      text: "Ștergi această cerere, cu tot cu fișierele ei? Acțiunea nu poate fi anulată.",
-      eticheta: "Da, șterge cererea",
+      text: u.confirmaStergeCerere,
+      eticheta: u.daStergeCererea,
       periculos: true,
       actiune: () => {
         startTransition(async () => {
@@ -637,7 +609,7 @@ function FisaGrant({ orgSlug, date, initial, esteAdmin, onClose, onSaved }: { or
             await onSaved();
             onClose();
           } catch {
-            setMesaj({ tip: "eroare", text: "Nu am putut șterge cererea. Încearcă din nou." });
+            setMesaj({ tip: "eroare", text: u.nuAmPututStergeCererea });
           }
         });
       },
@@ -647,46 +619,46 @@ function FisaGrant({ orgSlug, date, initial, esteAdmin, onClose, onSaved }: { or
   function copiaza() {
     const clip = navigator.clipboard;
     if (!clip) {
-      setMesaj({ tip: "eroare", text: "Browserul nu permite copierea automată. Selectează textul și copiază-l manual." });
+      setMesaj({ tip: "eroare", text: u.copiereIndisponibila });
       return;
     }
     clip.writeText(f.draft).then(
-      () => setMesaj({ tip: "ok", text: "Schița a fost copiată." }),
-      () => setMesaj({ tip: "eroare", text: "Nu am putut copia. Selectează textul și copiază-l manual." }),
+      () => setMesaj({ tip: "ok", text: u.schitaCopiata }),
+      () => setMesaj({ tip: "eroare", text: u.nuAmPututCopia }),
     );
   }
 
   return (
-    <Dialog open onClose={inchide} title={noua ? "Cerere nouă de finanțare" : "Cerere de finanțare"} width="max-w-3xl">
+    <Dialog open onClose={inchide} title={noua ? u.titluNoua : u.titlu} width="max-w-3xl">
       <div className="space-y-5">
         <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
-          <Camp eticheta="Finanțator">{(id) => <Input id={id} value={f.finantator} onChange={(e) => set("finantator", e.target.value)} maxLength={160} placeholder="ex. Fundația …" />}</Camp>
-          <Camp eticheta="Program / apel">{(id) => <Input id={id} value={f.titlu} onChange={(e) => set("titlu", e.target.value)} maxLength={240} placeholder="ex. Apel pentru proiecte de sănătate" />}</Camp>
-          <Camp eticheta="Tip de finanțator">
+          <Camp eticheta={u.finantator}>{(id) => <Input id={id} value={f.finantator} onChange={(e) => set("finantator", e.target.value)} maxLength={160} placeholder={u.finantatorPh} />}</Camp>
+          <Camp eticheta={u.program}>{(id) => <Input id={id} value={f.titlu} onChange={(e) => set("titlu", e.target.value)} maxLength={240} placeholder={u.programPh} />}</Camp>
+          <Camp eticheta={u.tip}>
             {(id) => (
               <Select id={id} value={f.tipFinantator} onChange={(e) => set("tipFinantator", e.target.value)}>
                 {TIPURI_FINANTATOR.map((t) => (
                   <option key={t} value={t}>
-                    {ETICHETE_TIP[t]}
+                    {ui.tipuri[t]}
                   </option>
                 ))}
               </Select>
             )}
           </Camp>
-          <Camp eticheta="Stare">
+          <Camp eticheta={u.stare}>
             {(id) => (
               <Select id={id} value={f.stare} onChange={(e) => set("stare", e.target.value)}>
                 {STARI_GRANT.map((s) => (
                   <option key={s} value={s}>
-                    {ETICHETE_STARE[s]}
+                    {ui.stari[s]}
                   </option>
                 ))}
               </Select>
             )}
           </Camp>
           <div className="grid grid-cols-[1fr_6rem] gap-2">
-            <Camp eticheta="Suma solicitată">{(id) => <Input id={id} inputMode="decimal" value={f.suma} onChange={(e) => set("suma", e.target.value)} placeholder="ex. 25000" />}</Camp>
-            <Camp eticheta="Moneda">
+            <Camp eticheta={u.suma}>{(id) => <Input id={id} inputMode="decimal" value={f.suma} onChange={(e) => set("suma", e.target.value)} placeholder={u.sumaPh} />}</Camp>
+            <Camp eticheta={u.moneda}>
               {(id) => (
                 <Select id={id} value={f.moneda} onChange={(e) => set("moneda", e.target.value)}>
                   {MONEDE.map((m) => (
@@ -698,13 +670,13 @@ function FisaGrant({ orgSlug, date, initial, esteAdmin, onClose, onSaved }: { or
               )}
             </Camp>
           </div>
-          <Camp eticheta="Termen de depunere" ajutor="Cât timp cererea nu e depusă, reminderul pleacă pe e-mail cu 7 zile și cu o zi înainte, către responsabil; fără responsabil, către proprietarii organizației.">
+          <Camp eticheta={u.termen} ajutor={u.termenAjutor}>
             {(id, desc) => <Input id={id} aria-describedby={desc} type="date" value={f.termen} onChange={(e) => set("termen", e.target.value)} />}
           </Camp>
-          <Camp eticheta="Responsabil">
+          <Camp eticheta={u.responsabil}>
             {(id) => (
               <Select id={id} value={f.responsabilId ?? ""} onChange={(e) => set("responsabilId", e.target.value || null)}>
-                <option value="">— nealocat —</option>
+                <option value="">{u.nealocat}</option>
                 {date.membri.map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.nume}
@@ -713,68 +685,68 @@ function FisaGrant({ orgSlug, date, initial, esteAdmin, onClose, onSaved }: { or
               </Select>
             )}
           </Camp>
-          <Camp eticheta="Link către apel sau ghid" className="sm:col-span-2">
+          <Camp eticheta={u.link} className="sm:col-span-2">
             {(id) => <Input id={id} value={f.link} onChange={(e) => set("link", e.target.value)} placeholder="https://…" maxLength={500} />}
           </Camp>
         </div>
 
         <ListaBifabila
-          titlu="Eligibilitate"
-          ajutor="Condițiile din ghid pe care trebuie să le îndeplinești. Bifează ce ai verificat."
+          titlu={u.eligibilitate}
+          ajutor={u.eligibilitateAjutor}
           elemente={f.eligibilitate as ElementLista[]}
           onChange={(e) => set("eligibilitate", e)}
-          standard={ELIGIBILITATE_STANDARD}
-          etichetaStandard="Adaugă criteriile uzuale"
+          standard={ui.eligibilitateStandard}
+          etichetaStandard={u.eligibilitateStandard}
         />
         <ListaBifabila
-          titlu="Documente de pregătit"
-          ajutor="Tot ce trebuie atașat cererii. Bifează ce e gata."
+          titlu={u.documente}
+          ajutor={u.documenteAjutor}
           elemente={f.documente as ElementLista[]}
           onChange={(e) => set("documente", e)}
-          standard={DOCUMENTE_STANDARD}
-          etichetaStandard="Adaugă lista standard"
+          standard={ui.documenteStandard}
+          etichetaStandard={u.documenteStandard}
         />
 
-        <Camp eticheta="Cerințele finanțatorului" ajutor="Lipește din ghid secțiunile cerute, limitele de lungime și criteriile de evaluare. Schița se scrie pe ele.">
+        <Camp eticheta={u.cerinte} ajutor={u.cerinteAjutor}>
           {(id, desc) => <Textarea id={id} aria-describedby={desc} value={f.cerinte} onChange={(e) => set("cerinte", e.target.value)} rows={5} maxLength={20000} />}
         </Camp>
 
         <div className="space-y-2.5 rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] p-3.5">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <Label htmlFor="grant-draft">Schița cererii</Label>
+              <Label htmlFor="grant-draft">{u.schita}</Label>
               <p className="text-[12px] text-[var(--ci-text-muted)]">
-                Pornește din dosarul organizației ({progres.completate}/{progres.total} câmpuri completate) și din cerințele de mai sus. Folosește doar faptele din dosar; ce lipsește rămâne marcat. E un punct de plecare, nu o cerere gata de depus.
+                {u.schitaAjutor(progres.completate, progres.total)}
               </p>
             </div>
             {date.aiPermis && (
               <div className="flex items-center gap-2">
-                <Select aria-label="Limba schiței" value={limba} onChange={(e) => setLimba(e.target.value as "ro" | "en")} className="!h-8 !w-auto !text-[13px]">
+                <Select aria-label={u.limbaSchitei} value={limba} onChange={(e) => setLimba(e.target.value as "ro" | "en")} className="!h-8 !w-auto !text-[13px]">
                   <option value="ro">Română</option>
                   <option value="en">English</option>
                 </Select>
                 <Button type="button" onClick={genereaza} loading={seGenereaza} disabled={!date.aiDisponibil || pending}>
-                  <Sparkles className="h-4 w-4" /> {f.draft ? "Regenerează schița" : "Generează schiță cu AI"}
+                  <Sparkles className="h-4 w-4" /> {f.draft ? u.regenereaza : u.genereaza}
                 </Button>
               </div>
             )}
           </div>
           {date.aiPermis &&
             (!date.aiDisponibil ? (
-              <p className="text-[12px] text-[var(--ci-text-muted)]">Generarea cu AI nu e activă pe această platformă; poți scrie schița manual mai jos.</p>
+              <p className="text-[12px] text-[var(--ci-text-muted)]">{u.aiInactiv}</p>
             ) : (
-              <p className="text-[12px] text-[var(--ci-text-muted)]">{AVERTISMENT_AI}</p>
+              <p className="text-[12px] text-[var(--ci-text-muted)]">{ui.avertismentAi}</p>
             ))}
-          <Textarea id="grant-draft" value={f.draft} onChange={(e) => set("draft", e.target.value)} rows={12} maxLength={30000} placeholder="Schița apare aici. O poți edita liber." />
+          <Textarea id="grant-draft" value={f.draft} onChange={(e) => set("draft", e.target.value)} rows={12} maxLength={30000} placeholder={u.schitaPh} />
           <div className="flex flex-wrap items-center gap-2">
             {f.draft && (
               <Button type="button" size="sm" onClick={copiaza}>
-                <Check className="h-3.5 w-3.5" /> Copiază schița
+                <Check className="h-3.5 w-3.5" /> {u.copiazaSchita}
               </Button>
             )}
             {draftAnterior !== null && (
               <Button type="button" size="sm" onClick={revinaLaDraft} disabled={pending}>
-                Revino la schița anterioară
+                {u.revino}
               </Button>
             )}
           </div>
@@ -782,20 +754,20 @@ function FisaGrant({ orgSlug, date, initial, esteAdmin, onClose, onSaved }: { or
 
         {castigata && (
           <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-3">
-            <Camp eticheta="Suma câștigată">{(id) => <Input id={id} inputMode="decimal" value={f.sumaCastigata} onChange={(e) => set("sumaCastigata", e.target.value)} placeholder={f.suma || "ex. 20000"} />}</Camp>
-            <Camp eticheta="Data deciziei">{(id) => <Input id={id} type="date" value={f.dataDecizie} onChange={(e) => set("dataDecizie", e.target.value)} />}</Camp>
-            <Camp eticheta="Termen de raportare">{(id) => <Input id={id} type="date" value={f.termenRaportare} onChange={(e) => set("termenRaportare", e.target.value)} />}</Camp>
+            <Camp eticheta={u.sumaCastigata}>{(id) => <Input id={id} inputMode="decimal" value={f.sumaCastigata} onChange={(e) => set("sumaCastigata", e.target.value)} placeholder={f.suma || u.sumaCastigataPh} />}</Camp>
+            <Camp eticheta={u.dataDecizie}>{(id) => <Input id={id} type="date" value={f.dataDecizie} onChange={(e) => set("dataDecizie", e.target.value)} />}</Camp>
+            <Camp eticheta={u.termenRaportare}>{(id) => <Input id={id} type="date" value={f.termenRaportare} onChange={(e) => set("termenRaportare", e.target.value)} />}</Camp>
           </div>
         )}
 
         <div>
-          <Label htmlFor="grant-fisier">Fișiere atașate</Label>
+          <Label htmlFor="grant-fisier">{u.fisiere}</Label>
           {noua ? (
-            <p className="text-[12px] text-[var(--ci-text-muted)]">Salvează cererea ca să poți atașa fișiere (PDF, imagini, Word, Excel; maximum 4 MB fiecare).</p>
+            <p className="text-[12px] text-[var(--ci-text-muted)]">{u.fisiereNoua}</p>
           ) : (
             <div className="space-y-2">
               <p className="text-[12px] text-[var(--ci-text-muted)]">
-                Statut, bilanț, buget, scrisori de sprijin: tot ce ai pregătit pentru depunere. PDF, imagini, Word, Excel; maximum 4 MB fiecare. Nu încărca acte cu CNP sau date medicale decât dacă sunt necesare cererii și ai temei legal.
+                {u.fisiereAjutor}
               </p>
               {fisiere.length > 0 && (
                 <ul className="space-y-1">
@@ -806,7 +778,7 @@ function FisaGrant({ orgSlug, date, initial, esteAdmin, onClose, onSaved }: { or
                         {x.nume}
                       </button>
                       <span className="shrink-0 text-[12px] text-[var(--ci-text-muted)]">{formatMarime(x.marime)}</span>
-                      <button type="button" aria-label={`Șterge fișierul ${x.nume}`} className="-m-1.5 p-2 text-[var(--ci-text-faint)] hover:text-[var(--ci-red)]" onClick={() => stergeFisier(x.id, x.nume)}>
+                      <button type="button" aria-label={u.stergeFisierAria(x.nume)} className="-m-1.5 p-2 text-[var(--ci-text-faint)] hover:text-[var(--ci-red)]" onClick={() => stergeFisier(x.id, x.nume)}>
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </li>
@@ -827,14 +799,14 @@ function FisaGrant({ orgSlug, date, initial, esteAdmin, onClose, onSaved }: { or
               />
               {seIncarca && (
                 <p role="status" className="text-[12.5px] text-[var(--ci-text-muted)]">
-                  Se încarcă…
+                  {u.seIncarca}
                 </p>
               )}
             </div>
           )}
         </div>
 
-        <Camp eticheta="Note interne">{(id) => <Textarea id={id} value={f.nota} onChange={(e) => set("nota", e.target.value)} rows={3} maxLength={4000} />}</Camp>
+        <Camp eticheta={u.note}>{(id) => <Textarea id={id} value={f.nota} onChange={(e) => set("nota", e.target.value)} rows={3} maxLength={4000} />}</Camp>
       </div>
 
       {/* Subsolul rămâne vizibil în timp ce fișa derulează (important pe telefon). */}
@@ -857,17 +829,17 @@ function FisaGrant({ orgSlug, date, initial, esteAdmin, onClose, onSaved }: { or
           <div>
             {!noua && esteAdmin && (
               <Button type="button" variant="ghost" onClick={sterge} disabled={pending}>
-                <Trash2 className="h-4 w-4" /> Șterge
+                <Trash2 className="h-4 w-4" /> {u.sterge}
               </Button>
             )}
           </div>
           <div className="flex items-center gap-3">
-            {nesalvat && <span className="text-[12px] text-[var(--ci-text-muted)]">Modificări nesalvate</span>}
+            {nesalvat && <span className="text-[12px] text-[var(--ci-text-muted)]">{u.nesalvat}</span>}
             <Button type="button" onClick={inchide}>
-              {nesalvat ? "Renunță" : "Închide"}
+              {nesalvat ? u.renunta : u.inchide}
             </Button>
             <Button type="button" variant="primary" onClick={salveazaSiInchide} loading={pending && !seGenereaza && !seIncarca}>
-              Salvează
+              {u.salveaza}
             </Button>
           </div>
         </div>
@@ -879,6 +851,8 @@ function FisaGrant({ orgSlug, date, initial, esteAdmin, onClose, onSaved }: { or
 // ---------------------------------------------------------------------------------------------------------------- Dosar
 
 function Dosar({ orgSlug, dosar, prefill, reincarca, aiPermis }: { orgSlug: string; dosar: Record<string, string>; prefill: Record<string, string>; reincarca: () => Promise<void>; aiPermis: boolean }) {
+  const ui = GRANTURI_UI_DICT[useLocale()];
+  const u = ui.dosar;
   // Câmpurile necompletate pornesc din ce știe deja platforma despre organizație.
   const [v, setV] = useState<Record<string, string>>(() => ({ ...prefill, ...dosar }));
   const [pending, startTransition] = useTransition();
@@ -894,34 +868,37 @@ function Dosar({ orgSlug, dosar, prefill, reincarca, aiPermis }: { orgSlug: stri
       <Card>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="max-w-2xl">
-            <h2 className="ci-display text-[15px] font-semibold text-[var(--ci-text)]">Dosarul organizației</h2>
+            <h2 className="ci-display text-[15px] font-semibold text-[var(--ci-text)]">{u.titlu}</h2>
             <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">
-              Faptele pe care le cere aproape orice finanțator, scrise o singură dată. Schița fiecărei cereri pornește de aici: scrie numai ce poți susține cu documente. Un dosar gol produce schițe aproape goale.
+              {u.descriere}
             </p>
-            {aiPermis && <p className="mt-1.5 text-[12px] text-[var(--ci-text-muted)]">Când generezi o schiță cu AI, textul din dosar (fără contact și IBAN) este trimis către Anthropic (SUA). Folosește prenume schimbate și detalii generale pentru beneficiari.</p>}
+            {aiPermis && <p className="mt-1.5 text-[12px] text-[var(--ci-text-muted)]">{u.aiNota}</p>}
           </div>
           <div className="text-right">
             <p className="ci-display text-lg font-bold tabular-nums text-[var(--ci-text)]">
               {progres.completate}/{progres.total}
             </p>
-            <p className="text-[12px] text-[var(--ci-text-muted)]">câmpuri completate</p>
+            <p className="text-[12px] text-[var(--ci-text-muted)]">{u.completate}</p>
           </div>
         </div>
       </Card>
 
       <Card>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {CAMPURI_DOSAR.map((c) => (
+          {CAMPURI_DOSAR.map((c0) => {
+            const c = { ...c0, ...(u.campuri[c0.cheie] ?? {}) };
+            return (
             <Camp key={c.cheie} eticheta={c.eticheta} ajutor={c.ajutor || undefined} className={c.lung ? "sm:col-span-2" : ""}>
               {(id, desc) =>
                 c.lung ? (
-                  <Textarea id={id} aria-describedby={desc} value={v[c.cheie] ?? ""} rows={4} maxLength={6000} placeholder={c.exemplu ? `Exemplu: ${c.exemplu}` : undefined} onChange={(e) => modifica(c.cheie, e.target.value)} />
+                  <Textarea id={id} aria-describedby={desc} value={v[c.cheie] ?? ""} rows={4} maxLength={6000} placeholder={c.exemplu ? u.exemplu(c.exemplu) : undefined} onChange={(e) => modifica(c.cheie, e.target.value)} />
                 ) : (
-                  <Input id={id} aria-describedby={desc} value={v[c.cheie] ?? ""} maxLength={6000} placeholder={c.exemplu ? `Exemplu: ${c.exemplu}` : undefined} onChange={(e) => modifica(c.cheie, e.target.value)} />
+                  <Input id={id} aria-describedby={desc} value={v[c.cheie] ?? ""} maxLength={6000} placeholder={c.exemplu ? u.exemplu(c.exemplu) : undefined} onChange={(e) => modifica(c.cheie, e.target.value)} />
                 )
               }
             </Camp>
-          ))}
+            );
+          })}
         </div>
         <div className="mt-5 flex items-center gap-3">
           <Button
@@ -932,14 +909,14 @@ function Dosar({ orgSlug, dosar, prefill, reincarca, aiPermis }: { orgSlug: stri
                 try {
                   await salveazaDosarAction(orgSlug, v);
                   await reincarca();
-                  setMesaj({ tip: "ok", text: "Dosar salvat." });
+                  setMesaj({ tip: "ok", text: u.salvat });
                 } catch {
-                  setMesaj({ tip: "eroare", text: "Nu am putut salva dosarul. Încearcă din nou." });
+                  setMesaj({ tip: "eroare", text: u.nuAmPututSalva });
                 }
               })
             }
           >
-            Salvează dosarul
+            {u.salveazaDosarul}
           </Button>
           <Mesaj mesaj={mesaj} />
         </div>
@@ -951,6 +928,9 @@ function Dosar({ orgSlug, dosar, prefill, reincarca, aiPermis }: { orgSlug: stri
 // ---------------------------------------------------------------------------------------------------------------- Surse
 
 function CautareApeluri({ orgSlug, date, reincarca }: { orgSlug: string; date: DateGranturi; reincarca: () => Promise<void> }) {
+  const locale = useLocale();
+  const u = GRANTURI_UI_DICT[locale].surse;
+  const { formatData, dataLunga } = formatariGranturi(locale);
   const [domeniu, setDomeniu] = useState("");
   const [zona, setZona] = useState("România");
   const [observatii, setObservatii] = useState("");
@@ -967,10 +947,10 @@ function CautareApeluri({ orgSlug, date, reincarca }: { orgSlug: string; date: D
     startTransition(async () => {
       try {
         const r = await cautaApeluriAction(orgSlug, domeniu, zona, observatii);
-        if (r.ok) setRezultate({ apeluri: r.apeluri, la: new Date().toLocaleDateString("ro-RO", { day: "numeric", month: "long", year: "numeric" }) });
+        if (r.ok) setRezultate({ apeluri: r.apeluri, la: dataLunga(new Date()) });
         else setMesaj({ tip: "eroare", text: r.eroare });
       } catch {
-        setMesaj({ tip: "eroare", text: "Căutarea nu a reușit acum. Încearcă din nou în câteva momente." });
+        setMesaj({ tip: "eroare", text: u.cautareEsuata });
       } finally {
         setSeCauta(false);
       }
@@ -984,36 +964,36 @@ function CautareApeluri({ orgSlug, date, reincarca }: { orgSlug: string; date: D
       <div className="flex items-start gap-2.5">
         <Search className="mt-0.5 h-4 w-4 shrink-0 text-[var(--ci-primary)]" aria-hidden />
         <div className="min-w-0 flex-1">
-          <h3 className="ci-display text-[14px] font-semibold text-[var(--ci-text)]">Caută apeluri cu AI</h3>
+          <h3 className="ci-display text-[14px] font-semibold text-[var(--ci-text)]">{u.cautaTitlu}</h3>
           <p className="mt-0.5 text-[12.5px] text-[var(--ci-text-muted)]">
-            Caută pe web apeluri deschise sau recurente potrivite organizației. Păstrăm doar rezultatele cu link real, dar <b className="font-semibold text-[var(--ci-text)]">termenul, eligibilitatea și credibilitatea sursei se verifică mereu pe pagina oficială</b> înainte să aplici. Către căutare nu trimitem datele din dosar, doar ce scrii mai jos.
+            {u.cautaDescriere1}<b className="font-semibold text-[var(--ci-text)]">{u.cautaDescriereBold}</b>{u.cautaDescriere2}
           </p>
           {!date.aiDisponibil ? (
-            <p className="mt-2 text-[12.5px] text-[var(--ci-text-muted)]">Căutarea cu AI nu e activă pe această platformă.</p>
+            <p className="mt-2 text-[12.5px] text-[var(--ci-text-muted)]">{u.aiInactiv}</p>
           ) : (
             <>
               <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-[1.4fr_1fr]">
-                <Camp eticheta="Domeniu și temă">{(id) => <Input id={id} value={domeniu} maxLength={200} onChange={(e) => setDomeniu(e.target.value)} placeholder="ex. sănătate, copii cu dizabilități" />}</Camp>
-                <Camp eticheta="Zonă">
+                <Camp eticheta={u.domeniu}>{(id) => <Input id={id} value={domeniu} maxLength={200} onChange={(e) => setDomeniu(e.target.value)} placeholder={u.domeniuPh} />}</Camp>
+                <Camp eticheta={u.zona}>
                   {(id) => (
                     <Select id={id} value={zona} onChange={(e) => setZona(e.target.value)}>
-                      <option>România</option>
-                      <option>Europa</option>
-                      <option>Internațional</option>
+                      <option value="România">{u.zone["România"]}</option>
+                      <option value="Europa">{u.zone.Europa}</option>
+                      <option value="Internațional">{u.zone["Internațional"]}</option>
                     </Select>
                   )}
                 </Camp>
-                <Camp eticheta="Precizări (opțional)" className="sm:col-span-2">
-                  {(id) => <Input id={id} value={observatii} maxLength={300} onChange={(e) => setObservatii(e.target.value)} placeholder="ex. proiecte între 10.000 și 50.000 de euro, fără cofinanțare" />}
+                <Camp eticheta={u.precizari} className="sm:col-span-2">
+                  {(id) => <Input id={id} value={observatii} maxLength={300} onChange={(e) => setObservatii(e.target.value)} placeholder={u.precizariPh} />}
                 </Camp>
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-3">
                 <Button variant="primary" onClick={cauta} loading={seCauta} disabled={pending && !seCauta}>
-                  <Search className="h-4 w-4" /> {seCauta ? "Se caută…" : "Caută apeluri"}
+                  <Search className="h-4 w-4" /> {seCauta ? u.seCauta : u.cautaBtn}
                 </Button>
                 {seCauta && (
                   <span role="status" className="text-[12.5px] text-[var(--ci-text-muted)]">
-                    Poate dura până la un minut.
+                    {u.poateDura}
                   </span>
                 )}
               </div>
@@ -1025,8 +1005,8 @@ function CautareApeluri({ orgSlug, date, reincarca }: { orgSlug: string; date: D
           {rezultate && (
             <p role="status" className="mt-3 text-[13px] text-[var(--ci-text-muted)]">
               {rezultate.apeluri.length === 0
-                ? "Nu am găsit apeluri sigure pentru această căutare. Încearcă o temă mai largă sau altă zonă."
-                : `Am găsit ${rezultate.apeluri.length} ${rezultate.apeluri.length === 1 ? "apel" : "apeluri"} la ${rezultate.la}. Verifică fiecare pe pagina oficială.`}
+                ? u.nuAmGasit
+                : u.amGasit(rezultate.apeluri.length, rezultate.la)}
             </p>
           )}
           {rezultate && rezultate.apeluri.length > 0 && (
@@ -1037,15 +1017,15 @@ function CautareApeluri({ orgSlug, date, reincarca }: { orgSlug: string; date: D
                     <div className="min-w-0 flex-1">
                       <p className="text-[13.5px] font-semibold text-[var(--ci-text)]">{a.titlu}</p>
                       <p className="text-[12.5px] text-[var(--ci-text-muted)]">
-                        {a.finantator} · {a.termen ? `termen: ${formatData(a.termen)}` : "termen neconfirmat"}
+                        {a.finantator} · {a.termen ? u.termen(formatData(a.termen)) : u.termenNeconfirmat}
                       </p>
                       {a.motiv && <p className="mt-1 text-[12.5px] text-[var(--ci-text)]">{a.motiv}</p>}
                       <a href={a.url} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1 text-[12.5px] font-medium text-[var(--ci-primary)] hover:underline">
-                        Deschide pagina ({domeniuDinUrl(a.url)}) <ExternalLink className="h-3 w-3" aria-hidden />
+                        {u.deschidePagina(domeniuDinUrl(a.url))} <ExternalLink className="h-3 w-3" aria-hidden />
                       </a>
                     </div>
                     {deja(a) ? (
-                      <Badge tone="green">În registru</Badge>
+                      <Badge tone="green">{u.inRegistru}</Badge>
                     ) : (
                       <Button
                         size="sm"
@@ -1057,15 +1037,15 @@ function CautareApeluri({ orgSlug, date, reincarca }: { orgSlug: string; date: D
                               if (r.ok) {
                                 setAdaugate((x) => ({ ...x, [a.url]: true }));
                                 await reincarca();
-                                setMesaj({ tip: "ok", text: `„${a.titlu}” a fost adăugat în registru, în starea „Identificat”.` });
+                                setMesaj({ tip: "ok", text: u.adaugatApel(a.titlu) });
                               } else setMesaj({ tip: "eroare", text: r.eroare });
                             } catch {
-                              setMesaj({ tip: "eroare", text: "Nu am putut adăuga în registru. Încearcă din nou." });
+                              setMesaj({ tip: "eroare", text: u.nuAmPututAdauga }); 
                             }
                           })
                         }
                       >
-                        <Plus className="h-3.5 w-3.5" /> Adaugă în registru
+                        <Plus className="h-3.5 w-3.5" /> {u.adaugaInRegistru}
                       </Button>
                     )}
                   </div>
@@ -1080,6 +1060,7 @@ function CautareApeluri({ orgSlug, date, reincarca }: { orgSlug: string; date: D
 }
 
 function Surse({ orgSlug, date, reincarca }: { orgSlug: string; date: DateGranturi; reincarca: () => Promise<void> }) {
+  const u = GRANTURI_UI_DICT[useLocale()].surse;
   const [fel, setFel] = useState<string>("toate");
   const [pending, startTransition] = useTransition();
   const [mesaj, setMesaj] = useState<MesajUi>(null);
@@ -1092,11 +1073,11 @@ function Surse({ orgSlug, date, reincarca }: { orgSlug: string; date: DateGrantu
       {date.aiPermis && <CautareApeluri orgSlug={orgSlug} date={date} reincarca={reincarca} />}
       <Card>
         <p className="text-[13px] text-[var(--ci-text-muted)]">
-          Locurile unde merită căutat periodic (lista a fost verificată în {SURSE_VERIFICATE_IN}). Nu arată apeluri în timp real: <b className="font-semibold text-[var(--ci-text)]">termenele, sumele și condițiile se verifică mereu pe site-ul finanțatorului</b>, iar criteriile se pot schimba. Apasă „Urmărește” ca să-l pui în registru și să-i adaugi apelul concret când apare.
+          {u.introLista1(u.verificatIn)}<b className="font-semibold text-[var(--ci-text)]">{u.introListaBold}</b>{u.introLista2}
         </p>
       </Card>
-      <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filtrează sursele">
-        {[["toate", "Toate"], ...Object.entries(ETICHETE_FEL)].map(([k, e]) => (
+      <div className="flex flex-wrap gap-1.5" role="group" aria-label={u.filtreazaSurse}>
+        {[["toate", u.toate], ...Object.entries(ETICHETE_FEL).map(([k, e]) => [k, u.fel[k] ?? e])].map(([k, e]) => (
           <button
             key={k}
             type="button"
@@ -1118,18 +1099,18 @@ function Surse({ orgSlug, date, reincarca }: { orgSlug: string; date: DateGrantu
               <div className="flex items-start justify-between gap-2">
                 <h3 className="ci-display text-[14px] font-semibold text-[var(--ci-text)]">{s.nume}</h3>
                 <Badge tone="neutral" icon={false}>
-                  {ETICHETE_FEL[s.fel]}
+                  {u.fel[s.fel] ?? ETICHETE_FEL[s.fel]}
                 </Badge>
               </div>
-              <p className="text-[13px] text-[var(--ci-text)]">{s.descriere}</p>
-              <p className="text-[12.5px] text-[var(--ci-text-muted)]">{s.cum}</p>
+              <p className="text-[13px] text-[var(--ci-text)]">{u.descrieri[s.id]?.descriere ?? s.descriere}</p>
+              <p className="text-[12.5px] text-[var(--ci-text-muted)]">{u.descrieri[s.id]?.cum ?? s.cum}</p>
               <div className="mt-auto flex flex-wrap items-center gap-2 pt-1">
                 <a href={s.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[13px] font-medium text-[var(--ci-primary)] hover:underline">
-                  Deschide site-ul <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+                  {u.deschideSite} <ExternalLink className="h-3.5 w-3.5" aria-hidden />
                 </a>
                 <span className="flex-1" />
                 {deja(s.nume) ? (
-                  <Badge tone="green">În registru</Badge>
+                  <Badge tone="green">{u.inRegistru}</Badge>
                 ) : (
                   <Button
                     size="sm"
@@ -1137,19 +1118,19 @@ function Surse({ orgSlug, date, reincarca }: { orgSlug: string; date: DateGrantu
                     onClick={() =>
                       startTransition(async () => {
                         try {
-                          const r = await adaugaSursaInRegistruAction(orgSlug, s.nume, "Apel de verificat", s.tip, s.url, "");
+                          const r = await adaugaSursaInRegistruAction(orgSlug, s.nume, u.apelDeVerificat, s.tip, s.url, "");
                           if (r.ok) {
                             setAdaugat((x) => ({ ...x, [s.nume]: true }));
                             await reincarca();
-                            setMesaj({ tip: "ok", text: `${s.nume} a fost adăugat în registru. Deschide-l din fila Registru ca să-i completezi apelul și termenul.` });
+                            setMesaj({ tip: "ok", text: u.adaugatSursa(s.nume) });
                           } else setMesaj({ tip: "eroare", text: r.eroare });
                         } catch {
-                          setMesaj({ tip: "eroare", text: "Nu am putut adăuga în registru. Încearcă din nou." });
+                          setMesaj({ tip: "eroare", text: u.nuAmPututAdauga }); 
                         }
                       })
                     }
                   >
-                    <Plus className="h-3.5 w-3.5" /> Urmărește
+                    <Plus className="h-3.5 w-3.5" /> {u.urmareste}
                   </Button>
                 )}
               </div>

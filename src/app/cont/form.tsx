@@ -2,14 +2,18 @@
 
 import { useActionState } from "react";
 
+import type { Locale } from "@/lib/i18n/config";
+import { CONT_UI_DICT } from "@/lib/i18n/dictionaries/cont-ui";
+
 import { stergeContulMeuAction, type StergeContState } from "./actions";
 
-export function StergeContForm({ email }: { email: string }) {
+export function StergeContForm({ email, locale }: { email: string; locale: Locale }) {
+  const t = CONT_UI_DICT[locale].sterge;
   const [state, formAction, pending] = useActionState<StergeContState, FormData>(stergeContulMeuAction, { error: null });
   return (
     <form action={formAction} className="mt-4 flex flex-col gap-3">
       <label className="text-sm font-medium text-ink">
-        Pentru confirmare, scrie adresa de email a contului ({email})
+        {t.confirmare(email)}
         <input
           name="confirmare"
           type="email"
@@ -28,7 +32,7 @@ export function StergeContForm({ email }: { email: string }) {
         disabled={pending}
         className="self-start rounded-lg bg-red-700 px-4 py-2 text-sm font-semibold text-white hover:bg-red-800 disabled:opacity-60"
       >
-        {pending ? "Se șterge…" : "Șterge definitiv contul meu"}
+        {pending ? t.seSterge : t.buton}
       </button>
     </form>
   );

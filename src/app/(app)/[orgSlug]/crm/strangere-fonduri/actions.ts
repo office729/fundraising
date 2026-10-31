@@ -22,6 +22,8 @@ import {
 import { htmlEmailMultumireDonatie, subiectEmailMultumireDonatie } from "@/lib/donation-email-template";
 import { emailConfigurat, trimiteEmail } from "@/lib/email";
 import { stergeFisierePrivate } from "@/lib/fisiere-private";
+import { STRANGERE_FONDURI_UI_DICT } from "@/lib/i18n/dictionaries/strangere-fonduri-ui";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { TEXTE_CAMPANIE } from "./campanie-texte";
 import { aziRo, parseazaTermen } from "./campanie-validare";
 import { crediteazaPaginaSiDonator } from "@/lib/fundraising-credit";
@@ -42,13 +44,14 @@ export type StergePaginaState = { error: string | null };
 // loc — păstrează istoricul. `org_id` filtrat explicit (nu doar prin RLS) —
 // chiar dacă id-ul e ghicit, nu atinge alt org.
 export const stergePaginaStrangereFonduri = withOrgAdmin(async (ctx, id: string): Promise<StergePaginaState> => {
+  const t = STRANGERE_FONDURI_UI_DICT[await getLocale()].actiuni;
   const donatii = await ctx.db
     .select({ id: fundraisingDonations.id })
     .from(fundraisingDonations)
     .where(and(eq(fundraisingDonations.pageId, id), inArray(fundraisingDonations.status, ["reusita", "rambursata"])))
     .limit(1);
   if (donatii[0]) {
-    return { error: "Pagina are donații reușite sau rambursate — nu poate fi ștearsă definitiv. Închide-o în loc, ca să păstrezi istoricul." };
+    return { error: t.paginaAreDonatii };
   }
   // Încercările neterminate (în așteptare / eșuate) nu au valoare contabilă; se curăță explicit, fiindcă baza de date nu
   // mai șterge donațiile în cascadă odată cu pagina.
@@ -102,6 +105,8 @@ export type CreeazaPaginaAdminState = { error: string | null; id?: string; slug?
 // să pornească o pagină de campanie (nu doar susținătorii, prin link public).
 export const creeazaPaginaAdminAction = withOrgAdmin(
   async (ctx, _prevState: CreeazaPaginaAdminState, formData: FormData): Promise<CreeazaPaginaAdminState> => {
+    const locale = await getLocale();
+    const t = STRANGERE_FONDURI_UI_DICT[locale].actiuni;
     const str = (k: string) => String(formData.get(k) ?? "").trim();
     const numeCreator = str("numeCreator");
     const emailCreator = str("emailCreator");
@@ -113,18 +118,18 @@ export const creeazaPaginaAdminAction = withOrgAdmin(
     const templateCerut = str("template");
 
     if (!numeCreator || !emailCreator || !titlu || !poveste) {
-      return { error: "Completează toate câmpurile obligatorii." };
+      return { error: t.completeazaObligatorii };
     }
     let sumaTinta: number | null = null;
     if (sumaTintaRaw) {
       const n = Math.round(Number(sumaTintaRaw));
       if (!Number.isFinite(n) || n <= 0) {
-        return { error: "Suma țintă trebuie să fie un număr pozitiv." };
+        return { error: t.sumaTintaPozitiva };
       }
       sumaTinta = n;
     }
     const termen = parseazaTermen(str("termen"), aziRo());
-    if (termen.eroare) return { error: TEXTE_CAMPANIE.ro.erori[termen.eroare] };
+    if (termen.eroare) return { error: TEXTE_CAMPANIE[locale].erori[termen.eroare] };
 
     // Aspectul (domeniul) cerut se acceptă doar dacă e permis organizației — la fel ca la editare; altfel rămâne cel implicit.
     const [org] = await ctx.db
@@ -189,6 +194,8 @@ export type EditeazaPaginaAdminState = { error: string | null };
 // (link-ul public deja distribuit trebuie să rămână valid).
 export const editeazaPaginaAdminAction = withOrgAdmin(
   async (ctx, pageId: string, _prevState: EditeazaPaginaAdminState, formData: FormData): Promise<EditeazaPaginaAdminState> => {
+    const locale = await getLocale();
+    const t = STRANGERE_FONDURI_UI_DICT[locale].actiuni;
     const str = (k: string) => String(formData.get(k) ?? "").trim();
     const numeCreator = str("numeCreator");
     const emailCreator = str("emailCreator");
@@ -200,19 +207,19 @@ export const editeazaPaginaAdminAction = withOrgAdmin(
     const templateCerut = str("template");
 
     if (!numeCreator || !emailCreator || !titlu || !poveste) {
-      return { error: "Completează toate câmpurile obligatorii." };
+      return { error: t.completeazaObligatorii };
     }
     let sumaTinta: number | null = null;
     if (sumaTintaRaw) {
       const n = Math.round(Number(sumaTintaRaw));
       if (!Number.isFinite(n) || n <= 0) {
-        return { error: "Suma țintă trebuie să fie un număr pozitiv." };
+        return { error: t.sumaTintaPozitiva };
       }
       sumaTinta = n;
     }
     // La editare un termen deja depășit se acceptă (campanie veche); doar valoarea trebuie să fie o dată validă.
     const termen = parseazaTermen(str("termen"), aziRo(), true);
-    if (termen.eroare) return { error: TEXTE_CAMPANIE.ro.erori[termen.eroare] };
+    if (termen.eroare) return { error: TEXTE_CAMPANIE[locale].erori[termen.eroare] };
 
     // Nu avem încredere în ce trimite clientul — recalculăm lista de
     // template-uri permise din org-ul real, ca la creare (creeaza/actions.ts).
@@ -242,7 +249,7 @@ export const editeazaPaginaAdminAction = withOrgAdmin(
       })
       .where(and(eq(fundraisingPages.id, pageId), eq(fundraisingPages.orgId, ctx.orgId)))
       .returning({ id: fundraisingPages.id });
-    if (!r[0]) return { error: "Pagina nu a fost găsită." };
+    if (!r[0]) return { error: t.paginaNegasita };
 
     return { error: null };
   },
@@ -256,24 +263,25 @@ export type AdaugaActualizareState = { error: string | null };
 // `data` e opțională la trimitere (input HTML `type="date"` gol dacă
 // utilizatorul o șterge) — implicit azi, ca formularul să rămână simplu de
 // completat rapid.
-function parseazaDataActualizare(formData: FormData): Date | { error: string } {
+function parseazaDataActualizare(formData: FormData, mesajInvalid: string): Date | { error: string } {
   const dataRaw = String(formData.get("data") ?? "").trim();
   if (!dataRaw) return new Date();
   const data = new Date(dataRaw);
-  if (Number.isNaN(data.getTime())) return { error: "Data introdusă nu e validă." };
+  if (Number.isNaN(data.getTime())) return { error: mesajInvalid };
   return data;
 }
 
 export const adaugaActualizareAction = withOrgAdmin(
   async (ctx, _prevState: AdaugaActualizareState, formData: FormData): Promise<AdaugaActualizareState> => {
+    const t = STRANGERE_FONDURI_UI_DICT[await getLocale()].actiuni;
     const pageId = String(formData.get("pageId") ?? "").trim();
     const titlu = String(formData.get("titlu") ?? "").trim();
     const continut = String(formData.get("continut") ?? "").trim();
 
     if (!pageId || !titlu || !continut) {
-      return { error: "Completează titlul și conținutul actualizării." };
+      return { error: t.completeazaTitluContinut };
     }
-    const data = parseazaDataActualizare(formData);
+    const data = parseazaDataActualizare(formData, t.dataInvalida);
     if ("error" in data) return data;
 
     const pagina = await ctx.db
@@ -281,7 +289,7 @@ export const adaugaActualizareAction = withOrgAdmin(
       .from(fundraisingPages)
       .where(and(eq(fundraisingPages.id, pageId), eq(fundraisingPages.orgId, ctx.orgId)))
       .limit(1);
-    if (!pagina[0]) return { error: "Pagina nu a fost găsită." };
+    if (!pagina[0]) return { error: t.paginaNegasita };
 
     await ctx.db.insert(fundraisingUpdates).values({
       id: randomUUID(),
@@ -303,13 +311,14 @@ export type EditeazaActualizareState = { error: string | null };
 // mută niciodată pe altă pagină.
 export const editeazaActualizareAction = withOrgAdmin(
   async (ctx, id: string, _prevState: EditeazaActualizareState, formData: FormData): Promise<EditeazaActualizareState> => {
+    const t = STRANGERE_FONDURI_UI_DICT[await getLocale()].actiuni;
     const titlu = String(formData.get("titlu") ?? "").trim();
     const continut = String(formData.get("continut") ?? "").trim();
 
     if (!titlu || !continut) {
-      return { error: "Completează titlul și conținutul actualizării." };
+      return { error: t.completeazaTitluContinut };
     }
-    const data = parseazaDataActualizare(formData);
+    const data = parseazaDataActualizare(formData, t.dataInvalida);
     if ("error" in data) return data;
 
     await ctx.db
@@ -335,12 +344,13 @@ export type ImaginePaginaState = { error: string | null; ok: boolean };
 // pentru useri autentificați), sub alt prefix de path decât logo-urile.
 export const actualizeazaImaginePaginaAction = withOrgAdmin(
   async (ctx, pageId: string, _prevState: ImaginePaginaState, formData: FormData): Promise<ImaginePaginaState> => {
+    const t = STRANGERE_FONDURI_UI_DICT[await getLocale()].actiuni;
     const imagine = formData.get("imagine");
     if (!(imagine instanceof File) || imagine.size === 0) {
-      return { error: "Alege o imagine.", ok: false };
+      return { error: t.alegeImagine, ok: false };
     }
     if (imagine.size > 5 * 1024 * 1024) {
-      return { error: "Imaginea e prea mare (max 5MB).", ok: false };
+      return { error: t.imagineMare, ok: false };
     }
 
     const pagina = await ctx.db
@@ -348,11 +358,11 @@ export const actualizeazaImaginePaginaAction = withOrgAdmin(
       .from(fundraisingPages)
       .where(and(eq(fundraisingPages.id, pageId), eq(fundraisingPages.orgId, ctx.orgId)))
       .limit(1);
-    if (!pagina[0]) return { error: "Pagina nu a fost găsită.", ok: false };
+    if (!pagina[0]) return { error: t.paginaNegasita, ok: false };
 
     // Allowlist (fără SVG): extensia vine din tipul acceptat, nu din cel trimis de client.
     const ext = extensieImagine(imagine.type);
-    if (!ext) return { error: "Format neacceptat — folosește PNG, JPG sau WebP.", ok: false };
+    if (!ext) return { error: t.formatNeacceptat, ok: false };
 
     const supabase = await createClient();
     const path = `${ctx.orgSlug}/campanie-${pageId}-${randomUUID()}.${ext}`;
@@ -361,7 +371,7 @@ export const actualizeazaImaginePaginaAction = withOrgAdmin(
       upsert: false,
     });
     if (uploadError) {
-      return { error: "Încărcarea imaginii a eșuat: " + uploadError.message, ok: false };
+      return { error: t.incarcareEsuata(uploadError.message), ok: false };
     }
     const imagineUrl = supabase.storage.from("org-branding").getPublicUrl(path).data.publicUrl;
 
@@ -380,6 +390,7 @@ export type AdaugaDonatieOfflineState = { error: string | null; ok: boolean };
 // de confirmat asincron, deci nimic de așteptat.
 export const adaugaDonatieOfflineAction = withOrgAdmin(
   async (ctx, pageId: string, _prevState: AdaugaDonatieOfflineState, formData: FormData): Promise<AdaugaDonatieOfflineState> => {
+    const t = STRANGERE_FONDURI_UI_DICT[await getLocale()].actiuni;
     const numeDonator = String(formData.get("numeDonator") ?? "").trim().slice(0, 200);
     const emailRaw = String(formData.get("emailDonator") ?? "").trim();
     const telefonDonator = String(formData.get("telefonDonator") ?? "").trim().slice(0, 200);
@@ -388,12 +399,12 @@ export const adaugaDonatieOfflineAction = withOrgAdmin(
     const consimtamantWhatsapp = formData.get("consimtamantWhatsapp") != null;
     const consimtamantEmail = formData.get("consimtamantEmail") != null;
 
-    if (!numeDonator) return { error: "Numele donatorului e obligatoriu.", ok: false };
-    if (!Number.isFinite(suma) || suma < 1) return { error: "Introdu o sumă validă.", ok: false };
+    if (!numeDonator) return { error: t.numeDonatorObligatoriu, ok: false };
+    if (!Number.isFinite(suma) || suma < 1) return { error: t.sumaInvalida, ok: false };
 
     const emailDonator = emailRaw ? normalizeazaEmail(emailRaw) : "";
     if (emailDonator && !EMAIL_RE.test(emailDonator)) {
-      return { error: "Adresa de email nu e validă.", ok: false };
+      return { error: t.emailInvalid, ok: false };
     }
 
     // Cota de persoane fizice — DOAR aici (introducere manuală de admin), NU
@@ -417,7 +428,7 @@ export const adaugaDonatieOfflineAction = withOrgAdmin(
             .where(eq(donatoriReali.orgId, ctx.orgId));
           if (!subCota(donatoriCount, limite.contactePf)) {
             return {
-              error: `Ai atins limita de ${limite.contactePf} persoane fizice a pachetului tău — treci la un pachet mai mare ca să adaugi donatori noi.`,
+              error: t.limitaPersoaneFizice(limite.contactePf),
               ok: false,
             };
           }
@@ -430,7 +441,7 @@ export const adaugaDonatieOfflineAction = withOrgAdmin(
       .from(fundraisingPages)
       .where(and(eq(fundraisingPages.id, pageId), eq(fundraisingPages.orgId, ctx.orgId)))
       .limit(1);
-    if (!pagina[0]) return { error: "Pagina nu a fost găsită.", ok: false };
+    if (!pagina[0]) return { error: t.paginaNegasita, ok: false };
 
     const donationId = randomUUID();
     await ctx.db.insert(fundraisingDonations).values({

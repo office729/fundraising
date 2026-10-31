@@ -5,18 +5,21 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
+import { DONATORI_UI3_DICT } from "@/lib/i18n/dictionaries/donatori-ui-3";
+
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
+import { useLocale } from "../../lib/locale-context";
+import { formatariPf } from "../pf-format";
 
 import { imbinaDonatoriAction, respingeGrupDubluAction, restaureazaDubluriRespinseAction, type DateDubluri, type GrupDublu } from "./actions";
 
-const nr = (n: number) => n.toLocaleString("ro-RO");
-const dataRo = (iso: string) => new Date(iso).toLocaleDateString("ro-RO", { timeZone: "Europe/Bucharest", day: "2-digit", month: "2-digit", year: "numeric" });
-const NUME_MOTIV: Record<string, string> = { email: "aceeași adresă de e-mail (scrisă puțin diferit)", telefon: "același telefon", "nume+localitate": "același nume și aceeași localitate" };
-
 function Grup({ g, orgSlug, poateImbina, laGata }: { g: GrupDublu; orgSlug: string; poateImbina: boolean; laGata: (m: string) => void }) {
   const router = useRouter();
+  const locale = useLocale();
+  const t = DONATORI_UI3_DICT[locale].dubluri;
+  const { nr, data: dataRo } = formatariPf(locale);
   const [pending, startTransition] = useTransition();
   // La „probabil aceeași persoană” e propus donatorul cu cele mai multe donații; la „posibil” alegerea rămâne a omului (nimic ales din oficiu).
   const [pastrat, setPastrat] = useState(g.incredere === "mare" ? g.sugerat : "");
@@ -38,7 +41,7 @@ function Grup({ g, orgSlug, poateImbina, laGata }: { g: GrupDublu; orgSlug: stri
         setEroare(r.eroare);
         return;
       }
-      laGata(`${r.imbinati === 1 ? "Un donator a fost unit" : `${r.imbinati} donatori au fost uniți`} cu ${principal?.nume ?? "donatorul păstrat"}: ${nr(r.donatiiMutate + r.importuriMutate)} donații și ${nr(r.notiteMutate)} notițe au trecut la el.`);
+      laGata(t.unit(r.imbinati, principal?.nume ?? t.donatorulPastrat, nr(r.donatiiMutate + r.importuriMutate), nr(r.notiteMutate)));
       window.scrollTo({ top: 0, behavior: "smooth" });
       router.refresh();
     });
@@ -51,7 +54,7 @@ function Grup({ g, orgSlug, poateImbina, laGata }: { g: GrupDublu; orgSlug: stri
         setEroare(r.eroare);
         return;
       }
-      laGata("Grupul nu va mai fi propus (decât dacă apare în el un donator nou). Nu s-a schimbat nimic la donatori.");
+      laGata(t.grupRespins);
       window.scrollTo({ top: 0, behavior: "smooth" });
       router.refresh();
     });
@@ -60,12 +63,12 @@ function Grup({ g, orgSlug, poateImbina, laGata }: { g: GrupDublu; orgSlug: stri
     <Card>
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <Badge tone={g.incredere === "mare" ? "amber" : "neutral"} icon={false}>
-          {g.incredere === "mare" ? "Probabil aceeași persoană" : "Posibil aceeași persoană"}
+          {g.incredere === "mare" ? t.probabil : t.posibil}
         </Badge>
-        <span className="text-[12.5px] text-[var(--ci-text-muted)]">după {g.motive.map((m) => NUME_MOTIV[m] ?? m).join(", ")}</span>
+        <span className="text-[12.5px] text-[var(--ci-text-muted)]">{t.dupa} {g.motive.map((m) => t.motive[m] ?? m).join(", ")}</span>
       </div>
       <fieldset>
-        <legend className="sr-only">Donatori care par aceeași persoană: alege pe cine păstrezi</legend>
+        <legend className="sr-only">{t.legenda}</legend>
         <ul className="space-y-2">
           {g.membri.map((m) => {
             const esteDePastrat = m.id === pastrat;
@@ -78,7 +81,7 @@ function Grup({ g, orgSlug, poateImbina, laGata }: { g: GrupDublu; orgSlug: stri
                       {m.nume}{" "}
                       {sugerat && (
                         <Badge tone="blue" icon={false}>
-                          sugerat: are cele mai multe donații
+                          {t.sugerat}
                         </Badge>
                       )}
                     </p>
@@ -88,25 +91,25 @@ function Grup({ g, orgSlug, poateImbina, laGata }: { g: GrupDublu; orgSlug: stri
                       {m.localitate ? ` · ${m.localitate}` : ""}
                     </p>
                     <p className="mt-1 flex flex-wrap items-center gap-2 text-[12.5px] text-[var(--ci-text-muted)]">
-                      {nr(m.numarDonatii)} {m.numarDonatii === 1 ? "donație" : "donații"} · {nr(m.totalDonat)} lei · prima {dataRo(m.primaDonatieLa)} · ultima {dataRo(m.ultimaDonatieLa)}
+                      {nr(m.numarDonatii)} {m.numarDonatii === 1 ? t.donatie : t.donatii} · {nr(m.totalDonat)} lei · {t.prima} {dataRo(m.primaDonatieLa)} · {t.ultima} {dataRo(m.ultimaDonatieLa)}
                       {m.dezabonat && (
                         <Badge tone="amber" icon={false}>
-                          dezabonat de la e-mailuri
+                          {t.dezabonat}
                         </Badge>
                       )}
                       {m.abonamentActiv && (
                         <Badge tone="blue" icon={false}>
-                          donație lunară activă
+                          {t.lunaraActiva}
                         </Badge>
                       )}
                     </p>
                     {m.abonamentActiv && poateImbina && !esteDePastrat && (
                       <p className="mt-1 flex items-start gap-1.5 text-[12.5px] text-[#7a3e00]">
-                        <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden /> Nu poate fi unit cât timp are donație lunară activă: următoarea plată ar recrea donatorul. Oprește abonamentul din Stripe, apoi revino.
+                        <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden /> {t.blocat}
                       </p>
                     )}
                     <Link href={`/${orgSlug}/crm/donatori/${m.id}`} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex min-h-9 items-center text-[12.5px] font-semibold text-[var(--ci-primary)] underline">
-                      Deschide fișa donatorului (într-o filă nouă)
+                      {t.deschideFisa}
                     </Link>
                   </div>
                   {poateImbina && (
@@ -116,7 +119,7 @@ function Grup({ g, orgSlug, poateImbina, laGata }: { g: GrupDublu; orgSlug: stri
                           type="radio"
                           name={`pastrat-${g.membri[0].id}`}
                           className="size-5"
-                          aria-label={`Păstrează pe ${m.nume} (${m.email})`}
+                          aria-label={t.pastreazaAria(m.nume, m.email)}
                           checked={esteDePastrat}
                           onChange={() => {
                             setPastrat(m.id);
@@ -124,14 +127,14 @@ function Grup({ g, orgSlug, poateImbina, laGata }: { g: GrupDublu; orgSlug: stri
                             setConfirma(false);
                           }}
                         />
-                        Păstrează acesta
+                        {t.pastreazaAcesta}
                       </label>
                       {!pereche && !esteDePastrat && pastrat !== "" && (
                         <label className="flex min-h-11 cursor-pointer items-center gap-2">
                           <input
                             type="checkbox"
                             className="size-5"
-                            aria-label={`Unește pe ${m.nume} (${m.email}) cu donatorul păstrat`}
+                            aria-label={t.uneste(m.nume, m.email)}
                             checked={bifati.has(m.id)}
                             onChange={(e) => {
                               setBifati((s) => {
@@ -143,7 +146,7 @@ function Grup({ g, orgSlug, poateImbina, laGata }: { g: GrupDublu; orgSlug: stri
                               setConfirma(false);
                             }}
                           />
-                          Unește cu cel păstrat
+                          {t.unesteCuCel}
                         </label>
                       )}
                     </div>
@@ -165,36 +168,36 @@ function Grup({ g, orgSlug, poateImbina, laGata }: { g: GrupDublu; orgSlug: stri
           {!confirma ? (
             <div className="flex flex-wrap items-center gap-2">
               <Button variant="primary" className="min-h-11" disabled={secundari.length === 0 || pastrat === "" || blocati.length > 0 || pending} onClick={() => setConfirma(true)}>
-                {pastrat === "" ? "Alege mai întâi pe cine păstrezi" : secundari.length === 0 ? "Bifează donatorii de unit" : `Unește ${secundari.length} ${secundari.length === 1 ? "donator" : "donatori"} în ${principal?.nume ?? ""}`}
+                {pastrat === "" ? t.alegeMaiIntai : secundari.length === 0 ? t.bifeaza : t.unesteN(secundari.length, principal?.nume ?? "")}
               </Button>
               <Button className="min-h-11" loading={pending} disabled={pending} onClick={persoaneDiferite}>
-                Sunt persoane diferite
+                {t.suntDiferite}
               </Button>
             </div>
           ) : (
-            <div role="group" aria-label="Confirmă unirea" className="rounded-lg bg-[var(--ci-surface-2)] p-3 text-[13px] text-[var(--ci-text)]">
-              <p className="font-semibold">Nu se poate anula. Confirmi unirea?</p>
+            <div role="group" aria-label={t.confirmaAria} className="rounded-lg bg-[var(--ci-surface-2)] p-3 text-[13px] text-[var(--ci-text)]">
+              <p className="font-semibold">{t.confirmaTitlu}</p>
               <ul className="mt-1.5 list-disc space-y-1 pl-5 text-[12.5px]">
                 <li>
-                  Rămâne: <strong>{principal?.nume}</strong> ({principal?.email}). Dispar din listă: {secundari.map((m) => `${m.nume} (${m.email})`).join("; ")}.
+                  {t.ramane} <strong>{principal?.nume}</strong> ({principal?.email}). {t.dispar} {secundari.map((m) => `${m.nume} (${m.email})`).join("; ")}.
                 </li>
-                <li>Donațiile, importurile și notițele lor trec la donatorul păstrat; telefonul, localitatea și județul lipsă se completează. Adresele vechi nu se păstrează: o donație nouă făcută cu una dintre ele ar crea din nou un donator separat.</li>
-                <li>Acordul pentru e-mailuri nu se mută de pe o adresă pe alta: dacă ai ales un donator care n-a fost întrebat, rămâne „necunoscut”, chiar dacă celălalt a bifat. Refuzul sau dezabonarea oricăruia rămâne valabilă.</li>
-                <li>Se înregistrează în jurnal (fără datele personale ale celor uniți).</li>
+                <li>{t.confirma1}</li>
+                <li>{t.confirma2}</li>
+                <li>{t.confirma3}</li>
               </ul>
               <div className="mt-3 flex gap-2">
                 <Button variant="danger" className="min-h-11" loading={pending} onClick={imbina}>
-                  Da, unește
+                  {t.daUneste}
                 </Button>
                 <Button className="min-h-11" disabled={pending} onClick={() => setConfirma(false)}>
-                  Renunță
+                  {t.renunta}
                 </Button>
               </div>
             </div>
           )}
         </div>
       ) : (
-        <p className="mt-3 text-[12.5px] text-[var(--ci-text-muted)]">Doar un administrator poate uni donatori.</p>
+        <p className="mt-3 text-[12.5px] text-[var(--ci-text-muted)]">{t.doarAdmin}</p>
       )}
     </Card>
   );
@@ -202,6 +205,8 @@ function Grup({ g, orgSlug, poateImbina, laGata }: { g: GrupDublu; orgSlug: stri
 
 export function DubluriClient({ orgSlug, date }: { orgSlug: string; date: DateDubluri }) {
   const router = useRouter();
+  const locale = useLocale();
+  const t = DONATORI_UI3_DICT[locale].dubluri;
   const [mesaj, setMesaj] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   return (
@@ -214,13 +219,13 @@ export function DubluriClient({ orgSlug, date }: { orgSlug: string; date: DateDu
       {date.grupuri.length === 0 ? (
         <Card>
           <p className="text-center text-[13px] text-[var(--ci-text-muted)]">
-            Totul e în ordine: nu există donatori care par aceeași persoană. Pagina verifică din nou de fiecare dată când o deschizi: după adresa de e-mail, telefon și nume cu localitate.
+            {t.totulOk}
           </p>
         </Card>
       ) : (
         <>
           <p className="text-[13px] text-[var(--ci-text-muted)]">
-            {nr(date.total)} {date.total === 1 ? "grup" : "grupuri"} de verificat{date.total > date.grupuri.length ? ` (se arată primele ${nr(date.grupuri.length)}, cele mai sigure întâi)` : ""}.
+            {t.deVerificat(date.total, date.total > date.grupuri.length ? date.grupuri.length : null)}
           </p>
           {date.grupuri.map((g) => (
             <Grup key={g.membri.map((m) => m.id).join("-")} g={g} orgSlug={orgSlug} poateImbina={date.poateImbina} laGata={setMesaj} />
@@ -229,7 +234,7 @@ export function DubluriClient({ orgSlug, date }: { orgSlug: string; date: DateDu
       )}
       {date.ignorate > 0 && date.poateImbina && (
         <p className="text-[12.5px] text-[var(--ci-text-muted)]">
-          {nr(date.ignorate)} {date.ignorate === 1 ? "grup marcat" : "grupuri marcate"} „Sunt persoane diferite”.{" "}
+          {t.ignorate(date.ignorate)}{" "}
           <button
             type="button"
             className="min-h-9 font-semibold text-[var(--ci-primary)] underline disabled:opacity-50"
@@ -237,12 +242,12 @@ export function DubluriClient({ orgSlug, date }: { orgSlug: string; date: DateDu
             onClick={() =>
               startTransition(async () => {
                 const r = await restaureazaDubluriRespinseAction(orgSlug);
-                setMesaj(r.ok ? "Grupurile ignorate vor fi propuse din nou." : r.eroare);
+                setMesaj(r.ok ? t.restaurate : r.eroare);
                 if (r.ok) router.refresh();
               })
             }
           >
-            Afișează-le din nou
+            {t.afiseazaDinNou}
           </button>
         </p>
       )}

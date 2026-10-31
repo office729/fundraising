@@ -19,6 +19,7 @@ const PRIORITATE_TONE = { mare: "red", medie: "amber", mica: "neutral" } as cons
 // traseu orizontal de etape (gen hartă/potecă), nu un tabel de rânduri.
 export function NaturalAncoratDashboard({
   base,
+  locale,
   dict,
   domeniu,
   kpis,
@@ -29,6 +30,7 @@ export function NaturalAncoratDashboard({
   apeluriReale,
   prioritateLabels,
 }: DashboardData) {
+  const fmtSuma = (v: number) => formatSuma(v, "RON", locale);
   const totalKpi = kpis[0];
   const restKpi = kpis.slice(1);
   const itemLabel = domeniu ? CAMPAIGN_TEMPLATES[domeniu].itemLabel : undefined;
@@ -38,15 +40,16 @@ export function NaturalAncoratDashboard({
       <Card className="flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between">
         {totalKpi && (
           <ImpactBadge
-            value={totalKpi.unitate === "count" ? String(Math.round(totalKpi.valoare)) : formatSuma(totalKpi.valoare)}
+            value={totalKpi.unitate === "count" ? String(Math.round(totalKpi.valoare)) : fmtSuma(totalKpi.valoare)}
             label={totalKpi.label}
+            heading={dict.impactTotal}
           />
         )}
         <div className="flex flex-wrap gap-4">
           {restKpi.map((k) => (
             <Link prefetch={false} key={k.key} href={`${base}/${k.href}`} className="text-center">
               <p className="ci-display ci-tabular text-lg font-bold text-[var(--ci-text)]">
-                {k.unitate === "count" ? Math.round(k.valoare) : k.unitate === "percent" ? `${Math.round(k.valoare)}%` : formatSuma(k.valoare)}
+                {k.unitate === "count" ? Math.round(k.valoare) : k.unitate === "percent" ? `${Math.round(k.valoare)}%` : fmtSuma(k.valoare)}
               </p>
               <p className="text-[11px] text-[var(--ci-text-muted)]">{k.label}</p>
             </Link>
@@ -99,7 +102,7 @@ export function NaturalAncoratDashboard({
                 <ProgressBar value={pct} tone={b.statusCampanie === "urgenta" ? "primary" : "blue"} />
                 <div className="mt-2 flex items-center justify-between text-[12px] text-[var(--ci-text-muted)]">
                   <span className="ci-tabular">
-                    {formatSuma(b.sumaStransa)} {dict.proiecte.din} {formatSuma(b.obiectiv)}
+                    {fmtSuma(b.sumaStransa)} {dict.proiecte.din} {fmtSuma(b.obiectiv)}
                   </span>
                   <span className="ci-tabular font-medium text-[var(--ci-text)]">{pct}%</span>
                 </div>
@@ -118,7 +121,7 @@ export function NaturalAncoratDashboard({
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[13px] font-medium text-[var(--ci-text)]">{a.motiv}</p>
                 <p className="mt-0.5 text-[12px] text-[var(--ci-text-muted)]">
-                  {a.responsabil} · termen {formatDataRelativa(a.termen)}
+                  {a.responsabil} · {dict.due} {formatDataRelativa(a.termen, locale)}
                 </p>
               </div>
               <Link prefetch={false}
@@ -141,7 +144,7 @@ export function NaturalAncoratDashboard({
                 <CartesianGrid stroke="var(--ci-border)" vertical={false} />
                 <XAxis dataKey="label" tick={{ fontSize: 12, fill: "var(--ci-text-muted)" }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: "var(--ci-text-muted)" }} axisLine={false} tickLine={false} width={40} />
-                <RTooltip formatter={(v) => formatSuma(Number(v))} contentStyle={{ borderRadius: 8, border: "1px solid var(--ci-border)", fontSize: 12 }} />
+                <RTooltip formatter={(v) => fmtSuma(Number(v))} contentStyle={{ borderRadius: 8, border: "1px solid var(--ci-border)", fontSize: 12 }} />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
                 <Bar dataKey="pf" name={dict.donationChart.pf} stackId="a" fill="var(--ci-primary)" radius={[0, 0, 0, 0]} />
                 <Bar dataKey="pj" name={dict.donationChart.pj} stackId="a" fill="#8a7048" radius={[0, 0, 0, 0]} />

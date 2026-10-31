@@ -3,6 +3,7 @@
 import { Download, Trash2, Upload } from "lucide-react";
 import { useState } from "react";
 
+import { COMPONENTE_UI_DICT } from "@/lib/i18n/dictionaries/componente-ui";
 import { INSTRUMENTE_DICT } from "@/lib/i18n/dictionaries/instrumente";
 
 import { downloadCsv, toCsv } from "../lib/export-csv";
@@ -35,6 +36,7 @@ type Confirm = "ultimul" | "tot" | null;
 export function ImportExportPanel({ tip }: { tip: Tip }) {
   const locale = useLocale();
   const dict = INSTRUMENTE_DICT[locale].index;
+  const t = COMPONENTE_UI_DICT[locale].panel;
   const pf = tip === "donatori";
   const donatori = useDonatori();
   const companii = useCompanii();
@@ -76,15 +78,12 @@ export function ImportExportPanel({ tip }: { tip: Tip }) {
     setConfirm(null);
   }
 
-  const nume = pf ? "persoane fizice" : "companii";
-  const mesaj =
-    confirm === "ultimul"
-      ? `Ești sigur că vrei să ștergi ultimul fișier importat (${ultimulLot} ${nume})? Datele din setul demonstrativ nu sunt afectate.`
-      : `Ești sigur că vrei să ștergi toată baza de date importată (${importate.length} ${nume})? Datele din setul demonstrativ nu sunt afectate.`;
+  const nume = pf ? t.numePf : t.numePj;
+  const mesaj = confirm === "ultimul" ? t.confirmUltimul(ultimulLot, nume) : t.confirmTot(importate.length, nume);
 
   return (
     <Card>
-      <CardHeader title={`Import / export — ${pf ? "persoane fizice" : "persoane juridice"}`} subtitle={dict.import.subtitle} />
+      <CardHeader title={t.titlu(pf)} subtitle={dict.import.subtitle} />
       <div className="grid gap-3 sm:grid-cols-2">
         <PanelButton icon={Upload} label={pf ? dict.import.importaPF : dict.import.importaPJ} sub={pf ? dict.import.donatori : dict.import.companii} onClick={() => setImportOpen(true)} />
         <PanelButton
@@ -96,23 +95,23 @@ export function ImportExportPanel({ tip }: { tip: Tip }) {
       </div>
       <div className="mt-4 grid gap-3 border-t border-[var(--ci-border)] pt-4 sm:grid-cols-2">
         <Button variant="secondary" onClick={() => setConfirm("ultimul")} disabled={!importate.length}>
-          <Trash2 className="h-3.5 w-3.5" /> Șterge ultimul fișier importat{importate.length ? ` (${ultimulLot})` : ""}
+          <Trash2 className="h-3.5 w-3.5" /> {t.stergeUltimul}{importate.length ? ` (${ultimulLot})` : ""}
         </Button>
         <Button variant="primary" onClick={() => setConfirm("tot")} disabled={!importate.length}>
-          <Trash2 className="h-3.5 w-3.5" /> Șterge toată baza importată ({importate.length})
+          <Trash2 className="h-3.5 w-3.5" /> {t.stergeTot} ({importate.length})
         </Button>
       </div>
 
       {importOpen && <ImportDialog open onClose={() => setImportOpen(false)} tip={tip} />}
 
-      <Dialog open={confirm !== null} onClose={() => setConfirm(null)} title="Confirmă ștergerea" width="max-w-md">
+      <Dialog open={confirm !== null} onClose={() => setConfirm(null)} title={t.confirmaTitlu} width="max-w-md">
         <p className="text-[13px] text-[var(--ci-text)]">{mesaj}</p>
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="secondary" onClick={() => setConfirm(null)}>
-            Nu
+            {t.nu}
           </Button>
           <Button variant="danger" onClick={executa}>
-            Da, șterge
+            {t.daSterge}
           </Button>
         </div>
       </Dialog>

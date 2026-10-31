@@ -150,7 +150,7 @@ export function DashboardAcasa({ orgSlug, previzualizare = false }: { orgSlug: s
 
   const kpis = dashboardKpis(perioada, locale);
   const actiuni = centruDeActiuni(taskuriLive, locale);
-  const evolutie = lunarEvolutie();
+  const evolutie = lunarEvolutie(locale);
   const BENEFICIARI = useBeneficiari();
   const campaniiActive = BENEFICIARI.filter((b) => b.statusCampanie !== "finalizata");
   const COMPANII = useCompanii();
@@ -171,6 +171,7 @@ export function DashboardAcasa({ orgSlug, previzualizare = false }: { orgSlug: s
 
   const dashboardData: DashboardData = {
     base,
+    locale,
     dict,
     domeniu,
     kpis,

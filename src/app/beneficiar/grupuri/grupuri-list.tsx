@@ -1,15 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import type { Locale } from "@/lib/i18n/config";
+import { BENEFICIAR_PORTAL_UI_DICT } from "@/lib/i18n/dictionaries/beneficiar-portal-ui";
 import { urlWebSigur } from "@/lib/validation";
 
 import { marcheazaPublicatGrupAction } from "../actions";
 
 export type GroupRow = { id: string; nume: string; platforma: "facebook" | "whatsapp" | "altul"; link: string; localitate: string | null };
 
-const PLATFORMA_LABEL: Record<GroupRow["platforma"], string> = { facebook: "Facebook", whatsapp: "WhatsApp", altul: "Altul" };
-
-export function GrupuriList({ grupuri, publicateIds }: { grupuri: GroupRow[]; publicateIds: string[] }) {
+export function GrupuriList({ grupuri, publicateIds, locale }: { grupuri: GroupRow[]; publicateIds: string[]; locale: Locale }) {
+  const t = BENEFICIAR_PORTAL_UI_DICT[locale].grupuri;
   const [publicate, setPublicate] = useState<string[]>(publicateIds);
   const [pending, setPending] = useState<string | null>(null);
 
@@ -32,19 +33,19 @@ export function GrupuriList({ grupuri, publicateIds }: { grupuri: GroupRow[]; pu
                   {g.nume}
                 </a>
                 <p className="mt-0.5 text-[12px] text-muted-2">
-                  {PLATFORMA_LABEL[g.platforma]}
+                  {t.platforme[g.platforma]}
                   {g.localitate ? ` · ${g.localitate}` : ""}
                 </p>
               </div>
               {done ? (
-                <span className="rounded-full bg-brand-green-soft px-2.5 py-1 text-[12px] font-medium text-brand-green">Am publicat</span>
+                <span className="rounded-full bg-brand-green-soft px-2.5 py-1 text-[12px] font-medium text-brand-green">{t.amPublicat}</span>
               ) : (
                 <button
                   onClick={() => marcheaza(g.id)}
                   disabled={pending === g.id}
                   className="rounded-lg border border-line bg-panel px-3 py-1.5 text-[12.5px] font-medium text-ink hover:bg-panel-2 disabled:opacity-50"
                 >
-                  {pending === g.id ? "Se salvează..." : "Am publicat"}
+                  {pending === g.id ? t.seSalveaza : t.amPublicat}
                 </button>
               )}
             </div>

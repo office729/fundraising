@@ -11,6 +11,9 @@ import {
 import { ArrowDown, ArrowUp, ArrowUpDown, SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
 
+import { COMPONENTE_UI_DICT } from "@/lib/i18n/dictionaries/componente-ui";
+
+import { useLocale } from "../lib/locale-context";
 import { DropdownItem, DropdownMenu } from "./ui/dropdown-menu";
 import { Pagination } from "./ui/pagination";
 import { Skeleton } from "./ui/states";
@@ -33,6 +36,7 @@ export function DataTable<T>({
   pageSize?: number;
   loading?: boolean;
 }) {
+  const t = COMPONENTE_UI_DICT[useLocale()].dataTable;
   const [sorting, setSorting] = useState<SortingState>([]);
   const [hidden, setHidden] = useState<Record<string, boolean>>({});
   const [page, setPage] = useState(1);
@@ -68,7 +72,7 @@ export function DataTable<T>({
           align="end"
           trigger={
             <button className="inline-flex h-8 items-center gap-1.5 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-2.5 text-[12px] font-medium text-[var(--ci-text-muted)] transition-colors hover:bg-[var(--ci-surface-2)]">
-              <SlidersHorizontal className="h-3.5 w-3.5" /> Coloane
+              <SlidersHorizontal className="h-3.5 w-3.5" /> {t.coloane}
             </button>
           }
         >
@@ -86,7 +90,7 @@ export function DataTable<T>({
                 </DropdownItem>
               ))}
               <div className="border-t border-[var(--ci-border)] mt-1 pt-1">
-                <DropdownItem onClick={close}>Închide</DropdownItem>
+                <DropdownItem onClick={close}>{t.inchide}</DropdownItem>
               </div>
             </>
           )}

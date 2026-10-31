@@ -6,6 +6,8 @@ import { redirect } from "next/navigation";
 import { getAuthUser } from "@/lib/auth/dal";
 import { idUtilizatorDupaEmail, opreNotificare, reiaNotificare, esteTipNotificare } from "@/lib/notificari-oprite";
 import { db } from "@/lib/db";
+import { CONT_UI_DICT } from "@/lib/i18n/dictionaries/cont-ui";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { raporteazaEroare } from "@/lib/monitoring";
 import { createClient } from "@/lib/supabase/server";
 
@@ -15,16 +17,17 @@ export type StergeContState = { error: string | null };
 export async function seteazaNotificareAction(tip: string, activ: boolean): Promise<{ ok: true } | { ok: false; eroare: string }> {
   const user = await getAuthUser();
   if (!user?.email) redirect("/login");
-  if (!esteTipNotificare(tip)) return { ok: false, eroare: "Tip de notificare necunoscut." };
+  const e = CONT_UI_DICT[await getLocale()].erori;
+  if (!esteTipNotificare(tip)) return { ok: false, eroare: e.tipNecunoscut };
   try {
     const id = await idUtilizatorDupaEmail(user.email);
-    if (!id) return { ok: false, eroare: "Contul nu a fost găsit." };
+    if (!id) return { ok: false, eroare: e.contNegasit };
     if (activ) await reiaNotificare(id, tip);
     else await opreNotificare(id, tip);
     return { ok: true };
-  } catch (e) {
-    raporteazaEroare("cont-notificari", e);
-    return { ok: false, eroare: "Nu am putut salva alegerea. Încearcă din nou." };
+  } catch (err) {
+    raporteazaEroare("cont-notificari", err);
+    return { ok: false, eroare: e.nuSalvat };
   }
 }
 
@@ -36,9 +39,10 @@ export async function stergeContulMeuAction(_prev: StergeContState, formData: Fo
   const user = await getAuthUser();
   if (!user?.email) redirect("/login");
   const email = user.email.toLowerCase();
+  const er = CONT_UI_DICT[await getLocale()].erori;
 
   const confirmare = String(formData.get("confirmare") ?? "").trim().toLowerCase();
-  if (confirmare !== email) return { error: "Scrie exact adresa de email a contului pentru a confirma ștergerea." };
+  if (confirmare !== email) return { error: er.confirmareGresita };
 
   try {
     await db.transaction(async (tx) => {
@@ -58,13 +62,10 @@ export async function stergeContulMeuAction(_prev: StergeContState, formData: Fo
   } catch (e) {
     const mesaj = e instanceof Error ? e.message : "";
     if (mesaj.includes("unic_owner")) {
-      return {
-        error:
-          "Ești singurul owner al uneia sau mai multor organizații. Predă rolul de owner altcuiva sau șterge organizația (Setări → Date și ștergerea organizației), apoi încearcă din nou.",
-      };
+      return { error: er.unicOwner };
     }
     raporteazaEroare("stergere-cont", e);
-    return { error: "Nu am putut șterge contul. Încearcă din nou sau scrie-ne la vlad.placinta@alexandrit.ro." };
+    return { error: er.nuSters };
   }
 
   // Contul Supabase Auth a fost șters; închidem și sesiunea din acest browser.

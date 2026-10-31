@@ -2,6 +2,8 @@ import Link from "next/link";
 
 import { requireOrgAccess } from "@/lib/auth/guard";
 import { variantaPagina } from "@/lib/personalizare-org";
+import { getLocale } from "@/lib/i18n/get-locale";
+import { DECIDENTI_UI_DICT } from "@/lib/i18n/dictionaries/decidenti-ui";
 
 import { personalizareEfectiva } from "../personalizare-efectiva";
 import { coadaAzi, deAprobat, firmeDeCautat, getStatisticaDecidenti, urmarireLinkedin } from "./actions";
@@ -17,6 +19,8 @@ const unu = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) 
 export default async function DecidentiPage({ params, searchParams }: { params: Promise<{ orgSlug: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { orgSlug } = await params;
   const access = await requireOrgAccess(orgSlug);
+  const locale = await getLocale();
+  const ui = DECIDENTI_UI_DICT[locale].pagina;
   const sp = await searchParams;
   const tab = unu(sp.tab) === "aprobare" ? "aprobare" : unu(sp.tab) === "masa" ? "masa" : unu(sp.tab) === "linkedin" ? "linkedin" : "azi";
   const toate = unu(sp.al) === "toate";
@@ -34,21 +38,21 @@ export default async function DecidentiPage({ params, searchParams }: { params: 
   const scadente = coada ? coada.rows.filter((r) => !r.urmatorPasLa || r.urmatorPasLa <= coada.azi).length : 0;
 
   const tabs = [
-    { k: "azi", eticheta: "De contactat azi", n: coada ? scadente : null, href: `/${orgSlug}/crm/decidenti` },
-    { k: "aprobare", eticheta: "De aprobat", n: aprobare ? aprobare.rows.length : null, href: `/${orgSlug}/crm/decidenti?tab=aprobare` },
-    { k: "masa", eticheta: "Căutare în masă", n: null, href: `/${orgSlug}/crm/decidenti?tab=masa` },
-    { k: "linkedin", eticheta: "LinkedIn", n: null, href: `/${orgSlug}/crm/decidenti?tab=linkedin` },
+    { k: "azi", eticheta: ui.taburi.azi, n: coada ? scadente : null, href: `/${orgSlug}/crm/decidenti` },
+    { k: "aprobare", eticheta: ui.taburi.aprobare, n: aprobare ? aprobare.rows.length : null, href: `/${orgSlug}/crm/decidenti?tab=aprobare` },
+    { k: "masa", eticheta: ui.taburi.masa, n: null, href: `/${orgSlug}/crm/decidenti?tab=masa` },
+    { k: "linkedin", eticheta: ui.taburi.linkedin, n: null, href: `/${orgSlug}/crm/decidenti?tab=linkedin` },
   ] as const;
 
   return (
     <div className="mx-auto max-w-[1100px] space-y-4">
       <div>
-        <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">Decidenți</h1>
+        <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">{ui.titlu}</h1>
         <p className="mt-0.5 max-w-3xl text-[13px] text-[var(--ci-text-muted)]">
-          Persoanele care decid sponsorizările în firmele tale: de la găsire, la aprobare, la primul contact și urmărire. Căutarea individuală se face de pe fișa fiecărei firme.
+          {ui.descriere}
         </p>
       </div>
-      <nav aria-label="Secțiuni" className="flex flex-wrap gap-1.5 border-b border-[var(--ci-border)] pb-2">
+      <nav aria-label={ui.navAria} className="flex flex-wrap gap-1.5 border-b border-[var(--ci-border)] pb-2">
         {tabs.map((t) => (
           <Link
             key={t.k}
@@ -67,7 +71,7 @@ export default async function DecidentiPage({ params, searchParams }: { params: 
           <CoadaAzi orgSlug={orgSlug} date={coada} toate={toate} />
         ) : (
           <p role="alert" className="rounded-lg bg-[var(--ci-red-soft)] px-3 py-2 text-[13px] text-[#9b1c1c]">
-            Nu am putut încărca lista. Reîncarcă pagina.
+            {ui.eroareLista}
           </p>
         ))}
       {tab === "aprobare" &&
@@ -75,15 +79,15 @@ export default async function DecidentiPage({ params, searchParams }: { params: 
           <DeAprobatGlobal orgSlug={orgSlug} date={aprobare} />
         ) : (
           <p role="alert" className="rounded-lg bg-[var(--ci-red-soft)] px-3 py-2 text-[13px] text-[#9b1c1c]">
-            Nu am putut încărca lista. Reîncarcă pagina.
+            {ui.eroareLista}
           </p>
         ))}
       {tab === "linkedin" &&
         (linkedin ? (
-          <UrmarireLinkedin orgSlug={orgSlug} palnie={linkedin.palnie} liste={linkedin.liste} />
+          <UrmarireLinkedin orgSlug={orgSlug} locale={locale} palnie={linkedin.palnie} liste={linkedin.liste} />
         ) : (
           <p role="alert" className="rounded-lg bg-[var(--ci-red-soft)] px-3 py-2 text-[13px] text-[#9b1c1c]">
-            Nu am putut încărca datele. Reîncarcă pagina.
+            {ui.eroareDate}
           </p>
         ))}
       {tab === "masa" &&
@@ -91,7 +95,7 @@ export default async function DecidentiPage({ params, searchParams }: { params: 
           <CautareMasa key={benzi} orgSlug={orgSlug} date={masa} benzi={benzi} />
         ) : (
           <p role="alert" className="rounded-lg bg-[var(--ci-red-soft)] px-3 py-2 text-[13px] text-[#9b1c1c]">
-            Nu am putut încărca firmele. Reîncarcă pagina.
+            {ui.eroareFirme}
           </p>
         ))}
       {etape && <GraficDecidenti etape={etape} />}

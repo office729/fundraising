@@ -3,27 +3,22 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { NotaCrm } from "../components/nota-crm";
+import { DONATORI_UI_DICT } from "@/lib/i18n/dictionaries/donatori-ui";
 
-const FILE = [
-  { sub: "", label: "Donatori" },
-  { sub: "/acasa", label: "Acasă" },
-  { sub: "/proiecte", label: "Proiecte" },
-  { sub: "/rapoarte", label: "Rapoarte" },
-  { sub: "/analize", label: "Analize" },
-  { sub: "/importuri", label: "Importuri" },
-  { sub: "/dubluri", label: "Dubluri" },
-  { sub: "/parcursuri", label: "Parcursuri" },
-];
+import { NotaCrm } from "../components/nota-crm";
+import { useLocale } from "../lib/locale-context";
+
+const FILE = [{ sub: "" }, { sub: "/acasa" }, { sub: "/proiecte" }, { sub: "/rapoarte" }, { sub: "/analize" }, { sub: "/importuri" }, { sub: "/dubluri" }, { sub: "/parcursuri" }];
 
 // Vederile CRM Persoane fizice: lista, tabloul de bord, raportul pe proiecte, rapoartele salvate, analizele și importurile.
 export function PfNav({ orgSlug }: { orgSlug: string }) {
   const pathname = usePathname() ?? "";
+  const dict = DONATORI_UI_DICT[useLocale()].nav;
   const baza = `/${orgSlug}/crm/donatori`;
   return (
     <>
     <NotaCrm id="persoane-fizice" />
-    <nav aria-label="Vederi persoane fizice" className="ci-scrollbar flex gap-1 overflow-x-auto rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-1">
+    <nav aria-label={dict.aria} className="ci-scrollbar flex gap-1 overflow-x-auto rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-1">
       {FILE.map((t) => {
         const href = `${baza}${t.sub}`;
         const activ = t.sub === "" ? pathname === baza : pathname.startsWith(href);
@@ -37,7 +32,7 @@ export function PfNav({ orgSlug }: { orgSlug: string }) {
               activ ? "bg-[var(--ci-primary)] text-white" : "text-[var(--ci-text-muted)] hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)]"
             }`}
           >
-            {t.label}
+            {dict.tabs[t.sub]}
           </Link>
         );
       })}

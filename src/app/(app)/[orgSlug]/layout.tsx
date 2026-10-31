@@ -158,7 +158,7 @@ export default async function OrgLayout({
               <Link prefetch={false}
                 href="/platform-admin"
                 className="text-[13px] font-medium text-muted transition hover:text-brand-blue"
-                title="Doar contul platformei"
+                title={locale === "ro" ? "Doar contul platformei" : "Platform account only"}
               >
                 DB
               </Link>

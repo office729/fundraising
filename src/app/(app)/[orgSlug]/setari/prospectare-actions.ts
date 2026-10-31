@@ -9,6 +9,7 @@ import { prospectareChei, prospectareJurnal, prospectareSuprimati } from "@/lib/
 import { EroareUtilizator, mesajSigur } from "@/lib/erori";
 import { apolloValideaza, CONECTORI, curataMesaj, hunterValideaza, lushaValideaza, NUME_CONECTOR, prospeoValideaza, waalaxyListe, waalaxyValideaza, type Conector, type ElementWaalaxy, type Rezultat } from "@/lib/prospectare/motor";
 import { criptareConfigurata, cripteaza, decripteaza } from "@/lib/secret-box";
+import { getTr } from "@/lib/i18n/tr-server";
 
 // Cheile PROPRII ale organizației la Lusha, Apollo, Prospeo, Hunter și Waalaxy (pachetul IMPACT). Se salvează criptat (AES-256-GCM) și nu se mai afișează niciodată;
 // rămâne doar o amprentă (ultimele caractere). Doar owner și administratorii le gestionează. Costurile pentru apeluri sunt în contul organizației la furnizor.
@@ -78,21 +79,25 @@ const salveaza = withOrgFaze<[string, string], { furnizor: Conector; cheie: stri
   admin: true,
   opts: OPTIUNI,
   pregateste: async (_ctx, furnizor, cheie) => {
-    if (!eConector(furnizor)) throw new EroareUtilizator("Furnizor necunoscut.");
+    const t = await getTr();
+    if (!eConector(furnizor)) throw new EroareUtilizator(t("Furnizor necunoscut.", "Unknown provider."));
     const curata = String(cheie ?? "").trim();
-    if (!RE_CHEIE.test(curata)) throw new EroareUtilizator("Cheia pare incompletă sau are caractere nepermise. Copiază-o din contul tău la instrument, fără spații.");
-    if (!criptareConfigurata()) throw new EroareUtilizator("Salvarea cheilor nu e activată pe această platformă (lipsește cheia de criptare). Scrie-ne ca s-o activăm.");
+    if (!RE_CHEIE.test(curata)) throw new EroareUtilizator(t("Cheia pare incompletă sau are caractere nepermise. Copiază-o din contul tău la instrument, fără spații.", "The key looks incomplete or has disallowed characters. Copy it from your account at the tool, without spaces."));
+    if (!criptareConfigurata()) throw new EroareUtilizator(t("Salvarea cheilor nu e activată pe această platformă (lipsește cheia de criptare). Scrie-ne ca s-o activăm.", "Saving keys is not enabled on this platform (the encryption key is missing). Write to us so we can enable it."));
     return { pregatit: { furnizor, cheie: curata } };
   },
   extern: async (p) => {
     const r = await VALIDATORI[p.furnizor](p.cheie, fetch);
     if (r.ok) return { ok: true };
     // Cheia respinsă: mesaj despre ce se poate verifica (nu trimite înapoi în Setări, unde e deja utilizatorul).
-    if (r.status === 401 || r.status === 403) return { ok: false, eroare: `${NUME_CONECTOR[p.furnizor]} nu a acceptat cheia. Verifică să fi copiat-o întreagă, fără spații, și că planul tău ${NUME_CONECTOR[p.furnizor]} include accesul API.` };
+    if (r.status === 401 || r.status === 403) {
+      const t = await getTr();
+      return { ok: false, eroare: t(`${NUME_CONECTOR[p.furnizor]} nu a acceptat cheia. Verifică să fi copiat-o întreagă, fără spații, și că planul tău ${NUME_CONECTOR[p.furnizor]} include accesul API.`, `${NUME_CONECTOR[p.furnizor]} did not accept the key. Check that you copied all of it, without spaces, and that your ${NUME_CONECTOR[p.furnizor]} plan includes API access.`) };
+    }
     return { ok: false, eroare: curataMesaj(r.eroare, [p.cheie]) };
   },
   salveaza: async (ctx, p, rezultat) => {
-    if (!rezultat.ok) throw new EroareUtilizator(rezultat.eroare ?? "Cheia nu a putut fi verificată.");
+    if (!rezultat.ok) throw new EroareUtilizator(rezultat.eroare ?? (await getTr())("Cheia nu a putut fi verificată.", "The key could not be verified."));
     // O cheie nouă pentru același conector pornește de la zero alegerile (lista/campania Waalaxy aparțineau contului vechi).
     await ctx.db
       .insert(prospectareChei)
@@ -105,7 +110,7 @@ const salveaza = withOrgFaze<[string, string], { furnizor: Conector; cheie: stri
 
 const sterge = withOrgAdmin(
   async (ctx, furnizor: string): Promise<void> => {
-    if (!eConector(furnizor)) throw new EroareUtilizator("Furnizor necunoscut.");
+    if (!eConector(furnizor)) throw new EroareUtilizator((await getTr())("Furnizor necunoscut.", "Unknown provider."));
     await ctx.db.delete(prospectareChei).where(and(eq(prospectareChei.orgId, ctx.orgId), eq(prospectareChei.provider, furnizor)));
     await inregistreazaAudit(ctx.db, { orgId: ctx.orgId, actorAppUserId: ctx.userId, actiune: "prospectare_cheie_stearsa", entitate: "organizatie", entitateId: ctx.orgId, detalii: { furnizor } });
     revalidatePath(`/${ctx.orgSlug}/crm/setari`);
@@ -118,7 +123,8 @@ export async function salveazaCheieProspectare(orgSlug: string, furnizor: string
     await salveaza(orgSlug, furnizor, cheie);
     return { error: null };
   } catch (e) {
-    return { error: mesajSigur(e, `Nu am putut salva cheia ${eConector(furnizor) ? NUME_CONECTOR[furnizor] : ""}. Încearcă din nou.`, "prospectare-cheie-salvare") };
+    const t = await getTr();
+    return { error: mesajSigur(e, t(`Nu am putut salva cheia ${eConector(furnizor) ? NUME_CONECTOR[furnizor] : ""}. Încearcă din nou.`, `We could not save the ${eConector(furnizor) ? NUME_CONECTOR[furnizor] : ""} key. Please try again.`), "prospectare-cheie-salvare") };
   }
 }
 
@@ -127,7 +133,8 @@ export async function stergeCheieProspectare(orgSlug: string, furnizor: string):
     await sterge(orgSlug, furnizor);
     return { error: null };
   } catch (e) {
-    return { error: mesajSigur(e, "Nu am putut șterge cheia. Încearcă din nou.", "prospectare-cheie-stergere") };
+    const t = await getTr();
+    return { error: mesajSigur(e, t("Nu am putut șterge cheia. Încearcă din nou.", "We could not delete the key. Please try again."), "prospectare-cheie-stergere") };
   }
 }
 
@@ -140,11 +147,12 @@ const citesteOptiuni = withOrgFaze<[], { cheie: string }, Rezultat<{ liste: Elem
   opts: OPTIUNI,
   pregateste: async (ctx) => {
     const [r] = await ctx.db.select({ enc: prospectareChei.cheieEnc }).from(prospectareChei).where(and(eq(prospectareChei.orgId, ctx.orgId), eq(prospectareChei.provider, "waalaxy"))).limit(1);
-    if (!r) return { gata: { error: "Conectează întâi cheia Waalaxy.", liste: [], campanii: [] } };
+    const t = await getTr();
+    if (!r) return { gata: { error: t("Conectează întâi cheia Waalaxy.", "Connect the Waalaxy key first."), liste: [], campanii: [] } };
     try {
       return { pregatit: { cheie: decripteaza(r.enc) } };
     } catch {
-      return { gata: { error: "Cheia Waalaxy nu mai poate fi citită; adaug-o din nou.", liste: [], campanii: [] } };
+      return { gata: { error: t("Cheia Waalaxy nu mai poate fi citită; adaug-o din nou.", "The Waalaxy key can no longer be read; add it again."), liste: [], campanii: [] } };
     }
   },
   extern: (p) => waalaxyListe(p.cheie, fetch),
@@ -155,7 +163,8 @@ export async function optiuniWaalaxy(orgSlug: string): Promise<OptiuniWaalaxy> {
   try {
     return await citesteOptiuni(orgSlug);
   } catch (e) {
-    return { error: mesajSigur(e, "Nu am putut citi listele din Waalaxy. Încearcă din nou.", "prospectare-waalaxy-liste"), liste: [], campanii: [] };
+    const t = await getTr();
+    return { error: mesajSigur(e, t("Nu am putut citi listele din Waalaxy. Încearcă din nou.", "We could not read the lists from Waalaxy. Please try again."), "prospectare-waalaxy-liste"), liste: [], campanii: [] };
   }
 }
 
@@ -166,13 +175,14 @@ const idValid = (v: unknown): v is string => typeof v === "string" && RE_ID.test
 
 const salveazaListaWaalaxy = withOrgAdmin(
   async (ctx, alegere: SetariWaalaxy): Promise<void> => {
-    if (!idValid(alegere?.listaId)) throw new EroareUtilizator("Alege o listă din Waalaxy.");
-    if (alegere.campanieId && !idValid(alegere.campanieId)) throw new EroareUtilizator("Campania aleasă nu e validă.");
+    const t = await getTr();
+    if (!idValid(alegere?.listaId)) throw new EroareUtilizator(t("Alege o listă din Waalaxy.", "Choose a list from Waalaxy."));
+    if (alegere.campanieId && !idValid(alegere.campanieId)) throw new EroareUtilizator(t("Campania aleasă nu e validă.", "The chosen campaign is not valid."));
     const setari: Record<string, string> = { listaId: alegere.listaId, listaNume: taie(alegere.listaNume), campanieId: alegere.campanieId || "", campanieNume: alegere.campanieId ? taie(alegere.campanieNume) : "" };
     for (const rol of ROLURI_CAMPANIE) {
       const c = alegere.campaniiRol?.[rol];
       if (!c?.id) continue;
-      if (!idValid(c.id)) throw new EroareUtilizator("O campanie aleasă pe rol nu e validă.");
+      if (!idValid(c.id)) throw new EroareUtilizator(t("O campanie aleasă pe rol nu e validă.", "A campaign chosen for a role is not valid."));
       setari[`campanie_${rol}`] = c.id;
       setari[`campanie_${rol}_nume`] = taie(c.nume);
     }
@@ -181,7 +191,7 @@ const salveazaListaWaalaxy = withOrgAdmin(
       .set({ setari, updatedAt: new Date() })
       .where(and(eq(prospectareChei.orgId, ctx.orgId), eq(prospectareChei.provider, "waalaxy")))
       .returning({ id: prospectareChei.id });
-    if (r.length === 0) throw new EroareUtilizator("Conectează întâi cheia Waalaxy.");
+    if (r.length === 0) throw new EroareUtilizator(t("Conectează întâi cheia Waalaxy.", "Connect the Waalaxy key first."));
     await inregistreazaAudit(ctx.db, { orgId: ctx.orgId, actorAppUserId: ctx.userId, actiune: "prospectare_waalaxy_lista", entitate: "organizatie", entitateId: ctx.orgId, detalii: { campanie: Boolean(alegere.campanieId) } });
     revalidatePath(`/${ctx.orgSlug}/crm/setari`);
   },
@@ -193,7 +203,8 @@ export async function salveazaAlegereWaalaxy(orgSlug: string, alegere: SetariWaa
     await salveazaListaWaalaxy(orgSlug, alegere);
     return { error: null };
   } catch (e) {
-    return { error: mesajSigur(e, "Nu am putut salva alegerea. Încearcă din nou.", "prospectare-waalaxy-alegere") };
+    const t = await getTr();
+    return { error: mesajSigur(e, t("Nu am putut salva alegerea. Încearcă din nou.", "We could not save the choice. Please try again."), "prospectare-waalaxy-alegere") };
   }
 }
 
@@ -224,7 +235,7 @@ export async function listaExcluderiProspectare(orgSlug: string): Promise<Exclud
 
 const eliminaExcludere = withOrgAdmin(
   async (ctx, id: string): Promise<void> => {
-    if (!idValid(id)) throw new EroareUtilizator("Excluderea nu a fost găsită.");
+    if (!idValid(id)) throw new EroareUtilizator((await getTr())("Excluderea nu a fost găsită.", "The exclusion was not found."));
     await ctx.db.delete(prospectareSuprimati).where(and(eq(prospectareSuprimati.id, id), eq(prospectareSuprimati.orgId, ctx.orgId)));
     await inregistreazaAudit(ctx.db, { orgId: ctx.orgId, actorAppUserId: ctx.userId, actiune: "prospectare_excludere_scoasa", entitate: "organizatie", entitateId: ctx.orgId, detalii: {} });
     revalidatePath(`/${ctx.orgSlug}/crm/setari`);
@@ -237,6 +248,7 @@ export async function scoateExcludereProspectare(orgSlug: string, id: string): P
     await eliminaExcludere(orgSlug, id);
     return { error: null };
   } catch (e) {
-    return { error: mesajSigur(e, "Nu am putut scoate persoana din listă. Încearcă din nou.", "prospectare-excludere-scoasa") };
+    const t = await getTr();
+    return { error: mesajSigur(e, t("Nu am putut scoate persoana din listă. Încearcă din nou.", "We could not remove the person from the list. Please try again."), "prospectare-excludere-scoasa") };
   }
 }

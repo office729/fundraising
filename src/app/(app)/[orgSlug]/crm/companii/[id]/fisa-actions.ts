@@ -9,8 +9,12 @@ import { amprentePersoana } from "@/lib/gdpr-persoane";
 import { companies, contacts } from "@/lib/db/schema";
 import { valideazaFacebook, valideazaLinkedin } from "@/lib/pagini-sociale";
 import { stadiuD177Valid } from "@/lib/stadii-d177";
+import { getLocale } from "@/lib/i18n/get-locale";
+import { COMPANII_UI_DICT, traduEroareLib } from "@/lib/i18n/dictionaries/companii-ui";
 
 import type { ActionState, PersoanaDeAprobat } from "../actions";
+
+const mesaje = async () => COMPANII_UI_DICT[await getLocale()].msg;
 
 type ExtraFirma = {
   negasit?: { la: string; de: string; deNume: string | null };
@@ -33,15 +37,16 @@ async function incarca(ctx: OrgContext, companyId: string) {
 // se înregistrează cine și când l-a adăugat — alimentează indicatorul KPI „Firme cu LinkedIn / Facebook adăugat”.
 export const seteazaPaginaSociala = withOrgSession(
   async (ctx, companyId: string, platforma: "linkedin" | "facebook", url: string | null): Promise<ActionState & { url?: string | null }> => {
-    if (platforma !== "linkedin" && platforma !== "facebook") return { error: "Platformă necunoscută." };
+    const m = await mesaje();
+    if (platforma !== "linkedin" && platforma !== "facebook") return { error: m.platformaNecunoscuta };
     const firma = await incarca(ctx, companyId);
-    if (!firma) return { error: "Firma nu a fost găsită." };
+    if (!firma) return { error: m.firmaNegasita };
     const vechi = platforma === "linkedin" ? firma.linkedin : firma.facebook;
 
     let nou: string | null = null;
     if (url && url.trim()) {
       const r = platforma === "linkedin" ? valideazaLinkedin(url) : valideazaFacebook(url);
-      if (!r.ok) return { error: r.eroare };
+      if (!r.ok) return { error: traduEroareLib(await getLocale(), r.eroare) };
       nou = r.url;
     }
     if (nou === (vechi ?? null)) return { error: null, url: nou };
@@ -61,8 +66,9 @@ export const seteazaPaginaSociala = withOrgSession(
 
 // „Negăsit pe platforme” — se salvează cu data și cine a marcat.
 export const comutaNegasit = withOrgSession(async (ctx, companyId: string, activ: boolean): Promise<ActionState> => {
+  const m = await mesaje();
   const firma = await incarca(ctx, companyId);
-  if (!firma) return { error: "Firma nu a fost găsită." };
+  if (!firma) return { error: m.firmaNegasita };
   const marcaj = { la: new Date().toISOString(), de: ctx.userId, deNume: ctx.userName ?? null };
   await ctx.db
     .update(companies)
@@ -93,8 +99,9 @@ async function scoateDinDeAprobat(ctx: OrgContext, companyId: string, ids: Set<s
 
 // Aprobare = persoana intră în contactele firmei (cu consimțământ „necunoscut”) și dispare din lista „De aprobat”.
 export const aprobaPersoane = withOrgSession(async (ctx, companyId: string, ids: string[]): Promise<ActionState & { aprobate?: number }> => {
+  const m = await mesaje();
   const firma = await incarca(ctx, companyId);
-  if (!firma) return { error: "Firma nu a fost găsită." };
+  if (!firma) return { error: m.firmaNegasita };
   const set = new Set(ids);
   const deAdaugat = (firma.extra.deAprobat ?? []).filter((p) => set.has(p.id));
   if (deAdaugat.length === 0) return { error: null, aprobate: 0 };
@@ -119,8 +126,9 @@ export const aprobaPersoane = withOrgSession(async (ctx, companyId: string, ids:
 
 // Respingere = datele persoanei se șterg efectiv; rămâne doar amprenta (hash) în lista „nu mai căuta”.
 export const respingePersoane = withOrgSession(async (ctx, companyId: string, ids: string[]): Promise<ActionState & { respinse?: number }> => {
+  const m = await mesaje();
   const firma = await incarca(ctx, companyId);
-  if (!firma) return { error: "Firma nu a fost găsită." };
+  if (!firma) return { error: m.firmaNegasita };
   const set = new Set(ids);
   const deRespins = (firma.extra.deAprobat ?? []).filter((p) => set.has(p.id));
   if (deRespins.length === 0) return { error: null, respinse: 0 };
@@ -132,7 +140,8 @@ export const respingePersoane = withOrgSession(async (ctx, companyId: string, id
 // Acordul unei persoane de contact (da / nu / necunoscut). Un contact cu acord „nu” e ignorat de „Pasul următor” și nu mai e contactat sau îmbogățit automat.
 export const seteazaConsimtamantContact = withOrgSession(
   async (ctx, contactId: string, status: "da" | "nu" | "necunoscut"): Promise<ActionState> => {
-    if (status !== "da" && status !== "nu" && status !== "necunoscut") return { error: "Stare necunoscută." };
+    const m = await mesaje();
+    if (status !== "da" && status !== "nu" && status !== "necunoscut") return { error: m.stareNecunoscuta };
     const r = await ctx.db
       .update(contacts)
       .set({
@@ -143,15 +152,16 @@ export const seteazaConsimtamantContact = withOrgSession(
       })
       .where(and(eq(contacts.id, contactId), eq(contacts.orgId, ctx.orgId)))
       .returning({ id: contacts.id });
-    return r[0] ? { error: null } : { error: "Contactul nu a fost găsit." };
+    return r[0] ? { error: null } : { error: m.contactNegasit };
   },
 );
 // Punct unic prin care persoanele GĂSITE (de un import / o integrare) ajung în lista „De aprobat” a firmei — niciodată direct în
 // contacte. Cine e pe lista „nu mai căuta” (amprentă a numelui sau a profilului) nu mai e adus înapoi.
 export const propunePersoane = withOrgSession(
   async (ctx, companyId: string, persoane: Omit<PersoanaDeAprobat, "id" | "adaugatLa">[]): Promise<ActionState & { adaugate?: number; excluse?: number }> => {
+    const m = await mesaje();
     const firma = await incarca(ctx, companyId);
-    if (!firma) return { error: "Firma nu a fost găsită." };
+    if (!firma) return { error: m.firmaNegasita };
     const excluse = new Set(firma.extra.nuMaiCauta ?? []);
     const curente = firma.extra.deAprobat ?? [];
     const noi: PersoanaDeAprobat[] = [];
@@ -175,7 +185,8 @@ export const propunePersoane = withOrgSession(
 );
 // Stadiul contractului D177 (vezi lib/stadii-d177.ts). Al doilea clic pe stadiul curent îl resetează la „nou”.
 export const seteazaStadiuD177 = withOrgSession(async (ctx, companyId: string, stadiu: string): Promise<ActionState> => {
-  if (!stadiuD177Valid(stadiu)) return { error: "Stadiu necunoscut." };
+  const m = await mesaje();
+  if (!stadiuD177Valid(stadiu)) return { error: m.stadiuNecunoscut };
   const r = await ctx.db
     .update(companies)
     .set({
@@ -184,5 +195,5 @@ export const seteazaStadiuD177 = withOrgSession(async (ctx, companyId: string, s
     })
     .where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId)))
     .returning({ id: companies.id });
-  return r[0] ? { error: null } : { error: "Firma nu a fost găsită." };
+  return r[0] ? { error: null } : { error: m.firmaNegasita };
 });

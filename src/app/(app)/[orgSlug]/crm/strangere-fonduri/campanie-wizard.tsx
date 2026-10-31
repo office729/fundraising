@@ -15,6 +15,7 @@ import { Button } from "../components/ui/button";
 import { Dialog } from "../components/ui/dialog";
 import { Input, Label, Select, Textarea } from "../components/ui/input";
 import { useLocale } from "../lib/locale-context";
+import { STRANGERE_FONDURI_UI_DICT } from "@/lib/i18n/dictionaries/strangere-fonduri-ui";
 import { actualizeazaImaginePaginaAction, creeazaPaginaAdminAction } from "./actions";
 import { citesteDraft, salveazaDraft, stergeDraft, type DraftCampanie } from "./campanie-draft";
 import { axaDeDecupare, citestePoza, decupeaza, MAX_INTRARE_MB, pozitieCss, valideazaFisier, type PozaCitita } from "./campanie-poza";
@@ -207,8 +208,8 @@ export function CampanieWizard(props: CampanieWizardProps) {
           fdPoza.set("imagine", taiata);
           const ri = await actualizeazaImaginePaginaAction(orgSlug, r.id, { error: null, ok: false }, fdPoza);
           if (ri.error) pozaEroareLocal = ri.error;
-        } catch (e) {
-          pozaEroareLocal = e instanceof Error ? e.message : "—";
+        } catch {
+          pozaEroareLocal = t.asistent.pozaPregatireEsuata;
         }
       }
       stergeDraft(orgSlug);
@@ -454,7 +455,7 @@ function PasDetalii({ t, limba, form, set, erori, templateuri }: PasProps & { li
                   className={`rounded-full border px-4 py-2 text-[13px] font-medium transition-colors ${activ ? "border-[var(--ci-primary)] bg-[var(--ci-primary-soft)] text-[var(--ci-primary)]" : "border-[var(--ci-border)] hover:border-[var(--ci-border-strong)]"}`}
                 >
                   {activ && <Check className="mr-1 inline h-3.5 w-3.5" />}
-                  {CAMPAIGN_TEMPLATES[id].nume}
+                  {STRANGERE_FONDURI_UI_DICT[limba].teme[id] ?? CAMPAIGN_TEMPLATES[id].nume}
                 </button>
               );
             })}
@@ -474,7 +475,7 @@ function PasDetalii({ t, limba, form, set, erori, templateuri }: PasProps & { li
           <div className="mt-2 flex flex-wrap gap-2">
             {SUGESTII_SUMA.map((s) => (
               <button key={s} onClick={() => set("sumaTinta", s.toLocaleString("ro-RO"))} className="rounded-full border border-[var(--ci-border)] px-3 py-1 text-[12.5px] text-[var(--ci-text-muted)] transition-colors hover:border-[var(--ci-border-strong)] hover:text-[var(--ci-text)]">
-                {s.toLocaleString("ro-RO")} {d.lei}
+                {s.toLocaleString(limba === "ro" ? "ro-RO" : "en-GB")} {d.lei}
               </button>
             ))}
           </div>
@@ -684,7 +685,7 @@ function PasVerificare({ t, limba, form, poza, avertismente: lista, onModifica, 
 
       <div className="mt-5 divide-y divide-[var(--ci-border)] rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-4">
         <RandRezumat {...rand} eticheta={v.titluRand} valoare={form.titlu.trim() || v.lipseste} pas={0} gol={!form.titlu.trim()} />
-        <RandRezumat {...rand} eticheta={v.domeniu} valoare={CAMPAIGN_TEMPLATES[form.template as CampaignPageTemplate]?.nume ?? v.nealeas} pas={0} />
+        <RandRezumat {...rand} eticheta={v.domeniu} valoare={STRANGERE_FONDURI_UI_DICT[limba].teme[form.template] ?? CAMPAIGN_TEMPLATES[form.template as CampaignPageTemplate]?.nume ?? v.nealeas} pas={0} />
         <RandRezumat {...rand} eticheta={v.sumaTinta} valoare={suma ? `${suma.toLocaleString(numeLocale)} lei` : v.faraTinta} pas={0} gol={!suma} />
         <RandRezumat {...rand} eticheta={v.termen} valoare={termen ? dataLocala(termen, limba) : v.faraTermen} pas={0} gol={!termen} />
         <RandRezumat {...rand} eticheta={v.locatie} valoare={loc || v.necompletata} pas={0} gol={!loc} />

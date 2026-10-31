@@ -15,6 +15,7 @@ import { segmentFirma } from "@/lib/id-scurt";
 import { etichetaStadiuD177 } from "@/lib/stadii-d177";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { COMPANII_DICT } from "@/lib/i18n/dictionaries/companii";
+import { COMPANII_UI_DICT, intlLocale } from "@/lib/i18n/dictionaries/companii-ui";
 import { D177Badge } from "./d177-badge";
 import { AddCompanyButton, CalendarLucruButton, ImportCsvButton, TopButton } from "./header-actions";
 import { FereastraFiscala } from "./fereastra-fiscala";
@@ -61,6 +62,8 @@ async function CompaniiContent({
   }
   const locale = await getLocale();
   const dict = COMPANII_DICT[locale].page;
+  const ui = COMPANII_UI_DICT[locale].lista;
+  const nf = intlLocale(locale);
 
   const { totalFirme, stats, lista, responsabili, dupaJudet, functiiNr, benziNr, caiCalde } = await getPaginaCompanii(orgSlug, filtru);
 
@@ -68,19 +71,19 @@ async function CompaniiContent({
     <div className="mx-auto max-w-[1400px] space-y-5">
       <div>
         <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">{dict.title}</h1>
-        <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">{dict.subtitle(totalFirme.toLocaleString("ro-RO"))}</p>
+        <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">{dict.subtitle(totalFirme.toLocaleString(nf))}</p>
       </div>
 
       <NotaCrm id="companii" />
 
-      {areBenzi && <FereastraFiscala orgSlug={orgSlug} />}
+      {areBenzi && <FereastraFiscala orgSlug={orgSlug} locale={locale} />}
 
       <HartaJudeteCard
         dupaJudet={dupaJudet}
-        titlu="Harta României"
-        subtitlu="Câte firme din baza ta sunt în fiecare județ. Treci cu mouse-ul peste un județ."
-        unitate="firme"
-        ariaLabel="Harta României cu numărul de firme pe județ"
+        titlu={ui.harta.titlu}
+        subtitlu={ui.harta.subtitlu}
+        unitate={ui.harta.unitate}
+        ariaLabel={ui.harta.aria}
       />
 
       <div className="flex flex-wrap gap-2">
@@ -91,12 +94,12 @@ async function CompaniiContent({
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <StatCard label={dict.stats.companii} value={stats.companii.toLocaleString("ro-RO")} />
-        <StatCard label={dict.stats.sponsorizari} value={stats.sponsorizari.toLocaleString("ro-RO")} />
-        <StatCard label={dict.stats.totalSponsorizat} value={`${stats.totalSponsorizat.toLocaleString("ro-RO")} RON`} tone="accent" />
-        <StatCard label={dict.stats.recurenti} value={stats.recurenti.toLocaleString("ro-RO")} suffix={`${stats.recurentiPct}%`} />
-        <StatCard label={dict.stats.medieSponsorizare} value={`${stats.medieSponsorizare.toLocaleString("ro-RO")} RON`} />
-        <StatCard label={dict.stats.medieCompanie} value={`${stats.medieCompanie.toLocaleString("ro-RO")} RON`} />
+        <StatCard label={dict.stats.companii} value={stats.companii.toLocaleString(nf)} />
+        <StatCard label={dict.stats.sponsorizari} value={stats.sponsorizari.toLocaleString(nf)} />
+        <StatCard label={dict.stats.totalSponsorizat} value={`${stats.totalSponsorizat.toLocaleString(nf)} RON`} tone="accent" />
+        <StatCard label={dict.stats.recurenti} value={stats.recurenti.toLocaleString(nf)} suffix={`${stats.recurentiPct}%`} />
+        <StatCard label={dict.stats.medieSponsorizare} value={`${stats.medieSponsorizare.toLocaleString(nf)} RON`} />
+        <StatCard label={dict.stats.medieCompanie} value={`${stats.medieCompanie.toLocaleString(nf)} RON`} />
       </div>
 
       <FilterBar responsabili={responsabili} functiiNr={functiiNr} prioritizare={areBenzi} benziNr={benziNr} caiCalde={caiCalde} />
@@ -107,12 +110,12 @@ async function CompaniiContent({
             <EmptyState title={dict.empty.title} description={dict.empty.description} />
             {filtru.q.trim() && numarFiltreActive(filtru) > 0 && (
               <div className="mt-3 flex flex-col items-center gap-2 text-center">
-                <p className="text-[13px] text-[var(--ci-text-muted)]">Căutarea „{filtru.q.trim()}” e combinată cu filtrele active.</p>
+                <p className="text-[13px] text-[var(--ci-text-muted)]">{ui.cautareCombinata(filtru.q.trim())}</p>
                 <Link
                   href={`/${orgSlug}/crm/companii?q=${encodeURIComponent(filtru.q.trim())}`}
                   className="rounded-[var(--ci-radius-btn)] bg-[var(--ci-primary)] px-4 py-2 text-[13px] font-semibold text-white hover:opacity-90"
                 >
-                  Caută „{filtru.q.trim()}” în toată baza
+                  {ui.cautaInTotBaza(filtru.q.trim())}
                 </Link>
               </div>
             )}
@@ -133,12 +136,12 @@ async function CompaniiContent({
                       {c.nume}
                     </Link>
                     {c.linkedin && /^https?:\/\//i.test(c.linkedin) && (
-                      <a href={c.linkedin} target="_blank" rel="noopener noreferrer" title="Pagina de LinkedIn" aria-label="Pagina de LinkedIn" className="relative z-10 inline-flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded px-1 text-[10px] leading-none font-bold text-white" style={{ background: "#0a66c2" }}>
+                      <a href={c.linkedin} target="_blank" rel="noopener noreferrer" title={ui.paginaLinkedin} aria-label={ui.paginaLinkedin} className="relative z-10 inline-flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded px-1 text-[10px] leading-none font-bold text-white" style={{ background: "#0a66c2" }}>
                         in
                       </a>
                     )}
                     {c.facebook && /^https?:\/\//i.test(c.facebook) && (
-                      <a href={c.facebook} target="_blank" rel="noopener noreferrer" title="Pagina de Facebook" aria-label="Pagina de Facebook" className="relative z-10 inline-flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded px-1 text-[11px] leading-none font-bold text-white" style={{ background: "#1877f2" }}>
+                      <a href={c.facebook} target="_blank" rel="noopener noreferrer" title={ui.paginaFacebook} aria-label={ui.paginaFacebook} className="relative z-10 inline-flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded px-1 text-[11px] leading-none font-bold text-white" style={{ background: "#1877f2" }}>
                         f
                       </a>
                     )}
@@ -163,7 +166,7 @@ async function CompaniiContent({
                   )}
                   {areBenzi && c.caldMotiv && (
                     <Badge tone="orange" icon={false}>
-                      🔥 {c.caldMotiv}
+                      🔥 {ui.motivCald[c.caldMotiv] ?? c.caldMotiv}
                     </Badge>
                   )}
                   {c.temperatura === "cald" && <Badge tone="red" icon={false}>{dict.cald}</Badge>}
@@ -178,7 +181,7 @@ async function CompaniiContent({
                   {c.mec20 && <Badge tone="pink" icon={false}>20%</Badge>}
                   {c.decembrie && <Badge tone="indigo" icon={false}>{COMPANII_DICT[locale].filterBar.decembrie}</Badge>}
                   <span className="ci-tabular ml-2 text-[13px] font-semibold text-[var(--ci-text)]">
-                    {c.sumaSponsorizata.toLocaleString("ro-RO")} RON
+                    {c.sumaSponsorizata.toLocaleString(nf)} RON
                   </span>
                 </div>
               </div>

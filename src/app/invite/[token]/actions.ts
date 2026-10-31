@@ -9,6 +9,8 @@ import { getLimiteleEfective, subCota } from "@/lib/billing/quota";
 import { db } from "@/lib/db";
 import { invites, memberships, organizations } from "@/lib/db/schema";
 import { EroareUtilizator, mesajSigur } from "@/lib/erori";
+import { INVITE_UI_DICT } from "@/lib/i18n/dictionaries/invite-ui";
+import { getLocale } from "@/lib/i18n/get-locale";
 
 export type InviteLookup = {
   email: string;
@@ -54,6 +56,7 @@ export async function acceptInviteAction(token: string): Promise<{ error: string
     redirect(`/login?invite=${token}`);
   }
 
+  const er = INVITE_UI_DICT[await getLocale()].erori;
   let orgSlug: string | null = null;
   try {
     orgSlug = await db.transaction(async (tx) => {
@@ -71,13 +74,11 @@ export async function acceptInviteAction(token: string): Promise<{ error: string
         .where(sql`${invites.token} = ${token}`)
         .limit(1);
       const invite = rows[0];
-      if (!invite) throw new EroareUtilizator("Invitație inexistentă sau expirată.");
-      if (invite.acceptedAt) throw new EroareUtilizator("Invitația a fost deja folosită.");
-      if (invite.expiresAt.getTime() < Date.now()) throw new EroareUtilizator("Invitația a expirat.");
+      if (!invite) throw new EroareUtilizator(er.inexistenta);
+      if (invite.acceptedAt) throw new EroareUtilizator(er.folosita);
+      if (invite.expiresAt.getTime() < Date.now()) throw new EroareUtilizator(er.expirata);
       if (invite.email.toLowerCase() !== authUser.email!.toLowerCase()) {
-        throw new EroareUtilizator(
-          `Invitația e pentru ${invite.email} — ești logat cu alt email. Deconectează-te și intră cu adresa corectă.`,
-        );
+        throw new EroareUtilizator(er.altEmail(invite.email));
       }
 
       await tx.execute(sql`select set_config('app.current_user_email', ${authUser.email}, true)`);
@@ -103,9 +104,7 @@ export async function acceptInviteAction(token: string): Promise<{ error: string
           .from(memberships)
           .where(eq(memberships.orgId, invite.orgId));
         if (!subCota(membriCount, limite.utilizatori)) {
-          throw new EroareUtilizator(
-            `Organizația a atins limita de ${limite.utilizatori} utilizatori a pachetului ei — nu mai poate primi membri noi momentan.`,
-          );
+          throw new EroareUtilizator(er.limitaUtilizatori(limite.utilizatori));
         }
       }
 
@@ -123,7 +122,7 @@ export async function acceptInviteAction(token: string): Promise<{ error: string
       return (orgRows as unknown as { slug: string }[])[0]?.slug ?? null;
     });
   } catch (e) {
-    return { error: mesajSigur(e, "Acceptarea a eșuat.", "invitatie-acceptare") };
+    return { error: mesajSigur(e, er.acceptareEsuata, "invitatie-acceptare") };
   }
 
   if (orgSlug) redirect(`/${orgSlug}`);

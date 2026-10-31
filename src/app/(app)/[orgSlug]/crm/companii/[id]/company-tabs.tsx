@@ -6,6 +6,7 @@ import { Tabs } from "../../components/ui/tabs";
 import { formatDataOra } from "../../lib/format";
 import { useLocale } from "../../lib/locale-context";
 import { COMPANII_DICT } from "@/lib/i18n/dictionaries/companii";
+import { COMPANII_UI_DICT, intlLocale } from "@/lib/i18n/dictionaries/companii-ui";
 import { sumaEfectiva } from "@/lib/prioritizare-firme";
 import { ContactePanel } from "./contacte-panel";
 import { ContractPanel } from "./contract-panel";
@@ -59,6 +60,8 @@ export function CompanyTabs({
 }) {
   const locale = useLocale();
   const dict = COMPANII_DICT[locale].detail;
+  const ui = COMPANII_UI_DICT[locale].fisa;
+  const nf = intlLocale(locale);
   const estimare = sumaEfectiva(c.sumaDisponibila, c);
   return (
     <Tabs
@@ -99,15 +102,15 @@ export function CompanyTabs({
             <>
               <VerificaAnafButton companyId={c.id} cui={c.cui} anafActiv={c.anafActiv} anafVerificatLa={c.anafVerificatLa} />
               <Card>
-              <InfoRow label={dict.info.ca} value={c.ca != null ? `${c.ca.toLocaleString("ro-RO")} RON` : null} />
-              <InfoRow label={dict.info.profit} value={c.profit != null ? `${c.profit.toLocaleString("ro-RO")} RON` : null} />
-              <InfoRow label={dict.info.impozit} value={c.impozit != null ? `${c.impozit.toLocaleString("ro-RO")} RON` : null} />
+              <InfoRow label={dict.info.ca} value={c.ca != null ? `${c.ca.toLocaleString(nf)} RON` : null} />
+              <InfoRow label={dict.info.profit} value={c.profit != null ? `${c.profit.toLocaleString(nf)} RON` : null} />
+              <InfoRow label={dict.info.impozit} value={c.impozit != null ? `${c.impozit.toLocaleString(nf)} RON` : null} />
               <InfoRow label={dict.info.regimFiscal} value={c.regimFiscal} />
               <InfoRow label={dict.info.anBilant} value={c.anBilant != null ? String(c.anBilant) : null} />
               <InfoRow label={dict.info.nrAngajati} value={c.nrAngajati != null ? String(c.nrAngajati) : null} />
-              <InfoRow label={dict.info.sumaDisponibila} value={c.sumaDisponibila != null && c.sumaDisponibila > 0 ? `${c.sumaDisponibila.toLocaleString("ro-RO")} RON` : estimare.estimata ? `~${estimare.suma.toLocaleString("ro-RO")} RON (estimat din bilanț)` : c.sumaDisponibila != null ? `${c.sumaDisponibila.toLocaleString("ro-RO")} RON` : null} />
-              <InfoRow label={dict.info.sumaPropusa} value={c.sumaPropusa != null ? `${c.sumaPropusa.toLocaleString("ro-RO")} RON` : null} />
-              <InfoRow label={dict.info.sumaSponsorizataTotal} value={`${(c.sumaSponsorizata ?? 0).toLocaleString("ro-RO")} RON`} />
+              <InfoRow label={dict.info.sumaDisponibila} value={c.sumaDisponibila != null && c.sumaDisponibila > 0 ? `${c.sumaDisponibila.toLocaleString(nf)} RON` : estimare.estimata ? `~${estimare.suma.toLocaleString(nf)} RON ${ui.estimatDinBilant}` : c.sumaDisponibila != null ? `${c.sumaDisponibila.toLocaleString(nf)} RON` : null} />
+              <InfoRow label={dict.info.sumaPropusa} value={c.sumaPropusa != null ? `${c.sumaPropusa.toLocaleString(nf)} RON` : null} />
+              <InfoRow label={dict.info.sumaSponsorizataTotal} value={`${(c.sumaSponsorizata ?? 0).toLocaleString(nf)} RON`} />
               </Card>
             </>
           );
