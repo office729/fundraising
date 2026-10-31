@@ -3,18 +3,18 @@
 import { ArrowLeft, ArrowRight, Check, Copy, Download, ImagePlus, Pencil, Plus, Printer, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
+import { AVATAR_GHID_DICT } from "@/lib/i18n/dictionaries/avatar-donator-ui-2";
+import type { Locale } from "@/lib/i18n/config";
+import { conversiiLoc, gradeLoc, tipuriFisaLoc } from "@/lib/avatar-donator/localizare";
 import { parseNum } from "@/lib/avatar-donator/motor";
 import {
   citesteFisa,
-  CONVERSII,
   FISA_PRINCIPALA,
   fiseDeRevizuit,
-  GRADE,
   incredereValidari,
   MAX_FISE_SUPLIMENTARE,
   MAX_VALIDARI,
   scrieFisa,
-  TIPURI_FISA,
   toateFisele,
   type AvatarData,
   type Conversie,
@@ -28,6 +28,7 @@ import type { SegmentReal, SegmentStat } from "@/lib/segmente-donatori";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Input, Textarea } from "../components/ui/input";
+import { useLocale } from "../lib/locale-context";
 
 import type { Actualizeaza } from "./avatar-donator-client";
 
@@ -40,338 +41,103 @@ import type { Actualizeaza } from "./avatar-donator-client";
 //  - RFM (Blackbaud / Dotdigital): etapa relației (nou, loial, în risc, inactiv) și recență/frecvență/valoare.
 // Fișa principală scrie în ACELEAȘI câmpuri ca varianta detaliată (rezumat, conversie, buget): nu există două surse de adevăr.
 // Fișele suplimentare (donator lunar, firme…) sunt independente și nu intră în calculul de buget.
-type Baza = { id: string; sectiune: string; eticheta: string; titlu: string; ajutor: string; optional?: boolean; doarPrincipala?: boolean };
-type Intrebare =
-  | (Baza & { tip: "text" | "lung"; camp: string; exemplu: string; sugestii?: string[]; unul?: boolean; propune?: (d: Fisa) => string[] })
+// Textele întrebărilor (în română și engleză) stau în dicționar (avatar-donator-ui-2.ts); aici e doar structura lor.
+type Baza = { id: string; s: number; optional?: boolean; doarPrincipala?: boolean };
+type TextePutine = { eticheta: string; titlu: string; ajutor: string; exemplu: string; sugestii: string[] };
+type IntrebareStruct =
+  | (Baza & { tip: "text" | "lung"; camp: string; unul?: boolean; propune?: (d: Fisa, locale: Locale) => string[] })
   | (Baza & { tip: "conversie" })
-  | (Baza & { tip: "suma"; camp: "donatieUnica" | "lunar"; unitate: string });
+  | (Baza & { tip: "suma"; camp: "donatieUnica" | "lunar"; unitate: "lei" | "leiLuna" });
+type Intrebare = IntrebareStruct & { sectiune: string } & TextePutine;
 
-const S1 = "Obiectiv și persoană";
-const S2 = "Motivații și frâne";
-const S3 = "Comportament de donare";
-const S4 = "Cum ajungi la el";
-const S5 = "Limite și măsurare";
-
-// Etapele relației = segmentele din pagina „Segmente de donatori”; cele reale vin din baza de date.
-const CICLU: { text: string; seg: SegmentReal }[] = [
-  { text: "Nou (prima donație)", seg: "nou" },
-  { text: "Recurent (lunar)", seg: "recurent" },
-  { text: "Fidel (donează de mai multe ori)", seg: "fidel" },
-  { text: "Major (donații mari)", seg: "major" },
-  { text: "În risc (nu a mai donat de ceva timp)", seg: "in_risc" },
-  { text: "Inactiv", seg: "inactiv" },
-  { text: "Reactivat", seg: "reactivat" },
-];
+// Etapele relației = segmentele din pagina „Segmente de donatori”; cele reale vin din baza de date. Ordinea corespunde listei `ciclu` din dicționar.
+const CICLU_SEG: SegmentReal[] = ["nou", "recurent", "fidel", "major", "in_risc", "inactiv", "reactivat"];
 
 // Propunere de 3 sume (mică / tipică / ambițioasă) pornind de la donația tipică, rotunjite.
-function treiSume(f: Fisa): string[] {
+function treiSume(f: Fisa, locale: Locale): string[] {
   const m = parseNum(f.donatieUnica);
   if (!m || m <= 0) return [];
   const pas = m >= 1000 ? 100 : m >= 100 ? 10 : 5;
   const rot = (x: number) => Math.max(pas, Math.round(x / pas) * pas);
   const v = [rot(m / 2), rot(m), rot(m * 2)];
-  return v[0] === v[1] || v[1] === v[2] ? [] : [`${v.map((x) => x.toLocaleString("ro-RO")).join(" / ")} lei`];
+  const fl = locale === "ro" ? "ro-RO" : "en-GB";
+  return v[0] === v[1] || v[1] === v[2] ? [] : [`${v.map((x) => x.toLocaleString(fl)).join(" / ")} lei`];
 }
 
-const INTREBARI: Intrebare[] = [
-  {
-    id: "conversie",
-    sectiune: S1,
-    tip: "conversie",
-    eticheta: "Obiectivul",
-    titlu: "Ce vrei să facă, mai întâi?",
-    ajutor: "Pornește de la scop: prima acțiune pe care o ceri unui om nou. Pe ea se bazează recomandările din Sinteză.",
-  },
-  {
-    id: "nume",
-    sectiune: S1,
-    tip: "text",
-    camp: "nume",
-    eticheta: "Numele profilului",
-    titlu: "Cum i-ai spune donatorului tău ideal?",
-    ajutor: "Un nume scurt, doar pentru echipă. Te ajută să vorbești despre el ca despre o persoană reală.",
-    exemplu: "ex. „Părintele implicat”, „Antreprenorul local”",
-  },
-  {
-    id: "date",
-    sectiune: S1,
-    tip: "lung",
-    camp: "date",
-    eticheta: "Persoana",
-    titlu: "Descrie-l ca pe o persoană reală",
-    ajutor: "Descrie un grup de donatori, nu o persoană anume: vârsta tipică, orașul sau zona, contextul (de exemplu „părinți”). Nu deduce venitul, sănătatea sau convingerile cuiva; scrie doar ce știi din datele sau conversațiile tale.",
-    exemplu: "ex. Femei de 35–44 de ani din orașe mari, părinți, care au donat prin Facebook",
-    sugestii: ["18–24 ani", "25–34 ani", "35–44 ani", "45–54 ani", "55+ ani", "Oraș mare", "Oraș mic", "Rural", "Are copii", "Pensionar"],
-  },
-  {
-    id: "marime",
-    sectiune: S1,
-    tip: "text",
-    camp: "marime",
-    eticheta: "Câți sunt",
-    titlu: "Câți oameni ca el crezi că ai în jur?",
-    ajutor: "O estimare aproximativă e suficientă: numărul din baza ta de date sau al urmăritorilor care seamănă cu el.",
-    exemplu: "ex. aproximativ 800 de persoane",
-    sugestii: ["Sub 100", "100–500", "500–2.000", "Peste 2.000", "Nu știu încă"],
-    unul: true,
-  },
-  {
-    id: "motivatie",
-    sectiune: S2,
-    tip: "lung",
-    camp: "motivatie",
-    eticheta: "Valori și scopuri",
-    titlu: "Ce valori are și de ce ar dona pentru cauza ta?",
-    ajutor: "Ce vrea să schimbe, ce îl atinge. Gândește-te la ultimul donator cu care ai vorbit.",
-    exemplu: "ex. vrea să ajute un copil concret și să vadă rezultatul",
-    sugestii: ["Empatie pentru un caz concret", "Vrea să schimbe ceva în comunitate", "Experiență personală cu boala", "Apartenență la o comunitate", "Recunoștință", "Răspunderea față de cei din jur"],
-  },
-  {
-    id: "citat",
-    sectiune: S2,
-    tip: "text",
-    camp: "citat",
-    eticheta: "În cuvintele lui",
-    titlu: "Ce ar spune el, cu vorbele lui, despre cauza ta?",
-    ajutor: "O propoziție reală sau plauzibilă. Te ajută să scrii texte care sună ca el, nu ca organizația.",
-    exemplu: "ex. „Vreau să știu sigur că banii ajung la copil.”",
-    optional: true,
-  },
-  {
-    id: "obiectii",
-    sectiune: S2,
-    tip: "lung",
-    camp: "obiectii",
-    eticheta: "Provocări și obiecții",
-    titlu: "Ce îl face să ezite?",
-    ajutor: "Îndoielile pe care le aud echipa sau voluntarii și dovada care le rezolvă.",
-    exemplu: "ex. nu știe unde ajung banii; îl liniștesc raportul și o poză cu rezultatul",
-    sugestii: ["Nu are încredere că banii ajung unde trebuie", "Crede că suma lui nu contează", "Nu vrea să se angajeze lunar", "Nu cunoaște organizația", "Plata online i se pare nesigură"],
-  },
-  {
-    id: "ciclu",
-    sectiune: S3,
-    tip: "lung",
-    camp: "ciclu",
-    eticheta: "Etapa relației",
-    titlu: "În ce etapă a relației cu organizația se află, de obicei?",
-    ajutor: "Aceleași etape ca în pagina Segmente de donatori. Alege principala (sau două). Lângă fiecare vezi câți donatori ai de fapt în baza ta.",
-    exemplu: "ex. Nou, apoi Fidel",
-    sugestii: CICLU.map((c) => c.text),
-  },
-  {
-    id: "comportament",
-    sectiune: S3,
-    tip: "lung",
-    camp: "comportament",
-    eticheta: "Comportament de donare",
-    titlu: "Cum donează de obicei?",
-    ajutor: "Trei lucruri: când a donat ultima oară (recență), cât de des (frecvență) și cât (valoare). Dacă ai date reale din platformă, folosește-le.",
-    exemplu: "ex. 50–100 lei, de 1–2 ori pe an, ultima dată în urmă cu 4 luni, cu cardul, de pe telefon",
-    sugestii: ["O singură dată", "Lunar", "De câteva ori pe an", "A donat în ultimele 3 luni", "Card online", "Transfer bancar", "SMS", "De pe telefon"],
-  },
-  {
-    id: "suma",
-    sectiune: S3,
-    tip: "suma",
-    camp: "donatieUnica",
-    eticheta: "Donația tipică",
-    titlu: "Cât este o donație obișnuită?",
-    ajutor: "Suma din care calculăm cât îți poți permite să cheltuiești ca să aduci un donator nou. O poți schimba oricând în tabul Buget.",
-    unitate: "lei",
-  },
-  {
-    id: "sume",
-    sectiune: S3,
-    tip: "text",
-    camp: "sume",
-    eticheta: "Sume propuse",
-    titlu: "Ce trei sume îi propui când ceri donația?",
-    ajutor: "O sumă mică, una tipică și una ambițioasă. Cererea cu sume potrivite capacității lui aduce mai mult decât o sumă liberă.",
-    exemplu: "ex. 20 / 50 / 100 lei",
-    sugestii: ["10 / 25 / 50 lei", "20 / 50 / 100 lei", "50 / 100 / 250 lei"],
-    propune: treiSume,
-    unul: true,
-    optional: true,
-  },
-  {
-    id: "recurent",
-    sectiune: S3,
-    tip: "text",
-    camp: "recurent",
-    eticheta: "Donație lunară",
-    titlu: "Ar dona lunar?",
-    ajutor: "Cât de probabil ar fi să devină donator recurent. Donatorii lunari aduc mai mult pe termen lung.",
-    exemplu: "ex. poate, dacă primește rapoarte lunare",
-    sugestii: ["Da, ar dona lunar", "Poate, dacă vede rezultate", "Probabil nu, preferă donații unice"],
-    unul: true,
-    optional: true,
-  },
-  {
-    id: "canale",
-    sectiune: S4,
-    tip: "lung",
-    camp: "canale",
-    eticheta: "Unde se informează",
-    titlu: "Unde îl poți găsi?",
-    ajutor: "Platformele și locurile unde petrece timp și de unde află lucruri noi.",
-    exemplu: "ex. Facebook și grupuri de părinți",
-    sugestii: ["Facebook", "Instagram", "TikTok", "LinkedIn", "Google / YouTube", "Email", "Evenimente locale", "Recomandări de la prieteni"],
-  },
-  {
-    id: "contact",
-    sectiune: S4,
-    tip: "lung",
-    camp: "contact",
-    eticheta: "Preferință de contact",
-    titlu: "Cum preferă să fie contactat?",
-    ajutor: "Canalul pe care răspunde cel mai bine. Contactează doar persoanele care și-au dat acordul pentru acel canal.",
-    exemplu: "ex. email, rar; SMS doar pentru campanii urgente",
-    sugestii: ["Email", "Telefon", "SMS", "WhatsApp", "Poștă", "Mesaj pe rețele sociale"],
-    optional: true,
-  },
-  {
-    id: "mesaj",
-    sectiune: S4,
-    tip: "lung",
-    camp: "mesaj",
-    eticheta: "Mesaj și format",
-    titlu: "Ce mesaj și ce format îl convinge?",
-    ajutor: "Tonul, ce spui prima dată și în ce format (video scurt, poveste, cifre).",
-    exemplu: "ex. o poveste scurtă, cu fața omului, și un buton clar „Donează 20 lei”",
-    sugestii: ["Poveste personală", "Video scurt", "Cifre și rezultate", "Mesaj direct, cald", "Apel la acțiune clar"],
-  },
-  {
-    id: "momente",
-    sectiune: S4,
-    tip: "lung",
-    camp: "momente",
-    eticheta: "Momente",
-    titlu: "Când este cel mai dispus să doneze?",
-    ajutor: "Momente din an sau din viața lui.",
-    exemplu: "ex. înainte de Crăciun, după o poveste care îl atinge",
-    sugestii: ["Crăciun", "Paște", "1 iunie", "Campania 3,5%", "Început de an școlar", "După un caz publicat", "Ziua organizației"],
-  },
-  {
-    id: "excluderi",
-    sectiune: S5,
-    tip: "lung",
-    camp: "excluderi",
-    eticheta: "Excluderi",
-    titlu: "Pe cine NU vrei să abordezi?",
-    ajutor: "Persoane sau practici evitate, din motive de etică sau de eficiență.",
-    exemplu: "ex. nu contactăm beneficiarii și familiile lor ca să doneze",
-    sugestii: ["Beneficiarii și familiile lor", "Cei care s-au dezabonat", "Minorii", "Persoane în dificultate financiară"],
-  },
-  {
-    id: "buget",
-    sectiune: S5,
-    tip: "suma",
-    camp: "lunar",
-    eticheta: "Buget lunar",
-    titlu: "Cât poți cheltui lunar pe promovare?",
-    ajutor: "Bugetul total, în lei. Dacă nu ai unul, lasă gol: îl completezi când ești pregătit. Bugetul se setează o singură dată, în fișa principală.",
-    unitate: "lei / lună",
-    doarPrincipala: true,
-  },
-  {
-    id: "kpi",
-    sectiune: S5,
-    tip: "lung",
-    camp: "kpi",
-    eticheta: "KPI și limite",
-    titlu: "Cum vei ști că funcționează?",
-    ajutor: "Câteva cifre simple și o limită sub care oprești sau schimbi ceva.",
-    exemplu: "ex. 30 donatori noi pe lună; dacă un donator costă peste 40 lei, oprim reclama",
-    sugestii: ["Donatori noi pe lună", "Cost per donator", "Rata de conversie", "Donatori care revin", "Donații lunare recurente"],
-  },
-  {
-    id: "baza",
-    sectiune: S5,
-    tip: "lung",
-    camp: "baza",
-    eticheta: "Sursa fișei",
-    titlu: "Pe ce te bazezi când descrii acest donator?",
-    ajutor: "Date reale cântăresc mai mult decât o intuiție. Revizuiește fișa o dată pe an și după fiecare campanie mare.",
-    exemplu: "ex. 12 interviuri cu donatori + datele din platformă",
-    sugestii: ["Date reale din platformă", "Interviuri cu donatori", "Sondaj", "Intuiția echipei"],
-    optional: true,
-  },
+const STRUCTURA: IntrebareStruct[] = [
+  { id: "conversie", s: 0, tip: "conversie" },
+  { id: "nume", s: 0, tip: "text", camp: "nume" },
+  { id: "date", s: 0, tip: "lung", camp: "date" },
+  { id: "marime", s: 0, tip: "text", camp: "marime", unul: true },
+  { id: "motivatie", s: 1, tip: "lung", camp: "motivatie" },
+  { id: "citat", s: 1, tip: "text", camp: "citat", optional: true },
+  { id: "obiectii", s: 1, tip: "lung", camp: "obiectii" },
+  { id: "ciclu", s: 2, tip: "lung", camp: "ciclu" },
+  { id: "comportament", s: 2, tip: "lung", camp: "comportament" },
+  { id: "suma", s: 2, tip: "suma", camp: "donatieUnica", unitate: "lei" },
+  { id: "sume", s: 2, tip: "text", camp: "sume", propune: treiSume, unul: true, optional: true },
+  { id: "recurent", s: 2, tip: "text", camp: "recurent", unul: true, optional: true },
+  { id: "canale", s: 3, tip: "lung", camp: "canale" },
+  { id: "contact", s: 3, tip: "lung", camp: "contact", optional: true },
+  { id: "mesaj", s: 3, tip: "lung", camp: "mesaj" },
+  { id: "momente", s: 3, tip: "lung", camp: "momente" },
+  { id: "excluderi", s: 4, tip: "lung", camp: "excluderi" },
+  { id: "buget", s: 4, tip: "suma", camp: "lunar", unitate: "leiLuna", doarPrincipala: true },
+  { id: "kpi", s: 4, tip: "lung", camp: "kpi" },
+  { id: "baza", s: 4, tip: "lung", camp: "baza", optional: true },
 ];
 
-// Adaptări pentru fișele de firmă: aceleași întrebări, cu formulări potrivite sponsorilor corporate.
-type Varianta = { eticheta?: string; titlu?: string; ajutor?: string; exemplu?: string; sugestii?: string[]; propune?: boolean };
-const VARIANTE_FIRME: Record<string, Varianta> = {
-  date: {
-    titlu: "Descrie firma ca pe un client real",
-    ajutor: "Domeniul, mărimea (angajați sau cifră de afaceri), orașul și persoana care decide (rolul ei).",
-    exemplu: "ex. SRL de IT, 80 de angajați, București; decide directorul de marketing",
-    sugestii: ["IT", "Retail", "Producție", "Servicii financiare", "Sub 50 de angajați", "50–250 de angajați", "Peste 250 de angajați", "București", "Alt oraș mare"],
-  },
-  motivatie: {
-    titlu: "De ce ar sponsoriza cauza ta?",
-    ajutor: "Responsabilitate socială (CSR), imagine, implicarea angajaților, beneficii fiscale.",
-    exemplu: "ex. vrea să implice angajații într-o cauză locală și să raporteze impactul",
-    sugestii: ["CSR / responsabilitate socială", "Imaginea firmei", "Implicarea angajaților", "Beneficii fiscale", "Cunoaște cauza personal"],
-  },
-  obiectii: {
-    sugestii: ["Bugetul de sponsorizări e epuizat", "Nu are un proces pentru sponsorizări", "Vrea vizibilitate în schimb", "Nu cunoaște organizația", "Sprijină deja alt ONG"],
-  },
-  ciclu: { titlu: "În ce etapă a relației cu firma ești?", ajutor: "Etapa în care se află de obicei firmele de acest tip.", sugestii: ["Prospect (neabordat)", "Contactat", "În discuție", "Sponsor activ", "Fost sponsor"] },
-  comportament: {
-    titlu: "Cum sponsorizează de obicei?",
-    ajutor: "Cât, cât de des, prin contract sau redirecționare de impozit, în ce perioadă a anului.",
-    exemplu: "ex. contract anual de 5.000–10.000 lei, decis la începutul anului",
-    sugestii: ["Contract de sponsorizare", "Redirecționare de impozit", "O dată pe an", "Proiecte pe termen lung", "Sub 5.000 lei", "5.000–20.000 lei", "Peste 20.000 lei"],
-  },
-  suma: { titlu: "Cât este o sponsorizare obișnuită?", ajutor: "Suma tipică a unei sponsorizări, în lei." },
-  sume: { titlu: "Ce trei sume de sponsorizare propui?", exemplu: "ex. 2.500 / 10.000 / 25.000 lei", sugestii: ["1.000 / 5.000 / 10.000 lei", "2.500 / 10.000 / 25.000 lei"] },
-  recurent: { titlu: "Ar sponsoriza în fiecare an?", exemplu: "ex. da, dacă primește un raport de impact", sugestii: ["Da, parteneriat anual", "Poate, dacă primește raport de impact", "Doar punctual"] },
-  canale: { eticheta: "Unde îl găsești", ajutor: "Unde poți ajunge la persoana care decide.", sugestii: ["LinkedIn", "Email direct", "Întâlniri one-to-one", "Evenimente de networking", "Recomandări", "Telefon"] },
-  contact: { sugestii: ["Email", "Telefon", "Întâlnire față în față", "LinkedIn"] },
-  mesaj: { sugestii: ["Dosar de prezentare cu impact", "Raport de transparență", "Beneficii pentru firmă", "Povestea unui beneficiar", "Cifre clare"] },
-  momente: { sugestii: ["Începutul anului fiscal (bugete)", "Închiderea anului fiscal", "Crăciun", "Evenimente de CSR"] },
-  excluderi: { sugestii: ["Firme din domenii incompatibile cu misiunea", "Firme cu probleme reputaționale", "Firme care cer exclusivitate nejustificată"] },
-  kpi: { sugestii: ["Firme contactate pe lună", "Rata de răspuns", "Valoarea medie a unei sponsorizări", "Parteneriate reînnoite"] },
-};
+// Întrebările cu textele în limba curentă (sugestiile etapei relației vin din lista `ciclu`).
+function construiesteIntrebari(locale: Locale): Intrebare[] {
+  const g = AVATAR_GHID_DICT[locale];
+  return STRUCTURA.map((q) => {
+    const t = g.q[q.id];
+    return {
+      ...q,
+      sectiune: g.sectiuni[q.s],
+      eticheta: t.eticheta,
+      titlu: t.titlu,
+      ajutor: t.ajutor,
+      exemplu: t.exemplu ?? "",
+      sugestii: q.id === "ciclu" ? [...g.ciclu] : (t.sugestii ?? []),
+    } as Intrebare;
+  });
+}
 
-function pentruTip(q: Intrebare, tip: TipFisa): Intrebare {
+function pentruTip(q: Intrebare, tip: TipFisa, locale: Locale): Intrebare {
   if (tip !== "firme") return q;
-  const v = VARIANTE_FIRME[q.id];
+  const v = AVATAR_GHID_DICT[locale].firme[q.id];
   if (!v) return q;
-  const { propune: _p, ...rest } = v;
-  void _p;
-  return { ...q, ...rest } as Intrebare;
+  return { ...q, ...v } as Intrebare;
 }
 
 // Fără aceste răspunsuri, fișa nu poate ghida o campanie; restul îmbogățesc fișa.
 const ESENTIALE = ["conversie", "nume", "date", "motivatie", "obiectii", "comportament", "canale", "mesaj"];
 
-const SECTIUNI = [...new Set(INTREBARI.map((q) => q.sectiune))];
-
-function valoare(f: Fisa, q: Intrebare): string {
-  if (q.tip === "conversie") return CONVERSII.find((c) => c.key === f.conversie)?.label ?? "";
+function valoare(f: Fisa, q: Intrebare, locale: Locale): string {
+  if (q.tip === "conversie") return conversiiLoc(locale).find((c) => c.key === f.conversie)?.label ?? "";
   if (q.tip === "suma") return q.camp === "lunar" ? f.lunar : f.donatieUnica;
   return f.rezumat[q.camp] ?? "";
 }
 
-function afiseaza(q: Intrebare, v: string): string {
-  return q.tip === "suma" ? `${v} ${q.unitate}` : v;
+function afiseaza(q: Intrebare, v: string, locale: Locale): string {
+  return q.tip === "suma" ? `${v} ${AVATAR_GHID_DICT[locale].unitati[q.unitate]}` : v;
 }
 
-function intrebariPentru(f: Fisa, principala: boolean): Intrebare[] {
-  return INTREBARI.filter((q) => principala || !q.doarPrincipala).map((q) => pentruTip(q, f.tip));
+function intrebariPentru(f: Fisa, principala: boolean, toate: Intrebare[], locale: Locale): Intrebare[] {
+  return toate.filter((q) => principala || !q.doarPrincipala).map((q) => pentruTip(q, f.tip, locale));
 }
 
-function textRezumat(f: Fisa, intrebari: Intrebare[]): string {
+function textRezumat(f: Fisa, intrebari: Intrebare[], sectiuni: string[], locale: Locale): string {
+  const u = AVATAR_GHID_DICT[locale].ui;
   const nume = f.rezumat.nume?.trim();
-  const iesire: string[] = [nume ? `Fișă de avatar donator: ${nume}` : "Fișă de avatar donator"];
-  for (const sectiune of SECTIUNI) {
+  const iesire: string[] = [u.textTitlu(nume || undefined)];
+  for (const sectiune of sectiuni) {
     const linii = intrebari
       .filter((q) => q.sectiune === sectiune)
       .map((q) => {
-        const v = valoare(f, q).trim();
-        return v ? `${q.eticheta}: ${afiseaza(q, v)}` : null;
+        const v = valoare(f, q, locale).trim();
+        return v ? `${q.eticheta}: ${afiseaza(q, v, locale)}` : null;
       })
       .filter((l): l is string => l !== null);
     if (linii.length) iesire.push("", sectiune.toUpperCase(), ...linii);
@@ -382,24 +148,28 @@ function textRezumat(f: Fisa, intrebari: Intrebare[]): string {
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
 // Fișa pe o pagină A4, într-o fereastră separată (fără meniul aplicației), gata de tipărit sau de salvat ca PDF.
-function imprima(f: Fisa, intrebari: Intrebare[], poza: string | null): boolean {
+function imprima(f: Fisa, intrebari: Intrebare[], sectiuni: string[], poza: string | null, locale: Locale): boolean {
+  const u = AVATAR_GHID_DICT[locale].ui;
+  const fl = locale === "ro" ? "ro-RO" : "en-GB";
   const w = window.open("", "_blank", "width=900,height=1100");
   if (!w) return false;
-  const nume = f.rezumat.nume?.trim() || "Donatorul ideal";
-  const tip = TIPURI_FISA.find((t) => t.key === f.tip)?.label ?? "";
+  const nume = f.rezumat.nume?.trim() || u.numeImplicitFisa;
+  const tip = tipuriFisaLoc(locale).find((t) => t.key === f.tip)?.label ?? "";
   const citat = f.rezumat.citat?.trim();
   const persoana = f.rezumat.date?.trim();
   const incredere = incredereValidari(f.validari);
-  const gradLabel = GRADE.find((g) => g.key === incredere.grad)?.label ?? "";
-  const sectiuni = SECTIUNI.map((s) => {
-    const randuri = intrebari
-      .filter((q) => q.sectiune === s && q.id !== "nume" && q.id !== "date" && q.id !== "citat")
-      .map((q) => ({ q, v: valoare(f, q).trim() }))
-      .filter((r) => r.v);
-    if (!randuri.length) return "";
-    return `<section><h2>${esc(s)}</h2>${randuri.map((r) => `<div class="r"><b>${esc(r.q.eticheta)}</b><span>${esc(afiseaza(r.q, r.v))}</span></div>`).join("")}</section>`;
-  }).join("");
-  w.document.write(`<!doctype html><html lang="ro"><head><meta charset="utf-8"><title>Fișă de avatar — ${esc(nume)}</title><style>
+  const gradLabel = gradeLoc(locale).find((g) => g.key === incredere.grad)?.label ?? "";
+  const sectiuniHtml = sectiuni
+    .map((s) => {
+      const randuri = intrebari
+        .filter((q) => q.sectiune === s && q.id !== "nume" && q.id !== "date" && q.id !== "citat")
+        .map((q) => ({ q, v: valoare(f, q, locale).trim() }))
+        .filter((r) => r.v);
+      if (!randuri.length) return "";
+      return `<section><h2>${esc(s)}</h2>${randuri.map((r) => `<div class="r"><b>${esc(r.q.eticheta)}</b><span>${esc(afiseaza(r.q, r.v, locale))}</span></div>`).join("")}</section>`;
+    })
+    .join("");
+  w.document.write(`<!doctype html><html lang="${locale}"><head><meta charset="utf-8"><title>${esc(u.titluFisaTiparita(nume))}</title><style>
     @page { size: A4; margin: 14mm; }
     * { box-sizing: border-box; }
     body { font: 13px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; color: #1c2430; margin: 0; }
@@ -417,11 +187,11 @@ function imprima(f: Fisa, intrebari: Intrebare[], poza: string | null): boolean 
     footer { margin-top: 10px; padding-top: 8px; border-top: 1px solid #d5dbe3; font-size: 11px; color: #5b6676; }
   </style></head><body>
     <header>
-      <div class="poza">${poza ? `<img src="${poza}" alt="">` : "Fotografie<br>(opțional)"}</div>
-      <div><div class="tip">${esc(tip)} · fișă de avatar</div><h1>${esc(nume)}</h1>${persoana ? `<p class="persoana">${esc(persoana)}</p>` : ""}${citat ? `<blockquote>${esc(citat)}</blockquote>` : ""}</div>
+      <div class="poza">${poza ? `<img src="${poza}" alt="">` : u.fotografie}</div>
+      <div><div class="tip">${esc(u.tipFisaTiparita(tip))}</div><h1>${esc(nume)}</h1>${persoana ? `<p class="persoana">${esc(persoana)}</p>` : ""}${citat ? `<blockquote>${esc(citat)}</blockquote>` : ""}</div>
     </header>
-    <main>${sectiuni}</main>
-    <footer>Încredere: ${esc(gradLabel)}${incredere.n ? ` — verificată cu ${incredere.n} ${incredere.n === 1 ? "donator" : "donatori"}, ${incredere.pct}% recunoaștere` : ""} · Întocmită/actualizată: ${new Date().toLocaleDateString("ro-RO")}${f.revizuitLa ? ` · Revizuită: ${new Date(f.revizuitLa).toLocaleDateString("ro-RO")}` : ""}</footer>
+    <main>${sectiuniHtml}</main>
+    <footer>${esc(u.subsol(gradLabel, incredere.n, incredere.pct, new Date().toLocaleDateString(fl), f.revizuitLa ? new Date(f.revizuitLa).toLocaleDateString(fl) : null))}</footer>
   </body></html>`);
   w.document.close();
   setTimeout(() => {
@@ -430,8 +200,6 @@ function imprima(f: Fisa, intrebari: Intrebare[], poza: string | null): boolean 
   }, 400);
   return true;
 }
-
-const lei = (n: number) => `${Math.round(n).toLocaleString("ro-RO")} lei`;
 
 export function TabSimplu({
   data,
@@ -446,13 +214,26 @@ export function TabSimplu({
   segmente: SegmentStat[] | null;
   stat: StatisticiPlatforma | null;
 }) {
+  const locale = useLocale();
+  const g = AVATAR_GHID_DICT[locale];
+  const u = g.ui;
+  const fl = locale === "ro" ? "ro-RO" : "en-GB";
+  const lei = (n: number) => `${Math.round(n).toLocaleString(fl)} lei`;
+  const SECTIUNI = g.sectiuni;
+  const TIPURI_FISA = tipuriFisaLoc(locale);
+  const GRADE = gradeLoc(locale);
+  const CONVERSII = conversiiLoc(locale);
+  const toateIntrebarile = useMemo(() => construiesteIntrebari(locale), [locale]);
+  // Etapa relației se recunoaște în ambele limbi (textul ales se păstrează în fișă așa cum a fost scris).
+  const cicluTexte = (i: number) => [AVATAR_GHID_DICT.ro.ciclu[i], AVATAR_GHID_DICT.en.ciclu[i]];
+
   const [fisaId, setFisaId] = useState(FISA_PRINCIPALA);
   const fisa = citesteFisa(data, fisaId);
   const principala = fisa.id === FISA_PRINCIPALA;
-  const intrebari = useMemo(() => intrebariPentru(fisa, principala), [fisa, principala]);
+  const intrebari = useMemo(() => intrebariPentru(fisa, principala, toateIntrebarile, locale), [fisa, principala, toateIntrebarile, locale]);
   const total = intrebari.length;
   const REZUMAT = total; // indexul ecranului de rezumat
-  const nrCompletate = intrebari.filter((q) => valoare(fisa, q).trim() !== "").length;
+  const nrCompletate = intrebari.filter((q) => valoare(fisa, q, locale).trim() !== "").length;
 
   // Cine a început deja ghidul revine direct la rezumat; cine nu, de la prima întrebare.
   const [pas, setPas] = useState(nrCompletate > 0 ? REZUMAT : 0);
@@ -474,9 +255,9 @@ export function TabSimplu({
 
   function deschideFisa(id: string) {
     const f = citesteFisa(data, id);
-    const intr = intrebariPentru(f, id === FISA_PRINCIPALA);
+    const intr = intrebariPentru(f, id === FISA_PRINCIPALA, toateIntrebarile, locale);
     setFisaId(id);
-    setPas(intr.some((q) => valoare(f, q).trim() !== "") ? intr.length : 0);
+    setPas(intr.some((q) => valoare(f, q, locale).trim() !== "") ? intr.length : 0);
     setFisaNoua(false);
   }
   function creeazaFisa(tip: TipFisa) {
@@ -501,7 +282,7 @@ export function TabSimplu({
     setFisaNoua(false);
   }
   function stergeFisa() {
-    if (principala || !window.confirm(`Ștergi fișa „${fisa.rezumat.nume?.trim() || fisa.nume}”? Nu se poate anula.`)) return;
+    if (principala || !window.confirm(u.confirmaSterge(fisa.rezumat.nume?.trim() || fisa.nume))) return;
     actualizeaza((d) => ({ ...d, fiseExtra: d.fiseExtra.filter((f) => f.id !== fisaId) }));
     setFisaId(FISA_PRINCIPALA);
     setPas(REZUMAT);
@@ -509,7 +290,7 @@ export function TabSimplu({
 
   async function copiaza() {
     try {
-      await navigator.clipboard.writeText(textRezumat(fisa, intrebari));
+      await navigator.clipboard.writeText(textRezumat(fisa, intrebari, SECTIUNI, locale));
       setCopiat(true);
       setTimeout(() => setCopiat(false), 2000);
     } catch {
@@ -517,7 +298,7 @@ export function TabSimplu({
     }
   }
   function descarca() {
-    const url = URL.createObjectURL(new Blob([textRezumat(fisa, intrebari)], { type: "text/plain;charset=utf-8" }));
+    const url = URL.createObjectURL(new Blob([textRezumat(fisa, intrebari, SECTIUNI, locale)], { type: "text/plain;charset=utf-8" }));
     const a = document.createElement("a");
     a.href = url;
     a.download = "avatar-donator.txt";
@@ -526,7 +307,7 @@ export function TabSimplu({
   }
   function alegePoza(file: File) {
     if (!file.type.startsWith("image/") || file.size > 3 * 1024 * 1024) {
-      setMesajPrint("Alege o imagine de cel mult 3 MB.");
+      setMesajPrint(u.imagineMare);
       return;
     }
     const r = new FileReader();
@@ -537,14 +318,14 @@ export function TabSimplu({
     r.readAsDataURL(file);
   }
   function tipareste() {
-    setMesajPrint(imprima(fisa, intrebari, poza) ? "" : "Browserul a blocat fereastra de tipărire. Permite ferestrele pop-up pentru această pagină.");
+    setMesajPrint(imprima(fisa, intrebari, SECTIUNI, poza, locale) ? "" : u.popupBlocat);
   }
 
   // ===== Selectorul de fișe =====
   const fise = toateFisele(data);
   const selector = (
     <div className="space-y-2">
-      <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Fișele de avatar">
+      <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={u.selectorAria}>
         {fise.map((f) => (
           <button
             key={f.id}
@@ -555,7 +336,7 @@ export function TabSimplu({
               f.id === fisaId ? "border-[var(--ci-primary)] bg-[var(--ci-primary-soft)] text-[var(--ci-primary)]" : "border-[var(--ci-border)] text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]"
             }`}
           >
-            {f.id === FISA_PRINCIPALA ? `Principală${f.rezumat.nume?.trim() ? ` · ${f.rezumat.nume.trim()}` : ""}` : f.rezumat.nume?.trim() || f.nume}
+            {f.id === FISA_PRINCIPALA ? `${u.principala}${f.rezumat.nume?.trim() ? ` · ${f.rezumat.nume.trim()}` : ""}` : f.rezumat.nume?.trim() || f.nume}
           </button>
         ))}
         {data.fiseExtra.length < MAX_FISE_SUPLIMENTARE && (
@@ -565,7 +346,7 @@ export function TabSimplu({
             aria-expanded={fisaNoua}
             className="inline-flex items-center gap-1 rounded-full border border-dashed border-[var(--ci-border-strong)] px-3 py-1 text-[12.5px] text-[var(--ci-text-muted)] hover:bg-[var(--ci-surface-2)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none"
           >
-            <Plus className="size-3.5" aria-hidden /> Fișă nouă
+            <Plus className="size-3.5" aria-hidden /> {u.fisaNoua}
           </button>
         )}
       </div>
@@ -590,15 +371,21 @@ export function TabSimplu({
   // ===================== REZUMAT =====================
   if (pas >= REZUMAT) {
     const nume = fisa.rezumat.nume?.trim();
-    const lipsaEsentiale = intrebari.filter((q) => ESENTIALE.includes(q.id) && valoare(fisa, q).trim() === "");
-    const opt = intrebari.filter((q) => q.optional && valoare(fisa, q).trim() === "").length;
+    const lipsaEsentiale = intrebari.filter((q) => ESENTIALE.includes(q.id) && valoare(fisa, q, locale).trim() === "");
+    const opt = intrebari.filter((q) => q.optional && valoare(fisa, q, locale).trim() === "").length;
     const incredere = incredereValidari(fisa.validari);
-    const gradLabel = GRADE.find((g) => g.key === incredere.grad)?.label ?? "";
+    const gradLabel = GRADE.find((x) => x.key === incredere.grad)?.label ?? "";
     const dePierdut = fiseDeRevizuit(data, acum).some((f) => f.id === fisa.id);
     const ultimaRevizie = fisa.revizuitLa ?? (principala ? data.actualizat : fisa.creat);
     const totalBaza = (segmente ?? []).reduce((s, x) => s + x.nr, 0);
     const ciclu = fisa.rezumat.ciclu ?? "";
-    const segmenteAlese = fisa.tip === "firme" || !segmente ? [] : CICLU.filter((c) => c.seg !== "reactivat" && ciclu.toLowerCase().includes(c.text.toLowerCase())).map((c) => ({ c, s: segmente.find((x) => x.segment === c.seg) })).filter((x) => x.s);
+    const segmenteAlese =
+      fisa.tip === "firme" || !segmente
+        ? []
+        : CICLU_SEG.map((seg, i) => ({ seg, i }))
+            .filter(({ seg, i }) => seg !== "reactivat" && cicluTexte(i).some((tx) => ciclu.toLowerCase().includes(tx.toLowerCase())))
+            .map(({ seg, i }) => ({ text: g.ciclu[i], seg, s: segmente.find((x) => x.segment === seg) }))
+            .filter((x) => x.s);
     const donatieTipica = parseNum(fisa.donatieUnica);
     const raport = stat && donatieTipica && stat.medianaUnica > 0 ? donatieTipica / stat.medianaUnica : null;
 
@@ -610,26 +397,26 @@ export function TabSimplu({
 
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
-            <h2 className="ci-display text-[17px] font-bold text-[var(--ci-text)]">{nume ? `${fisa.tip === "firme" ? "Sponsorul" : "Donatorul"} tău ideal: ${nume}` : principala ? "Donatorul tău ideal" : fisa.nume}</h2>
+            <h2 className="ci-display text-[17px] font-bold text-[var(--ci-text)]">{u.titluSumar(fisa.tip === "firme", nume, principala, fisa.nume)}</h2>
             <p className="mt-0.5 text-[12.5px] text-[var(--ci-text-muted)]">
-              {nrCompletate} din {total} câmpuri completate
-              {ultimaRevizie ? ` · ultima modificare ${new Date(ultimaRevizie).toLocaleDateString("ro-RO")}` : ""}
+              {u.campuriCompletate(nrCompletate, total)}
+              {ultimaRevizie ? u.ultimaModificare(new Date(ultimaRevizie).toLocaleDateString(fl)) : ""}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button size="sm" onClick={copiaza}>
               {copiat ? <Check className="size-4" aria-hidden /> : <Copy className="size-4" aria-hidden />}
-              {copiat ? "Copiat" : "Copiază"}
+              {copiat ? u.copiat : u.copiaza}
             </Button>
             <Button size="sm" onClick={descarca}>
-              <Download className="size-4" aria-hidden /> Descarcă .txt
+              <Download className="size-4" aria-hidden /> {u.descarca}
             </Button>
             <Button size="sm" variant="primary" onClick={tipareste}>
-              <Printer className="size-4" aria-hidden /> Tipărește fișa
+              <Printer className="size-4" aria-hidden /> {u.tipareste}
             </Button>
             {!principala && (
               <Button size="sm" variant="ghost" onClick={stergeFisa}>
-                <Trash2 className="size-4" aria-hidden /> Șterge fișa
+                <Trash2 className="size-4" aria-hidden /> {u.stergeFisa}
               </Button>
             )}
           </div>
@@ -637,7 +424,7 @@ export function TabSimplu({
 
         <div className="flex flex-wrap items-center gap-2 text-[12.5px] text-[var(--ci-text-muted)]">
           <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-2.5 py-1 text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)] focus-within:ring-2 focus-within:ring-[var(--ci-primary)]">
-            <ImagePlus className="size-4" aria-hidden /> {poza ? "Schimbă fotografia" : "Adaugă o fotografie pentru fișa tipărită"}
+            <ImagePlus className="size-4" aria-hidden /> {poza ? u.schimbaFoto : u.adaugaFoto}
             <input
               type="file"
               accept="image/*"
@@ -649,7 +436,7 @@ export function TabSimplu({
               }}
             />
           </label>
-          <span>Fotografia se folosește doar la tipărire și nu se salvează în aplicație.</span>
+          <span>{u.fotoNota}</span>
         </div>
         {mesajPrint && (
           <p role="alert" className="text-[12.5px] text-[var(--ci-red)]">
@@ -663,12 +450,12 @@ export function TabSimplu({
         >
           {lipsaEsentiale.length === 0 ? (
             <>
-              <strong>Fișa e suficient de solidă ca să ghideze o campanie.</strong>
-              {opt > 0 ? ` Mai poți adăuga ${opt} ${opt === 1 ? "detaliu opțional" : "detalii opționale"}.` : ""}
+              <strong>{u.solida}</strong>
+              {opt > 0 ? u.maiPoti(opt) : ""}
             </>
           ) : (
             <>
-              <strong>Lipsesc {lipsaEsentiale.length === 1 ? "un răspuns esențial" : `${lipsaEsentiale.length} răspunsuri esențiale`}:</strong> {lipsaEsentiale.map((q) => q.eticheta.toLowerCase()).join(", ")}.
+              <strong>{u.lipsesc(lipsaEsentiale.length)}</strong> {lipsaEsentiale.map((q) => q.eticheta.toLowerCase()).join(", ")}.
             </>
           )}
         </div>
@@ -681,20 +468,20 @@ export function TabSimplu({
                 .map((q, i) => ({ q, i }))
                 .filter(({ q }) => q.sectiune === sectiune)
                 .map(({ q, i }) => {
-                  const v = valoare(fisa, q).trim();
+                  const v = valoare(fisa, q, locale).trim();
                   return (
                     <div key={q.id} className="flex items-start justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
                       <div className="min-w-0">
                         <dt className="text-[12px] font-semibold text-[var(--ci-text-muted)]">
                           {q.eticheta}
-                          {q.optional && <span className="ml-1.5 font-normal text-[var(--ci-text-faint)]">opțional</span>}
+                          {q.optional && <span className="ml-1.5 font-normal text-[var(--ci-text-faint)]">{u.optional}</span>}
                         </dt>
-                        <dd className={`mt-0.5 text-[14px] break-words whitespace-pre-line ${v ? "text-[var(--ci-text)]" : "text-[var(--ci-text-faint)]"}`}>{v ? afiseaza(q, v) : "Necompletat"}</dd>
+                        <dd className={`mt-0.5 text-[14px] break-words whitespace-pre-line ${v ? "text-[var(--ci-text)]" : "text-[var(--ci-text-faint)]"}`}>{v ? afiseaza(q, v, locale) : u.necompletat}</dd>
                       </div>
                       <button
                         type="button"
                         onClick={() => setPas(i)}
-                        aria-label={`Editează: ${q.eticheta}`}
+                        aria-label={u.editeaza(q.eticheta)}
                         className="shrink-0 rounded-md p-1.5 text-[var(--ci-text-muted)] hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none"
                       >
                         <Pencil className="size-4" aria-hidden />
@@ -709,34 +496,25 @@ export function TabSimplu({
         {/* Verificare cu baza reală de donatori */}
         {fisa.tip !== "firme" && (segmente || stat) && (
           <Card>
-            <h3 className="text-[14px] font-bold text-[var(--ci-text)]">Fișa față de baza ta reală</h3>
+            <h3 className="text-[14px] font-bold text-[var(--ci-text)]">{u.bazaReala}</h3>
             {segmente && totalBaza === 0 ? (
-              <p className="mt-1 text-[12.5px] text-[var(--ci-text-muted)]">Nu ai încă donatori în baza de date, deci nu putem verifica fișa. Revino după primele donații.</p>
+              <p className="mt-1 text-[12.5px] text-[var(--ci-text-muted)]">{u.faraDonatori}</p>
             ) : (
               <div className="mt-1 space-y-2 text-[13px] text-[var(--ci-text)]">
                 {segmenteAlese.length > 0 ? (
                   <ul className="divide-y divide-[var(--ci-border)]">
-                    {segmenteAlese.map(({ c, s }) => (
-                      <li key={c.seg} className="flex flex-wrap items-baseline justify-between gap-2 py-1.5 first:pt-0 last:pb-0">
-                        <span className="font-medium">{c.text.split(" (")[0]}</span>
-                        <span className="ci-tabular text-[var(--ci-text-muted)]">
-                          {s!.nr} donatori ({totalBaza ? Math.round((s!.nr / totalBaza) * 100) : 0}% din bază) · {lei(s!.suma)}
-                          {s!.nr > 0 ? ` · ${lei(s!.suma / s!.nr)} în medie` : ""}
-                        </span>
+                    {segmenteAlese.map(({ text, seg, s }) => (
+                      <li key={seg} className="flex flex-wrap items-baseline justify-between gap-2 py-1.5 first:pt-0 last:pb-0">
+                        <span className="font-medium">{text.split(" (")[0]}</span>
+                        <span className="ci-tabular text-[var(--ci-text-muted)]">{u.segmentRand(s!.nr, totalBaza ? Math.round((s!.nr / totalBaza) * 100) : 0, lei(s!.suma), s!.nr > 0 ? lei(s!.suma / s!.nr) : null)}</span>
                       </li>
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-[12.5px] text-[var(--ci-text-muted)]">Alege etapa relației (în ghid) ca să vezi câți donatori reali se potrivesc.</p>
+                  <p className="text-[12.5px] text-[var(--ci-text-muted)]">{u.alegeEtapa}</p>
                 )}
-                {segmenteAlese.some(({ s }) => s!.nr === 0) && (
-                  <p className="text-[12.5px] text-[var(--ci-amber)]">Cel puțin una dintre etapele alese nu are niciun donator în bază. Verifică dacă fișa descrie o realitate sau o țintă.</p>
-                )}
-                {raport !== null && stat && (raport > 1.5 || raport < 0.67) && (
-                  <p className="text-[12.5px] text-[var(--ci-amber)]">
-                    Donația tipică din fișă ({lei(donatieTipica!)}) diferă mult de mediana reală a donațiilor online ({lei(stat.medianaUnica)}). Folosește cifra reală sau explică diferența.
-                  </p>
-                )}
+                {segmenteAlese.some(({ s }) => s!.nr === 0) && <p className="text-[12.5px] text-[var(--ci-amber)]">{u.etapaGoala}</p>}
+                {raport !== null && stat && (raport > 1.5 || raport < 0.67) && <p className="text-[12.5px] text-[var(--ci-amber)]">{u.donatieDiferita(lei(donatieTipica!), lei(stat.medianaUnica))}</p>}
               </div>
             )}
           </Card>
@@ -746,18 +524,16 @@ export function TabSimplu({
         <Card>
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
-              <h3 className="text-[14px] font-bold text-[var(--ci-text)]">Verificare pe donatori reali</h3>
-              <p className="mt-0.5 max-w-xl text-[12.5px] text-[var(--ci-text-muted)]">
-                Arată fișa la 5–10 donatori sau potențiali donatori și întreabă dacă se recunosc. Notează doar prenumele sau inițialele, fără date de contact.
-              </p>
+              <h3 className="text-[14px] font-bold text-[var(--ci-text)]">{u.validare.titlu}</h3>
+              <p className="mt-0.5 max-w-xl text-[12.5px] text-[var(--ci-text-muted)]">{u.validare.sub}</p>
             </div>
             <span
               className={`rounded-full px-2.5 py-1 text-[12px] font-semibold ${
                 incredere.grad === "masurat" ? "bg-[var(--ci-green-soft)] text-[var(--ci-green)]" : incredere.grad === "estimat" ? "bg-[var(--ci-amber-soft)] text-[var(--ci-text)]" : "bg-[var(--ci-surface-2)] text-[var(--ci-text-muted)]"
               }`}
             >
-              {incredere.grad === "masurat" ? "Validată" : gradLabel}
-              {incredere.n > 0 ? ` · ${incredere.n} ${incredere.n === 1 ? "răspuns" : "răspunsuri"}, ${incredere.pct}%` : ""}
+              {incredere.grad === "masurat" ? u.validare.validata : gradLabel}
+              {incredere.n > 0 ? u.validare.raspunsuri(incredere.n, incredere.pct) : ""}
             </span>
           </div>
 
@@ -766,17 +542,17 @@ export function TabSimplu({
               {fisa.validari.map((v, i) => (
                 <li key={v.id} className="grid items-center gap-2 sm:grid-cols-[150px_auto_1fr_auto]">
                   <Input
-                    aria-label={`Persoana ${i + 1}`}
-                    placeholder="Prenume / inițiale"
+                    aria-label={u.validare.persoanaAria(i + 1)}
+                    placeholder={u.validare.prenume}
                     value={v.persoana}
                     onChange={(e) => setValidari((l) => l.map((x) => (x.id === v.id ? { ...x, persoana: e.target.value } : x)))}
                   />
-                  <div role="radiogroup" aria-label={`Se recunoaște? ${v.persoana || `persoana ${i + 1}`}`} className="flex gap-1">
+                  <div role="radiogroup" aria-label={u.validare.seRecunoaste(v.persoana || u.validare.persoanaN(i + 1))} className="flex gap-1">
                     {(
                       [
-                        ["da", "Da"],
-                        ["partial", "Parțial"],
-                        ["nu", "Nu"],
+                        ["da", u.validare.da],
+                        ["partial", u.validare.partial],
+                        ["nu", u.validare.nu],
                       ] as [Recunoastere, string][]
                     ).map(([val, eticheta]) => (
                       <button
@@ -794,14 +570,14 @@ export function TabSimplu({
                     ))}
                   </div>
                   <Input
-                    aria-label={`Ce a spus ${v.persoana || `persoana ${i + 1}`}`}
-                    placeholder="Ce a spus / ce nu se potrivește"
+                    aria-label={u.validare.ceAspus(v.persoana || u.validare.persoanaN(i + 1))}
+                    placeholder={u.validare.notaPlaceholder}
                     value={v.nota}
                     onChange={(e) => setValidari((l) => l.map((x) => (x.id === v.id ? { ...x, nota: e.target.value } : x)))}
                   />
                   <button
                     type="button"
-                    aria-label={`Șterge răspunsul ${i + 1}`}
+                    aria-label={u.validare.stergeRaspuns(i + 1)}
                     onClick={() => setValidari((l) => l.filter((x) => x.id !== v.id))}
                     className="justify-self-end rounded-md p-1.5 text-[var(--ci-text-muted)] hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-red)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none"
                   >
@@ -815,57 +591,54 @@ export function TabSimplu({
           <div className="mt-3 flex flex-wrap items-center gap-2">
             {fisa.validari.length < MAX_VALIDARI && (
               <Button size="sm" onClick={() => setValidari((l) => [...l, { id: crypto.randomUUID(), persoana: "", recunoaste: "", nota: "" }])}>
-                <Plus className="size-4" aria-hidden /> Adaugă un donator
+                <Plus className="size-4" aria-hidden /> {u.validare.adauga}
               </Button>
             )}
             {incredere.n >= 3 && (
               <Button
                 size="sm"
                 onClick={() => {
-                  const linie = `Verificată cu ${incredere.n} donatori (${incredere.pct}% se recunosc)`;
+                  const linie = u.validare.linieBaza(incredere.n, incredere.pct);
                   const curent = (fisa.rezumat.baza ?? "").trim();
                   if (!curent.includes(linie)) seteazaRezumat("baza", curent ? `${curent}; ${linie}` : linie);
                 }}
               >
-                Trece rezultatul în „Sursa fișei”
+                {u.validare.treciInBaza}
               </Button>
             )}
           </div>
-          {incredere.n >= 5 && incredere.pct < 50 && (
-            <p className="mt-2 text-[12.5px] text-[var(--ci-amber)]">Sub jumătate dintre donatori se recunosc. Fișa descrie mai degrabă o țintă decât un donator real: ajusteaz-o după ce au spus.</p>
-          )}
+          {incredere.n >= 5 && incredere.pct < 50 && <p className="mt-2 text-[12.5px] text-[var(--ci-amber)]">{u.validare.subJumatate}</p>}
         </Card>
 
         {/* Revizuire anuală */}
         <Card>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <h3 className="text-[14px] font-bold text-[var(--ci-text)]">Revizuire anuală</h3>
+              <h3 className="text-[14px] font-bold text-[var(--ci-text)]">{u.revizuire.titlu}</h3>
               <p className={`mt-0.5 text-[12.5px] ${dePierdut ? "text-[var(--ci-amber)]" : "text-[var(--ci-text-muted)]"}`}>
-                {dePierdut ? "Fișa n-a mai fost revizuită de peste 12 luni. " : ""}
-                {fisa.revizuitLa ? `Ultima revizuire confirmată: ${new Date(fisa.revizuitLa).toLocaleDateString("ro-RO")}.` : "Nu ai confirmat încă o revizuire."} Recitește fișa o dată pe an și după fiecare campanie mare.
+                {dePierdut ? u.revizuire.depasita : ""}
+                {fisa.revizuitLa ? u.revizuire.ultima(new Date(fisa.revizuitLa).toLocaleDateString(fl)) : u.revizuire.nu}
+                {u.revizuire.recitesteAdv}
               </p>
             </div>
             <Button size="sm" onClick={() => seteazaFisa((f) => ({ ...f, revizuitLa: new Date().toISOString() }))}>
-              <Check className="size-4" aria-hidden /> Marchează ca revizuită
+              <Check className="size-4" aria-hidden /> {u.revizuire.marcheaza}
             </Button>
           </div>
         </Card>
 
         <Card>
-          <h3 className="text-[14px] font-bold text-[var(--ci-text)]">Ce urmează</h3>
-          <p className="mt-0.5 text-[12.5px] text-[var(--ci-text-muted)]">
-            Din fișa principală, aplicația poate calcula cum să-ți împarți bugetul pe platforme. Pentru scoruri pe segmente și chestionarul complet, folosește variantele detaliate.
-          </p>
+          <h3 className="text-[14px] font-bold text-[var(--ci-text)]">{u.urmeaza.titlu}</h3>
+          <p className="mt-0.5 text-[12.5px] text-[var(--ci-text-muted)]">{u.urmeaza.text}</p>
           <div className="mt-3 flex flex-wrap gap-2">
             <Button variant="primary" size="sm" onClick={() => mergiLa("sinteza")}>
-              Vezi recomandările <ArrowRight className="size-4" aria-hidden />
+              {u.urmeaza.recomandari} <ArrowRight className="size-4" aria-hidden />
             </Button>
             <Button size="sm" onClick={() => mergiLa("buget")}>
-              Completează bugetul și canalele
+              {u.urmeaza.buget}
             </Button>
             <Button size="sm" onClick={() => mergiLa("profile")}>
-              Scoruri pe segmente
+              {u.urmeaza.scoruri}
             </Button>
           </div>
         </Card>
@@ -875,16 +648,17 @@ export function TabSimplu({
 
   // ===================== ÎNTREBĂRI =====================
   const q = intrebari[pas];
-  const v = valoare(fisa, q);
+  const v = valoare(fisa, q, locale);
   const esteUltima = pas === total - 1;
   const inainte = () => setPas((p) => Math.min(REZUMAT, p + 1));
-  const sugestii = q.tip === "text" || q.tip === "lung" ? [...(q.propune?.(fisa) ?? []), ...(q.sugestii ?? [])] : [];
+  const sugestii = q.tip === "text" || q.tip === "lung" ? [...(q.propune?.(fisa, locale) ?? []), ...(q.sugestii ?? [])] : [];
   const reperReal = fisa.tip !== "firme" && stat && stat.medianaUnica > 0;
   const sufixSegment = (s: string): string => {
     if (q.id !== "ciclu" || fisa.tip === "firme" || !segmente) return "";
-    const c = CICLU.find((x) => x.text === s);
-    if (!c || c.seg === "reactivat") return "";
-    return ` · ${segmente.find((x) => x.segment === c.seg)?.nr ?? 0} în baza ta`;
+    const idx = g.ciclu.indexOf(s);
+    const seg = idx >= 0 ? CICLU_SEG[idx] : undefined;
+    if (!seg || seg === "reactivat") return "";
+    return u.pas.inBazaTa(segmente.find((x) => x.segment === seg)?.nr ?? 0);
   };
 
   return (
@@ -893,13 +667,13 @@ export function TabSimplu({
       <div>
         <div className="flex items-center justify-between gap-2 text-[12px] text-[var(--ci-text-muted)]">
           <span>
-            <span className="font-semibold text-[var(--ci-primary)]">{q.sectiune}</span> · întrebarea {pas + 1} din {total}
+            <span className="font-semibold text-[var(--ci-primary)]">{q.sectiune}</span> · {u.pas.intrebarea(pas + 1, total)}
           </span>
           <button type="button" onClick={() => setPas(REZUMAT)} className="shrink-0 font-medium text-[var(--ci-primary)] hover:underline focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
-            Vezi rezumatul
+            {u.pas.vezRezumat}
           </button>
         </div>
-        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[var(--ci-surface-2)]" role="progressbar" aria-valuemin={1} aria-valuemax={total} aria-valuenow={pas + 1} aria-label="Progres ghid">
+        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[var(--ci-surface-2)]" role="progressbar" aria-valuemin={1} aria-valuemax={total} aria-valuenow={pas + 1} aria-label={u.pas.progresAria}>
           <div className="h-full rounded-full bg-[var(--ci-primary)] transition-[width]" style={{ width: `${((pas + 1) / total) * 100}%` }} />
         </div>
       </div>
@@ -907,14 +681,14 @@ export function TabSimplu({
       <Card>
         <h2 className="ci-display text-[18px] font-bold text-[var(--ci-text)]">
           {q.titlu}
-          {q.optional && <span className="ml-2 align-middle text-[12px] font-normal text-[var(--ci-text-faint)]">opțional</span>}
+          {q.optional && <span className="ml-2 align-middle text-[12px] font-normal text-[var(--ci-text-faint)]">{u.optional}</span>}
         </h2>
         <p className="mt-1 text-[13px] text-[var(--ci-text-muted)]">{q.ajutor}</p>
 
         {reperReal && (q.id === "comportament" || q.id === "suma") && stat && (
           <p className="mt-3 rounded-[var(--ci-radius-btn)] bg-[var(--ci-surface-2)] px-3 py-2 text-[12.5px] text-[var(--ci-text)]">
-            <strong>Reper real din platformă:</strong> donație online tipică (mediană) {lei(stat.medianaUnica)}, medie {lei(stat.medieUnica)}, {stat.donatii} donații unice
-            {stat.abonamenteActive > 0 ? `, ${stat.abonamenteActive} abonamente lunare active` : ""}.
+            <strong>{u.pas.reper}</strong>
+            {u.pas.reperText(lei(stat.medianaUnica), lei(stat.medieUnica), stat.donatii, stat.abonamenteActive)}
           </p>
         )}
 
@@ -935,7 +709,7 @@ export function TabSimplu({
                   onChange={(e) => seteazaFisa((f) => ({ ...f, [q.camp]: e.target.value }))}
                   onKeyDown={(e) => e.key === "Enter" && inainte()}
                 />
-                <span className="text-[13px] text-[var(--ci-text-muted)]">{q.unitate}</span>
+                <span className="text-[13px] text-[var(--ci-text-muted)]">{g.unitati[q.unitate]}</span>
               </div>
               {q.camp === "donatieUnica" && reperReal && stat && (
                 <button
@@ -943,7 +717,7 @@ export function TabSimplu({
                   onClick={() => seteazaFisa((f) => ({ ...f, donatieUnica: String(stat.medianaUnica) }))}
                   className="rounded-full border border-[var(--ci-border)] px-2.5 py-1 text-[12.5px] text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none"
                 >
-                  Folosește mediana reală: {lei(stat.medianaUnica)}
+                  {u.pas.folosesteMediana(lei(stat.medianaUnica))}
                 </button>
               )}
             </div>
@@ -972,7 +746,7 @@ export function TabSimplu({
 
           {(q.tip === "text" || q.tip === "lung") && sugestii.length > 0 && (
             <div className="mt-3">
-              <p className="text-[12px] text-[var(--ci-text-muted)]">{q.unul ? "Alege una:" : "Apasă ca să adaugi:"}</p>
+              <p className="text-[12px] text-[var(--ci-text-muted)]">{q.unul ? u.pas.alegeUna : u.pas.apasa}</p>
               <div className="mt-1.5 flex flex-wrap gap-1.5">
                 {sugestii.map((s) => {
                   const ales = q.unul ? v.trim() === s : v.toLowerCase().includes(s.toLowerCase());
@@ -1000,16 +774,16 @@ export function TabSimplu({
 
       <div className="flex items-center justify-between gap-2">
         <Button onClick={() => setPas((p) => Math.max(0, p - 1))} disabled={pas === 0}>
-          <ArrowLeft className="size-4" aria-hidden /> Înapoi
+          <ArrowLeft className="size-4" aria-hidden /> {u.pas.inapoi}
         </Button>
         <div className="flex gap-2">
           {v.trim() === "" && !esteUltima && (
             <Button variant="ghost" onClick={inainte}>
-              Sari peste
+              {u.pas.sari}
             </Button>
           )}
           <Button variant="primary" onClick={inainte}>
-            {esteUltima ? "Vezi rezumatul" : "Următoarea"} <ArrowRight className="size-4" aria-hidden />
+            {esteUltima ? u.pas.vezRezumatBtn : u.pas.urmatoarea} <ArrowRight className="size-4" aria-hidden />
           </Button>
         </div>
       </div>

@@ -1,3 +1,5 @@
+import { PERFORMANTA_UI_DICT } from "@/lib/i18n/dictionaries/performanta-ui";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { dateDemo } from "@/lib/performanta-demo-date";
 
 import { AutomatizariClient } from "../../automatizari-client";
@@ -8,8 +10,9 @@ export const dynamic = "force-dynamic";
 export default async function DemoAutomatizari({ params }: { params: Promise<{ orgSlug: string }> }) {
   const { orgSlug } = await params;
   const d = dateDemo();
+  const p = PERFORMANTA_UI_DICT[await getLocale()].demo.automatizari;
   return (
-    <PaginaDemo orgSlug={orgSlug} titlu="Automatizări · exemplu" descriere="Reguli clare, pornite sau oprite de organizație. Mai puține reamintiri de făcut manual, fără un val de alerte.">
+    <PaginaDemo orgSlug={orgSlug} titlu={p.titlu} descriere={p.descriere}>
       <AutomatizariClient orgSlug={orgSlug} setari={d.setari} angajati={d.angajatiSetari} admin />
     </PaginaDemo>
   );

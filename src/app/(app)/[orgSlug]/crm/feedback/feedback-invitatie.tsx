@@ -5,6 +5,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { FEEDBACK_UI_DICT } from "@/lib/i18n/dictionaries/feedback-ui";
+
+import { useLocale } from "../lib/locale-context";
 import { cereInvitatieChestionarAction } from "./actions";
 
 const ZILE_AMANARE = 14; // „Mai târziu” ascunde invitația două săptămâni
@@ -13,6 +16,7 @@ const MS_ZI = 86_400_000;
 // Invitație discretă să completezi chestionarul. Server-ul decide dacă are sens (după câteva zile de la înscriere, o dată la trei luni);
 // întrebăm cel mult o dată pe sesiune de browser și nu insistăm: „Mai târziu” o ascunde pentru două săptămâni.
 export function FeedbackInvitatie({ orgSlug }: { orgSlug: string }) {
+  const d = FEEDBACK_UI_DICT[useLocale()].invitatie;
   const pathname = usePathname();
   const [vizibila, setVizibila] = useState(false);
   const cheieAmanare = `fa-feedback-amanat-${orgSlug}`;
@@ -54,18 +58,18 @@ export function FeedbackInvitatie({ orgSlug }: { orgSlug: string }) {
       <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-4 gap-y-2">
         <MessageSquareHeart className="h-4 w-4 shrink-0 text-[var(--ci-primary)]" aria-hidden="true" />
         <p className="min-w-0 flex-1 text-[13px] text-[var(--ci-text)]">
-          <span className="font-semibold">Cum merge cu Alexandrit?</span> Două minute din timpul tău ne ajută să construim ce îți trebuie.
+          <span className="font-semibold">{d.intrebare}</span>{d.text}
         </p>
         <Link
           prefetch={false}
           href={`/${orgSlug}/crm/feedback`}
           className="rounded-[var(--ci-radius-btn)] bg-[var(--ci-primary)] px-3.5 py-1.5 text-[13px] font-semibold whitespace-nowrap text-white transition hover:bg-[var(--ci-primary-hover)]"
         >
-          Completează chestionarul
+          {d.completeaza}
         </Link>
         <button type="button" onClick={amana} className="flex items-center gap-1 text-[13px] font-medium whitespace-nowrap text-[var(--ci-text-muted)] transition hover:text-[var(--ci-text)]">
           <X className="h-3.5 w-3.5" aria-hidden="true" />
-          Mai târziu
+          {d.maiTarziu}
         </button>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 
 import { withOrgSession } from "@/lib/auth/guard";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { analizeazaDonator, comparaPrioritateReactivare, type Analiza } from "@/lib/analiza-donator";
 import { bazaDonatori } from "@/lib/donatori-pf";
 
@@ -37,13 +38,14 @@ export const getReactivareDonatori = withOrgSession(async (ctx): Promise<Reactiv
     limit ${LIMITA_ANALIZA}
   `)) as unknown as { id: string; nume: string; telefon: string | null; total: number; nr: number; prima: Date | string | null; ultima: Date | string | null; nu_contactat: boolean; dezabonat_email_la: Date | string | null }[];
 
+  const locale = await getLocale();
   const analizati: RandReactivare[] = rows.map((r) => ({
     id: r.id,
     nume: r.nume,
     telefon: r.telefon,
     nuContactat: Boolean(r.nu_contactat),
     dezabonat: Boolean(r.dezabonat_email_la),
-    analiza: analizeazaDonator({ primaAt: r.prima, ultimaAt: r.ultima, nr: r.nr, total: r.total }),
+    analiza: analizeazaDonator({ primaAt: r.prima, ultimaAt: r.ultima, nr: r.nr, total: r.total }, new Date(), locale),
   }));
 
   const deContactat = analizati.filter((x) => (x.analiza.risc === "ridicat" || x.analiza.risc === "mediu") && !x.nuContactat);

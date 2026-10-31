@@ -54,7 +54,7 @@ async function inregistreazaAcordReinnoire(ctx: OrgContext, acord: boolean, pach
 // niciodată optimist, înainte de confirmare.
 // Recomandarea de pachet din ce a folosit organizația în probă (utilizatori, contacte, module); disponibilă și când proba s-a încheiat,
 // ca ecranul de alegere a pachetului să poată explica ce se potrivește.
-export const obtineRecomandareAction = withOrgAdmin(async (ctx): Promise<Recomandare> => recomandaPachet(await masoaraUtilizarea(ctx)), { permiteAccesBlocat: true });
+export const obtineRecomandareAction = withOrgAdmin(async (ctx): Promise<Recomandare> => recomandaPachet(await masoaraUtilizarea(ctx), await getLocale()), { permiteAccesBlocat: true });
 
 export const startCheckoutAction = withOrgAdmin(
   async (ctx, pkg: Exclude<OrgPackage, "trial" | "custom">, acordReinnoire: boolean, extraUtilizatori: number = 0, facturareCeruta: string = "lunar") => {
@@ -68,6 +68,8 @@ export const startCheckoutAction = withOrgAdmin(
       : schimbarePlanBlocata(
           { package: ctx.orgPackage, extraUsers: ctx.orgExtraUsers, subscriptionStatus: ctx.orgSubscriptionStatus, currentPeriodEnd: ctx.orgCurrentPeriodEnd },
           { package: pkg, extraUsers: extra },
+          new Date(),
+          await getLocale(),
         );
     if (blocat) return { blocat };
     // Perioada (lună sau an) și suma se stabilesc AICI; anualul = 10 luni plătite pentru 12 de acces (2 luni gratuite).
@@ -109,6 +111,8 @@ export const startCustomCheckoutAction = withOrgAdmin(
       : schimbarePlanBlocata(
           { package: ctx.orgPackage, extraUsers: ctx.orgExtraUsers, subscriptionStatus: ctx.orgSubscriptionStatus, currentPeriodEnd: ctx.orgCurrentPeriodEnd },
           { package: "custom", extraUsers: 0 },
+          new Date(),
+          await getLocale(),
         );
     if (blocat) return { blocat };
     const config = normalizeCustomPlanConfig(rawConfig);

@@ -3,13 +3,18 @@
 import { ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
+import { INSTRUMENTE_UI_DICT } from "@/lib/i18n/dictionaries/instrumente-ui";
+
 import { Button } from "../../components/ui/button";
+import { useLocale } from "../../lib/locale-context";
 
 export type ElementExport = { eticheta: string; descriere: string; icon: ReactNode; onClick: () => void };
 
 // „Alte formate”: o listă de butoane obișnuite (nu un meniu ARIA fals): Tab merge printre ele, Escape închide și întoarce focusul pe buton,
 // iar un click în afară închide. La deschidere, focusul trece pe primul element.
-export function MeniuExport({ elemente, eticheta = "Alte formate" }: { elemente: ElementExport[]; eticheta?: string }) {
+export function MeniuExport({ elemente, eticheta: etichetaDin }: { elemente: ElementExport[]; eticheta?: string }) {
+  const etichetaImplicita = INSTRUMENTE_UI_DICT[useLocale()].comun.meniuExport;
+  const eticheta = etichetaDin ?? etichetaImplicita;
   const [deschis, setDeschis] = useState(false);
   const declansator = useRef<HTMLDivElement>(null);
   const panou = useRef<HTMLDivElement>(null);

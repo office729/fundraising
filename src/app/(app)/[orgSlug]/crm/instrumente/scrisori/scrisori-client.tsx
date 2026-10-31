@@ -2,13 +2,16 @@
 
 import { useMemo } from "react";
 
+import { INSTRUMENTE_UI_DICT } from "@/lib/i18n/dictionaries/instrumente-ui";
 import { antetDinOrganizatie, campuriNecompletate, curataDateScrisoare, dateScrisoareExemplu, dateScrisoareGoale, MECANISME_SCRISOARE, MODELE_SCRISORI, TIPURI_SCRISOARE, type DateScrisoare, type InfoOrganizatie } from "@/lib/scrisori";
 import { MOTIVE } from "@/lib/motiv";
 import { randeazaScrisoare } from "@/lib/scrisori-modele";
 import { paletaDinHex } from "@/lib/raport-impact-culori";
 
+import { useLocale } from "../../lib/locale-context";
 import { GalerieSabloane } from "../_comun/galerie-sabloane";
 import { GeneratorDocument, type Banner, type GrupDef } from "../_comun/generator-document";
+import { traduElemente } from "../_comun/tradu";
 
 const accenteOrg = (o: InfoOrganizatie) => {
   const p = o.culoare ? paletaDinHex(o.culoare) : null;
@@ -16,14 +19,16 @@ const accenteOrg = (o: InfoOrganizatie) => {
 };
 
 export function GalerieScrisori({ orgSlug, org, azi }: { orgSlug: string; org: InfoOrganizatie; azi: string }) {
+  const locale = useLocale();
+  const d = INSTRUMENTE_UI_DICT[locale].galerieScrisori;
   const modele = useMemo(() => {
     const ex = dateScrisoareExemplu({ nume: org.nume, antetLinii: antetDinOrganizatie(org), logo: org.logo, acc: accenteOrg(org) }, azi);
-    return MODELE_SCRISORI.map((m) => ({ id: m.id, eticheta: m.eticheta, hint: m.hint, html: randeazaScrisoare(ex, m.id) }));
-  }, [org, azi]);
+    return traduElemente(MODELE_SCRISORI, "scrisori", locale).map((m) => ({ id: m.id, eticheta: m.eticheta, hint: m.hint, html: randeazaScrisoare(ex, m.id) }));
+  }, [org, azi, locale]);
   return (
     <GalerieSabloane
-      titlu="Scrisori: alege un șablon"
-      subtitlu={`${MODELE_SCRISORI.length} modele de scrisoare cu antet, cu date de exemplu. Apasă pe unul ca să-l completezi.`}
+      titlu={d.titlu}
+      subtitlu={d.subtitlu(MODELE_SCRISORI.length)}
       hrefGenerator={`/${orgSlug}/crm/instrumente/scrisori/generator`}
       modele={modele}
       lat={794}
@@ -34,70 +39,76 @@ export function GalerieScrisori({ orgSlug, org, azi }: { orgSlug: string; org: I
   );
 }
 
-const GRUPURI: GrupDef[] = [
-  {
-    titlu: "Destinatar",
-    campuri: [
-      { cheie: "destNume", eticheta: "Nume și prenume", jumatate: true },
-      { cheie: "destFunctie", eticheta: "Funcția", jumatate: true },
-      { cheie: "destFirma", eticheta: "Firma sau instituția", placeholder: "ex. Firma SRL" },
-      { cheie: "destAdresa", eticheta: "Adresa", tip: "textarea", rows: 2, ajutor: "Câte un rând pentru fiecare linie." },
-    ],
-  },
-  {
-    titlu: "Scrisoarea",
-    campuri: [
-      { cheie: "loc", eticheta: "Localitatea", jumatate: true },
-      { cheie: "data", eticheta: "Data", tip: "data", jumatate: true },
-      { cheie: "nrInregistrare", eticheta: "Număr de înregistrare", placeholder: "ex. Nr. 014/2026" },
-      { cheie: "subiect", eticheta: "Subiect" },
-      { cheie: "formulaAdresare", eticheta: "Formula de adresare" },
-      { cheie: "corp", eticheta: "Textul scrisorii", tip: "textarea", rows: 11, ajutor: "Paragrafele se despart printr-un rând liber. Se completează automat: {DESTINATAR}, {FIRMA}, {ORGANIZATIE}, {DATA}, {SUMA}, {PROIECT}, {AN}." },
-      { cheie: "formulaFinala", eticheta: "Formula de încheiere" },
-    ],
-  },
-  {
-    titlu: "Cerere și termen",
-    subtitlu: "Folosite în {SUMA_CERUTA}, {REZULTAT}, {TERMEN} și {PARAGRAF_FISCAL}, în scrisorile de solicitare, ofertă, follow-up și reînnoire.",
-    campuri: [
-      { cheie: "sumaCeruta", eticheta: "Suma propusă", placeholder: "ex. 12.000 lei", jumatate: true },
-      { cheie: "termen", eticheta: "Termen sau moment", placeholder: "ex. marți, între 10 și 12", jumatate: true },
-      { cheie: "rezultat", eticheta: "Ce se obține cu suma", placeholder: "ex. examinarea la timp a 40 de copii" },
-      { cheie: "mecanism", eticheta: "Mecanism fiscal (opțional)", tip: "select", optiuni: MECANISME_SCRISOARE, ajutor: "Adaugă un paragraf prudent despre mecanism, fără cifre sau termene. Verific-o cu contabilul înainte să trimiți." },
-    ],
-  },
-  {
-    titlu: "Date pentru text",
-    subtitlu: "Folosite în {SUMA}, {PROIECT} și {AN}. Se completează singure când pornești din fișa unei firme.",
-    campuri: [
-      { cheie: "suma", eticheta: "Suma", placeholder: "ex. 5.000 lei", jumatate: true },
-      { cheie: "an", eticheta: "Anul", placeholder: "ex. 2026", jumatate: true },
-      { cheie: "proiect", eticheta: "Proiectul" },
-    ],
-  },
-  {
-    titlu: "Semnătură",
-    campuri: [
-      { cheie: "semnNume", eticheta: "Nume semnatar", jumatate: true },
-      { cheie: "semnFunctie", eticheta: "Funcția semnatarului", jumatate: true },
-      { cheie: "ps", eticheta: "P.S. (opțional)", tip: "textarea", rows: 2 },
-      { cheie: "anexe", eticheta: "Anexe (opțional)", placeholder: "ex. Raportul de impact 2025" },
-    ],
-  },
-  {
-    titlu: "Antet",
-    subtitlu: "Datele organizației din antet și din subsol",
-    campuri: [
-      { cheie: "antetNume", eticheta: "Numele organizației" },
-      { cheie: "motivGrafic", eticheta: "Motiv grafic", tip: "select", optiuni: MOTIVE, ajutor: "Apare discret în unele modele (filigran, linie sub antet)." },
-      { cheie: "antetLinii", eticheta: "Adresă, CIF, IBAN, contact", tip: "textarea", rows: 3, ajutor: "Câte un rând pentru fiecare informație. Poți adăuga și mențiuni utile firmelor: statutul de utilitate publică sau numărul din registrul entităților pentru care se acordă deduceri fiscale, dacă organizația îl are." },
-    ],
-  },
-];
-
 const PERSONALE = ["sumaCeruta", "rezultat", "termen", "destNume", "destFunctie", "destFirma", "destAdresa", "logoDestinatar", "nrInregistrare", "semnNume", "semnFunctie", "ps", "anexe", "suma", "proiect", "an"];
 
 export function GeneratorScrisori({ orgSlug, org, azi, model, semnatar, dateIni, firmaId, bannere }: { orgSlug: string; org: InfoOrganizatie; azi: string; model?: string; semnatar: { nume: string; functie: string }; dateIni?: Record<string, unknown>; firmaId: string | null; bannere: Banner[] }) {
+  const locale = useLocale();
+  const t = INSTRUMENTE_UI_DICT[locale].scrisori;
+  const g = t.grupuri;
+  const modeleTrad = useMemo(() => traduElemente(MODELE_SCRISORI, "scrisori", locale), [locale]);
+  const mecanisme = useMemo(() => traduElemente(MECANISME_SCRISOARE, "mecanismeScrisoare", locale), [locale]);
+  const motive = useMemo(() => traduElemente(MOTIVE, "motive", locale), [locale]);
+  const tipuri = useMemo(() => traduElemente(TIPURI_SCRISOARE, "tipuriScrisoare", locale), [locale]);
+  const GRUPURI: GrupDef[] = [
+    {
+      titlu: g.destinatar,
+      campuri: [
+        { cheie: "destNume", eticheta: g.destNume, jumatate: true },
+        { cheie: "destFunctie", eticheta: g.destFunctie, jumatate: true },
+        { cheie: "destFirma", eticheta: g.destFirma, placeholder: g.destFirmaEx },
+        { cheie: "destAdresa", eticheta: g.destAdresa, tip: "textarea", rows: 2, ajutor: g.destAdresaAjutor },
+      ],
+    },
+    {
+      titlu: g.scrisoarea,
+      campuri: [
+        { cheie: "loc", eticheta: g.loc, jumatate: true },
+        { cheie: "data", eticheta: g.data, tip: "data", jumatate: true },
+        { cheie: "nrInregistrare", eticheta: g.nrInregistrare, placeholder: g.nrEx },
+        { cheie: "subiect", eticheta: g.subiect },
+        { cheie: "formulaAdresare", eticheta: g.formulaAdresare },
+        { cheie: "corp", eticheta: g.corp, tip: "textarea", rows: 11, ajutor: g.corpAjutor },
+        { cheie: "formulaFinala", eticheta: g.formulaFinala },
+      ],
+    },
+    {
+      titlu: g.cerere,
+      subtitlu: g.cerereSub,
+      campuri: [
+        { cheie: "sumaCeruta", eticheta: g.sumaCeruta, placeholder: g.sumaCerutaEx, jumatate: true },
+        { cheie: "termen", eticheta: g.termen, placeholder: g.termenEx, jumatate: true },
+        { cheie: "rezultat", eticheta: g.rezultat, placeholder: g.rezultatEx },
+        { cheie: "mecanism", eticheta: g.mecanism, tip: "select", optiuni: mecanisme, ajutor: g.mecanismAjutor },
+      ],
+    },
+    {
+      titlu: g.dateText,
+      subtitlu: g.dateTextSub,
+      campuri: [
+        { cheie: "suma", eticheta: g.suma, placeholder: g.sumaEx, jumatate: true },
+        { cheie: "an", eticheta: g.an, placeholder: g.anEx, jumatate: true },
+        { cheie: "proiect", eticheta: g.proiect },
+      ],
+    },
+    {
+      titlu: g.semnatura,
+      campuri: [
+        { cheie: "semnNume", eticheta: g.semnNume, jumatate: true },
+        { cheie: "semnFunctie", eticheta: g.semnFunctie, jumatate: true },
+        { cheie: "ps", eticheta: g.ps, tip: "textarea", rows: 2 },
+        { cheie: "anexe", eticheta: g.anexe, placeholder: g.anexeEx },
+      ],
+    },
+    {
+      titlu: g.antet,
+      subtitlu: g.antetSub,
+      campuri: [
+        { cheie: "antetNume", eticheta: g.antetNume },
+        { cheie: "motivGrafic", eticheta: g.motivGrafic, tip: "select", optiuni: motive, ajutor: g.motivAjutor },
+        { cheie: "antetLinii", eticheta: g.antetLinii, tip: "textarea", rows: 3, ajutor: g.antetLiniiAjutor },
+      ],
+    },
+  ];
   const modelValid = MODELE_SCRISORI.some((m) => m.id === model) ? (model as DateScrisoare["model"]) : undefined;
   const initial = useMemo<DateScrisoare>(() => {
     const d = dateScrisoareGoale({ nume: org.nume, antetLinii: antetDinOrganizatie(org), logo: org.logo, acc: accenteOrg(org) }, azi);
@@ -109,19 +120,19 @@ export function GeneratorScrisori({ orgSlug, org, azi, model, semnatar, dateIni,
     <GeneratorDocument<DateScrisoare>
       orgSlug={orgSlug}
       cheieTool="scrisori"
-      titlu="Scrisoare cu antet"
+      titlu={t.titluGenerator}
       galerieHref={`/${orgSlug}/crm/instrumente/scrisori`}
-      modele={MODELE_SCRISORI}
+      modele={modeleTrad}
       date={initial}
       curata={(b) => curataDateScrisoare(b, azi)}
       randeaza={randeazaScrisoare}
       grupuri={GRUPURI}
-      tipuri={{ cheie: "tip", eticheta: "Tipul scrisorii", optiuni: TIPURI_SCRISOARE.map((t) => ({ id: t.id, eticheta: t.eticheta, patch: { subiect: t.subiect, formulaAdresare: t.formulaAdresare, corp: t.corp, formulaFinala: t.formulaFinala } })) }}
+      tipuri={{ cheie: "tip", eticheta: t.tipulScrisorii, optiuni: tipuri.map((x) => ({ id: x.id, eticheta: x.eticheta, patch: { subiect: x.subiect, formulaAdresare: x.formulaAdresare, corp: x.corp, formulaFinala: x.formulaFinala } })) }}
       logoOng={{ cheie: "logoOng", implicit: org.logo }}
-      logoDestinatar={{ cheie: "logoDestinatar", eticheta: "Logo destinatar (opțional)" }}
+      logoDestinatar={{ cheie: "logoDestinatar", eticheta: t.logoDestinatar }}
       culoareOrganizatie={org.culoare}
       numeFisier={(d) => `scrisoare-${d.destFirma || d.destNume || "document"}`}
-      titluIstoric={(d) => `${d.subiect || "Scrisoare"} — ${d.destFirma || d.destNume || "fără destinatar"}`}
+      titluIstoric={(d) => `${d.subiect || t.titluGenerator} — ${d.destFirma || d.destNume || t.faraDestinatar}`}
       numerotare={{ cheie: "nrInregistrare" }}
       campuriPersonale={PERSONALE}
       modelDinUrl={modelValid}
@@ -130,10 +141,10 @@ export function GeneratorScrisori({ orgSlug, org, azi, model, semnatar, dateIni,
       bannere={bannere}
       avertizare={(d) => {
         const lipsa = campuriNecompletate(d);
-        if (lipsa.length) return `Completează în text: ${lipsa.join(", ")}. Altfel rămân vizibile în scrisoare.`;
-        return d.corp.length > 2400 ? "Textul e lung: scrisoarea se întinde pe mai multe pagini A4." : null;
+        if (lipsa.length) return t.completeaza(lipsa.join(", "));
+        return d.corp.length > 2400 ? t.textLung : null;
       }}
-      ajutor="Alegi șablonul și tipul scrisorii, completezi destinatarul și vezi scrisoarea în dreapta, în timp real. „Salvează ca PDF” descarcă direct fișierul. Modelele sunt orientative: citește și adaptează textul înainte să-l trimiți."
+      ajutor={t.ajutor}
     />
   );
 }

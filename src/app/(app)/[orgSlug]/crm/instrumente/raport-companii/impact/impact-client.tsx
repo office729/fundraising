@@ -4,6 +4,7 @@ import { AlertTriangle, ChevronDown, ClipboardCopy, Copy, Download, Eye, FileDow
 import Link from "next/link";
 import { useEffect, useId, useMemo, useRef, useState, useTransition, type ReactNode } from "react";
 
+import { IMPACT_UI_DICT } from "@/lib/i18n/dictionaries/instrumente-ui-2";
 import { descarcaBlob, htmlInPdf } from "@/lib/html-in-pdf";
 import { incarcaLogo, paletaDinLogo } from "@/lib/logo-incarcare";
 import { MOTIVE } from "@/lib/motiv";
@@ -16,14 +17,14 @@ import { Button } from "../../../components/ui/button";
 import { Card } from "../../../components/ui/card";
 import { Input, Label, Select, Textarea } from "../../../components/ui/input";
 import { formatSuma } from "../../../lib/format";
+import { useLocale } from "../../../lib/locale-context";
 import { Camp } from "../../_comun/camp";
 import { inregistreazaDocumentAction } from "../../_comun/documente-actions";
 import { MeniuExport } from "../../_comun/meniu-export";
+import { traduElemente } from "../../_comun/tradu";
 import { incarcaImpactAction, salveazaImpactAction, type CompanieImpactRand, type IncarcareImpact } from "../impact-actions";
 
 type Stare = "idle" | "asteapta" | "salveaza" | "salvat" | "eroare";
-
-const etichetaStare: Record<Stare, string> = { idle: "", asteapta: "Modificări nesalvate…", salveaza: "Se salvează…", salvat: "Salvat pe fișa firmei", eroare: "Nu s-a putut salva" };
 
 const fara = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 // Un proiect care pare să vorbească despre un copil sau un pacient (vârstă, „copil”, diagnostic, operație) are nevoie fie de un titlu public
@@ -54,6 +55,14 @@ function Sectiune({ titlu, subtitlu, deschis = false, children }: { titlu: strin
 }
 
 export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }: { orgSlug: string; companii: CompanieImpactRand[]; firmaInitiala: string | null; initial: IncarcareImpact; azi: string }) {
+  const locale = useLocale();
+  const t = IMPACT_UI_DICT[locale];
+  const etichetaStare: Record<Stare, string> = { idle: "", ...t.stare };
+  const modeleTrad = useMemo(() => traduElemente(MODELE_IMPACT, "impact", locale), [locale]);
+  const mecanismeImpact = useMemo(() => traduElemente(MECANISME_IMPACT, "mecanismeImpact", locale), [locale]);
+  const mecanismeProiect = useMemo(() => traduElemente(MECANISME_PROIECT, "mecanismeProiect", locale), [locale]);
+  const stariProiect = useMemo(() => traduElemente(STARI_PROIECT, "stariProiect", locale), [locale]);
+  const motive = useMemo(() => traduElemente(MOTIVE, "motive", locale), [locale]);
   const [companyId, setCompanyId] = useState<string | null>(firmaInitiala);
   const [date, setDate] = useState<DateImpact>(initial.date);
   const [salvat, setSalvat] = useState(initial.salvat);
@@ -78,7 +87,7 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
     setStare("asteapta");
     timer.current = setTimeout(async () => {
       setStare("salveaza");
-      const r = await salveazaImpactAction(orgSlug, id, urmator).catch(() => ({ ok: false as const, eroare: "Eroare" }));
+      const r = await salveazaImpactAction(orgSlug, id, urmator).catch(() => ({ ok: false as const, eroare: t.eroareScurta }));
       setStare(r.ok ? "salvat" : "eroare");
       if (!r.ok) setMesaj(r.eroare);
     }, 1200);
@@ -101,7 +110,7 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
       if (r.paleta) setPaleta(r.paleta);
       actualizeaza({ logoFirma: r.dataUrl, ...(r.paleta ? culoriDin(r.paleta) : {}) });
     } catch (e) {
-      setEroareLogo(e instanceof Error ? e.message : "Logoul nu a putut fi încărcat.");
+      setEroareLogo(e instanceof Error ? e.message : t.logoNeincarcat);
     }
   }
   async function alegeLogoOng(fisier?: File) {
@@ -110,18 +119,18 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
     try {
       actualizeaza({ logoOng: (await incarcaLogo(fisier)).dataUrl });
     } catch (e) {
-      setEroareLogo(e instanceof Error ? e.message : "Logoul nu a putut fi încărcat.");
+      setEroareLogo(e instanceof Error ? e.message : t.logoNeincarcat);
     }
   }
   async function preiaCulori() {
     setEroareLogo(null);
     try {
       const p = await paletaDinLogo(date.logoFirma);
-      if (!p) return setEroareLogo("Nu am găsit culori în logo. Alege-le manual mai jos.");
+      if (!p) return setEroareLogo(t.nuCulori);
       setPaleta(p);
       actualizeaza(culoriDin(p));
     } catch (e) {
-      setEroareLogo(e instanceof Error ? e.message : "Culorile nu au putut fi citite.");
+      setEroareLogo(e instanceof Error ? e.message : t.culoriNecitite);
     }
   }
 
@@ -131,9 +140,9 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
     const deSalvat = stare === "asteapta" && companyId ? { id: companyId, date } : null;
     start(async () => {
       if (deSalvat) {
-        const r = await salveazaImpactAction(orgSlug, deSalvat.id, deSalvat.date).catch(() => ({ ok: false as const, eroare: "Eroare" }));
+        const r = await salveazaImpactAction(orgSlug, deSalvat.id, deSalvat.date).catch(() => ({ ok: false as const, eroare: t.eroareScurta }));
         if (!r.ok) {
-          setMesaj(`Modificările la firma anterioară nu s-au putut salva (${r.eroare}). Nu am schimbat firma.`);
+          setMesaj(t.nuSalvat(r.eroare));
           setStare("eroare");
           return;
         }
@@ -164,7 +173,7 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
       });
       const noi = r.date.proiecte.filter((_, k) => !folosite.has(k));
       actualizeaza({ firma: date.firma || r.date.firma, proiecte: [...reunite, ...noi] });
-      setInfo(noi.length ? `Am adăugat ${noi.length} ${noi.length === 1 ? "proiect" : "proiecte"} din sponsorizări. Ce ai scris rămâne neschimbat.` : "Nu sunt proiecte noi în sponsorizări. Sumele și datele au fost actualizate.");
+      setInfo(noi.length ? t.proiecteAdaugate(noi.length) : t.fara);
       setTimeout(() => setInfo(null), 6000);
     });
   }
@@ -173,7 +182,7 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
   const html = useMemo(() => randeazaRaportImpact(curat, { organizatie: initial.organizatie, azi, identificare: initial.identificare }), [curat, initial.organizatie, initial.identificare, azi]);
   const total = totalImpact(curat);
   const nrNumite = curat.proiecte.filter((p) => p.nume && !p.nealocat).length;
-  const modelAles = MODELE_IMPACT.find((m) => m.id === date.model)!;
+  const modelAles = modeleTrad.find((m) => m.id === date.model)!;
   const nrPlaceholdere = aplicaPlaceholdere(date.narativ, curat).length;
   const anUrmator = String(Number(azi.slice(0, 4)) + 1);
 
@@ -188,7 +197,7 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
     inregistreazaDocumentAction(orgSlug, "rapoarte", { titlu: `Raport de impact — ${curat.firma || "fără firmă"}`, firmaId: companyId, numar: "", date: faraLogo })
       .then((r) => {
         if (!r.ok) ultimaInregistrare.current = "";
-        setInfo((x) => `${x ? `${x} ` : ""}${r.ok ? "Salvat în istoric." : "Nu s-a putut salva în istoric (raport prea mare)."}`);
+        setInfo((x) => `${x ? `${x} ` : ""}${r.ok ? t.istoricOk : t.istoricMare}`);
       })
       .catch((e) => {
         ultimaInregistrare.current = "";
@@ -204,7 +213,7 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-    setInfo("Fișierul a fost descărcat.");
+    setInfo(t.fisierDescarcat);
     inregistreaza();
     setTimeout(() => setInfo(null), 6000);
   }
@@ -214,17 +223,17 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
     try {
       await navigator.clipboard.writeText(html);
     } catch {
-      const t = document.createElement("textarea");
-      t.value = html;
-      t.setAttribute("readonly", "");
-      t.style.cssText = "position:fixed;opacity:0;top:0;left:0";
-      document.body.appendChild(t);
-      t.select();
+      const el = document.createElement("textarea");
+      el.value = html;
+      el.setAttribute("readonly", "");
+      el.style.cssText = "position:fixed;opacity:0;top:0;left:0";
+      document.body.appendChild(el);
+      el.select();
       const ok = document.execCommand("copy");
-      t.remove();
-      if (!ok) return setMesaj("Nu am putut copia codul. Folosește „Descarcă HTML” și deschide fișierul într-un editor.");
+      el.remove();
+      if (!ok) return setMesaj(t.nuCopiat);
     }
-    setInfo("Codul HTML a fost copiat. Lipește-l în editorul de cod al platformei.");
+    setInfo(t.htmlCopiat);
     inregistreaza();
     setTimeout(() => setInfo(null), 6000);
   }
@@ -235,11 +244,11 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
     try {
       const { blob, imaginiOmise } = await htmlInPdf(html);
       descarcaBlob(blob, `raport-impact-${numeFirma()}.pdf`);
-      setInfo(imaginiOmise ? `PDF descărcat, dar ${imaginiOmise === 1 ? "un logo nu a putut fi inclus" : `${imaginiOmise} logo-uri nu au putut fi incluse`} (adresa lui nu e permisă sau nu a răspuns). Încarcă logoul din calculator, ca fișier.` : "PDF-ul a fost descărcat.");
+      setInfo(imaginiOmise ? t.pdfLogouri(imaginiOmise) : t.pdfDescarcat);
       inregistreaza();
     } catch (e) {
       raporteazaEroare("pdf-direct", e, { tip: "raport", ua: navigator.userAgent.slice(0, 160), lungime: html.length });
-      setInfo("Nu am putut crea PDF-ul direct în acest browser. Se deschide tipărirea: alege „Salvează ca PDF”.");
+      setInfo(t.pdfFallback);
       tipareste();
     } finally {
       setSeFacePdf(false);
@@ -254,7 +263,7 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
         w.focus();
         w.print();
         inregistreaza();
-      } else setMesaj("Previzualizarea nu e încărcată încă. Încearcă din nou.");
+      } else setMesaj(t.previzNeincarcata);
     };
     // Pe telefon, previzualizarea poate fi ascunsă: o afișăm înainte de tipărire.
     if (vedere === "editez" && window.matchMedia("(max-width: 1023px)").matches) {
@@ -267,18 +276,18 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
   const deVerificat = date.proiecte.filter(areNevoieDeAcord);
   // Butoanele rămân active: când ceva lipsește, mesajul spune ce (un buton dezactivat nu explică nimic, mai ales pe telefon).
   const cuVerificari = (actiune: () => void) => {
-    if (lipsaFirma) return setMesaj("Completează numele firmei în secțiunea „Firma” înainte de export.");
+    if (lipsaFirma) return setMesaj(t.lipsaFirma);
     if (deVerificat.length) {
-      return setMesaj(
-        `${deVerificat.length === 1 ? "Un proiect pare" : `${deVerificat.length} proiecte par`} să vorbească despre un copil sau un pacient (${deVerificat.map((p) => `„${p.nume || "fără nume"}”`).join(", ")}). Completează „Titlu public” fără nume sau bifează că ai acordul pentru publicare, apoi exportă.`,
-      );
+      return setMesaj(t.acordNecesar(deVerificat.length, deVerificat.map((p) => p.nume || t.faraNume)));
     }
     actiune();
   };
-  const sumaProiecte = date.proiecte.reduce((t, x) => t + (x.suma ?? 0), 0);
+  const sumaProiecte = date.proiecte.reduce((s, x) => s + (x.suma ?? 0), 0);
   const totalDiferit = date.totalManual != null && date.totalManual !== sumaProiecte;
   const faraInvitatie = !date.ceUrmeaza.trim() && !date.ctaText.trim();
+  const fSuma = (v: number) => formatSuma(v, undefined, locale);
 
+  // Textul de reînnoire intră în raportul trimis companiei, deci rămâne în română.
   function adaugaTextReinnoire() {
     actualizeaza({
       ceUrmeaza: date.ceUrmeaza.trim() || `Pentru ${anUrmator} vă propunem să continuăm împreună. Vă invităm la o discuție despre cum sprijinul dumneavoastră poate ajunge la și mai mulți oameni; vă contactăm în următoarele săptămâni.`,
@@ -290,18 +299,18 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
     <div className="mx-auto max-w-[1400px] space-y-5 pb-20 lg:pb-0">
       <div className="fixed inset-x-0 bottom-0 z-30 flex gap-2 border-t border-[var(--ci-border)] bg-[var(--ci-surface)] p-2 lg:hidden">
         <Button className="min-h-11 flex-1" onClick={() => setVedere((v) => (v === "editez" ? "previz" : "editez"))}>
-          {vedere === "editez" ? "Previzualizează" : "Înapoi la editare"}
+          {vedere === "editez" ? t.previzualizeaza : t.inapoiEditare}
         </Button>
         <Button variant="primary" className="min-h-11 flex-1" onClick={() => cuVerificari(exportaPdf)} disabled={seFacePdf}>
-          {seFacePdf ? "Se pregătește…" : "Export PDF"}
+          {seFacePdf ? t.sePregateste : t.exportPdf}
         </Button>
       </div>
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2.5">
         <div className="flex min-w-0 flex-wrap items-center gap-3">
           <Link href={`/${orgSlug}/crm/instrumente/raport-companii`} prefetch={false} className="inline-flex h-9 items-center gap-1.5 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-3 text-[13px] font-medium text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
-            <LayoutGrid className="size-4" aria-hidden /> Galerie de șabloane
+            <LayoutGrid className="size-4" aria-hidden /> {t.galerie}
           </Link>
-          <h1 className="ci-display text-[15px] font-bold text-[var(--ci-text)]">Raport de impact pentru companii</h1>
+          <h1 className="ci-display text-[15px] font-bold text-[var(--ci-text)]">{t.titlu}</h1>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {/* Starea intermediară (modificări nesalvate) e doar vizuală; cititoarele de ecran aud doar „Salvat”, erorile și rezultatele exportului. */}
@@ -311,25 +320,23 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
           <span className="sr-only" role="status" aria-live="polite">
             {info ?? (stare === "salvat" || stare === "eroare" ? etichetaStare[stare] : "")}
           </span>
-          <Button variant="primary" onClick={() => cuVerificari(copiaza)} className="min-h-11 sm:min-h-9" title="Copiază tot codul HTML al raportului">
-            <ClipboardCopy className="size-4" aria-hidden /> Copiază codul HTML
+          <Button variant="primary" onClick={() => cuVerificari(copiaza)} className="min-h-11 sm:min-h-9" title={t.copiazaHtmlTitlu}>
+            <ClipboardCopy className="size-4" aria-hidden /> {t.copiazaHtml}
           </Button>
-          <Button onClick={() => cuVerificari(exportaPdf)} disabled={seFacePdf} className="min-h-11 sm:min-h-9" title="Descarcă un fișier PDF (pagini A4 în înaltă rezoluție)">
-            <FileDown className="size-4" aria-hidden /> {seFacePdf ? "Se pregătește PDF-ul…" : "Export PDF"}
+          <Button onClick={() => cuVerificari(exportaPdf)} disabled={seFacePdf} className="min-h-11 sm:min-h-9" title={t.pdfTitlu}>
+            <FileDown className="size-4" aria-hidden /> {seFacePdf ? t.sePregatestePdf : t.exportPdf}
           </Button>
           <MeniuExport
             elemente={[
-              { eticheta: "Descarcă HTML", descriere: "Un fișier pe care îl deschizi în browser.", icon: <Download className="size-4" aria-hidden />, onClick: () => cuVerificari(exportaHtml) },
-              { eticheta: "Tipărește sau PDF cu text selectabil", descriere: "Deschide tipărirea; în ea alegi „Salvează ca PDF”. Textul și linkurile rămân active.", icon: <Printer className="size-4" aria-hidden />, onClick: () => cuVerificari(tipareste) },
+              { eticheta: t.descarcaHtml, descriere: t.descarcaHtmlDesc, icon: <Download className="size-4" aria-hidden />, onClick: () => cuVerificari(exportaHtml) },
+              { eticheta: t.tipareste, descriere: t.tiparesteDesc, icon: <Printer className="size-4" aria-hidden />, onClick: () => cuVerificari(tipareste) },
             ]}
           />
         </div>
       </div>
-      <p className="-mt-2 max-w-4xl text-[12.5px] text-[var(--ci-text-muted)]">
-        Alegi șablonul, completezi datele și vezi raportul în dreapta. Pentru platformă, copiezi codul HTML și îl lipești în editorul de cod. Unele platforme de email taie o parte din stiluri; pentru trimitere prin email, PDF-ul e varianta sigură. Citește raportul înainte să-l trimiți: textele sunt orientative.
-      </p>
-      <div role="tablist" aria-label="Vedere" className="grid grid-cols-2 gap-1 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-1 lg:hidden">
-        {([["editez", "Editez", PencilLine], ["previz", "Previzualizez", Eye]] as const).map(([k, e, Icon]) => (
+      <p className="-mt-2 max-w-4xl text-[12.5px] text-[var(--ci-text-muted)]">{t.ajutor}</p>
+      <div role="tablist" aria-label={t.vedere} className="grid grid-cols-2 gap-1 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-1 lg:hidden">
+        {([["editez", t.editez, PencilLine], ["previz", t.previz, Eye]] as const).map(([k, e, Icon]) => (
           <button key={k} type="button" role="tab" aria-selected={vedere === k} onClick={() => setVedere(k)} className={`min-h-11 rounded-[calc(var(--ci-radius-btn)-2px)] py-2 text-[13px] font-semibold focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none ${vedere === k ? "bg-[var(--ci-primary)] text-white" : "text-[var(--ci-text-muted)]"}`}>
             <span className="inline-flex items-center justify-center gap-1.5">
               <Icon className="size-4" aria-hidden /> {e}
@@ -341,10 +348,10 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
 
       <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(340px,0.85fr)_minmax(0,1.15fr)]">
         <div className={`min-w-0 space-y-4 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto lg:pr-2 ${vedere === "previz" ? "hidden lg:block" : ""}`}>
-          <Sectiune titlu="Șablon" subtitlu={modelAles.hint} deschis>
-            <Camp eticheta="Tipul de raport">
+          <Sectiune titlu={t.sablon} subtitlu={modelAles.hint} deschis>
+            <Camp eticheta={t.tipRaport}>
               <Select value={date.model} onChange={(e) => actualizeaza({ model: e.target.value as DateImpact["model"] })}>
-                {MODELE_IMPACT.map((m) => (
+                {modeleTrad.map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.eticheta}
                   </option>
@@ -353,58 +360,58 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
             </Camp>
           </Sectiune>
 
-          <Sectiune titlu="Firma" subtitlu={companyId ? (salvat ? "Se păstrează ce ai salvat data trecută" : "Propunere din sponsorizările înregistrate") : "Fără firmă din listă, nu se salvează nimic"} deschis>
+          <Sectiune titlu={t.firma} subtitlu={companyId ? (salvat ? t.firmaSalvata : t.firmaPropunere) : t.firmaFaraLista} deschis>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <Camp eticheta="Firmă din CRM">
+              <Camp eticheta={t.firmaCrm}>
                 <Select value={companyId ?? ""} onChange={(e) => schimbaFirma(e.target.value)} disabled={ocupat}>
-                  <option value="">Altă firmă (completez manual)</option>
+                  <option value="">{t.altaFirma}</option>
                   {companii.map((c) => (
                     <option key={c.companyId} value={c.companyId}>
-                      {c.nume} · {formatSuma(c.total)}
+                      {c.nume} · {fSuma(c.total)}
                     </option>
                   ))}
                 </Select>
               </Camp>
-              <Camp eticheta="Numele din raport">
-                <Input value={date.firma} onChange={(e) => actualizeaza({ firma: e.target.value })} maxLength={200} placeholder="ex. Firma SRL" />
+              <Camp eticheta={t.numeRaport}>
+                <Input value={date.firma} onChange={(e) => actualizeaza({ firma: e.target.value })} maxLength={200} placeholder={t.numeEx} />
               </Camp>
-              <Camp eticheta="Mecanism" ajutor={date.mecanism === "nespecificat" ? "Textul rămâne general: „sprijinul acordat”." : "Formularea din raport e orientativă. Verific-o cu contabilul sau cu un jurist înainte să trimiți raportul."}>
+              <Camp eticheta={t.mecanism} ajutor={date.mecanism === "nespecificat" ? t.mecanismGeneral : t.mecanismAvertisment}>
                 <Select value={date.mecanism} onChange={(e) => actualizeaza({ mecanism: e.target.value as DateImpact["mecanism"] })}>
-                  {MECANISME_IMPACT.map((m) => (
+                  {mecanismeImpact.map((m) => (
                     <option key={m.id} value={m.id}>
                       {m.eticheta}
                     </option>
                   ))}
                 </Select>
               </Camp>
-              <Camp eticheta="Total anul anterior (opțional)" ajutor="Dacă îl completezi, raportul arată comparația procentuală.">
+              <Camp eticheta={t.totalAnterior} ajutor={t.totalAnteriorAjutor}>
                 <Input inputMode="numeric" value={date.totalAnterior ?? ""} onChange={(e) => actualizeaza({ totalAnterior: e.target.value === "" ? null : Number(e.target.value.replace(/\D/g, "")) })} />
               </Camp>
-              <Camp eticheta="Total (lasă gol ca să se adune)" ajutor={totalDiferit ? `Atenție: totalul scris (${formatSuma(date.totalManual ?? 0)}) diferă de suma proiectelor (${formatSuma(sumaProiecte)}). Raportul îl afișează pe cel scris și notează diferența.` : undefined}>
+              <Camp eticheta={t.totalGol} ajutor={totalDiferit ? t.totalDiferit(fSuma(date.totalManual ?? 0), fSuma(sumaProiecte)) : undefined}>
                 <Input inputMode="numeric" value={date.totalManual ?? ""} onChange={(e) => actualizeaza({ totalManual: e.target.value === "" ? null : Number(e.target.value.replace(/\D/g, "")) })} placeholder={String(sumaProiecte)} />
               </Camp>
             </div>
           </Sectiune>
 
-          <Sectiune titlu="Proiecte susținute" subtitlu={`${nrNumite} ${nrNumite === 1 ? "proiect" : "proiecte"} · ${formatSuma(total)}`} deschis>
+          <Sectiune titlu={t.proiecteSustinute} subtitlu={t.proiecteSub(nrNumite, fSuma(total))} deschis>
             <div className="space-y-3">
-              {date.proiecte.length === 0 && <p className="text-[13px] text-[var(--ci-text-muted)]">Niciun proiect încă. Adaugă unul sau {companyId ? "reia-le din sponsorizări." : "alege o firmă din CRM."}</p>}
+              {date.proiecte.length === 0 && <p className="text-[13px] text-[var(--ci-text-muted)]">{t.niciunProiect(!!companyId)}</p>}
               {date.proiecte.map((p, i) => {
                 const atentie = areNevoieDeAcord(p);
                 return (
                   <details key={i} open={!p.nume || date.proiecte.length <= 2 || atentie} className="group rounded-[var(--ci-radius-card)] border border-[var(--ci-border)]">
                     <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 rounded-[var(--ci-radius-card)] px-3 py-2 text-left focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none [&::-webkit-details-marker]:hidden">
                       <span className="min-w-0 truncate text-[13px] font-semibold text-[var(--ci-text)]">
-                        {p.nume || "Proiect nou"}
+                        {p.nume || t.proiectNou}
                         <span className="ml-2 font-normal text-[var(--ci-text-muted)]">
-                          {p.suma !== null ? formatSuma(p.suma) : ""}
-                          {p.stare ? ` · ${STARI_PROIECT.find((x) => x.id === p.stare)?.eticheta}` : ""}
+                          {p.suma !== null ? fSuma(p.suma) : ""}
+                          {p.stare ? ` · ${stariProiect.find((x) => x.id === p.stare)?.eticheta}` : ""}
                         </span>
                       </span>
                       <span className="flex shrink-0 items-center gap-2">
                         {atentie && (
                           <span className="inline-flex items-center gap-1 text-[12px] font-medium text-[var(--ci-red)]">
-                            <AlertTriangle className="size-3.5" aria-hidden /> Acord necesar
+                            <AlertTriangle className="size-3.5" aria-hidden /> {t.acordNecesarEticheta}
                           </span>
                         )}
                         <ChevronDown className="size-4 text-[var(--ci-text-muted)] transition-transform group-open:rotate-180" aria-hidden />
@@ -412,126 +419,126 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
                     </summary>
                     <div className="space-y-2.5 px-3 pb-3">
                       <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-6">
-                        <Camp className="sm:col-span-4" eticheta="Proiect">
+                        <Camp className="sm:col-span-4" eticheta={t.proiect}>
                           <Input value={p.nume} onChange={(e) => actualizeazaProiect(i, { nume: e.target.value })} maxLength={200} />
                         </Camp>
-                        <Camp className="sm:col-span-2" eticheta="Sumă (lei)">
+                        <Camp className="sm:col-span-2" eticheta={t.sumaLei}>
                           <Input type="number" min={0} inputMode="numeric" value={p.suma ?? ""} onChange={(e) => actualizeazaProiect(i, { suma: e.target.value === "" ? null : Number(e.target.value) })} />
                         </Camp>
-                        <Camp className="sm:col-span-3" eticheta="Data încasării sau alocării" ajutor="După ea se grupează pe ani.">
+                        <Camp className="sm:col-span-3" eticheta={t.dataIncasarii} ajutor={t.dataAjutor}>
                           <Input type="date" value={p.data} onChange={(e) => actualizeazaProiect(i, { data: e.target.value })} />
                         </Camp>
-                        <Camp className="sm:col-span-3" eticheta="Stare">
+                        <Camp className="sm:col-span-3" eticheta={t.stareCamp}>
                           <Select value={p.stare} onChange={(e) => actualizeazaProiect(i, { stare: e.target.value as ProiectImpact["stare"] })}>
-                            {STARI_PROIECT.map((st) => (
+                            {stariProiect.map((st) => (
                               <option key={st.id} value={st.id}>
                                 {st.eticheta}
                               </option>
                             ))}
                           </Select>
                         </Camp>
-                        <Camp className="sm:col-span-6" eticheta="Rezultat obținut" ajutor="Ce s-a realizat concret cu această sumă. Apare în raport.">
+                        <Camp className="sm:col-span-6" eticheta={t.rezultat} ajutor={t.rezultatAjutor}>
                           <Textarea rows={2} value={p.observatii} onChange={(e) => actualizeazaProiect(i, { observatii: e.target.value })} maxLength={600} />
                         </Camp>
                       </div>
                       <details open={atentie} className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)]">
-                        <summary className="flex min-h-10 cursor-pointer items-center gap-1.5 px-3 text-[12.5px] font-semibold text-[var(--ci-text-muted)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">Detalii, dovezi și acord</summary>
+                        <summary className="flex min-h-10 cursor-pointer items-center gap-1.5 px-3 text-[12.5px] font-semibold text-[var(--ci-text-muted)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">{t.detalii}</summary>
                         <div className="grid grid-cols-1 gap-2.5 p-3 sm:grid-cols-6">
-                          <Camp className="sm:col-span-6" eticheta="Link către pagina proiectului" ajutor="Doar adrese https.">
+                          <Camp className="sm:col-span-6" eticheta={t.linkProiect} ajutor={t.linkAjutor}>
                             <Input type="url" value={p.link} onChange={(e) => actualizeazaProiect(i, { link: e.target.value })} placeholder="https://…" />
                           </Camp>
-                          <Camp className={date.mecanism === "d177" ? "sm:col-span-4" : "sm:col-span-6"} eticheta="Partener sau loc (opțional)">
+                          <Camp className={date.mecanism === "d177" ? "sm:col-span-4" : "sm:col-span-6"} eticheta={t.partener}>
                             <Input value={p.locatie} onChange={(e) => actualizeazaProiect(i, { locatie: e.target.value })} maxLength={200} />
                           </Camp>
                           {date.mecanism === "d177" && (
-                            <Camp className="sm:col-span-2" eticheta="Anul fiscal al direcționării">
+                            <Camp className="sm:col-span-2" eticheta={t.anFiscal}>
                               <Input type="number" min={2000} max={2100} value={p.anDirectionare ?? ""} onChange={(e) => actualizeazaProiect(i, { anDirectionare: e.target.value === "" ? null : Number(e.target.value) })} />
                             </Camp>
                           )}
-                          <Camp className="sm:col-span-3" eticheta="Mecanism pentru acest proiect" ajutor="Dacă firma a folosit mecanisme diferite, alege-l aici.">
+                          <Camp className="sm:col-span-3" eticheta={t.mecanismProiect} ajutor={t.mecanismProiectAjutor}>
                             <Select value={p.mecanism} onChange={(e) => actualizeazaProiect(i, { mecanism: e.target.value as ProiectImpact["mecanism"] })}>
-                              {MECANISME_PROIECT.map((m) => (
+                              {mecanismeProiect.map((m) => (
                                 <option key={m.id} value={m.id}>
                                   {m.eticheta}
                                 </option>
                               ))}
                             </Select>
                           </Camp>
-                          <Camp className="sm:col-span-3" eticheta="Contract sau recipisă (opțional)" ajutor="Număr și dată, ca raportul să se potrivească cu documentele.">
-                            <Input value={p.referintaContract} onChange={(e) => actualizeazaProiect(i, { referintaContract: e.target.value })} maxLength={120} placeholder="ex. contract nr. 12 / 03.04.2025" />
+                          <Camp className="sm:col-span-3" eticheta={t.contract} ajutor={t.contractAjutor}>
+                            <Input value={p.referintaContract} onChange={(e) => actualizeazaProiect(i, { referintaContract: e.target.value })} maxLength={120} placeholder={t.contractEx} />
                           </Camp>
-                          <Camp className="sm:col-span-3" eticheta="Beneficiari (număr, opțional)" ajutor="Doar beneficiari unici, fără dublări între proiecte.">
+                          <Camp className="sm:col-span-3" eticheta={t.beneficiari} ajutor={t.beneficiariAjutor}>
                             <Input type="number" min={0} inputMode="numeric" value={p.nrBeneficiari ?? ""} onChange={(e) => actualizeazaProiect(i, { nrBeneficiari: e.target.value === "" ? null : Number(e.target.value) })} />
                           </Camp>
-                          <Camp className="sm:col-span-3" eticheta="Dovadă (link https, opțional)" ajutor="Ordin de plată, factură sau raport anonimizat. Fără documente cu date personale.">
+                          <Camp className="sm:col-span-3" eticheta={t.dovada} ajutor={t.dovadaAjutor}>
                             <Input type="url" value={p.linkDovada} onChange={(e) => actualizeazaProiect(i, { linkDovada: e.target.value })} placeholder="https://…" />
                           </Camp>
-                          <Camp className="sm:col-span-6" eticheta="Titlu public (opțional)" ajutor="Dacă îl completezi, apare în raport în locul numelui de mai sus. Folosește-l când numele intern conține date personale, de exemplu numele unui copil.">
+                          <Camp className="sm:col-span-6" eticheta={t.titluPublic} ajutor={t.titluPublicAjutor}>
                             <Input value={p.titluPublic} onChange={(e) => actualizeazaProiect(i, { titluPublic: e.target.value })} maxLength={200} />
                           </Camp>
                           <label className="flex items-start gap-2 text-[12.5px] text-[var(--ci-text)] sm:col-span-6">
                             <input type="checkbox" checked={p.acordVerificat} onChange={(e) => actualizeazaProiect(i, { acordVerificat: e.target.checked })} className="mt-0.5 size-4" />
-                            <span>Am verificat că proiectul poate fi publicat (acord pentru poveste și imagini, fără date medicale sau personale ne-anonimizate). Pentru minori acordul îl dau părinții și poate fi retras.</span>
+                            <span>{t.acordBifa}</span>
                           </label>
                           <label className="flex items-start gap-2 text-[12.5px] text-[var(--ci-text)] sm:col-span-6">
                             <input type="checkbox" checked={p.nealocat} onChange={(e) => actualizeazaProiect(i, { nealocat: e.target.checked })} className="mt-0.5 size-4" />
-                            <span>Sumă primită, dar încă neafectată unui proiect (nu se numără ca proiect).</span>
+                            <span>{t.nealocatBifa}</span>
                           </label>
                         </div>
                       </details>
                       <div className="flex justify-end gap-1">
                         <Button size="sm" variant="ghost" onClick={() => actualizeaza({ proiecte: [...date.proiecte.slice(0, i + 1), { ...p }, ...date.proiecte.slice(i + 1)] })}>
-                          <Copy className="size-3.5" aria-hidden /> Duplică
+                          <Copy className="size-3.5" aria-hidden /> {t.duplica}
                         </Button>
                         <Button size="sm" variant="ghost" onClick={() => actualizeaza({ proiecte: date.proiecte.filter((_, j) => j !== i) })}>
-                          <Trash2 className="size-3.5" aria-hidden /> Șterge
+                          <Trash2 className="size-3.5" aria-hidden /> {t.sterge}
                         </Button>
                       </div>
                     </div>
                   </details>
                 );
               })}
-              {date.proiecte.length >= 100 && <p role="alert" className="text-[12.5px] text-[var(--ci-red)]">Ai atins limita de 100 de proiecte. Proiectele în plus nu se mai păstrează.</p>}
+              {date.proiecte.length >= 100 && <p role="alert" className="text-[12.5px] text-[var(--ci-red)]">{t.limita}</p>}
               <div className="flex flex-wrap gap-2">
                 <Button disabled={date.proiecte.length >= 100} onClick={() => actualizeaza({ proiecte: [...date.proiecte, { ...PROIECT_GOL }] })}>
-                  <Plus className="size-4" aria-hidden /> Adaugă proiect
+                  <Plus className="size-4" aria-hidden /> {t.adaugaProiect}
                 </Button>
                 {companyId && (
                   <Button variant="ghost" onClick={dinSponsorizari} disabled={ocupat}>
-                    <RotateCcw className="size-4" aria-hidden /> Reia din sponsorizări
+                    <RotateCcw className="size-4" aria-hidden /> {t.reiaSponsorizari}
                   </Button>
                 )}
               </div>
             </div>
           </Sectiune>
 
-          <Sectiune titlu="Logo-uri și culori" subtitlu="Apar împreună în antet. Culorile raportului se iau din logoul firmei.">
+          <Sectiune titlu={t.logouri} subtitlu={t.logouriSub}>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <CampLogo eticheta="Logo firmă" valoare={date.logoFirma} alt={date.firma} onFisier={alegeLogoFirma} onSterge={() => actualizeaza({ logoFirma: "" })} />
+              <CampLogo eticheta={t.logoFirma} valoare={date.logoFirma} alt={date.firma} onFisier={alegeLogoFirma} onSterge={() => actualizeaza({ logoFirma: "" })} />
               <CampLogo
-                eticheta="Logo organizație"
+                eticheta={t.logoOrganizatie}
                 valoare={date.logoOng}
-                alt="Logo organizație"
+                alt={t.logoOrgAlt}
                 onFisier={alegeLogoOng}
                 onSterge={() => actualizeaza({ logoOng: "" })}
-                extra={initial.logoOngImplicit && date.logoOng !== initial.logoOngImplicit ? <Button size="sm" variant="ghost" onClick={() => actualizeaza({ logoOng: initial.logoOngImplicit })}>Folosește logoul din Setări</Button> : null}
+                extra={initial.logoOngImplicit && date.logoOng !== initial.logoOngImplicit ? <Button size="sm" variant="ghost" onClick={() => actualizeaza({ logoOng: initial.logoOngImplicit })}>{t.logoSetari}</Button> : null}
               />
             </div>
             {eroareLogo && <p role="alert" className="mt-2 text-[13px] text-[var(--ci-red)]">{eroareLogo}</p>}
             <div className="mt-4 border-t border-[var(--ci-border)] pt-3">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                 <Button size="sm" onClick={preiaCulori} disabled={!date.logoFirma}>
-                  <Palette className="size-3.5" aria-hidden /> Preia culorile din logo
+                  <Palette className="size-3.5" aria-hidden /> {t.preiaCulori}
                 </Button>
                 <Button size="sm" variant="ghost" onClick={() => actualizeaza({ ...CULORI_IMPLICITE })}>
-                  <RotateCcw className="size-3.5" aria-hidden /> Culorile implicite
+                  <RotateCcw className="size-3.5" aria-hidden /> {t.culoriImplicite}
                 </Button>
               </div>
-              <p className="mt-2 text-[12.5px] text-[var(--ci-text-muted)]">{paleta ? (paleta.sursa === "logo" ? "Culori preluate din logoul firmei." : "Logoul e alb-negru: am ales nuanțe neutre.") : "Culorile se pot lua din logo sau se aleg manual, mai jos."}</p>
+              <p className="mt-2 text-[12.5px] text-[var(--ci-text-muted)]">{paleta ? (paleta.sursa === "logo" ? t.culoriDinLogo : t.logoAlbNegru) : t.culoriManual}</p>
               <div className="mt-3">
-                <Camp eticheta="Motiv grafic" ajutor="Apare discret în copertă, în decor și în sigilii.">
+                <Camp eticheta={t.motivGrafic} ajutor={t.motivAjutor}>
                   <Select value={date.motivGrafic} onChange={(e) => actualizeaza({ motivGrafic: e.target.value as DateImpact["motivGrafic"] })}>
-                    {MOTIVE.map((m) => (
+                    {motive.map((m) => (
                       <option key={m.id} value={m.id}>
                         {m.eticheta}
                       </option>
@@ -540,7 +547,7 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
                 </Camp>
               </div>
               <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                {([["accent", "Culoare principală"], ["accent2", "Culoare închisă"], ["accent3", "Fundal deschis"]] as const).map(([k, eticheta]) => (
+                {([["accent", t.culoarePrincipala], ["accent2", t.culoareInchisa], ["accent3", t.fundalDeschis]] as const).map(([k, eticheta]) => (
                   <Camp key={k} eticheta={eticheta}>
                     <input type="color" value={date[k]} onChange={(e) => actualizeaza({ [k]: e.target.value })} className="h-9 w-full cursor-pointer rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] p-1 focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none" />
                   </Camp>
@@ -549,62 +556,62 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
             </div>
           </Sectiune>
 
-          <Sectiune titlu="Text" subtitlu="Se completează automat: {FIRMA}, {NR_PROIECTE}, {MECANISM}, {TOTAL}, {PERIOADA}, {PERIOADA_TXT}, {PROIECTE_TXT}, {CONTACT}">
-            <Camp eticheta="Textul raportului" ajutor={`Paragrafele se despart printr-un rând liber. Acum: ${nrPlaceholdere} ${nrPlaceholdere === 1 ? "paragraf" : "paragrafe"}. Scrie doar ce e adevărat pentru această firmă.`}>
+          <Sectiune titlu={t.text} subtitlu={t.textSub}>
+            <Camp eticheta={t.textulRaportului} ajutor={t.textAjutor(nrPlaceholdere)}>
               <Textarea rows={8} value={date.narativ} onChange={(e) => actualizeaza({ narativ: e.target.value })} maxLength={5000} />
             </Camp>
           </Sectiune>
 
-          <Sectiune titlu="Încheiere" subtitlu="Ce urmează, variante pentru anul viitor, un buton și datele de contact. Ce lași gol nu apare în raport." deschis={faraInvitatie}>
+          <Sectiune titlu={t.incheiere} subtitlu={t.incheiereSub} deschis={faraInvitatie}>
             {faraInvitatie && (
               <div className="mb-3 flex flex-wrap items-center gap-2 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface-2)] px-3 py-2 text-[12.5px] text-[var(--ci-text)]">
-                <span className="min-w-0 flex-1">Raportul nu invită la nimic: fără „Ce urmează” sau buton, rămâne doar o recipisă. O invitație pentru {anUrmator} ajută la reînnoire.</span>
+                <span className="min-w-0 flex-1">{t.faraInvitatie(anUrmator)}</span>
                 <Button size="sm" onClick={adaugaTextReinnoire}>
-                  <Plus className="size-3.5" aria-hidden /> Adaugă text de reînnoire
+                  <Plus className="size-3.5" aria-hidden /> {t.adaugaReinnoire}
                 </Button>
               </div>
             )}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <Camp className="sm:col-span-2" eticheta="Ce urmează">
-                <Textarea rows={3} value={date.ceUrmeaza} onChange={(e) => actualizeaza({ ceUrmeaza: e.target.value })} maxLength={800} placeholder="ex. Anul viitor continuăm proiectul în încă două spitale." />
+              <Camp className="sm:col-span-2" eticheta={t.ceUrmeaza}>
+                <Textarea rows={3} value={date.ceUrmeaza} onChange={(e) => actualizeaza({ ceUrmeaza: e.target.value })} maxLength={800} placeholder={t.ceUrmeazaEx} />
               </Camp>
-              <Camp className="sm:col-span-2" eticheta="Variante pentru anul viitor" ajutor="Câte una pe rând: suma și ce se obține cu ea. Ex.: „12.000 lei — 40 de copii examinați la timp”.">
+              <Camp className="sm:col-span-2" eticheta={t.variante} ajutor={t.varianteAjutor}>
                 <Textarea rows={3} value={date.optiuniViitor} onChange={(e) => actualizeaza({ optiuniViitor: e.target.value })} maxLength={800} />
               </Camp>
-              <Camp eticheta="Text buton (invitație)">
-                <Input value={date.ctaText} onChange={(e) => actualizeaza({ ctaText: e.target.value })} maxLength={80} placeholder={`ex. Să continuăm în ${anUrmator}`} />
+              <Camp eticheta={t.textButon}>
+                <Input value={date.ctaText} onChange={(e) => actualizeaza({ ctaText: e.target.value })} maxLength={80} placeholder={t.textButonEx(anUrmator)} />
               </Camp>
-              <Camp eticheta="Link buton (https)">
+              <Camp eticheta={t.linkButon}>
                 <Input type="url" value={date.ctaLink} onChange={(e) => actualizeaza({ ctaLink: e.target.value })} placeholder="https://…" />
               </Camp>
-              <Camp eticheta="Persoană de contact">
+              <Camp eticheta={t.contactPersoana}>
                 <Input value={date.contactNume} onChange={(e) => actualizeaza({ contactNume: e.target.value })} maxLength={100} />
               </Camp>
-              <Camp eticheta="Telefon">
+              <Camp eticheta={t.telefon}>
                 <Input type="tel" value={date.contactTelefon} onChange={(e) => actualizeaza({ contactTelefon: e.target.value })} maxLength={40} />
               </Camp>
-              <Camp className="sm:col-span-2" eticheta="Email">
+              <Camp className="sm:col-span-2" eticheta={t.email}>
                 <Input type="email" value={date.contactEmail} onChange={(e) => actualizeaza({ contactEmail: e.target.value })} maxLength={120} />
               </Camp>
-              <Camp className="sm:col-span-2" eticheta="Citat sau mesaj scurt" ajutor="Folosește un citat doar cu acordul persoanei.">
+              <Camp className="sm:col-span-2" eticheta={t.citat} ajutor={t.citatAjutor}>
                 <Textarea rows={2} value={date.citat} onChange={(e) => actualizeaza({ citat: e.target.value })} maxLength={300} />
               </Camp>
-              <Camp className="sm:col-span-2" eticheta="Cine a spus citatul (opțional)">
+              <Camp className="sm:col-span-2" eticheta={t.citatAutor}>
                 <Input value={date.citatAutor} onChange={(e) => actualizeaza({ citatAutor: e.target.value })} maxLength={100} />
               </Camp>
-              <Camp className="sm:col-span-2" eticheta="Link către pagina de transparență (https)">
+              <Camp className="sm:col-span-2" eticheta={t.transparenta}>
                 <Input type="url" value={date.transparentaLink} onChange={(e) => actualizeaza({ transparentaLink: e.target.value })} placeholder="https://…" />
               </Camp>
             </div>
           </Sectiune>
 
-          <Sectiune titlu="Semnătură și opțiuni">
-            <Camp eticheta="Semnează" ajutor="Persoana care răspunde de cifrele din raport.">
-              <Input value={date.autor} onChange={(e) => actualizeaza({ autor: e.target.value })} maxLength={100} placeholder="Prenume și nume" />
+          <Sectiune titlu={t.semnatura}>
+            <Camp eticheta={t.semneaza} ajutor={t.semneazaAjutor}>
+              <Input value={date.autor} onChange={(e) => actualizeaza({ autor: e.target.value })} maxLength={100} placeholder={t.semneazaEx} />
             </Camp>
             <label className="mt-3 flex items-center gap-2 text-[13px] text-[var(--ci-text)]">
               <input type="checkbox" checked={date.gruparePeAn} onChange={(e) => actualizeaza({ gruparePeAn: e.target.checked })} className="size-4" />
-              Grupează proiectele pe ani (unde modelul permite)
+              {t.gruparePeAn}
             </label>
           </Sectiune>
         </div>
@@ -612,12 +619,12 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
         <div className={`min-w-0 lg:sticky lg:top-4 ${vedere === "editez" ? "hidden lg:block" : ""}`}>
           <Card className="!p-0 overflow-hidden">
             <div className="flex items-center justify-between border-b border-[var(--ci-border)] px-4 py-2.5">
-              <p className="text-[13px] font-semibold text-[var(--ci-text)]">Design · {modelAles.eticheta}</p>
-              <p className="text-[12px] text-[var(--ci-text-muted)]">Exact ce se copiază și se exportă</p>
+              <p className="text-[13px] font-semibold text-[var(--ci-text)]">{t.design} · {modelAles.eticheta}</p>
+              <p className="text-[12px] text-[var(--ci-text-muted)]">{t.exactCopiaza}</p>
             </div>
             <iframe
               ref={cadru}
-              title="Previzualizarea raportului de impact"
+              title={t.previzTitlu}
               srcDoc={html}
               sandbox="allow-same-origin allow-modals allow-popups allow-popups-to-escape-sandbox"
               className="block h-[70vh] w-full bg-white lg:h-[calc(100vh-9rem)]"
@@ -631,6 +638,7 @@ export function ImpactClient({ orgSlug, companii, firmaInitiala, initial, azi }:
 
 function CampLogo({ eticheta, valoare, alt, onFisier, onSterge, extra }: { eticheta: string; valoare: string; alt: string; onFisier: (f?: File) => void; onSterge: () => void; extra?: React.ReactNode }) {
   const id = useId();
+  const t = IMPACT_UI_DICT[useLocale()];
   return (
     <div className="min-w-0">
       <Label htmlFor={id}>{eticheta}</Label>
@@ -643,12 +651,12 @@ function CampLogo({ eticheta, valoare, alt, onFisier, onSterge, extra }: { etich
             // eslint-disable-next-line @next/next/no-img-element
             <img src={valoare} alt={alt} className="max-h-14 max-w-[10rem] object-contain" />
           ) : (
-            <span className="px-2 text-center text-[11px] text-[var(--ci-text-faint)]">Fără logo</span>
+            <span className="px-2 text-center text-[11px] text-[var(--ci-text-faint)]">{t.faraLogo}</span>
           )}
         </div>
         <div className="flex min-w-0 flex-wrap items-center gap-1.5">
           <label htmlFor={id} className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 text-[13px] font-medium text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)] focus-within:ring-2 focus-within:ring-[var(--ci-primary)]">
-            <Upload className="size-3.5" aria-hidden /> {valoare ? "Schimbă" : "Încarcă"}
+            <Upload className="size-3.5" aria-hidden /> {valoare ? t.schimba : t.incarca}
           </label>
           <input
             id={id}
@@ -662,7 +670,7 @@ function CampLogo({ eticheta, valoare, alt, onFisier, onSterge, extra }: { etich
           />
           {valoare && (
             <Button size="sm" variant="ghost" onClick={onSterge}>
-              <Trash2 className="size-3.5" aria-hidden /> Șterge
+              <Trash2 className="size-3.5" aria-hidden /> {t.sterge}
             </Button>
           )}
           {extra}

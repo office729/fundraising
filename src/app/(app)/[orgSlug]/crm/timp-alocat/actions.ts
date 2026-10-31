@@ -5,6 +5,7 @@ import { desc, eq } from "drizzle-orm";
 import { withOrgSession } from "@/lib/auth/guard";
 import { orgTimp } from "@/lib/db/schema";
 import { EroareUtilizator } from "@/lib/erori";
+import { getTr } from "@/lib/i18n/tr-server";
 import type { Categorie } from "@/lib/timp-custom";
 
 export type IntrareTimpClient = { id: string; data: string; categorie: Categorie; descriere: string; minute: number };
@@ -13,7 +14,10 @@ export type IntrareTimpClient = { id: string; data: string; categorie: Categorie
 // e activată pentru organizație (config.arataTimp) și doar intrările terminate. NU se selectează niciodată tarifele, timerele pornite sau cine a introdus intrarea.
 // Fără tabel (încă nelivrat) sau fără drept, lista e goală.
 export const citesteTimpOrg = withOrgSession(async (ctx): Promise<IntrareTimpClient[]> => {
-  if (ctx.role !== "owner" && ctx.role !== "admin") throw new EroareUtilizator("Doar proprietarul și administratorii văd timpul alocat.");
+  if (ctx.role !== "owner" && ctx.role !== "admin") {
+    const t = await getTr();
+    throw new EroareUtilizator(t("Doar proprietarul și administratorii văd timpul alocat.", "Only the owner and the administrators can see the allocated time."));
+  }
   try {
     const rows = await ctx.db.transaction((sp) =>
       sp

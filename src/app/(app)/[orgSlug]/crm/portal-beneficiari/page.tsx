@@ -4,37 +4,29 @@ import { Card, CardHeader } from "../components/ui/card";
 import { EmptyState } from "../components/ui/states";
 import { getPanouBeneficiari } from "./actions";
 import { PanouBeneficiari } from "./panou-beneficiari";
+import { PORTAL_BENEFICIARI_UI_DICT } from "@/lib/i18n/dictionaries/portal-beneficiari-ui";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { titluAbsolut } from "@/lib/page-titles";
-
-const ACTIUNE_LABEL: Record<string, string> = {
-  factura_incarcata: "Factură încărcată",
-  factura_stearsa: "Factură ștearsă",
-  agent_atribuit: "Agent atribuit",
-  beneficiar_dezactivat: "Beneficiar dezactivat",
-  comunicat_aprobat: "Comunicat aprobat",
-  f230_pdf_generat: "Formular 230: PDF generat (acces CNP)",
-  f230_export_cnp: "Formular 230: export cu CNP",
-  f230_sters: "Formular 230: răspuns șters",
-  donator_export_gdpr: "Donator: export date (GDPR)",
-  donator_sters_gdpr: "Donator: date șterse (GDPR)",
-};
 
 export default async function PortalBeneficiariPage({ params }: { params: Promise<{ orgSlug: string }> }) {
   const { orgSlug } = await params;
+  const locale = await getLocale();
+  const dict = PORTAL_BENEFICIARI_UI_DICT[locale];
+  const intl = locale === "ro" ? "ro-RO" : "en-GB";
   const { beneficiari, taskuriNefinalizate, campaniiStagnante, auditLog } = await getPanouBeneficiari(orgSlug);
 
   return (
     <div className="mx-auto max-w-[1100px] space-y-5">
-      <Breadcrumb items={[{ label: "Strângere fonduri", href: `/${orgSlug}/crm/strangere-fonduri` }, { label: "Panou beneficiari" }]} />
+      <Breadcrumb items={[{ label: dict.strangereFonduri, href: `/${orgSlug}/crm/strangere-fonduri` }, { label: dict.titlu }]} />
       <div>
-        <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">Panou beneficiari</h1>
-        <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">Vizualizare centralizată peste toate campaniile cu beneficiar — filtrare, rapoarte, jurnal de audit.</p>
+        <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">{dict.titlu}</h1>
+        <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">{dict.descriere}</p>
       </div>
 
       <PanouBeneficiari orgSlug={orgSlug} beneficiari={beneficiari.map((b) => ({ ...b, createdAt: b.createdAt.toISOString() }))} />
 
       <Card>
-        <CardHeader title="Sarcini nefinalizate" subtitle={`${taskuriNefinalizate.length} sarcini în așteptare, pe toate campaniile`} />
+        <CardHeader title={dict.sarcini} subtitle={dict.sarciniSub(taskuriNefinalizate.length)} />
         {taskuriNefinalizate.length ? (
           <div className="flex flex-col gap-2">
             {taskuriNefinalizate.map((t) => (
@@ -48,23 +40,23 @@ export default async function PortalBeneficiariPage({ params }: { params: Promis
                     <span className="truncate text-[13px] font-medium text-[var(--ci-text)]">{t.titlu}</span>
                     {t.tip === "sponsorizare" && (
                       <Badge tone="purple" icon={false}>
-                        Sponsorizare
+                        {dict.sponsorizare}
                       </Badge>
                     )}
                   </div>
                   <p className="truncate text-[12px] text-[var(--ci-text-muted)]">{t.campaignTitlu}</p>
                 </div>
-                {t.dataLimita && <span className="shrink-0 text-[12px] text-[var(--ci-text-faint)]">{new Date(t.dataLimita).toLocaleDateString("ro-RO")}</span>}
+                {t.dataLimita && <span className="shrink-0 text-[12px] text-[var(--ci-text-faint)]">{new Date(t.dataLimita).toLocaleDateString(intl)}</span>}
               </a>
             ))}
           </div>
         ) : (
-          <EmptyState title="Nicio sarcină în așteptare" description="Toate sarcinile beneficiarilor sunt finalizate." />
+          <EmptyState title={dict.faraSarcini} description={dict.faraSarciniDescriere} />
         )}
       </Card>
 
       <Card>
-        <CardHeader title="Campanii stagnante" subtitle="Nicio actualizare publicată în ultimele 14 zile" />
+        <CardHeader title={dict.stagnante} subtitle={dict.stagnanteSub} />
         {campaniiStagnante.length ? (
           <div className="flex flex-col gap-2">
             {campaniiStagnante.map((c) => (
@@ -75,32 +67,32 @@ export default async function PortalBeneficiariPage({ params }: { params: Promis
               >
                 <span className="truncate text-[13px] font-medium text-[var(--ci-text)]">{c.titlu}</span>
                 <Badge tone="amber" icon={false}>
-                  {c.zileFaraActualizare != null ? `${c.zileFaraActualizare} zile fără update` : "Nicio actualizare încă"}
+                  {c.zileFaraActualizare != null ? dict.zileFaraUpdate(c.zileFaraActualizare) : dict.nicioActualizare}
                 </Badge>
               </a>
             ))}
           </div>
         ) : (
-          <EmptyState title="Nicio campanie stagnantă" description="Toate campaniile active au primit o actualizare recentă." />
+          <EmptyState title={dict.faraStagnante} description={dict.faraStagnanteDescriere} />
         )}
       </Card>
 
       <Card>
-        <CardHeader title="Jurnal de audit" subtitle="Operațiuni financiare și administrative sensibile — vizibil doar admin/owner" />
+        <CardHeader title={dict.audit} subtitle={dict.auditSub} />
         {auditLog.length ? (
           <div className="flex flex-col gap-1.5">
             {auditLog.map((a) => (
               <div key={a.id} className="flex items-center justify-between gap-2 border-b border-[var(--ci-border)] px-1 py-2 text-[12.5px] last:border-0">
                 <div className="min-w-0">
-                  <span className="font-medium text-[var(--ci-text)]">{ACTIUNE_LABEL[a.actiune] ?? a.actiune}</span>
-                  <span className="ml-2 text-[var(--ci-text-muted)]">{a.actorNume || a.actorEmail || "sistem"}</span>
+                  <span className="font-medium text-[var(--ci-text)]">{dict.actiuni[a.actiune] ?? a.actiune}</span>
+                  <span className="ml-2 text-[var(--ci-text-muted)]">{a.actorNume || a.actorEmail || dict.sistem}</span>
                 </div>
-                <span className="shrink-0 text-[var(--ci-text-faint)]">{new Date(a.createdAt).toLocaleString("ro-RO")}</span>
+                <span className="shrink-0 text-[var(--ci-text-faint)]">{new Date(a.createdAt).toLocaleString(intl)}</span>
               </div>
             ))}
           </div>
         ) : (
-          <EmptyState title="Niciun eveniment înregistrat" description="Jurnalul de audit e gol momentan." />
+          <EmptyState title={dict.faraEvenimente} description={dict.faraEvenimenteDescriere} />
         )}
       </Card>
     </div>

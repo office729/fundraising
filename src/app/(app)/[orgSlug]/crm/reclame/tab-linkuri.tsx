@@ -15,7 +15,6 @@ import { useLocale } from "../lib/locale-context";
 
 import { salveazaLinkAction, stergeLinkAction, type DateReclame } from "./actions";
 import { formatariReclame } from "./format";
-import { traduLib } from "./texte-lib";
 
 async function copiaza(text: string): Promise<boolean> {
   try {
@@ -59,7 +58,7 @@ export function TabLinkuri({ orgSlug, date }: { orgSlug: string; date: DateRecla
   const [mesaj, setMesaj] = useState<string | null>(null);
 
   const sursa = PRESETURI_SURSA.find((p) => p.cheie === preset) ?? PRESETURI_SURSA[0]!;
-  const rezultat = url.trim() ? construiesteLink({ url, source: sursa.source, medium: sursa.medium, campaign: campanie, content: continut }) : null;
+  const rezultat = url.trim() ? construiesteLink({ url, source: sursa.source, medium: sursa.medium, campaign: campanie, content: continut }, locale) : null;
 
   function salveaza() {
     setMesaj(null);
@@ -71,7 +70,7 @@ export function TabLinkuri({ orgSlug, date }: { orgSlug: string; date: DateRecla
         setContinut(urmatorulCod("cr", [...date.linkuri.map((l) => l.utmContent ?? ""), continut]));
         setEticheta("");
         router.refresh();
-      } else setMesaj(traduLib(locale, r.eroare));
+      } else setMesaj(r.eroare);
     });
   }
 
@@ -122,7 +121,7 @@ export function TabLinkuri({ orgSlug, date }: { orgSlug: string; date: DateRecla
 
         {rezultat && !rezultat.ok && (
           <p role="alert" className="rounded-[var(--ci-radius-btn)] bg-[var(--ci-red-soft)] px-3 py-2 text-[13px] text-[var(--ci-red)]">
-            {traduLib(locale, rezultat.eroare)}
+            {rezultat.eroare}
           </p>
         )}
         {rezultat?.ok && (

@@ -1,6 +1,8 @@
 import "server-only";
 
 import type { requireOrgAccess } from "@/lib/auth/guard";
+import { INSTRUMENTE_UI_DICT } from "@/lib/i18n/dictionaries/instrumente-ui";
+import { getLocale } from "@/lib/i18n/get-locale";
 
 import { dateFirmaAction, incarcaDocumentAction, semnatarCurentAction, type TipDoc } from "./documente-actions";
 import { infoOrganizatie } from "./info-organizatie";
@@ -15,6 +17,7 @@ const unu = (v: string | string[] | undefined) => (typeof v === "string" ? v : u
 // Tot ce are nevoie o pagină de generator de la server: organizația, semnatarul implicit, un document redeschis (?doc=),
 // datele unei firme din CRM (?firma=) și avertismentele despre antet.
 export async function pregatesteGenerator(orgSlug: string, access: Access, sp: Sp, tip: TipDoc) {
+  const d = INSTRUMENTE_UI_DICT[await getLocale()].comun.pregatire;
   const org = infoOrganizatie(access);
   const semnatar = await semnatarCurentAction(orgSlug);
 
@@ -33,7 +36,7 @@ export async function pregatesteGenerator(orgSlug: string, access: Access, sp: S
     const f = await dateFirmaAction(orgSlug, firmaParam);
     if (f) firmaId = firmaParam;
     if (f && !dateIni) {
-      if (f.suma) bannere.push({ text: `Suma, proiectul și anul sunt din ultima sponsorizare înregistrată${f.dataSponsorizare ? ` (${f.dataSponsorizare.split("-").reverse().join(".")})` : ""}: ${f.suma}. Dacă documentul se referă la altă sponsorizare, corectează-le.` });
+      if (f.suma) bannere.push({ text: d.sumaDinUltima(f.suma, f.dataSponsorizare ? f.dataSponsorizare.split("-").reverse().join(".") : "") });
       dateIni =
         tip === "scrisori"
           ? { destFirma: f.nume, destNume: f.administrator, destAdresa: f.adresa, suma: f.suma, proiect: f.proiect, an: f.an }
@@ -42,10 +45,10 @@ export async function pregatesteGenerator(orgSlug: string, access: Access, sp: S
   }
 
   if (access.orgLogoUrl && !org.logo) {
-    bannere.push({ text: "Logoul din Setări nu e o adresă https, așa că nu apare în document. Încarcă-l din nou în Setări sau adaugă-l aici.", href: `/${orgSlug}/setari`, eticheta: "Deschide Setări" });
+    bannere.push({ text: d.logoHttps, href: `/${orgSlug}/setari`, eticheta: d.deschideSetari });
   }
   if (tip === "scrisori" && !org.adresa && !org.cif && !org.iban) {
-    bannere.push({ text: "Antetul nu are încă adresă, CIF sau IBAN. Completează-le în Setări ca să apară în toate scrisorile.", href: `/${orgSlug}/setari`, eticheta: "Completează în Setări" });
+    bannere.push({ text: d.antetGol, href: `/${orgSlug}/setari`, eticheta: d.completeazaSetari });
   }
 
   return { org, semnatar, dateIni, firmaId, bannere };

@@ -3,6 +3,8 @@
 // relație / oportunitate (15), contact / decident (15), momentul potrivit (15).
 // Formulele urmăresc logica din CRM PJ, adaptată la datele reale din baza de date.
 
+import type { Locale } from "./i18n/config";
+
 export type ScorInput = {
   sumaDisponibila: number | null;
   ca: number | null;
@@ -22,7 +24,6 @@ export type ScorCheie = "capacitate" | "marime" | "relatie" | "contact" | "momen
 export type ScorLinie = { cheie: ScorCheie; puncte: number; max: number; detaliu: string };
 export type Prioritate = "ridicata" | "medie" | "scazuta";
 
-const fmt = (n: number) => n.toLocaleString("ro-RO");
 const PIPELINE_INAINTE_DE_ABORDARE = new Set(["nou", "pe_viitor"]);
 
 // Perioade fiscale favorabile: octombrie–decembrie (bugete și sponsorizări de sfârșit de an)
@@ -31,14 +32,19 @@ function perioadaFiscala(luna: number) {
   return luna >= 10 || (luna >= 4 && luna <= 6);
 }
 
-export function calculeazaScor(i: ScorInput): { total: number; linii: ScorLinie[]; prioritate: Prioritate } {
+// `detaliu` e text pentru utilizator: `locale` (implicit română) alege limba lui.
+export function calculeazaScor(i: ScorInput, locale: Locale = "ro"): { total: number; linii: ScorLinie[]; prioritate: Prioritate } {
+  const en = locale === "en";
+  const fmt = (n: number) => n.toLocaleString(en ? "en-GB" : "ro-RO");
   // 1. Capacitate D177 + 20% (max 35): liniar până la 500.000 lei disponibili.
   const disp = i.sumaDisponibila ?? 0;
   const capacitate: ScorLinie = {
     cheie: "capacitate",
     puncte: Math.min(35, Math.round(disp / 14286)),
     max: 35,
-    detaliu: i.sumaDisponibila != null && disp > 0 ? `~${fmt(disp)} lei disponibili${i.sumaEstimata ? " (estimat din bilanț)" : ""}` : i.sumaDisponibila != null ? `~${fmt(disp)} lei disponibili` : "fără date",
+    detaliu: en
+      ? i.sumaDisponibila != null && disp > 0 ? `~${fmt(disp)} lei available${i.sumaEstimata ? " (estimated from the balance sheet)" : ""}` : i.sumaDisponibila != null ? `~${fmt(disp)} lei available` : "no data"
+      : i.sumaDisponibila != null && disp > 0 ? `~${fmt(disp)} lei disponibili${i.sumaEstimata ? " (estimat din bilanț)" : ""}` : i.sumaDisponibila != null ? `~${fmt(disp)} lei disponibili` : "fără date",
   };
 
   // 2. Mărime și profitabilitate (max 20)
@@ -46,42 +52,42 @@ export function calculeazaScor(i: ScorInput): { total: number; linii: ScorLinie[
   let marime = 0;
   if (i.profit != null && i.profit > 0) {
     marime += 10;
-    partiMarime.push("profit pozitiv");
+    partiMarime.push(en ? "positive profit" : "profit pozitiv");
   } else if (i.profit != null) {
-    partiMarime.push("profit negativ");
+    partiMarime.push(en ? "negative profit" : "profit negativ");
   }
   const ca = i.ca ?? 0;
   if (ca >= 10_000_000) {
     marime += 10;
-    partiMarime.push("CA foarte mare");
+    partiMarime.push(en ? "very high turnover" : "CA foarte mare");
   } else if (ca >= 1_000_000) {
     marime += 7;
-    partiMarime.push("CA mare");
+    partiMarime.push(en ? "high turnover" : "CA mare");
   } else if (ca >= 100_000) {
     marime += 4;
-    partiMarime.push("CA medie");
+    partiMarime.push(en ? "medium turnover" : "CA medie");
   }
-  if (i.nrAngajati) partiMarime.push(`${fmt(i.nrAngajati)} angajați`);
-  const linieMarime: ScorLinie = { cheie: "marime", puncte: Math.min(20, marime), max: 20, detaliu: partiMarime.join(", ") || "fără date" };
+  if (i.nrAngajati) partiMarime.push(en ? `${fmt(i.nrAngajati)} employees` : `${fmt(i.nrAngajati)} angajați`);
+  const linieMarime: ScorLinie = { cheie: "marime", puncte: Math.min(20, marime), max: 20, detaliu: partiMarime.join(", ") || (en ? "no data" : "fără date") };
 
   // 3. Relație / oportunitate (max 15)
   let relatie = 0;
-  let detRelatie = "fără relație";
+  let detRelatie = en ? "no relationship" : "fără relație";
   if (i.recurent) {
     relatie = 15;
-    detRelatie = "sponsor recurent (relație caldă)";
+    detRelatie = en ? "recurring sponsor (warm relationship)" : "sponsor recurent (relație caldă)";
   } else if (i.temperatura === "cald") {
     relatie = 12;
-    detRelatie = "relație caldă";
+    detRelatie = en ? "warm relationship" : "relație caldă";
   } else if (i.cald) {
     relatie = 12;
-    detRelatie = "cale caldă (o persoană de contact e deja în organizație)";
+    detRelatie = en ? "warm path (a contact person is already in the organization)" : "cale caldă (o persoană de contact e deja în organizație)";
   } else if ((i.sumaSponsorizata ?? 0) > 0) {
     relatie = 8;
-    detRelatie = "a mai sponsorizat";
+    detRelatie = en ? "has sponsored before" : "a mai sponsorizat";
   } else if (i.temperatura === "rece") {
     relatie = 2;
-    detRelatie = "relație rece";
+    detRelatie = en ? "cold relationship" : "relație rece";
   }
   const linieRelatie: ScorLinie = { cheie: "relatie", puncte: relatie, max: 15, detaliu: detRelatie };
 
@@ -92,7 +98,7 @@ export function calculeazaScor(i: ScorInput): { total: number; linii: ScorLinie[
     cheie: "contact",
     puncte: n === 0 ? 0 : decident ? 15 : 9,
     max: 15,
-    detaliu: n === 0 ? "niciun contact salvat" : `${n} contact${n === 1 ? "" : "e"} salvat${n === 1 ? "" : "e"}`,
+    detaliu: en ? (n === 0 ? "no contact saved" : `${n} ${n === 1 ? "contact" : "contacts"} saved`) : n === 0 ? "niciun contact salvat" : `${n} contact${n === 1 ? "" : "e"} salvat${n === 1 ? "" : "e"}`,
   };
 
   // 5. Momentul potrivit (max 15): pipeline activ (5) + perioadă fiscală favorabilă (10)
@@ -101,13 +107,13 @@ export function calculeazaScor(i: ScorInput): { total: number; linii: ScorLinie[
   let moment = 0;
   if (!PIPELINE_INAINTE_DE_ABORDARE.has(i.stage)) {
     moment += 5;
-    partiMoment.push("în pipeline activ");
+    partiMoment.push(en ? "in the active pipeline" : "în pipeline activ");
   }
   if (perioadaFiscala(luna)) {
     moment += 10;
-    partiMoment.push("perioadă fiscală favorabilă");
+    partiMoment.push(en ? "favourable tax period" : "perioadă fiscală favorabilă");
   }
-  const linieMoment: ScorLinie = { cheie: "moment", puncte: moment, max: 15, detaliu: partiMoment.join(", ") || "în afara perioadei fiscale" };
+  const linieMoment: ScorLinie = { cheie: "moment", puncte: moment, max: 15, detaliu: partiMoment.join(", ") || (en ? "outside the tax period" : "în afara perioadei fiscale") };
 
   const linii = [capacitate, linieMarime, linieRelatie, linieContact, linieMoment];
   const total = Math.min(100, linii.reduce((s, l) => s + l.puncte, 0));

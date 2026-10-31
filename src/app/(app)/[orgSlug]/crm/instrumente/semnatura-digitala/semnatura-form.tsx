@@ -3,22 +3,16 @@
 import { FileSignature, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { useState, useSyncExternalStore, useTransition } from "react";
 
+import { INSTRUMENTE_UI_DICT } from "@/lib/i18n/dictionaries/instrumente-ui";
+
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Card, CardHeader } from "../../components/ui/card";
 import { Input, Label } from "../../components/ui/input";
+import { useLocale } from "../../lib/locale-context";
 import { trimiteDocumentLaSemnat, verificaStatusDocument } from "./actions";
 
 type Trimis = { documentId: string; titlu: string; la: string; status: string; token: string };
-
-const STATUS_RO: Record<string, string> = {
-  InProgress: "Așteaptă semnături",
-  Completed: "Semnat de toți",
-  Declined: "Refuzat",
-  Expired: "Expirat",
-  Revoked: "Retras",
-  Draft: "Ciornă",
-};
 
 // Lista documentelor trimise se ține în browser (per organizație); statusul real
 // vine de la BoldSign la fiecare „Actualizează".
@@ -58,6 +52,8 @@ function useTrimise(orgSlug: string) {
 }
 
 export function SemnaturaForm({ orgSlug, configurat, poateTrimite }: { orgSlug: string; configurat: boolean; poateTrimite: boolean }) {
+  const locale = useLocale();
+  const t = INSTRUMENTE_UI_DICT[locale].semnatura;
   const [semnatari, setSemnatari] = useState([{ nume: "", email: "" }]);
   const [eroare, setEroare] = useState<string | null>(null);
   const [mesajOk, setMesajOk] = useState<string | null>(null);
@@ -78,7 +74,7 @@ export function SemnaturaForm({ orgSlug, configurat, poateTrimite }: { orgSlug: 
         return;
       }
       salveaza([{ documentId: r.documentId!, titlu: r.titlu!, la: new Date().toISOString(), status: "InProgress", token: r.token! }, ...lista]);
-      setMesajOk("Documentul a fost trimis. Semnatarii primesc un email cu linkul de semnare.");
+      setMesajOk(t.trimisOk);
       formular.reset();
       setSemnatari([{ nume: "", email: "" }]);
     });
@@ -97,32 +93,23 @@ export function SemnaturaForm({ orgSlug, configurat, poateTrimite }: { orgSlug: 
 
   return (
     <div className="space-y-5">
-      {!configurat && (
-        <p className="rounded-[var(--ci-radius-card)] bg-[var(--ci-amber-soft)] px-3.5 py-2.5 text-[13px] text-[var(--ci-text)]">
-          Integrarea BoldSign nu e configurată încă pentru această platformă (lipsește cheia API). Formularul de mai jos devine activ după ce cheia e adăugată.
-          Integrările nu sunt incluse în prețul abonamentului — se fac la cerere.
-        </p>
-      )}
+      {!configurat && <p className="rounded-[var(--ci-radius-card)] bg-[var(--ci-amber-soft)] px-3.5 py-2.5 text-[13px] text-[var(--ci-text)]">{t.neconfigurat}</p>}
 
-      {!poateTrimite && (
-        <p className="rounded-[var(--ci-radius-card)] bg-[var(--ci-surface-2)] px-3.5 py-2.5 text-[13px] text-[var(--ci-text)]">
-          Doar administratorii organizației pot trimite documente la semnat. Cere unui admin să îl trimită.
-        </p>
-      )}
+      {!poateTrimite && <p className="rounded-[var(--ci-radius-card)] bg-[var(--ci-surface-2)] px-3.5 py-2.5 text-[13px] text-[var(--ci-text)]">{t.doarAdmin}</p>}
 
       <Card>
-        <CardHeader title="Document nou" subtitle="Doar PDF, cel mult 10 MB" />
+        <CardHeader title={t.documentNou} subtitle={t.documentNouSub} />
         <form onSubmit={trimite} className="space-y-4">
           <div>
-            <Label>Fișier PDF</Label>
+            <Label>{t.fisierPdf}</Label>
             <input type="file" name="fisier" accept="application/pdf,.pdf" required className="block w-full text-[13px]" />
           </div>
           <div>
-            <Label>Titlu</Label>
-            <Input name="titlu" placeholder="ex. Contract de sponsorizare — Companie SRL" required />
+            <Label>{t.titluDoc}</Label>
+            <Input name="titlu" placeholder={t.titluEx} required />
           </div>
           <div>
-            <Label>Mesaj pentru semnatari (opțional)</Label>
+            <Label>{t.mesaj}</Label>
             <textarea
               name="mesaj"
               rows={2}
@@ -131,12 +118,12 @@ export function SemnaturaForm({ orgSlug, configurat, poateTrimite }: { orgSlug: 
           </div>
 
           <div className="space-y-2">
-            <Label>Semnatari</Label>
+            <Label>{t.semnatari}</Label>
             {semnatari.map((s, i) => (
               <div key={i} className="flex flex-wrap items-center gap-2">
                 <Input
                   name="semnatar_nume"
-                  placeholder="Nume"
+                  placeholder={t.nume}
                   value={s.nume}
                   onChange={(e) => setSemnatari(semnatari.map((x, j) => (j === i ? { ...x, nume: e.target.value } : x)))}
                   className="min-w-40 flex-1"
@@ -144,13 +131,13 @@ export function SemnaturaForm({ orgSlug, configurat, poateTrimite }: { orgSlug: 
                 <Input
                   name="semnatar_email"
                   type="email"
-                  placeholder="email@exemplu.ro"
+                  placeholder={t.emailEx}
                   value={s.email}
                   onChange={(e) => setSemnatari(semnatari.map((x, j) => (j === i ? { ...x, email: e.target.value } : x)))}
                   className="min-w-48 flex-1"
                 />
                 {semnatari.length > 1 && (
-                  <button type="button" aria-label="Șterge semnatarul" onClick={() => setSemnatari(semnatari.filter((_, j) => j !== i))} className="text-[var(--ci-text-muted)] hover:text-[var(--ci-red)]">
+                  <button type="button" aria-label={t.stergeSemnatar} onClick={() => setSemnatari(semnatari.filter((_, j) => j !== i))} className="text-[var(--ci-text-muted)] hover:text-[var(--ci-red)]">
                     <Trash2 className="h-4 w-4" />
                   </button>
                 )}
@@ -158,38 +145,38 @@ export function SemnaturaForm({ orgSlug, configurat, poateTrimite }: { orgSlug: 
             ))}
             {semnatari.length < 10 && (
               <button type="button" onClick={() => setSemnatari([...semnatari, { nume: "", email: "" }])} className="flex items-center gap-1 text-[13px] font-medium text-[var(--ci-primary)] hover:underline">
-                <Plus className="h-3.5 w-3.5" /> Adaugă semnatar
+                <Plus className="h-3.5 w-3.5" /> {t.adaugaSemnatar}
               </button>
             )}
-            <p className="text-[12px] text-[var(--ci-text-muted)]">Câmpul de semnătură al fiecărui semnatar apare în josul primei pagini.</p>
+            <p className="text-[12px] text-[var(--ci-text-muted)]">{t.campSemnatura}</p>
           </div>
 
           {eroare && <p className="text-[13px] text-[var(--ci-red)]">{eroare}</p>}
           {mesajOk && <p className="text-[13px] text-[var(--ci-green)]">{mesajOk}</p>}
 
           <Button type="submit" variant="primary" disabled={pending || !configurat || !poateTrimite}>
-            <FileSignature className="h-3.5 w-3.5" /> {pending ? "Se trimite…" : "Trimite la semnat"}
+            <FileSignature className="h-3.5 w-3.5" /> {pending ? t.seTrimite : t.trimite}
           </Button>
         </form>
       </Card>
 
       <Card>
-        <CardHeader title="Documente trimise" subtitle="Din acest browser — statusul real vine de la BoldSign" />
+        <CardHeader title={t.trimise} subtitle={t.trimiseSub} />
         {lista.length === 0 ? (
-          <p className="text-[13px] text-[var(--ci-text-muted)]">Niciun document trimis încă.</p>
+          <p className="text-[13px] text-[var(--ci-text-muted)]">{t.niciunul}</p>
         ) : (
           <ul className="divide-y divide-[var(--ci-border)]">
             {lista.map((d) => (
               <li key={d.documentId} className="flex flex-wrap items-center gap-3 py-2.5">
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[13px] font-medium text-[var(--ci-text)]">{d.titlu}</p>
-                  <p className="text-[12px] text-[var(--ci-text-muted)]">{new Date(d.la).toLocaleString("ro-RO")}</p>
+                  <p className="text-[12px] text-[var(--ci-text-muted)]">{new Date(d.la).toLocaleString(locale === "ro" ? "ro-RO" : "en-GB")}</p>
                 </div>
                 <Badge tone={d.status === "Completed" ? "green" : d.status === "Declined" || d.status === "Expired" ? "red" : "neutral"}>
-                  {STATUS_RO[d.status] ?? d.status}
+                  {t.status[d.status] ?? d.status}
                 </Badge>
                 <Button variant="secondary" size="sm" onClick={() => actualizeaza(d.documentId)} disabled={seActualizeaza === d.documentId}>
-                  <RefreshCw className="h-3.5 w-3.5" /> Actualizează
+                  <RefreshCw className="h-3.5 w-3.5" /> {t.actualizeaza}
                 </Button>
               </li>
             ))}

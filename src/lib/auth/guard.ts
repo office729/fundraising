@@ -4,16 +4,26 @@ import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
 
 import type { CustomPlanConfigSaved } from "@/lib/billing/custom-plan";
-import { areModul, MODULE_PACHET, type ModulPachet } from "@/lib/billing/packages";
+import { areModul, numeModul, numePachetMinim, type ModulPachet } from "@/lib/billing/packages";
 import { isAccessBlocked, pachetEfectiv, pachetPentruModule } from "@/lib/billing/trial";
 import { db } from "@/lib/db";
 import { EroareUtilizator } from "@/lib/erori";
+import { getTr } from "@/lib/i18n/tr-server";
 import { esteEroareDeJurnalizat, jurnalizeazaEroareOrg } from "@/lib/suport/jurnal-erori";
 import type { DomeniuActivitate } from "@/lib/campaign-templates";
 
 import { findBeneficiaryProfile } from "./beneficiar";
 import { ensureAppUser, getAuthUser } from "./dal";
 import { findOrgMembership } from "./org";
+
+// Mesajele de refuz sunt în limba curentă; în afara unei cereri web (job, script) limba nu se poate citi și rămâne româna.
+async function trRefuz(): Promise<(ro: string, en: string) => string> {
+  try {
+    return await getTr();
+  } catch {
+    return (ro) => ro;
+  }
+}
 
 export type OrgRole = "owner" | "admin" | "member";
 
@@ -176,11 +186,13 @@ export function withOrgSession<A extends unknown[], R>(
           ctx.userEmail,
         )
       ) {
-        throw new EroareUtilizator("Perioada de probă s-a încheiat — alege un pachet ca să continui.");
+        const t = await trRefuz();
+        throw new EroareUtilizator(t("Perioada de probă s-a încheiat — alege un pachet ca să continui.", "The trial period has ended — choose a plan to continue."));
       }
       if (opts?.modul && !areModul(pachetPentruModule(ctx.orgPackage, ctx.userEmail), opts.modul)) {
-        const m = MODULE_PACHET[opts.modul];
-        throw new EroareUtilizator(`${m.nume} este inclus începând cu pachetul ${m.minim === "impact" ? "IMPACT" : "CREȘTERE"}.`);
+        const t = await trRefuz();
+        const minim = numePachetMinim(opts.modul);
+        throw new EroareUtilizator(t(`${numeModul(opts.modul)} este inclus începând cu pachetul ${minim}.`, `${numeModul(opts.modul, "en")} is included from the ${minim} plan upwards.`));
       }
       urma.orgId = ctx.orgId;
       return action(ctx, ...args);
@@ -199,7 +211,7 @@ export function withOrgAdmin<A extends unknown[], R>(
 ): (orgSlug: string, ...args: A) => Promise<R> {
   return withOrgSession(async (ctx, ...args: A) => {
     if (ctx.role !== "owner" && ctx.role !== "admin") {
-      throw new EroareUtilizator("Necesită rol de admin sau owner în organizație.");
+      throw new EroareUtilizator((await trRefuz())("Necesită rol de admin sau owner în organizație.", "This requires the admin or owner role in the organization."));
     }
     return action(ctx, ...args);
   }, opts);

@@ -54,7 +54,7 @@ export default function OnePagerPage() {
           <div>
             <SectionLabel>{dict.impactLabel}</SectionLabel>
             <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <Stat label={dict.totalStrans} value={formatSuma(stats.totalDonat)} />
+              <Stat label={dict.totalStrans} value={formatSuma(stats.totalDonat, undefined, locale)} />
               <Stat label={dict.cazuriActive} value={String(stats.cazuriActive)} />
               <Stat label={dict.cazuriFinalizate} value={String(stats.cazuriFinalizate)} />
               <Stat label={dict.companiiPartenere} value={String(stats.companiiPartenere)} />
@@ -73,7 +73,7 @@ export default function OnePagerPage() {
                       <p className="text-[13px] font-medium text-[var(--ci-text)]">{b.nume}</p>
                       <p className="text-[12px] text-[var(--ci-text-muted)]">{b.localitate}</p>
                       <ProgressBar value={pct} className="mt-2" />
-                      <p className="ci-tabular mt-1 text-[12px] text-[var(--ci-text-muted)]">{formatSuma(b.sumaStransa)} {dict.din} {formatSuma(b.obiectiv)}</p>
+                      <p className="ci-tabular mt-1 text-[12px] text-[var(--ci-text-muted)]">{formatSuma(b.sumaStransa, undefined, locale)} {dict.din} {formatSuma(b.obiectiv, undefined, locale)}</p>
                     </div>
                   </div>
                 );

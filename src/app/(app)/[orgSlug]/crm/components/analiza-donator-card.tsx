@@ -1,7 +1,7 @@
 "use client";
 
 import { ritmInCuvinte, urmatoareaDepasita, type Analiza, type NivelRisc } from "@/lib/analiza-donator";
-import { COMPONENTE_UI_DICT, etichetaRiscEn, riscMotivEn, ritmEn } from "@/lib/i18n/dictionaries/componente-ui";
+import { COMPONENTE_UI_DICT } from "@/lib/i18n/dictionaries/componente-ui";
 
 import { formatData, formatSuma } from "../lib/format";
 import { useLocale } from "../lib/locale-context";
@@ -15,7 +15,6 @@ const TON: Record<NivelRisc, StatusTone> = { scazut: "green", mediu: "amber", ri
 export function AnalizaDonatorCard({ analiza, moneda = "lei", titlu }: { analiza: Analiza; moneda?: string; titlu?: string }) {
   const locale = useLocale();
   const t = COMPONENTE_UI_DICT[locale].analiza;
-  const en = locale === "en";
   const a = analiza;
   const depasita = urmatoareaDepasita(a);
   return (
@@ -24,13 +23,13 @@ export function AnalizaDonatorCard({ analiza, moneda = "lei", titlu }: { analiza
         <h2 className="ci-display text-[15px] font-semibold text-[var(--ci-text)]">{titlu ?? t.titlu}</h2>
         <Badge tone={TON[a.risc]} icon={false}>
           {t.risc[a.risc]}
-          {a.eticheta ? ` · ${en ? etichetaRiscEn(a.eticheta) : a.eticheta}` : ""}
+          {a.eticheta ? ` · ${a.eticheta}` : ""}
         </Badge>
       </div>
-      <p className="mt-2 text-[13px] leading-relaxed text-[var(--ci-text-muted)]">{en ? riscMotivEn(a.riscMotiv) : a.riscMotiv}</p>
+      <p className="mt-2 text-[13px] leading-relaxed text-[var(--ci-text-muted)]">{a.riscMotiv}</p>
 
       <div className="mt-4 grid grid-cols-2 gap-4 border-t border-[var(--ci-border)] pt-4 sm:grid-cols-4">
-        <Camp label={t.ritm} value={en ? ritmEn(ritmInCuvinte(a.cadentaZile)) : ritmInCuvinte(a.cadentaZile)} />
+        <Camp label={t.ritm} value={ritmInCuvinte(a.cadentaZile, locale)} />
         <Camp label={depasita ? t.eraAsteptata : t.urmatoarea} value={a.urmatoareaAt ? formatData(a.urmatoareaAt, locale) : "—"} />
         <Camp label={t.ritmValoric} value={a.valoareAnuala != null ? formatSuma(a.valoareAnuala, moneda, locale) : "—"} />
         <Camp label={t.valoareViitor} value={a.valoareViitor != null ? formatSuma(a.valoareViitor, moneda, locale) : "—"} />

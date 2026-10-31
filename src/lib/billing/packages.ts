@@ -5,6 +5,8 @@
 //
 // Cotele și modulele se aplică pe server: la creare (contacte, utilizatori, rapoarte) și în acțiunile și paginile modulelor (areModul).
 
+import type { Locale } from "../i18n/config";
+
 export type OrgPackage = "trial" | "start" | "crestere" | "impact" | "custom";
 
 export type ToolId =
@@ -23,29 +25,41 @@ export type ToolId =
 // Formularul 230, contractele, newsletterul, rapoartele) e în toate pachetele. Probă și plan personalizat: toate deschise.
 export type ModulPachet = "program-lucru" | "kpi" | "instrumente-design" | "voluntari" | "comunicat-presa" | "analiza-baze" | "granturi" | "calendar" | "reclame" | "analiza-donator" | "prioritizare-firme" | "cai-calde" | "prospectare-multi" | "parcursuri-donatori" | "campuri-personalizate" | "api-webhooks";
 
-export const MODULE_PACHET: Record<ModulPachet, { minim: "crestere" | "impact"; nume: string }> = {
-  "program-lucru": { minim: "crestere", nume: "Program de lucru" },
-  kpi: { minim: "crestere", nume: "KPI și performanță" },
-  "instrumente-design": { minim: "crestere", nume: "Instrumente de design" },
-  voluntari: { minim: "crestere", nume: "CRM voluntari" },
-  "comunicat-presa": { minim: "impact", nume: "Comunicat de presă" },
-  "analiza-baze": { minim: "impact", nume: "Analiza bazei de date" },
-  granturi: { minim: "impact", nume: "Granturi" },
-  calendar: { minim: "impact", nume: "Calendar de fundraising" },
-  reclame: { minim: "impact", nume: "Performanța reclamelor" },
+// `nume` e în română (cum apare în emailuri și pe documente); `numeEn` e pentru interfața în engleză (vezi numeModul).
+export const MODULE_PACHET: Record<ModulPachet, { minim: "crestere" | "impact"; nume: string; numeEn: string }> = {
+  "program-lucru": { minim: "crestere", nume: "Program de lucru", numeEn: "Work schedule" },
+  kpi: { minim: "crestere", nume: "KPI și performanță", numeEn: "KPIs and performance" },
+  "instrumente-design": { minim: "crestere", nume: "Instrumente de design", numeEn: "Design tools" },
+  voluntari: { minim: "crestere", nume: "CRM voluntari", numeEn: "Volunteer CRM" },
+  "comunicat-presa": { minim: "impact", nume: "Comunicat de presă", numeEn: "Press release" },
+  "analiza-baze": { minim: "impact", nume: "Analiza bazei de date", numeEn: "Database analysis" },
+  granturi: { minim: "impact", nume: "Granturi", numeEn: "Grants" },
+  calendar: { minim: "impact", nume: "Calendar de fundraising", numeEn: "Fundraising calendar" },
+  reclame: { minim: "impact", nume: "Performanța reclamelor", numeEn: "Ad performance" },
   // Inteligență pentru fundraising, fără servicii externe: calculată din datele organizației, deterministă și explicabilă.
-  "analiza-donator": { minim: "impact", nume: "Analiza donatorului (risc, ritm, valoare estimată)" },
-  "prioritizare-firme": { minim: "impact", nume: "Prioritizarea firmelor (benzi A/B/C)" },
-  "cai-calde": { minim: "impact", nume: "Căi calde către firme" },
+  "analiza-donator": { minim: "impact", nume: "Analiza donatorului (risc, ritm, valoare estimată)", numeEn: "Donor analysis (risk, rhythm, estimated value)" },
+  "prioritizare-firme": { minim: "impact", nume: "Prioritizarea firmelor (benzi A/B/C)", numeEn: "Company prioritisation (A/B/C bands)" },
+  "cai-calde": { minim: "impact", nume: "Căi calde către firme", numeEn: "Warm paths to companies" },
   // Căutarea de decidenți cu cheile proprii ale organizației la Lusha, Apollo, Prospeo, Hunter și Waalaxy (nu sunt incluse în abonament).
-  "prospectare-multi": { minim: "impact", nume: "Prospectare de decidenți (Lusha, Apollo, Prospeo, Hunter, Waalaxy)" },
+  "prospectare-multi": { minim: "impact", nume: "Prospectare de decidenți (Lusha, Apollo, Prospeo, Hunter, Waalaxy)", numeEn: "Decision-maker prospecting (Lusha, Apollo, Prospeo, Hunter, Waalaxy)" },
   // Serii automate de e-mailuri către donatori (Welcome, Save, Upgrade), cu textele editabile; trimise zilnic doar celor cu acord de e-mail.
-  "parcursuri-donatori": { minim: "crestere", nume: "Parcursuri pentru donatori (Welcome, Save, Upgrade)" },
+  "parcursuri-donatori": { minim: "crestere", nume: "Parcursuri pentru donatori (Welcome, Save, Upgrade)", numeEn: "Donor journeys (Welcome, Save, Upgrade)" },
   // Câmpuri proprii la donatori și firme, completate de echipă și vizibile și în API.
-  "campuri-personalizate": { minim: "crestere", nume: "Câmpuri personalizate la donatori și firme" },
+  "campuri-personalizate": { minim: "crestere", nume: "Câmpuri personalizate la donatori și firme", numeEn: "Custom fields for donors and companies" },
   // Chei API (citire donatori și donații, câmpuri personalizate) și webhook-uri către sistemele organizației.
-  "api-webhooks": { minim: "impact", nume: "API și webhook-uri" },
+  "api-webhooks": { minim: "impact", nume: "API și webhook-uri", numeEn: "API and webhooks" },
 };
+
+// Numele modulului în limba cerută (implicit română, ca în emailuri și pe documente).
+export function numeModul(modul: ModulPachet, locale: Locale = "ro"): string {
+  const m = MODULE_PACHET[modul];
+  return locale === "en" ? m.numeEn : m.nume;
+}
+
+// Pachetul minim al unui modul, ca nume propriu (START / CREȘTERE / IMPACT; la fel în ambele limbi).
+export function numePachetMinim(modul: ModulPachet): "CREȘTERE" | "IMPACT" {
+  return MODULE_PACHET[modul].minim === "impact" ? "IMPACT" : "CREȘTERE";
+}
 
 const RANG_PACHET: Record<string, number> = { start: 1, crestere: 2, impact: 3 };
 
@@ -195,9 +209,11 @@ export function utilizatoriSuplimentariValizi(pkg: OrgPackage, cerut: unknown): 
 }
 
 // Eticheta pachetului pe comandă, pe factură și în emailuri, cu utilizatorii suplimentari menționați.
-export function etichetaPachet(pkg: Exclude<OrgPackage, "trial" | "custom">, extra: number): string {
-  const nume = pkg === "start" ? "Pachet START" : pkg === "crestere" ? "Pachet CREȘTERE" : "Pachet IMPACT";
-  return extra > 0 ? `${nume} + ${extra} ${extra === 1 ? "utilizator suplimentar" : "utilizatori suplimentari"}` : nume;
+// Implicit în română (comanda, factura, emailurile); `locale: "en"` doar pentru afișarea în interfață.
+export function etichetaPachet(pkg: Exclude<OrgPackage, "trial" | "custom">, extra: number, locale: Locale = "ro"): string {
+  const nume = numePachetFix(pkg, locale);
+  if (extra <= 0) return nume;
+  return locale === "en" ? `${nume} + ${extra} extra ${extra === 1 ? "user" : "users"}` : `${nume} + ${extra} ${extra === 1 ? "utilizator suplimentar" : "utilizatori suplimentari"}`;
 }
 
 // Prețul lunar al unui pachet fix, cu utilizatorii suplimentari incluși (null pentru trial).
@@ -242,6 +258,16 @@ export const NUME_PACHET_FIX: Record<Exclude<OrgPackage, "trial" | "custom">, st
   crestere: "Pachet CREȘTERE",
   impact: "Pachet IMPACT",
 };
+export const NUME_PACHET_FIX_EN: Record<Exclude<OrgPackage, "trial" | "custom">, string> = {
+  start: "START plan",
+  crestere: "CREȘTERE plan",
+  impact: "IMPACT plan",
+};
+
+// Numele pachetului fix în limba cerută (implicit română).
+export function numePachetFix(pkg: Exclude<OrgPackage, "trial" | "custom">, locale: Locale = "ro"): string {
+  return (locale === "en" ? NUME_PACHET_FIX_EN : NUME_PACHET_FIX)[pkg];
+}
 
 // Abonamentul platformei se încasează prin Netopia (nu Stripe), lună de lună:
 // fiecare plată are prețul din `pretLunar` de mai sus, calculat server-side
@@ -263,38 +289,42 @@ export type EvaluarePachet = {
 };
 
 const PACHETE_ORDONATE: Exclude<OrgPackage, "trial" | "custom">[] = ["start", "crestere", "impact"];
-const nrRo = (n: number) => n.toLocaleString("ro-RO");
 
-export function evalueazaPachete(u: UtilizarePachet): EvaluarePachet[] {
+// `lipsuri` și `folosit` sunt text pentru utilizator: `locale` (implicit română) alege limba lor.
+export function evalueazaPachete(u: UtilizarePachet, locale: Locale = "ro"): EvaluarePachet[] {
+  const en = locale === "en";
+  const nrRo = (n: number) => n.toLocaleString(en ? "en-GB" : "ro-RO");
   return PACHETE_ORDONATE.map((pachet) => {
     const l = PACKAGE_LIMITS[pachet];
     const lipsuri: string[] = [];
     let extra = 0;
     if (pachet === "start") {
       extra = Math.max(0, u.utilizatori - l.utilizatori!);
-      if (extra > MAX_UTILIZATORI_SUPLIMENTARI) lipsuri.push(`maximum ${l.utilizatori! + MAX_UTILIZATORI_SUPLIMENTARI} utilizatori (ai ${u.utilizatori})`);
+      if (extra > MAX_UTILIZATORI_SUPLIMENTARI) lipsuri.push(en ? `maximum ${l.utilizatori! + MAX_UTILIZATORI_SUPLIMENTARI} users (you have ${u.utilizatori})` : `maximum ${l.utilizatori! + MAX_UTILIZATORI_SUPLIMENTARI} utilizatori (ai ${u.utilizatori})`);
     } else if (l.utilizatori !== null && u.utilizatori > l.utilizatori) {
-      lipsuri.push(`maximum ${l.utilizatori} utilizatori (ai ${u.utilizatori})`);
+      lipsuri.push(en ? `maximum ${l.utilizatori} users (you have ${u.utilizatori})` : `maximum ${l.utilizatori} utilizatori (ai ${u.utilizatori})`);
     }
-    if (l.contactePf !== null && u.contactePf > l.contactePf) lipsuri.push(`maximum ${nrRo(l.contactePf)} contacte persoane fizice (ai ${nrRo(u.contactePf)})`);
-    if (l.companiiPj !== null && u.companiiPj > l.companiiPj) lipsuri.push(`maximum ${nrRo(l.companiiPj)} contacte persoane juridice (ai ${nrRo(u.companiiPj)})`);
-    for (const m of u.module) if (!areModul(pachet, m)) lipsuri.push(`nu include ${MODULE_PACHET[m].nume}`);
+    if (l.contactePf !== null && u.contactePf > l.contactePf) lipsuri.push(en ? `maximum ${nrRo(l.contactePf)} individual contacts (you have ${nrRo(u.contactePf)})` : `maximum ${nrRo(l.contactePf)} contacte persoane fizice (ai ${nrRo(u.contactePf)})`);
+    if (l.companiiPj !== null && u.companiiPj > l.companiiPj) lipsuri.push(en ? `maximum ${nrRo(l.companiiPj)} company contacts (you have ${nrRo(u.companiiPj)})` : `maximum ${nrRo(l.companiiPj)} contacte persoane juridice (ai ${nrRo(u.companiiPj)})`);
+    for (const m of u.module) if (!areModul(pachet, m)) lipsuri.push(en ? `does not include ${numeModul(m, locale)}` : `nu include ${MODULE_PACHET[m].nume}`);
     return { pachet, extra: Math.min(extra, MAX_UTILIZATORI_SUPLIMENTARI), pretLunar: pretLunarPachet(pachet, extra) ?? 0, acopera: lipsuri.length === 0, lipsuri };
   });
 }
 
 export type Recomandare = { alegere: EvaluarePachet; depaseste: boolean; folosit: string[]; evaluari: EvaluarePachet[] };
 
-export function recomandaPachet(u: UtilizarePachet): Recomandare {
-  const evaluari = evalueazaPachete(u);
+export function recomandaPachet(u: UtilizarePachet, locale: Locale = "ro"): Recomandare {
+  const en = locale === "en";
+  const nrRo = (n: number) => n.toLocaleString(en ? "en-GB" : "ro-RO");
+  const evaluari = evalueazaPachete(u, locale);
   const acoperitoare = evaluari.filter((e) => e.acopera);
   // Cel mai ieftin care acoperă tot; la preț egal, pachetul mai mic. Dacă nu acoperă niciunul, IMPACT (cel mai mare) și semnalăm depășirea.
   const alegere = acoperitoare.length ? acoperitoare.reduce((a, b) => (b.pretLunar < a.pretLunar ? b : a)) : evaluari[evaluari.length - 1];
   const folosit = [
-    `${u.utilizatori} ${u.utilizatori === 1 ? "utilizator" : "utilizatori"}`,
-    ...(u.contactePf > 0 ? [`${nrRo(u.contactePf)} contacte persoane fizice`] : []),
-    ...(u.companiiPj > 0 ? [`${nrRo(u.companiiPj)} contacte persoane juridice`] : []),
-    ...u.module.map((m) => MODULE_PACHET[m].nume),
+    `${u.utilizatori} ${en ? (u.utilizatori === 1 ? "user" : "users") : u.utilizatori === 1 ? "utilizator" : "utilizatori"}`,
+    ...(u.contactePf > 0 ? [`${nrRo(u.contactePf)} ${en ? "individual contacts" : "contacte persoane fizice"}`] : []),
+    ...(u.companiiPj > 0 ? [`${nrRo(u.companiiPj)} ${en ? "company contacts" : "contacte persoane juridice"}`] : []),
+    ...u.module.map((m) => numeModul(m, locale)),
   ];
   return { alegere, depaseste: acoperitoare.length === 0, folosit, evaluari };
 }

@@ -1,4 +1,6 @@
 import { requireOrgAccess } from "@/lib/auth/guard";
+import { INSTRUMENTE_UI_DICT } from "@/lib/i18n/dictionaries/instrumente-ui";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { titluAbsolut } from "@/lib/page-titles";
 
 import { IstoricDocumente } from "../_comun/istoric-documente";
@@ -11,6 +13,7 @@ export const dynamic = "force-dynamic";
 export default async function RaportCompaniiPage({ params }: { params: Promise<{ orgSlug: string }> }) {
   const { orgSlug } = await params;
   const access = await requireOrgAccess(orgSlug);
+  const t = INSTRUMENTE_UI_DICT[await getLocale()].raportCompanii;
   const firme = await listeazaCompaniiImpactAction(orgSlug).catch(() => []);
   const totalFirme = firme.reduce((t, f) => t + f.total, 0);
   const top3 = [...firme].sort((a, b) => b.total - a.total).slice(0, 3);
@@ -19,12 +22,12 @@ export default async function RaportCompaniiPage({ params }: { params: Promise<{
   return (
     <div className="mx-auto max-w-[1200px] space-y-5">
       <div>
-        <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">Rapoarte de impact pentru companii</h1>
-        <p className="mt-0.5 max-w-3xl text-[13px] text-[var(--ci-text-muted)]">Alegi un șablon. În generator încarci logo-urile, completezi proiectele și copiezi codul HTML sau exporți PDF.</p>
+        <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">{t.titlu}</h1>
+        <p className="mt-0.5 max-w-3xl text-[13px] text-[var(--ci-text-muted)]">{t.subtitlu}</p>
       </div>
       {firme.length >= 4 && (
         <p role="note" className={`rounded-[var(--ci-radius-btn)] border px-3 py-2 text-[12.5px] ${procentTop3 >= 60 ? "border-[var(--ci-red)] text-[var(--ci-red)]" : "border-[var(--ci-border)] text-[var(--ci-text-muted)]"}`}>
-          Primele 3 firme reprezintă {procentTop3}% din sponsorizările înregistrate ({firme.length} firme în total). {procentTop3 >= 60 ? "Dependența de puține firme e un risc: merită un plan pentru firme noi." : "Distribuția e echilibrată."}
+          {t.concentrare(procentTop3, firme.length, procentTop3 >= 60)}
         </p>
       )}
       <IstoricDocumente orgSlug={orgSlug} tip="rapoarte" hrefGenerator={`/${orgSlug}/crm/instrumente/raport-companii/impact`} />

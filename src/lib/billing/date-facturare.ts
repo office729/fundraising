@@ -7,3 +7,4 @@ export function dateFacturareComplete(org: { cif: string | null; adresaSediu: st
 }
 
 export const MESAJ_DATE_FACTURARE_LIPSA = "Completează CIF-ul, adresa sediului și județul organizației înainte de plată.";
+export const MESAJ_DATE_FACTURARE_LIPSA_EN = "Fill in your organization's CIF (tax ID), registered office address and county (județ) before paying.";

@@ -1,5 +1,7 @@
 import { requireOrgAccess } from "@/lib/auth/guard";
-import { aziBucuresti, bancaOre, CATEGORII, formateazaMinute, minuteInLuna, numeLuna, totaluri, urmatorulReset, type Categorie } from "@/lib/timp-custom";
+import { TIMP_ALOCAT_UI_DICT } from "@/lib/i18n/dictionaries/timp-alocat-ui";
+import { getLocale } from "@/lib/i18n/get-locale";
+import { aziBucuresti, bancaOre, CATEGORII, formateazaMinute, minuteInLuna, totaluri, type Categorie } from "@/lib/timp-custom";
 
 import { personalizareEfectiva } from "../personalizare-efectiva";
 import { citesteTimpOrg } from "./actions";
@@ -10,6 +12,16 @@ export const dynamic = "force-dynamic";
 // munca făcută cu asistență AI se vede ca timp normal (marcajul „cu AI” rămâne intern, în panoul platformei).
 export default async function TimpAlocatPage({ params }: { params: Promise<{ orgSlug: string }> }) {
   const { orgSlug } = await params;
+  const locale = await getLocale();
+  const dict = TIMP_ALOCAT_UI_DICT[locale];
+  const intl = locale === "ro" ? "ro-RO" : "en-GB";
+  // Numele lunii și data următorului reset în limba curentă (lib/timp-custom.ts le dă doar în română).
+  const numeLuna = (iso: string) => new Date(`${iso.slice(0, 7)}-01T12:00:00`).toLocaleDateString(intl, { month: "long", year: "numeric" });
+  const urmatorulReset = (iso: string) => {
+    const d = new Date(`${iso.slice(0, 7)}-01T12:00:00`);
+    d.setMonth(d.getMonth() + 1);
+    return d.toLocaleDateString(intl, { day: "numeric", month: "long" });
+  };
   const access = await requireOrgAccess(orgSlug);
   const [intrari, pers] = await Promise.all([citesteTimpOrg(orgSlug), personalizareEfectiva(orgSlug, access.userEmail)]);
   const tot = totaluri(intrari, null);
@@ -23,22 +35,22 @@ export default async function TimpAlocatPage({ params }: { params: Promise<{ org
   return (
     <div className="mx-auto max-w-[1000px] space-y-5">
       <div>
-        <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">Timp alocat</h1>
+        <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">{dict.titlu}</h1>
         <p className="mt-0.5 max-w-3xl text-[13px] text-[var(--ci-text-muted)]">
-          Cât timp a alocat echipa Alexandrit modificărilor custom, integrărilor cu alte instrumente și suportului pentru organizația ta, cu ce s-a făcut.
+          {dict.descriere}
         </p>
       </div>
 
-      <section aria-label="Banca de ore" className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4">
+      <section aria-label={dict.bancaOre} className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <div>
-            <p className="text-[12px] text-[var(--ci-text-muted)]">{banca.stare === "fara_pachet" ? "Total timp alocat" : lunar ? `Banca de ore · ${numeLuna(azi)}` : "Banca de ore"}</p>
+            <p className="text-[12px] text-[var(--ci-text-muted)]">{banca.stare === "fara_pachet" ? dict.totalAlocat : lunar ? dict.bancaLuna(numeLuna(azi)) : dict.bancaOre}</p>
             <p className="mt-1 text-2xl font-bold text-[var(--ci-text)] tabular-nums">
               {formateazaMinute(banca.stare === "fara_pachet" ? tot.minute : minuteBanca)}
-              {banca.stare !== "fara_pachet" && <span className="text-base font-normal text-[var(--ci-text-muted)]"> din {formateazaMinute(banca.minutePachet)} incluse în pachet{lunar ? " luna aceasta" : ""}</span>}
+              {banca.stare !== "fara_pachet" && <span className="text-base font-normal text-[var(--ci-text-muted)]">{dict.dinPachet(formateazaMinute(banca.minutePachet), lunar)}</span>}
             </p>
           </div>
-          {lunar && <p className="text-[12px] text-[var(--ci-text-muted)]">Total de la început: {formateazaMinute(tot.minute)}</p>}
+          {lunar && <p className="text-[12px] text-[var(--ci-text-muted)]">{dict.totalInceput(formateazaMinute(tot.minute))}</p>}
         </div>
         {banca.stare !== "fara_pachet" && (
           <>
@@ -48,16 +60,14 @@ export default async function TimpAlocatPage({ params }: { params: Promise<{ org
               aria-valuemin={0}
               aria-valuemax={100}
               aria-valuenow={Math.round(banca.procent * 100)}
-              aria-label="Pachet de ore folosit"
+              aria-label={dict.pachetFolosit}
             >
               <div className="h-full rounded-full" style={{ width: `${Math.round(banca.procent * 100)}%`, background: culoare }} />
             </div>
             <p className="mt-2 text-[13px] text-[var(--ci-text)]" role={banca.stare === "in_limita" ? undefined : "status"}>
-              {banca.stare === "depasit"
-                ? `Pachetul de ore a fost depășit cu ${formateazaMinute(-banca.minuteRamase)}. Te contactăm pentru pașii următori.`
-                : `Rămase: ${formateazaMinute(banca.minuteRamase)}.`}
-              {banca.stare === "atentie" && " Pachetul se apropie de sfârșit."}
-              {lunar && ` Se resetează pe ${urmatorulReset(azi)}.`}
+              {banca.stare === "depasit" ? dict.depasit(formateazaMinute(-banca.minuteRamase)) : dict.ramase(formateazaMinute(banca.minuteRamase))}
+              {banca.stare === "atentie" && dict.seApropie}
+              {lunar && dict.seReseteaza(urmatorulReset(azi))}
             </p>
           </>
         )}
@@ -66,30 +76,30 @@ export default async function TimpAlocatPage({ params }: { params: Promise<{ org
         <p className="text-[12px] text-[var(--ci-text-muted)]">
           {(Object.keys(CATEGORII) as Categorie[])
             .filter((c) => tot.peCategorie[c] > 0)
-            .map((c) => `${CATEGORII[c]}: ${formateazaMinute(tot.peCategorie[c])}`)
+            .map((c) => `${dict.categorii[c] ?? CATEGORII[c]}: ${formateazaMinute(tot.peCategorie[c])}`)
             .join(" · ")}
         </p>
       )}
 
       {intrari.length === 0 ? (
-        <p className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4 text-[13px] text-[var(--ci-text-muted)]">Nu există încă timp înregistrat.</p>
+        <p className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4 text-[13px] text-[var(--ci-text-muted)]">{dict.gol}</p>
       ) : (
         <div className="overflow-x-auto rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)]">
           <table className="w-full text-left text-[13px]">
-            <caption className="sr-only">Intrările de timp alocat</caption>
+            <caption className="sr-only">{dict.caption}</caption>
             <thead className="border-b border-[var(--ci-border)] text-[12px] text-[var(--ci-text-muted)]">
               <tr>
-                <th scope="col" className="px-3 py-2 font-medium">Data</th>
-                <th scope="col" className="px-3 py-2 font-medium">Categorie</th>
-                <th scope="col" className="px-3 py-2 font-medium">Ce s-a făcut</th>
-                <th scope="col" className="px-3 py-2 text-right font-medium">Durată</th>
+                <th scope="col" className="px-3 py-2 font-medium">{dict.data}</th>
+                <th scope="col" className="px-3 py-2 font-medium">{dict.categorie}</th>
+                <th scope="col" className="px-3 py-2 font-medium">{dict.ceSaFacut}</th>
+                <th scope="col" className="px-3 py-2 text-right font-medium">{dict.durata}</th>
               </tr>
             </thead>
             <tbody>
               {intrari.map((i) => (
                 <tr key={i.id} className="border-b border-[var(--ci-border)] last:border-0">
-                  <td className="px-3 py-2 whitespace-nowrap tabular-nums">{new Date(`${i.data}T00:00:00`).toLocaleDateString("ro-RO", { day: "2-digit", month: "short", year: "numeric" })}</td>
-                  <td className="px-3 py-2">{CATEGORII[i.categorie]}</td>
+                  <td className="px-3 py-2 whitespace-nowrap tabular-nums">{new Date(`${i.data}T00:00:00`).toLocaleDateString(intl, { day: "2-digit", month: "short", year: "numeric" })}</td>
+                  <td className="px-3 py-2">{dict.categorii[i.categorie] ?? CATEGORII[i.categorie]}</td>
                   <td className="px-3 py-2">{i.descriere}</td>
                   <td className="px-3 py-2 text-right whitespace-nowrap tabular-nums">{formateazaMinute(i.minute)}</td>
                 </tr>

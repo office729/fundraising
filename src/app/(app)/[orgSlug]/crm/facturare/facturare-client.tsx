@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
+import { FACTURARE_UI_DICT } from "@/lib/i18n/dictionaries/facturare-ui";
 import { JUDETE } from "@/lib/judete";
 
 import { Badge } from "../components/ui/badge";
@@ -13,31 +14,27 @@ import { Card } from "../components/ui/card";
 import { Dialog } from "../components/ui/dialog";
 import { Input, Label, Select } from "../components/ui/input";
 import { EmptyState } from "../components/ui/states";
+import { useLocale } from "../lib/locale-context";
 import { salveazaDateFacturareAction } from "../../billing-actions";
 import { anuleazaAbonamentulAction, eliminaCardSalvatAction, reiaAbonamentulAction } from "../../setari/netopia-card-actions";
 
 import { genereazaFacturaAction, type DateFacturare } from "./actions";
 
-const data = (iso: string) => new Date(iso).toLocaleDateString("ro-RO", { timeZone: "Europe/Bucharest", day: "2-digit", month: "long", year: "numeric" });
-const STATUS: Record<string, { text: string; ton: "green" | "amber" | "neutral" }> = {
-  active: { text: "activ", ton: "green" },
-  trialing: { text: "perioadă de probă", ton: "amber" },
-  past_due: { text: "plată întârziată", ton: "amber" },
-  canceled: { text: "anulat", ton: "neutral" },
-};
+const data = (iso: string, numere: string) => new Date(iso).toLocaleDateString(numere, { timeZone: "Europe/Bucharest", day: "2-digit", month: "long", year: "numeric" });
 
 export function FacturareClient({ orgSlug, date }: { orgSlug: string; date: DateFacturare }) {
+  const d = FACTURARE_UI_DICT[useLocale()];
   const { plan, metodaPlata, firma, facturi } = date;
-  const status = STATUS[plan.status] ?? { text: plan.status, ton: "neutral" as const };
+  const statusText = d.status[plan.status] ?? plan.status;
   const [editare, setEditare] = useState(false);
   const [anulare, setAnulare] = useState(false);
 
   const metoda =
     metodaPlata.tip === "card-automat"
-      ? { titlu: "Card, reînnoire automată", detaliu: [metodaPlata.masca, metodaPlata.expira ? `expiră ${metodaPlata.expira}` : null].filter(Boolean).join(" · ") }
+      ? { titlu: d.cardAuto, detaliu: [metodaPlata.masca, metodaPlata.expira ? d.expira(metodaPlata.expira) : null].filter(Boolean).join(" · ") }
       : metodaPlata.tip === "card"
-        ? { titlu: "Card, plată manuală", detaliu: "Plătești manual la fiecare reînnoire" }
-        : { titlu: "Nicio plată încă", detaliu: plan.probaZileRamase != null ? `${plan.probaZileRamase} zile de probă rămase` : "Alege un plan pentru a începe" };
+        ? { titlu: d.cardManual, detaliu: d.cardManualDetaliu }
+        : { titlu: d.niciPlata, detaliu: plan.probaZileRamase != null ? d.zileProba(plan.probaZileRamase) : d.alegePlan };
 
   return (
     <div className="mx-auto max-w-[1000px] space-y-5">
@@ -46,35 +43,35 @@ export function FacturareClient({ orgSlug, date }: { orgSlug: string; date: Date
           <Receipt className="h-5 w-5" />
         </span>
         <div>
-          <h1 className="ci-display text-xl font-bold text-[var(--ci-text)]">Facturare</h1>
-          <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">Abonamentul și facturile emise de Alexandrit</p>
+          <h1 className="ci-display text-xl font-bold text-[var(--ci-text)]">{d.titlu}</h1>
+          <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">{d.subtitlu}</p>
         </div>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
         <Card>
-          <p className="text-[12.5px] text-[var(--ci-text-muted)]">Plan curent</p>
+          <p className="text-[12.5px] text-[var(--ci-text-muted)]">{d.planCurent}</p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <Badge tone="blue" icon={false}>
               {plan.eticheta}
             </Badge>
-            <span className="text-[13px] text-[var(--ci-text-muted)]">({status.text})</span>
+            <span className="text-[13px] text-[var(--ci-text-muted)]">({statusText})</span>
           </div>
           <Link href={`/${orgSlug}/crm/setari#abonament`} className="mt-3 inline-block text-[13px] font-semibold text-[var(--ci-primary)] hover:underline">
-            Schimbă planul
+            {d.schimbaPlanul}
           </Link>
         </Card>
         <Card>
-          <p className="text-[12.5px] text-[var(--ci-text-muted)]">Metoda de plată</p>
+          <p className="text-[12.5px] text-[var(--ci-text-muted)]">{d.metoda}</p>
           <p className="mt-2 flex items-center gap-2 text-[15px] font-semibold text-[var(--ci-text)]">
             <CreditCard className="h-4 w-4 text-[var(--ci-text-muted)]" aria-hidden /> {metoda.titlu}
           </p>
           <p className="mt-1 text-[12.5px] text-[var(--ci-text-muted)]">{metoda.detaliu}</p>
         </Card>
         <Card>
-          <p className="text-[12.5px] text-[var(--ci-text-muted)]">{plan.probaZileRamase != null ? "Perioada de probă" : "Expiră la"}</p>
+          <p className="text-[12.5px] text-[var(--ci-text-muted)]">{plan.probaZileRamase != null ? d.perioadaProba : d.expiraLa}</p>
           <p className="ci-tabular mt-2 text-[17px] font-bold text-[var(--ci-text)]">
-            {plan.probaZileRamase != null ? `${plan.probaZileRamase} ${plan.probaZileRamase === 1 ? "zi rămasă" : "zile rămase"}` : plan.expiraLa ? data(plan.expiraLa) : "—"}
+            {plan.probaZileRamase != null ? d.ziRamasa(plan.probaZileRamase) : plan.expiraLa ? data(plan.expiraLa, d.numere) : "—"}
           </p>
         </Card>
       </div>
@@ -85,43 +82,43 @@ export function FacturareClient({ orgSlug, date }: { orgSlug: string; date: Date
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="flex items-center gap-2 text-[16px] font-bold text-[var(--ci-text)]">
-              <Building2 className="h-4 w-4 text-[var(--ci-primary)]" aria-hidden /> Date de facturare
+              <Building2 className="h-4 w-4 text-[var(--ci-primary)]" aria-hidden /> {d.date.titlu}
             </h2>
-            <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">Aceste date apar pe facturile generate.</p>
+            <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">{d.date.subtitlu}</p>
           </div>
           <Button onClick={() => setEditare(true)}>
-            <Pencil className="h-3.5 w-3.5" /> Editează
+            <Pencil className="h-3.5 w-3.5" /> {d.date.editeaza}
           </Button>
         </div>
         <dl className="mt-4 grid gap-x-8 gap-y-4 sm:grid-cols-2">
-          <Camp eticheta="Denumire" valoare={firma.nume} nota="Se schimbă din Setări → Organizație" />
-          <Camp eticheta="CUI" valoare={firma.cif} />
-          <Camp eticheta="Județ" valoare={firma.judet} />
-          <Camp eticheta="Email facturi" valoare={firma.emailFacturi} nota="Facturile se trimit pe emailul proprietarului contului" />
+          <Camp eticheta={d.date.denumire} valoare={firma.nume} nota={d.date.denumireNota} />
+          <Camp eticheta={d.date.cui} valoare={firma.cif} />
+          <Camp eticheta={d.date.judet} valoare={firma.judet} />
+          <Camp eticheta={d.date.emailFacturi} valoare={firma.emailFacturi} nota={d.date.emailNota} />
           <div className="sm:col-span-2">
-            <Camp eticheta="Adresa sediului" valoare={firma.adresa} />
+            <Camp eticheta={d.date.adresa} valoare={firma.adresa} />
           </div>
         </dl>
-        {!firma.completa && <p className="mt-4 rounded-lg bg-[var(--ci-amber-soft)] px-3 py-2 text-[13px] text-[var(--ci-text)]">Completează CUI-ul, adresa și județul: fără ele nu putem emite factura pe numele organizației.</p>}
+        {!firma.completa && <p className="mt-4 rounded-lg bg-[var(--ci-amber-soft)] px-3 py-2 text-[13px] text-[var(--ci-text)]">{d.date.incomplete}</p>}
       </Card>
 
       <Card>
         <h2 className="flex items-center gap-2 text-[16px] font-bold text-[var(--ci-text)]">
-          <FileText className="h-4 w-4 text-[var(--ci-primary)]" aria-hidden /> Facturile mele
+          <FileText className="h-4 w-4 text-[var(--ci-primary)]" aria-hidden /> {d.facturi.titlu}
         </h2>
-        <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">Istoricul facturilor pentru abonamentul tău</p>
+        <p className="mt-0.5 text-[13px] text-[var(--ci-text-muted)]">{d.facturi.subtitlu}</p>
         <div className="mt-4">
           {facturi.length === 0 ? (
-            <EmptyState icon={Receipt} title="Nicio factură încă" description="După prima plată a abonamentului, factura apare aici și o primești și pe email." />
+            <EmptyState icon={Receipt} title={d.facturi.golTitlu} description={d.facturi.golDesc} />
           ) : (
             <div className="overflow-x-auto rounded-[var(--ci-radius-card)] border border-[var(--ci-border)]">
               <table className="w-full min-w-[560px] text-left text-[13px]">
                 <thead className="bg-[var(--ci-surface-2)] text-[11.5px] tracking-wide text-[var(--ci-text-muted)] uppercase">
                   <tr>
-                    <th className="px-3 py-2 font-semibold">Data</th>
-                    <th className="px-3 py-2 font-semibold">Descriere</th>
-                    <th className="px-3 py-2 text-right font-semibold">Suma</th>
-                    <th className="px-3 py-2 text-right font-semibold">Factura</th>
+                    <th className="px-3 py-2 font-semibold">{d.facturi.data}</th>
+                    <th className="px-3 py-2 font-semibold">{d.facturi.descriere}</th>
+                    <th className="px-3 py-2 text-right font-semibold">{d.facturi.suma}</th>
+                    <th className="px-3 py-2 text-right font-semibold">{d.facturi.factura}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -143,23 +140,24 @@ export function FacturareClient({ orgSlug, date }: { orgSlug: string; date: Date
 
 // Anularea abonamentului și ștergerea cardului. Anularea oprește reînnoirea; accesul rămâne până la sfârșitul perioadei deja plătite.
 function ControlAbonament({ orgSlug, date, onAnuleaza }: { orgSlug: string; date: DateFacturare; onAnuleaza: () => void }) {
+  const d = FACTURARE_UI_DICT[useLocale()];
   const router = useRouter();
   const [pending, start] = useTransition();
   const [eroare, setEroare] = useState("");
   const { plan, abonament, metodaPlata } = date;
-  const pana = plan.expiraLa ? data(plan.expiraLa) : null;
-  const card = [metodaPlata.masca, metodaPlata.expira ? `expiră ${metodaPlata.expira}` : null].filter(Boolean).join(" · ") || "salvat";
+  const pana = plan.expiraLa ? data(plan.expiraLa, d.numere) : null;
+  const card = [metodaPlata.masca, metodaPlata.expira ? d.expira(metodaPlata.expira) : null].filter(Boolean).join(" · ") || d.control.salvat;
 
   // Nimic de controlat: fără card salvat și fără abonament anulat, plata e manuală și abonamentul se încheie singur la expirare.
   const explicatie = abonament.anulat
-    ? `Abonamentul e anulat: nu se mai reînnoiește și nu ți se mai ia nicio sumă${pana ? `. Ai acces la tot până pe ${pana}` : ""}. Îl poți relua oricând.`
+    ? d.control.anulat(pana)
     : abonament.reinnoireActiva
-      ? `Abonamentul se reînnoiește automat cu cardul (${card})${pana ? `, următoarea dată pe ${pana}` : ""}.`
+      ? d.control.reinnoire(card, pana)
       : abonament.cardSalvat
-        ? `Ai un card salvat (${card}), dar reînnoirea automată e oprită: plătești manual la fiecare reînnoire.`
+        ? d.control.cardOprit(card)
         : abonament.platit
-          ? `Plătești manual la fiecare reînnoire${pana ? `; abonamentul curent e valabil până pe ${pana}` : ""}. Dacă îl anulezi, nu se mai prelungește: se oprește singur la această dată.`
-          : "Nu ai încă un abonament plătit, deci nu e nimic de anulat. Cât ții proba gratuită nu se ia nicio sumă.";
+          ? d.control.manual(pana)
+          : d.control.faraAbonament;
 
   function ruleaza(f: () => Promise<unknown>) {
     setEroare("");
@@ -168,7 +166,7 @@ function ControlAbonament({ orgSlug, date, onAnuleaza }: { orgSlug: string; date
         await f();
         router.refresh();
       } catch {
-        setEroare("Nu am putut face modificarea acum. Încearcă din nou peste puțin timp.");
+        setEroare(d.control.eroare);
       }
     });
   }
@@ -176,7 +174,7 @@ function ControlAbonament({ orgSlug, date, onAnuleaza }: { orgSlug: string; date
   return (
     <Card>
       <h2 className="flex items-center gap-2 text-[16px] font-bold text-[var(--ci-text)]">
-        <XCircle className="h-4 w-4 text-[var(--ci-primary)]" aria-hidden /> Anulare abonament și card
+        <XCircle className="h-4 w-4 text-[var(--ci-primary)]" aria-hidden /> {d.control.titlu}
       </h2>
       <p className="mt-1 text-[13px] text-[var(--ci-text-muted)]">{explicatie}</p>
       {eroare && (
@@ -187,12 +185,12 @@ function ControlAbonament({ orgSlug, date, onAnuleaza }: { orgSlug: string; date
       <div className="mt-4 flex flex-wrap gap-2.5">
         {abonament.anulat ? (
           <Button variant="primary" loading={pending} onClick={() => ruleaza(() => reiaAbonamentulAction(orgSlug))}>
-            Reia abonamentul
+            {d.control.reia}
           </Button>
         ) : (
           (abonament.reinnoireActiva || abonament.cardSalvat || abonament.platit) && (
             <Button variant="danger" disabled={pending} onClick={onAnuleaza}>
-              Anulează abonamentul
+              {d.control.anuleaza}
             </Button>
           )
         )}
@@ -200,11 +198,11 @@ function ControlAbonament({ orgSlug, date, onAnuleaza }: { orgSlug: string; date
           <Button
             disabled={pending}
             onClick={() => {
-              if (!window.confirm("Ștergem cardul salvat? Nu se mai poate face nicio plată automată; la următoarea plată poți salva un card nou.")) return;
+              if (!window.confirm(d.control.confirmaCard)) return;
               ruleaza(() => eliminaCardSalvatAction(orgSlug));
             }}
           >
-            Șterge cardul salvat
+            {d.control.stergeCard}
           </Button>
         )}
       </div>
@@ -213,25 +211,26 @@ function ControlAbonament({ orgSlug, date, onAnuleaza }: { orgSlug: string; date
 }
 
 function DialogAnulare({ orgSlug, date, onClose }: { orgSlug: string; date: DateFacturare; onClose: () => void }) {
+  const d = FACTURARE_UI_DICT[useLocale()];
   const router = useRouter();
   const [pending, start] = useTransition();
   const [stergeCard, setStergeCard] = useState(date.abonament.cardSalvat);
   const [eroare, setEroare] = useState("");
-  const pana = date.plan.expiraLa ? data(date.plan.expiraLa) : null;
+  const pana = date.plan.expiraLa ? data(date.plan.expiraLa, d.numere) : null;
 
   return (
-    <Dialog open onClose={onClose} title="Anulezi abonamentul?" width="max-w-md">
+    <Dialog open onClose={onClose} title={d.dialogAnulare.titlu} width="max-w-md">
       <div className="space-y-4">
         <ul className="list-disc space-y-1.5 pl-5 text-[13.5px] text-[var(--ci-text)]">
-          <li>Abonamentul nu se mai prelungește și nu se mai ia nicio sumă. Se oprește singur la sfârșitul perioadei plătite.</li>
-          <li>{pana ? `Ai în continuare acces la tot până pe ${pana}, cât ai plătit deja.` : "Accesul rămâne cât ai plătit deja."}</li>
-          <li>Datele organizației nu se șterg imediat; după încheierea accesului se aplică perioada de grație din Termeni.</li>
-          <li>Poți relua abonamentul oricând din această pagină.</li>
+          <li>{d.dialogAnulare.p1}</li>
+          <li>{d.dialogAnulare.acces(pana)}</li>
+          <li>{d.dialogAnulare.p3}</li>
+          <li>{d.dialogAnulare.p4}</li>
         </ul>
         {date.abonament.cardSalvat && (
           <label className="flex cursor-pointer items-start gap-2.5 text-[13px] text-[var(--ci-text)]">
             <input type="checkbox" checked={stergeCard} onChange={(e) => setStergeCard(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--ci-primary)]" />
-            <span>Șterge și cardul salvat, ca să nu mai poată fi folosit pentru plăți automate.</span>
+            <span>{d.dialogAnulare.stergeCardBifa}</span>
           </label>
         )}
         {eroare && (
@@ -241,7 +240,7 @@ function DialogAnulare({ orgSlug, date, onClose }: { orgSlug: string; date: Date
         )}
         <div className="flex justify-end gap-2 border-t border-[var(--ci-border)] pt-3">
           <Button type="button" onClick={onClose}>
-            Păstrez abonamentul
+            {d.dialogAnulare.pastrez}
           </Button>
           <Button
             variant="danger"
@@ -255,12 +254,12 @@ function DialogAnulare({ orgSlug, date, onClose }: { orgSlug: string; date: Date
                   router.refresh();
                   onClose();
                 } catch {
-                  setEroare("Nu am putut anula acum. Încearcă din nou peste puțin timp.");
+                  setEroare(d.dialogAnulare.eroare);
                 }
               });
             }}
           >
-            Anulează abonamentul
+            {d.control.anuleaza}
           </Button>
         </div>
       </div>
@@ -279,24 +278,25 @@ function Camp({ eticheta, valoare, nota }: { eticheta: string; valoare: string |
 }
 
 function RandFactura({ orgSlug, f, facturareActiva }: { orgSlug: string; f: DateFacturare["facturi"][number]; facturareActiva: boolean }) {
+  const d = FACTURARE_UI_DICT[useLocale()];
   const router = useRouter();
   const [pending, start] = useTransition();
   const [eroare, setEroare] = useState("");
   return (
     <>
       <tr className="border-t border-[var(--ci-border)]">
-        <td className="px-3 py-2.5 whitespace-nowrap">{data(f.data)}</td>
+        <td className="px-3 py-2.5 whitespace-nowrap">{data(f.data, d.numere)}</td>
         <td className="px-3 py-2.5">
-          {f.pachet} <span className="text-[var(--ci-text-muted)]">({f.luni === 12 ? "un an" : "o lună"})</span>
+          {f.pachet} <span className="text-[var(--ci-text-muted)]">({f.luni === 12 ? d.facturi.unAn : d.facturi.oLuna})</span>
         </td>
-        <td className="ci-tabular px-3 py-2.5 text-right whitespace-nowrap">{f.sumaLei.toLocaleString("ro-RO")} lei</td>
+        <td className="ci-tabular px-3 py-2.5 text-right whitespace-nowrap">{f.sumaLei.toLocaleString(d.numere)} lei</td>
         <td className="px-3 py-2.5 text-right whitespace-nowrap">
           {f.stare === "emisa" && f.link ? (
             <a href={f.link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 font-semibold text-[var(--ci-primary)] hover:underline">
-              <Download className="h-3.5 w-3.5" aria-hidden /> Descarcă {f.numar ? `#${f.numar}` : ""}
+              <Download className="h-3.5 w-3.5" aria-hidden /> {d.facturi.descarca} {f.numar ? `#${f.numar}` : ""}
             </a>
           ) : f.stare === "nefacturat" ? (
-            <span className="text-[var(--ci-text-muted)]">Plată de test, nefacturată</span>
+            <span className="text-[var(--ci-text-muted)]">{d.facturi.test}</span>
           ) : facturareActiva ? (
             <Button
               size="sm"
@@ -310,10 +310,10 @@ function RandFactura({ orgSlug, f, facturareActiva }: { orgSlug: string; f: Date
                 });
               }}
             >
-              {pending ? "Se emite…" : "Generează factura"}
+              {pending ? d.facturi.seEmite : d.facturi.genereaza}
             </Button>
           ) : (
-            <span className="text-[var(--ci-text-muted)]">Se emite în curând</span>
+            <span className="text-[var(--ci-text-muted)]">{d.facturi.curand}</span>
           )}
         </td>
       </tr>
@@ -331,6 +331,7 @@ function RandFactura({ orgSlug, f, facturareActiva }: { orgSlug: string; f: Date
 }
 
 function EditareDate({ orgSlug, firma, onClose }: { orgSlug: string; firma: DateFacturare["firma"]; onClose: () => void }) {
+  const d = FACTURARE_UI_DICT[useLocale()];
   const router = useRouter();
   const [pending, start] = useTransition();
   const [cif, setCif] = useState(firma.cif ?? "");
@@ -339,7 +340,7 @@ function EditareDate({ orgSlug, firma, onClose }: { orgSlug: string; firma: Date
   const [eroare, setEroare] = useState("");
 
   return (
-    <Dialog open onClose={onClose} title="Date de facturare" width="max-w-lg">
+    <Dialog open onClose={onClose} title={d.editare.titlu} width="max-w-lg">
       <form
         className="space-y-4"
         onSubmit={(e) => {
@@ -356,17 +357,17 @@ function EditareDate({ orgSlug, firma, onClose }: { orgSlug: string; firma: Date
         }}
       >
         <div>
-          <Label htmlFor="fc-cif">CUI (cu sau fără RO)</Label>
-          <Input id="fc-cif" value={cif} onChange={(e) => setCif(e.target.value)} placeholder="ex. RO12345678" />
+          <Label htmlFor="fc-cif">{d.editare.cuiLabel}</Label>
+          <Input id="fc-cif" value={cif} onChange={(e) => setCif(e.target.value)} placeholder={d.editare.cuiPlaceholder} />
         </div>
         <div>
-          <Label htmlFor="fc-adresa">Adresa sediului social</Label>
-          <Input id="fc-adresa" value={adresa} onChange={(e) => setAdresa(e.target.value)} placeholder="Strada, număr, localitate" />
+          <Label htmlFor="fc-adresa">{d.editare.adresaLabel}</Label>
+          <Input id="fc-adresa" value={adresa} onChange={(e) => setAdresa(e.target.value)} placeholder={d.editare.adresaPlaceholder} />
         </div>
         <div>
-          <Label htmlFor="fc-judet">Județ</Label>
+          <Label htmlFor="fc-judet">{d.editare.judetLabel}</Label>
           <Select id="fc-judet" value={judet} onChange={(e) => setJudet(e.target.value)}>
-            <option value="">Alege județul</option>
+            <option value="">{d.editare.alegeJudet}</option>
             {JUDETE.map((j) => (
               <option key={j} value={j}>
                 {j}
@@ -374,7 +375,7 @@ function EditareDate({ orgSlug, firma, onClose }: { orgSlug: string; firma: Date
             ))}
           </Select>
         </div>
-        <p className="text-[12.5px] text-[var(--ci-text-muted)]">Modificările se aplică facturilor viitoare. Facturile deja emise nu se schimbă.</p>
+        <p className="text-[12.5px] text-[var(--ci-text-muted)]">{d.editare.nota}</p>
         {eroare && (
           <p role="alert" className="rounded-lg bg-[var(--ci-red-soft)] px-3 py-2 text-[13px] text-[var(--ci-red)]">
             {eroare}
@@ -382,10 +383,10 @@ function EditareDate({ orgSlug, firma, onClose }: { orgSlug: string; firma: Date
         )}
         <div className="flex justify-end gap-2 border-t border-[var(--ci-border)] pt-3">
           <Button type="button" onClick={onClose}>
-            Renunț
+            {d.editare.renunt}
           </Button>
           <Button type="submit" variant="primary" loading={pending}>
-            Salvează
+            {d.editare.salveaza}
           </Button>
         </div>
       </form>

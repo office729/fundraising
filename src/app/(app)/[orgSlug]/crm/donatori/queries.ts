@@ -1,6 +1,7 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 
 import { withOrgSession } from "@/lib/auth/guard";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { listeazaDefinitii } from "@/lib/campuri-personalizate-server";
 import { appUsers, atribConversii, donatiiImportate, donatorNotite, donatoriReali, fundraisingDonations, fundraisingPages } from "@/lib/db/schema";
 import {
@@ -15,6 +16,7 @@ import {
 
 // Numele parcursurilor automate, pentru cronologie (aceleași ca pe pagina Parcursuri). Cheile necunoscute se afișează așa cum sunt.
 const NUME_PARCURS: Record<string, string> = { welcome: "Welcome", save: "Save", upgrade: "Upgrade", reactivare: "Reactivare", a_doua_donatie: "A doua donație" };
+const NUME_PARCURS_EN: Record<string, string> = { welcome: "Welcome", save: "Save", upgrade: "Upgrade", reactivare: "Reactivation", a_doua_donatie: "Second donation" };
 
 // Fișa unui donator real (pagina reali/[id]). Lista, segmentele și analizele sunt în queries-pf.ts și queries-analiza.ts.
 export const getDonatorRealDetaliu = withOrgSession(async (ctx, id: string) => {
@@ -72,12 +74,14 @@ export const getDonatorRealDetaliu = withOrgSession(async (ctx, id: string) => {
     >,
   ]);
 
+  const locale = await getLocale();
+  const numeParcurs = locale === "en" ? NUME_PARCURS_EN : NUME_PARCURS;
   // O singură cronologie: donații online și importate, înregistrările echipei (notițe, apeluri), e-mailurile din parcursuri și schimbările de stare.
   const evenimente: EvenimentCronologie[] = [
-    ...donatii.map((d) => evenimentDonatie({ id: d.id, la: d.createdAt, suma: d.suma, status: d.status, recurenta: d.recurenta, proiect: d.proiect })),
-    ...importate.map((d) => evenimentDonatieImportata({ id: d.id, la: d.data, suma: d.suma, proiect: d.proiect, procesator: d.procesator })),
-    ...notite.map((n) => evenimentNota({ id: n.id, la: n.createdAt, tip: n.tip, text: n.text, rezultat: n.rezultat, autor: n.autorNume })),
-    ...parcursuri.map((p) => evenimentParcurs({ id: p.id, la: p.creat_la, numeParcurs: NUME_PARCURS[p.cheie] ?? p.cheie, pas: p.pas, stare: p.stare })),
+    ...donatii.map((d) => evenimentDonatie({ id: d.id, la: d.createdAt, suma: d.suma, status: d.status, recurenta: d.recurenta, proiect: d.proiect }, locale)),
+    ...importate.map((d) => evenimentDonatieImportata({ id: d.id, la: d.data, suma: d.suma, proiect: d.proiect, procesator: d.procesator }, locale)),
+    ...notite.map((n) => evenimentNota({ id: n.id, la: n.createdAt, tip: n.tip, text: n.text, rezultat: n.rezultat, autor: n.autorNume }, locale)),
+    ...parcursuri.map((p) => evenimentParcurs({ id: p.id, la: p.creat_la, numeParcurs: numeParcurs[p.cheie] ?? p.cheie, pas: p.pas, stare: p.stare }, locale)),
     ...evenimenteDeStare({
       acordLa: donator.consimtamantEmailLa,
       acordSursa: donator.consimtamantEmailSursa,
@@ -87,7 +91,7 @@ export const getDonatorRealDetaliu = withOrgSession(async (ctx, id: string) => {
       adresaMotiv: donator.emailStareMotiv,
       sunatLa: donator.sunatLa,
       multumitLa: donator.multumitLa,
-    }),
+    }, locale),
   ];
   const cronologie = ordoneazaCronologie(evenimente);
 

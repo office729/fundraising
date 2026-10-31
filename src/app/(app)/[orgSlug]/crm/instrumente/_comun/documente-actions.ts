@@ -5,6 +5,8 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { and, desc, eq, isNull, sql } from "drizzle-orm";
 
 import { withOrgSession, type OrgContext } from "@/lib/auth/guard";
+import { INSTRUMENTE_UI_DICT } from "@/lib/i18n/dictionaries/instrumente-ui";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { getLimiteleEfective, mesajeCote } from "@/lib/billing/quota";
 import { angajati, appUsers, certificateVerificari, companies, companySponsorizari, crmKv, roluri } from "@/lib/db/schema";
 import { caleDoc, multumiriRestante, TIPURI_DOC, type Intrare, type Restanta, type Stare, type TipDoc } from "@/lib/documente-istoric";
@@ -34,7 +36,7 @@ const salveaza = (ctx: OrgContext, tip: TipDoc, st: Stare) =>
 
 // „Nr. 014/2026”: contorul crește la fiecare cerere, separat pe tip și pe an. Un număr cerut și nefolosit rămâne sărit (nu se reutilizează).
 export const urmatorulNumarAction = withOrgSession(async (ctx, tip: TipDoc): Promise<string> => {
-  if (!tipValid(tip) || !poateTip(ctx, tip)) throw new Error("Tip de document necunoscut.");
+  if (!tipValid(tip) || !poateTip(ctx, tip)) throw new Error(INSTRUMENTE_UI_DICT[await getLocale()].comun.erori.tipNecunoscut);
   const st = await stareBlocata(ctx, tip);
   const an = anRomania();
   const nr = (st.numere[an] ?? 0) + 1;
@@ -170,7 +172,8 @@ export const asiguraVerificareAction = withOrgSession(
     const titlu = String(intrare.titlu ?? "").trim().slice(0, 120);
     const data = /^\d{4}-\d{2}-\d{2}$/.test(String(intrare.data)) ? String(intrare.data) : new Date().toISOString().slice(0, 10);
     const numar = String(intrare.numar ?? "").trim().slice(0, 60) || null;
-    if (!destinatar) return { ok: false, eroare: "Completează numele destinatarului ca să poți emite codul de verificare." };
+    const erori = INSTRUMENTE_UI_DICT[await getLocale()].comun.erori;
+    if (!destinatar) return { ok: false, eroare: erori.numeDestinatar };
     const cod = String(intrare.cod ?? "");
     if (/^[A-Z0-9]{5}-[A-Z0-9]{5}$/.test(cod)) {
       const r = await ctx.db
@@ -189,6 +192,6 @@ export const asiguraVerificareAction = withOrgSession(
         .returning({ id: certificateVerificari.id });
       if (r[0]) return { ok: true, cod: nou };
     }
-    return { ok: false, eroare: "Nu am putut crea codul de verificare. Încearcă din nou." };
+    return { ok: false, eroare: erori.codVerificare };
   },
 );

@@ -218,7 +218,7 @@ const updateCustomDomainRow = withOrgAdmin(async (ctx, domain: string | null) =>
     // Domeniul propriu e inclus în IMPACT; cine îl are deja (de dinainte) îl poate păstra.
     const [curent] = await ctx.db.select({ d: organizations.customDomain }).from(organizations).where(eq(organizations.id, ctx.orgId)).limit(1);
     if (curent?.d !== domain && !getLimiteleEfective(ctx.orgPackage, ctx.orgCustomPlanConfig).domeniuPropriu) {
-      throw new EroareUtilizator(mesajeCote.domeniuPropriu(ctx.orgPackage));
+      throw new EroareUtilizator(mesajeCote.domeniuPropriu(ctx.orgPackage, await getLocale()));
     }
     const [conflict] = await ctx.db
       .select({ id: organizations.id })

@@ -49,7 +49,7 @@ export function RfmClient({ segmente }: { segmente: SegmentStat[] }) {
         <Card><p className="text-[12px] text-[var(--ci-text-muted)]">{dict.stats.totalDonatori}</p><p className="ci-tabular mt-1 text-xl font-bold text-[var(--ci-text)]">{nrDonatori}</p></Card>
         <Card><p className="text-[12px] text-[var(--ci-text-muted)]">{dict.stats.rataRetentie}</p><p className="ci-tabular mt-1 text-xl font-bold text-[var(--ci-green)]">{retentie}%</p></Card>
         <Card><p className="text-[12px] text-[var(--ci-text-muted)]">{dict.stats.riscaSaIiPierdem}</p><p className="ci-tabular mt-1 text-xl font-bold text-[var(--ci-amber)]">{inRisc}</p></Card>
-        <Card><p className="text-[12px] text-[var(--ci-text-muted)]">{dict.stats.valoareDonatoriMari}</p><p className="ci-tabular mt-1 text-xl font-bold text-[var(--ci-text)]">{formatSuma(valoareMajori)}</p></Card>
+        <Card><p className="text-[12px] text-[var(--ci-text-muted)]">{dict.stats.valoareDonatoriMari}</p><p className="ci-tabular mt-1 text-xl font-bold text-[var(--ci-text)]">{formatSuma(valoareMajori, "RON", locale)}</p></Card>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -76,7 +76,7 @@ export function RfmClient({ segmente }: { segmente: SegmentStat[] }) {
 
               <div className="mt-3 flex items-center justify-between rounded-[var(--ci-radius-card)] bg-[var(--ci-surface-2)] px-3 py-2">
                 <span className="text-[12px] text-[var(--ci-text-muted)]">{dict.sumaGrup}</span>
-                <span className="ci-tabular text-[13px] font-semibold text-[var(--ci-text)]">{formatSuma(d.valoare)}</span>
+                <span className="ci-tabular text-[13px] font-semibold text-[var(--ci-text)]">{formatSuma(d.valoare, "RON", locale)}</span>
               </div>
 
               <div className="mt-3 rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] px-3 py-2.5">

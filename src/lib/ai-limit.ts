@@ -15,8 +15,14 @@ const LIMITA_ZILNICA_PLATIT = 300;
 const LIMITA_CAUTARE_PROBA = 5;
 const LIMITA_CAUTARE_PLATIT = 30;
 export const MESAJ_LIMITA_CAUTARE = "Ai atins limita zilnică de căutări de apeluri cu AI pentru organizația ta. Încearcă din nou mâine sau caută manual în lista de surse.";
+export const MESAJ_LIMITA_CAUTARE_EN = "You have reached your organization's daily limit of AI call searches. Try again tomorrow or search manually in the list of sources.";
 
 export const MESAJ_LIMITA_AI = "Ai atins limita zilnică de generări AI pentru organizația ta. Încearcă din nou mâine.";
+export const MESAJ_LIMITA_AI_EN = "You have reached your organization's daily limit of AI generations. Try again tomorrow.";
+
+// Mesajele de limită în limba cerută (implicit română).
+export const mesajLimitaAi = (locale: "ro" | "en" = "ro") => (locale === "en" ? MESAJ_LIMITA_AI_EN : MESAJ_LIMITA_AI);
+export const mesajLimitaCautare = (locale: "ro" | "en" = "ro") => (locale === "en" ? MESAJ_LIMITA_CAUTARE_EN : MESAJ_LIMITA_CAUTARE);
 
 // true = limita a fost depășită (apelantul întoarce MESAJ_LIMITA_AI în forma lui
 // de eroare). Contorul crește la fiecare apel, deci se pune DUPĂ verificările

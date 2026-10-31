@@ -7,6 +7,7 @@ import { construiesteAvatare, type RezultatAvatare } from "@/lib/avatar-donator/
 import { obtineDateAvatare } from "@/lib/avatar-donator/avatare-reale-db";
 import { normalizeaza, type AvatarData, type StatisticiPlatforma } from "@/lib/avatar-donator/tipuri";
 import { crmKv } from "@/lib/db/schema";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { sectiuneSigura } from "@/lib/sectiune-sigura";
 import { obtineSegmenteReale, type SegmentStat } from "@/lib/segmente-donatori";
 
@@ -60,7 +61,8 @@ export const getAvatar = withOrgSession(async (ctx): Promise<{ data: AvatarData;
   const data = normalizeaza(row?.data);
   // Avatarele din date reale (doar cifre agregate; secțiune secundară: dacă pică, pagina merge și fără ele).
   const canaleIntroduse = Object.values(data.canale).some((c) => c.urmaritori.trim() || c.reach30.trim() || c.engagement.trim());
-  const avatare = await sectiuneSigura(ctx, "avatare-reale", async (db) => construiesteAvatare(await obtineDateAvatare(db, ctx.orgId, canaleIntroduse)), null as RezultatAvatare | null);
+  const locale = await getLocale();
+  const avatare = await sectiuneSigura(ctx, "avatare-reale", async (db) => construiesteAvatare(await obtineDateAvatare(db, ctx.orgId, canaleIntroduse), locale), null as RezultatAvatare | null);
   return { data, stat, segmente, avatare };
 });
 

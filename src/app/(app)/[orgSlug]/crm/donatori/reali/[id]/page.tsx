@@ -41,8 +41,8 @@ export default async function DonatorRealProfilPage({ params }: { params: Promis
   const access = await requireOrgAccess(orgSlug);
   const areAnaliza = areModul(pachetPentruModule(access.orgPackage, access.userEmail), "analiza-donator");
   const areCampuri = areModul(pachetPentruModule(access.orgPackage, access.userEmail), "campuri-personalizate");
-  const analiza = areAnaliza ? analizeazaDonator({ primaAt: donator.primaDonatieLa, ultimaAt: donator.ultimaDonatieLa, nr: donator.numarDonatii, total: donator.totalDonat }) : null;
   const locale = await getLocale();
+  const analiza = areAnaliza ? analizeazaDonator({ primaAt: donator.primaDonatieLa, ultimaAt: donator.ultimaDonatieLa, nr: donator.numarDonatii, total: donator.totalDonat }, new Date(), locale) : null;
   const dict = DONATORI_REALI_DICT[locale].detail;
   const statusLabel = dict.donatii.statusLabel;
   const t = DONATORI_UI2_DICT[locale].fisa;
@@ -169,7 +169,7 @@ export default async function DonatorRealProfilPage({ params }: { params: Promis
                             {statusLabel[d.status] ?? d.status}
                           </Badge>
                         </td>
-                        <td className="px-4 py-2.5 text-[12.5px] text-[var(--ci-text-muted)]">{etichetaProvenienta({ sursa: d.provSursa, canal: d.provCanal, tip: d.provTip, campanie: d.provCampanie })}</td>
+                        <td className="px-4 py-2.5 text-[12.5px] text-[var(--ci-text-muted)]">{etichetaProvenienta({ sursa: d.provSursa, canal: d.provCanal, tip: d.provTip, campanie: d.provCampanie }, locale)}</td>
                       </tr>
                     ))}
                   </tbody>

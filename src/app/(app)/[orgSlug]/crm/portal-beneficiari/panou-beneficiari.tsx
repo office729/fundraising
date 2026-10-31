@@ -2,9 +2,12 @@
 
 import { useMemo, useState } from "react";
 
+import { PORTAL_BENEFICIARI_UI_DICT } from "@/lib/i18n/dictionaries/portal-beneficiari-ui";
+
 import { Badge } from "../components/ui/badge";
 import { Card, CardHeader } from "../components/ui/card";
 import { EmptyState } from "../components/ui/states";
+import { useLocale } from "../lib/locale-context";
 
 export type BeneficiarRow = {
   id: string;
@@ -21,6 +24,8 @@ export type BeneficiarRow = {
 };
 
 export function PanouBeneficiari({ orgSlug, beneficiari }: { orgSlug: string; beneficiari: BeneficiarRow[] }) {
+  const locale = useLocale();
+  const dict = PORTAL_BENEFICIARI_UI_DICT[locale].panou;
   const [judetFiltru, setJudetFiltru] = useState("toate");
   const [statusFiltru, setStatusFiltru] = useState("toate");
   const [agentFiltru, setAgentFiltru] = useState("toate");
@@ -40,10 +45,10 @@ export function PanouBeneficiari({ orgSlug, beneficiari }: { orgSlug: string; be
 
   return (
     <Card>
-      <CardHeader title="Toți beneficiarii" subtitle={`${filtrati.length} din ${beneficiari.length} — filtrează după județ, status sau agent`} />
+      <CardHeader title={dict.toti} subtitle={dict.sub(filtrati.length, beneficiari.length)} />
       <div className="mb-3 flex flex-wrap gap-2">
         <select value={judetFiltru} onChange={(e) => setJudetFiltru(e.target.value)} className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-1.5 text-[13px]">
-          <option value="toate">Toate județele</option>
+          <option value="toate">{dict.toateJudetele}</option>
           {judete.map((j) => (
             <option key={j} value={j}>
               {j}
@@ -51,12 +56,12 @@ export function PanouBeneficiari({ orgSlug, beneficiari }: { orgSlug: string; be
           ))}
         </select>
         <select value={statusFiltru} onChange={(e) => setStatusFiltru(e.target.value)} className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-1.5 text-[13px]">
-          <option value="toate">Toate statusurile</option>
-          <option value="activ">Activ</option>
-          <option value="dezactivat">Dezactivat</option>
+          <option value="toate">{dict.toateStatusurile}</option>
+          <option value="activ">{dict.activ}</option>
+          <option value="dezactivat">{dict.dezactivat}</option>
         </select>
         <select value={agentFiltru} onChange={(e) => setAgentFiltru(e.target.value)} className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-1.5 text-[13px]">
-          <option value="toate">Toți agenții</option>
+          <option value="toate">{dict.totiAgentii}</option>
           {agenti.map((a) => (
             <option key={a} value={a}>
               {a}
@@ -79,23 +84,23 @@ export function PanouBeneficiari({ orgSlug, beneficiari }: { orgSlug: string; be
                   <div className="flex items-center gap-2">
                     <span className="truncate text-[13px] font-medium text-[var(--ci-text)]">{b.campaignTitlu}</span>
                     <Badge tone={b.status === "activ" ? "green" : "neutral"} icon={false}>
-                      {b.status === "activ" ? "Activ" : "Dezactivat"}
+                      {b.status === "activ" ? dict.activ : dict.dezactivat}
                     </Badge>
                   </div>
                   <p className="truncate text-[12px] text-[var(--ci-text-muted)]">
-                    {b.email} {b.campaignJudet ? `· ${b.campaignJudet}` : ""} {b.agent ? `· agent: ${b.agent.agentNume || b.agent.agentEmail}` : "· fără agent"}
+                    {b.email} {b.campaignJudet ? `· ${b.campaignJudet}` : ""} {b.agent ? dict.agent(b.agent.agentNume || b.agent.agentEmail) : dict.faraAgent}
                   </p>
                 </div>
                 <div className="shrink-0 text-right">
                   <p className="ci-tabular text-[13px] font-semibold text-[var(--ci-text)]">{procent != null ? `${procent}%` : "—"}</p>
-                  <p className="text-[11px] text-[var(--ci-text-faint)]">{b.sumaStransa.toLocaleString("ro-RO")} lei</p>
+                  <p className="text-[11px] text-[var(--ci-text-faint)]">{b.sumaStransa.toLocaleString(locale === "ro" ? "ro-RO" : "en-GB")} {dict.lei}</p>
                 </div>
               </a>
             );
           })}
         </div>
       ) : (
-        <EmptyState title="Niciun beneficiar" description="Niciun beneficiar nu corespunde filtrelor alese." />
+        <EmptyState title={dict.niciunBeneficiar} description={dict.niciunBeneficiarDescriere} />
       )}
     </Card>
   );

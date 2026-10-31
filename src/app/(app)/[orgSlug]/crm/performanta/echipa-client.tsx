@@ -5,26 +5,30 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 
-import { ETICHETE_ABSENTA, valideazaAbsenta, type TipAbsenta } from "@/lib/performanta-activitati-reguli";
+import type { Locale } from "@/lib/i18n/config";
+import { PERFORMANTA_UI_DICT } from "@/lib/i18n/dictionaries/performanta-ui";
+import { PERFORMANTA_UI4_DICT } from "@/lib/i18n/dictionaries/performanta-ui-4";
+import { valideazaAbsenta, type TipAbsenta } from "@/lib/performanta-activitati-reguli";
 import type { MembruEchipa, SaptamanaCapacitate } from "@/lib/performanta-activitati-tipuri";
-import { ETICHETE_INCARCARE, type NivelIncarcare } from "@/lib/performanta-masurare";
+import type { NivelIncarcare } from "@/lib/performanta-masurare";
 
 import { Avatar } from "../components/ui/avatar";
 import { Button } from "../components/ui/button";
 import { Input, Label, Select } from "../components/ui/input";
 import { SidePanel } from "../components/ui/side-panel";
 import { EmptyState } from "../components/ui/states";
+import { useLocale } from "../lib/locale-context";
 import { adaugaAbsentaAction, stergeAbsentaAction } from "./activitati-actions";
 import { dataCompleta, dataScurta } from "./ui-comune";
 
 type DateEchipa = { membri: MembruEchipa[]; luni: string[]; azi: string; euAngajatId: string | null; admin: boolean };
 type Vedere = "tabel" | "carduri" | "organigrama" | "capacitate";
 
-const VEDERI: { id: Vedere; eticheta: string; Icon: typeof Table2 }[] = [
-  { id: "tabel", eticheta: "Tabel", Icon: Table2 },
-  { id: "carduri", eticheta: "Carduri", Icon: LayoutGrid },
-  { id: "organigrama", eticheta: "Organigramă", Icon: Network },
-  { id: "capacitate", eticheta: "Capacitate", Icon: Rows3 },
+const VEDERI: { id: Vedere; Icon: typeof Table2 }[] = [
+  { id: "tabel", Icon: Table2 },
+  { id: "carduri", Icon: LayoutGrid },
+  { id: "organigrama", Icon: Network },
+  { id: "capacitate", Icon: Rows3 },
 ];
 
 // Culoarea ajută, dar nivelul e mereu scris (text), ca să se înțeleagă și fără culori.
@@ -35,10 +39,11 @@ const CELULA: Record<NivelIncarcare, string> = {
   plin: "bg-[var(--ci-amber-soft)] text-[var(--ci-amber)]",
   suprasolicitat: "bg-[var(--ci-red-soft)] text-[var(--ci-red)]",
 };
-const h = (n: number) => String(Math.round(n * 10) / 10).replace(".", ",");
+const h = (n: number, locale: Locale = "ro") => (locale === "ro" ? String(Math.round(n * 10) / 10).replace(".", ",") : String(Math.round(n * 10) / 10));
 const adauga = (iso: string, zile: number) => new Date(Date.parse(`${iso}T12:00:00Z`) + zile * 86400000).toISOString().slice(0, 10);
 
 export function EchipaClient({ orgSlug, d, departamente }: { orgSlug: string; d: DateEchipa; departamente: { id: string; nume: string }[] }) {
+  const dict = PERFORMANTA_UI4_DICT[useLocale()].echipa;
   const router = useRouter();
   const pathname = usePathname();
   const sp = useSearchParams();
@@ -72,12 +77,12 @@ export function EchipaClient({ orgSlug, d, departamente }: { orgSlug: string; d:
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2" role="search" aria-label="Filtre echipă">
+      <div className="flex flex-wrap items-center gap-2" role="search" aria-label={dict.filtre}>
         <div className="min-w-[12rem] flex-1 sm:max-w-xs">
-          <Input aria-label="Caută în echipă" icon={<Search className="size-4" aria-hidden />} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Caută după nume sau rol" />
+          <Input aria-label={dict.cautaAria} icon={<Search className="size-4" aria-hidden />} value={q} onChange={(e) => setQ(e.target.value)} placeholder={dict.cautaPlaceholder} />
         </div>
-        <Select aria-label="Departament" className="!w-auto min-w-40" value={dep} onChange={(e) => seteaza({ dep: e.target.value || null })}>
-          <option value="">Toate departamentele</option>
+        <Select aria-label={dict.departament} className="!w-auto min-w-40" value={dep} onChange={(e) => seteaza({ dep: e.target.value || null })}>
+          <option value="">{dict.toateDepartamentele}</option>
           {departamente.map((x) => (
             <option key={x.id} value={x.id}>
               {x.nume}
@@ -86,13 +91,13 @@ export function EchipaClient({ orgSlug, d, departamente }: { orgSlug: string; d:
         </Select>
         <label className="inline-flex cursor-pointer items-center gap-2 text-[13px] text-[var(--ci-text-muted)]">
           <input type="checkbox" className="size-4" checked={arataInactivi} onChange={(e) => seteaza({ inactivi: e.target.checked ? "1" : null })} />
-          Arată și inactivii
+          {dict.arataInactivi}
         </label>
-        <div role="group" aria-label="Vedere" className="ml-auto flex rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-0.5">
-          {VEDERI.map(({ id, eticheta, Icon }) => (
+        <div role="group" aria-label={dict.vedere} className="ml-auto flex rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-0.5">
+          {VEDERI.map(({ id, Icon }) => (
             <button key={id} type="button" aria-pressed={vedere === id} onClick={() => seteaza({ vedere: id === "tabel" ? null : id })} className={`inline-flex items-center gap-1.5 rounded-[calc(var(--ci-radius-btn)-2px)] px-2.5 py-1 text-[12.5px] font-medium focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none ${vedere === id ? "bg-[var(--ci-surface-2)] text-[var(--ci-text)]" : "text-[var(--ci-text-muted)] hover:text-[var(--ci-text)]"}`}>
               <Icon className="size-4" aria-hidden />
-              <span className="max-sm:sr-only">{eticheta}</span>
+              <span className="max-sm:sr-only">{dict.vederi[id]}</span>
             </button>
           ))}
         </div>
@@ -100,9 +105,9 @@ export function EchipaClient({ orgSlug, d, departamente }: { orgSlug: string; d:
 
       {lista.length === 0 ? (
         <EmptyState
-          title={d.membri.length === 0 ? "Nu există încă profiluri de angajat" : "Nimeni nu se potrivește filtrelor"}
-          description={d.membri.length === 0 ? "Profilurile, rolurile și departamentele se creează în „Organizație & Echipă”." : "Scoate un filtru ca să vezi din nou echipa."}
-          action={d.membri.length === 0 ? <Link href={`/${orgSlug}/crm/organizatie`} className="inline-flex h-9 items-center rounded-[var(--ci-radius-btn)] bg-[var(--ci-primary)] px-3.5 text-sm font-medium text-white hover:bg-[var(--ci-primary-hover)]">Mergi la Organizație & Echipă</Link> : undefined}
+          title={d.membri.length === 0 ? dict.faraProfiluriTitlu : dict.nimeniTitlu}
+          description={d.membri.length === 0 ? dict.faraProfiluriDescriere : dict.nimeniDescriere}
+          action={d.membri.length === 0 ? <Link href={`/${orgSlug}/crm/organizatie`} className="inline-flex h-9 items-center rounded-[var(--ci-radius-btn)] bg-[var(--ci-primary)] px-3.5 text-sm font-medium text-white hover:bg-[var(--ci-primary-hover)]">{dict.mergiLa}</Link> : undefined}
         />
       ) : vedere === "tabel" ? (
         <Tabel membri={lista} onAlege={(m) => setSelectatId(m.id)} />
@@ -120,25 +125,27 @@ export function EchipaClient({ orgSlug, d, departamente }: { orgSlug: string; d:
 }
 
 function StareProfil({ status }: { status: string }) {
+  const dict = PERFORMANTA_UI4_DICT[useLocale()].echipa;
   if (status === "activ") return null;
-  return <span className="rounded-full bg-[var(--ci-surface-2)] px-2 py-px text-[11px] font-medium text-[var(--ci-text-muted)]">{status === "concediu" ? "În concediu" : status === "suspendat" ? "Suspendat" : "Inactiv"}</span>;
+  return <span className="rounded-full bg-[var(--ci-surface-2)] px-2 py-px text-[11px] font-medium text-[var(--ci-text-muted)]">{dict.status[status] ?? dict.status.inactiv}</span>;
 }
 
 function Tabel({ membri, onAlege }: { membri: MembruEchipa[]; onAlege: (m: MembruEchipa) => void }) {
+  const dict = PERFORMANTA_UI4_DICT[useLocale()].echipa;
   return (
     <div className="ci-scrollbar max-h-[70vh] overflow-auto rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)]">
       <table className="w-full min-w-[52rem] border-collapse text-[13px]">
         <thead className="sticky top-0 z-[1] bg-[var(--ci-surface-2)] text-left text-[12px] font-semibold text-[var(--ci-text-muted)]">
           <tr>
-            <th scope="col" className="px-4 py-2">Persoană</th>
-            <th scope="col" className="px-3 py-2">Rol</th>
-            <th scope="col" className="px-3 py-2">Departament</th>
-            <th scope="col" className="px-3 py-2">Raportează lui</th>
-            <th scope="col" className="px-3 py-2 text-right">Normă</th>
-            <th scope="col" className="px-3 py-2 text-right">Deschise</th>
-            <th scope="col" className="px-3 py-2 text-right">Blocate</th>
-            <th scope="col" className="px-3 py-2 text-right">Peste termen</th>
-            <th scope="col" className="px-3 py-2 text-right">Obiective conduse</th>
+            <th scope="col" className="px-4 py-2">{dict.persoana}</th>
+            <th scope="col" className="px-3 py-2">{dict.rol}</th>
+            <th scope="col" className="px-3 py-2">{dict.departament}</th>
+            <th scope="col" className="px-3 py-2">{dict.raporteazaLui}</th>
+            <th scope="col" className="px-3 py-2 text-right">{dict.norma}</th>
+            <th scope="col" className="px-3 py-2 text-right">{dict.deschise}</th>
+            <th scope="col" className="px-3 py-2 text-right">{dict.blocate}</th>
+            <th scope="col" className="px-3 py-2 text-right">{dict.pesteTermen}</th>
+            <th scope="col" className="px-3 py-2 text-right">{dict.obiectiveConduse}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-[var(--ci-border)]">
@@ -163,12 +170,13 @@ function Tabel({ membri, onAlege }: { membri: MembruEchipa[]; onAlege: (m: Membr
           ))}
         </tbody>
       </table>
-      <p className="border-t border-[var(--ci-border)] px-4 py-2 text-[12px] text-[var(--ci-text-muted)]">Munca și capacitatea se văd doar pentru tine, pentru echipa ta și, dacă ești administrator, pentru toți. „—” înseamnă că nu ai acces la acea informație.</p>
+      <p className="border-t border-[var(--ci-border)] px-4 py-2 text-[12px] text-[var(--ci-text-muted)]">{dict.notaTabel}</p>
     </div>
   );
 }
 
 function Carduri({ membri, onAlege }: { membri: MembruEchipa[]; onAlege: (m: MembruEchipa) => void }) {
+  const dict = PERFORMANTA_UI4_DICT[useLocale()].echipa;
   return (
     <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
       {membri.map((m) => (
@@ -180,16 +188,16 @@ function Carduri({ membri, onAlege }: { membri: MembruEchipa[]; onAlege: (m: Mem
                 <p className="flex flex-wrap items-center gap-2 text-[14px] font-semibold text-[var(--ci-text)]">
                   {m.nume} <StareProfil status={m.status} />
                 </p>
-                <p className="truncate text-[12.5px] text-[var(--ci-text-muted)]">{[m.rol, m.departmentNume].filter(Boolean).join(" · ") || "Fără rol"}</p>
+                <p className="truncate text-[12.5px] text-[var(--ci-text-muted)]">{[m.rol, m.departmentNume].filter(Boolean).join(" · ") || dict.faraRol}</p>
               </div>
             </div>
             {m.vedeDetalii ? (
               <dl className="ci-tabular mt-3 grid grid-cols-4 gap-2 text-center text-[12px]">
                 {[
-                  ["Deschise", m.deschise],
-                  ["Blocate", m.blocate],
-                  ["Peste termen", m.intarziate],
-                  ["Obiective", m.obiectiveResponsabil],
+                  [dict.deschise, m.deschise],
+                  [dict.blocate, m.blocate],
+                  [dict.pesteTermen, m.intarziate],
+                  [dict.obiective, m.obiectiveResponsabil],
                 ].map(([e, v]) => (
                   <div key={e as string} className="rounded-[var(--ci-radius-btn)] bg-[var(--ci-surface-2)] px-1 py-1.5">
                     <dd className="text-[15px] font-semibold text-[var(--ci-text)]">{v}</dd>
@@ -198,7 +206,7 @@ function Carduri({ membri, onAlege }: { membri: MembruEchipa[]; onAlege: (m: Mem
                 ))}
               </dl>
             ) : (
-              <p className="mt-3 text-[12px] text-[var(--ci-text-muted)]">Detaliile de muncă nu sunt vizibile pentru tine.</p>
+              <p className="mt-3 text-[12px] text-[var(--ci-text-muted)]">{dict.faraDetalii}</p>
             )}
           </button>
         </li>
@@ -208,6 +216,7 @@ function Carduri({ membri, onAlege }: { membri: MembruEchipa[]; onAlege: (m: Mem
 }
 
 function Organigrama({ membri, onAlege }: { membri: MembruEchipa[]; onAlege: (m: MembruEchipa) => void }) {
+  const dict = PERFORMANTA_UI4_DICT[useLocale()].echipa;
   const ids = new Set(membri.map((m) => m.id));
   const copii = new Map<string, MembruEchipa[]>();
   const radacini: MembruEchipa[] = [];
@@ -227,7 +236,7 @@ function Organigrama({ membri, onAlege }: { membri: MembruEchipa[]; onAlege: (m:
           <Avatar name={m.nume} size="sm" />
           <span>
             <span className="block text-[13.5px] font-semibold text-[var(--ci-text)]">{m.nume}</span>
-            <span className="block text-[12px] text-[var(--ci-text-muted)]">{[m.rol, m.departmentNume].filter(Boolean).join(" · ") || "Fără rol"}</span>
+            <span className="block text-[12px] text-[var(--ci-text-muted)]">{[m.rol, m.departmentNume].filter(Boolean).join(" · ") || dict.faraRol}</span>
           </span>
           <StareProfil status={m.status} />
         </button>
@@ -242,7 +251,7 @@ function Organigrama({ membri, onAlege }: { membri: MembruEchipa[]; onAlege: (m:
       <ul>{arbore}</ul>
       {ramase.length > 0 && (
         <div className="mt-4 rounded-[var(--ci-radius-btn)] bg-[var(--ci-amber-soft)] p-3 text-[13px] text-[var(--ci-amber)]">
-          Raportările următoarelor persoane se învârt în cerc (fiecare raportează, direct sau indirect, chiar lui): {ramase.map((m) => m.nume).join(", ")}. Corectează „Raportează lui” în Organizație & Echipă.
+          {dict.ciclu(ramase.map((m) => m.nume).join(", "))}
         </div>
       )}
     </div>
@@ -250,18 +259,21 @@ function Organigrama({ membri, onAlege }: { membri: MembruEchipa[]; onAlege: (m:
 }
 
 function Capacitate({ membri, luni, azi, onAlege, muta }: { membri: MembruEchipa[]; luni: string[]; azi: string; onAlege: (m: MembruEchipa) => void; muta: (n: number) => void }) {
+  const locale = useLocale();
+  const dict = PERFORMANTA_UI4_DICT[locale].echipa;
+  const comune = PERFORMANTA_UI_DICT[locale].comune;
   const luniCurenta = luni.find((l) => azi >= l && azi <= adauga(l, 6));
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="max-w-2xl text-[13px] text-[var(--ci-text-muted)]">
-          Orele estimate ale activităților cu termen în săptămână (plus restanțele, la săptămâna curentă), față de orele disponibile: zile lucrătoare fără sărbători și absențe, după normă. Activitățile fără efort estimat nu intră în calcul.
+          {dict.capacitateIntro}
         </p>
         <div className="flex items-center rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)]">
-          <button type="button" aria-label="Cu o săptămână în urmă" onClick={() => muta(-1)} className="rounded-l-[var(--ci-radius-btn)] p-2 text-[var(--ci-text-muted)] hover:bg-[var(--ci-surface-2)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
+          <button type="button" aria-label={dict.saptamanaInUrma} onClick={() => muta(-1)} className="rounded-l-[var(--ci-radius-btn)] p-2 text-[var(--ci-text-muted)] hover:bg-[var(--ci-surface-2)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
             <ChevronLeft className="size-4" aria-hidden />
           </button>
-          <button type="button" aria-label="Cu o săptămână înainte" onClick={() => muta(1)} className="rounded-r-[var(--ci-radius-btn)] p-2 text-[var(--ci-text-muted)] hover:bg-[var(--ci-surface-2)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
+          <button type="button" aria-label={dict.saptamanaInainte} onClick={() => muta(1)} className="rounded-r-[var(--ci-radius-btn)] p-2 text-[var(--ci-text-muted)] hover:bg-[var(--ci-surface-2)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
             <ChevronRight className="size-4" aria-hidden />
           </button>
         </div>
@@ -270,11 +282,11 @@ function Capacitate({ membri, luni, azi, onAlege, muta }: { membri: MembruEchipa
         <table className="w-full min-w-[46rem] border-collapse text-[12.5px]">
           <thead className="bg-[var(--ci-surface-2)] text-left text-[12px] font-semibold text-[var(--ci-text-muted)]">
             <tr>
-              <th scope="col" className="sticky left-0 bg-[var(--ci-surface-2)] px-4 py-2">Persoană</th>
+              <th scope="col" className="sticky left-0 bg-[var(--ci-surface-2)] px-4 py-2">{dict.persoana}</th>
               {luni.map((l) => (
                 <th key={l} scope="col" className={`px-2 py-2 text-center ${l === luniCurenta ? "text-[var(--ci-primary)]" : ""}`}>
-                  {dataScurta(l)}
-                  {l === luniCurenta && <span className="block text-[10.5px] font-medium">acum</span>}
+                  {dataScurta(l, locale)}
+                  {l === luniCurenta && <span className="block text-[10.5px] font-medium">{dict.acum}</span>}
                 </th>
               ))}
             </tr>
@@ -303,12 +315,12 @@ function Capacitate({ membri, luni, azi, onAlege, muta }: { membri: MembruEchipa
           </tbody>
         </table>
       </div>
-      <ul className="flex flex-wrap gap-x-4 gap-y-1.5 text-[12px] text-[var(--ci-text-muted)]" aria-label="Legendă">
-        {(Object.keys(ETICHETE_INCARCARE) as NivelIncarcare[]).map((n) => (
+      <ul className="flex flex-wrap gap-x-4 gap-y-1.5 text-[12px] text-[var(--ci-text-muted)]" aria-label={dict.legenda}>
+        {(Object.keys(comune.incarcare) as NivelIncarcare[]).map((n) => (
           <li key={n} className="flex items-center gap-1.5">
             <span className={`inline-block size-3 rounded ${CELULA[n].split(" ")[0]} ring-1 ring-[var(--ci-border)]`} aria-hidden />
-            {ETICHETE_INCARCARE[n]}
-            <span className="text-[var(--ci-text-faint)]">{{ liber: "(sub 50%)", echilibrat: "(50–90%)", plin: "(90–110%)", suprasolicitat: "(peste 110%)", indisponibil: "(fără ore disponibile)" }[n]}</span>
+            {comune.incarcare[n]}
+            <span className="text-[var(--ci-text-faint)]">{dict.praguri[n]}</span>
           </li>
         ))}
       </ul>
@@ -317,25 +329,32 @@ function Capacitate({ membri, luni, azi, onAlege, muta }: { membri: MembruEchipa
 }
 
 function Celula({ s }: { s: SaptamanaCapacitate }) {
+  const locale = useLocale();
+  const dict = PERFORMANTA_UI4_DICT[locale].echipa;
+  const comune = PERFORMANTA_UI_DICT[locale].comune;
   return (
-    <div className={`rounded-[var(--ci-radius-btn)] px-2 py-1.5 text-center ${CELULA[s.nivel]}`} title={`${s.nrActivitati} activități · ${s.zileAbsente} zile de absență${s.fara_estimare ? ` · ${s.fara_estimare} fără efort estimat` : ""}`}>
+    <div className={`rounded-[var(--ci-radius-btn)] px-2 py-1.5 text-center ${CELULA[s.nivel]}`} title={dict.celula(s.nrActivitati, s.zileAbsente, s.fara_estimare)}>
       <span className="ci-tabular block text-[12.5px] font-semibold">
-        {h(s.incarcareOre)}/{h(s.capacitateOre)} h
+        {h(s.incarcareOre, locale)}/{h(s.capacitateOre, locale)} h
       </span>
-      <span className="block text-[11px]">{ETICHETE_INCARCARE[s.nivel]}</span>
+      <span className="block text-[11px]">{comune.incarcare[s.nivel]}</span>
     </div>
   );
 }
 
 function PanouPersoana({ orgSlug, m, luni, onClose }: { orgSlug: string; m: MembruEchipa | null; luni: string[]; onClose: () => void }) {
+  const dict = PERFORMANTA_UI4_DICT[useLocale()].echipa;
   return (
-    <SidePanel open={!!m} onClose={onClose} title={m?.nume ?? "Persoană"} subtitle={m ? [m.rol, m.departmentNume].filter(Boolean).join(" · ") || undefined : undefined}>
+    <SidePanel open={!!m} onClose={onClose} title={m?.nume ?? dict.persoanaImplicit} subtitle={m ? [m.rol, m.departmentNume].filter(Boolean).join(" · ") || undefined : undefined}>
       {m && <ContinutPersoana key={m.id} orgSlug={orgSlug} m={m} luni={luni} />}
     </SidePanel>
   );
 }
 
 function ContinutPersoana({ orgSlug, m, luni }: { orgSlug: string; m: MembruEchipa; luni: string[] }) {
+  const locale = useLocale();
+  const dict = PERFORMANTA_UI4_DICT[locale].echipa;
+  const comune = PERFORMANTA_UI_DICT[locale].comune;
   const router = useRouter();
   const [tip, setTip] = useState<TipAbsenta>("concediu");
   const [start, setStart] = useState("");
@@ -364,16 +383,16 @@ function ContinutPersoana({ orgSlug, m, luni }: { orgSlug: string; m: MembruEchi
     <div className="space-y-5">
       <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-[13px]">
         <div>
-          <dt className="text-[12px] text-[var(--ci-text-muted)]">Raportează lui</dt>
+          <dt className="text-[12px] text-[var(--ci-text-muted)]">{dict.raporteazaLui}</dt>
           <dd className="mt-0.5 font-medium text-[var(--ci-text)]">{m.managerNume ?? "—"}</dd>
         </div>
         <div>
-          <dt className="text-[12px] text-[var(--ci-text-muted)]">Normă</dt>
+          <dt className="text-[12px] text-[var(--ci-text-muted)]">{dict.norma}</dt>
           <dd className="mt-0.5 font-medium text-[var(--ci-text)]">{m.vedeDetalii ? `${m.normaProcent}%` : "—"}</dd>
         </div>
         {m.email && (
           <div className="col-span-2">
-            <dt className="text-[12px] text-[var(--ci-text-muted)]">Email</dt>
+            <dt className="text-[12px] text-[var(--ci-text-muted)]">{dict.email}</dt>
             <dd className="mt-0.5 font-medium break-all text-[var(--ci-text)]">{m.email}</dd>
           </div>
         )}
@@ -382,13 +401,13 @@ function ContinutPersoana({ orgSlug, m, luni }: { orgSlug: string; m: MembruEchi
       {m.vedeDetalii ? (
         <>
           <section aria-labelledby="cap-t">
-            <h3 id="cap-t" className="ci-display mb-2 text-[14px] font-semibold text-[var(--ci-text)]">Încărcare pe săptămâni</h3>
+            <h3 id="cap-t" className="ci-display mb-2 text-[14px] font-semibold text-[var(--ci-text)]">{dict.incarcarePeSaptamani}</h3>
             <ul className="space-y-1.5">
               {m.saptamani.map((s, i) => (
                 <li key={s.luni} className="flex items-center justify-between gap-2 text-[13px]">
-                  <span className="text-[var(--ci-text-muted)]">Săptămâna din {dataScurta(luni[i])}</span>
+                  <span className="text-[var(--ci-text-muted)]">{dict.saptamanaDin(dataScurta(luni[i], locale))}</span>
                   <span className={`ci-tabular rounded-full px-2 py-0.5 text-[12px] font-medium ${CELULA[s.nivel]}`}>
-                    {h(s.incarcareOre)}/{h(s.capacitateOre)} h · {ETICHETE_INCARCARE[s.nivel]}
+                    {h(s.incarcareOre, locale)}/{h(s.capacitateOre, locale)} h · {comune.incarcare[s.nivel]}
                   </span>
                 </li>
               ))}
@@ -396,19 +415,19 @@ function ContinutPersoana({ orgSlug, m, luni }: { orgSlug: string; m: MembruEchi
           </section>
 
           <section aria-labelledby="abs-t">
-            <h3 id="abs-t" className="ci-display mb-2 text-[14px] font-semibold text-[var(--ci-text)]">Absențe</h3>
+            <h3 id="abs-t" className="ci-display mb-2 text-[14px] font-semibold text-[var(--ci-text)]">{dict.absente}</h3>
             {m.absente.length === 0 ? (
-              <p className="text-[13px] text-[var(--ci-text-muted)]">Nicio absență în următoarele săptămâni.</p>
+              <p className="text-[13px] text-[var(--ci-text-muted)]">{dict.faraAbsente}</p>
             ) : (
               <ul className="space-y-1.5">
                 {m.absente.map((a) => (
                   <li key={a.id} className="flex items-center justify-between gap-2 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-3 py-1.5 text-[13px]">
                     <span>
-                      <strong className="font-medium text-[var(--ci-text)]">{ETICHETE_ABSENTA[a.tip]}</strong> <span className="text-[var(--ci-text-muted)]">· {dataCompleta(a.dataStart)}{a.dataSfarsit !== a.dataStart && ` – ${dataCompleta(a.dataSfarsit)}`}</span>
+                      <strong className="font-medium text-[var(--ci-text)]">{comune.absenta[a.tip]}</strong> <span className="text-[var(--ci-text-muted)]">· {dataCompleta(a.dataStart, locale)}{a.dataSfarsit !== a.dataStart && ` – ${dataCompleta(a.dataSfarsit, locale)}`}</span>
                       {a.nota && <span className="block text-[12px] text-[var(--ci-text-muted)]">{a.nota}</span>}
                     </span>
                     {a.poateSterge && (
-                      <Button size="icon" variant="ghost" aria-label="Șterge absența" onClick={() => tr(async () => { await stergeAbsentaAction(orgSlug, a.id); router.refresh(); })}>
+                      <Button size="icon" variant="ghost" aria-label={dict.stergeAbsenta} onClick={() => tr(async () => { await stergeAbsentaAction(orgSlug, a.id); router.refresh(); })}>
                         <Trash2 className="size-4" aria-hidden />
                       </Button>
                     )}
@@ -425,27 +444,27 @@ function ContinutPersoana({ orgSlug, m, luni }: { orgSlug: string; m: MembruEchi
                   adaugaAbsenta();
                 }}
               >
-                <p className="text-[12.5px] font-medium text-[var(--ci-text)] sm:col-span-2">Adaugă o absență</p>
+                <p className="text-[12.5px] font-medium text-[var(--ci-text)] sm:col-span-2">{dict.adaugaAbsenta}</p>
                 <div>
-                  <Label htmlFor="ab-tip">Tip</Label>
+                  <Label htmlFor="ab-tip">{dict.tip}</Label>
                   <Select id="ab-tip" value={tip} onChange={(e) => setTip(e.target.value as TipAbsenta)}>
-                    {(Object.keys(ETICHETE_ABSENTA) as TipAbsenta[]).map((t) => (
+                    {Object.keys(comune.absenta).map((t) => (
                       <option key={t} value={t}>
-                        {ETICHETE_ABSENTA[t]}
+                        {comune.absenta[t]}
                       </option>
                     ))}
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="ab-nota">Notă (opțional)</Label>
+                  <Label htmlFor="ab-nota">{dict.nota}</Label>
                   <Input id="ab-nota" maxLength={300} value={nota} onChange={(e) => setNota(e.target.value)} />
                 </div>
                 <div>
-                  <Label htmlFor="ab-start">De la</Label>
+                  <Label htmlFor="ab-start">{dict.deLa}</Label>
                   <Input id="ab-start" type="date" value={start} onChange={(e) => setStart(e.target.value)} />
                 </div>
                 <div>
-                  <Label htmlFor="ab-end">Până la (inclusiv)</Label>
+                  <Label htmlFor="ab-end">{dict.panaLa}</Label>
                   <Input id="ab-end" type="date" min={start} value={sfarsit} onChange={(e) => setSfarsit(e.target.value)} />
                 </div>
                 {eroare && (
@@ -455,7 +474,7 @@ function ContinutPersoana({ orgSlug, m, luni }: { orgSlug: string; m: MembruEchi
                 )}
                 <div className="sm:col-span-2">
                   <Button type="submit" variant="primary" size="sm" loading={pending}>
-                    Adaugă
+                    {dict.adauga}
                   </Button>
                 </div>
               </form>
@@ -463,10 +482,10 @@ function ContinutPersoana({ orgSlug, m, luni }: { orgSlug: string; m: MembruEchi
           </section>
         </>
       ) : (
-        <p className="rounded-[var(--ci-radius-btn)] bg-[var(--ci-surface-2)] p-3 text-[13px] text-[var(--ci-text-muted)]">Încărcarea și absențele acestei persoane le văd ea, managerul ei și administratorii.</p>
+        <p className="rounded-[var(--ci-radius-btn)] bg-[var(--ci-surface-2)] p-3 text-[13px] text-[var(--ci-text-muted)]">{dict.faraAcces}</p>
       )}
       <Link href={`/${orgSlug}/crm/organizatie`} className="inline-block text-[12.5px] font-medium text-[var(--ci-blue)] hover:underline">
-        Editează profilul în Organizație & Echipă
+        {dict.editeazaProfilul}
       </Link>
     </div>
   );

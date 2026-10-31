@@ -177,7 +177,7 @@ async function CompaniiContent({
                       <D177Badge companyId={c.id} incasat={c.d177Incasat} />
                     </span>
                   )}
-                  {c.d177 && c.d177Stadiu && c.d177Stadiu !== "nou" && <Badge tone="indigo" icon={false}>{etichetaStadiuD177(c.d177Stadiu)}</Badge>}
+                  {c.d177 && c.d177Stadiu && c.d177Stadiu !== "nou" && <Badge tone="indigo" icon={false}>{etichetaStadiuD177(c.d177Stadiu, locale)}</Badge>}
                   {c.mec20 && <Badge tone="pink" icon={false}>20%</Badge>}
                   {c.decembrie && <Badge tone="indigo" icon={false}>{COMPANII_DICT[locale].filterBar.decembrie}</Badge>}
                   <span className="ci-tabular ml-2 text-[13px] font-semibold text-[var(--ci-text)]">

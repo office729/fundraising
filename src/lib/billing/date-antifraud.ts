@@ -53,6 +53,7 @@ export function extrageLocalitate(adresa: string | null | undefined, judet: stri
 // Pentru plata interactivă: fără un telefon valid nu pornim plata. Înainte, plecau „0700000000” și alte valori inventate, iar Netopia a marcat „Fraudă”
 // tranzacțiile cu date de test, înainte de bancă; același card cu date reale a ajuns la 3-D Secure.
 export const MESAJ_TELEFON_LIPSA = "Completează un număr de telefon valid (ex. 0722 123 456) înainte de plată: banca și procesatorul de plăți îl cer pentru a verifica plata.";
+export const MESAJ_TELEFON_LIPSA_EN = "Enter a valid phone number (e.g. 0722 123 456) before paying: the bank and the payment processor require it to verify the payment.";
 
 export function telefonPlataValid(telefon: string | null | undefined): boolean {
   return telefonPentruNetopia(telefon).real;

@@ -5,6 +5,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import { guardModul } from "@/lib/auth/guard-modul";
 import { angajati, appUsers, departments, kpiAuditLog, memberships, roluri } from "@/lib/db/schema";
 import { EroareUtilizator, mesajSigur } from "@/lib/erori";
+import { getTr } from "@/lib/i18n/tr-server";
 
 const { withOrgAdmin, withOrgSession } = guardModul("kpi");
 
@@ -27,7 +28,8 @@ export const listeazaDepartamenteAction = withOrgSession(async (ctx): Promise<De
 // treci separat prin tab-ul Roluri pentru cea mai simplă structură (un
 // departament, o funcție).
 export const creeazaDepartamentAction = withOrgAdmin(async (ctx, nume: string, descriere: string | null, functiePrincipala: string | null) => {
-  if (!nume.trim()) throw new EroareUtilizator("Numele departamentului e obligatoriu.");
+  const t = await getTr();
+  if (!nume.trim()) throw new EroareUtilizator(t("Numele departamentului e obligatoriu.", "The department name is required."));
   const [rand] = await ctx.db.insert(departments).values({ orgId: ctx.orgId, nume: nume.trim(), descriere }).returning({ id: departments.id });
   await ctx.db.insert(kpiAuditLog).values({ orgId: ctx.orgId, actorUserId: ctx.userId, actiune: "creeaza", entitate: "departament", entitateId: rand.id, detalii: { nume } });
   if (functiePrincipala?.trim()) {
@@ -36,9 +38,10 @@ export const creeazaDepartamentAction = withOrgAdmin(async (ctx, nume: string, d
 });
 
 export const actualizeazaDepartamentAction = withOrgAdmin(async (ctx, id: string, nume: string, descriere: string | null) => {
-  if (!nume.trim()) throw new EroareUtilizator("Numele departamentului e obligatoriu.");
+  const t = await getTr();
+  if (!nume.trim()) throw new EroareUtilizator(t("Numele departamentului e obligatoriu.", "The department name is required."));
   const r = await ctx.db.update(departments).set({ nume: nume.trim(), descriere }).where(and(eq(departments.id, id), eq(departments.orgId, ctx.orgId))).returning({ id: departments.id });
-  if (!r[0]) throw new EroareUtilizator("Departamentul nu a fost găsit.");
+  if (!r[0]) throw new EroareUtilizator(t("Departamentul nu a fost găsit.", "Department not found."));
 });
 
 export const stergeDepartamentAction = withOrgAdmin(async (ctx, id: string) => {
@@ -62,20 +65,22 @@ export const listeazaRoluriAction = withOrgSession(async (ctx): Promise<RolRand[
 });
 
 export const creeazaRolAction = withOrgAdmin(async (ctx, nume: string, descriere: string | null, responsabilitati: string | null, departmentId: string | null) => {
-  if (!nume.trim()) throw new EroareUtilizator("Numele rolului e obligatoriu.");
+  const t = await getTr();
+  if (!nume.trim()) throw new EroareUtilizator(t("Numele rolului e obligatoriu.", "The role name is required."));
   const [rand] = await ctx.db.insert(roluri).values({ orgId: ctx.orgId, nume: nume.trim(), descriere, responsabilitati, departmentId }).returning({ id: roluri.id });
   await ctx.db.insert(kpiAuditLog).values({ orgId: ctx.orgId, actorUserId: ctx.userId, actiune: "creeaza", entitate: "rol", entitateId: rand.id, detalii: { nume } });
 });
 
 export const actualizeazaRolAction = withOrgAdmin(
   async (ctx, id: string, nume: string, descriere: string | null, responsabilitati: string | null, departmentId: string | null) => {
-    if (!nume.trim()) throw new EroareUtilizator("Numele rolului e obligatoriu.");
+    const t = await getTr();
+    if (!nume.trim()) throw new EroareUtilizator(t("Numele rolului e obligatoriu.", "The role name is required."));
     const r = await ctx.db
       .update(roluri)
       .set({ nume: nume.trim(), descriere, responsabilitati, departmentId })
       .where(and(eq(roluri.id, id), eq(roluri.orgId, ctx.orgId)))
       .returning({ id: roluri.id });
-    if (!r[0]) throw new EroareUtilizator("Rolul nu a fost găsit.");
+    if (!r[0]) throw new EroareUtilizator(t("Rolul nu a fost găsit.", "Role not found."));
   },
 );
 
@@ -165,36 +170,38 @@ export type AngajatInput = {
 // Eroarea de unicitate (angajati_org_app_user_idx — un cont legat de cel mult
 // UN profil de angajat) e tehnică (cod Postgres 23505); o traducem într-un
 // mesaj clar în loc s-o lăsăm să iasă brută către utilizator.
-function mesajConflictCont(e: unknown): string | null {
+function mesajConflictCont(e: unknown, t: (ro: string, en: string) => string): string | null {
   if (e && typeof e === "object" && "code" in e && (e as { code: unknown }).code === "23505") {
-    return "Acest cont de platformă e deja legat de alt angajat.";
+    return t("Acest cont de platformă e deja legat de alt angajat.", "This platform account is already linked to another team member.");
   }
   return null;
 }
 
 export const creeazaAngajatAction = withOrgAdmin(async (ctx, input: AngajatInput) => {
-  if (!input.nume.trim()) throw new EroareUtilizator("Numele angajatului e obligatoriu.");
+  const t = await getTr();
+  if (!input.nume.trim()) throw new EroareUtilizator(t("Numele angajatului e obligatoriu.", "The team member's name is required."));
   try {
     const [rand] = await ctx.db.insert(angajati).values({ orgId: ctx.orgId, ...input, nume: input.nume.trim() }).returning({ id: angajati.id });
     await ctx.db.insert(kpiAuditLog).values({ orgId: ctx.orgId, actorUserId: ctx.userId, actiune: "creeaza", entitate: "angajat", entitateId: rand.id, detalii: { nume: input.nume } });
   } catch (e) {
-    throw new EroareUtilizator(mesajConflictCont(e) ?? mesajSigur(e, "Crearea angajatului a eșuat.", "organizatie-creeaza-angajat"));
+    throw new EroareUtilizator(mesajConflictCont(e, t) ?? mesajSigur(e, t("Crearea angajatului a eșuat.", "Could not create the team member."), "organizatie-creeaza-angajat"));
   }
 });
 
 export const actualizeazaAngajatAction = withOrgAdmin(async (ctx, id: string, input: AngajatInput) => {
-  if (!input.nume.trim()) throw new EroareUtilizator("Numele angajatului e obligatoriu.");
-  if (input.managerId === id) throw new EroareUtilizator("Un angajat nu poate fi propriul său manager.");
+  const t = await getTr();
+  if (!input.nume.trim()) throw new EroareUtilizator(t("Numele angajatului e obligatoriu.", "The team member's name is required."));
+  if (input.managerId === id) throw new EroareUtilizator(t("Un angajat nu poate fi propriul său manager.", "A team member cannot be their own manager."));
   try {
     const r = await ctx.db
       .update(angajati)
       .set({ ...input, nume: input.nume.trim() })
       .where(and(eq(angajati.id, id), eq(angajati.orgId, ctx.orgId)))
       .returning({ id: angajati.id });
-    if (!r[0]) throw new EroareUtilizator("Angajatul nu a fost găsit.");
+    if (!r[0]) throw new EroareUtilizator(t("Angajatul nu a fost găsit.", "Team member not found."));
   } catch (e) {
     if (e instanceof EroareUtilizator) throw e;
-    throw new EroareUtilizator(mesajConflictCont(e) ?? mesajSigur(e, "Actualizarea angajatului a eșuat.", "organizatie-actualizeaza-angajat"));
+    throw new EroareUtilizator(mesajConflictCont(e, t) ?? mesajSigur(e, t("Actualizarea angajatului a eșuat.", "Could not update the team member."), "organizatie-actualizeaza-angajat"));
   }
 });
 

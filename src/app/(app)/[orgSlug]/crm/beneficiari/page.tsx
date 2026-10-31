@@ -11,6 +11,7 @@ import { formatSuma } from "../lib/format";
 import { useBeneficiari } from "../lib/use-data";
 import { useLocale } from "../lib/locale-context";
 import { BENEFICIARI_DICT } from "@/lib/i18n/dictionaries/beneficiari";
+import { PORTAL_BENEFICIARI_UI_DICT } from "@/lib/i18n/dictionaries/portal-beneficiari-ui";
 
 export default function BeneficiariPage() {
   const { orgSlug } = useParams<{ orgSlug: string }>();
@@ -18,6 +19,7 @@ export default function BeneficiariPage() {
   const BENEFICIARI = useBeneficiari();
   const locale = useLocale();
   const dict = BENEFICIARI_DICT[locale].lista;
+  const stari = PORTAL_BENEFICIARI_UI_DICT[locale].stari;
   const [arhivaDeschisa, setArhivaDeschisa] = useState(false);
   const active = BENEFICIARI.filter((b) => b.statusCampanie !== "finalizata");
   const arhivate = BENEFICIARI.filter((b) => b.statusCampanie === "finalizata");
@@ -33,13 +35,13 @@ export default function BeneficiariPage() {
               <div className="mb-2 flex items-center justify-between">
                 <p className="text-sm font-semibold text-[var(--ci-text)]">{b.nume}</p>
                 <Badge tone={b.statusCampanie === "urgenta" ? "red" : b.statusCampanie === "finalizata" ? "green" : "blue"}>
-                  {b.statusCampanie}
+                  {stari.campanie[b.statusCampanie] ?? b.statusCampanie}
                 </Badge>
               </div>
               <p className="text-[12px] text-[var(--ci-text-muted)]">{dict.varstaLocalitate(b.varsta, b.localitate)}</p>
               <ProgressBar value={pct} className="mt-3" />
               <div className="mt-2 flex items-center justify-between text-[12px] text-[var(--ci-text-muted)]">
-                <span className="ci-tabular">{formatSuma(b.sumaStransa)}</span>
+                <span className="ci-tabular">{formatSuma(b.sumaStransa, "RON", locale)}</span>
                 <span className="ci-tabular font-medium text-[var(--ci-text)]">{pct}%</span>
               </div>
             </button>

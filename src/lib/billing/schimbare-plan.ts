@@ -16,7 +16,8 @@ export type PlanTinta = { package: string; extraUsers: number };
 const CONTACT = "vlad.placinta@alexandrit.ro";
 
 // Mesajul de arătat utilizatorului dacă schimbarea e blocată, sau null dacă plata poate continua.
-export function schimbarePlanBlocata(curent: PlanCurent, tinta: PlanTinta, acum: Date = new Date()): string | null {
+// `locale` (implicit română) alege limba mesajului.
+export function schimbarePlanBlocata(curent: PlanCurent, tinta: PlanTinta, acum: Date = new Date(), locale: "ro" | "en" = "ro"): string | null {
   const perioadaPlatitaActiva = curent.subscriptionStatus === "active" && curent.currentPeriodEnd != null && curent.currentPeriodEnd > acum;
   if (!perioadaPlatitaActiva || curent.package === "trial") return null;
 
@@ -26,6 +27,10 @@ export function schimbarePlanBlocata(curent: PlanCurent, tinta: PlanTinta, acum:
   const extraTinta = tinta.package === "start" ? tinta.extraUsers : 0;
   if (curent.package === tinta.package && curent.package !== "custom" && extraCurent === extraTinta) return null;
 
+  if (locale === "en") {
+    const dataEn = curent.currentPeriodEnd!.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+    return `You already have a subscription paid until ${dataEn}. So that you do not pay twice, the plan can be changed after this date. If you need a change sooner, write to us at ${CONTACT}.`;
+  }
   const data = curent.currentPeriodEnd!.toLocaleDateString("ro-RO", { day: "numeric", month: "long", year: "numeric" });
   return `Ai deja un abonament plătit până la ${data}. Ca să nu plătești de două ori, planul se poate schimba după această dată. Dacă ai nevoie de o schimbare mai devreme, scrie-ne la ${CONTACT}.`;
 }

@@ -31,6 +31,7 @@ import {
 import { adaugaZileLucratoare, APELURI_REZERVATE_PER_CAUTARE, aziBucuresti, COOLDOWN_CAUTARE_ORE, LIMITA_APELURI_PE_ZI, REZERVARE_EXPIRA_MIN } from "@/lib/prospectare/limite";
 import { decripteaza } from "@/lib/secret-box";
 import { noteazaInvitatie } from "@/lib/waalaxy-server";
+import { traduEroareProspectare } from "@/lib/i18n/dictionaries/lib-mesaje-ui";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { COMPANII_UI_DICT } from "@/lib/i18n/dictionaries/companii-ui";
 
@@ -146,12 +147,13 @@ export const getCredite = withOrgFaze<[], { chei: Partial<Record<Furnizor, strin
     return { pregatit: { chei, waalaxy } };
   },
   extern: async (p): Promise<CreditFurnizor[]> => {
+    const locale = await getLocale();
     const rezultate = await Promise.all(
       FURNIZORI.map(async (f): Promise<CreditFurnizor> => {
         const cheie = p.chei[f];
         if (!cheie) return { furnizor: f, conectat: false, credite: null };
         const r = await crediteFurnizor(f, cheie, fetch);
-        return r.ok ? { furnizor: f, conectat: true, credite: r.date } : { furnizor: f, conectat: true, credite: null, eroare: r.eroare };
+        return r.ok ? { furnizor: f, conectat: true, credite: r.date } : { furnizor: f, conectat: true, credite: null, eroare: traduEroareProspectare(r.eroare, locale) };
       }),
     );
     return [...rezultate, { furnizor: "waalaxy", conectat: p.waalaxy, credite: null }];
@@ -327,7 +329,8 @@ export const cautaDecidentiAction = withOrgFaze<[string, boolean], Pregatit, Rez
       noi = inserati.length;
     }
     revalidatePath(`/${ctx.orgSlug}/crm/companii`);
-    return { ok: true, gasiti: r.candidati.length, noi, avertismente: r.erori };
+    const locale = await getLocale();
+    return { ok: true, gasiti: r.candidati.length, noi, avertismente: r.erori.map((e) => traduEroareProspectare(e, locale)) };
   },
 });
 
@@ -396,7 +399,7 @@ export const aprobaCandidat = withOrgFaze<[string, boolean], PregatitAprobare, E
   extern: async (p): Promise<ExternAprobare> => {
     if (!p.waalaxy) return { trimis: false };
     const r = await waalaxyTrimite(p.waalaxy.cheie, { listaId: p.waalaxy.listaId, campanieId: p.waalaxy.campanieId || undefined, prospecti: [p.waalaxy.prospect] }, fetch);
-    return r.ok ? { trimis: true } : { trimis: false, eroare: r.eroare };
+    return r.ok ? { trimis: true } : { trimis: false, eroare: traduEroareProspectare(r.eroare, await getLocale()) };
   },
   salveaza: async (ctx, p, extern): Promise<RezultatAprobare> => {
     const m = await mesaje();
@@ -544,7 +547,7 @@ export const imbogatesteFirmaAction = withOrgFaze<[string], { companyId: string;
   extern: async ({ firma, cheie }) => apolloImbogatesteFirma(cheie, { nume: firma.nume, domeniu: domeniuDinSite(firma.site) ?? firma.domeniuEmail }, fetch),
   salveaza: async (ctx, { companyId, firma }, rezultat): Promise<RezultatImbogatire> => {
     const m = await mesaje();
-    if (!rezultat.ok) return { ok: false, eroare: rezultat.eroare };
+    if (!rezultat.ok) return { ok: false, eroare: traduEroareProspectare(rezultat.eroare, await getLocale()) };
     await ctx.db.insert(prospectareJurnal).values({ orgId: ctx.orgId, provider: "apollo", operatie: "imbogatire_firma", ok: true, unitati: 1, companyId, userId: ctx.userId });
     if (!rezultat.date) return { ok: true, completat: [], mesaj: m.apolloNegasit };
     const completat: string[] = [];

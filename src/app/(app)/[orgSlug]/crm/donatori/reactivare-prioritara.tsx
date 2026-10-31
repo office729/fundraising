@@ -58,7 +58,7 @@ export function ReactivarePrioritara({ orgSlug, date, locale }: { orgSlug: strin
                   </td>
                   <td className="px-3 py-2.5">
                     <Badge tone={TON[r.analiza.risc]} icon={false}>
-                      {ui.etichetaRisc[r.analiza.eticheta] ?? r.analiza.eticheta}
+                      {r.analiza.eticheta}
                     </Badge>
                   </td>
                   <td className="px-3 py-2.5 text-[var(--ci-text-muted)]">{ui.ritm(r.analiza.cadentaZile)}</td>

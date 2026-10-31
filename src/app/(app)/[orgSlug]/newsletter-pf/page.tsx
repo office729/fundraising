@@ -1,4 +1,5 @@
 import { requireOrgAccess } from "@/lib/auth/guard";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { titluAbsolut } from "@/lib/page-titles";
 import { orgHasToolAccess } from "@/lib/billing/packages";
 import { NEWSLETTER_PF_DESIGN_RECOMANDAT } from "@/lib/design-template-recommendations";
@@ -10,7 +11,7 @@ import { ToolLocked } from "@/modules/crm/shared/tool-locked";
 import { CrmToolPage } from "../crm/tool-page";
 import { NewsletterPagina } from "../newsletter-pagina";
 
-const TITLE = "Generator newsletter — persoane fizice";
+const TITLE = { ro: "Generator newsletter — persoane fizice", en: "Newsletter generator — individuals" } as const;
 
 export async function generateMetadata() {
   return titluAbsolut("crmNewsletterPf");
@@ -19,9 +20,10 @@ export async function generateMetadata() {
 export default async function NewsletterPfPage({ params }: { params: Promise<{ orgSlug: string }> }) {
   const { orgSlug } = await params;
   const access = await requireOrgAccess(orgSlug);
+  const title = TITLE[await getLocale()];
 
   if (!orgHasToolAccess(access.orgPackage, access.orgCustomPlanConfig, "newsletter-pf")) {
-    return <ToolLocked orgSlug={orgSlug} toolName={TITLE} />;
+    return <ToolLocked orgSlug={orgSlug} toolName={title} />;
   }
 
   return (
@@ -29,7 +31,7 @@ export default async function NewsletterPfPage({ params }: { params: Promise<{ o
       <NewsletterPagina tip="pf">
         <StandaloneToolFrame
               html={neutralizeazaLinkuriPilot(NEWSLETTER_PF_HTML, orgSlug)}
-              title={TITLE}
+              title={title}
               orgSlug={orgSlug}
               orgName={access.orgName}
               orgLogoUrl={access.orgLogoUrl}

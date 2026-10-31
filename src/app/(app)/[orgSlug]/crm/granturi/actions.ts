@@ -5,7 +5,7 @@ import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 
 import { aiConfigurat, cautaApeluriAI, genereazaDraftGrantAI, type RezultatCautareApeluri } from "@/lib/ai";
-import { limitaAIDepasita, limitaCautareDepasita, MESAJ_LIMITA_AI, MESAJ_LIMITA_CAUTARE } from "@/lib/ai-limit";
+import { limitaAIDepasita, limitaCautareDepasita, mesajLimitaAi, mesajLimitaCautare } from "@/lib/ai-limit";
 import { withOrgAdmin, withOrgFaze, withOrgSession } from "@/lib/auth/guard";
 import { areModul } from "@/lib/billing/packages";
 import { isPlatformAdmin, pachetPentruModule } from "@/lib/billing/trial";
@@ -15,7 +15,7 @@ import { BUCKET_PRIVAT, caleDinReferinta, referintaPrivata, stergeFisierePrivate
 import { createClient } from "@/lib/supabase/server";
 import { CAMPURI_DOSAR, aziBucuresti, curataDosar, esteStare, valideazaGrant, type ElementLista, type GrantInput } from "@/lib/granturi/stari";
 import { getLocale } from "@/lib/i18n/get-locale";
-import { GRANTURI_UI_DICT, traduEroareGrant } from "@/lib/i18n/dictionaries/granturi-ui";
+import { GRANTURI_UI_DICT } from "@/lib/i18n/dictionaries/granturi-ui";
 
 // Mesajele afișate utilizatorului, în limba aleasă (cookie-ul de limbă).
 const mesaje = async () => GRANTURI_UI_DICT[await getLocale()].msg;
@@ -112,8 +112,8 @@ export const salveazaGrantAction = withOrgSession(async (ctx, input: GrantInput)
   await cuModul(ctx);
   const locale = await getLocale();
   const m = await mesaje();
-  const r = valideazaGrant(input);
-  if (!r.ok) return { ok: false, eroare: traduEroareGrant(locale, r.eroare) };
+  const r = valideazaGrant(input, locale);
+  if (!r.ok) return { ok: false, eroare: r.eroare };
   const v = r.v;
   const valori = {
     finantator: v.finantator,
@@ -196,8 +196,8 @@ export const adaugaSursaInRegistruAction = withOrgSession(async (ctx, finantator
     sumaCastigata: "",
     dataDecizie: "",
     termenRaportare: "",
-  });
-  if (!r.ok) return { ok: false, eroare: traduEroareGrant(locale, r.eroare) };
+  }, locale);
+  if (!r.ok) return { ok: false, eroare: r.eroare };
   const [exista] = await ctx.db
     .select({ id: granturi.id })
     .from(granturi)
@@ -314,7 +314,7 @@ export const cautaApeluriAction = withOrgFaze<
     const m = await mesaje();
     if (!isPlatformAdmin(ctx.userEmail)) throw new EroareUtilizator(m.cautareIndisponibila);
     if (!aiConfigurat()) return { gata: { ok: false, eroare: m.cautareNeconfigurata } };
-    if (await limitaCautareDepasita(ctx)) return { gata: { ok: false, eroare: traduEroareGrant(locale, MESAJ_LIMITA_CAUTARE) } };
+    if (await limitaCautareDepasita(ctx)) return { gata: { ok: false, eroare: mesajLimitaCautare(locale) } };
     return {
       pregatit: {
         domeniu: String(domeniu ?? "").trim().slice(0, 200),
@@ -347,7 +347,7 @@ export const genereazaDraftGrantAction = withOrgFaze<
     if (!aiConfigurat()) return { gata: { ok: false, eroare: m.draftNeconfigurat } };
     const [g] = await ctx.db.select().from(granturi).where(and(eq(granturi.id, grantId), eq(granturi.orgId, ctx.orgId))).limit(1);
     if (!g) return { gata: { ok: false, eroare: m.cerereNegasita } };
-    if (await limitaAIDepasita(ctx)) return { gata: { ok: false, eroare: traduEroareGrant(locale, MESAJ_LIMITA_AI) } };
+    if (await limitaAIDepasita(ctx)) return { gata: { ok: false, eroare: mesajLimitaAi(locale) } };
     const [d] = await ctx.db.select({ continut: granturiDosar.continut }).from(granturiDosar).where(eq(granturiDosar.orgId, ctx.orgId)).limit(1);
     const dosar = curataDosar(d?.continut);
     return {

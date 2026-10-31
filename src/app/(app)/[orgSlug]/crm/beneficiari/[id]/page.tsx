@@ -2,6 +2,8 @@
 
 import { notFound, useParams } from "next/navigation";
 
+import type { Locale } from "@/lib/i18n/config";
+
 import { Badge } from "../../components/ui/badge";
 import { Breadcrumb } from "../../components/ui/breadcrumb";
 import { Card, CardHeader } from "../../components/ui/card";
@@ -13,6 +15,7 @@ import { formatData, formatSuma } from "../../lib/format";
 import { useBeneficiar } from "../../lib/use-data";
 import { useLocale } from "../../lib/locale-context";
 import { BENEFICIARI_DICT } from "@/lib/i18n/dictionaries/beneficiari";
+import { PORTAL_BENEFICIARI_UI_DICT } from "@/lib/i18n/dictionaries/portal-beneficiari-ui";
 import { ALOCARI_PLATI, COMPANII, DONATII } from "../../mock";
 
 export default function BeneficiarProfilPage() {
@@ -20,6 +23,7 @@ export default function BeneficiarProfilPage() {
   const b = useBeneficiar(id);
   const locale = useLocale();
   const dict = BENEFICIARI_DICT[locale].profil;
+  const stari = PORTAL_BENEFICIARI_UI_DICT[locale].stari;
   if (!b) notFound();
 
   const donatii = DONATII.filter((d) => d.beneficiarId === b.id);
@@ -39,7 +43,7 @@ export default function BeneficiarProfilPage() {
             <div className="flex items-center gap-2">
               <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">{b.nume}</h1>
               <Badge tone={b.statusCampanie === "urgenta" ? "red" : b.statusCampanie === "finalizata" ? "green" : "blue"}>
-                {b.statusCampanie}
+                {stari.campanie[b.statusCampanie] ?? b.statusCampanie}
               </Badge>
             </div>
             <p className="mt-1 text-[13px] text-[var(--ci-text-muted)]">
@@ -49,7 +53,7 @@ export default function BeneficiarProfilPage() {
         </div>
         <ProgressBar value={pct} className="mt-4" />
         <div className="mt-2 flex items-center justify-between text-[13px]">
-          <span className="ci-tabular text-[var(--ci-text-muted)]">{formatSuma(b.sumaStransa)} {dict.din} {formatSuma(b.obiectiv)}</span>
+          <span className="ci-tabular text-[var(--ci-text-muted)]">{formatSuma(b.sumaStransa, "RON", locale)} {dict.din} {formatSuma(b.obiectiv, "RON", locale)}</span>
           <span className="ci-tabular font-semibold text-[var(--ci-text)]">{pct}%</span>
         </div>
       </Card>
@@ -57,12 +61,12 @@ export default function BeneficiarProfilPage() {
       <Card>
         <CardHeader title={dict.cardFinanciar.title} subtitle={dict.cardFinanciar.subtitle} />
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-          <FinStat label={dict.fin.necesar.label} value={b.obiectiv} tip={dict.fin.necesar.tip} />
-          <FinStat label={dict.fin.incasat.label} value={b.sumaStransa} tip={dict.fin.incasat.tip} />
-          <FinStat label={dict.fin.alocat.label} value={b.sumaAlocata} tip={dict.fin.alocat.tip} />
-          <FinStat label={dict.fin.achitat.label} value={b.sumaAchitata} tip={dict.fin.achitat.tip} />
-          <FinStat label={dict.fin.disponibil.label} value={disponibil} tip={dict.fin.disponibil.tip} />
-          <FinStat label={dict.fin.ramasDeStrans.label} value={ramasDeStrans} tip={dict.fin.ramasDeStrans.tip} />
+          <FinStat label={dict.fin.necesar.label} value={b.obiectiv} tip={dict.fin.necesar.tip} locale={locale} />
+          <FinStat label={dict.fin.incasat.label} value={b.sumaStransa} tip={dict.fin.incasat.tip} locale={locale} />
+          <FinStat label={dict.fin.alocat.label} value={b.sumaAlocata} tip={dict.fin.alocat.tip} locale={locale} />
+          <FinStat label={dict.fin.achitat.label} value={b.sumaAchitata} tip={dict.fin.achitat.tip} locale={locale} />
+          <FinStat label={dict.fin.disponibil.label} value={disponibil} tip={dict.fin.disponibil.tip} locale={locale} />
+          <FinStat label={dict.fin.ramasDeStrans.label} value={ramasDeStrans} tip={dict.fin.ramasDeStrans.tip} locale={locale} />
         </div>
       </Card>
 
@@ -88,9 +92,9 @@ export default function BeneficiarProfilPage() {
                   <div key={d.id} className="flex items-center justify-between rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] px-3.5 py-2.5">
                     <div>
                       <p className="text-[13px] font-medium text-[var(--ci-text)]">{d.sursaNume}</p>
-                      <p className="text-[12px] text-[var(--ci-text-muted)]">{formatData(d.data)}</p>
+                      <p className="text-[12px] text-[var(--ci-text-muted)]">{formatData(d.data, locale)}</p>
                     </div>
-                    <span className="ci-tabular text-sm font-semibold text-[var(--ci-text)]">{formatSuma(d.suma, d.moneda)}</span>
+                    <span className="ci-tabular text-sm font-semibold text-[var(--ci-text)]">{formatSuma(d.suma, d.moneda, locale)}</span>
                   </div>
                 ))}
               </div>
@@ -111,10 +115,10 @@ export default function BeneficiarProfilPage() {
                 {plati.map((p) => (
                   <div key={p.id} className="flex items-center justify-between rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] px-3.5 py-2.5">
                     <div>
-                      <p className="text-[13px] font-medium text-[var(--ci-text)]">{formatData(p.la)}</p>
+                      <p className="text-[13px] font-medium text-[var(--ci-text)]">{formatData(p.la, locale)}</p>
                       <p className="text-[12px] text-[var(--ci-text-muted)]">{p.documentJustificativ ?? dict.faraDocument}</p>
                     </div>
-                    <Badge tone={p.status === "achitat" ? "green" : p.status === "in_asteptare" ? "amber" : "blue"}>{p.status.replace("_", " ")}</Badge>
+                    <Badge tone={p.status === "achitat" ? "green" : p.status === "in_asteptare" ? "amber" : "blue"}>{stari.plata[p.status] ?? p.status.replace("_", " ")}</Badge>
                   </div>
                 ))}
               </div>
@@ -129,14 +133,14 @@ export default function BeneficiarProfilPage() {
   );
 }
 
-function FinStat({ label, value, tip }: { label: string; value: number; tip: string }) {
+function FinStat({ label, value, tip, locale }: { label: string; value: number; tip: string; locale: Locale }) {
   return (
     <div>
       <div className="flex items-center gap-1">
         <p className="text-[12px] text-[var(--ci-text-muted)]">{label}</p>
         <Tooltip label={tip}><span className="text-[var(--ci-text-faint)]">ⓘ</span></Tooltip>
       </div>
-      <p className="ci-tabular mt-0.5 text-sm font-bold text-[var(--ci-text)]">{formatSuma(value)}</p>
+      <p className="ci-tabular mt-0.5 text-sm font-bold text-[var(--ci-text)]">{formatSuma(value, "RON", locale)}</p>
     </div>
   );
 }

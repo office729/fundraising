@@ -2,11 +2,13 @@
 
 import { AlertOctagon, CheckCircle2, CircleDashed, Clock, Flag, Link2, MoreHorizontal, Repeat, ShieldAlert, ShieldCheck, Target } from "lucide-react";
 
-import { ETICHETE_PRIORITATE, ETICHETE_STATUS_ACT, type Prioritate, type StatusActivitate } from "@/lib/performanta-activitati-reguli";
+import { PERFORMANTA_UI_DICT } from "@/lib/i18n/dictionaries/performanta-ui";
+import type { Prioritate, StatusActivitate } from "@/lib/performanta-activitati-reguli";
 import type { ActivitateDto } from "@/lib/performanta-activitati-tipuri";
 
 import { Avatar } from "../components/ui/avatar";
 import { DropdownItem, DropdownMenu } from "../components/ui/dropdown-menu";
+import { useLocale } from "../lib/locale-context";
 import { useActivitati } from "./activitati-context";
 import { dataScurta } from "./ui-comune";
 
@@ -20,11 +22,12 @@ const STIL_STATUS: Record<StatusActivitate, { Icon: typeof Clock; clasa: string 
 };
 
 export function StatusActivitateBadge({ status }: { status: StatusActivitate }) {
+  const dict = PERFORMANTA_UI_DICT[useLocale()].comune;
   const { Icon, clasa } = STIL_STATUS[status];
   return (
     <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[12px] font-medium whitespace-nowrap ${clasa}`}>
       <Icon className="size-3.5" aria-hidden />
-      {ETICHETE_STATUS_ACT[status]}
+      {dict.statusAct[status]}
     </span>
   );
 }
@@ -32,10 +35,11 @@ export function StatusActivitateBadge({ status }: { status: StatusActivitate }) 
 const CULOARE_PRIORITATE: Record<Prioritate, string> = { critica: "text-[var(--ci-red)]", mare: "text-[var(--ci-amber)]", medie: "text-[var(--ci-text-muted)]", scazuta: "text-[var(--ci-text-faint)]" };
 
 export function PrioritateChip({ prioritate }: { prioritate: Prioritate }) {
+  const dict = PERFORMANTA_UI_DICT[useLocale()].comune;
   return (
     <span className={`inline-flex items-center gap-1 text-[12px] font-medium ${CULOARE_PRIORITATE[prioritate]}`}>
       <Flag className="size-3.5" aria-hidden />
-      {ETICHETE_PRIORITATE[prioritate]}
+      {dict.prioritate[prioritate]}
     </span>
   );
 }
@@ -43,13 +47,16 @@ export function PrioritateChip({ prioritate }: { prioritate: Prioritate }) {
 // Cardul unei activități, folosit în listă, tablă, calendar și Spațiul meu. Acțiunea principală depinde de stare; restul sunt în meniu.
 export function CardActivitate({ a, compact = false, arataResponsabil = true }: { a: ActivitateDto; compact?: boolean; arataResponsabil?: boolean }) {
   const { deschideForm, deschideBlocaj, deschideInchidere, actiune, ocupat } = useActivitati();
+  const locale = useLocale();
+  const dict = PERFORMANTA_UI_DICT[locale].activitate;
+  const comune = PERFORMANTA_UI_DICT[locale].comune;
   const incheiata = a.status === "finalizat" || a.status === "anulat";
   const principala: { eticheta: string; tip: Parameters<typeof actiune>[1] } | null = incheiata
     ? null
     : a.status === "de_facut" || a.status === "in_asteptare"
-      ? { eticheta: "Începe", tip: "start" }
+      ? { eticheta: dict.incepe, tip: "start" }
       : a.status === "in_lucru"
-        ? { eticheta: "Finalizează", tip: "finalizeaza" }
+        ? { eticheta: dict.finalizeaza, tip: "finalizeaza" }
         : null;
 
   return (
@@ -62,22 +69,22 @@ export function CardActivitate({ a, compact = false, arataResponsabil = true }: 
           <DropdownMenu
             align="end"
             trigger={
-              <button type="button" aria-label={`Mai multe acțiuni pentru ${a.titlu}`} aria-haspopup="menu" className="rounded p-1 text-[var(--ci-text-muted)] hover:bg-[var(--ci-surface-2)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
+              <button type="button" aria-label={dict.maiMulte(a.titlu)} aria-haspopup="menu" className="rounded p-1 text-[var(--ci-text-muted)] hover:bg-[var(--ci-surface-2)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
                 <MoreHorizontal className="size-4" aria-hidden />
               </button>
             }
           >
             {(inchide) => (
               <>
-                <DropdownItem onClick={() => { inchide(); deschideForm(a); }}>Editează</DropdownItem>
-                {!incheiata && a.status !== "blocat" && <DropdownItem onClick={() => { inchide(); deschideBlocaj({ activitateId: a.id, titlu: a.titlu }); }}>Raportează un blocaj</DropdownItem>}
-                {a.status === "blocat" && a.blocaj?.poateInchide && <DropdownItem onClick={() => { inchide(); deschideInchidere(a.blocaj!); }}>Deschide blocajul</DropdownItem>}
-                {a.status === "in_lucru" && <DropdownItem onClick={() => { inchide(); actiune(a, "asteptare"); }}>Pune în așteptare</DropdownItem>}
-                {(a.status === "in_asteptare" || a.status === "in_lucru") && <DropdownItem onClick={() => { inchide(); actiune(a, "de_facut"); }}>Mută la „De făcut”</DropdownItem>}
-                {incheiata && <DropdownItem onClick={() => { inchide(); actiune(a, "redeschide"); }}>Redeschide</DropdownItem>}
-                {!incheiata && a.status !== "blocat" && <DropdownItem onClick={() => { inchide(); actiune(a, "finalizeaza"); }}>Finalizează</DropdownItem>}
-                {!incheiata && <DropdownItem onClick={() => { inchide(); actiune(a, "anuleaza"); }}>Anulează</DropdownItem>}
-                <DropdownItem danger onClick={() => { inchide(); actiune(a, "sterge"); }}>Șterge</DropdownItem>
+                <DropdownItem onClick={() => { inchide(); deschideForm(a); }}>{dict.editeaza}</DropdownItem>
+                {!incheiata && a.status !== "blocat" && <DropdownItem onClick={() => { inchide(); deschideBlocaj({ activitateId: a.id, titlu: a.titlu }); }}>{dict.raporteazaBlocaj}</DropdownItem>}
+                {a.status === "blocat" && a.blocaj?.poateInchide && <DropdownItem onClick={() => { inchide(); deschideInchidere(a.blocaj!); }}>{dict.deschideBlocaj}</DropdownItem>}
+                {a.status === "in_lucru" && <DropdownItem onClick={() => { inchide(); actiune(a, "asteptare"); }}>{dict.puneAsteptare}</DropdownItem>}
+                {(a.status === "in_asteptare" || a.status === "in_lucru") && <DropdownItem onClick={() => { inchide(); actiune(a, "de_facut"); }}>{dict.mutaDeFacut}</DropdownItem>}
+                {incheiata && <DropdownItem onClick={() => { inchide(); actiune(a, "redeschide"); }}>{dict.redeschide}</DropdownItem>}
+                {!incheiata && a.status !== "blocat" && <DropdownItem onClick={() => { inchide(); actiune(a, "finalizeaza"); }}>{dict.finalizeaza}</DropdownItem>}
+                {!incheiata && <DropdownItem onClick={() => { inchide(); actiune(a, "anuleaza"); }}>{dict.anuleaza}</DropdownItem>}
+                <DropdownItem danger onClick={() => { inchide(); actiune(a, "sterge"); }}>{dict.sterge}</DropdownItem>
               </>
             )}
           </DropdownMenu>
@@ -90,15 +97,15 @@ export function CardActivitate({ a, compact = false, arataResponsabil = true }: 
         {a.termen && (
           <span className={`inline-flex items-center gap-1 text-[12px] ${a.intarziata ? "font-medium text-[var(--ci-red)]" : "text-[var(--ci-text-muted)]"}`}>
             <Clock className="size-3.5" aria-hidden />
-            {dataScurta(a.termen)}
-            {a.intarziata && " · peste termen"}
+            {dataScurta(a.termen, locale)}
+            {a.intarziata && dict.pesteTermen}
           </span>
         )}
-        {a.efortOre !== null && <span className="ci-tabular text-[12px] text-[var(--ci-text-muted)]">{String(a.efortOre).replace(".", ",")} h</span>}
+        {a.efortOre !== null && <span className="ci-tabular text-[12px] text-[var(--ci-text-muted)]">{locale === "ro" ? String(a.efortOre).replace(".", ",") : a.efortOre} h</span>}
         {a.recurenta !== "nu" && (
           <span className="inline-flex items-center gap-1 text-[12px] text-[var(--ci-text-muted)]">
             <Repeat className="size-3.5" aria-hidden />
-            {a.recurenta === "saptamanal" ? "săptămânal" : "lunar"}
+            {comune.recurentaScurt[a.recurenta]}
           </span>
         )}
       </div>
@@ -118,14 +125,14 @@ export function CardActivitate({ a, compact = false, arataResponsabil = true }: 
             <li className="flex items-center gap-1.5">
               <Link2 className="size-3.5 shrink-0" aria-hidden />
               <span className="truncate">
-                Depinde de „{a.dependeDe.titlu}”{a.dependeDe.status === "finalizat" ? " (gata)" : " (încă deschisă)"}
+                {dict.dependeDe(a.dependeDe.titlu, a.dependeDe.status === "finalizat")}
               </span>
             </li>
           )}
           {a.aprobareNecesara && (
             <li className="flex items-center gap-1.5">
               {a.aprobata ? <ShieldCheck className="size-3.5 shrink-0 text-[var(--ci-green)]" aria-hidden /> : <ShieldAlert className="size-3.5 shrink-0 text-[var(--ci-amber)]" aria-hidden />}
-              {a.aprobata ? `Aprobată${a.aprobataDeNume ? ` de ${a.aprobataDeNume}` : ""}` : "Așteaptă aprobare"}
+              {a.aprobata ? dict.aprobata(a.aprobataDeNume ?? null) : dict.asteaptaAprobare}
             </li>
           )}
         </ul>
@@ -133,10 +140,10 @@ export function CardActivitate({ a, compact = false, arataResponsabil = true }: 
 
       {a.blocaj && (
         <button type="button" onClick={() => a.blocaj?.poateInchide && deschideInchidere(a.blocaj)} className="mt-2 block w-full rounded-[var(--ci-radius-btn)] bg-[var(--ci-red-soft)] px-2.5 py-1.5 text-left text-[12px] text-[var(--ci-red)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
-          <strong>Blocată:</strong> {a.blocaj.motiv}
+          <strong>{dict.blocata}</strong> {a.blocaj.motiv}
           <span className="block opacity-80">
-            De rezolvat de {a.blocaj.rezolvatorNume ?? "—"} · revenire {dataScurta(a.blocaj.termenRevenire)}
-            {a.blocaj.intarziat && " (termen depășit)"}
+            {dict.deRezolvat(a.blocaj.rezolvatorNume ?? "—", dataScurta(a.blocaj.termenRevenire, locale))}
+            {a.blocaj.intarziat && dict.termenDepasit}
           </span>
         </button>
       )}
@@ -153,7 +160,7 @@ export function CardActivitate({ a, compact = false, arataResponsabil = true }: 
         <div className="flex gap-1.5">
           {a.poateAproba && (
             <button type="button" disabled={ocupat} onClick={() => actiune(a, "aproba")} className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-2.5 py-1 text-[12.5px] font-medium text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none disabled:opacity-50">
-              Aprobă
+              {dict.aproba}
             </button>
           )}
           {a.poateEdita && principala && (

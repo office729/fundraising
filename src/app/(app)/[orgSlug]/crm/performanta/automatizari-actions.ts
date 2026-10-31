@@ -1,5 +1,6 @@
 "use server";
 
+import { getTr } from "@/lib/i18n/tr-server";
 import { withOrgSessionPerf as withOrgSession } from "@/lib/performanta-sesiune";
 import { incarcaStructura } from "@/lib/performanta-date";
 import { incarcaNotificari, incarcaSetari, marcheazaCitite, numarNecitite, ruleazaAutomatizari, salveazaSetari, type SetariAutomatizari } from "@/lib/performanta-automatizari";
@@ -12,7 +13,10 @@ export const obtineSetari = withOrgSession(async (ctx) => ({
 }));
 export const salveazaSetariAction = withOrgSession(async (ctx, x: Partial<SetariAutomatizari>) => salveazaSetari(ctx, x));
 export const ruleazaAcumAction = withOrgSession(async (ctx) => {
-  if (ctx.role !== "owner" && ctx.role !== "admin") return { ok: false as const, eroare: "Doar un administrator poate rula automatizările acum." };
+  if (ctx.role !== "owner" && ctx.role !== "admin") {
+    const t = await getTr();
+    return { ok: false as const, eroare: t("Doar un administrator poate rula automatizările acum.", "Only an administrator can run the automations now.") };
+  }
   const r = await ruleazaAutomatizari(ctx.db, ctx.orgId, ctx.orgSlug, { fortat: true });
   return { ok: true as const, rezultat: r.rezultat };
 });

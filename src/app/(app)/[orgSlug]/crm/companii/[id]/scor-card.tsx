@@ -25,7 +25,7 @@ const FUNDAL = { ridicata: "var(--ci-green-soft)", medie: "var(--ci-amber-soft)"
 
 export function ScorCard({ input, base, locale }: { input: ScorInput; base: string; locale: Locale }) {
   const t = TEXT[locale];
-  const { total, linii, prioritate } = calculeazaScor(input);
+  const { total, linii, prioritate } = calculeazaScor(input, locale);
   return (
     <Card>
       <div className="flex flex-col gap-5 sm:flex-row sm:items-start">

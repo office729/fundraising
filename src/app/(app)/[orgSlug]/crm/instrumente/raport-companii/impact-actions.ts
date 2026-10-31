@@ -7,6 +7,8 @@ import { withOrgAdmin, type OrgContext } from "@/lib/auth/guard";
 import { orgHasToolAccess } from "@/lib/billing/packages";
 import { appUsers, companies, companySponsorizari, crmKv, fundraisingPages } from "@/lib/db/schema";
 import { EroareUtilizator } from "@/lib/erori";
+import { INSTRUMENTE_UI_DICT } from "@/lib/i18n/dictionaries/instrumente-ui";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { motivImplicit } from "@/lib/motiv";
 import { curataDateImpact, dateImpactGoale, type DateImpact, type ProiectImpact, PROIECT_GOL } from "@/lib/raport-impact";
 
@@ -17,14 +19,14 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const HEX = /^#[0-9a-f]{6}$/i;
 
 // Gardul de pachet e și aici, nu doar în layout: acțiunile server pot fi apelate direct.
-function verificaAcces(ctx: Pick<OrgContext, "orgPackage" | "orgCustomPlanConfig">) {
-  if (!orgHasToolAccess(ctx.orgPackage, ctx.orgCustomPlanConfig, "raport-companii")) throw new EroareUtilizator("Instrumentul nu e inclus în planul organizației.");
+async function verificaAcces(ctx: Pick<OrgContext, "orgPackage" | "orgCustomPlanConfig">) {
+  if (!orgHasToolAccess(ctx.orgPackage, ctx.orgCustomPlanConfig, "raport-companii")) throw new EroareUtilizator(INSTRUMENTE_UI_DICT[await getLocale()].impactActions.indisponibil);
 }
 
 export type CompanieImpactRand = { companyId: string; nume: string; total: number; nr: number };
 
 export const listeazaCompaniiImpactAction = withOrgAdmin(async (ctx): Promise<CompanieImpactRand[]> => {
-  verificaAcces(ctx);
+  await verificaAcces(ctx);
   const r = await ctx.db
     .select({ companyId: companySponsorizari.companyId, nume: companies.nume, total: sql<number>`sum(${companySponsorizari.suma})::int`, nr: sql<number>`count(*)::int` })
     .from(companySponsorizari)
@@ -51,14 +53,14 @@ async function numeAutor(ctx: Pick<OrgContext, "db" | "userId">): Promise<string
 // Dacă firma nu are o versiune salvată, propunem proiectele din sponsorizările ei: fiecare alocare e un proiect (cu linkul campaniei,
 // dacă e o pagină din platformă), iar ce nu e alocat rămâne un rând cu numele proiectului sponsorizării.
 export const incarcaImpactAction = withOrgAdmin(async (ctx, companyId: string | null, ignoraSalvat = false): Promise<IncarcareImpact> => {
-  verificaAcces(ctx);
+  await verificaAcces(ctx);
   const baza = (ctx.orgBrandColor && HEX.test(ctx.orgBrandColor) ? { accent: ctx.orgBrandColor } : {}) as Partial<DateImpact>;
   const gol: DateImpact = { ...dateImpactGoale(), motivGrafic: motivImplicit(ctx.orgName), ...baza, autor: await numeAutor(ctx), logoOng: ctx.orgLogoUrl && /^https:\/\//i.test(ctx.orgLogoUrl) ? ctx.orgLogoUrl : "" };
   const raspuns = (date: DateImpact, salvat: boolean): IncarcareImpact => ({ organizatie: ctx.orgName, date, salvat, logoOngImplicit: gol.logoOng, identificare: [ctx.orgName, ctx.orgCif && `CIF ${ctx.orgCif}`, [ctx.orgAdresaSediu, ctx.orgJudet].filter(Boolean).join(", ")].filter(Boolean).join(" · ") });
   if (!companyId || !UUID.test(companyId)) return raspuns(gol, false);
 
   const [firma] = await ctx.db.select({ nume: companies.nume }).from(companies).where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId), isNull(companies.deletedAt))).limit(1);
-  if (!firma) throw new EroareUtilizator("Firma nu a fost găsită.");
+  if (!firma) throw new EroareUtilizator(INSTRUMENTE_UI_DICT[await getLocale()].impactActions.firmaNegasita);
 
   const [kv] = await ctx.db.select({ data: crmKv.data }).from(crmKv).where(and(eq(crmKv.orgId, ctx.orgId), eq(crmKv.path, CALE(companyId)))).limit(1);
   if (kv?.data && !ignoraSalvat) {
@@ -89,10 +91,10 @@ export const incarcaImpactAction = withOrgAdmin(async (ctx, companyId: string | 
 });
 
 export const salveazaImpactAction = withOrgAdmin(async (ctx, companyId: string, brut: unknown): Promise<{ ok: true } | { ok: false; eroare: string }> => {
-  verificaAcces(ctx);
-  if (!UUID.test(companyId)) return { ok: false, eroare: "Alege o firmă din listă ca să poți salva." };
+  await verificaAcces(ctx);
+  if (!UUID.test(companyId)) return { ok: false, eroare: INSTRUMENTE_UI_DICT[await getLocale()].impactActions.alegeFirma };
   const [firma] = await ctx.db.select({ id: companies.id }).from(companies).where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId), isNull(companies.deletedAt))).limit(1);
-  if (!firma) return { ok: false, eroare: "Firma nu a fost găsită." };
+  if (!firma) return { ok: false, eroare: INSTRUMENTE_UI_DICT[await getLocale()].impactActions.firmaNegasita };
   const date = curataDateImpact(brut);
   await ctx.db
     .insert(crmKv)

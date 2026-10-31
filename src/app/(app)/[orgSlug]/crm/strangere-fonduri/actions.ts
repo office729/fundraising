@@ -86,7 +86,7 @@ export const comutaStatusPaginaStrangereFonduri = withOrgAdmin(async (ctx, id: s
         .select({ n: sql<number>`count(*)::int` })
         .from(fundraisingPages)
         .where(and(eq(fundraisingPages.orgId, ctx.orgId), eq(fundraisingPages.status, "activa"), sql`${fundraisingPages.id} <> ${id}`));
-      if (!subCota(n, limite.campaniiActive)) return { error: mesajeCote.campanii(ctx.orgPackage, limite.campaniiActive) };
+      if (!subCota(n, limite.campaniiActive)) return { error: mesajeCote.campanii(ctx.orgPackage, limite.campaniiActive, await getLocale()) };
     }
   }
   await ctx.db
@@ -150,7 +150,7 @@ export const creeazaPaginaAdminAction = withOrgAdmin(
         .select({ n: sql<number>`count(*)::int` })
         .from(fundraisingPages)
         .where(and(eq(fundraisingPages.orgId, ctx.orgId), eq(fundraisingPages.status, "activa")));
-      if (!subCota(n, limite.campaniiActive)) return { error: mesajeCote.campanii(ctx.orgPackage, limite.campaniiActive) };
+      if (!subCota(n, limite.campaniiActive)) return { error: mesajeCote.campanii(ctx.orgPackage, limite.campaniiActive, await getLocale()) };
     }
 
     const baseSlug = slugify(titlu);

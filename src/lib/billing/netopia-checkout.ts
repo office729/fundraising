@@ -7,19 +7,20 @@ import { and, eq, or, sql } from "drizzle-orm";
 import type { OrgContext } from "@/lib/auth/guard";
 import { db, type Tx } from "@/lib/db";
 import { EroareUtilizator } from "@/lib/erori";
+import { getTr } from "@/lib/i18n/tr-server";
 import { raporteazaAvertisment, raporteazaEroare } from "@/lib/monitoring";
 import { organizations, platformPayments } from "@/lib/db/schema";
 import { clasificaStatus, interogheazaStatus, netopiaConfigurata, pornestePlata, taxeazaCuTokenSalvat, type DateFacturare } from "@/lib/netopia";
 import { decripteaza } from "@/lib/secret-box";
 
 import { alertaOperatorZilnic } from "./alerta-operator";
-import { dateAntifraud, MESAJ_TELEFON_LIPSA } from "./date-antifraud";
+import { dateAntifraud, MESAJ_TELEFON_LIPSA, MESAJ_TELEFON_LIPSA_EN } from "./date-antifraud";
 import { pretDeTest } from "./pret-test";
 import { isPlatformAdmin } from "./trial";
 import { NetopiaRespins } from "./netopia-erori";
 
 import { REFERRAL_DISCOUNT_PERCENT } from "../referral";
-import { dateFacturareComplete, MESAJ_DATE_FACTURARE_LIPSA } from "./date-facturare";
+import { dateFacturareComplete, MESAJ_DATE_FACTURARE_LIPSA, MESAJ_DATE_FACTURARE_LIPSA_EN } from "./date-facturare";
 import type { CustomPlanConfigSaved } from "./custom-plan";
 import { proceseazaRezultatPlataNetopia, type ConfirmareNetopia } from "./netopia-confirm";
 import type { OrgPackage } from "./packages";
@@ -115,7 +116,7 @@ export async function creeazaPlataAbonament(
   // Aplicat AICI (nu doar în interfață): fără CIF/adresă, factura Oblio ar pleca
   // pe „persoană fizică". Reînnoirile automate nu trec pe aici — au deja prima plată.
   if (!dateFacturareComplete({ cif: ctx.orgCif, adresaSediu: ctx.orgAdresaSediu, judet: ctx.orgJudet })) {
-    throw new EroareUtilizator(MESAJ_DATE_FACTURARE_LIPSA);
+    throw new EroareUtilizator((await getTr())(MESAJ_DATE_FACTURARE_LIPSA, MESAJ_DATE_FACTURARE_LIPSA_EN));
   }
 
   // Telefonul organizației (completat la înscriere) — nu e în contextul de sesiune, deci îl citim aici. Obligatoriu la plata interactivă și verificat
@@ -128,7 +129,7 @@ export async function creeazaPlataAbonament(
     adresaSediu: ctx.orgAdresaSediu,
     judet: ctx.orgJudet,
   });
-  if (!antifraud.telefonReal) throw new EroareUtilizator(MESAJ_TELEFON_LIPSA);
+  if (!antifraud.telefonReal) throw new EroareUtilizator((await getTr())(MESAJ_TELEFON_LIPSA, MESAJ_TELEFON_LIPSA_EN));
 
   // Comanda se scrie într-o tranzacție SCURTĂ, separată și comisă imediat (cu context de încredere), nu în tranzacția
   // organizației: altfel `salveazaNtpId` (alt rând de conexiune) nu vedea rândul necomis, actualiza 0 rânduri și

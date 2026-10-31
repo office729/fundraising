@@ -7,6 +7,11 @@
 //  - faptele (cifre) sunt separate de interpretare (ce pare să însemne) și de ipoteze (ce NU se poate deduce din date);
 //  - motivațiile, emoțiile și situația personală nu se deduc: apar doar ca ipoteze, de validat cu donatorii;
 //  - nu se deduce venitul sau averea din suma donată.
+//
+// Limba: construiesteAvatare și textFisa primesc un parametru opțional `locale` (implicit „ro”, ca testele existente);
+// textele englezești stau în SABLOANE_EN și în ramurile „en” de mai jos.
+
+import type { Locale } from "../i18n/config";
 
 export type GrupCod = "recurent" | "fidel" | "major" | "nou" | "pauza";
 export type Incredere = "ridicat" | "mediu" | "scazut";
@@ -91,10 +96,13 @@ export function nivelIncredere(nr: number): Incredere | null {
 }
 
 export const ETICHETA_INCREDERE: Record<Incredere, string> = { ridicat: "Încredere ridicată", mediu: "Încredere medie", scazut: "Încredere scăzută" };
+const ETICHETA_INCREDERE_EN: Record<Incredere, string> = { ridicat: "High confidence", mediu: "Medium confidence", scazut: "Low confidence" };
+export const etichetaIncredere = (i: Incredere, locale: Locale = "ro") => (locale === "ro" ? ETICHETA_INCREDERE[i] : ETICHETA_INCREDERE_EN[i]);
 
+const fmtLocale = (locale: Locale) => (locale === "ro" ? "ro-RO" : "en-GB");
 const pct = (parte: number, total: number) => (total > 0 ? Math.round((parte / total) * 100) : 0);
-const lei = (n: number) => `${Math.round(n).toLocaleString("ro-RO")} lei`;
-const zile = (n: number) => `${Math.round(n).toLocaleString("ro-RO")} ${Math.round(n) === 1 ? "zi" : "zile"}`;
+const lei = (n: number, locale: Locale = "ro") => `${Math.round(n).toLocaleString(fmtLocale(locale))} lei`;
+const zile = (n: number, locale: Locale = "ro") => `${Math.round(n).toLocaleString(fmtLocale(locale))} ${locale === "ro" ? (Math.round(n) === 1 ? "zi" : "zile") : Math.round(n) === 1 ? "day" : "days"}`;
 
 const NUME_GRUP: Record<GrupCod, string> = {
   recurent: "Susținătorii lunari",
@@ -103,9 +111,28 @@ const NUME_GRUP: Record<GrupCod, string> = {
   nou: "Donatorii noi",
   pauza: "Donatorii în pauză",
 };
+const NUME_GRUP_EN: Record<GrupCod, string> = {
+  recurent: "Monthly supporters",
+  fidel: "Donors who come back",
+  major: "Major contributors",
+  nou: "New donors",
+  pauza: "Donors on pause",
+};
 export const ORDINE_GRUPURI: GrupCod[] = ["recurent", "fidel", "major", "nou", "pauza"];
 
-function fapteComune(g: GrupStat, baza: BazaStat): string[] {
+function fapteComune(g: GrupStat, baza: BazaStat, locale: Locale = "ro"): string[] {
+  const fl = fmtLocale(locale);
+  if (locale !== "ro") {
+    const f = [
+      `${g.nr.toLocaleString(fl)} donors (${pct(g.nr, baza.donatori)}% of the base with gifts)`,
+      `${lei(g.suma, locale)} given in total (${pct(g.suma, baza.suma)}% of the total amount)`,
+      `Given in total per donor: ${lei(g.medianaTotal, locale)} (median); ${g.medieDonatii.toLocaleString(fl, { maximumFractionDigits: 1 })} gifts on average`,
+      `Last gift: ${zile(g.medianaRecentaZile, locale)} ago (median)`,
+    ];
+    if (g.medianaIntervalZile != null && g.cuInterval >= PRAG_MIN) f.push(`Typical interval between gifts: ${zile(g.medianaIntervalZile, locale)} (median, across ${g.cuInterval} donors with 2+ gifts)`);
+    f.push(`Reachable by email (with consent, not unsubscribed): ${g.cuEmail.toLocaleString(fl)} of ${g.nr.toLocaleString(fl)} (${pct(g.cuEmail, g.nr)}%)`);
+    return f;
+  }
   const f = [
     `${g.nr.toLocaleString("ro-RO")} donatori (${pct(g.nr, baza.donatori)}% din baza cu donații)`,
     `${lei(g.suma)} donați în total (${pct(g.suma, baza.suma)}% din suma totală)`,
@@ -118,6 +145,7 @@ function fapteComune(g: GrupStat, baza: BazaStat): string[] {
 }
 
 const IPOTEZA_MOTIV = "Motivul pentru care donează nu rezultă din datele de donație. Rămâne o ipoteză până la validarea cu donatorii (sondaj scurt sau 5–8 conversații).";
+const IPOTEZA_MOTIV_EN = "The reason they give cannot be read from the gift data. It remains a hypothesis until validated with donors (a short survey or 5–8 conversations).";
 
 type Sablon = Pick<Avatar, "etapa" | "interpretare" | "ipoteze" | "bariere" | "canale" | "recomandari" | "teste" | "indicatori" | "dateSuplimentare"> & { fapteExtra?: (g: GrupStat, baza: BazaStat) => string[]; dovada: (g: GrupStat) => string };
 
@@ -239,14 +267,139 @@ const SABLOANE: Record<GrupCod, Sablon> = {
   },
 };
 
-function motivIncredere(nr: number, nivel: Incredere): string {
+const SABLOANE_EN: Record<GrupCod, Sablon> = {
+  recurent: {
+    dovada: (g) => `${g.medieDonatii.toLocaleString("en-GB", { maximumFractionDigits: 1 })} gifts on average; ${pct(g.cuEmail, g.nr)}% reachable by email`,
+    etapa: "Active relationship — monthly gift",
+    interpretare: [
+      "They have an active monthly subscription: the group with the most stable relationship and predictable income for the organization.",
+      "For them, the main risk is not a lack of initial interest but a silent stop of payment (expired card, failed payment) or forgetting why they give.",
+    ],
+    ipoteze: [IPOTEZA_MOTIV_EN, "Hypothesis: a periodic confirmation of impact reduces subscription cancellations. To be tested, not assumed."],
+    bariere: ["Failed payments or expired card (check in the payment data)", "Communication that is too rare or too insistent (hypothesis)"],
+    canale: ["Email (if there is consent)", "The thank-you page and the campaign page", "A short update message, in the same language and tone as at the time of the gift"],
+    recomandari: {
+      mesaj: "A concrete thank-you: what was done this month and how the group contributed. No request for money in the same message.",
+      cta: "Read the update / See what we did together",
+      frecventa: "To test: one short update a month, with a single main message",
+      canal: "Email, then the campaign page",
+      evitat: ["Requests for extra gifts in every communication", "Generic messages without concrete results", "Pressure or guilt"],
+      urmatorulPas: "Send the first monthly thank-you update and track how many open it and how many keep their subscription for 90 days.",
+    },
+    teste: ["Email subject: the campaign name vs. the concrete result", "Plain-text thank-you vs. one with a photo from the field (with the people's consent)"],
+    indicatori: ["Subscription retention rate at 3, 6 and 12 months", "Failed payments / total payments", "Open and unsubscribe rate on updates"],
+    dateSuplimentare: ["Reasons for cancelling subscriptions (survey at cancellation)", "Open rate of emails to this group", "History of failed payments"],
+  },
+  fidel: {
+    dovada: (g) => (g.medianaIntervalZile != null && g.cuInterval >= PRAG_MIN ? `They come back about every ${zile(g.medianaIntervalZile, "en")} (median)` : `${g.medieDonatii.toLocaleString("en-GB", { maximumFractionDigits: 1 })} gifts on average`),
+    etapa: "Growing relationship — have given at least twice",
+    interpretare: [
+      "They came back after the first gift: the behaviour shows trust already verified in practice.",
+      "They are the group closest to a monthly gift, but that remains to be verified: coming back does not guarantee they would accept a subscription.",
+    ],
+    ipoteze: [IPOTEZA_MOTIV_EN, "Hypothesis: offering a small monthly gift, presented as an option, might be well received. To be tested on a sample, not on the whole group."],
+    bariere: ["They have never been offered a monthly gift (check in the communication history)", "Fear of a long-term commitment (hypothesis)"],
+    canale: ["Email (if there is consent)", "The page of the campaign they last gave to"],
+    recomandari: {
+      mesaj: "Acknowledge their continuity (“you have been with us several times”) and show the concrete result of the last campaign.",
+      cta: "Stay with us — give a small monthly amount (optional)",
+      frecventa: "To test: an invitation to a monthly gift after an impact update, not right after a gift",
+      canal: "Email, then the donation page with the “monthly” option open",
+      evitat: ["Repeated insistence if they declined once", "Large monthly amounts, out of line with their previous gifts", "Pressure or guilt"],
+      urmatorulPas: "Pick a small sample from the group, send an impact update and, in the same message, the optional invitation to a monthly gift.",
+    },
+    teste: ["Invitation to a monthly gift in the same message as the update vs. in a separate message", "Suggested monthly amount: the median of their gifts vs. a smaller amount"],
+    indicatori: ["Conversion rate to a monthly gift", "A third gift within 12 months", "Unsubscribe rate after the invitation"],
+    dateSuplimentare: ["The source of each gift (online, transfer, event)", "Reaction to earlier invitations, if there were any", "Direct feedback from a few donors in the group"],
+  },
+  major: {
+    dovada: (g) => `${lei(g.medianaTotal, "en")} given in total per donor (median)`,
+    etapa: "Valuable relationship — in the top 10% by amount given",
+    interpretare: [
+      "They contribute an important part of the total amount. Losing a single donor from this group shows in income.",
+      "The amount given says nothing about a person's income or situation: the group is defined only by how much it has already given.",
+    ],
+    ipoteze: [IPOTEZA_MOTIV_EN, "Hypothesis: personal thanks and transparency about results matter more than mass appeals. To be checked through conversations, not assumed."],
+    bariere: ["Mass communication may feel impersonal (hypothesis)", "No human contact in the organization (to be checked)"],
+    canale: ["Personal message or phone call, only if there is consent to be contacted", "Personalised email", "An invitation to a results presentation"],
+    recomandari: {
+      mesaj: "A personal thank-you, signed by a team member, with the results the group contributed to. No request for money in the first contact.",
+      cta: "Let us show you what happened — we invite you to a short presentation",
+      frecventa: "To test: a personal contact every 4–6 months, outside campaigns",
+      canal: "Personal message / phone call with consent, then a short report",
+      evitat: ["Treating them as a “source of money”", "Mass communication identical to the one for other donors", "Mentioning the amount given in front of others"],
+      urmatorulPas: "For each donor in the group, assign a team member to thank them personally within the next 30 days.",
+    },
+    teste: ["Personal thank-you vs. standard thank-you: the effect on the next gift", "Invitation to a presentation vs. a report sent by email"],
+    indicatori: ["Retention rate of the group's donors at 12 months", "Frequency of gifts after the personal thank-you", "Number of feedback conversations held"],
+    dateSuplimentare: ["Interests stated by donors (only if they offer them voluntarily)", "Consent for phone contact", "History of interactions with the team"],
+  },
+  nou: {
+    dovada: (g) => `A single gift; the latest ${zile(g.medianaRecentaZile, "en")} ago (median)`,
+    etapa: "Start of a relationship — a single gift, in the last 6 months",
+    interpretare: [
+      "The second gift is the decisive moment: in this group it is decided whether the relationship continues or remains an isolated gesture.",
+      "A single gift does not allow conclusions about the person: we do not infer preferences or reasons from it.",
+    ],
+    ipoteze: [IPOTEZA_MOTIV_EN, "Hypothesis: a quick, concrete thank-you raises the chance of a second gift. To be tested by comparing two thank-you variants."],
+    bariere: ["They don't know what was done with their gift (hypothesis)", "No clear invitation to stay in touch (to be checked)"],
+    canale: ["Thank-you email (if there is consent)", "The thank-you page after the gift", "Campaign updates"],
+    recomandari: {
+      mesaj: "A thank-you within 24–48 hours, with a simple explanation of what happens with the gift and what comes next.",
+      cta: "Stay in touch — find out what was done with your gift",
+      frecventa: "To test: 1 thank-you + 1 impact update in the first 30 days, then a first gentle invitation",
+      canal: "Email and the thank-you page",
+      evitat: ["A second request for money right after the first gift", "Long or multiple messages in the first days", "Pressure or guilt"],
+      urmatorulPas: "Check that every new donor receives the thank-you within 48 hours and add an impact update after 3–4 weeks.",
+    },
+    teste: ["Thank-you within 24 hours vs. within 3 days", "First invitation after 30 days vs. after 60 days", "Thank-you with a concrete result vs. with a story"],
+    indicatori: ["Second-gift rate within 90 days", "Open rate of the thank-you", "Unsubscribe rate in the first 30 days"],
+    dateSuplimentare: ["The source of the first gift (campaign, shared link, event)", "Open rate of the first emails", "Short feedback: “what convinced you to give?” (voluntary)"],
+  },
+  pauza: {
+    dovada: (g) => `${g.riscLuni.toLocaleString("en-GB")} on pause for 6–12 months · ${g.inactivi.toLocaleString("en-GB")} for over 12 months`,
+    etapa: "Interrupted relationship — haven't given for over 6 months",
+    interpretare: [
+      "They gave once, but not recently. From the data we cannot know whether they were asked, whether they forgot, or whether they lost interest.",
+      "It is a group with reactivation potential, but also with the highest risk of fatigue if pressed.",
+    ],
+    ipoteze: [
+      IPOTEZA_MOTIV_EN,
+      "Hypothesis: some of them have not been contacted since their last gift. To be checked in the communication history.",
+      "We do not assume personal reasons (financial, health or other): they cannot be inferred and must not be attributed.",
+    ],
+    bariere: ["No communication after the last gift (to be checked)", "Interest shifted to other causes (hypothesis)", "Old or inactive email address (to be checked)"],
+    canale: ["Email (only with consent, not unsubscribed)", "A single short series of messages, then a pause"],
+    recomandari: {
+      mesaj: "What was achieved since their last gift, with a sincere thank-you. A clear option to stop receiving messages.",
+      cta: "See what happened — and, if you wish, support us again",
+      frecventa: "To test: 2 messages in 60 days, then stop if they don't respond",
+      canal: "Email; no insistence on other channels",
+      evitat: ["A long series of reactivation messages", "A tone of reproach (“you forgot us”)", "Ignoring unsubscribes"],
+      urmatorulPas: "Prepare the 2-message series for those with email consent and measure reactivation and unsubscribes after 60 days.",
+    },
+    teste: ["Message with results vs. message with a new story", "Pause of 6–12 months vs. over 12 months: different messages"],
+    indicatori: ["Reactivation rate (a new gift within 90 days)", "Unsubscribe rate", "Open rate of the first message"],
+    dateSuplimentare: ["The date of the last communication sent to each donor", "The reason for unsubscribing, if offered voluntarily", "Open rate of emails over the last 12 months"],
+    fapteExtra: (g) => [`Of these, ${g.riscLuni.toLocaleString("en-GB")} have not given for 6–12 months, and ${g.inactivi.toLocaleString("en-GB")} for over 12 months`],
+  },
+};
+
+function motivIncredere(nr: number, nivel: Incredere, locale: Locale = "ro"): string {
+  if (locale !== "ro") {
+    const baza = `The group has ${nr.toLocaleString("en-GB")} donors`;
+    if (nivel === "ridicat") return `${baza}: enough for stable patterns. The reasons remain hypotheses all the same.`;
+    if (nivel === "mediu") return `${baza}: the patterns are indicative, to be confirmed in the next campaigns.`;
+    return `${baza}: small group, the figures may vary a lot. Treat conclusions as hypotheses.`;
+  }
   const baza = `Grupul are ${nr.toLocaleString("ro-RO")} donatori`;
   if (nivel === "ridicat") return `${baza}: suficient pentru tipare stabile. Motivele rămân totuși ipoteze.`;
   if (nivel === "mediu") return `${baza}: tiparele sunt orientative, de confirmat în următoarele campanii.`;
   return `${baza}: grup mic, cifrele pot varia mult. Tratează concluziile ca ipoteze.`;
 }
 
-export function construiesteAvatare(date: DateAvatare): RezultatAvatare {
+export function construiesteAvatare(date: DateAvatare, locale: Locale = "ro"): RezultatAvatare {
+  const en = locale !== "ro";
   const { baza, grupuri } = date;
   const dupaGrup = new Map(grupuri.map((g) => [g.grup, g]));
   const avatare: Avatar[] = [];
@@ -258,13 +411,13 @@ export function construiesteAvatare(date: DateAvatare): RezultatAvatare {
       if (!g || g.nr === 0) continue;
       const nivel = nivelIncredere(g.nr);
       if (!nivel) {
-        grupuriMici.push({ nume: NUME_GRUP[id], nr: g.nr });
+        grupuriMici.push({ nume: (en ? NUME_GRUP_EN : NUME_GRUP)[id], nr: g.nr });
         continue;
       }
-      const s = SABLOANE[id];
+      const s = (en ? SABLOANE_EN : SABLOANE)[id];
       avatare.push({
         id,
-        nume: NUME_GRUP[id],
+        nume: (en ? NUME_GRUP_EN : NUME_GRUP)[id],
         etapa: s.etapa,
         dovada: s.dovada(g),
         nr: g.nr,
@@ -272,8 +425,8 @@ export function construiesteAvatare(date: DateAvatare): RezultatAvatare {
         suma: g.suma,
         procentSuma: pct(g.suma, baza.suma),
         incredere: nivel,
-        motivIncredere: motivIncredere(g.nr, nivel),
-        fapte: [...fapteComune(g, baza), ...(s.fapteExtra?.(g, baza) ?? [])],
+        motivIncredere: motivIncredere(g.nr, nivel, locale),
+        fapte: [...fapteComune(g, baza, locale), ...(s.fapteExtra?.(g, baza) ?? [])],
         interpretare: s.interpretare,
         ipoteze: s.ipoteze,
         // Campaniile apar doar dacă le-au susținut cel puțin 3 donatori din grup (nu expunem alegerile unor persoane izolate).
@@ -286,6 +439,30 @@ export function construiesteAvatare(date: DateAvatare): RezultatAvatare {
         dateSuplimentare: s.dateSuplimentare,
       });
     }
+  }
+
+  if (en) {
+    const suraseEn: SursaDate[] = [
+      { eticheta: "Gifts on the platform (online, recorded manually, imported)", stare: baza.donatori > 0 ? "conectat" : "lipsa", detaliu: baza.donatori > 0 ? `${baza.donatori.toLocaleString("en-GB")} donors with gifts` : "There are no gifts in the CRM yet" },
+      { eticheta: "Channel statistics (followers, reach, engagement)", stare: date.canaleIntroduse ? "manual" : "lipsa", detaliu: date.canaleIntroduse ? "Entered by the team under “Budget & channels”; not verified automatically" : "To be filled in manually under “Budget & channels”" },
+      { eticheta: "Website, Google Analytics (GA4)", stare: "lipsa", detaliu: "Not connected. Add aggregate results to see which pages lead to gifts" },
+      { eticheta: "Newsletters (opens, clicks, unsubscribes)", stare: "lipsa", detaliu: "Not connected. Without them we cannot say how each group reacts to communications" },
+      { eticheta: "Donor surveys and feedback", stare: "lipsa", detaliu: "None yet. It is the only source for real reasons and barriers" },
+    ];
+    const limitariEn = [
+      "The analysis uses only the CRM gifts of donors with an email address. Gifts without an email are not included in the groups.",
+      "Groups are defined by giving behaviour (recency, frequency, value), not by age, income, location or other personal characteristics.",
+      "Correlation does not mean causation: two things appearing together does not show that one causes the other.",
+      "A group under 10 donors is not shown. Groups under 30 have low confidence.",
+      "The website, social networks, GA4 and newsletters are not connected; what they say about the audience is not included.",
+    ];
+    const intrebariEn = [
+      "What reasons do donors say made them give? (cannot be inferred from the data)",
+      "Through which channels did they learn about the organization? (the gift source is not filled in everywhere)",
+      "How does each group react to newsletters and thank-you communications?",
+      "What are the reasons why donors on pause stopped giving?",
+    ];
+    return { suficient: avatare.length > 0, avatare, grupuriMici, baza, surse: suraseEn, limitari: limitariEn, intrebari: intrebariEn };
   }
 
   const surse: SursaDate[] = [
@@ -314,8 +491,26 @@ export function construiesteAvatare(date: DateAvatare): RezultatAvatare {
 }
 
 // Textul unei fișe de avatar, pentru copiere în documente interne (doar date agregate).
-export function textFisa(a: Avatar): string {
+export function textFisa(a: Avatar, locale: Locale = "ro"): string {
   const lista = (titlu: string, items: string[]) => (items.length ? `${titlu}\n${items.map((i) => `- ${i}`).join("\n")}\n` : "");
+  if (locale !== "ro") {
+    return [
+      `${a.nume} — ${a.etapa}`,
+      `${etichetaIncredere(a.incredere, locale)}: ${a.motivIncredere}`,
+      "",
+      lista("Facts observed (from the organization's data)", a.fapte),
+      lista("Marketing interpretation", a.interpretare),
+      lista("Hypotheses to validate", a.ipoteze),
+      lista("Campaigns supported by several in the group", a.campanii.map((c) => `${c.titlu} (${c.donatori} donors)`)),
+      `Recommendation\n- Message: ${a.recomandari.mesaj}\n- Call to action: ${a.recomandari.cta}\n- Frequency to test: ${a.recomandari.frecventa}\n- Channel: ${a.recomandari.canal}\n- Next step: ${a.recomandari.urmatorulPas}\n`,
+      lista("To avoid", a.recomandari.evitat),
+      lista("Priority A/B tests", a.teste),
+      lista("Indicators to track", a.indicatori),
+      lista("Data that would confirm or refute the avatar", a.dateSuplimentare),
+    ]
+      .filter((x) => x !== "")
+      .join("\n");
+  }
   return [
     `${a.nume} — ${a.etapa}`,
     `${ETICHETA_INCREDERE[a.incredere]}: ${a.motivIncredere}`,

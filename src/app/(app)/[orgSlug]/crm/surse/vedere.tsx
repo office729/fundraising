@@ -2,9 +2,11 @@ import { Download, Eye, FileSignature, HandCoins, Info, Percent, Users, Wallet }
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { CANALE, ETICHETE_CANAL, ETICHETE_FLUX, ETICHETE_TIP, etichetaSursa, TIPURI, type Canal } from "@/lib/atribuire/clasificare";
+import { CANALE, etichetaSursa, TIPURI, type Canal } from "@/lib/atribuire/clasificare";
 import { MODELE, rata } from "@/lib/atribuire/model";
 import { filtreInParametri, PERIOADE_RAPORT, ziuaRoJs, type Raport } from "@/lib/atribuire/rapoarte";
+import { etichetaSursaTr, SURSE_UI_DICT } from "@/lib/i18n/dictionaries/surse-ui";
+import type { Locale } from "@/lib/i18n/config";
 
 import { Badge, type StatusTone } from "../components/ui/badge";
 import { Breadcrumb } from "../components/ui/breadcrumb";
@@ -15,13 +17,6 @@ import { FereastraAtribuire } from "./fereastra-atribuire";
 import { GeneratorLinkuri, type TintaLink } from "./generator-linkuri";
 import { GraficEvolutie, type PunctGrafic } from "./grafic";
 
-const nr = (n: number) => n.toLocaleString("ro-RO");
-const pct = (n: number, d: number) => {
-  const r = rata(n, d);
-  return r === null ? "—" : `${r.toLocaleString("ro-RO", { maximumFractionDigits: 1 })}%`;
-};
-const dataRo = (iso: string) => iso.split("-").reverse().join(".");
-const dataOraRo = (iso: string) => new Date(iso).toLocaleString("ro-RO", { timeZone: "Europe/Bucharest", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
 const TON_TIP: Record<string, StatusTone> = { platit: "orange", organic: "green", nedeterminat: "neutral" };
 const TON_CANAL = (c: Canal): StatusTone => (c === "direct" ? "neutral" : c.endsWith("platit") || c.endsWith("platita") ? "orange" : c === "social_nedeterminat" || c === "altele" ? "neutral" : "blue");
 
@@ -58,6 +53,7 @@ function zileDinPerioada(de: string, pana: string): string[] {
 }
 
 export function SurseVedere({
+  locale,
   orgSlug,
   orgNume,
   raport,
@@ -66,6 +62,7 @@ export function SurseVedere({
   tinte,
   siteUrl,
 }: {
+  locale: Locale;
   orgSlug: string;
   orgNume: string;
   raport: Raport;
@@ -74,12 +71,23 @@ export function SurseVedere({
   tinte: TintaLink[];
   siteUrl: string;
 }) {
+  const d = SURSE_UI_DICT[locale];
+  const nr = (n: number) => n.toLocaleString(d.numere);
+  const pct = (n: number, den: number) => {
+    const r = rata(n, den);
+    return r === null ? "—" : `${r.toLocaleString(d.numere, { maximumFractionDigits: 1 })}%`;
+  };
+  const dataRo = (iso: string) => iso.split("-").reverse().join(locale === "ro" ? "." : "/");
+  const dataOraRo = (iso: string) => new Date(iso).toLocaleString(d.numere, { timeZone: "Europe/Bucharest", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  const sursa = (x: string) => etichetaSursaTr(locale, x, etichetaSursa);
+  const suma = (v: number) => formatSuma(v, undefined, locale);
   const f = raport.filtre;
   const baza = `/${orgSlug}/crm/surse`;
   const q = filtreInParametri(f);
   const exportHref = `/api/${orgSlug}/surse-export?${q.toString()}`;
   const tabHref = (t: "rezumat" | "linkuri") => `${baza}${t === "linkuri" ? "?tab=linkuri" : `?${q.toString()}`}`;
   const model = MODELE.find((m) => m.cheie === f.model)!;
+  const modelTr = d.modele[model.cheie] ?? model;
 
   const toateZilele = zileDinPerioada(f.de, f.pana);
   const dupaZi = new Map(raport.serie.map((p) => [p.ziua, p]));
@@ -92,16 +100,16 @@ export function SurseVedere({
 
   return (
     <div className="mx-auto max-w-[1180px] space-y-5">
-      <Breadcrumb items={[{ label: "Strângere de fonduri", href: `/${orgSlug}/crm/strangere-fonduri` }, { label: "Statistici și surse" }]} />
+      <Breadcrumb items={[{ label: d.breadcrumbFonduri, href: `/${orgSlug}/crm/strangere-fonduri` }, { label: d.titlu }]} />
 
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">Statistici și surse</h1>
+          <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">{d.titlu}</h1>
           <p className="mt-0.5 max-w-2xl text-[13px] text-[var(--ci-text-muted)]">
-            De unde vin oamenii care îți văd campaniile și Formularul 230, dacă vin din promovare organică sau plătită, și câți dintre ei donează sau trimit formularul.
+            {d.intro}
           </p>
         </div>
-        <nav aria-label="Secțiune" className="flex gap-1 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-1">
+        <nav aria-label={d.sectiune} className="flex gap-1 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-1">
           {(["rezumat", "linkuri"] as const).map((x) => (
             <Link
               key={x}
@@ -110,7 +118,7 @@ export function SurseVedere({
               aria-current={x === tab ? "page" : undefined}
               className={`rounded-[calc(var(--ci-radius-btn)-2px)] px-3 py-1.5 text-[13px] font-medium transition ${x === tab ? "bg-[var(--ci-primary)] text-white" : "text-[var(--ci-text-muted)] hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)]"}`}
             >
-              {x === "rezumat" ? "Statistici" : "Generator de linkuri"}
+              {x === "rezumat" ? d.tabRezumat : d.tabLinkuri}
             </Link>
           ))}
         </nav>
@@ -122,22 +130,22 @@ export function SurseVedere({
         <>
           <form method="get" className="space-y-3 rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4">
             <div className="flex flex-wrap items-end gap-3">
-              <Camp eticheta="De la" id="f-de">
+              <Camp eticheta={d.filtre.de} id="f-de">
                 <input id="f-de" type="date" name="de" defaultValue={f.de} max={ziuaRoJs(0)} className={campClasa} />
               </Camp>
-              <Camp eticheta="Până la" id="f-pana">
+              <Camp eticheta={d.filtre.pana} id="f-pana">
                 <input id="f-pana" type="date" name="pana" defaultValue={f.pana} max={ziuaRoJs(0)} className={campClasa} />
               </Camp>
-              <Camp eticheta="Tip de flux" id="f-flux">
+              <Camp eticheta={d.filtre.flux} id="f-flux">
                 <select id="f-flux" name="flux" defaultValue={f.pageId ? "campanie" : f.flux} className={campClasa}>
-                  <option value="toate">Toate fluxurile</option>
-                  <option value="campanie">{ETICHETE_FLUX.campanie}</option>
-                  <option value="f230">{ETICHETE_FLUX.f230}</option>
+                  <option value="toate">{d.filtre.toateFluxurile}</option>
+                  <option value="campanie">{d.fluxuri.campanie}</option>
+                  <option value="f230">{d.fluxuri.f230}</option>
                 </select>
               </Camp>
-              <Camp eticheta="Campanie" id="f-campanie">
+              <Camp eticheta={d.filtre.campanie} id="f-campanie">
                 <select id="f-campanie" name="campanie" defaultValue={f.pageId ?? ""} className={`${campClasa} max-w-[240px]`}>
-                  <option value="">Toate campaniile</option>
+                  <option value="">{d.filtre.toateCampaniile}</option>
                   {raport.campaniiDisponibile.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.titlu}
@@ -145,39 +153,39 @@ export function SurseVedere({
                   ))}
                 </select>
               </Camp>
-              <Camp eticheta="Sursă" id="f-sursa">
+              <Camp eticheta={d.filtre.sursa} id="f-sursa">
                 <select id="f-sursa" name="sursa" defaultValue={f.sursa ?? ""} className={campClasa}>
-                  <option value="">Toate sursele</option>
+                  <option value="">{d.filtre.toateSursele}</option>
                   {raport.opSurse.map((s) => (
                     <option key={s} value={s}>
-                      {etichetaSursa(s)}
+                      {sursa(s)}
                     </option>
                   ))}
                 </select>
               </Camp>
-              <Camp eticheta="Canal" id="f-canal">
+              <Camp eticheta={d.filtre.canal} id="f-canal">
                 <select id="f-canal" name="canal" defaultValue={f.canal ?? ""} className={campClasa}>
-                  <option value="">Toate canalele</option>
+                  <option value="">{d.filtre.toateCanalele}</option>
                   {CANALE.map((c) => (
                     <option key={c} value={c}>
-                      {ETICHETE_CANAL[c]}
+                      {d.canal[c]}
                     </option>
                   ))}
                 </select>
               </Camp>
-              <Camp eticheta="Organic / plătit" id="f-tip">
+              <Camp eticheta={d.filtre.tip} id="f-tip">
                 <select id="f-tip" name="tip" defaultValue={f.tip ?? ""} className={campClasa}>
-                  <option value="">Toate</option>
+                  <option value="">{d.filtre.toate}</option>
                   {TIPURI.map((x) => (
                     <option key={x} value={x}>
-                      {ETICHETE_TIP[x]}
+                      {d.tip[x]}
                     </option>
                   ))}
                 </select>
               </Camp>
-              <Camp eticheta="Campanie de marketing" id="f-camp">
+              <Camp eticheta={d.filtre.campMarketing} id="f-camp">
                 <select id="f-camp" name="camp" defaultValue={f.campanieMarketing ?? ""} className={campClasa}>
-                  <option value="">Toate</option>
+                  <option value="">{d.filtre.toate}</option>
                   {raport.opCampaniiMarketing.map((c) => (
                     <option key={c} value={c}>
                       {c}
@@ -185,11 +193,11 @@ export function SurseVedere({
                   ))}
                 </select>
               </Camp>
-              <Camp eticheta="Model de atribuire" id="f-model">
+              <Camp eticheta={d.filtre.model} id="f-model">
                 <select id="f-model" name="model" defaultValue={f.model} className={campClasa}>
                   {MODELE.map((m) => (
                     <option key={m.cheie} value={m.cheie}>
-                      {m.eticheta}
+                      {d.modele[m.cheie]?.eticheta ?? m.eticheta}
                     </option>
                   ))}
                 </select>
@@ -197,18 +205,18 @@ export function SurseVedere({
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <button type="submit" className="h-9 rounded-[var(--ci-radius-btn)] bg-[var(--ci-primary)] px-4 text-[13px] font-semibold text-white hover:bg-[var(--ci-primary-hover)]">
-                Aplică filtrele
+                {d.filtre.aplica}
               </button>
-              <span className="text-[12px] text-[var(--ci-text-faint)]">Rapid:</span>
+              <span className="text-[12px] text-[var(--ci-text-faint)]">{d.filtre.rapid}</span>
               {PERIOADE_RAPORT.map((p) => (
                 <Link key={p.cheie} prefetch={false} href={`${baza}?perioada=${p.cheie}`} className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-2.5 py-1 text-[12.5px] text-[var(--ci-text-muted)] hover:bg-[var(--ci-surface-2)]">
-                  {p.eticheta}
+                  {d.perioade[p.cheie] ?? p.eticheta}
                 </Link>
               ))}
               {poateAdministra && (
                 <a href={exportHref} className="ml-auto inline-flex h-9 items-center gap-1.5 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-3 text-[13px] font-medium text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]">
                   <Download className="h-4 w-4" aria-hidden="true" />
-                  Export CSV (filtrele de acum)
+                  {d.filtre.export}
                 </a>
               )}
             </div>
@@ -218,15 +226,16 @@ export function SurseVedere({
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-[var(--ci-primary)]" aria-hidden="true" />
             <div>
               <p>
-                <strong className="text-[var(--ci-text)]">Statisticile arată traficul observabil</strong>, nu toate vizitele. Perioada: {dataRo(f.de)} – {dataRo(f.pana)} (ora României). Modelul de atribuire: <strong className="text-[var(--ci-text)]">{model.eticheta}</strong>. {model.descriere} Fereastra de atribuire: {raport.fereastraZile} de zile.
+                <strong className="text-[var(--ci-text)]">{d.nota.statisticile}</strong>
+                {d.nota.nuToate} {d.nota.perioada} {dataRo(f.de)} – {dataRo(f.pana)} {d.nota.oraRo} {d.nota.modelul} <strong className="text-[var(--ci-text)]">{modelTr.eticheta}</strong>. {modelTr.descriere} {d.nota.fereastra(raport.fereastraZile)}
               </p>
               <ul className="mt-1.5 list-disc space-y-0.5 pl-5">
-                {fara !== null && fara > 0 && <li>{fara.toLocaleString("ro-RO", { maximumFractionDigits: 0 })}% dintre vizitatori nu au dat acordul pentru statistici: ei sunt numărați doar pe zi, fără istoric între vizite.</li>}
+                {fara !== null && fara > 0 && <li>{d.nota.faraAcord(fara.toLocaleString(d.numere, { maximumFractionDigits: 0 }))}</li>}
                 {raport.tipNedeterminatVizitatori !== null && raport.tipNedeterminatVizitatori > 0 && (
-                  <li>{raport.tipNedeterminatVizitatori.toLocaleString("ro-RO", { maximumFractionDigits: 0 })}% dintre vizitatori au sursa sau tipul promovării nedeterminat (de exemplu Facebook fără link etichetat sau acces direct). Folosește linkurile din generator ca să afli.</li>
+                  <li>{d.nota.nedeterminat(raport.tipNedeterminatVizitatori.toLocaleString(d.numere, { maximumFractionDigits: 0 }))}</li>
                 )}
-                {raport.conversiiNeatribuite > 0 && <li>{nr(raport.conversiiNeatribuite)} din {nr(raport.conversiiTotal)} conversii nu au nicio sursă nedirectă în fereastra de atribuire (rămân „Direct”).</li>}
-                <li>Blocarea trackingului sau lipsa parametrilor din link pot limita măsurarea. Donațiile și formularele se înregistrează oricum, chiar dacă sursa lor nu se cunoaște.</li>
+                {raport.conversiiNeatribuite > 0 && <li>{d.nota.neatribuite(nr(raport.conversiiNeatribuite), nr(raport.conversiiTotal))}</li>}
+                <li>{d.nota.blocare}</li>
               </ul>
             </div>
           </div>
@@ -234,11 +243,11 @@ export function SurseVedere({
           {faraDate ? (
             <EmptyState
               icon={Eye}
-              title="Încă nu sunt date în această perioadă"
-              description="Trimite oamenii pe linkuri etichetate din „Generator de linkuri”. Vizitele, donațiile confirmate și formularele trimise apar aici pe măsură ce se întâmplă."
+              title={d.gol.titlu}
+              description={d.gol.desc}
               action={
                 <Link prefetch={false} href={tabHref("linkuri")} className="rounded-[var(--ci-radius-btn)] bg-[var(--ci-primary)] px-4 py-2 text-[13px] font-semibold text-white hover:bg-[var(--ci-primary-hover)]">
-                  Deschide generatorul de linkuri
+                  {d.gol.buton}
                 </Link>
               }
             />
@@ -247,58 +256,58 @@ export function SurseVedere({
               {aratFlux("campanie") && (
                 <section aria-labelledby="h-camp" className="space-y-2">
                   <h2 id="h-camp" className="ci-display text-[14px] font-semibold text-[var(--ci-text)]">
-                    {ETICHETE_FLUX.campanie}
+                    {d.fluxuri.campanie}
                   </h2>
                   <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-                    <Kpi icon={<Users className="h-3.5 w-3.5" />} eticheta="Vizitatori" valoare={nr(raport.totalCampanie.vizitatori)} nota={`${nr(raport.totalCampanie.sesiuni)} sesiuni`} />
-                    <Kpi icon={<HandCoins className="h-3.5 w-3.5" />} eticheta="Donații confirmate" valoare={nr(raport.totalCampanie.donatiiConfirmate)} nota={`din ${nr(raport.totalCampanie.donatiiInitiate)} trimise la plată · ${nr(raport.totalCampanie.donatiiRambursate)} rambursate`} />
-                    <Kpi icon={<Users className="h-3.5 w-3.5" />} eticheta="Donatori unici" valoare={nr(raport.totalCampanie.donatoriUnici)} nota="după adresa de email" />
-                    <Kpi icon={<Wallet className="h-3.5 w-3.5" />} eticheta="Valoare netă" valoare={formatSuma(raport.totalCampanie.sumaNeta)} nota={`brut ${formatSuma(raport.totalCampanie.sumaBruta)}`} />
-                    <Kpi icon={<Percent className="h-3.5 w-3.5" />} eticheta="Rata de conversie" valoare={pct(raport.totalCampanie.donatiiConfirmate, raport.totalCampanie.vizitatori)} nota="donații confirmate ÷ vizitatori" />
+                    <Kpi icon={<Users className="h-3.5 w-3.5" />} eticheta={d.kpi.vizitatori} valoare={nr(raport.totalCampanie.vizitatori)} nota={d.kpi.sesiuni(nr(raport.totalCampanie.sesiuni))} />
+                    <Kpi icon={<HandCoins className="h-3.5 w-3.5" />} eticheta={d.kpi.donatiiConfirmate} valoare={nr(raport.totalCampanie.donatiiConfirmate)} nota={d.kpi.donatiiNota(nr(raport.totalCampanie.donatiiInitiate), nr(raport.totalCampanie.donatiiRambursate))} />
+                    <Kpi icon={<Users className="h-3.5 w-3.5" />} eticheta={d.kpi.donatoriUnici} valoare={nr(raport.totalCampanie.donatoriUnici)} nota={d.kpi.dupaEmail} />
+                    <Kpi icon={<Wallet className="h-3.5 w-3.5" />} eticheta={d.kpi.valoareNeta} valoare={suma(raport.totalCampanie.sumaNeta)} nota={d.kpi.brut(suma(raport.totalCampanie.sumaBruta))} />
+                    <Kpi icon={<Percent className="h-3.5 w-3.5" />} eticheta={d.kpi.rataConversie} valoare={pct(raport.totalCampanie.donatiiConfirmate, raport.totalCampanie.vizitatori)} nota={d.kpi.rataConversieNota} />
                   </div>
                 </section>
               )}
               {aratFlux("f230") && !f.pageId && (
                 <section aria-labelledby="h-f230" className="space-y-2">
                   <h2 id="h-f230" className="ci-display text-[14px] font-semibold text-[var(--ci-text)]">
-                    {ETICHETE_FLUX.f230}
+                    {d.fluxuri.f230}
                   </h2>
                   <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                    <Kpi icon={<Users className="h-3.5 w-3.5" />} eticheta="Vizitatori" valoare={nr(raport.totalF230.vizitatori)} nota={`${nr(raport.totalF230.sesiuni)} sesiuni`} />
-                    <Kpi icon={<FileSignature className="h-3.5 w-3.5" />} eticheta="Formulare începute" valoare={nr(raport.totalF230.startFormular)} nota="sesiuni cu cel puțin un câmp completat" />
-                    <Kpi icon={<FileSignature className="h-3.5 w-3.5" />} eticheta="Formulare trimise" valoare={nr(raport.totalF230.formulareTrimise)} nota="salvate cu succes; nu înseamnă acceptate de ANAF sau încasate" />
-                    <Kpi icon={<Percent className="h-3.5 w-3.5" />} eticheta="Rata de finalizare" valoare={pct(raport.totalF230.formulareTrimise, raport.totalF230.startFormular)} nota="trimise ÷ începute" />
+                    <Kpi icon={<Users className="h-3.5 w-3.5" />} eticheta={d.kpi.vizitatori} valoare={nr(raport.totalF230.vizitatori)} nota={d.kpi.sesiuni(nr(raport.totalF230.sesiuni))} />
+                    <Kpi icon={<FileSignature className="h-3.5 w-3.5" />} eticheta={d.kpi.formulareIncepute} valoare={nr(raport.totalF230.startFormular)} nota={d.kpi.formulareInceputeNota} />
+                    <Kpi icon={<FileSignature className="h-3.5 w-3.5" />} eticheta={d.kpi.formulareTrimise} valoare={nr(raport.totalF230.formulareTrimise)} nota={d.kpi.formulareTrimiseNota} />
+                    <Kpi icon={<Percent className="h-3.5 w-3.5" />} eticheta={d.kpi.rataFinalizare} valoare={pct(raport.totalF230.formulareTrimise, raport.totalF230.startFormular)} nota={d.kpi.rataFinalizareNota} />
                   </div>
                 </section>
               )}
               {f.flux === "toate" && !f.pageId && (
                 <section aria-labelledby="h-20" className="space-y-2">
                   <h2 id="h-20" className="ci-display text-[14px] font-semibold text-[var(--ci-text)]">
-                    {ETICHETE_FLUX.sponsorizare20}
+                    {d.fluxuri.sponsorizare20}
                   </h2>
                   <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-                    <Kpi icon={<Users className="h-3.5 w-3.5" />} eticheta="Firme adăugate" valoare={nr(raport.sponsorizare20.companiiAdaugate)} />
-                    <Kpi icon={<FileSignature className="h-3.5 w-3.5" />} eticheta="Contracte trimise" valoare={nr(raport.sponsorizare20.contracteTrimise)} />
-                    <Kpi icon={<FileSignature className="h-3.5 w-3.5" />} eticheta="Contracte semnate" valoare={nr(raport.sponsorizare20.contracteSemnate)} nota="semnat nu înseamnă încasat" />
-                    <Kpi icon={<HandCoins className="h-3.5 w-3.5" />} eticheta="Sponsorizări încasate" valoare={nr(raport.sponsorizare20.sponsorizariIncasate)} />
-                    <Kpi icon={<Wallet className="h-3.5 w-3.5" />} eticheta="Sumă efectiv încasată" valoare={formatSuma(raport.sponsorizare20.sumaIncasata)} />
+                    <Kpi icon={<Users className="h-3.5 w-3.5" />} eticheta={d.kpi.firmeAdaugate} valoare={nr(raport.sponsorizare20.companiiAdaugate)} />
+                    <Kpi icon={<FileSignature className="h-3.5 w-3.5" />} eticheta={d.kpi.contracteTrimise} valoare={nr(raport.sponsorizare20.contracteTrimise)} />
+                    <Kpi icon={<FileSignature className="h-3.5 w-3.5" />} eticheta={d.kpi.contracteSemnate} valoare={nr(raport.sponsorizare20.contracteSemnate)} nota={d.kpi.semnatNuIncasat} />
+                    <Kpi icon={<HandCoins className="h-3.5 w-3.5" />} eticheta={d.kpi.sponsorizariIncasate} valoare={nr(raport.sponsorizare20.sponsorizariIncasate)} />
+                    <Kpi icon={<Wallet className="h-3.5 w-3.5" />} eticheta={d.kpi.sumaIncasata} valoare={suma(raport.sponsorizare20.sumaIncasata)} />
                   </div>
-                  <p className="text-[12px] text-[var(--ci-text-muted)]">Acest flux nu are pagini publice: contractele se generează în CRM Companii, deci cifrele vin din evidența CRM și nu au sursă de pe web. Filtrele de sursă nu se aplică.</p>
+                  <p className="text-[12px] text-[var(--ci-text-muted)]">{d.kpi.sponsorizareNota}</p>
                 </section>
               )}
 
               <Card>
-                <CardHeader title="Promovare organică și plătită" subtitle="Fiecare vizitator și rezultat apare o singură dată, în funcție de modelul ales. „Nedeterminat” = nu se poate stabili dacă a fost reclamă sau postare obișnuită." />
+                <CardHeader title={d.perTip.titlu} subtitle={d.perTip.subtitlu} />
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[640px] text-[13px]">
                     <thead className="border-b border-[var(--ci-border)] text-[12px] text-[var(--ci-text-muted)]">
                       <tr>
-                        <th className={capText}>Tip promovare</th>
-                        <th className={capTabel}>Vizitatori</th>
-                        <th className={capTabel}>Donații confirmate</th>
-                        <th className={capTabel}>Donatori unici</th>
-                        <th className={capTabel}>Valoare netă</th>
-                        <th className={capTabel}>Formulare 230 trimise</th>
+                        <th className={capText}>{d.perTip.tipPromovare}</th>
+                        <th className={capTabel}>{d.perTip.vizitatori}</th>
+                        <th className={capTabel}>{d.perTip.donatiiConfirmate}</th>
+                        <th className={capTabel}>{d.perTip.donatoriUnici}</th>
+                        <th className={capTabel}>{d.perTip.valoareNeta}</th>
+                        <th className={capTabel}>{d.perTip.formulare}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -306,67 +315,67 @@ export function SurseVedere({
                         <tr key={x.tip} className="border-b border-[var(--ci-border)] last:border-0">
                           <td className="px-3 py-2">
                             <Badge tone={TON_TIP[x.tip]} icon={false}>
-                              {ETICHETE_TIP[x.tip]}
+                              {d.tip[x.tip]}
                             </Badge>
                           </td>
                           <td className={celula}>{nr(x.vizitatori)}</td>
                           <td className={celula}>{nr(x.donatiiConfirmate)}</td>
                           <td className={celula}>{nr(x.donatoriUnici)}</td>
-                          <td className={celula}>{formatSuma(x.sumaNeta)}</td>
+                          <td className={celula}>{suma(x.sumaNeta)}</td>
                           <td className={celula}>{nr(x.formulareTrimise)}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
-                <p className="mt-2 text-[12px] text-[var(--ci-text-faint)]">„Organic” include și newsletterele, WhatsApp, QR și site-urile partenere, care au canale proprii în tabelul de mai jos.</p>
+                <p className="mt-2 text-[12px] text-[var(--ci-text-faint)]">{d.perTip.nota}</p>
               </Card>
 
               <Card>
-                <CardHeader title="Evoluție în timp" subtitle="Vizitatori (linie) și rezultate (bare), pe zile." />
+                <CardHeader title={d.evolutie.titlu} subtitle={d.evolutie.subtitlu} />
                 <GraficEvolutie date={grafic} />
               </Card>
 
               <Card padded={false}>
                 <div className="p-5 pb-3">
-                  <CardHeader title="Pe sursă și campanie de marketing" subtitle="Vizitatorii sunt grupați după sursa sesiunii lor; donațiile și formularele, după modelul de atribuire ales." />
+                  <CardHeader title={d.peSursa.titlu} subtitle={d.peSursa.subtitlu} />
                 </div>
                 {raport.tabel.length === 0 ? (
-                  <p className="px-5 pb-5 text-[13px] text-[var(--ci-text-muted)]">Niciun rând pentru filtrele alese.</p>
+                  <p className="px-5 pb-5 text-[13px] text-[var(--ci-text-muted)]">{d.peSursa.niciunRand}</p>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full min-w-[1080px] text-[13px]">
                       <thead className="border-y border-[var(--ci-border)] bg-[var(--ci-surface-2)] text-[12px] text-[var(--ci-text-muted)]">
                         <tr>
-                          <th className={capText}>Sursă</th>
-                          <th className={capText}>Canal</th>
-                          <th className={capText}>Tip</th>
-                          <th className={capText}>Campanie de marketing</th>
-                          <th className={capText}>Conținut</th>
-                          <th className={capTabel}>Vizitatori</th>
-                          <th className={capTabel}>Clic „Donează”</th>
-                          <th className={capTabel}>Donații începute</th>
-                          <th className={capTabel}>Donații confirmate</th>
-                          <th className={capTabel}>Donatori</th>
-                          <th className={capTabel}>Valoare netă</th>
-                          <th className={capTabel}>Rată conv.</th>
-                          <th className={capTabel}>Formulare începute</th>
-                          <th className={capTabel}>Formulare trimise</th>
-                          <th className={capTabel}>Rată fin.</th>
+                          <th className={capText}>{d.peSursa.sursa}</th>
+                          <th className={capText}>{d.peSursa.canal}</th>
+                          <th className={capText}>{d.peSursa.tip}</th>
+                          <th className={capText}>{d.peSursa.campMarketing}</th>
+                          <th className={capText}>{d.peSursa.continut}</th>
+                          <th className={capTabel}>{d.peSursa.vizitatori}</th>
+                          <th className={capTabel}>{d.peSursa.clickDoneaza}</th>
+                          <th className={capTabel}>{d.peSursa.donatiiIncepute}</th>
+                          <th className={capTabel}>{d.peSursa.donatiiConfirmate}</th>
+                          <th className={capTabel}>{d.peSursa.donatori}</th>
+                          <th className={capTabel}>{d.peSursa.valoareNeta}</th>
+                          <th className={capTabel}>{d.peSursa.rataConv}</th>
+                          <th className={capTabel}>{d.peSursa.formulareIncepute}</th>
+                          <th className={capTabel}>{d.peSursa.formulareTrimise}</th>
+                          <th className={capTabel}>{d.peSursa.rataFin}</th>
                         </tr>
                       </thead>
                       <tbody>
                         {raport.tabel.map((x) => (
                           <tr key={`${x.sursa}|${x.canal}|${x.tip}|${x.campanie}|${x.continut}`} className="border-b border-[var(--ci-border)] last:border-0">
-                            <td className="px-3 py-2 font-medium text-[var(--ci-text)]">{etichetaSursa(x.sursa)}</td>
+                            <td className="px-3 py-2 font-medium text-[var(--ci-text)]">{sursa(x.sursa)}</td>
                             <td className="px-3 py-2">
                               <Badge tone={TON_CANAL(x.canal)} icon={false}>
-                                {ETICHETE_CANAL[x.canal].replace(" (organic sau plătit nedeterminat)", "")}
+                                {d.canalScurt[x.canal]}
                               </Badge>
                             </td>
                             <td className="px-3 py-2">
                               <Badge tone={TON_TIP[x.tip]} icon={false}>
-                                {ETICHETE_TIP[x.tip]}
+                                {d.tip[x.tip]}
                               </Badge>
                             </td>
                             <td className="px-3 py-2 text-[var(--ci-text-muted)]">{x.campanie || "—"}</td>
@@ -376,7 +385,7 @@ export function SurseVedere({
                             <td className={celula}>{nr(x.startDonatie)}</td>
                             <td className={celula}>{nr(x.donatiiConfirmate)}</td>
                             <td className={celula}>{nr(x.donatoriUnici)}</td>
-                            <td className={celula}>{formatSuma(x.sumaNeta)}</td>
+                            <td className={celula}>{suma(x.sumaNeta)}</td>
                             <td className={celula}>{pct(x.donatiiConfirmate, x.vizitatori)}</td>
                             <td className={celula}>{nr(x.startFormular)}</td>
                             <td className={celula}>{nr(x.formulareTrimise)}</td>
@@ -392,18 +401,18 @@ export function SurseVedere({
               {raport.campanii.length > 0 && aratFlux("campanie") && (
                 <Card padded={false}>
                   <div className="p-5 pb-3">
-                    <CardHeader title="Pe campanie de strângere de fonduri" />
+                    <CardHeader title={d.peCampanie.titlu} />
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full min-w-[720px] text-[13px]">
                       <thead className="border-y border-[var(--ci-border)] bg-[var(--ci-surface-2)] text-[12px] text-[var(--ci-text-muted)]">
                         <tr>
-                          <th className={capText}>Campanie</th>
-                          <th className={capTabel}>Vizitatori</th>
-                          <th className={capTabel}>Donații confirmate</th>
-                          <th className={capTabel}>Donatori</th>
-                          <th className={capTabel}>Valoare netă</th>
-                          <th className={capTabel}>Rată conv.</th>
+                          <th className={capText}>{d.peCampanie.campanie}</th>
+                          <th className={capTabel}>{d.peSursa.vizitatori}</th>
+                          <th className={capTabel}>{d.peSursa.donatiiConfirmate}</th>
+                          <th className={capTabel}>{d.peSursa.donatori}</th>
+                          <th className={capTabel}>{d.peSursa.valoareNeta}</th>
+                          <th className={capTabel}>{d.peSursa.rataConv}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -417,7 +426,7 @@ export function SurseVedere({
                             <td className={celula}>{nr(c.vizitatori)}</td>
                             <td className={celula}>{nr(c.donatiiConfirmate)}</td>
                             <td className={celula}>{nr(c.donatoriUnici)}</td>
-                            <td className={celula}>{formatSuma(c.sumaNeta)}</td>
+                            <td className={celula}>{suma(c.sumaNeta)}</td>
                             <td className={celula}>{pct(c.donatiiConfirmate, c.vizitatori)}</td>
                           </tr>
                         ))}
@@ -428,33 +437,34 @@ export function SurseVedere({
               )}
 
               <Card>
-                <CardHeader title="Cost per rezultat" subtitle="Din cheltuielile reale de reclame importate sau sincronizate în „Performanța reclamelor”, legate de campania de marketing prin codul din link." />
+                <CardHeader title={d.costuri.titlu} subtitle={d.costuri.subtitlu} />
                 {raport.costuri.length === 0 ? (
                   <p className="text-[13px] text-[var(--ci-text-muted)]">
-                    <strong className="text-[var(--ci-text)]">Indisponibil.</strong> Nu există cheltuieli de reclame legate de campaniile de marketing din această perioadă. Fără ele nu se calculează niciun cost per donator, formular sau solicitare.
+                    <strong className="text-[var(--ci-text)]">{d.costuri.indisponibil}</strong>
+                    {d.costuri.indisponibilText}
                   </p>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full min-w-[560px] text-[13px]">
                       <thead className="border-b border-[var(--ci-border)] text-[12px] text-[var(--ci-text-muted)]">
                         <tr>
-                          <th className={capText}>Campanie de marketing</th>
-                          <th className={capTabel}>Cheltuit</th>
-                          <th className={capTabel}>Donatori</th>
-                          <th className={capTabel}>Cost / donator</th>
-                          <th className={capTabel}>Formulare 230</th>
-                          <th className={capTabel}>Cost / formular</th>
+                          <th className={capText}>{d.costuri.campMarketing}</th>
+                          <th className={capTabel}>{d.costuri.cheltuit}</th>
+                          <th className={capTabel}>{d.costuri.donatori}</th>
+                          <th className={capTabel}>{d.costuri.costDonator}</th>
+                          <th className={capTabel}>{d.costuri.formulare}</th>
+                          <th className={capTabel}>{d.costuri.costFormular}</th>
                         </tr>
                       </thead>
                       <tbody>
                         {raport.costuri.map((c) => (
                           <tr key={c.campanie} className="border-b border-[var(--ci-border)] last:border-0">
                             <td className="px-3 py-2 text-[var(--ci-text)]">{c.campanie}</td>
-                            <td className={celula}>{formatSuma(c.costLei)}</td>
+                            <td className={celula}>{suma(c.costLei)}</td>
                             <td className={celula}>{nr(c.donatori)}</td>
-                            <td className={celula}>{c.costPerDonator === null ? "Indisponibil" : formatSuma(c.costPerDonator)}</td>
+                            <td className={celula}>{c.costPerDonator === null ? d.costuri.indisponibilCelula : suma(c.costPerDonator)}</td>
                             <td className={celula}>{nr(c.formulare)}</td>
-                            <td className={celula}>{c.costPerFormular === null ? "Indisponibil" : formatSuma(c.costPerFormular)}</td>
+                            <td className={celula}>{c.costPerFormular === null ? d.costuri.indisponibilCelula : suma(c.costPerFormular)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -466,38 +476,38 @@ export function SurseVedere({
               <Card padded={false}>
                 <div className="p-5 pb-3">
                   <CardHeader
-                    title="Ultimele conversii"
-                    subtitle={poateAdministra ? "Deschide istoricul unui vizitator (ID pseudonim) ca să vezi prima vizită, vizitele ulterioare și cum a fost atribuită conversia." : "Istoricul vizitatorilor identificabili e vizibil doar proprietarului și administratorilor."}
+                    title={d.conversii.titlu}
+                    subtitle={poateAdministra ? d.conversii.subtitluAdmin : d.conversii.subtitluMembru}
                   />
                 </div>
                 {raport.ultimeleConversii.length === 0 ? (
-                  <p className="px-5 pb-5 text-[13px] text-[var(--ci-text-muted)]">Nicio conversie în această perioadă.</p>
+                  <p className="px-5 pb-5 text-[13px] text-[var(--ci-text-muted)]">{d.conversii.nicio}</p>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full min-w-[820px] text-[13px]">
                       <thead className="border-y border-[var(--ci-border)] bg-[var(--ci-surface-2)] text-[12px] text-[var(--ci-text-muted)]">
                         <tr>
-                          <th className={capText}>Data</th>
-                          <th className={capText}>Ce</th>
-                          <th className={capText}>Stare</th>
-                          <th className={capTabel}>Sumă</th>
-                          <th className={capText}>Sursă atribuită</th>
-                          <th className={capText}>Tip</th>
-                          <th className={capText}>Campanie de marketing</th>
-                          {poateAdministra && <th className={capText}>Vizitator</th>}
+                          <th className={capText}>{d.conversii.data}</th>
+                          <th className={capText}>{d.conversii.ce}</th>
+                          <th className={capText}>{d.conversii.stare}</th>
+                          <th className={capTabel}>{d.conversii.suma}</th>
+                          <th className={capText}>{d.conversii.sursaAtribuita}</th>
+                          <th className={capText}>{d.conversii.tip}</th>
+                          <th className={capText}>{d.conversii.campMarketing}</th>
+                          {poateAdministra && <th className={capText}>{d.conversii.vizitator}</th>}
                         </tr>
                       </thead>
                       <tbody>
                         {raport.ultimeleConversii.map((c, i) => (
                           <tr key={`${c.la}-${i}`} className="border-b border-[var(--ci-border)] last:border-0">
                             <td className="px-3 py-2 whitespace-nowrap text-[var(--ci-text-muted)]">{dataOraRo(c.la)}</td>
-                            <td className="px-3 py-2">{c.tip === "f230" ? "Formular 230" : (c.pageTitlu ?? "Donație")}</td>
-                            <td className="px-3 py-2 text-[var(--ci-text-muted)]">{STARE[c.stare] ?? c.stare}</td>
-                            <td className={celula}>{c.suma !== null ? formatSuma(c.suma) : "—"}</td>
+                            <td className="px-3 py-2">{c.tip === "f230" ? d.conversii.formular230 : (c.pageTitlu ?? d.conversii.donatie)}</td>
+                            <td className="px-3 py-2 text-[var(--ci-text-muted)]">{d.stare[c.stare] ?? c.stare}</td>
+                            <td className={celula}>{c.suma !== null ? suma(c.suma) : "—"}</td>
                             <td className="px-3 py-2">
-                              {etichetaSursa(c.sursa)} · {ETICHETE_CANAL[c.canal].replace(" (organic sau plătit nedeterminat)", "")}
+                              {sursa(c.sursa)} · {d.canalScurt[c.canal]}
                             </td>
-                            <td className="px-3 py-2">{ETICHETE_TIP[c.tipPromovare]}</td>
+                            <td className="px-3 py-2">{d.tip[c.tipPromovare]}</td>
                             <td className="px-3 py-2 text-[var(--ci-text-muted)]">{c.campanie || "—"}</td>
                             {poateAdministra && (
                               <td className="px-3 py-2 whitespace-nowrap">
@@ -506,11 +516,11 @@ export function SurseVedere({
                                     {c.vizitatorId.slice(0, 8)}…
                                   </Link>
                                 ) : (
-                                  <span className="text-[var(--ci-text-faint)]">fără istoric (fără acord)</span>
+                                  <span className="text-[var(--ci-text-faint)]">{d.conversii.faraIstoric}</span>
                                 )}
                                 {c.donatorId && (
                                   <Link prefetch={false} href={`/${orgSlug}/crm/donatori/reali/${c.donatorId}`} className="ml-2 text-[12px] text-[var(--ci-primary)] hover:underline">
-                                    donator
+                                    {d.conversii.donator}
                                   </Link>
                                 )}
                               </td>
@@ -526,16 +536,13 @@ export function SurseVedere({
           )}
 
           <Card>
-            <CardHeader title="Cum se calculează" />
+            <CardHeader title={d.cum.titlu} />
             <dl className="grid gap-x-8 gap-y-2 text-[13px] text-[var(--ci-text-muted)] md:grid-cols-2">
-              <Def t="Vizitatori">Vizitatori distincți cu cel puțin o vizită în perioadă. Din surse diferite nu se adună: un vizitator care a venit din două surse apare în ambele rânduri, dar o singură dată în totaluri.</Def>
-              <Def t="Donație confirmată">Doar cea confirmată de procesatorul de plată (webhook). Nu o dovedește vizita paginii de mulțumire. Valoarea netă scade rambursările.</Def>
-              <Def t="Rata de conversie">Donații confirmate ÷ vizitatori. Fără vizitatori nu există rată („—”).</Def>
-              <Def t="Rata de finalizare (F230)">Formulare trimise ÷ formulare începute. „Trimis” înseamnă salvat cu succes, nu acceptat de ANAF și nu bani încasați.</Def>
-              <Def t="Donatori unici">Adrese de email distincte ale donațiilor confirmate. Nu se unesc persoane după IP și nu se folosește amprentarea dispozitivului.</Def>
-              <Def t="Sume">În lei. Donațiile plătite în altă monedă sunt deja convertite de platformă la cursul zilei donației; nu se adună valute diferite.</Def>
-              <Def t="Prima / ultima sursă">„Ultima sursă nedirectă” ignoră o revenire directă și caută în fereastra de atribuire; „prima sursă” e prima vizită observată; „sesiunea conversiei” e sursa vizitei în care s-a făcut donația. Instantaneul se salvează la conversie și nu se mai schimbă.</Def>
-              <Def t="Regulile de sursă">UTM întâi; apoi identificatori de reclame care dovedesc plata (gclid etc.; fbclid nu o dovedește); apoi site-ul de proveniență; altfel Direct. Absența UTM nu înseamnă „organic”.</Def>
+              {d.cum.defs.map((x) => (
+                <Def key={x.t} t={x.t}>
+                  {x.d}
+                </Def>
+              ))}
             </dl>
             {poateAdministra && (
               <div className="mt-4 border-t border-[var(--ci-border)] pt-4">
@@ -543,14 +550,13 @@ export function SurseVedere({
               </div>
             )}
           </Card>
-          <p className="text-[11.5px] text-[var(--ci-text-faint)]">{orgNume} · evenimentele de trafic se păstrează 13 luni.</p>
+          <p className="text-[11.5px] text-[var(--ci-text-faint)]">{d.cum.subsol(orgNume)}</p>
         </>
       )}
     </div>
   );
 }
 
-const STARE: Record<string, string> = { reusita: "Confirmată", in_asteptare: "În așteptare", esuata: "Eșuată", rambursata: "Rambursată", trimis: "Trimis" };
 const campClasa = "h-9 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-2.5 text-[13px] text-[var(--ci-text)]";
 
 function Camp({ eticheta, id, children }: { eticheta: string; id: string; children: ReactNode }) {

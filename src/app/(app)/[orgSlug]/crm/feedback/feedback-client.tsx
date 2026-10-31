@@ -4,6 +4,7 @@ import { CheckCircle2, Lightbulb, MessageSquareHeart, Send } from "lucide-react"
 import { useId, useState, useTransition } from "react";
 
 import { ARII_NOTE, CATEGORII_SUGESTIE, MAX_MESAJ, MAX_TEXT_CHESTIONAR, MAX_TITLU, MODULE_FOLOSITE, STARI_SUGESTIE } from "@/lib/feedback/calcule";
+import { FEEDBACK_UI_DICT } from "@/lib/i18n/dictionaries/feedback-ui";
 
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -11,10 +12,11 @@ import { Card } from "../components/ui/card";
 import { Input, Label, Select, Textarea } from "../components/ui/input";
 import { EmptyState } from "../components/ui/states";
 import { Tabs } from "../components/ui/tabs";
+import { useLocale } from "../lib/locale-context";
 
 import { obtineDateFeedback, trimiteChestionarAction, trimiteSugestieAction, type DateFeedback } from "./actions";
 
-const dataRo = (iso: string) => new Date(iso).toLocaleDateString("ro-RO", { day: "numeric", month: "long", year: "numeric" });
+const dataLunga = (iso: string, numere: string) => new Date(iso).toLocaleDateString(numere, { day: "numeric", month: "long", year: "numeric" });
 
 // Rând de butoane numerotate (0–10 sau 1–5), ca un grup de opțiuni accesibil. `golPermis`: apăsat încă o dată pe valoarea aleasă, o șterge.
 function Scala({ de, pana, valoare, onChange, eticheta, golPermis = false }: { de: number; pana: number; valoare: number | null; onChange: (v: number | null) => void; eticheta: string; golPermis?: boolean }) {
@@ -64,6 +66,8 @@ function Bifa({ id, bifat, onChange, children }: { id: string; bifat: boolean; o
 }
 
 function Chestionar({ orgSlug, zileRamase, onTrimis }: { orgSlug: string; zileRamase: number; onTrimis: () => void }) {
+  const dict = FEEDBACK_UI_DICT[useLocale()];
+  const d = dict.chestionar;
   const id = useId();
   const [nps, setNps] = useState<number | null>(null);
   const [satisfactie, setSatisfactie] = useState<number | null>(null);
@@ -82,9 +86,9 @@ function Chestionar({ orgSlug, zileRamase, onTrimis }: { orgSlug: string; zileRa
         <div className="flex items-start gap-3">
           <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-[var(--ci-green)]" />
           <div>
-            <p className="text-sm font-semibold text-[var(--ci-text)]">{trimis ? "Mulțumim! Răspunsul tău a ajuns la echipa Alexandrit." : "Ai răspuns deja la chestionar."}</p>
+            <p className="text-sm font-semibold text-[var(--ci-text)]">{trimis ? d.multumimTrimis : d.deja}</p>
             <p className="mt-1 text-[13px] text-[var(--ci-text-muted)]">
-              {trimis ? "Îl citim cu atenție și îl folosim la deciziile despre ce construim mai departe." : `Poți trimite din nou peste ${zileRamase} ${zileRamase === 1 ? "zi" : "zile"}.`} Dacă ți-a venit o idee între timp, o poți scrie la fila „Sugestii și idei”.
+              {trimis ? d.citimTrimis : d.repeta(zileRamase)}{d.ideeNota}
             </p>
           </div>
         </div>
@@ -102,7 +106,7 @@ function Chestionar({ orgSlug, zileRamase, onTrimis }: { orgSlug: string; zileRa
           onTrimis();
         } else setEroare(r.eroare);
       } catch {
-        setEroare("Nu am putut trimite chestionarul acum. Încearcă din nou peste puțin timp.");
+        setEroare(d.eroareTrimitere);
       }
     });
   }
@@ -116,54 +120,54 @@ function Chestionar({ orgSlug, zileRamase, onTrimis }: { orgSlug: string; zileRa
       }}
     >
       <Card className="space-y-6">
-        <Intrebare titlu="Cât de probabil ai recomanda Alexandrit altui ONG?" ajutor="0 = deloc probabil, 10 = foarte probabil">
-          <Scala de={0} pana={10} valoare={nps} onChange={setNps} eticheta="Probabilitatea de a recomanda Alexandrit, de la 0 la 10" />
+        <Intrebare titlu={d.qNps} ajutor={d.qNpsAjutor}>
+          <Scala de={0} pana={10} valoare={nps} onChange={setNps} eticheta={d.npsAria} />
           <div className="mt-1.5 flex max-w-md justify-between text-[11.5px] text-[var(--ci-text-faint)]">
-            <span>Deloc probabil</span>
-            <span>Foarte probabil</span>
+            <span>{d.deloc}</span>
+            <span>{d.foarte}</span>
           </div>
         </Intrebare>
 
-        <Intrebare titlu="În general, cât de mulțumit ești de platformă?" ajutor="1 = foarte nemulțumit, 5 = foarte mulțumit">
-          <Scala de={1} pana={5} valoare={satisfactie} onChange={setSatisfactie} eticheta="Satisfacția generală, de la 1 la 5" />
+        <Intrebare titlu={d.qSatisfactie} ajutor={d.qSatisfactieAjutor}>
+          <Scala de={1} pana={5} valoare={satisfactie} onChange={setSatisfactie} eticheta={d.satisfactieAria} />
         </Intrebare>
 
-        <Intrebare titlu="Cum o evaluezi pe arii?" ajutor="Opțional: lasă gol ce nu ai folosit. 1 = slab, 5 = excelent.">
+        <Intrebare titlu={d.qArii} ajutor={d.qAriiAjutor}>
           <div className="space-y-3.5">
             {ARII_NOTE.map((a) => (
               <div key={a.cheie} className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
-                <span className="text-[13px] text-[var(--ci-text)]">{a.eticheta}</span>
-                <Scala de={1} pana={5} valoare={note[a.cheie] ?? null} onChange={(v) => setNote((p) => ({ ...p, [a.cheie]: v }))} eticheta={a.eticheta} golPermis />
+                <span className="text-[13px] text-[var(--ci-text)]">{dict.arii[a.cheie] ?? a.eticheta}</span>
+                <Scala de={1} pana={5} valoare={note[a.cheie] ?? null} onChange={(v) => setNote((p) => ({ ...p, [a.cheie]: v }))} eticheta={dict.arii[a.cheie] ?? a.eticheta} golPermis />
               </div>
             ))}
           </div>
         </Intrebare>
 
-        <Intrebare titlu="Ce părți ale platformei folosești?" ajutor="Poți alege mai multe. Ne ajută să vedem ce contează cel mai mult.">
+        <Intrebare titlu={d.qModule} ajutor={d.qModuleAjutor}>
           <div className="grid gap-2 sm:grid-cols-2">
             {MODULE_FOLOSITE.map((m) => (
               <Bifa key={m.cheie} id={`${id}-m-${m.cheie}`} bifat={module.includes(m.cheie)} onChange={(v) => setModule((p) => (v ? [...p, m.cheie] : p.filter((x) => x !== m.cheie)))}>
-                {m.eticheta}
+                {dict.module[m.cheie] ?? m.eticheta}
               </Bifa>
             ))}
           </div>
         </Intrebare>
 
         <div>
-          <Label htmlFor={`${id}-place`}>Ce îți place cel mai mult la Alexandrit?</Label>
-          <Textarea id={`${id}-place`} value={cePlace} onChange={(e) => setCePlace(e.target.value)} maxLength={MAX_TEXT_CHESTIONAR} rows={3} placeholder="Ce te ajută cel mai mult în munca de zi cu zi?" />
+          <Label htmlFor={`${id}-place`}>{d.cePlace}</Label>
+          <Textarea id={`${id}-place`} value={cePlace} onChange={(e) => setCePlace(e.target.value)} maxLength={MAX_TEXT_CHESTIONAR} rows={3} placeholder={d.cePlacePlaceholder} />
         </div>
         <div>
-          <Label htmlFor={`${id}-lipseste`}>Ce ți-ar îmbunătăți munca sau ce îți lipsește?</Label>
-          <Textarea id={`${id}-lipseste`} value={ceLipseste} onChange={(e) => setCeLipseste(e.target.value)} maxLength={MAX_TEXT_CHESTIONAR} rows={4} placeholder="Ce ai vrea să poți face și acum nu poți, sau ce merge greu?" />
+          <Label htmlFor={`${id}-lipseste`}>{d.ceLipseste}</Label>
+          <Textarea id={`${id}-lipseste`} value={ceLipseste} onChange={(e) => setCeLipseste(e.target.value)} maxLength={MAX_TEXT_CHESTIONAR} rows={4} placeholder={d.ceLipsestePlaceholder} />
         </div>
 
         <div className="space-y-3 border-t border-[var(--ci-border)] pt-4">
           <Bifa id={`${id}-contact`} bifat={poateContacta} onChange={setPoateContacta}>
-            Sunt de acord să fiu contactat de echipa Alexandrit, pe adresa de e-mail a contului, pentru detalii despre acest răspuns.
+            {d.contact}
           </Bifa>
           <p className="text-[12.5px] text-[var(--ci-text-muted)]">
-            Răspunsul ajunge doar la echipa Alexandrit și e legat de organizația ta. Adresa ta de e-mail apare în analiză doar dacă bifezi căsuța de mai sus.
+            {d.confidentialitate}
           </p>
         </div>
       </Card>
@@ -176,15 +180,17 @@ function Chestionar({ orgSlug, zileRamase, onTrimis }: { orgSlug: string; zileRa
       <div className="flex items-center gap-3">
         <Button type="submit" variant="primary" size="lg" loading={pending} disabled={pending}>
           <Send className="h-4 w-4" />
-          Trimite chestionarul
+          {d.trimite}
         </Button>
-        <span className="text-[12.5px] text-[var(--ci-text-muted)]">Durează cam două minute.</span>
+        <span className="text-[12.5px] text-[var(--ci-text-muted)]">{d.doarDouaMinute}</span>
       </div>
     </form>
   );
 }
 
 function Sugestii({ orgSlug, date, onTrimisa }: { orgSlug: string; date: DateFeedback; onTrimisa: () => void }) {
+  const dict = FEEDBACK_UI_DICT[useLocale()];
+  const d = dict.sugestii;
   const id = useId();
   const [categorie, setCategorie] = useState("functie-noua");
   const [titlu, setTitlu] = useState("");
@@ -207,12 +213,12 @@ function Sugestii({ orgSlug, date, onTrimisa }: { orgSlug: string; date: DateFee
           onTrimisa();
         } else setEroare(r.eroare);
       } catch {
-        setEroare("Nu am putut trimite sugestia acum. Încearcă din nou peste puțin timp.");
+        setEroare(d.eroareTrimitere);
       }
     });
   }
 
-  const etichetaCategorie = (c: string) => CATEGORII_SUGESTIE.find((x) => x.cheie === c)?.eticheta ?? c;
+  const etichetaCategorie = (c: string) => dict.categorii[c] ?? CATEGORII_SUGESTIE.find((x) => x.cheie === c)?.eticheta ?? c;
   const stare = (s: string) => STARI_SUGESTIE.find((x) => x.cheie === s) ?? STARI_SUGESTIE[0];
 
   return (
@@ -225,34 +231,34 @@ function Sugestii({ orgSlug, date, onTrimisa }: { orgSlug: string; date: DateFee
       >
         <Card className="space-y-4">
           <div>
-            <p className="text-sm font-semibold text-[var(--ci-text)]">Spune-ne ce ai vrea să găsești în Alexandrit</p>
-            <p className="mt-0.5 text-[12.5px] text-[var(--ci-text-muted)]">O funcție nouă, o îmbunătățire, o problemă întâlnită. Citim fiecare sugestie și îți răspundem aici.</p>
+            <p className="text-sm font-semibold text-[var(--ci-text)]">{d.titluForm}</p>
+            <p className="mt-0.5 text-[12.5px] text-[var(--ci-text-muted)]">{d.subtitluForm}</p>
           </div>
           <div className="grid gap-4 sm:grid-cols-[220px_1fr]">
             <div>
-              <Label htmlFor={`${id}-cat`}>Tipul sugestiei</Label>
+              <Label htmlFor={`${id}-cat`}>{d.tip}</Label>
               <Select id={`${id}-cat`} value={categorie} onChange={(e) => setCategorie(e.target.value)}>
                 {CATEGORII_SUGESTIE.map((c) => (
                   <option key={c.cheie} value={c.cheie}>
-                    {c.eticheta}
+                    {dict.categorii[c.cheie] ?? c.eticheta}
                   </option>
                 ))}
               </Select>
             </div>
             <div>
-              <Label htmlFor={`${id}-titlu`}>Titlu scurt</Label>
-              <Input id={`${id}-titlu`} value={titlu} onChange={(e) => setTitlu(e.target.value)} maxLength={MAX_TITLU} placeholder="De exemplu: export al donatorilor în Excel" />
+              <Label htmlFor={`${id}-titlu`}>{d.titluScurt}</Label>
+              <Input id={`${id}-titlu`} value={titlu} onChange={(e) => setTitlu(e.target.value)} maxLength={MAX_TITLU} placeholder={d.titluPlaceholder} />
             </div>
           </div>
           <div>
-            <Label htmlFor={`${id}-mesaj`}>Descrie pe scurt</Label>
-            <Textarea id={`${id}-mesaj`} value={mesaj} onChange={(e) => setMesaj(e.target.value)} maxLength={MAX_MESAJ} rows={5} placeholder="Ce vrei să poți face și de ce ți-ar fi de folos? Cu cât ne spui mai concret, cu atât o putem face mai bine." />
+            <Label htmlFor={`${id}-mesaj`}>{d.descrie}</Label>
+            <Textarea id={`${id}-mesaj`} value={mesaj} onChange={(e) => setMesaj(e.target.value)} maxLength={MAX_MESAJ} rows={5} placeholder={d.descriePlaceholder} />
             <p className="mt-1 text-right text-[11.5px] text-[var(--ci-text-faint)] tabular-nums">
               {mesaj.length} / {MAX_MESAJ}
             </p>
           </div>
           <Bifa id={`${id}-contact`} bifat={poateContacta} onChange={setPoateContacta}>
-            Sunt de acord să fiu contactat de echipa Alexandrit, pe adresa de e-mail a contului, pentru detalii.
+            {d.contact}
           </Bifa>
           {eroare && (
             <p role="alert" className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-red)]/30 bg-[var(--ci-red-soft)] px-3 py-2 text-[13px] text-[var(--ci-red)]">
@@ -261,21 +267,21 @@ function Sugestii({ orgSlug, date, onTrimisa }: { orgSlug: string; date: DateFee
           )}
           {multumire && (
             <p role="status" className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-green)]/30 bg-[var(--ci-green-soft)] px-3 py-2 text-[13px] text-[var(--ci-green)]">
-              Mulțumim! Sugestia a ajuns la echipa Alexandrit. O vezi mai jos, iar răspunsul nostru va apărea chiar acolo.
+              {d.multumire}
             </p>
           )}
           <Button type="submit" variant="primary" loading={pending} disabled={pending}>
             <Send className="h-4 w-4" />
-            Trimite sugestia
+            {d.trimite}
           </Button>
         </Card>
       </form>
 
       <div>
-        <h2 className="ci-display text-base font-semibold text-[var(--ci-text)]">Sugestiile organizației tale</h2>
+        <h2 className="ci-display text-base font-semibold text-[var(--ci-text)]">{d.ale}</h2>
         <div className="mt-3 space-y-3">
           {date.sugestii.length === 0 ? (
-            <EmptyState icon={Lightbulb} title="Nu ați trimis încă nicio sugestie" description="Prima idee poate fi exact ce ne lipsea. Scrie-o mai sus." />
+            <EmptyState icon={Lightbulb} title={d.golTitlu} description={d.golDesc} />
           ) : (
             date.sugestii.map((s) => {
               const st = stare(s.stare);
@@ -283,11 +289,11 @@ function Sugestii({ orgSlug, date, onTrimisa }: { orgSlug: string; date: DateFee
                 <Card key={s.id}>
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge tone={st.ton} icon={false}>
-                      {st.eticheta}
+                      {dict.stari[st.cheie] ?? st.eticheta}
                     </Badge>
                     <span className="text-[12px] text-[var(--ci-text-muted)]">
-                      {etichetaCategorie(s.categorie)} · {dataRo(s.createdAt)}
-                      {s.alMeu ? " · trimisă de tine" : ""}
+                      {etichetaCategorie(s.categorie)} · {dataLunga(s.createdAt, dict.numere)}
+                      {s.alMeu ? d.trimisaDeTine : ""}
                     </span>
                   </div>
                   <p className="mt-2 text-sm font-semibold text-[var(--ci-text)]">{s.titlu}</p>
@@ -295,7 +301,7 @@ function Sugestii({ orgSlug, date, onTrimisa }: { orgSlug: string; date: DateFee
                   {s.raspuns && (
                     <div className="mt-3 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface-2)] px-3.5 py-3">
                       <p className="text-[12px] font-semibold text-[var(--ci-text)]">
-                        Răspunsul echipei Alexandrit{s.raspunsLa ? ` · ${dataRo(s.raspunsLa)}` : ""}
+                        {d.raspuns}{s.raspunsLa ? ` · ${dataLunga(s.raspunsLa, dict.numere)}` : ""}
                       </p>
                       <p className="mt-1 text-[13px] whitespace-pre-line text-[var(--ci-text-muted)]">{s.raspuns}</p>
                     </div>
@@ -311,6 +317,7 @@ function Sugestii({ orgSlug, date, onTrimisa }: { orgSlug: string; date: DateFee
 }
 
 export function FeedbackClient({ orgSlug, initial }: { orgSlug: string; initial: DateFeedback }) {
+  const d = FEEDBACK_UI_DICT[useLocale()];
   const [date, setDate] = useState(initial);
 
   async function reincarca() {
@@ -328,17 +335,17 @@ export function FeedbackClient({ orgSlug, initial }: { orgSlug: string; initial:
           <MessageSquareHeart className="h-[18px] w-[18px]" />
         </span>
         <div>
-          <h1 className="ci-display text-xl font-bold text-[var(--ci-text)]">Părerea ta contează</h1>
+          <h1 className="ci-display text-xl font-bold text-[var(--ci-text)]">{d.titlu}</h1>
           <p className="mt-0.5 max-w-2xl text-[13px] text-[var(--ci-text-muted)]">
-            Alexandrit se construiește împreună cu organizațiile care îl folosesc. Spune-ne cât ești de mulțumit și ce ai vrea să găsești în platformă; fiecare răspuns e citit de echipă.
+            {d.intro}
           </p>
         </div>
       </div>
 
       <Tabs
         tabs={[
-          { key: "chestionar", label: "Chestionar de satisfacție" },
-          { key: "sugestii", label: `Sugestii și idei${date.sugestii.length ? ` (${date.sugestii.length})` : ""}` },
+          { key: "chestionar", label: d.taburi.chestionar },
+          { key: "sugestii", label: `${d.taburi.sugestii}${date.sugestii.length ? ` (${date.sugestii.length})` : ""}` },
         ]}
       >
         {(activ) => (

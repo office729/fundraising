@@ -238,14 +238,15 @@ export function curataSetari(x: unknown): SetariProgramari {
 
 export type DatePersoana = { nume: string; email: string; telefon: string; organizatie: string; mesaj: string };
 
-export function valideazaPersoana(x: unknown, cereTelefon: boolean): { ok: true; date: DatePersoana } | { ok: false; erori: Partial<Record<keyof DatePersoana, string>> } {
+export function valideazaPersoana(x: unknown, cereTelefon: boolean, locale: "ro" | "en" = "ro"): { ok: true; date: DatePersoana } | { ok: false; erori: Partial<Record<keyof DatePersoana, string>> } {
   const r = (x && typeof x === "object" ? x : {}) as Record<string, unknown>;
   const t = (k: string, max: number) => (typeof r[k] === "string" ? (r[k] as string).trim().slice(0, max) : "");
   const date: DatePersoana = { nume: t("nume", 120), email: t("email", 160).toLowerCase(), telefon: t("telefon", 40), organizatie: t("organizatie", 160), mesaj: t("mesaj", 1000) };
   const erori: Partial<Record<keyof DatePersoana, string>> = {};
-  if (date.nume.length < 2) erori.nume = "Scrie-ți numele.";
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(date.email)) erori.email = "Adresa de email nu pare corectă.";
-  if (date.telefon && !/^[+\d\s().-]{6,40}$/.test(date.telefon)) erori.telefon = "Numărul de telefon nu pare corect.";
-  if (cereTelefon && !date.telefon) erori.telefon = "Scrie un număr de telefon.";
+  const en = locale === "en";
+  if (date.nume.length < 2) erori.nume = en ? "Enter your name." : "Scrie-ți numele.";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(date.email)) erori.email = en ? "The email address does not look right." : "Adresa de email nu pare corectă.";
+  if (date.telefon && !/^[+\d\s().-]{6,40}$/.test(date.telefon)) erori.telefon = en ? "The phone number does not look right." : "Numărul de telefon nu pare corect.";
+  if (cereTelefon && !date.telefon) erori.telefon = en ? "Enter a phone number." : "Scrie un număr de telefon.";
   return Object.keys(erori).length ? { ok: false, erori } : { ok: true, date };
 }

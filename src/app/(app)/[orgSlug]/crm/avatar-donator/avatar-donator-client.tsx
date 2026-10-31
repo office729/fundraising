@@ -3,11 +3,13 @@
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { AVATAR_UI_DICT } from "@/lib/i18n/dictionaries/avatar-donator-ui";
 import { calculeazaAlocare, genereazaSfaturi, parseazaExport, progresChestionar } from "@/lib/avatar-donator/motor";
-import { fiseDeRevizuit, type AvatarData, type StatisticiPlatforma } from "@/lib/avatar-donator/tipuri";
+import { FISA_PRINCIPALA, fiseDeRevizuit, type AvatarData, type StatisticiPlatforma } from "@/lib/avatar-donator/tipuri";
 import type { RezultatAvatare } from "@/lib/avatar-donator/avatare-reale";
 import type { SegmentStat } from "@/lib/segmente-donatori";
 
+import { useLocale } from "../lib/locale-context";
 import { salveazaAvatar } from "./actions";
 import { TabAvatare } from "./tab-avatare";
 import { TabBuget } from "./tab-buget";
@@ -18,20 +20,16 @@ import { TabSinteza } from "./tab-sinteza";
 
 type TabId = "avatare" | "simplu" | "buget" | "sinteza" | "chestionar" | "profile";
 // Întâi ce arată datele reale (Avatare), apoi instrumentele manuale: fișa ta, intrările (Buget) înaintea rezultatului (Sinteză).
-const TABURI: { id: TabId; label: string }[] = [
-  { id: "avatare", label: "Avatare din date" },
-  { id: "simplu", label: "Fișa ta (ghid)" },
-  { id: "buget", label: "1. Buget & canale" },
-  { id: "sinteza", label: "2. Sinteză & recomandări" },
-  { id: "chestionar", label: "Chestionar (100 întrebări)" },
-  { id: "profile", label: "Profiluri & rezumat" },
-];
+const TAB_IDS: TabId[] = ["avatare", "simplu", "buget", "sinteza", "chestionar", "profile"];
+const TABURI = TAB_IDS.map((id) => ({ id }));
 
 export type Actualizeaza = (fn: (d: AvatarData) => AvatarData) => void;
 type Stare = "salvat" | "modificat" | "se-salveaza" | "eroare";
 
 export function AvatarDonatorClient({ initial, stat, segmente, avatare, avatarComplet }: { initial: AvatarData; stat: StatisticiPlatforma | null; segmente: SegmentStat[] | null; avatare: RezultatAvatare | null; avatarComplet: boolean }) {
   const { orgSlug } = useParams<{ orgSlug: string }>();
+  const locale = useLocale();
+  const t = AVATAR_UI_DICT[locale].client;
   const [data, setData] = useState<AvatarData>(initial);
   // Se deschide mereu pe ce arată datele reale; instrumentele manuale sunt în celelalte secțiuni.
   const [tab, setTabState] = useState<TabId>("avatare");
@@ -83,8 +81,8 @@ export function AvatarDonatorClient({ initial, stat, segmente, avatare, avatarCo
     return () => window.removeEventListener("beforeunload", handler);
   }, [stare]);
 
-  const alocare = useMemo(() => calculeazaAlocare(data), [data]);
-  const sfaturi = useMemo(() => genereazaSfaturi(data, alocare, stat), [data, alocare, stat]);
+  const alocare = useMemo(() => calculeazaAlocare(data, locale), [data, locale]);
+  const sfaturi = useMemo(() => genereazaSfaturi(data, alocare, stat, locale), [data, alocare, stat, locale]);
   const progres = useMemo(() => progresChestionar(data), [data]);
   const deRevizuit = useMemo(() => fiseDeRevizuit(initial, acum), [initial, acum]);
 
@@ -92,7 +90,7 @@ export function AvatarDonatorClient({ initial, stat, segmente, avatare, avatarCo
     const text = await file.text();
     const { raspunsuri, gasite } = parseazaExport(text);
     if (gasite === 0) {
-      setMesaj("Nu am găsit răspunsuri completate în fișier (formatul așteptat: exportul „Avatarul donatorului perfect”).");
+      setMesaj(t.importNimic);
       return;
     }
     actualizeaza((d) => {
@@ -106,24 +104,21 @@ export function AvatarDonatorClient({ initial, stat, segmente, avatare, avatarCo
       else if (q19.includes("sms")) nou.conversie = "sms";
       return nou;
     });
-    setMesaj(`Am importat ${gasite} ${gasite === 1 ? "răspuns" : "răspunsuri"} din fișier.`);
+    setMesaj(t.importOk(gasite));
   }
 
-  const indicator =
-    stare === "salvat" ? "Salvat" : stare === "modificat" ? "Modificări nesalvate…" : stare === "se-salveaza" ? "Se salvează…" : "Nu s-a putut salva";
+  const indicator = stare === "salvat" ? t.stare.salvat : stare === "modificat" ? t.stare.modificat : stare === "se-salveaza" ? t.stare.seSalveaza : t.stare.eroare;
 
   return (
     <div className="mx-auto max-w-[1100px] space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">Avatar donator</h1>
-          <p className="mt-0.5 max-w-2xl text-[13px] text-[var(--ci-text-muted)]">
-            Cine sunt grupurile de donatori care susțin organizația, după comportamentul lor real, și ce poți testa pentru fiecare. Concluziile din date sunt separate de ipoteze; fișa ta, bugetul și chestionarul rămân disponibile ca instrumente manuale.
-          </p>
+          <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">{t.titlu}</h1>
+          <p className="mt-0.5 max-w-2xl text-[13px] text-[var(--ci-text-muted)]">{t.subtitlu}</p>
         </div>
         <div className="flex flex-col items-end gap-1.5">
           <label className="cursor-pointer rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-3 py-1.5 text-[12.5px] font-medium text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)] focus-within:ring-2 focus-within:ring-[var(--ci-primary)]">
-            Importă din export (.txt)
+            {t.importa}
             <input
               type="file"
               accept=".txt,text/plain"
@@ -140,11 +135,10 @@ export function AvatarDonatorClient({ initial, stat, segmente, avatare, avatarCo
       {deRevizuit.length > 0 && (
         <div role="note" className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--ci-radius-card)] bg-[var(--ci-amber-soft)] px-3 py-2 text-[13px] text-[var(--ci-text)]">
           <span>
-            {deRevizuit.length === 1 ? "O fișă de avatar" : `${deRevizuit.length} fișe de avatar`} nu {deRevizuit.length === 1 ? "a" : "au"} fost revizuit{deRevizuit.length === 1 ? "ă" : "e"} de peste 12 luni:{" "}
-            <strong>{deRevizuit.map((f) => f.nume).join(", ")}</strong>.
+            {t.deRevizuit(deRevizuit.length)} <strong>{deRevizuit.map((f) => (f.id === FISA_PRINCIPALA ? t.principala : f.nume)).join(", ")}</strong>.
           </span>
           <button type="button" onClick={() => setTab("simplu")} className="font-semibold text-[var(--ci-primary)] hover:underline">
-            Revizuiește acum →
+            {t.revizuiesteAcum}
           </button>
         </div>
       )}
@@ -157,17 +151,17 @@ export function AvatarDonatorClient({ initial, stat, segmente, avatare, avatarCo
       {/* Bara de taburi + starea salvării, lipite sus, ca să se vadă și pe chestionarul lung */}
       <div className="sticky top-0 z-10 -mx-1 bg-[var(--ci-bg)] px-1 pt-1">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--ci-border)] pb-2">
-          <div role="tablist" aria-label="Secțiuni Avatar donator" className="flex flex-wrap gap-1.5">
-            {TABURI.map((t) => (
+          <div role="tablist" aria-label={t.taburiAria} className="flex flex-wrap gap-1.5">
+            {TABURI.map((tb) => (
               <button
-                key={t.id}
+                key={tb.id}
                 role="tab"
-                id={`tab-${t.id}`}
-                aria-selected={tab === t.id}
-                aria-controls={`panou-${t.id}`}
-                tabIndex={tab === t.id ? 0 : -1}
+                id={`tab-${tb.id}`}
+                aria-selected={tab === tb.id}
+                aria-controls={`panou-${tb.id}`}
+                tabIndex={tab === tb.id ? 0 : -1}
                 type="button"
-                onClick={() => setTab(t.id)}
+                onClick={() => setTab(tb.id)}
                 onKeyDown={(e) => {
                   if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
                   e.preventDefault();
@@ -177,11 +171,11 @@ export function AvatarDonatorClient({ initial, stat, segmente, avatare, avatarCo
                   requestAnimationFrame(() => document.getElementById(`tab-${urm.id}`)?.focus());
                 }}
                 className={`rounded-lg px-3.5 py-1.5 text-[13px] font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none ${
-                  tab === t.id ? "bg-[var(--ci-primary)] text-white" : "text-[var(--ci-text-muted)] hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)]"
+                  tab === tb.id ? "bg-[var(--ci-primary)] text-white" : "text-[var(--ci-text-muted)] hover:bg-[var(--ci-surface-2)] hover:text-[var(--ci-text)]"
                 }`}
               >
-                {t.label}
-                {t.id === "chestionar" && <span className="ml-1.5 text-[11px] font-normal opacity-80">{progres.completate}/{progres.total}</span>}
+                {t.taburi[tb.id]}
+                {tb.id === "chestionar" && <span className="ml-1.5 text-[11px] font-normal opacity-80">{progres.completate}/{progres.total}</span>}
               </button>
             ))}
           </div>
@@ -196,7 +190,7 @@ export function AvatarDonatorClient({ initial, stat, segmente, avatare, avatarCo
                 }}
                 className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-2 py-0.5 font-medium text-[var(--ci-primary)] hover:bg-[var(--ci-surface-2)]"
               >
-                Reîncearcă
+                {t.reincearca}
               </button>
             )}
           </div>
@@ -207,9 +201,9 @@ export function AvatarDonatorClient({ initial, stat, segmente, avatare, avatarCo
         {tab === "avatare" && <TabAvatare rezultat={avatare} mergiLa={setTab} />}
         {tab !== "avatare" && !avatarComplet && (
           <div className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-6 text-[13.5px] leading-relaxed">
-            <p className="font-semibold text-[var(--ci-text)]">Instrumentele manuale sunt incluse începând cu pachetul CREȘTERE</p>
-            <p className="mt-1 text-[var(--ci-text-muted)]">Fișa ta, bugetul și canalele, sinteza, chestionarul și profilurile se deblochează la CREȘTERE. Avatarele din datele donatorilor rămân disponibile în toate pachetele, iar ce ai completat deja se păstrează.</p>
-            <a href={`/${orgSlug}/crm/facturare`} className="mt-3 inline-block font-semibold text-[var(--ci-primary)] hover:underline">Vezi pachetele din Facturare →</a>
+            <p className="font-semibold text-[var(--ci-text)]">{t.blocatTitlu}</p>
+            <p className="mt-1 text-[var(--ci-text-muted)]">{t.blocatText}</p>
+            <a href={`/${orgSlug}/crm/facturare`} className="mt-3 inline-block font-semibold text-[var(--ci-primary)] hover:underline">{t.vezPachetele}</a>
           </div>
         )}
         {tab === "simplu" && avatarComplet && <TabSimplu data={data} actualizeaza={actualizeaza} mergiLa={setTab} segmente={segmente} stat={stat} />}

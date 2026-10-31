@@ -3,10 +3,13 @@
 import { ChevronDown, ChevronRight, ShieldAlert } from "lucide-react";
 import { useState } from "react";
 
+import { PERFORMANTA_UI_DICT } from "@/lib/i18n/dictionaries/performanta-ui";
+import { PERFORMANTA_UI3_DICT } from "@/lib/i18n/dictionaries/performanta-ui-3";
 import { ritmAsteptat } from "@/lib/performanta-masurare";
-import { ETICHETE_NIVEL, type NivelObiectiv, type ObiectivDto } from "@/lib/performanta-tipuri";
+import type { NivelObiectiv, ObiectivDto } from "@/lib/performanta-tipuri";
 
 import { Avatar } from "../components/ui/avatar";
+import { useLocale } from "../lib/locale-context";
 import { descriereTinta } from "./obiectiv-detaliu";
 import { ActualitateChip, BaraProgres, StareBadge, culoareStare, dataScurta, formateazaValoare } from "./ui-comune";
 
@@ -19,11 +22,13 @@ const STIL_NIVEL: Record<NivelObiectiv, string> = {
 };
 
 export function NivelChip({ nivel }: { nivel: NivelObiectiv }) {
-  return <span className={`rounded-full px-2 py-0.5 text-[11.5px] font-medium whitespace-nowrap ${STIL_NIVEL[nivel]}`}>{ETICHETE_NIVEL[nivel]}</span>;
+  const comune = PERFORMANTA_UI_DICT[useLocale()].comune;
+  return <span className={`rounded-full px-2 py-0.5 text-[11.5px] font-medium whitespace-nowrap ${STIL_NIVEL[nivel]}`}>{comune.nivel[nivel]}</span>;
 }
 
 function Responsabil({ nume }: { nume: string | null }) {
-  if (!nume) return <span className="text-[12.5px] text-[var(--ci-text-muted)]">Nealocat</span>;
+  const dict = PERFORMANTA_UI3_DICT[useLocale()].vederi;
+  if (!nume) return <span className="text-[12.5px] text-[var(--ci-text-muted)]">{dict.nealocat}</span>;
   return (
     <span className="inline-flex min-w-0 items-center gap-1.5 text-[12.5px] text-[var(--ci-text)]">
       <Avatar name={nume} size="sm" className="!size-6 !text-[10px]" />
@@ -35,6 +40,8 @@ function Responsabil({ nume }: { nume: string | null }) {
 // ───────── Listă ─────────
 
 export function VedereLista({ obiective, azi, onDeschide }: Comun) {
+  const locale = useLocale();
+  const dict = PERFORMANTA_UI3_DICT[locale].vederi;
   const [deschise, setDeschise] = useState<Set<string>>(new Set());
   const comuta = (id: string) =>
     setDeschise((s) => {
@@ -46,10 +53,10 @@ export function VedereLista({ obiective, azi, onDeschide }: Comun) {
   return (
     <div className="overflow-hidden rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)]">
       <div className="sticky top-0 z-[1] hidden grid-cols-[minmax(0,2.4fr)_minmax(0,1.2fr)_minmax(0,1.6fr)_8.5rem] gap-4 border-b border-[var(--ci-border)] bg-[var(--ci-surface-2)] px-4 py-2 text-[12px] font-semibold text-[var(--ci-text-muted)] md:grid" aria-hidden>
-        <span>Obiectiv</span>
-        <span>Responsabil</span>
-        <span>Progres</span>
-        <span>Stare</span>
+        <span>{dict.obiectiv}</span>
+        <span>{dict.responsabil}</span>
+        <span>{dict.progres}</span>
+        <span>{dict.stare}</span>
       </div>
       <ul className="divide-y divide-[var(--ci-border)]">
         {obiective.map((o) => {
@@ -62,7 +69,7 @@ export function VedereLista({ obiective, azi, onDeschide }: Comun) {
                   <button
                     type="button"
                     aria-expanded={deschis}
-                    aria-label={deschis ? "Ascunde rezultatele-cheie" : "Arată rezultatele-cheie"}
+                    aria-label={deschis ? dict.ascundeRk : dict.arataRk}
                     onClick={() => comuta(o.id)}
                     disabled={activ.length === 0}
                     className="mt-0.5 shrink-0 rounded p-0.5 text-[var(--ci-text-muted)] hover:bg-[var(--ci-surface-2)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none disabled:opacity-30"
@@ -76,10 +83,10 @@ export function VedereLista({ obiective, azi, onDeschide }: Comun) {
                     <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
                       <NivelChip nivel={o.nivel} />
                       {o.departmentNume && <span className="text-[12px] text-[var(--ci-text-muted)]">{o.departmentNume}</span>}
-                      <span className="text-[12px] text-[var(--ci-text-muted)]">{activ.length} rezultate-cheie</span>
+                      <span className="text-[12px] text-[var(--ci-text-muted)]">{dict.nrRk(activ.length)}</span>
                       {o.blocajeDeschise > 0 && (
                         <span className="inline-flex items-center gap-1 text-[12px] font-medium text-[var(--ci-red)]">
-                          <ShieldAlert className="size-3.5" aria-hidden /> {o.blocajeDeschise} {o.blocajeDeschise === 1 ? "blocaj" : "blocaje"}
+                          <ShieldAlert className="size-3.5" aria-hidden /> {dict.blocaje(o.blocajeDeschise)}
                         </span>
                       )}
                     </div>
@@ -87,8 +94,8 @@ export function VedereLista({ obiective, azi, onDeschide }: Comun) {
                 </div>
                 <Responsabil nume={o.responsabilNume} />
                 <div>
-                  <BaraProgres progres={o.progres} stare={o.stare} perioada={{ start: o.perioadaStart, end: o.perioadaEnd }} azi={azi} eticheta={`Progres ${o.titlu}`} latime="w-full max-w-48" />
-                  {o.rkCuDate < o.rkTotal && <p className="mt-0.5 text-[11.5px] text-[var(--ci-text-muted)]">{o.rkCuDate} din {o.rkTotal} cu date</p>}
+                  <BaraProgres progres={o.progres} stare={o.stare} perioada={{ start: o.perioadaStart, end: o.perioadaEnd }} azi={azi} eticheta={PERFORMANTA_UI_DICT[locale].prezentare.progresAria(o.titlu)} latime="w-full max-w-48" />
+                  {o.rkCuDate < o.rkTotal && <p className="mt-0.5 text-[11.5px] text-[var(--ci-text-muted)]">{dict.cuDate(o.rkCuDate, o.rkTotal)}</p>}
                 </div>
                 <div className="flex flex-col items-start gap-1">
                   <StareBadge stare={o.stare} />
@@ -102,11 +109,11 @@ export function VedereLista({ obiective, azi, onDeschide }: Comun) {
                       <div className="min-w-0">
                         <p className="truncate text-[13px] text-[var(--ci-text)]">{r.titlu}</p>
                         <p className="text-[11.5px] text-[var(--ci-text-muted)]">
-                          {r.valoare === null ? "Fără valoare încă" : r.metoda === "binar" ? (r.valoare >= 1 ? "Realizat" : "Nerealizat") : formateazaValoare(r.valoare, r.unitate)} · țintă: {descriereTinta(r)}
+                          {r.valoare === null ? dict.faraValoare : r.metoda === "binar" ? (r.valoare >= 1 ? dict.realizat : dict.nerealizat) : formateazaValoare(r.valoare, r.unitate, locale)} · {dict.tinta(descriereTinta(r, locale))}
                         </p>
                       </div>
                       <span className="truncate text-[12px] text-[var(--ci-text-muted)]">{r.responsabilNume ?? o.responsabilNume ?? ""}</span>
-                      <BaraProgres progres={r.progres} stare={r.stare} perioada={{ start: o.perioadaStart, end: r.termen && r.termen < o.perioadaEnd ? r.termen : o.perioadaEnd }} azi={azi} eticheta={`Progres ${r.titlu}`} latime="w-full max-w-48" />
+                      <BaraProgres progres={r.progres} stare={r.stare} perioada={{ start: o.perioadaStart, end: r.termen && r.termen < o.perioadaEnd ? r.termen : o.perioadaEnd }} azi={azi} eticheta={PERFORMANTA_UI_DICT[locale].prezentare.progresAria(r.titlu)} latime="w-full max-w-48" />
                       <StareBadge stare={r.stare} />
                     </li>
                   ))}
@@ -125,6 +132,8 @@ export function VedereLista({ obiective, azi, onDeschide }: Comun) {
 const ORDINE_NIVEL: Record<NivelObiectiv, number> = { strategic: 0, echipa: 1, individual: 2 };
 
 export function VedereArbore({ obiective, azi, onDeschide }: Comun) {
+  const locale = useLocale();
+  const dict = PERFORMANTA_UI3_DICT[locale].vederi;
   const ids = new Set(obiective.map((o) => o.id));
   const copii = new Map<string, ObiectivDto[]>();
   const radacini: ObiectivDto[] = [];
@@ -132,7 +141,7 @@ export function VedereArbore({ obiective, azi, onDeschide }: Comun) {
     if (o.parentId && ids.has(o.parentId)) copii.set(o.parentId, [...(copii.get(o.parentId) ?? []), o]);
     else radacini.push(o);
   }
-  const sorteaza = (l: ObiectivDto[]) => [...l].sort((a, b) => ORDINE_NIVEL[a.nivel] - ORDINE_NIVEL[b.nivel] || a.titlu.localeCompare(b.titlu, "ro"));
+  const sorteaza = (l: ObiectivDto[]) => [...l].sort((a, b) => ORDINE_NIVEL[a.nivel] - ORDINE_NIVEL[b.nivel] || a.titlu.localeCompare(b.titlu, locale));
   const nod = (o: ObiectivDto, adancime: number): React.ReactNode => {
     const fii = sorteaza(copii.get(o.id) ?? []);
     return (
@@ -149,7 +158,7 @@ export function VedereArbore({ obiective, azi, onDeschide }: Comun) {
               <Responsabil nume={o.responsabilNume} />
             </span>
           </span>
-          <BaraProgres progres={o.progres} stare={o.stare} perioada={{ start: o.perioadaStart, end: o.perioadaEnd }} azi={azi} eticheta={`Progres ${o.titlu}`} latime="w-28" />
+          <BaraProgres progres={o.progres} stare={o.stare} perioada={{ start: o.perioadaStart, end: o.perioadaEnd }} azi={azi} eticheta={PERFORMANTA_UI_DICT[locale].prezentare.progresAria(o.titlu)} latime="w-28" />
           <StareBadge stare={o.stare} />
         </button>
         {fii.length > 0 && <ul className="ml-3">{fii.map((f) => nod(f, adancime + 1))}</ul>}
@@ -158,7 +167,7 @@ export function VedereArbore({ obiective, azi, onDeschide }: Comun) {
   };
   return (
     <div>
-      <p className="mb-2 text-[12.5px] text-[var(--ci-text-muted)]">Fiecare obiectiv apare sub cel pe care îl sprijină. Progresul unui obiectiv superior nu se calculează din copii: fiecare are propriile rezultate-cheie.</p>
+      <p className="mb-2 text-[12.5px] text-[var(--ci-text-muted)]">{dict.notaArbore}</p>
       <ul>{sorteaza(radacini).map((o) => nod(o, 0))}</ul>
     </div>
   );
@@ -166,10 +175,12 @@ export function VedereArbore({ obiective, azi, onDeschide }: Comun) {
 
 // ───────── Cronologie ─────────
 
-const LUNI = ["ian", "feb", "mar", "apr", "mai", "iun", "iul", "aug", "sep", "oct", "nov", "dec"];
 const zile = (a: string, b: string) => Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 86400000);
 
 export function VedereCronologie({ obiective, azi, perioada, onDeschide }: Comun & { perioada: { start: string; end: string } }) {
+  const locale = useLocale();
+  const dict = PERFORMANTA_UI3_DICT[locale].vederi;
+  const LUNI = dict.luni;
   const total = Math.max(1, zile(perioada.start, perioada.end) + 1);
   const pct = (iso: string) => Math.max(0, Math.min(100, (zile(perioada.start, iso) / total) * 100));
   const luni: { eticheta: string; stanga: number }[] = [];
@@ -178,13 +189,13 @@ export function VedereCronologie({ obiective, azi, perioada, onDeschide }: Comun
     luni.push({ eticheta: `${LUNI[d.getUTCMonth()]}${perioada.start.slice(0, 4) !== perioada.end.slice(0, 4) ? ` ${String(d.getUTCFullYear()).slice(2)}` : ""}`, stanga: pct(iso < perioada.start ? perioada.start : iso) });
   }
   const aziIn = azi >= perioada.start && azi <= perioada.end;
-  const sortate = [...obiective].sort((a, b) => (a.perioadaStart < b.perioadaStart ? -1 : a.perioadaStart > b.perioadaStart ? 1 : a.titlu.localeCompare(b.titlu, "ro")));
+  const sortate = [...obiective].sort((a, b) => (a.perioadaStart < b.perioadaStart ? -1 : a.perioadaStart > b.perioadaStart ? 1 : a.titlu.localeCompare(b.titlu, locale)));
   return (
     <div className="overflow-hidden rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)]">
       <div className="ci-scrollbar overflow-x-auto">
         <div className="min-w-[44rem]">
           <div className="grid grid-cols-[minmax(11rem,15rem)_1fr] border-b border-[var(--ci-border)] bg-[var(--ci-surface-2)] text-[12px] font-semibold text-[var(--ci-text-muted)]">
-            <div className="sticky left-0 bg-[var(--ci-surface-2)] px-4 py-2">Obiectiv</div>
+            <div className="sticky left-0 bg-[var(--ci-surface-2)] px-4 py-2">{dict.obiectiv}</div>
             <div className="relative h-8" aria-hidden>
               {luni.map((l) => (
                 <span key={l.eticheta + l.stanga} className="absolute top-2 border-l border-[var(--ci-border)] pl-1.5 font-medium" style={{ left: `${l.stanga}%` }}>
@@ -207,7 +218,7 @@ export function VedereCronologie({ obiective, azi, perioada, onDeschide }: Comun
                       {o.titlu}
                     </button>
                     <p className="mt-0.5 truncate text-[11.5px] text-[var(--ci-text-muted)]">
-                      {o.responsabilNume ?? "Nealocat"} · {dataScurta(o.perioadaStart)} – {dataScurta(o.perioadaEnd)}
+                      {o.responsabilNume ?? dict.nealocat} · {dataScurta(o.perioadaStart, locale)} – {dataScurta(o.perioadaEnd, locale)}
                     </p>
                   </div>
                   <div className="relative h-12">
@@ -219,7 +230,7 @@ export function VedereCronologie({ obiective, azi, perioada, onDeschide }: Comun
                       onClick={() => onDeschide(o)}
                       className="absolute top-3 h-6 overflow-hidden rounded-md bg-[var(--ci-surface-2)] ring-1 ring-[var(--ci-border)]"
                       style={{ left: `${s}%`, width: `${lat}%` }}
-                      title={`${o.titlu}: ${o.progres === null ? "fără date" : `${Math.round((o.progres ?? 0) * 100)}%`}`}
+                      title={`${o.titlu}: ${o.progres === null ? dict.faraDate : `${Math.round((o.progres ?? 0) * 100)}%`}`}
                     >
                       <span className="block h-full" style={{ width: `${progres * 100}%`, background: culoareStare(o.stare), opacity: 0.85 }} />
                       {asteptat > 0.03 && asteptat < 0.99 && <span className="absolute top-0 h-full w-0.5 bg-[var(--ci-text)]/50" style={{ left: `${asteptat * 100}%` }} />}
@@ -227,7 +238,7 @@ export function VedereCronologie({ obiective, azi, perioada, onDeschide }: Comun
                     {o.rezultate
                       .filter((r) => r.status === "activ" && r.termen && r.termen >= perioada.start && r.termen <= perioada.end)
                       .map((r) => (
-                        <span key={r.id} aria-hidden title={`Termen: ${r.titlu} (${dataScurta(r.termen)})`} className="absolute top-[2.35rem] size-2 -translate-x-1/2 rotate-45 bg-[var(--ci-text)]/60" style={{ left: `${pct(r.termen!)}%` }} />
+                        <span key={r.id} aria-hidden title={dict.termenTitlu(r.titlu, dataScurta(r.termen, locale))} className="absolute top-[2.35rem] size-2 -translate-x-1/2 rotate-45 bg-[var(--ci-text)]/60" style={{ left: `${pct(r.termen!)}%` }} />
                       ))}
                   </div>
                 </li>
@@ -237,7 +248,7 @@ export function VedereCronologie({ obiective, azi, perioada, onDeschide }: Comun
         </div>
       </div>
       <p className="border-t border-[var(--ci-border)] px-4 py-2 text-[12px] text-[var(--ci-text-muted)]">
-        Bara arată perioada obiectivului, partea colorată progresul, liniuța ritmul așteptat azi, linia verticală ziua de azi, rombul termenele rezultatelor-cheie.
+        {dict.notaCronologie}
       </p>
     </div>
   );

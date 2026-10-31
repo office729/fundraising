@@ -26,7 +26,6 @@ import { TabConexiuni } from "./tab-conexiuni";
 import { TabImport } from "./tab-import";
 import { TabGhid } from "./tab-ghid";
 import { TabLinkuri } from "./tab-linkuri";
-import { traduLib } from "./texte-lib";
 
 type Bun = "sus" | "jos" | "neutru"; // ce sens al variației e favorabil
 
@@ -332,7 +331,7 @@ export function ReclameVedere({ orgSlug, date }: { orgSlug: string; date: DateRe
                                   <span className="ci-tabular mt-1 block text-[11.5px] text-[var(--ci-text-muted)]">
                                     {raport.pePlasament
                                       .filter((x) => x.platforma === p.platforma)
-                                      .map((x) => `${traduLib(locale, x.eticheta)}: ${formatLei(x.totaluri.cheltuieliBani, 0)}, ${formatNumar(x.totaluri.donatii)} ${dict.pePlatforme.donatii}`)
+                                      .map((x) => `${x.eticheta}: ${formatLei(x.totaluri.cheltuieliBani, 0)}, ${formatNumar(x.totaluri.donatii)} ${dict.pePlatforme.donatii}`)
                                       .join(" · ")}
                                   </span>
                                 )}
@@ -396,7 +395,7 @@ export function ReclameVedere({ orgSlug, date }: { orgSlug: string; date: DateRe
                                 <tr key={l.cheie} className="cursor-pointer border-t border-[var(--ci-border)] hover:bg-[var(--ci-surface-2)]" onClick={() => setDetaliu(l)}>
                                   <td className="px-4 py-2.5">
                                     <button type="button" onClick={(e) => { e.stopPropagation(); setDetaliu(l); }} className="text-left font-semibold text-[var(--ci-text)] hover:underline">
-                                      {traduLib(locale, l.eticheta)}
+                                      {l.eticheta}
                                     </button>
                                     <span className="block text-[11.5px] text-[var(--ci-text-muted)]">{l.utmCampanie ?? dict.tabel.faraCod}{!l.legata && dict.tabel.nelegata}</span>
                                   </td>
@@ -591,7 +590,7 @@ function DetaliuCampanie({ orgSlug, linie, date, onClose }: { orgSlug: string; l
   );
   const clicuri = linie.clicuri;
   return (
-    <Dialog open onClose={onClose} title={traduLib(locale, linie.eticheta)} width="max-w-lg">
+    <Dialog open onClose={onClose} title={linie.eticheta} width="max-w-lg">
       <div className="space-y-4">
         <p className="text-[12.5px] text-[var(--ci-text-muted)]">
           {date.etichetePlatforme[linie.platforma] ?? linie.platforma} · {linie.utmCampanie ? dict.cod(linie.utmCampanie) : dict.fara}
@@ -612,7 +611,7 @@ function DetaliuCampanie({ orgSlug, linie, date, onClose }: { orgSlug: string; l
         </dl>
         <p className="text-[12.5px] text-[var(--ci-text-muted)]">
           {dict.atribuire(linie.utmCampanie ?? dict.faraCodParan, date.fereastraZile)}
-          {linie.nota ? ` ${traduLib(locale, linie.nota)}.` : ""}
+          {linie.nota ? ` ${linie.nota}.` : ""}
         </p>
         {legatura && (
           <form

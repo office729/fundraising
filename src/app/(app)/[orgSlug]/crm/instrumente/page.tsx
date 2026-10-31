@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 
 import { useLocale } from "../lib/locale-context";
 import { INSTRUMENTE_DICT } from "@/lib/i18n/dictionaries/instrumente";
+import { INSTRUMENTE_UI_DICT } from "@/lib/i18n/dictionaries/instrumente-ui";
 
 // Pictograma fiecărui instrument, în culoarea categoriei (verde rapoarte, mov campanii, roșu generatoare, albastru documente).
 const PICTOGRAME: Record<string, LucideIcon> = {
@@ -58,21 +59,11 @@ const CATEGORII: { key: CategorieKey; culoare: string; instrumente: InstrumentDe
   },
 ];
 
-// Calendar orientativ al documentelor pentru companii (în română): când are sens fiecare document și în ce ordine se lucrează cu o firmă.
-const CALENDAR: [string, string][] = [
-  ["Octombrie – noiembrie", "Raport de impact și scrisoare de mulțumire pentru firmele din anul curent: firmele își închid bugetele de sponsorizare și planifică anul următor. Scrisoarea de solicitare merge către firmele noi sau către cele care ar putea crește suma."],
-  ["Decembrie", "Certificate de recunoștință și un bilanț al anului. Scrisoarea de confirmare se trimite după fiecare plată, indiferent de lună."],
-  ["Ianuarie – februarie", "Invitații la evenimente sau la vizite de proiect; propuneri de parteneriat către firmele cu cel puțin doi ani de colaborare."],
-  ["Martie – mai", "Campania de redirecționare (Declarația 177): one-pager și raport scurt, cu un termen clar. Verifică termenele în vigoare pe anaf.ro."],
-  ["Iunie – septembrie", "Raport intermediar pentru proiectele în desfășurare, ca să nu fie o pauză de un an fără vești."],
-  ["Oricând", "Mulțumire rapidă în 48 de ore după fiecare sprijin; certificat de participare sau de voluntariat imediat după eveniment."],
-];
-const SECVENTA = "Firmă nouă: telefon → scrisoare de solicitare cu one-pager (ziua 1) → follow-up (ziua 5) → telefon (ziua 10) → ofertă → contract → mulțumire rapidă (48 de ore) → actualizare (30 de zile) → raport de impact (90 de zile) → scrisoare de reînnoire (cu 90 de zile înainte de final) → certificat la final de an.";
-
 export default function InstrumentePage() {
   const { orgSlug } = useParams<{ orgSlug: string }>();
   const locale = useLocale();
   const dict = INSTRUMENTE_DICT[locale].index;
+  const ui = INSTRUMENTE_UI_DICT[locale].start;
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-8">
@@ -126,23 +117,21 @@ export default function InstrumentePage() {
         );
       })}
 
-      {locale === "ro" && (
-        <details className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4">
-          <summary className="cursor-pointer text-[14px] font-semibold text-[var(--ci-text)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">Când folosești ce: calendar anual și pașii cu o firmă</summary>
-          <dl className="mt-3 space-y-2.5">
-            {CALENDAR.map(([cand, ce]) => (
-              <div key={cand} className="grid gap-1 sm:grid-cols-[11rem_minmax(0,1fr)]">
-                <dt className="text-[13px] font-semibold text-[var(--ci-text)]">{cand}</dt>
-                <dd className="text-[13px] text-[var(--ci-text-muted)]">{ce}</dd>
-              </div>
-            ))}
-          </dl>
-          <p className="mt-3 border-t border-[var(--ci-border)] pt-3 text-[13px] text-[var(--ci-text-muted)]">
-            <span className="font-semibold text-[var(--ci-text)]">Secvența cu o firmă. </span>
-            {SECVENTA}
-          </p>
-        </details>
-      )}
+      <details className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-4">
+        <summary className="cursor-pointer text-[14px] font-semibold text-[var(--ci-text)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">{ui.calendarTitlu}</summary>
+        <dl className="mt-3 space-y-2.5">
+          {ui.calendar.map(([cand, ce]) => (
+            <div key={cand} className="grid gap-1 sm:grid-cols-[11rem_minmax(0,1fr)]">
+              <dt className="text-[13px] font-semibold text-[var(--ci-text)]">{cand}</dt>
+              <dd className="text-[13px] text-[var(--ci-text-muted)]">{ce}</dd>
+            </div>
+          ))}
+        </dl>
+        <p className="mt-3 border-t border-[var(--ci-border)] pt-3 text-[13px] text-[var(--ci-text-muted)]">
+          <span className="font-semibold text-[var(--ci-text)]">{ui.secventaTitlu}</span>
+          {ui.secventa}
+        </p>
+      </details>
     </div>
   );
 }

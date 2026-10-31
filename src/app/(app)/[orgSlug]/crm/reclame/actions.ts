@@ -15,9 +15,9 @@ import { perioadaAnterioara, rezolvaPerioada, type PresetPerioada } from "@/lib/
 import { detecteazaColoane, MAX_RANDURI, monedaDinAntet, normalizeaza, parseCsv, type CampMapat, type Mapare, type RandCost } from "@/lib/reclame/csv-costuri";
 import { asambleaza, totaluriSimple, type LegaturaCampanie, type Raport, type Totaluri } from "@/lib/reclame/raport";
 import { conecteazaMeta, deconecteazaMeta, sincronizeazaMeta, type RezultatConectare, type RezultatSync } from "@/lib/reclame/meta-sync";
+import { traduEroareMeta } from "@/lib/i18n/dictionaries/lib-mesaje-ui";
 import { construiesteLink } from "@/lib/reclame/utm";
 
-import { traduLib } from "./texte-lib";
 import { calitateDate, costuriPeriodei, donatiiAtribuite, legaturiCampanii, parcursObservat, reinnoiriAbonamenteAtribuite, type CalitateDate, type Parcurs } from "./queries";
 
 // Modulul „Performanța reclamelor” (inclus din pachetul IMPACT, vezi MODULE_PACHET). Doar proprietarul și administratorii: conține cheltuieli și donații.
@@ -79,7 +79,7 @@ export const obtineDateReclame = withOrgAdmin(async (ctx, p: ParametriReclame = 
   const costuri = await costuriPeriodei(ctx, perioada.de, perioada.pana);
   const donatii = await donatiiAtribuite(ctx, perioada.de, perioada.pana, fereastraZile);
   const legaturi = await legaturiCampanii(ctx);
-  const raport = asambleaza({ de: perioada.de, pana: perioada.pana, costuri, donatii, legaturi, etichetePlatforme });
+  const raport = asambleaza({ de: perioada.de, pana: perioada.pana, costuri, donatii, legaturi, etichetePlatforme, locale });
 
   const costuriAnt = await costuriPeriodei(ctx, anterioara.de, anterioara.pana);
   const donatiiAnt = await donatiiAtribuite(ctx, anterioara.de, anterioara.pana, fereastraZile);
@@ -123,7 +123,7 @@ export const obtineDateReclame = withOrgAdmin(async (ctx, p: ParametriReclame = 
       moneda: c.moneda,
       fusOrar: c.fusOrar,
       stare: c.stare,
-      ultimaEroare: c.ultimaEroare,
+      ultimaEroare: c.ultimaEroare ? traduEroareMeta(c.ultimaEroare, locale) : null,
       ultimaSincronizare: c.ultimaSincronizare ? c.ultimaSincronizare.toISOString() : null,
       ultimaReusita: c.ultimaReusita ? c.ultimaReusita.toISOString() : null,
       randuriUltima: c.randuriUltima,
@@ -142,16 +142,19 @@ const autorizeaza = withOrgAdmin(async (ctx) => ({ orgId: ctx.orgId, userId: ctx
 
 export async function conecteazaMetaAction(orgSlug: string, input: { contId: string; token: string; cursManual?: number | null }): Promise<RezultatConectare> {
   const { orgId, userId } = await autorizeaza(orgSlug);
-  const t = RECLAME_UI_DICT[await getLocale()].actiuni;
+  const locale = await getLocale();
+  const t = RECLAME_UI_DICT[locale].actiuni;
   // Plafon pe organizație: tokenurile greșite încercate la nesfârșit nu trebuie să încarce Meta sau serverul.
   if (!(await verificaLimitaRata("reclame-meta-conectare", orgId, 10, 60))) return { ok: false, eroare: t.prea };
-  return conecteazaMeta(orgId, userId, input);
+  const r = await conecteazaMeta(orgId, userId, input);
+  return r.ok ? r : { ...r, eroare: traduEroareMeta(r.eroare, locale) };
 }
 
 export async function sincronizeazaMetaAction(orgSlug: string, zile: number): Promise<RezultatSync> {
   const { orgId } = await autorizeaza(orgSlug);
   if (!(await verificaLimitaRata("reclame-meta-sync", orgId, 8, 60))) return { ok: false, eroare: RECLAME_UI_DICT[await getLocale()].actiuni.preaSync, clasa: "limita-locala" };
-  return sincronizeazaMeta(orgId, { zile: [7, 28, 90].includes(zile) ? zile : 7 });
+  const r = await sincronizeazaMeta(orgId, { zile: [7, 28, 90].includes(zile) ? zile : 7 });
+  return r.ok ? r : { ...r, eroare: traduEroareMeta(r.eroare, await getLocale()) };
 }
 
 export async function deconecteazaMetaAction(orgSlug: string): Promise<{ ok: true }> {
@@ -207,7 +210,7 @@ export const analizeazaCsvAction = withOrgAdmin(async (ctx, input: { text: strin
   if (randuri.length - 1 > MAX_RANDURI) return { ok: false, eroare: t.preaMulteRanduri(MAX_RANDURI.toLocaleString(locale === "ro" ? "ro-RO" : "en-GB")) };
   const antet = randuri[0]!.map((h) => h.trim());
   const mapare = (input.mapare ? maparePrimita(input.mapare, antet.length) : null) ?? detecteazaColoane(antet);
-  const norm = normalizeaza(randuri, mapare);
+  const norm = normalizeaza(randuri, mapare, { locale });
   const legaturi = await legaturiCampanii(ctx);
   return {
     ok: true,
@@ -238,7 +241,8 @@ export const confirmaImportAction = withOrgAdmin(
     ctx,
     input: { text: string; mapare: Mapare; platforma: string; moneda: string; cursRon: number; numeFisier?: string; legaturi: Record<string, string> },
   ): Promise<RezultatImport> => {
-    const t = RECLAME_UI_DICT[await getLocale()].actiuni;
+    const locale = await getLocale();
+    const t = RECLAME_UI_DICT[locale].actiuni;
     if (!esteCheiePlatforma(input.platforma)) return { ok: false, eroare: t.alegePlatforma };
     const moneda = String(input.moneda ?? "").trim().toUpperCase();
     if (!/^[A-Z]{3}$/.test(moneda)) return { ok: false, eroare: t.monedaInvalida };
@@ -250,7 +254,7 @@ export const confirmaImportAction = withOrgAdmin(
     if (rows.length < 2 || rows.length - 1 > MAX_RANDURI) return { ok: false, eroare: t.formatNeacceptat };
     const mapare = maparePrimita(input.mapare, rows[0]!.length);
     if (!mapare) return { ok: false, eroare: t.mapareInvalida };
-    const norm = normalizeaza(rows, mapare);
+    const norm = normalizeaza(rows, mapare, { locale });
     if (norm.randuri.length === 0) return { ok: false, eroare: norm.erori[0]?.mesaj ?? t.niciunRand };
 
     const lotId = randomUUID();
@@ -359,8 +363,8 @@ export const salveazaLegaturaAction = withOrgAdmin(async (ctx, input: { platform
 
 export const salveazaLinkAction = withOrgAdmin(
   async (ctx, input: { url: string; source: string; medium: string; campaign: string; content?: string; eticheta?: string }): Promise<{ ok: true; url: string } | { ok: false; eroare: string }> => {
-    const r = construiesteLink(input);
-    if (!r.ok) return { ok: false, eroare: traduLib(await getLocale(), r.eroare) };
+    const r = construiesteLink(input, await getLocale());
+    if (!r.ok) return { ok: false, eroare: r.eroare };
     await ctx.db.insert(reclameLinkuri).values({
       orgId: ctx.orgId,
       url: r.url.slice(0, 2000),

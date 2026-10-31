@@ -9,6 +9,8 @@ import { prospectareChei, prospectareJurnal, prospectareSuprimati } from "@/lib/
 import { EroareUtilizator, mesajSigur } from "@/lib/erori";
 import { apolloValideaza, CONECTORI, curataMesaj, hunterValideaza, lushaValideaza, NUME_CONECTOR, prospeoValideaza, waalaxyListe, waalaxyValideaza, type Conector, type ElementWaalaxy, type Rezultat } from "@/lib/prospectare/motor";
 import { criptareConfigurata, cripteaza, decripteaza } from "@/lib/secret-box";
+import { traduEroareProspectare } from "@/lib/i18n/dictionaries/lib-mesaje-ui";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { getTr } from "@/lib/i18n/tr-server";
 
 // Cheile PROPRII ale organizației la Lusha, Apollo, Prospeo, Hunter și Waalaxy (pachetul IMPACT). Se salvează criptat (AES-256-GCM) și nu se mai afișează niciodată;
@@ -94,7 +96,7 @@ const salveaza = withOrgFaze<[string, string], { furnizor: Conector; cheie: stri
       const t = await getTr();
       return { ok: false, eroare: t(`${NUME_CONECTOR[p.furnizor]} nu a acceptat cheia. Verifică să fi copiat-o întreagă, fără spații, și că planul tău ${NUME_CONECTOR[p.furnizor]} include accesul API.`, `${NUME_CONECTOR[p.furnizor]} did not accept the key. Check that you copied all of it, without spaces, and that your ${NUME_CONECTOR[p.furnizor]} plan includes API access.`) };
     }
-    return { ok: false, eroare: curataMesaj(r.eroare, [p.cheie]) };
+    return { ok: false, eroare: traduEroareProspectare(curataMesaj(r.eroare, [p.cheie]), await getLocale()) };
   },
   salveaza: async (ctx, p, rezultat) => {
     if (!rezultat.ok) throw new EroareUtilizator(rezultat.eroare ?? (await getTr())("Cheia nu a putut fi verificată.", "The key could not be verified."));
@@ -156,7 +158,7 @@ const citesteOptiuni = withOrgFaze<[], { cheie: string }, Rezultat<{ liste: Elem
     }
   },
   extern: (p) => waalaxyListe(p.cheie, fetch),
-  salveaza: async (_ctx, _p, r): Promise<OptiuniWaalaxy> => (r.ok ? { error: null, liste: r.date.liste, campanii: r.date.campanii } : { error: r.eroare, liste: [], campanii: [] }),
+  salveaza: async (_ctx, _p, r): Promise<OptiuniWaalaxy> => (r.ok ? { error: null, liste: r.date.liste, campanii: r.date.campanii } : { error: traduEroareProspectare(r.eroare, await getLocale()), liste: [], campanii: [] }),
 });
 
 export async function optiuniWaalaxy(orgSlug: string): Promise<OptiuniWaalaxy> {

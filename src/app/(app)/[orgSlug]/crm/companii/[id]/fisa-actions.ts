@@ -10,7 +10,7 @@ import { companies, contacts } from "@/lib/db/schema";
 import { valideazaFacebook, valideazaLinkedin } from "@/lib/pagini-sociale";
 import { stadiuD177Valid } from "@/lib/stadii-d177";
 import { getLocale } from "@/lib/i18n/get-locale";
-import { COMPANII_UI_DICT, traduEroareLib } from "@/lib/i18n/dictionaries/companii-ui";
+import { COMPANII_UI_DICT } from "@/lib/i18n/dictionaries/companii-ui";
 
 import type { ActionState, PersoanaDeAprobat } from "../actions";
 
@@ -45,8 +45,9 @@ export const seteazaPaginaSociala = withOrgSession(
 
     let nou: string | null = null;
     if (url && url.trim()) {
-      const r = platforma === "linkedin" ? valideazaLinkedin(url) : valideazaFacebook(url);
-      if (!r.ok) return { error: traduEroareLib(await getLocale(), r.eroare) };
+      const locale = await getLocale();
+      const r = platforma === "linkedin" ? valideazaLinkedin(url, locale) : valideazaFacebook(url, locale);
+      if (!r.ok) return { error: r.eroare };
       nou = r.url;
     }
     if (nou === (vechi ?? null)) return { error: null, url: nou };

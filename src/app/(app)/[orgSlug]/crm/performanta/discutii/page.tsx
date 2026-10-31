@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 
 import { requireOrgAccess } from "@/lib/auth/guard";
+import { PERFORMANTA_UI_DICT } from "@/lib/i18n/dictionaries/performanta-ui";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { titluAbsolut } from "@/lib/page-titles";
 
 import { DiscutiiClient } from "../discutii-client";
@@ -19,11 +21,12 @@ export default async function DiscutiiPage({ params, searchParams }: { params: P
   const sp = await searchParams;
   const ang = unu(sp.angajat);
   const date = await obtineDiscutii(orgSlug, UUID.test(ang) ? ang : null);
+  const p = PERFORMANTA_UI_DICT[await getLocale()].pagini.discutii;
   return (
     <div className="mx-auto max-w-[1300px] space-y-5">
       <div>
-        <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">Discuții și evaluări</h1>
-        <p className="mt-0.5 max-w-3xl text-[13px] text-[var(--ci-text-muted)]">Conversațiile care țin munca pe drumul bun. Tonul e de sprijin: ce a mers, unde e nevoie de ajutor, ce urmează. Nu există scor unic pe persoană.</p>
+        <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">{p.titlu}</h1>
+        <p className="mt-0.5 max-w-3xl text-[13px] text-[var(--ci-text-muted)]">{p.descriere}</p>
       </div>
       <Suspense fallback={null}>
         <PerfNav orgSlug={orgSlug} />

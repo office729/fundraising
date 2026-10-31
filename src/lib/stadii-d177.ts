@@ -27,7 +27,20 @@ export function stadiuD177Valid(k: unknown): k is string {
   return typeof k === "string" && STADII_D177.includes(k);
 }
 
-export function etichetaStadiuD177(k: string | null | undefined): string {
+// Etichetele stadiilor în engleză, pe cheie (fazele: Început → Start, Contact → Contact, Contract → Contract).
+export const ETICHETE_STADIU_D177_EN: Record<string, string> = {
+  nou: "New",
+  email: "Email sent",
+  telefon: "Phone call",
+  intalnire: "One-to-one meeting",
+  trimis: "Sent",
+  asteptare: "Pending",
+  semnat: "Signed",
+};
+export const TITLURI_FAZA_D177_EN: Record<string, string> = { prospectare: "Start", contact: "Contact", contract: "Contract" };
+
+export function etichetaStadiuD177(k: string | null | undefined, locale: "ro" | "en" = "ro"): string {
+  if (locale === "en") return (k && ETICHETE_STADIU_D177_EN[k]) || ETICHETE_STADIU_D177_EN.nou;
   for (const f of FAZE_D177) for (const e of f.etape) if (e.k === k) return e.eticheta;
   return "Nou";
 }

@@ -255,10 +255,12 @@ export function variabileNecunoscute(text: string): string[] {
   return [...gasite];
 }
 
-export function valideazaPasi(pasi: unknown, cheie: CheieParcurs): { ok: true; pasi: PasParcurs[] } | { ok: false; erori: EroareParcurs[] } {
+// Mesajele de eroare sunt în limba cerută prin `locale` (implicit română); textele pașilor (subiect, corp) sunt scrise de utilizator.
+export function valideazaPasi(pasi: unknown, cheie: CheieParcurs, locale: "ro" | "en" = "ro"): { ok: true; pasi: PasParcurs[] } | { ok: false; erori: EroareParcurs[] } {
+  const en = locale === "en";
   const erori: EroareParcurs[] = [];
-  if (!Array.isArray(pasi) || pasi.length === 0) return { ok: false, erori: [{ pas: null, mesaj: "Parcursul are nevoie de cel puțin un pas." }] };
-  if (pasi.length > LIMITE_PARCURS.maxPasi) return { ok: false, erori: [{ pas: null, mesaj: `Un parcurs poate avea cel mult ${LIMITE_PARCURS.maxPasi} pași.` }] };
+  if (!Array.isArray(pasi) || pasi.length === 0) return { ok: false, erori: [{ pas: null, mesaj: en ? "The journey needs at least one step." : "Parcursul are nevoie de cel puțin un pas." }] };
+  if (pasi.length > LIMITE_PARCURS.maxPasi) return { ok: false, erori: [{ pas: null, mesaj: en ? `A journey can have at most ${LIMITE_PARCURS.maxPasi} steps.` : `Un parcurs poate avea cel mult ${LIMITE_PARCURS.maxPasi} pași.` }] };
   const curate: PasParcurs[] = [];
   pasi.forEach((brut, i) => {
     const p = (brut ?? {}) as Record<string, unknown>;
@@ -266,18 +268,18 @@ export function valideazaPasi(pasi: unknown, cheie: CheieParcurs): { ok: true; p
     const corp = typeof p.corp === "string" ? p.corp.replace(/\r\n/g, "\n").replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "").trim() : "";
     const buton = typeof p.buton === "string" ? p.buton.replace(/[\r\n\u0000-\u001f]+/g, " ").trim() : "";
     const zile = typeof p.zile === "number" ? Math.round(p.zile) : Number.NaN;
-    if (!subiect) erori.push({ pas: i, mesaj: "Subiectul e obligatoriu." });
-    else if (subiect.length > LIMITE_PARCURS.maxSubiect) erori.push({ pas: i, mesaj: `Subiectul e prea lung (maximum ${LIMITE_PARCURS.maxSubiect} de caractere).` });
-    if (!corp) erori.push({ pas: i, mesaj: "Textul mesajului e obligatoriu." });
-    else if (corp.length > LIMITE_PARCURS.maxCorp) erori.push({ pas: i, mesaj: `Textul e prea lung (maximum ${LIMITE_PARCURS.maxCorp} de caractere).` });
-    if (buton.length > LIMITE_PARCURS.maxButon) erori.push({ pas: i, mesaj: `Textul butonului e prea lung (maximum ${LIMITE_PARCURS.maxButon} de caractere).` });
+    if (!subiect) erori.push({ pas: i, mesaj: en ? "The subject is required." : "Subiectul e obligatoriu." });
+    else if (subiect.length > LIMITE_PARCURS.maxSubiect) erori.push({ pas: i, mesaj: en ? `The subject is too long (maximum ${LIMITE_PARCURS.maxSubiect} characters).` : `Subiectul e prea lung (maximum ${LIMITE_PARCURS.maxSubiect} de caractere).` });
+    if (!corp) erori.push({ pas: i, mesaj: en ? "The message text is required." : "Textul mesajului e obligatoriu." });
+    else if (corp.length > LIMITE_PARCURS.maxCorp) erori.push({ pas: i, mesaj: en ? `The text is too long (maximum ${LIMITE_PARCURS.maxCorp} characters).` : `Textul e prea lung (maximum ${LIMITE_PARCURS.maxCorp} de caractere).` });
+    if (buton.length > LIMITE_PARCURS.maxButon) erori.push({ pas: i, mesaj: en ? `The button text is too long (maximum ${LIMITE_PARCURS.maxButon} characters).` : `Textul butonului e prea lung (maximum ${LIMITE_PARCURS.maxButon} de caractere).` });
     const minZile = (cheie === "upgrade" || cheie === "reactivare") && i === 0 ? 0 : 1;
     const areLink = /https?:\/\/|www\./i;
-    if (areLink.test(subiect) || areLink.test(corp)) erori.push({ pas: i, mesaj: "Nu pune adrese web în text: folosește butonul sau variabila {link}, ca adresa să fie mereu cea corectă." });
-    if (/\{(suma|total|campanie)\}/.test(subiect)) erori.push({ pas: i, mesaj: "Nu pune {suma}, {total} sau {campanie} în subiect: subiectul se vede pe ecranul blocat al telefonului și ar arăta altora ce a donat persoana. Le poți folosi în text." });
-    if (!Number.isFinite(zile) || zile < minZile || zile > LIMITE_PARCURS.maxZile) erori.push({ pas: i, mesaj: `Numărul de zile trebuie să fie între ${minZile} și ${LIMITE_PARCURS.maxZile}.` });
+    if (areLink.test(subiect) || areLink.test(corp)) erori.push({ pas: i, mesaj: en ? "Do not put web addresses in the text: use the button or the {link} variable, so the address is always the correct one." : "Nu pune adrese web în text: folosește butonul sau variabila {link}, ca adresa să fie mereu cea corectă." });
+    if (/\{(suma|total|campanie)\}/.test(subiect)) erori.push({ pas: i, mesaj: en ? "Do not put {suma}, {total} or {campanie} in the subject: the subject shows on the phone's lock screen and would show others what the person donated. You can use them in the text." : "Nu pune {suma}, {total} sau {campanie} în subiect: subiectul se vede pe ecranul blocat al telefonului și ar arăta altora ce a donat persoana. Le poți folosi în text." });
+    if (!Number.isFinite(zile) || zile < minZile || zile > LIMITE_PARCURS.maxZile) erori.push({ pas: i, mesaj: en ? `The number of days must be between ${minZile} and ${LIMITE_PARCURS.maxZile}.` : `Numărul de zile trebuie să fie între ${minZile} și ${LIMITE_PARCURS.maxZile}.` });
     const necunoscute = [...variabileNecunoscute(subiect), ...variabileNecunoscute(corp)];
-    if (necunoscute.length) erori.push({ pas: i, mesaj: `Variabile necunoscute: ${[...new Set(necunoscute)].map((v) => `{${v}}`).join(", ")}. Folosește: ${VARIABILE_PARCURS.map((v) => `{${v}}`).join(", ")}.` });
+    if (necunoscute.length) erori.push({ pas: i, mesaj: en ? `Unknown variables: ${[...new Set(necunoscute)].map((v) => `{${v}}`).join(", ")}. Use: ${VARIABILE_PARCURS.map((v) => `{${v}}`).join(", ")}.` : `Variabile necunoscute: ${[...new Set(necunoscute)].map((v) => `{${v}}`).join(", ")}. Folosește: ${VARIABILE_PARCURS.map((v) => `{${v}}`).join(", ")}.` });
     curate.push({ zile, subiect, corp, ...(buton ? { buton } : {}) });
   });
   return erori.length ? { ok: false, erori } : { ok: true, pasi: curate };

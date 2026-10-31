@@ -5,7 +5,6 @@ import type { LucideIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import type { EvenimentCronologie, TipEveniment, TonEveniment } from "@/lib/cronologie-donator";
-import type { Locale } from "@/lib/i18n/config";
 import { DONATORI_UI2_DICT } from "@/lib/i18n/dictionaries/donatori-ui-2";
 
 import { EmptyState } from "../../../components/ui/states";
@@ -39,42 +38,7 @@ const FILTRE: { cheie: string; tipuri: TipEveniment[] | null }[] = [
   { cheie: "emailuri", tipuri: ["parcurs", "acord_email", "dezabonare", "adresa"] },
 ];
 
-// Evenimentele vin din lib/cronologie-donator.ts cu texte în română; în engleză le traducem după tiparele cunoscute (orice altceva rămâne neschimbat).
-function tradu(e: EvenimentCronologie, locale: Locale): { titlu: string; detaliu: string | null } {
-  const detaliu = e.detaliu ?? null;
-  if (locale === "ro") return { titlu: e.titlu, detaliu };
-  const t = DONATORI_UI2_DICT[locale];
-  const c = t.cronTr;
-  const leiEn = (s: string) => s.replace(/\./g, ",");
-  let m = /^(Donație(?: în așteptare| eșuată| rambursată)?): (.+ lei)( \(lunară\))?$/.exec(e.titlu);
-  if (m) return { titlu: `${c.donatieStatus[m[1]] ?? m[1]}: ${leiEn(m[2])}${m[3] ? ` (${c.lunara})` : ""}`, detaliu: trad230Detaliu(detaliu, c) };
-  m = /^Donație importată: (.+ lei)$/.exec(e.titlu);
-  if (m) return { titlu: `${c.importata}: ${leiEn(m[1])}`, detaliu: trad230Detaliu(detaliu, c) };
-  m = /^Parcurs „(.+)”: în grupul de control \(nu a primit e-mail\)$/.exec(e.titlu);
-  if (m) return { titlu: c.parcursControl(c.parcursNume[m[1]] ?? m[1]), detaliu };
-  m = /^E-mail din parcursul „(.+)”, pasul (\d+)( \(în curs de trimitere\))?$/.exec(e.titlu);
-  if (m) return { titlu: c.parcursEmail(c.parcursNume[m[1]] ?? m[1], m[2], !!m[3]), detaliu };
-  if (e.tip === "nota" || e.tip === "apel" || e.tip === "intalnire" || e.tip === "email_echipa") {
-    const tipuriRo = Object.entries({ nota: "Notiță", apel: "Apel", intalnire: "Întâlnire", email: "E-mail trimis de echipă" });
-    const rezultateRo = Object.entries({ raspuns: "A răspuns", fara_raspuns: "Nu a răspuns", mesaj_vocal: "Mesaj vocal", reapel: "De sunat din nou", refuz: "A refuzat" });
-    const [partea1, ...rest] = e.titlu.split(": ");
-    const tip = tipuriRo.find(([, ro]) => ro === partea1)?.[0];
-    const rez = rest.length ? rezultateRo.find(([, ro]) => ro === rest.join(": "))?.[0] : null;
-    if (tip) return { titlu: rez ? `${t.notite.tipuri[tip]}: ${t.notite.rezultate[rez]}` : t.notite.tipuri[tip], detaliu };
-  }
-  const fix = c.fixe[e.titlu];
-  return { titlu: fix ?? e.titlu, detaliu: detaliu && c.fixe[detaliu] ? c.fixe[detaliu] : detaliu };
-}
-
-// „Proiect: X · Procesator: Y” (detaliul donațiilor) — doar etichetele se traduc, valorile rămân.
-function trad230Detaliu(detaliu: string | null, c: (typeof DONATORI_UI2_DICT)["en"]["cronTr"]): string | null {
-  if (!detaliu) return detaliu;
-  return detaliu
-    .split(" · ")
-    .map((p) => (p.startsWith("Proiect: ") ? `${c.proiect}: ${p.slice(9)}` : p.startsWith("Procesator: ") ? `${c.procesator}: ${p.slice(12)}` : p))
-    .join(" · ");
-}
-
+// Evenimentele vin din lib/cronologie-donator.ts (construite pe server în limba curentă): se afișează ca atare.
 // Grupare pe luni, pentru titluri de secțiune („octombrie 2026” / „October 2026”), în ordinea primită.
 function grupeaza(evenimente: readonly EvenimentCronologie[], tag: string): { luna: string; evenimente: EvenimentCronologie[] }[] {
   const grupuri: { luna: string; evenimente: EvenimentCronologie[] }[] = [];
@@ -125,7 +89,7 @@ export function CronologiePanel({ evenimente }: { evenimente: EvenimentCronologi
               <ol className="space-y-2">
                 {g.evenimente.map((e) => {
                   const Icoana = ICOANE[e.tip];
-                  const tr = tradu(e, locale);
+                  const tr = { titlu: e.titlu, detaliu: e.detaliu ?? null };
                   return (
                     <li key={e.id} className="flex gap-3 rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-3">
                       <span className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full ${CULOARE[e.ton]}`} aria-hidden>

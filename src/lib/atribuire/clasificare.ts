@@ -46,6 +46,30 @@ export const ETICHETE_METODA: Record<Metoda, string> = {
   referrer: "Site de proveniență (referrer)",
   necunoscut: "Necunoscută",
 };
+export const ETICHETE_CANAL_EN: Record<Canal, string> = {
+  social_organic: "Organic social",
+  social_platit: "Paid social",
+  social_nedeterminat: "Social (organic or paid, undetermined)",
+  cautare_organica: "Organic search",
+  cautare_platita: "Paid search",
+  email: "Email",
+  mesagerie: "Messaging",
+  referral: "Referral",
+  offline_qr: "Offline / QR",
+  direct: "Direct",
+  altele: "Other channel",
+};
+export const ETICHETE_TIP_EN: Record<TipPromovare, string> = { organic: "Organic (unpaid)", platit: "Paid", nedeterminat: "Undetermined" };
+export const ETICHETE_METODA_EN: Record<Metoda, string> = {
+  utm: "UTM tag",
+  identificator_reclame: "Ad click identifier",
+  referrer: "Referring site (referrer)",
+  necunoscut: "Unknown",
+};
+// Etichetele în limba cerută (implicit română).
+export const etichetaCanal = (c: Canal, locale: "ro" | "en" = "ro"): string => (locale === "en" ? ETICHETE_CANAL_EN : ETICHETE_CANAL)[c];
+export const etichetaTipPromovare = (t: TipPromovare, locale: "ro" | "en" = "ro"): string => (locale === "en" ? ETICHETE_TIP_EN : ETICHETE_TIP)[t];
+export const etichetaMetoda = (m: Metoda, locale: "ro" | "en" = "ro"): string => (locale === "en" ? ETICHETE_METODA_EN : ETICHETE_METODA)[m];
 export const CANALE: Canal[] = Object.keys(ETICHETE_CANAL) as Canal[];
 export const TIPURI: TipPromovare[] = ["organic", "platit", "nedeterminat"];
 export const esteCanal = (x: unknown): x is Canal => typeof x === "string" && x in ETICHETE_CANAL;
@@ -323,25 +347,26 @@ const NUME_AFISAT: Record<string, string> = {
   sms: "SMS",
 };
 
-export function etichetaSursa(sursa: string): string {
+export function etichetaSursa(sursa: string, locale: "ro" | "en" = "ro"): string {
   if (sursa === "(direct)") return "Direct";
-  if (sursa === "(necunoscut)") return "Necunoscută";
+  if (sursa === "(necunoscut)") return locale === "en" ? "Unknown" : "Necunoscută";
   if (NUME_AFISAT[sursa]) return NUME_AFISAT[sursa];
   return PLATFORME.some((x) => x.sursa === sursa) ? sursa.charAt(0).toUpperCase() + sursa.slice(1) : sursa;
 }
 
 // O singură linie pentru fișe: „Facebook · Social plătit · Plătit · cmp_ads”. Fără instantaneu de atribuire (conversie dinainte de activarea măsurării) -> „Fără sursă măsurată”.
-export function etichetaProvenienta(p: { sursa: string | null; canal: string | null; tip: string | null; campanie?: string | null }): string {
-  if (!p.sursa) return "Fără sursă măsurată";
-  const canal = p.canal && p.canal in ETICHETE_CANAL ? ETICHETE_CANAL[p.canal as Canal].replace(" (organic sau plătit nedeterminat)", "") : null;
-  const tip = p.tip && p.tip in ETICHETE_TIP ? ETICHETE_TIP[p.tip as TipPromovare] : null;
-  return [etichetaSursa(p.sursa), canal, tip, p.campanie || null].filter(Boolean).join(" · ");
+export function etichetaProvenienta(p: { sursa: string | null; canal: string | null; tip: string | null; campanie?: string | null }, locale: "ro" | "en" = "ro"): string {
+  if (!p.sursa) return locale === "en" ? "No measured source" : "Fără sursă măsurată";
+  const canal = p.canal && p.canal in ETICHETE_CANAL ? etichetaCanal(p.canal as Canal, locale).replace(locale === "en" ? " (organic or paid, undetermined)" : " (organic sau plătit nedeterminat)", "") : null;
+  const tip = p.tip && p.tip in ETICHETE_TIP ? etichetaTipPromovare(p.tip as TipPromovare, locale) : null;
+  return [etichetaSursa(p.sursa, locale), canal, tip, p.campanie || null].filter(Boolean).join(" · ");
 }
 
 // Cuvinte de limită, afișate în rapoarte când nu s-a putut stabili.
-export function limitaClasificare(c: Pick<Clasificare, "canal" | "tip" | "metoda" | "sursa">): string | null {
-  if (c.canal === "direct") return "Fără etichetă și fără site de proveniență: sursa nu poate fi stabilită.";
-  if (c.tip === "nedeterminat") return "Sursa e cunoscută, dar nu se poate stabili dacă promovarea a fost organică sau plătită.";
+export function limitaClasificare(c: Pick<Clasificare, "canal" | "tip" | "metoda" | "sursa">, locale: "ro" | "en" = "ro"): string | null {
+  const en = locale === "en";
+  if (c.canal === "direct") return en ? "No tag and no referring site: the source cannot be determined." : "Fără etichetă și fără site de proveniență: sursa nu poate fi stabilită.";
+  if (c.tip === "nedeterminat") return en ? "The source is known, but it cannot be determined whether the promotion was organic or paid." : "Sursa e cunoscută, dar nu se poate stabili dacă promovarea a fost organică sau plătită.";
   return null;
 }
 
@@ -368,6 +393,13 @@ export const ETICHETE_FLUX: Record<Flux, string> = {
   sponsorizare20: "Sponsorizare 20%",
   platforma: "Platforma Alexandrit (înscrieri)",
 };
+export const ETICHETE_FLUX_EN: Record<Flux, string> = {
+  campanie: "Fundraising campaign",
+  f230: "Formular 230 (3.5% income-tax redirect)",
+  sponsorizare20: "Sponsorship 20%",
+  platforma: "Alexandrit platform (sign-ups)",
+};
+export const etichetaFlux = (f: Flux, locale: "ro" | "en" = "ro"): string => (locale === "en" ? ETICHETE_FLUX_EN : ETICHETE_FLUX)[f];
 export const esteFlux = (x: unknown): x is Flux => typeof x === "string" && (FLUXURI as string[]).includes(x);
 
 // Parametrii de adresă pe care îi citim; orice altceva din adresă (inclusiv date personale puse greșit în link) e ignorat și nu se salvează.

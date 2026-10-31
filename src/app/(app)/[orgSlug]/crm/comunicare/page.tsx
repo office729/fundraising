@@ -73,7 +73,7 @@ export default function ComunicarePage() {
                       <Badge tone={TIP_TONE[c.tip]}>{TIP_LABEL[c.tip]}</Badge>
                       <span className="text-[13px] font-medium text-[var(--ci-text)]">{c.legatDe.nume}</span>
                     </div>
-                    <span className="shrink-0 text-[12px] text-[var(--ci-text-muted)]">{formatDataRelativa(c.la)}</span>
+                    <span className="shrink-0 text-[12px] text-[var(--ci-text-muted)]">{formatDataRelativa(c.la, locale)}</span>
                   </div>
                   <p className="text-[13px] text-[var(--ci-text-muted)]">{c.rezumat}</p>
                   <div className="mt-2 flex items-center gap-1.5">

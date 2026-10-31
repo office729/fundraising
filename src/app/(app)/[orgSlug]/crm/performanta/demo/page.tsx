@@ -1,3 +1,5 @@
+import { PERFORMANTA_UI_DICT } from "@/lib/i18n/dictionaries/performanta-ui";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { titluAbsolut } from "@/lib/page-titles";
 import { dateDemo } from "@/lib/performanta-demo-date";
 
@@ -10,8 +12,9 @@ export const dynamic = "force-dynamic";
 export default async function DemoPrezentare({ params }: { params: Promise<{ orgSlug: string }> }) {
   const { orgSlug } = await params;
   const d = dateDemo();
+  const p = PERFORMANTA_UI_DICT[await getLocale()].demo.prezentare;
   return (
-    <PaginaDemo orgSlug={orgSlug} titlu="Echipă și performanță · exemplu" descriere="O organizație fictivă cu o echipă de șase persoane, ca să vezi cum arată modulul când e folosit.">
+    <PaginaDemo orgSlug={orgSlug} titlu={p.titlu} descriere={p.descriere}>
       <PrezentareClient orgSlug={orgSlug} d={d.prezentare} />
     </PaginaDemo>
   );

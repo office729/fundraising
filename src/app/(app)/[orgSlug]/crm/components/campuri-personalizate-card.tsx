@@ -17,7 +17,8 @@ import { Input, Label, Select, Textarea } from "./ui/input";
 export function CampuriPersonalizateCard({ entitate, idEntitate, defs, valori }: { entitate: EntitateCamp; idEntitate: string; defs: DefinitieCamp[]; valori: ValoriCamp }) {
   const { orgSlug } = useParams<{ orgSlug: string }>();
   const router = useRouter();
-  const t = COMPONENTE_UI_DICT[useLocale()];
+  const locale = useLocale();
+  const t = COMPONENTE_UI_DICT[locale];
   const [editare, setEditare] = useState(false);
   const [ciorna, setCiorna] = useState<Record<string, string>>({});
   const [erori, setErori] = useState<Record<string, string>>({});
@@ -60,7 +61,7 @@ export function CampuriPersonalizateCard({ entitate, idEntitate, defs, valori }:
       {!editare ? (
         <dl className="mt-3 grid gap-3 sm:grid-cols-2">
           {defs.map((d) => {
-            const text = formateazaValoare(d, valori[d.cheie]);
+            const text = formateazaValoare(d, valori[d.cheie], locale);
             return (
               <div key={d.cheie}>
                 <dt className="text-[12px] text-[var(--ci-text-muted)]">{d.eticheta}</dt>

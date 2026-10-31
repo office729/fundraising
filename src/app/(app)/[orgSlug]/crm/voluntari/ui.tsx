@@ -42,10 +42,10 @@ export function MesajActiune({ mesaj }: { mesaj: Mesaj }) {
 }
 
 const FUS = "Europe/Bucharest";
-export const dataScurta = (iso: string) => new Date(iso).toLocaleDateString("ro-RO", { timeZone: FUS, day: "2-digit", month: "short", year: "numeric" });
-export const dataOra = (iso: string) => new Date(iso).toLocaleString("ro-RO", { timeZone: FUS, day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
-export const ora = (iso: string) => new Date(iso).toLocaleTimeString("ro-RO", { timeZone: FUS, hour: "2-digit", minute: "2-digit" });
-export const ziData = (isoData: string) => new Date(`${isoData}T12:00:00Z`).toLocaleDateString("ro-RO", { timeZone: "UTC", day: "2-digit", month: "short" });
+export const dataScurta = (iso: string, numere = "ro-RO") => new Date(iso).toLocaleDateString(numere, { timeZone: FUS, day: "2-digit", month: "short", year: "numeric" });
+export const dataOra = (iso: string, numere = "ro-RO") => new Date(iso).toLocaleString(numere, { timeZone: FUS, day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+export const ora = (iso: string, numere = "ro-RO") => new Date(iso).toLocaleTimeString(numere, { timeZone: FUS, hour: "2-digit", minute: "2-digit" });
+export const ziData = (isoData: string, numere = "ro-RO") => new Date(`${isoData}T12:00:00Z`).toLocaleDateString(numere, { timeZone: "UTC", day: "2-digit", month: "short" });
 
 const TONURI_INSCRIERE: Record<string, StatusTone> = { confirmata: "green", prezent: "green", in_asteptare: "amber", rezerva: "neutral", absent: "red", anulata: "neutral" };
 export function PastilaStatus({ valoare, eticheta }: { valoare: string; eticheta: string }) {

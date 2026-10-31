@@ -17,7 +17,7 @@ import { valideazaFacebook, valideazaLinkedin } from "@/lib/pagini-sociale";
 import { normalizeazaTelefonE164 } from "@/lib/telefon";
 import { urlWebSigur } from "@/lib/validation";
 import { getLocale } from "@/lib/i18n/get-locale";
-import { COMPANII_UI_DICT, traduEroareLib } from "@/lib/i18n/dictionaries/companii-ui";
+import { COMPANII_UI_DICT } from "@/lib/i18n/dictionaries/companii-ui";
 import { apeluri, companies, companyNotite, companySponsorizari, companyStageLog, contacts, crmKv } from "@/lib/db/schema";
 
 export type ActionState = { error: string | null };
@@ -129,8 +129,8 @@ export const adaugaSponsorizare = withOrgSession(
     } catch {
       return { error: m.defalcareIlizibila };
     }
-    const al = valideazaAlocari(suma, alocariBrut);
-    if (!al.ok) return { error: traduEroareLib(await getLocale(), al.eroare) };
+    const al = valideazaAlocari(suma, alocariBrut, await getLocale());
+    if (!al.ok) return { error: al.eroare };
 
     const firma = await ctx.db.select({ id: companies.id }).from(companies).where(and(eq(companies.id, companyId), eq(companies.orgId, ctx.orgId))).limit(1);
     if (!firma[0]) return { error: m.firmaNegasita };
@@ -161,8 +161,8 @@ export const seteazaAlocariSponsorizare = withOrgSession(async (ctx, id: string,
     .where(and(eq(companySponsorizari.id, id), eq(companySponsorizari.orgId, ctx.orgId)))
     .limit(1);
   if (!s) return { error: m.sponsorizareNegasita };
-  const al = valideazaAlocari(s.suma, alocari);
-  if (!al.ok) return { error: traduEroareLib(await getLocale(), al.eroare) };
+  const al = valideazaAlocari(s.suma, alocari, await getLocale());
+  if (!al.ok) return { error: al.eroare };
   await ctx.db
     .update(companySponsorizari)
     .set({ alocari: al.alocari.length ? al.alocari : null })
@@ -411,14 +411,14 @@ export const adaugaFirma = withOrgSession(async (ctx, _prev: AdaugaFirmaState, f
   let facebook: string | null = null;
   const li = txt("linkedin");
   if (li) {
-    const r = valideazaLinkedin(li);
-    if (!r.ok) return { error: traduEroareLib(await getLocale(), r.eroare) };
+    const r = valideazaLinkedin(li, await getLocale());
+    if (!r.ok) return { error: r.eroare };
     linkedin = r.url;
   }
   const fb = txt("facebook");
   if (fb) {
-    const r = valideazaFacebook(fb);
-    if (!r.ok) return { error: traduEroareLib(await getLocale(), r.eroare) };
+    const r = valideazaFacebook(fb, await getLocale());
+    if (!r.ok) return { error: r.eroare };
     facebook = r.url;
   }
 

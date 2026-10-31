@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 
 import { requireOrgAccess } from "@/lib/auth/guard";
+import { PERFORMANTA_UI_DICT } from "@/lib/i18n/dictionaries/performanta-ui";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { titluAbsolut } from "@/lib/page-titles";
 
 import { PerfNav } from "../perf-nav";
@@ -19,11 +21,12 @@ export default async function RapoartePage({ params, searchParams }: { params: P
   const sp = await searchParams;
   const dep = unu(sp.dep);
   const [d, departamente] = await Promise.all([obtineRapoarte(orgSlug, unu(sp.perioada) || null, UUID.test(dep) ? dep : null), obtineOrganizare(orgSlug)]);
+  const p = PERFORMANTA_UI_DICT[await getLocale()].pagini.rapoarte;
   return (
     <div className="mx-auto max-w-[1300px] space-y-5">
       <div className="print:hidden">
-        <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">Rapoarte</h1>
-        <p className="mt-0.5 max-w-3xl text-[13px] text-[var(--ci-text-muted)]">Fiecare cifră își spune perioada, unitatea și sursa. Rapoartele arată progres și volum de muncă, nu un scor pe oameni.</p>
+        <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">{p.titlu}</h1>
+        <p className="mt-0.5 max-w-3xl text-[13px] text-[var(--ci-text-muted)]">{p.descriere}</p>
       </div>
       <Suspense fallback={null}>
         <div className="print:hidden">

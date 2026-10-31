@@ -160,10 +160,11 @@ const getDate = withOrgSession(async (ctx, filtru: { an: string; judet: string; 
         .from(atribConversii)
         .where(and(eq(atribConversii.orgId, ctx.orgId), eq(atribConversii.tip, "f230"), inArray(atribConversii.entitateId, idsPagina)))
     : [];
-  const provPeId = new Map(proveniente.map((x) => [x.id, etichetaProvenienta(x)]));
+  const locale = await getLocale();
+  const provPeId = new Map(proveniente.map((x) => [x.id, etichetaProvenienta(x, locale)]));
   const submisiiPublice = submisii.map((s) => ({
     id: s.id,
-    provenienta: provPeId.get(s.id) ?? etichetaProvenienta({ sursa: null, canal: null, tip: null }),
+    provenienta: provPeId.get(s.id) ?? etichetaProvenienta({ sursa: null, canal: null, tip: null }, locale),
     nume: s.nume,
     prenume: s.prenume,
     email: s.email,

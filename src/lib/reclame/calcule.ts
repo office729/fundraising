@@ -99,7 +99,14 @@ export const formatNumar = (n: number | null): string => (n === null ? "—" : n
 export const formatProcent = (x: number | null): string => (x === null ? "—" : `${nf(1).format(x)}%`);
 
 // O propoziție generată din date, fără interpretări: spune ce s-a întâmplat și unde datele sunt incomplete.
-export function propozitieRezumat(t: Totaluri, ind: Indicatori, cuDateIncomplete: boolean): string {
+export function propozitieRezumat(t: Totaluri, ind: Indicatori, cuDateIncomplete: boolean, locale: "ro" | "en" = "ro"): string {
+  if (locale === "en") {
+    if (t.cheltuieliBani === 0 && t.donatii === 0) return "There are no imported costs or ad-attributed donations in the chosen period yet.";
+    if (t.cheltuieliBani === 0) return "There are donations attributed to ads, but no imported costs for the period, so efficiency cannot be calculated.";
+    const bazaEn = ind.roasNet === null ? "" : `In the chosen period, for every 1 leu spent, ${new Intl.NumberFormat("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(ind.roasNet)} lei of confirmed net donations were attributed.`;
+    const limitaEn = cuDateIncomplete ? " The data is incomplete (see “Data quality”), so the figure is indicative." : "";
+    return `${bazaEn}${limitaEn}`.trim();
+  }
   if (t.cheltuieliBani === 0 && t.donatii === 0) return "Nu există încă cheltuieli importate sau donații atribuite reclamelor în perioada aleasă.";
   if (t.cheltuieliBani === 0) return "Sunt donații atribuite reclamelor, dar nu există cheltuieli importate pentru perioadă, deci eficiența nu poate fi calculată.";
   const baza = ind.roasNet === null ? "" : `În perioada aleasă, la fiecare 1 leu cheltuit au fost atribuiți ${new Intl.NumberFormat("ro-RO", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(ind.roasNet)} lei din donații nete confirmate.`;

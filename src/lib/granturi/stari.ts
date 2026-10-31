@@ -1,6 +1,8 @@
 // Logica pură a modulului Granturi (fără baze de date și fără alias-uri `@/`, ca să poată fi testată direct): stările unei cereri de
 // finanțare, termenele, validarea intrărilor și rezumatul registrului.
 
+import type { Locale } from "../i18n/config";
+
 export const STARI_GRANT = ["identificat", "in_pregatire", "aplicat", "castigat", "respins", "in_derulare", "raportat", "renuntat"] as const;
 export type StareGrant = (typeof STARI_GRANT)[number];
 
@@ -14,6 +16,19 @@ export const ETICHETE_STARE: Record<StareGrant, string> = {
   raportat: "Raportat",
   renuntat: "Renunțat",
 };
+
+export const ETICHETE_STARE_EN: Record<StareGrant, string> = {
+  identificat: "Identified",
+  in_pregatire: "In preparation",
+  aplicat: "Applied",
+  castigat: "Won",
+  respins: "Rejected",
+  in_derulare: "In progress",
+  raportat: "Reported",
+  renuntat: "Withdrawn",
+};
+// Eticheta stării în limba cerută (implicit română).
+export const etichetaStare = (s: StareGrant, locale: Locale = "ro"): string => (locale === "en" ? ETICHETE_STARE_EN : ETICHETE_STARE)[s];
 
 // Cât timp cererea nu a fost depusă, termenul limită contează (alertă + reminder).
 export const STARI_CU_TERMEN_DEPUNERE: readonly StareGrant[] = ["identificat", "in_pregatire"];
@@ -32,6 +47,17 @@ export const ETICHETE_TIP: Record<TipFinantator, string> = {
   platforma: "Platformă / program",
   alt: "Altul",
 };
+
+export const ETICHETE_TIP_EN: Record<TipFinantator, string> = {
+  corporate: "Company / corporate foundation",
+  fundatie: "Foundation",
+  ue: "European funds",
+  public: "Public institution",
+  platforma: "Platform / programme",
+  alt: "Other",
+};
+// Eticheta tipului de finanțator în limba cerută (implicit română).
+export const etichetaTipFinantator = (t: TipFinantator, locale: Locale = "ro"): string => (locale === "en" ? ETICHETE_TIP_EN : ETICHETE_TIP)[t];
 
 export const MONEDE = ["RON", "EUR", "USD"] as const;
 export type Moneda = (typeof MONEDE)[number];
@@ -78,7 +104,14 @@ export function aziBucuresti(acum: Date = new Date()): string {
 }
 
 // Text scurt, uman, pentru un termen: „în 3 zile”, „azi”, „depășit cu 2 zile”.
-export function textTermen(zile: number | null): string {
+export function textTermen(zile: number | null, locale: Locale = "ro"): string {
+  if (locale === "en") {
+    if (zile === null) return "no deadline";
+    if (zile === 0) return "today";
+    if (zile === 1) return "tomorrow";
+    if (zile === -1) return "overdue by one day";
+    return zile > 0 ? `in ${zile} days` : `overdue by ${-zile} days`;
+  }
   if (zile === null) return "fără termen";
   if (zile === 0) return "azi";
   if (zile === 1) return "mâine";
@@ -242,18 +275,20 @@ export function linkValid(x: unknown): string | null {
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export function valideazaGrant(i: GrantInput): { ok: true; v: GrantCurat } | { ok: false; eroare: string } {
+// Mesajul de eroare e în limba cerută prin `locale` (implicit română).
+export function valideazaGrant(i: GrantInput, locale: Locale = "ro"): { ok: true; v: GrantCurat } | { ok: false; eroare: string } {
+  const en = locale === "en";
   const finantator = text(i.finantator, 160);
   const titlu = text(i.titlu, 240);
-  if (!finantator) return { ok: false, eroare: "Scrie numele finanțatorului." };
-  if (!titlu) return { ok: false, eroare: "Scrie titlul programului sau al apelului." };
-  if (!esteStare(i.stare)) return { ok: false, eroare: "Starea nu e validă." };
-  if (i.termen && !dataValida(i.termen)) return { ok: false, eroare: "Termenul de depunere nu e o dată validă." };
-  if (i.dataDecizie && !dataValida(i.dataDecizie)) return { ok: false, eroare: "Data deciziei nu e validă." };
-  if (i.termenRaportare && !dataValida(i.termenRaportare)) return { ok: false, eroare: "Termenul de raportare nu e o dată validă." };
-  if (i.suma && sumaValida(i.suma) === null) return { ok: false, eroare: "Suma solicitată nu e validă." };
-  if (i.sumaCastigata && sumaValida(i.sumaCastigata) === null) return { ok: false, eroare: "Suma câștigată nu e validă." };
-  if (i.link && !linkValid(i.link)) return { ok: false, eroare: "Linkul trebuie să fie o adresă web (ex. https://…)." };
+  if (!finantator) return { ok: false, eroare: en ? "Enter the funder's name." : "Scrie numele finanțatorului." };
+  if (!titlu) return { ok: false, eroare: en ? "Enter the title of the program or call." : "Scrie titlul programului sau al apelului." };
+  if (!esteStare(i.stare)) return { ok: false, eroare: en ? "The status is not valid." : "Starea nu e validă." };
+  if (i.termen && !dataValida(i.termen)) return { ok: false, eroare: en ? "The submission deadline is not a valid date." : "Termenul de depunere nu e o dată validă." };
+  if (i.dataDecizie && !dataValida(i.dataDecizie)) return { ok: false, eroare: en ? "The decision date is not valid." : "Data deciziei nu e validă." };
+  if (i.termenRaportare && !dataValida(i.termenRaportare)) return { ok: false, eroare: en ? "The reporting deadline is not a valid date." : "Termenul de raportare nu e o dată validă." };
+  if (i.suma && sumaValida(i.suma) === null) return { ok: false, eroare: en ? "The requested amount is not valid." : "Suma solicitată nu e validă." };
+  if (i.sumaCastigata && sumaValida(i.sumaCastigata) === null) return { ok: false, eroare: en ? "The awarded amount is not valid." : "Suma câștigată nu e validă." };
+  if (i.link && !linkValid(i.link)) return { ok: false, eroare: en ? "The link must be a web address (e.g. https://…)." : "Linkul trebuie să fie o adresă web (ex. https://…)." };
   return {
     ok: true,
     v: {

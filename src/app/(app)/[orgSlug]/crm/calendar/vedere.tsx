@@ -2,6 +2,8 @@ import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
 import { ETICHETE_TIP_EVENIMENT, NUME_LUNI, grilaLuna, grupeazaPeZile, lunaVecina, type EvenimentCalendar, type TipEveniment } from "@/lib/calendar-fundraising";
+import type { Locale } from "@/lib/i18n/config";
+import { CALENDAR_UI_DICT } from "@/lib/i18n/dictionaries/calendar-ui";
 
 import { Card } from "../components/ui/card";
 
@@ -36,24 +38,35 @@ function Punct({ tip, mic }: { tip: TipEveniment; mic?: boolean }) {
 // Termenele de acțiune care au trecut sau cad azi se marchează în listă (la „moment de campanie” sau „follow-up” nu are rost).
 const CERE_ACTIUNE: TipEveniment[] = ["grant", "raportare", "obiectiv", "followup"];
 
-const ZILE_SAPTAMANA = ["Lu", "Ma", "Mi", "Jo", "Vi", "Sâ", "Du"];
-
 const zi = (data: string) => Number(data.slice(8, 10));
-const dataLunga = (data: string) => new Date(`${data}T12:00:00`).toLocaleDateString("ro-RO", { weekday: "long", day: "numeric", month: "long" });
+const dataLunga = (data: string, locale: Locale) => new Date(`${data}T12:00:00`).toLocaleDateString(locale === "ro" ? "ro-RO" : "en-GB", { weekday: "long", day: "numeric", month: "long" });
 
-function Eticheta({ tip }: { tip: TipEveniment }) {
+// Titlul și detaliul unui eveniment în limba curentă. În română rămân cele din bibliotecă; în engleză se traduc cele fixe (după id) și prefixele după tip.
+function textEveniment(e: EvenimentCalendar, locale: Locale): { titlu: string; detaliu: string | null } {
+  if (locale === "ro") return { titlu: e.titlu, detaliu: e.detaliu };
+  const d = CALENDAR_UI_DICT.en;
+  const baza = e.id.replace(/-\d{4}$/, "");
+  if (d.titluri[baza]) return { titlu: d.titluri[baza], detaliu: d.detalii[baza] ?? e.detaliu };
+  const pre = d.prefix[e.tip];
+  const titlu = pre && e.titlu.startsWith(pre[0]) ? pre[1] + e.titlu.slice(pre[0].length) : e.titlu;
+  return { titlu, detaliu: e.detaliu ? (d.detaliuFix[e.detaliu] ?? e.detaliu) : null };
+}
+
+function Eticheta({ tip, locale }: { tip: TipEveniment; locale: Locale }) {
   return (
     <span className="inline-flex items-center gap-1.5 text-[11.5px] text-[var(--ci-text-muted)]">
       <Punct tip={tip} />
-      {ETICHETE_TIP_EVENIMENT[tip]}
+      {locale === "ro" ? ETICHETE_TIP_EVENIMENT[tip] : CALENDAR_UI_DICT[locale].tipuri[tip]}
     </span>
   );
 }
 
 // Calendarul lunii: grila, legenda și lista pe zile. Primește evenimentele gata calculate (vezi page.tsx), deci nu atinge baza de date.
-export function CalendarVedere({ orgSlug, an, luna, azi, evenimente }: { orgSlug: string; an: number; luna: number; azi: string; evenimente: EvenimentCalendar[] }) {
+export function CalendarVedere({ orgSlug, an, luna, azi, evenimente, locale }: { orgSlug: string; an: number; luna: number; azi: string; evenimente: EvenimentCalendar[]; locale: Locale }) {
+  const dict = CALENDAR_UI_DICT[locale];
+  const numeLuna = locale === "ro" ? NUME_LUNI[luna - 1] : new Date(Date.UTC(an, luna - 1, 1)).toLocaleDateString("en-GB", { month: "long", timeZone: "UTC" });
   const grila = grilaLuna(an, luna, azi);
-  const pe = grupeazaPeZile(evenimente);
+  const pe = grupeazaPeZile(evenimente.map((e) => ({ ...e, ...textEveniment(e, locale) })));
   const prefixLuna = `${an}-${String(luna).padStart(2, "0")}`;
   const zileCuEvenimente = [...pe.keys()].filter((d) => d.startsWith(prefixLuna));
   const link = (l: string) => `/${orgSlug}/crm/calendar?luna=${l}`;
@@ -67,31 +80,31 @@ export function CalendarVedere({ orgSlug, an, luna, azi, evenimente }: { orgSlug
             <CalendarDays className="h-5 w-5" />
           </span>
           <div>
-            <h1 className="ci-display text-xl font-bold text-[var(--ci-text)]">Calendar de fundraising</h1>
+            <h1 className="ci-display text-xl font-bold text-[var(--ci-text)]">{dict.titlu}</h1>
             <p className="mt-0.5 max-w-2xl text-[13px] text-[var(--ci-text-muted)]">
-              Termene de granturi, sfârșituri de campanie, follow-up-uri la companii, ture de voluntari și momentele din an bune pentru o campanie, într-o singură vedere.
+              {dict.descriere}
             </p>
           </div>
         </div>
-        <nav aria-label="Schimbă luna" className="flex items-center gap-2">
-          <Link prefetch={false} href={link(lunaVecina(an, luna, -1))} className={butonNav} aria-label="Luna anterioară">
+        <nav aria-label={dict.schimbaLuna} className="flex items-center gap-2">
+          <Link prefetch={false} href={link(lunaVecina(an, luna, -1))} className={butonNav} aria-label={dict.lunaAnterioara}>
             <ChevronLeft className="h-4 w-4" />
           </Link>
           <span className="ci-display min-w-[9.5rem] text-center text-[15px] font-semibold text-[var(--ci-text)] capitalize">
-            {NUME_LUNI[luna - 1]} {an}
+            {numeLuna} {an}
           </span>
-          <Link prefetch={false} href={link(lunaVecina(an, luna, 1))} className={butonNav} aria-label="Luna următoare">
+          <Link prefetch={false} href={link(lunaVecina(an, luna, 1))} className={butonNav} aria-label={dict.lunaUrmatoare}>
             <ChevronRight className="h-4 w-4" />
           </Link>
           <Link prefetch={false} href={`/${orgSlug}/crm/calendar`} className="inline-flex h-9 items-center rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 text-[13px] font-medium text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]">
-            Azi
+            {dict.azi}
           </Link>
         </nav>
       </div>
 
       <Card padded={false} className="overflow-hidden">
         <div className="grid grid-cols-7 border-b border-[var(--ci-border)] bg-[var(--ci-surface-2)] text-center text-[12px] font-medium text-[var(--ci-text-muted)]">
-          {ZILE_SAPTAMANA.map((z) => (
+          {dict.zileSapt.map((z) => (
             <div key={z} className="py-2">
               {z}
             </div>
@@ -103,7 +116,7 @@ export function CalendarVedere({ orgSlug, an, luna, azi, evenimente }: { orgSlug
             return (
               <div key={z.data} className={`min-h-[4.5rem] border-r border-b border-[var(--ci-border)] p-1.5 last:border-r-0 sm:min-h-[6.5rem] ${z.inLuna ? "" : "bg-[var(--ci-surface-2)]/60 opacity-60"}`}>
                 {lista.length > 0 && z.inLuna ? (
-                  <a href={`#zi-${z.data}`} className={`inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-[12px] font-semibold tabular-nums hover:underline ${z.azi ? "bg-[var(--ci-primary)] text-white" : "text-[var(--ci-text)]"}`} aria-current={z.azi ? "date" : undefined} aria-label={`${dataLunga(z.data)}: ${lista.length} ${lista.length === 1 ? "eveniment" : "evenimente"}`}>
+                  <a href={`#zi-${z.data}`} className={`inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-[12px] font-semibold tabular-nums hover:underline ${z.azi ? "bg-[var(--ci-primary)] text-white" : "text-[var(--ci-text)]"}`} aria-current={z.azi ? "date" : undefined} aria-label={`${dataLunga(z.data, locale)}: ${dict.eveniment(lista.length)}`}>
                     {zi(z.data)}
                   </a>
                 ) : (
@@ -133,7 +146,7 @@ export function CalendarVedere({ orgSlug, an, luna, azi, evenimente }: { orgSlug
                       )}
                     </li>
                   ))}
-                  {lista.length > 3 && <li className="px-1 text-[11px] text-[var(--ci-text-muted)]">+{lista.length - 3} în plus</li>}
+                  {lista.length > 3 && <li className="px-1 text-[11px] text-[var(--ci-text-muted)]">{dict.inPlus(lista.length - 3)}</li>}
                 </ul>
               </div>
             );
@@ -141,23 +154,23 @@ export function CalendarVedere({ orgSlug, an, luna, azi, evenimente }: { orgSlug
         </div>
       </Card>
 
-      <div className="flex flex-wrap gap-x-4 gap-y-1" aria-label="Legendă">
+      <div className="flex flex-wrap gap-x-4 gap-y-1" aria-label={dict.legenda}>
         {(Object.keys(ETICHETE_TIP_EVENIMENT) as TipEveniment[]).map((t) => (
-          <Eticheta key={t} tip={t} />
+          <Eticheta key={t} tip={t} locale={locale} />
         ))}
       </div>
 
       <Card>
-        <h2 className="ci-display mb-3 text-[15px] font-semibold text-[var(--ci-text)]">Lista lunii</h2>
+        <h2 className="ci-display mb-3 text-[15px] font-semibold text-[var(--ci-text)]">{dict.listaLunii}</h2>
         {zileCuEvenimente.length === 0 ? (
-          <p className="text-[13px] text-[var(--ci-text-muted)]">Nimic programat în această lună.</p>
+          <p className="text-[13px] text-[var(--ci-text-muted)]">{dict.nimic}</p>
         ) : (
           <ul className="divide-y divide-[var(--ci-border)]">
             {zileCuEvenimente.map((d) => (
               <li key={d} id={`zi-${d}`} className="grid scroll-mt-4 grid-cols-1 gap-1 py-3 sm:grid-cols-[11rem_1fr]">
                 <p className={`text-[13px] font-medium capitalize ${d === azi ? "text-[var(--ci-primary)]" : "text-[var(--ci-text)]"}`}>
-                  {dataLunga(d)}
-                  {d === azi ? " · azi" : ""}
+                  {dataLunga(d, locale)}
+                  {d === azi ? dict.azi2 : ""}
                 </p>
                 <ul className="space-y-1.5">
                   {(pe.get(d) ?? []).map((e) => (
@@ -172,10 +185,10 @@ export function CalendarVedere({ orgSlug, an, luna, azi, evenimente }: { orgSlug
                           <span className="font-medium text-[var(--ci-text)]">{e.titlu}</span>
                         )}
                         <span className="block text-[12px] text-[var(--ci-text-muted)]">
-                          {ETICHETE_TIP_EVENIMENT[e.tip]}
+                          {locale === "ro" ? ETICHETE_TIP_EVENIMENT[e.tip] : dict.tipuri[e.tip]}
                           {e.detaliu ? ` · ${e.detaliu}` : ""}
-                          {CERE_ACTIUNE.includes(e.tip) && e.data < azi && <b className="ml-1.5 font-semibold text-[var(--ci-red)]">· Depășit</b>}
-                          {CERE_ACTIUNE.includes(e.tip) && e.data === azi && <b className="ml-1.5 font-semibold text-[var(--ci-red)]">· Azi</b>}
+                          {CERE_ACTIUNE.includes(e.tip) && e.data < azi && <b className="ml-1.5 font-semibold text-[var(--ci-red)]">{dict.depasit}</b>}
+                          {CERE_ACTIUNE.includes(e.tip) && e.data === azi && <b className="ml-1.5 font-semibold text-[var(--ci-red)]">{dict.azi3}</b>}
                         </span>
                       </span>
                     </li>
@@ -186,7 +199,7 @@ export function CalendarVedere({ orgSlug, an, luna, azi, evenimente }: { orgSlug
           </ul>
         )}
         <p className="mt-3 text-[12px] text-[var(--ci-text-muted)]">
-          Termenele fiscale și momentele de campanie sunt orientative: verifică termenele oficiale pe anaf.ro. Termenele de granturi se adaugă din pagina Granturi.
+          {dict.nota}
         </p>
       </Card>
     </div>

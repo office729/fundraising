@@ -64,9 +64,13 @@ function adaugaDonatii(t: Totaluri, d: RandDonatieAgg) {
 const adunaOpt = (a: number | null, b: number | null): number | null => (a === null && b === null ? null : (a ?? 0) + (b ?? 0));
 
 export const ETICHETE_PLASAMENT: Record<string, string> = { facebook: "Facebook", instagram: "Instagram", audience_network: "Audience Network", messenger: "Messenger", "": "Plasament nespecificat" };
+export const ETICHETE_PLASAMENT_EN: Record<string, string> = { ...ETICHETE_PLASAMENT, "": "Unspecified placement" };
 
-export function asambleaza(input: { de: string; pana: string; costuri: RandCostAgg[]; donatii: RandDonatieAgg[]; legaturi: LegaturaCampanie[]; etichetePlatforme: Record<string, string> }): Raport {
+// `input.locale` (implicit română) alege limba etichetelor și notelor generate aici; numele campaniilor și ale platformelor vin din date.
+export function asambleaza(input: { de: string; pana: string; costuri: RandCostAgg[]; donatii: RandDonatieAgg[]; legaturi: LegaturaCampanie[]; etichetePlatforme: Record<string, string>; locale?: "ro" | "en" }): Raport {
   const { de, pana, costuri, donatii, legaturi } = input;
+  const en = input.locale === "en";
+  const etichetePlasament = en ? ETICHETE_PLASAMENT_EN : ETICHETE_PLASAMENT;
   // cod UTM legat, după (platformă + cheia campaniei de la platformă)
   const codPentruCampanie = new Map<string, string>();
   const campaniiCuCod = new Set<string>(); // platforma|cod
@@ -94,7 +98,7 @@ export function asambleaza(input: { de: string; pana: string; costuri: RandCostA
   const platforma = (p: string) => linie(pePlatformaMap, p, () => ({ cheie: p, eticheta: input.etichetePlatforme[p] ?? p, platforma: p, utmCampanie: null, legata: true, nota: null }));
 
   const plasament = (p: string, pl: string) =>
-    linie(pePlasamentMap, `${p}|${pl}`, () => ({ cheie: `${p}|${pl}`, eticheta: ETICHETE_PLASAMENT[pl] ?? pl, platforma: p, utmCampanie: null, legata: true, nota: null }));
+    linie(pePlasamentMap, `${p}|${pl}`, () => ({ cheie: `${p}|${pl}`, eticheta: etichetePlasament[pl] ?? pl, platforma: p, utmCampanie: null, legata: true, nota: null }));
 
   let costNealocatBani = 0;
   for (const c of costuri) {
@@ -115,11 +119,11 @@ export function asambleaza(input: { de: string; pana: string; costuri: RandCostA
       ? linie(peCampanieMap, `${c.platforma}|${cod}`, () => ({ cheie: `${c.platforma}|${cod}`, eticheta: c.campanieNume || cod, platforma: c.platforma, utmCampanie: cod, legata: true, nota: null }))
       : linie(peCampanieMap, `${c.platforma}|~${c.campanieCheie}`, () => ({
           cheie: `${c.platforma}|~${c.campanieCheie}`,
-          eticheta: c.campanieNume || c.campanieCheie || "Campanie nespecificată",
+          eticheta: c.campanieNume || c.campanieCheie || (en ? "Unspecified campaign" : "Campanie nespecificată"),
           platforma: c.platforma,
           utmCampanie: null,
           legata: false,
-          nota: "Cheltuială nealocată: leagă campania de un cod UTM",
+          nota: en ? "Unallocated spend: link the campaign to a UTM code" : "Cheltuială nealocată: leagă campania de un cod UTM",
         }));
     l.totaluri.cheltuieliBani += c.costBani;
     l.afisari = adunaOpt(l.afisari, c.afisari);
@@ -143,11 +147,11 @@ export function asambleaza(input: { de: string; pana: string; costuri: RandCostA
     const cheieC = `${pcheie}|${d.utmCampanie ?? "~fara-cod"}`;
     const l = linie(peCampanieMap, cheieC, () => ({
       cheie: cheieC,
-      eticheta: d.utmCampanie ?? "Fără cod de campanie în link",
+      eticheta: d.utmCampanie ?? (en ? "No campaign code in the link" : "Fără cod de campanie în link"),
       platforma: pcheie,
       utmCampanie: d.utmCampanie,
       legata: legat,
-      nota: legat ? null : d.utmCampanie ? "Cod UTM fără cheltuială legată" : "Linkul n-a avut utm_campaign",
+      nota: legat ? null : d.utmCampanie ? (en ? "UTM code with no linked spend" : "Cod UTM fără cheltuială legată") : en ? "The link had no utm_campaign" : "Linkul n-a avut utm_campaign",
     }));
     adaugaDonatii(l.totaluri, d);
     if (!legat) donatiiFaraCostLegat += d.n;

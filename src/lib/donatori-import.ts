@@ -1,5 +1,7 @@
 import { faraDiacritice } from "@/lib/cautare";
 import { curataNume, curataTelefon, evalueazaEmail } from "@/lib/curatare-contacte";
+import type { Locale } from "@/lib/i18n/config";
+import { traduMotivEmail } from "@/lib/i18n/dictionaries/lib-mesaje-ui";
 import { EMAIL_RE, normalizeazaEmail } from "@/lib/validation";
 
 // Importul de donații în CRM Persoane fizice — partea pură (fără baza de date): detectarea coloanelor, parsarea sumelor și a datelor,
@@ -138,7 +140,8 @@ const text = (v: unknown, max: number) => {
   return s === "" ? null : s;
 };
 
-export type OptiuniRand = { corecteazaEmail?: boolean };
+// `locale` (implicit română) alege limba motivelor întoarse.
+export type OptiuniRand = { corecteazaEmail?: boolean; locale?: Locale };
 
 // Un telefon pe care nu l-am putut valida se păstrează așa cum a fost scris doar dacă arată a număr (cifre, spații, + și paranteze): „7.57E+08” (Excel) sau „-” nu au ce căuta în fișa donatorului.
 function telefonBrutPastrat(t: string | null | undefined): string | null {
@@ -150,12 +153,14 @@ function telefonBrutPastrat(t: string | null | undefined): string | null {
 
 export function normalizeazaRand(celule: unknown[], m: Mapare, acum: Date = new Date(), optiuni: OptiuniRand = {}): RezultatRand {
   const ia = (c: CampImport) => (m[c] !== undefined ? celule[m[c]!] : undefined);
+  const locale: Locale = optiuni.locale ?? "ro";
+  const en = locale === "en";
   const status = cheie(ia("status"));
-  if (status && (STATUS_RAU.test(status) || !STATUS_BUN.test(status))) return { ok: false, motiv: "Status care nu e o donație reușită" };
+  if (status && (STATUS_RAU.test(status) || !STATUS_BUN.test(status))) return { ok: false, motiv: en ? "Status is not a successful donation" : "Status care nu e o donație reușită" };
   // E-mailul: adresele aproape sigure se corectează (gmial.com → gmail.com) și se raportează; cele imposibile sau fictive se resping cu motivul spus.
   const brutEmail = String(ia("email") ?? "").trim();
   const ev = evalueazaEmail(brutEmail);
-  if (ev.stare === "invalid") return { ok: false, motiv: brutEmail ? `Email invalid: ${ev.motiv ?? "adresă imposibilă"}` : "Email lipsă" };
+  if (ev.stare === "invalid") return { ok: false, motiv: brutEmail ? `${en ? "Invalid email" : "Email invalid"}: ${traduMotivEmail(ev.motiv ?? "Adresă imposibilă", locale)}` : en ? "Email missing" : "Email lipsă" };
   let email = ev.email;
   let emailOriginal: string | null = null;
   let emailMotiv: string | null = null;
@@ -163,16 +168,16 @@ export function normalizeazaRand(celule: unknown[], m: Mapare, acum: Date = new 
     if (optiuni.corecteazaEmail === false) {
       // Fără corecturi: rămâne adresa din fișier, dacă măcar are forma unei adrese.
       email = normalizeazaEmail(brutEmail);
-      if (!EMAIL_RE.test(email)) return { ok: false, motiv: `Email invalid: ${ev.motiv ?? "adresă imposibilă"}` };
+      if (!EMAIL_RE.test(email)) return { ok: false, motiv: `${en ? "Invalid email" : "Email invalid"}: ${traduMotivEmail(ev.motiv ?? "Adresă imposibilă", locale)}` };
     } else {
       emailOriginal = brutEmail;
-      emailMotiv = ev.motiv;
+      emailMotiv = ev.motiv ? traduMotivEmail(ev.motiv, locale) : ev.motiv;
     }
   }
   const suma = parseSuma(ia("suma"));
-  if (suma === null) return { ok: false, motiv: "Sumă lipsă sau invalidă" };
+  if (suma === null) return { ok: false, motiv: en ? "Amount missing or invalid" : "Sumă lipsă sau invalidă" };
   const data = parseData(ia("data"), acum);
-  if (!data) return { ok: false, motiv: "Dată lipsă sau invalidă" };
+  if (!data) return { ok: false, motiv: en ? "Date missing or invalid" : "Dată lipsă sau invalidă" };
   const moneda = (text(ia("moneda"), 8) ?? "RON").toUpperCase().replace("LEI", "RON").replace("RON.", "RON");
   const numeCurat = curataNume(ia("nume")).nume;
   const telefon = curataTelefon(ia("telefon"));

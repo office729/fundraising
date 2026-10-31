@@ -2,15 +2,18 @@
 
 import { useMemo } from "react";
 
+import { INSTRUMENTE_UI_DICT } from "@/lib/i18n/dictionaries/instrumente-ui";
 import { curataDateCertificat, dateCertificatExemplu, dateCertificatGoale, MODELE_CERTIFICATE, MODELE_PORTRET, TIPURI_CERTIFICAT, type DateCertificat } from "@/lib/certificate";
 import { randeazaCertificat } from "@/lib/certificate-modele";
 import { MOTIVE } from "@/lib/motiv";
 import { paletaDinHex } from "@/lib/raport-impact-culori";
 import type { InfoOrganizatie } from "@/lib/scrisori";
 
+import { useLocale } from "../../lib/locale-context";
 import { GalerieSabloane } from "../_comun/galerie-sabloane";
 import { asiguraVerificareAction } from "../_comun/documente-actions";
 import { GeneratorDocument, type Banner, type GrupDef } from "../_comun/generator-document";
+import { traduElemente } from "../_comun/tradu";
 
 const accenteOrg = (o: InfoOrganizatie) => {
   const p = o.culoare ? paletaDinHex(o.culoare) : null;
@@ -18,14 +21,16 @@ const accenteOrg = (o: InfoOrganizatie) => {
 };
 
 export function GalerieCertificate({ orgSlug, org, azi }: { orgSlug: string; org: InfoOrganizatie; azi: string }) {
+  const locale = useLocale();
+  const d = INSTRUMENTE_UI_DICT[locale].galerieCertificate;
   const modele = useMemo(() => {
     const ex = dateCertificatExemplu({ nume: org.nume, logo: org.logo, acc: accenteOrg(org) }, azi);
-    return MODELE_CERTIFICATE.map((m) => ({ id: m.id, eticheta: m.eticheta, hint: m.hint, html: randeazaCertificat(ex, m.id), ...(MODELE_PORTRET.includes(m.id) ? { lat: 794, inalt: 1123 } : {}) }));
-  }, [org, azi]);
+    return traduElemente(MODELE_CERTIFICATE, "certificate", locale).map((m) => ({ id: m.id, eticheta: m.eticheta, hint: m.hint, html: randeazaCertificat(ex, m.id), ...(MODELE_PORTRET.includes(m.id) ? { lat: 794, inalt: 1123 } : {}) }));
+  }, [org, azi, locale]);
   return (
     <GalerieSabloane
-      titlu="Certificate: alege un șablon"
-      subtitlu={`${MODELE_CERTIFICATE.length} modele de certificat, cu date de exemplu. Apasă pe unul ca să-l completezi.`}
+      titlu={d.titlu}
+      subtitlu={d.subtitlu(MODELE_CERTIFICATE.length)}
       hrefGenerator={`/${orgSlug}/crm/instrumente/certificate/generator`}
       modele={modele}
       lat={1123}
@@ -36,51 +41,56 @@ export function GalerieCertificate({ orgSlug, org, azi }: { orgSlug: string; org
   );
 }
 
-const GRUPURI: GrupDef[] = [
-  {
-    titlu: "Cui se acordă",
-    campuri: [
-      { cheie: "destinatar", eticheta: "Numele persoanei sau al companiei", placeholder: "ex. Exemplu Construct SRL" },
-      { cheie: "detaliu", eticheta: "Detaliu (opțional)", placeholder: "ex. 4 proiecte susținute în 2025–2026", ajutor: "Nu publica sume date de persoane fizice fără acordul lor." },
-    ],
-  },
-  {
-    titlu: "Textul certificatului",
-    campuri: [
-      { cheie: "titlu", eticheta: "Titlul" },
-      { cheie: "introducere", eticheta: "Formula de acordare", placeholder: "ex. se acordă cu mulțumire" },
-      { cheie: "motiv", eticheta: "Motivul", tip: "textarea", rows: 4, ajutor: "Se completează automat: {DESTINATAR}, {ORGANIZATIE}, {DATA}." },
-      { cheie: "citat", eticheta: "Citat sau mesaj scurt (opțional)" },
-    ],
-  },
-  {
-    titlu: "Data și numărul",
-    campuri: [
-      { cheie: "loc", eticheta: "Localitatea", jumatate: true },
-      { cheie: "data", eticheta: "Data", tip: "data", jumatate: true },
-      { cheie: "nrCertificat", eticheta: "Număr certificat (opțional)", placeholder: "ex. Nr. 014/2026" },
-    ],
-  },
-  {
-    titlu: "Semnături",
-    campuri: [
-      { cheie: "semn1Nume", eticheta: "Primul semnatar", jumatate: true },
-      { cheie: "semn1Functie", eticheta: "Funcția", jumatate: true },
-      { cheie: "semn2Nume", eticheta: "Al doilea semnatar (opțional)", jumatate: true },
-      { cheie: "semn2Functie", eticheta: "Funcția", jumatate: true },
-    ],
-  },
-  {
-    titlu: "Verificare online",
-    subtitlu: "Pe certificat apar un cod QR și adresa unei pagini publice care confirmă că a fost emis de organizație.",
-    campuri: [{ cheie: "verificareOnline", eticheta: "Verificare online", tip: "bifa", placeholder: "Cod de verificare și pagină publică (arată numele destinatarului, titlul, data, numărul și emitentul)", ajutor: "Debifează dacă numele destinatarului nu trebuie să fie public, de exemplu la un voluntar. Pagina oferă și butoane de distribuire pe LinkedIn." }],
-  },
-  { titlu: "Organizația", campuri: [{ cheie: "antetNume", eticheta: "Numele organizației (apare în sigiliu)" }, { cheie: "motivGrafic", eticheta: "Motiv grafic", tip: "select", optiuni: MOTIVE, ajutor: "Ce apare în centrul sigiliului și în decor." }] },
-];
-
 const PERSONALE = ["destinatar", "detaliu", "citat", "logoDestinatar", "nrCertificat", "semn1Nume", "semn1Functie", "semn2Nume", "semn2Functie"];
 
 export function GeneratorCertificate({ orgSlug, org, azi, model, semnatar, dateIni, firmaId, bannere, siteUrl }: { siteUrl: string; orgSlug: string; org: InfoOrganizatie; azi: string; model?: string; semnatar: { nume: string; functie: string }; dateIni?: Record<string, unknown>; firmaId: string | null; bannere: Banner[] }) {
+  const locale = useLocale();
+  const t = INSTRUMENTE_UI_DICT[locale].certificate;
+  const g = t.grupuri;
+  const modeleTrad = useMemo(() => traduElemente(MODELE_CERTIFICATE, "certificate", locale), [locale]);
+  const motive = useMemo(() => traduElemente(MOTIVE, "motive", locale), [locale]);
+  const tipuri = useMemo(() => traduElemente(TIPURI_CERTIFICAT, "tipuriCertificat", locale), [locale]);
+  const GRUPURI: GrupDef[] = [
+    {
+      titlu: g.cuiSeAcorda,
+      campuri: [
+        { cheie: "destinatar", eticheta: g.destinatar, placeholder: g.destinatarEx },
+        { cheie: "detaliu", eticheta: g.detaliu, placeholder: g.detaliuEx, ajutor: g.detaliuAjutor },
+      ],
+    },
+    {
+      titlu: g.textul,
+      campuri: [
+        { cheie: "titlu", eticheta: g.titlu },
+        { cheie: "introducere", eticheta: g.introducere, placeholder: g.introducereEx },
+        { cheie: "motiv", eticheta: g.motiv, tip: "textarea", rows: 4, ajutor: g.motivAjutor },
+        { cheie: "citat", eticheta: g.citat },
+      ],
+    },
+    {
+      titlu: g.dataNumar,
+      campuri: [
+        { cheie: "loc", eticheta: g.loc, jumatate: true },
+        { cheie: "data", eticheta: g.data, tip: "data", jumatate: true },
+        { cheie: "nrCertificat", eticheta: g.nrCertificat, placeholder: g.nrEx },
+      ],
+    },
+    {
+      titlu: g.semnaturi,
+      campuri: [
+        { cheie: "semn1Nume", eticheta: g.semn1Nume, jumatate: true },
+        { cheie: "semn1Functie", eticheta: g.functia, jumatate: true },
+        { cheie: "semn2Nume", eticheta: g.semn2Nume, jumatate: true },
+        { cheie: "semn2Functie", eticheta: g.functia, jumatate: true },
+      ],
+    },
+    {
+      titlu: g.verificare,
+      subtitlu: g.verificareSub,
+      campuri: [{ cheie: "verificareOnline", eticheta: g.verificare, tip: "bifa", placeholder: g.verificareBifa, ajutor: g.verificareAjutor }],
+    },
+    { titlu: g.organizatia, campuri: [{ cheie: "antetNume", eticheta: g.antetNume }, { cheie: "motivGrafic", eticheta: g.motivGrafic, tip: "select", optiuni: motive, ajutor: g.motivGraficAjutor }] },
+  ];
   const modelValid = MODELE_CERTIFICATE.some((m) => m.id === model) ? (model as DateCertificat["model"]) : undefined;
   const initial = useMemo<DateCertificat>(() => {
     const d = dateCertificatGoale({ nume: org.nume, logo: org.logo, acc: accenteOrg(org) }, azi);
@@ -91,19 +101,19 @@ export function GeneratorCertificate({ orgSlug, org, azi, model, semnatar, dateI
     <GeneratorDocument<DateCertificat>
       orgSlug={orgSlug}
       cheieTool="certificate"
-      titlu="Certificat"
+      titlu={t.titluGenerator}
       galerieHref={`/${orgSlug}/crm/instrumente/certificate`}
-      modele={MODELE_CERTIFICATE}
+      modele={modeleTrad}
       date={initial}
       curata={(b) => curataDateCertificat(b, azi)}
       randeaza={randeazaCertificat}
       grupuri={GRUPURI}
-      tipuri={{ cheie: "tip", eticheta: "Tipul certificatului", optiuni: TIPURI_CERTIFICAT.map((t) => ({ id: t.id, eticheta: t.eticheta, patch: { titlu: t.titlu, introducere: t.introducere, motiv: t.motiv } })) }}
+      tipuri={{ cheie: "tip", eticheta: t.tipulCertificatului, optiuni: tipuri.map((x) => ({ id: x.id, eticheta: x.eticheta, patch: { titlu: x.titlu, introducere: x.introducere, motiv: x.motiv } })) }}
       logoOng={{ cheie: "logoOng", implicit: org.logo }}
-      logoDestinatar={{ cheie: "logoDestinatar", eticheta: "Logo destinatar (opțional)" }}
+      logoDestinatar={{ cheie: "logoDestinatar", eticheta: t.logoDestinatar }}
       culoareOrganizatie={org.culoare}
       numeFisier={(d) => `certificat-${d.destinatar || "document"}`}
-      titluIstoric={(d) => `${d.titlu || "Certificat"} — ${d.destinatar || "fără destinatar"}`}
+      titluIstoric={(d) => `${d.titlu || t.titluGenerator} — ${d.destinatar || INSTRUMENTE_UI_DICT[locale].scrisori.faraDestinatar}`}
       numerotare={{ cheie: "nrCertificat" }}
       campuriPersonale={PERSONALE}
       modelDinUrl={modelValid}
@@ -116,7 +126,7 @@ export function GeneratorCertificate({ orgSlug, org, azi, model, semnatar, dateI
         if (!r.ok) throw new Error(r.eroare);
         return { ...d, codVerificare: r.cod, urlVerificare: `${siteUrl}/v/${r.cod}` };
       }}
-      ajutor="Alegi șablonul și tipul certificatului, scrii numele destinatarului și vezi certificatul în dreapta, în timp real. „Salvează ca PDF” descarcă direct fișierul. Certificatul e un gest de recunoaștere, nu un document oficial. La export primește un cod QR și o pagină publică de verificare."
+      ajutor={t.ajutor}
     />
   );
 }

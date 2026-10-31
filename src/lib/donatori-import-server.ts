@@ -10,6 +10,7 @@ import { gasesteDubluri } from "@/lib/curatare-contacte";
 import { cursEurRon } from "@/lib/curs-valutar";
 import { donatiiImportate, donatoriImporturi, donatoriReali, fundraisingPages } from "@/lib/db/schema";
 import { donCte } from "@/lib/donatori-pf";
+import type { Locale } from "@/lib/i18n/config";
 import {
   CAMPURI_IMPORT,
   cheieDonatie,
@@ -34,7 +35,9 @@ type Ctx = Pick<OrgContext, "db" | "orgId" | "userId" | "orgPackage" | "orgCusto
 
 export type FisierCitit = { antet: string[]; randuri: unknown[][] };
 
-export async function citesteFisier(buf: Buffer, numeFisier: string): Promise<FisierCitit> {
+// `locale` (implicit română) alege limba mesajelor de eroare aruncate și a motivelor întoarse în plan.
+export async function citesteFisier(buf: Buffer, numeFisier: string, locale: Locale = "ro"): Promise<FisierCitit> {
+  const en = locale === "en";
   const XLSX = await import("xlsx");
   const ext = numeFisier.toLowerCase().split(".").pop() ?? "";
   let wb;
@@ -45,18 +48,18 @@ export async function citesteFisier(buf: Buffer, numeFisier: string): Promise<Fi
     wb = XLSX.read(text, { type: "string", FS: detecteazaSeparator(text), raw: true });
   }
   const ws = wb.Sheets[wb.SheetNames[0]];
-  if (!ws) throw new Error("Fișierul nu conține nicio foaie.");
+  if (!ws) throw new Error(en ? "The file contains no sheet." : "Fișierul nu conține nicio foaie.");
   // O foaie mică poate declara un interval uriaș (A1:XFD1048576): verificăm dimensiunea declarată înainte să o parcurgem.
   const interval = ws["!ref"] ? XLSX.utils.decode_range(ws["!ref"]) : null;
   if (interval && (interval.e.c - interval.s.c + 1 > MAX_COLOANE_IMPORT || interval.e.r - interval.s.r + 1 > MAX_RANDURI_IMPORT + 50)) {
-    throw new Error(`Foaia e prea mare (maximum ${MAX_RANDURI_IMPORT.toLocaleString("ro-RO")} de rânduri și ${MAX_COLOANE_IMPORT} de coloane).`);
+    throw new Error(en ? `The sheet is too large (maximum ${MAX_RANDURI_IMPORT.toLocaleString("en-GB")} rows and ${MAX_COLOANE_IMPORT} columns).` : `Foaia e prea mare (maximum ${MAX_RANDURI_IMPORT.toLocaleString("ro-RO")} de rânduri și ${MAX_COLOANE_IMPORT} de coloane).`);
   }
   const toate = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, raw: true, defval: "", blankrows: false });
   // Antetul = primul rând cu cel puțin 2 celule completate.
   const iAntet = toate.findIndex((r) => r.filter((c) => String(c ?? "").trim() !== "").length >= 2);
-  if (iAntet < 0) throw new Error("Nu am găsit un rând de antet în fișier.");
+  if (iAntet < 0) throw new Error(en ? "We could not find a header row in the file." : "Nu am găsit un rând de antet în fișier.");
   const randuri = toate.slice(iAntet + 1).filter((r) => r.some((c) => String(c ?? "").trim() !== ""));
-  if (randuri.length > MAX_RANDURI_IMPORT) throw new Error(`Fișierul are peste ${MAX_RANDURI_IMPORT.toLocaleString("ro-RO")} de rânduri. Împarte-l în mai multe importuri.`);
+  if (randuri.length > MAX_RANDURI_IMPORT) throw new Error(en ? `The file has more than ${MAX_RANDURI_IMPORT.toLocaleString("en-GB")} rows. Split it into several imports.` : `Fișierul are peste ${MAX_RANDURI_IMPORT.toLocaleString("ro-RO")} de rânduri. Împarte-l în mai multe importuri.`);
   return { antet: toate[iAntet].map((c) => String(c ?? "").trim()), randuri };
 }
 
@@ -92,7 +95,7 @@ export type CuratareImport = {
   totalPosibileDubluri: number;
 };
 
-export type OptiuniPlan = { corecteaza?: boolean };
+export type OptiuniPlan = { corecteaza?: boolean; locale?: Locale };
 
 export type Plan = {
   previzualizare: Previzualizare;
@@ -105,6 +108,8 @@ const ziua = (d: Date) => d.toISOString().slice(0, 10);
 
 export async function planifica(ctx: Ctx, fisier: FisierCitit, maparePrimita?: Mapare, optiuni: OptiuniPlan = {}): Promise<Plan> {
   const corecteaza = optiuni.corecteaza !== false;
+  const locale: Locale = optiuni.locale ?? "ro";
+  const en = locale === "en";
   const mapare = maparePrimita && Object.keys(maparePrimita).length ? maparePrimita : detecteazaColoane(fisier.antet);
   const lipsa = OBLIGATORII_IMPORT.filter((c) => mapare[c] === undefined);
   const gol: Previzualizare = {
@@ -119,7 +124,7 @@ export async function planifica(ctx: Ctx, fisier: FisierCitit, maparePrimita?: M
   const motive = new Map<string, number>();
   const exemple: { rand: number; motiv: string }[] = [];
   fisier.randuri.forEach((celule, i) => {
-    const r = normalizeazaRand(celule, mapare, acum, { corecteazaEmail: corecteaza });
+    const r = normalizeazaRand(celule, mapare, acum, { corecteazaEmail: corecteaza, locale });
     if (r.ok) valide.push({ rand: r.rand, nr: i + 2 });
     else {
       motive.set(r.motiv, (motive.get(r.motiv) ?? 0) + 1);
@@ -136,14 +141,14 @@ export async function planifica(ctx: Ctx, fisier: FisierCitit, maparePrimita?: M
   for (const { rand, nr } of valide) {
     if (rand.moneda === "RON") {
       const lei = Math.round(rand.suma);
-      if (lei < 1) { nrInvalide++; if (exemple.length < 12) exemple.push({ rand: nr, motiv: "Sumă sub 1 leu" }); continue; }
+      if (lei < 1) { nrInvalide++; if (exemple.length < 12) exemple.push({ rand: nr, motiv: en ? "Amount under 1 leu" : "Sumă sub 1 leu" }); continue; }
       acceptate.push({ ...rand, sumaLei: lei, sumaOriginala: null });
     } else if (rand.moneda === "EUR" && curs) {
       const lei = Math.max(1, Math.round(rand.suma * curs));
       acceptate.push({ ...rand, sumaLei: lei, sumaOriginala: rand.suma });
     } else {
       nrInvalide++;
-      if (exemple.length < 12) exemple.push({ rand: nr, motiv: rand.moneda === "EUR" ? "Cursul EUR → RON nu e disponibil acum" : `Monedă neacceptată (${rand.moneda})` });
+      if (exemple.length < 12) exemple.push({ rand: nr, motiv: rand.moneda === "EUR" ? (en ? "The EUR → RON rate is not available right now" : "Cursul EUR → RON nu e disponibil acum") : en ? `Unsupported currency (${rand.moneda})` : `Monedă neacceptată (${rand.moneda})` });
     }
   }
 
@@ -258,9 +263,10 @@ export async function recalculeazaCacheDonatori(ctx: Pick<OrgContext, "db" | "or
 
 export type RezultatImport = { importId: string; importate: number; duplicate: number; donatoriNoi: number };
 
-export async function executaImport(ctx: Ctx, plan: Plan, numeSursa: string): Promise<RezultatImport> {
+export async function executaImport(ctx: Ctx, plan: Plan, numeSursa: string, locale: Locale = "ro"): Promise<RezultatImport> {
+  const en = locale === "en";
   const p = plan.previzualizare;
-  if (plan.deImportat.length === 0) throw new Error("Nu există nicio donație de importat.");
+  if (plan.deImportat.length === 0) throw new Error(en ? "There is no donation to import." : "Nu există nicio donație de importat.");
   await ctx.db.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`${ctx.orgId}:donatori-import`}, 0))`);
 
   // Cota de persoane fizice a pachetului: donatorii NOI ocupă locuri.
@@ -268,7 +274,7 @@ export async function executaImport(ctx: Ctx, plan: Plan, numeSursa: string): Pr
   if (limite.contactePf !== null && plan.emailuriNoi.size > 0) {
     const [{ n }] = await ctx.db.select({ n: sql<number>`count(*)`.mapWith(Number) }).from(donatoriReali).where(eq(donatoriReali.orgId, ctx.orgId));
     if (!subCota(n + plan.emailuriNoi.size - 1, limite.contactePf)) {
-      throw new Error(`Importul ar adăuga ${plan.emailuriNoi.size} donatori noi și ar depăși limita de ${limite.contactePf} persoane fizice a pachetului.`);
+      throw new Error(en ? `The import would add ${plan.emailuriNoi.size} new donors and exceed the plan's limit of ${limite.contactePf} individual contacts.` : `Importul ar adăuga ${plan.emailuriNoi.size} donatori noi și ar depăși limita de ${limite.contactePf} persoane fizice a pachetului.`);
     }
   }
 
@@ -314,10 +320,10 @@ export async function executaImport(ctx: Ctx, plan: Plan, numeSursa: string): Pr
 
 // Șterge un import: donațiile lui pleacă în cascadă, donatorii creați doar de el (fără alte donații, notițe sau stare de lucru) se șterg,
 // iar totalurile celorlalți se recalculează.
-export async function stergeImport(ctx: Pick<OrgContext, "db" | "orgId" | "userId">, importId: string): Promise<{ stersi: number; donatoriStersi: number }> {
+export async function stergeImport(ctx: Pick<OrgContext, "db" | "orgId" | "userId">, importId: string, locale: Locale = "ro"): Promise<{ stersi: number; donatoriStersi: number }> {
   await ctx.db.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`${ctx.orgId}:donatori-import`}, 0))`);
   const [imp] = await ctx.db.select({ id: donatoriImporturi.id, nume: donatoriImporturi.nume }).from(donatoriImporturi).where(and(eq(donatoriImporturi.id, importId), eq(donatoriImporturi.orgId, ctx.orgId))).limit(1);
-  if (!imp) throw new Error("Importul nu mai există.");
+  if (!imp) throw new Error(locale === "en" ? "The import no longer exists." : "Importul nu mai există.");
   const afectati = (await ctx.db.execute(sql`select distinct email from donatii_importate where org_id = ${ctx.orgId} and import_id = ${importId}`)) as unknown as { email: string }[];
   const emailuri = afectati.map((a) => a.email);
   const stersi = (await ctx.db.delete(donatoriImporturi).where(and(eq(donatoriImporturi.id, importId), eq(donatoriImporturi.orgId, ctx.orgId))).returning({ id: donatoriImporturi.id })).length ? emailuri.length : 0;

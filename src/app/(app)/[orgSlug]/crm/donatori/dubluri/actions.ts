@@ -71,7 +71,7 @@ export type { RezultatImbinare } from "@/lib/donatori-imbinare";
 
 // Îmbină donatorii secundari în cel principal (logica e în lib/donatori-imbinare.ts); doar administratorii, după confirmarea din interfață.
 export const imbinaDonatori = withOrgAdmin(async (ctx, primarId: string, secundariIds: string[]): Promise<RezultatImbinare> => {
-  const r = await executaImbinare(ctx, primarId, secundariIds);
+  const r = await executaImbinare(ctx, primarId, secundariIds, await getLocale());
   if (r.ok) revalidatePath(`/${ctx.orgSlug}/crm/donatori`);
   return r;
 });

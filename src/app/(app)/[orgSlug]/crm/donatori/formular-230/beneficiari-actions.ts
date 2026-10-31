@@ -30,7 +30,7 @@ const inserteazaBeneficiar = withOrgAdmin(
     const limite = getLimiteleEfective(ctx.orgPackage, ctx.orgCustomPlanConfig);
     if (limite.conturi230 !== null) {
       const [{ n }] = await ctx.db.select({ n: sql<number>`count(*)::int` }).from(formular230Beneficiari).where(eq(formular230Beneficiari.orgId, ctx.orgId));
-      if (!subCota(n, limite.conturi230)) throw new EroareUtilizator(mesajeCote.conturi230(ctx.orgPackage, limite.conturi230));
+      if (!subCota(n, limite.conturi230)) throw new EroareUtilizator(mesajeCote.conturi230(ctx.orgPackage, limite.conturi230, await getLocale()));
     }
     const baseSlug = slugify(values.nume);
     const slug = await genereazaSlugUnic(baseSlug === SLUG_PRINCIPAL ? `${baseSlug}-cont` : baseSlug, async (s) => {

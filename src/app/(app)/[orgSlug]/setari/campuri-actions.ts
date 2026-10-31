@@ -8,6 +8,7 @@ import { withOrgAdmin, withOrgSession } from "@/lib/auth/guard";
 import { esteEntitateCamp, maiPoateAdauga, valideazaDefinitie, type DefinitieCamp, type EntitateCamp, type EroareDefinitie } from "@/lib/campuri-personalizate";
 import { listeazaDefinitii, salveazaValori, type RezultatSalvareCampuri } from "@/lib/campuri-personalizate-server";
 import { campuriPersonalizate } from "@/lib/db/schema";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { getTr } from "@/lib/i18n/tr-server";
 
 // Câmpurile personalizate ale organizației (pachetul CREȘTERE): le definesc administratorii, le completează oricine din echipă în fișa donatorului sau a firmei.
@@ -24,7 +25,7 @@ export type RezultatDefinitie = { ok: true } | { ok: false; mesaj: string; erori
 
 export const adaugaCamp = withOrgAdmin(async (ctx, brut: { entitate: string; eticheta: string; tip: string; optiuni?: string | string[] }): Promise<RezultatDefinitie> => {
   const t = await getTr();
-  const v = valideazaDefinitie(brut);
+  const v = valideazaDefinitie(brut, await getLocale());
   if (!v.ok) return { ok: false, mesaj: v.erori[0]?.mesaj ?? t("Verifică câmpul.", "Check the field."), erori: v.erori };
   const existente = await ctx.db
     .select({ cheie: campuriPersonalizate.cheie, ordine: campuriPersonalizate.ordine })
@@ -54,7 +55,7 @@ export const actualizeazaCamp = withOrgAdmin(async (ctx, id: string, brut: { eti
   const t = await getTr();
   const [existent] = await ctx.db.select().from(campuriPersonalizate).where(and(eq(campuriPersonalizate.id, id), eq(campuriPersonalizate.orgId, ctx.orgId))).limit(1);
   if (!existent) return { ok: false, mesaj: t("Câmpul nu a fost găsit.", "The field was not found.") };
-  const v = valideazaDefinitie({ entitate: existent.entitate, eticheta: brut.eticheta, tip: existent.tip, optiuni: brut.optiuni ?? existent.optiuni });
+  const v = valideazaDefinitie({ entitate: existent.entitate, eticheta: brut.eticheta, tip: existent.tip, optiuni: brut.optiuni ?? existent.optiuni }, await getLocale());
   if (!v.ok) return { ok: false, mesaj: v.erori[0]?.mesaj ?? t("Verifică câmpul.", "Check the field."), erori: v.erori };
   await ctx.db.update(campuriPersonalizate).set({ eticheta: v.def.eticheta, optiuni: v.def.optiuni }).where(and(eq(campuriPersonalizate.id, id), eq(campuriPersonalizate.orgId, ctx.orgId)));
   await inregistreazaAudit(ctx.db, { orgId: ctx.orgId, actorAppUserId: ctx.userId, actiune: "camp_personalizat_modificat", entitate: "camp_personalizat", entitateId: id });
@@ -77,7 +78,7 @@ export const salveazaCampuriFisa = withOrgSession(async (ctx, entitate: string, 
   const t = await getTr();
   if (!esteEntitateCamp(entitate as EntitateCamp)) return { ok: false, mesaj: t("Cerere invalidă.", "Invalid request."), erori: {} };
   if (typeof idEntitate !== "string" || !/^[0-9a-f-]{36}$/i.test(idEntitate) || !valori || typeof valori !== "object" || Array.isArray(valori)) return { ok: false, mesaj: t("Cerere invalidă.", "Invalid request."), erori: {} };
-  const r = await salveazaValori(ctx.db, ctx.orgId, entitate as EntitateCamp, idEntitate, valori);
+  const r = await salveazaValori(ctx.db, ctx.orgId, entitate as EntitateCamp, idEntitate, valori, await getLocale());
   if (r.ok) revalidatePath(`/${ctx.orgSlug}/crm/${entitate === "donator" ? "donatori/reali" : "companii"}/${idEntitate}`);
   return r;
 }, OPTIUNI);

@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { requireOrgAccess } from "@/lib/auth/guard";
+import { PERFORMANTA_UI_DICT } from "@/lib/i18n/dictionaries/performanta-ui";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { titluAbsolut } from "@/lib/page-titles";
 
 import { obtineRaportEvaluari } from "../../evaluari-actions";
@@ -18,12 +20,13 @@ export default async function RaportEvaluariPage({ params, searchParams }: { par
   await requireOrgAccess(orgSlug);
   const sp = await searchParams;
   const d = await obtineRaportEvaluari(orgSlug, unu(sp.perioada) || null);
+  const p = PERFORMANTA_UI_DICT[await getLocale()].pagini.rapoarteEvaluari;
   return (
     <div className="mx-auto max-w-[1300px] space-y-5">
       <div className="print:hidden">
-        <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">Raport de evaluări</h1>
+        <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">{p.titlu}</h1>
         <p className="mt-0.5 max-w-3xl text-[13px] text-[var(--ci-text-muted)]">
-          Cine a avut ce discuții în perioadă. <Link href={`/${orgSlug}/crm/performanta/rapoarte`} className="font-medium text-[var(--ci-blue)] hover:underline">Înapoi la rapoartele generale</Link>
+          {p.descriere} <Link href={`/${orgSlug}/crm/performanta/rapoarte`} className="font-medium text-[var(--ci-blue)] hover:underline">{p.inapoi}</Link>
         </p>
       </div>
       <Suspense fallback={null}>

@@ -5,16 +5,18 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 
+import { PERFORMANTA_UI2_DICT } from "@/lib/i18n/dictionaries/performanta-ui-2";
 import type { NotificareDto } from "@/lib/performanta-automatizari";
 
 import { Button } from "../components/ui/button";
 import { EmptyState } from "../components/ui/states";
+import { useLocale } from "../lib/locale-context";
 import { marcheazaCititeAction } from "./automatizari-actions";
 import { dataOra } from "./ui-comune";
 
-const ETICHETE: Record<string, string> = { termen: "Termene", blocaj: "Blocaj", actualizare: "Actualizare", rezumat: "Rezumat", risc: "Obiectiv în risc" };
-
 export function NotificariClient({ orgSlug, notificari, necitite }: { orgSlug: string; notificari: NotificareDto[]; necitite: number }) {
+  const locale = useLocale();
+  const dict = PERFORMANTA_UI2_DICT[locale].notificari;
   const router = useRouter();
   const [pending, tr] = useTransition();
   const citeste = (ids: string[] | "toate") =>
@@ -23,14 +25,14 @@ export function NotificariClient({ orgSlug, notificari, necitite }: { orgSlug: s
       router.refresh();
     });
 
-  if (notificari.length === 0) return <EmptyState icon={Bell} title="Nicio notificare" description="Apar aici termenele, blocajele, cererile de actualizare și rezumatul săptămânii, dacă un administrator a pornit automatizările." />;
+  if (notificari.length === 0) return <EmptyState icon={Bell} title={dict.golTitlu} description={dict.golDescriere} />;
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-[13px] text-[var(--ci-text-muted)]">{necitite > 0 ? `${necitite} necitite` : "Toate sunt citite"}</p>
+        <p className="text-[13px] text-[var(--ci-text-muted)]">{necitite > 0 ? dict.necitite(necitite) : dict.toateCitite}</p>
         {necitite > 0 && (
           <Button size="sm" loading={pending} onClick={() => citeste("toate")}>
-            Marchează toate ca citite
+            {dict.marcheazaToate}
           </Button>
         )}
       </div>
@@ -41,21 +43,21 @@ export function NotificariClient({ orgSlug, notificari, necitite }: { orgSlug: s
               <span className={`mt-1.5 size-2 shrink-0 rounded-full ${n.citit ? "bg-transparent" : "bg-[var(--ci-primary)]"}`} aria-hidden />
               <div className="min-w-0 flex-1">
                 <p className="flex flex-wrap items-center gap-2 text-[13.5px] font-semibold text-[var(--ci-text)]">
-                  {!n.citit && <span className="sr-only">Necitită: </span>}
+                  {!n.citit && <span className="sr-only">{dict.necititaPrefix}</span>}
                   {n.titlu}
-                  <span className="rounded-full bg-[var(--ci-surface-2)] px-2 py-px text-[11px] font-medium text-[var(--ci-text-muted)]">{ETICHETE[n.tip] ?? n.tip}</span>
+                  <span className="rounded-full bg-[var(--ci-surface-2)] px-2 py-px text-[11px] font-medium text-[var(--ci-text-muted)]">{dict.tip[n.tip] ?? n.tip}</span>
                 </p>
                 {n.continut && <p className="mt-1 text-[13px] whitespace-pre-line text-[var(--ci-text-muted)]">{n.continut}</p>}
                 <p className="mt-1 flex flex-wrap items-center gap-3 text-[12px] text-[var(--ci-text-muted)]">
-                  {dataOra(n.creatLa)}
+                  {dataOra(n.creatLa, locale)}
                   {n.link && (
                     <Link href={n.link} onClick={() => !n.citit && citeste([n.id])} className="font-medium text-[var(--ci-blue)] hover:underline">
-                      Deschide
+                      {dict.deschide}
                     </Link>
                   )}
                   {!n.citit && (
                     <button type="button" onClick={() => citeste([n.id])} className="font-medium text-[var(--ci-blue)] hover:underline focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
-                      Marchează citită
+                      {dict.marcheazaCitita}
                     </button>
                   )}
                 </p>

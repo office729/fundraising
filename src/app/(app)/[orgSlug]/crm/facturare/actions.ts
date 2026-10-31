@@ -10,6 +10,7 @@ import { trialDaysRemaining } from "@/lib/billing/trial";
 import { appUsers, memberships, organizations, platformPayments } from "@/lib/db/schema";
 import { facturareFiscalaPermisa, MARCAJ_NEFACTURAT_SANDBOX, oblioConfigurata } from "@/lib/oblio";
 import { cardAfisat } from "@/lib/billing/card-afisat";
+import { getTr } from "@/lib/i18n/tr-server";
 
 // Pagina „Facturare” a organizației: planul, metoda de plată, datele de facturare și facturile emise de Alexandrit prin Oblio.
 // Doar owner/admin; datele de facturare se editează cu acțiunea existentă (salveazaDateFacturareAction din billing-actions).
@@ -37,9 +38,14 @@ export type DateFacturare = {
   facturareActiva: boolean;
 };
 
-const ETICHETE: Record<string, string> = { trial: "Probă", start: "START", crestere: "CREȘTERE", impact: "IMPACT", custom: "Personalizat" };
+// Numele planurilor (START, CREȘTERE, IMPACT) sunt denumiri de produs și rămân la fel în ambele limbi; „Probă” și „Personalizat” se traduc.
+const etichete = (t: (ro: string, en: string) => string): Record<string, string> => ({ trial: t("Probă", "Trial"), start: "START", crestere: "CREȘTERE", impact: "IMPACT", custom: t("Personalizat", "Custom") });
+const numePachet = (t: (ro: string, en: string) => string): Record<string, string> => ({ start: t("Pachet START", "START plan"), crestere: t("Pachet CREȘTERE", "CREȘTERE plan"), impact: t("Pachet IMPACT", "IMPACT plan") });
 
 export const obtineDateFacturare = withOrgAdmin(async (ctx): Promise<DateFacturare> => {
+  const t = await getTr();
+  const ETICHETE = etichete(t);
+  const NUME_PACHET = numePachet(t);
   const [org] = await ctx.db
     .select({
       masca: organizations.netopiaCardMasked,
@@ -108,7 +114,7 @@ export const obtineDateFacturare = withOrgAdmin(async (ctx): Promise<DateFactura
     facturi: plati.map((p) => ({
       id: p.id,
       data: p.createdAt.toISOString(),
-      pachet: (NUME_PACHET_FIX as Record<string, string>)[p.pachet] ?? ETICHETE[p.pachet] ?? p.pachet,
+      pachet: NUME_PACHET[p.pachet] ?? (NUME_PACHET_FIX as Record<string, string>)[p.pachet] ?? ETICHETE[p.pachet] ?? p.pachet,
       sumaLei: p.sumaLei,
       luni: p.luni,
       numar: p.numar,
@@ -122,21 +128,22 @@ export const obtineDateFacturare = withOrgAdmin(async (ctx): Promise<DateFactura
 // Emite acum o factură rămasă neemisă (Oblio a fost indisponibil etc.). Doar pentru o plată reușită a ACESTEI organizații, și doar dacă
 // datele de facturare sunt complete. Emiterea e idempotentă (aceeași comandă nu creează două facturi).
 export const genereazaFacturaAction = withOrgAdmin(async (ctx, plataId: string): Promise<{ ok: true } | { ok: false; eroare: string }> => {
-  if (!/^[0-9a-f-]{36}$/i.test(String(plataId))) return { ok: false, eroare: "Cerere invalidă." };
+  const t = await getTr();
+  if (!/^[0-9a-f-]{36}$/i.test(String(plataId))) return { ok: false, eroare: t("Cerere invalidă.", "Invalid request.") };
   const [plata] = await ctx.db
     .select({ orderId: platformPayments.orderId, numar: platformPayments.oblioNumber })
     .from(platformPayments)
     .where(and(eq(platformPayments.id, plataId), eq(platformPayments.orgId, ctx.orgId), eq(platformPayments.status, "reusita")))
     .limit(1);
-  if (!plata) return { ok: false, eroare: "Plata nu a fost găsită." };
+  if (!plata) return { ok: false, eroare: t("Plata nu a fost găsită.", "Payment not found.") };
   if (plata.numar) return { ok: true };
-  if (!dateFacturareComplete({ cif: ctx.orgCif, adresaSediu: ctx.orgAdresaSediu, judet: ctx.orgJudet })) return { ok: false, eroare: MESAJ_DATE_FACTURARE_LIPSA };
-  if (!oblioConfigurata() || !facturareFiscalaPermisa()) return { ok: false, eroare: "Emiterea facturilor nu e activă pe acest server. Factura se va emite singură când e activată." };
+  if (!dateFacturareComplete({ cif: ctx.orgCif, adresaSediu: ctx.orgAdresaSediu, judet: ctx.orgJudet })) return { ok: false, eroare: t(MESAJ_DATE_FACTURARE_LIPSA, "Fill in your organization's CUI (tax ID), registered office address and county before paying.") };
+  if (!oblioConfigurata() || !facturareFiscalaPermisa()) return { ok: false, eroare: t("Emiterea facturilor nu e activă pe acest server. Factura se va emite singură când e activată.", "Invoice issuing is not active on this server. The invoice will be issued automatically once it is enabled.") };
   try {
     await factureazaPlata(plata.orderId);
   } catch {
-    return { ok: false, eroare: "Nu am putut emite factura acum. Încearcă din nou peste câteva minute." };
+    return { ok: false, eroare: t("Nu am putut emite factura acum. Încearcă din nou peste câteva minute.", "We could not issue the invoice right now. Please try again in a few minutes.") };
   }
   const [dupa] = await ctx.db.select({ link: platformPayments.oblioLink }).from(platformPayments).where(and(eq(platformPayments.id, plataId), eq(platformPayments.orgId, ctx.orgId))).limit(1);
-  return dupa?.link ? { ok: true } : { ok: false, eroare: "Factura nu s-a putut emite încă. Încearcă din nou peste câteva minute." };
+  return dupa?.link ? { ok: true } : { ok: false, eroare: t("Factura nu s-a putut emite încă. Încearcă din nou peste câteva minute.", "The invoice could not be issued yet. Please try again in a few minutes.") };
 });

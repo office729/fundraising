@@ -1,3 +1,5 @@
+import { PERFORMANTA_UI_DICT } from "@/lib/i18n/dictionaries/performanta-ui";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { dateDemo } from "@/lib/performanta-demo-date";
 
 import { SpatiulMeuClient } from "../../spatiul-meu-client";
@@ -8,8 +10,9 @@ export const dynamic = "force-dynamic";
 export default async function DemoSpatiulMeu({ params }: { params: Promise<{ orgSlug: string }> }) {
   const { orgSlug } = await params;
   const d = dateDemo();
+  const p = PERFORMANTA_UI_DICT[await getLocale()].demo.spatiulMeu;
   return (
-    <PaginaDemo orgSlug={orgSlug} titlu="Spațiul meu · exemplu" descriere="Ce are de făcut persoana, ce o blochează, ce trebuie actualizat și cum stau obiectivele ei. Gândit întâi pentru telefon.">
+    <PaginaDemo orgSlug={orgSlug} titlu={p.titlu} descriere={p.descriere}>
       <SpatiulMeuClient orgSlug={orgSlug} d={{ meu: d.spatiulMeu, context: d.context }} perioada={d.trim.cod} />
     </PaginaDemo>
   );

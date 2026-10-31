@@ -13,7 +13,7 @@ import { NotaCrmMarketing } from "./nota-crm-marketing";
 import { CampaniiSectiune } from "./campanii-sectiune";
 import { getCampaniiLanding, PRAG_ORGANIZATII } from "@/lib/campanii-publice";
 import { JsonLd } from "@/components/seo/json-ld";
-import { NUME_PACHET_FIX, PACKAGE_LIMITS } from "@/lib/billing/packages";
+import { numePachetFix, PACKAGE_LIMITS } from "@/lib/billing/packages";
 import { schemaAplicatie, schemaOrganizatie, schemaSite } from "@/lib/seo-schema";
 
 export default async function LandingPage({
@@ -78,9 +78,9 @@ export default async function LandingPage({
       <JsonLd
         date={schemaAplicatie(
           [
-            { nume: NUME_PACHET_FIX.start, pretLunar: PACKAGE_LIMITS.start.pretLunar! },
-            { nume: NUME_PACHET_FIX.crestere, pretLunar: PACKAGE_LIMITS.crestere.pretLunar! },
-            { nume: NUME_PACHET_FIX.impact, pretLunar: PACKAGE_LIMITS.impact.pretLunar! },
+            { nume: numePachetFix("start", locale), pretLunar: PACKAGE_LIMITS.start.pretLunar! },
+            { nume: numePachetFix("crestere", locale), pretLunar: PACKAGE_LIMITS.crestere.pretLunar! },
+            { nume: numePachetFix("impact", locale), pretLunar: PACKAGE_LIMITS.impact.pretLunar! },
           ],
           locale === "ro" ? "Platformă de fundraising pentru ONG-uri: CRM pentru donatori și companii, pagini de donații, Formular 230 și Declarația 177." : "Fundraising platform for NGOs: CRM for donors and companies, donation pages, Form 230 and Declaration 177.",
         )}

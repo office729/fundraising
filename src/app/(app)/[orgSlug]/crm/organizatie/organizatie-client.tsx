@@ -11,6 +11,7 @@ import { Dialog } from "../components/ui/dialog";
 import { Input, Label, Select, Textarea } from "../components/ui/input";
 import { EmptyState } from "../components/ui/states";
 import { Tabs } from "../components/ui/tabs";
+import { ORGANIZATIE_UI_DICT } from "@/lib/i18n/dictionaries/organizatie-ui";
 import { useLocale } from "../lib/locale-context";
 import {
   actualizeazaAngajatAction,
@@ -35,8 +36,6 @@ import {
 import { importaMembriiInEchipaAction } from "./actions";
 
 const STATUS_TONE = { activ: "green", concediu: "amber", suspendat: "orange", inactiv: "neutral" } as const;
-const STATUS_LABEL_RO: Record<AngajatRand["status"], string> = { activ: "Activ", concediu: "Concediu", suspendat: "Suspendat", inactiv: "Inactiv" };
-const NIVEL_LABEL_RO: Record<AngajatRand["nivelAcces"], string> = { membru: "Membru", manager: "Manager", admin_departament: "Admin departament" };
 
 export function OrganizatieClient({
   initialDepartamente,
@@ -192,7 +191,7 @@ function DepartamenteTab({
         setEditDeschis(null);
         await reincarca();
       } catch (e) {
-        setEroare(e instanceof Error ? e.message : "Eroare.");
+        setEroare(e instanceof Error ? e.message : ORGANIZATIE_UI_DICT[ro ? "ro" : "en"].eroare);
       }
     });
   };
@@ -204,7 +203,7 @@ function DepartamenteTab({
         await stergeDepartamentAction(orgSlug, id);
         await reincarca();
       } catch (e) {
-        setEroare(e instanceof Error ? e.message : "Eroare.");
+        setEroare(e instanceof Error ? e.message : ORGANIZATIE_UI_DICT[ro ? "ro" : "en"].eroare);
       }
     });
   };
@@ -320,7 +319,7 @@ function RoluriTab({
         setEditDeschis(null);
         await reincarca();
       } catch (e) {
-        setEroare(e instanceof Error ? e.message : "Eroare.");
+        setEroare(e instanceof Error ? e.message : ORGANIZATIE_UI_DICT[ro ? "ro" : "en"].eroare);
       }
     });
   };
@@ -332,7 +331,7 @@ function RoluriTab({
         await stergeRolAction(orgSlug, id);
         await reincarca();
       } catch (e) {
-        setEroare(e instanceof Error ? e.message : "Eroare.");
+        setEroare(e instanceof Error ? e.message : ORGANIZATIE_UI_DICT[ro ? "ro" : "en"].eroare);
       }
     });
   };
@@ -485,7 +484,7 @@ function AngajatiTab({
         setEditId(null);
         await reincarca();
       } catch (e) {
-        setEroare(e instanceof Error ? e.message : "Eroare.");
+        setEroare(e instanceof Error ? e.message : ORGANIZATIE_UI_DICT[ro ? "ro" : "en"].eroare);
       }
     });
   };
@@ -500,7 +499,7 @@ function AngajatiTab({
         setMesajImport(r.adaugati + r.legati === 0 ? (ro ? "Toți membrii platformei sunt deja în echipă." : "All platform members are already in the team.") : ro ? `Adăugați: ${r.adaugati}${r.legati ? ` · legați de profiluri existente: ${r.legati}` : ""}.` : `Added: ${r.adaugati}${r.legati ? ` · linked to existing profiles: ${r.legati}` : ""}.`);
         await reincarca();
       } catch (e) {
-        setEroare(e instanceof Error ? e.message : "Eroare.");
+        setEroare(e instanceof Error ? e.message : ORGANIZATIE_UI_DICT[ro ? "ro" : "en"].eroare);
       }
     });
   };
@@ -512,7 +511,7 @@ function AngajatiTab({
         await stergeAngajatAction(orgSlug, id);
         await reincarca();
       } catch (e) {
-        setEroare(e instanceof Error ? e.message : "Eroare.");
+        setEroare(e instanceof Error ? e.message : ORGANIZATIE_UI_DICT[ro ? "ro" : "en"].eroare);
       }
     });
   };
@@ -548,8 +547,8 @@ function AngajatiTab({
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <Badge tone={STATUS_TONE[a.status]}>{ro ? STATUS_LABEL_RO[a.status] : a.status}</Badge>
-                {a.nivelAcces !== "membru" && <Badge tone="blue">{ro ? NIVEL_LABEL_RO[a.nivelAcces] : a.nivelAcces}</Badge>}
+                <Badge tone={STATUS_TONE[a.status]}>{ORGANIZATIE_UI_DICT[ro ? "ro" : "en"].status[a.status] ?? a.status}</Badge>
+                {a.nivelAcces !== "membru" && <Badge tone="blue">{ORGANIZATIE_UI_DICT[ro ? "ro" : "en"].nivel[a.nivelAcces] ?? a.nivelAcces}</Badge>}
                 {esteAdmin && (
                   <>
                     <Button variant="ghost" size="icon" onClick={() => deschideEdit(a)}><Pencil className="h-3.5 w-3.5" /></Button>

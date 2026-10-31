@@ -14,6 +14,9 @@ export const PLATFORME: { cheie: Platforma; eticheta: string }[] = [
   { cheie: "google", eticheta: "Google Ads" },
   { cheie: "altele", eticheta: "Altă platformă" },
 ];
+export const PLATFORME_EN: Record<Platforma, string> = { meta: "Meta (Facebook and Instagram)", tiktok: "TikTok", linkedin: "LinkedIn", google: "Google Ads", altele: "Other platform" };
+// Eticheta platformei în limba cerută (implicit română).
+export const etichetaPlatforma = (cheie: Platforma, locale: "ro" | "en" = "ro"): string => (locale === "en" ? PLATFORME_EN[cheie] : (PLATFORME.find((p) => p.cheie === cheie)?.eticheta ?? cheie));
 export const esteCheiePlatforma = (x: unknown): x is Platforma => typeof x === "string" && PLATFORME.some((p) => p.cheie === x);
 
 export type ClasaTrafic = "platita" | "organica" | "email" | "alta";

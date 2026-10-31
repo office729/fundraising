@@ -4,6 +4,7 @@ import { and, asc, eq, sql } from "drizzle-orm";
 
 import { curataValori, esteTipCamp, valoriDinJson, type DefinitieCamp, type EntitateCamp, type ValoriCamp } from "@/lib/campuri-personalizate";
 import type { db } from "@/lib/db";
+import type { Locale } from "@/lib/i18n/config";
 import { campuriPersonalizate } from "@/lib/db/schema";
 import { sqlArray } from "@/lib/sql-array";
 
@@ -25,15 +26,17 @@ export async function listeazaDefinitii(database: Database, orgId: string, entit
 export type RezultatSalvareCampuri = { ok: true; campuri: ValoriCamp } | { ok: false; mesaj: string; erori: Record<string, string> };
 
 // Salvează valorile trimise: doar câmpurile active ale organizației, aduse la tip; golul șterge valoarea. Câmpurile netrimise sau arhivate rămân neatinse.
-export async function salveazaValori(database: Database, orgId: string, entitate: EntitateCamp, idEntitate: string, brut: Record<string, unknown>): Promise<RezultatSalvareCampuri> {
+// `locale` (implicit română) alege limba mesajelor întoarse.
+export async function salveazaValori(database: Database, orgId: string, entitate: EntitateCamp, idEntitate: string, brut: Record<string, unknown>, locale: Locale = "ro"): Promise<RezultatSalvareCampuri> {
+  const en = locale === "en";
   const defs = await listeazaDefinitii(database, orgId, entitate, true);
-  const r = curataValori(defs, brut);
-  if (Object.keys(r.erori).length > 0) return { ok: false, mesaj: "Verifică câmpurile marcate.", erori: r.erori };
+  const r = curataValori(defs, brut, locale);
+  if (Object.keys(r.erori).length > 0) return { ok: false, mesaj: en ? "Check the marked fields." : "Verifică câmpurile marcate.", erori: r.erori };
   const tabel = entitate === "donator" ? sql`donatori_reali` : sql`companies`;
   const rez = (await database.execute(sql`
     update ${tabel} set campuri = (coalesce(campuri, '{}'::jsonb) - ${sqlArray(r.de_sters)}) || ${JSON.stringify(r.de_pus)}::text::jsonb
     where id = ${idEntitate} and org_id = ${orgId}
     returning campuri`)) as unknown as { campuri: unknown }[];
-  if (rez.length === 0) return { ok: false, mesaj: entitate === "donator" ? "Donatorul nu a fost găsit." : "Firma nu a fost găsită.", erori: {} };
+  if (rez.length === 0) return { ok: false, mesaj: en ? (entitate === "donator" ? "The donor was not found." : "The company was not found.") : entitate === "donator" ? "Donatorul nu a fost găsit." : "Firma nu a fost găsită.", erori: {} };
   return { ok: true, campuri: valoriDinJson(rez[0].campuri) };
 }

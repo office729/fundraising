@@ -4,6 +4,7 @@ import { ClipboardCopy, Download, Eye, FileDown, LayoutGrid, Palette, Pencil, Ro
 import Link from "next/link";
 import { useDeferredValue, useEffect, useId, useMemo, useRef, useState } from "react";
 
+import { INSTRUMENTE_UI_DICT } from "@/lib/i18n/dictionaries/instrumente-ui";
 import { descarcaBlob, htmlInPdf } from "@/lib/html-in-pdf";
 import { raporteazaEroare } from "@/lib/monitoring";
 import { incarcaLogo, paletaDinLogo } from "@/lib/logo-incarcare";
@@ -13,6 +14,7 @@ import { Button } from "../../components/ui/button";
 import { Card, CardHeader } from "../../components/ui/card";
 import { Dialog } from "../../components/ui/dialog";
 import { Input, Label, Select, Textarea } from "../../components/ui/input";
+import { useLocale } from "../../lib/locale-context";
 import { Camp } from "./camp";
 import { MeniuExport } from "./meniu-export";
 import { inregistreazaDocumentAction, urmatorulNumarAction, verificaCotaDocumentAction, type TipDoc } from "./documente-actions";
@@ -92,6 +94,8 @@ function MiniaturaModel({ html, activ, eticheta, onAlege }: { html: string; acti
 
 // Generator de documente: formularul în stânga, designul în dreapta, în timp real (de la 1024 px lățime; pe ecran mic, filele Editez / Previzualizez).
 export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
+  const locale = useLocale();
+  const d = INSTRUMENTE_UI_DICT[locale].generator;
   const [date, setDate] = useState<D>(p.date);
   const [vedere, setVedere] = useState<"editez" | "previz">("editez");
   const [info, setInfo] = useState<string | null>(null);
@@ -126,7 +130,7 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
             const restaurat = p.curata({ ...p.date, ...(c.date as object) });
             // eslint-disable-next-line react-hooks/set-state-in-effect
             setDate(p.modelDinUrl ? ({ ...restaurat, model: p.modelDinUrl } as D) : restaurat);
-            setCiorna(new Date(c.la).toLocaleDateString("ro-RO"));
+            setCiorna(new Date(c.la).toLocaleDateString(locale === "ro" ? "ro-RO" : "en-GB"));
           } else window.localStorage.removeItem(cheieCiorna);
         }
       } catch {
@@ -178,18 +182,18 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
       if (preiaCulori && r.paleta) setPaleta(r.paleta);
       actualizeaza({ [cheie]: r.dataUrl, ...(preiaCulori && r.paleta ? culoriDin(r.paleta) : {}) } as Partial<D>);
     } catch (e) {
-      setEroareLogo(e instanceof Error ? e.message : "Logoul nu a putut fi încărcat.");
+      setEroareLogo(e instanceof Error ? e.message : d.logoNeincarcat);
     }
   }
   async function culoriDinLogo(cheie: string) {
     setEroareLogo(null);
     try {
       const pl = await paletaDinLogo(val(cheie));
-      if (!pl) return setEroareLogo("Nu am găsit culori în logo. Alege-le manual.");
+      if (!pl) return setEroareLogo(d.nuCulori);
       setPaleta(pl);
       actualizeaza(culoriDin(pl));
     } catch (e) {
-      setEroareLogo(e instanceof Error ? e.message : "Culorile nu au putut fi citite.");
+      setEroareLogo(e instanceof Error ? e.message : d.culoriNecitite);
     }
   }
 
@@ -204,17 +208,17 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
       .then((r) => {
         if (r.ok) {
           setModificat(false);
-          setInfo((x) => (x ? `${x} Salvat în istoric.` : "Salvat în istoric."));
+          setInfo((x) => (x ? `${x} ${d.salvatIstoric}` : d.salvatIstoric));
         }
         else {
           ultimaInregistrare.current = "";
-          setInfo((x) => (x ? `${x} Nu s-a putut salva în istoric.` : "Nu s-a putut salva în istoric."));
+          setInfo((x) => (x ? `${x} ${d.nuIstoric}` : d.nuIstoric));
         }
       })
       .catch((e) => {
         ultimaInregistrare.current = "";
         raporteazaEroare("documente-istoric", e, { tip: p.cheieTool });
-        setInfo((x) => (x ? `${x} Nu s-a putut salva în istoric.` : "Nu s-a putut salva în istoric."));
+        setInfo((x) => (x ? `${x} ${d.nuIstoric}` : d.nuIstoric));
       });
   }
 
@@ -238,7 +242,7 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
       setDate((prev) => ({ ...prev, ...nou }));
       return { html: randeaza(nou), curatFinal: nou };
     } catch (e) {
-      setEroare(e instanceof Error ? e.message : "Nu am putut pregăti documentul pentru export.");
+      setEroare(e instanceof Error ? e.message : d.nuPregatit);
       return null;
     }
   }
@@ -258,9 +262,9 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
       t.select();
       const ok = document.execCommand("copy");
       t.remove();
-      if (!ok) return setEroare("Nu am putut copia codul. Folosește „Descarcă HTML”.");
+      if (!ok) return setEroare(d.nuCopiat);
     }
-    setInfo("Codul HTML a fost copiat.");
+    setInfo(d.htmlCopiat);
     inregistreaza(f.html, f.curatFinal);
     setTimeout(() => setInfo(null), 6000);
   }
@@ -275,7 +279,7 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-    setInfo("Fișierul a fost descărcat.");
+    setInfo(d.fisierDescarcat);
     inregistreaza(f.html, f.curatFinal);
     setTimeout(() => setInfo(null), 6000);
   }
@@ -290,11 +294,11 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
       const { blob, imaginiOmise } = await htmlInPdf(f.html);
       descarcaBlob(blob, `${numeSigur()}.pdf`);
       inregistreaza(f.html, f.curatFinal);
-      setInfo(imaginiOmise ? `PDF descărcat, dar ${imaginiOmise === 1 ? "un logo nu a putut fi inclus" : `${imaginiOmise} logo-uri nu au putut fi incluse`} (adresa lui nu e permisă sau nu a răspuns). Încarcă logoul din calculator, ca fișier.` : "PDF-ul a fost descărcat.");
+      setInfo(imaginiOmise ? d.pdfLogouri(imaginiOmise) : d.pdfDescarcat);
       setTimeout(() => setInfo(null), 8000);
     } catch (e) {
       raporteazaEroare("pdf-direct", e, { tip: p.cheieTool, ua: navigator.userAgent.slice(0, 160), lungime: (f?.html ?? html).length });
-      setInfo("Nu am putut crea PDF-ul direct în acest browser. Se deschide tipărirea: alege „Salvează ca PDF”.");
+      setInfo(d.pdfFallback);
       setTimeout(() => setInfo(null), 8000);
       tipareste();
     } finally {
@@ -310,7 +314,7 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
         w.focus();
         w.print();
         inregistreaza(f.html, f.curatFinal);
-      } else setEroare("Previzualizarea nu e încărcată încă. Încearcă din nou.");
+      } else setEroare(d.previzNeincarcata);
     };
     // Dacă documentul s-a schimbat la pregătire (cod nou), previzualizarea are nevoie de un moment ca să se redeseneze înainte de tipărire.
     const asteapta = f.html !== html ? 450 : 0;
@@ -322,8 +326,8 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
   }
   function reseteaza() {
     setConf({
-      titlu: "Începi de la capăt?",
-      text: "Se șterge tot ce ai completat și revii la textul de pornire. Documentele deja exportate rămân în istoric.",
+      titlu: d.resetTitlu,
+      text: d.resetText,
       actiune: () => {
         try {
           window.localStorage.removeItem(cheieCiorna);
@@ -344,7 +348,7 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
     try {
       actualizeaza({ [p.numerotare.cheie]: await urmatorulNumarAction(p.orgSlug, p.cheieTool) } as Partial<D>);
     } catch {
-      setEroare("Nu am putut atribui un număr. Încearcă din nou.");
+      setEroare(d.nuNumar);
     } finally {
       setSeteazaNumar(false);
     }
@@ -357,7 +361,7 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
     if (!nou || !p.tipuri) return;
     const editat = curentTip ? Object.entries(curentTip.patch).some(([k, v]) => val(k) !== v) : Object.keys(nou.patch).some((k) => val(k).trim() !== "");
     const aplica = () => actualizeaza({ [p.tipuri!.cheie]: nou.id, ...nou.patch } as Partial<D>);
-    if (editat) setConf({ titlu: "Înlocuiești textul?", text: "Ai modificat textul. Noul tip are alt text de pornire: dacă continui, textul tău se înlocuiește.", actiune: aplica });
+    if (editat) setConf({ titlu: d.tipTitlu, text: d.tipText, actiune: aplica });
     else aplica();
   }
 
@@ -366,7 +370,7 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
       <Dialog open={!!conf} onClose={() => setConf(null)} title={conf?.titlu ?? ""}>
         <p className="text-[13.5px] text-[var(--ci-text-muted)]">{conf?.text}</p>
         <div className="mt-4 flex justify-end gap-2">
-          <Button onClick={() => setConf(null)}>Anulează</Button>
+          <Button onClick={() => setConf(null)}>{d.anuleaza}</Button>
           <Button
             variant="primary"
             onClick={() => {
@@ -375,22 +379,22 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
               a?.();
             }}
           >
-            Continuă
+            {d.continua}
           </Button>
         </div>
       </Dialog>
       <div className="fixed inset-x-0 bottom-0 z-30 flex gap-2 border-t border-[var(--ci-border)] bg-[var(--ci-surface)] p-2 lg:hidden">
         <Button className="min-h-11 flex-1" onClick={() => setVedere((v) => (v === "editez" ? "previz" : "editez"))}>
-          {vedere === "editez" ? "Previzualizează" : "Înapoi la editare"}
+          {vedere === "editez" ? d.previzualizeaza : d.inapoiEditare}
         </Button>
         <Button variant="primary" className="min-h-11 flex-1" onClick={pdf} disabled={seFacePdf}>
-          {seFacePdf ? "Se pregătește…" : "Salvează ca PDF"}
+          {seFacePdf ? d.sePregateste : d.salveazaPdf}
         </Button>
       </div>
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 py-2.5">
         <div className="flex min-w-0 flex-wrap items-center gap-3">
           <Link href={p.galerieHref} prefetch={false} className="inline-flex h-9 items-center gap-1.5 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-3 text-[13px] font-medium text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)] focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
-            <LayoutGrid className="size-4" aria-hidden /> Galerie de șabloane
+            <LayoutGrid className="size-4" aria-hidden /> {d.galerie}
           </Link>
           <h1 className="ci-display text-[15px] font-bold text-[var(--ci-text)]">{p.titlu}</h1>
         </div>
@@ -398,14 +402,14 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
           <span className="text-[12px] text-[var(--ci-text-muted)]" role="status" aria-live="polite">
             {info}
           </span>
-          <Button variant="primary" onClick={pdf} disabled={seFacePdf} title="Descarcă un fișier PDF (pagină în înaltă rezoluție)">
-            <FileDown className="size-4" aria-hidden /> {seFacePdf ? "Se pregătește PDF-ul…" : "Salvează ca PDF"}
+          <Button variant="primary" onClick={pdf} disabled={seFacePdf} title={d.titluPdf}>
+            <FileDown className="size-4" aria-hidden /> {seFacePdf ? d.sePregatestePdf : d.salveazaPdf}
           </Button>
           <MeniuExport
             elemente={[
-              { eticheta: "Copiază codul HTML", descriere: "Pentru a-l lipi într-o platformă sau pe un site.", icon: <ClipboardCopy className="size-4" aria-hidden />, onClick: copiaza },
-              { eticheta: "Descarcă HTML", descriere: "Un fișier pe care îl deschizi în browser.", icon: <Download className="size-4" aria-hidden />, onClick: descarca },
-              { eticheta: "Tipărește sau PDF cu text selectabil", descriere: "Deschide tipărirea; în ea alegi „Salvează ca PDF”. Textul și linkurile rămân active.", icon: <FileDown className="size-4" aria-hidden />, onClick: tipareste },
+              { eticheta: d.copiazaHtml, descriere: d.copiazaHtmlDesc, icon: <ClipboardCopy className="size-4" aria-hidden />, onClick: copiaza },
+              { eticheta: d.descarcaHtml, descriere: d.descarcaHtmlDesc, icon: <Download className="size-4" aria-hidden />, onClick: descarca },
+              { eticheta: d.tipareste, descriere: d.tiparesteDesc, icon: <FileDown className="size-4" aria-hidden />, onClick: tipareste },
             ]}
           />
         </div>
@@ -417,22 +421,22 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
           {b.text}{" "}
           {b.href && (
             <Link href={b.href} prefetch={false} className="font-semibold text-[var(--ci-primary)] underline">
-              {b.eticheta ?? "Deschide"}
+              {b.eticheta ?? d.deschide}
             </Link>
           )}
         </p>
       ))}
       {ciorna && (
         <p role="status" className="flex flex-wrap items-center gap-2 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface-2)] px-3 py-2 text-[12.5px] text-[var(--ci-text)]">
-          Ai reluat ciorna din {ciorna}. Numele persoanelor nu se păstrează în ciornă; ea rămâne doar în acest browser, cel mult {ZILE_CIORNA} de zile.
+          {d.ciornaReluata(ciorna, ZILE_CIORNA)}
           <button type="button" onClick={reseteaza} className="font-semibold text-[var(--ci-primary)] underline focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
-            Începe de la zero
+            {d.incepeZero}
           </button>
         </p>
       )}
 
-      <div role="tablist" aria-label="Vedere" className="grid grid-cols-2 gap-1 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-1 lg:hidden">
-        {([["editez", "Editez", Pencil], ["previz", "Previzualizez", Eye]] as const).map(([k, e, Ico]) => (
+      <div role="tablist" aria-label={d.vedere} className="grid grid-cols-2 gap-1 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-1 lg:hidden">
+        {([["editez", d.editez, Pencil], ["previz", d.previz, Eye]] as const).map(([k, e, Ico]) => (
           <button key={k} type="button" role="tab" aria-selected={vedere === k} onClick={() => setVedere(k)} className={`inline-flex items-center justify-center gap-2 rounded-[calc(var(--ci-radius-btn)-2px)] py-2 text-[13px] font-semibold focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none ${vedere === k ? "bg-[var(--ci-primary)] text-white" : "text-[var(--ci-text-muted)]"}`}>
             <Ico className="size-4" aria-hidden /> {e}
           </button>
@@ -442,8 +446,8 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
       <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(340px,0.85fr)_minmax(0,1.15fr)]">
         <div className={`min-w-0 space-y-4 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto lg:pr-2 ${vedere === "previz" ? "hidden lg:block" : ""}`}>
           <Card>
-            <CardHeader title="Șablon" subtitle={modelAles.hint} />
-            <Camp eticheta="Modelul">
+            <CardHeader title={d.sablon} subtitle={modelAles.hint} />
+            <Camp eticheta={d.modelul}>
               <Select value={date.model} onChange={(e) => actualizeaza({ model: e.target.value } as Partial<D>)}>
                 {p.modele.map((m) => (
                   <option key={m.id} value={m.id}>
@@ -453,17 +457,17 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
               </Select>
             </Camp>
             <button type="button" onClick={() => setBandaDeschisa((v) => !v)} aria-expanded={bandaDeschisa} className="mt-2 text-[12.5px] font-semibold text-[var(--ci-primary)] underline focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
-              {bandaDeschisa ? "Ascunde miniaturile" : "Alege după aspect, cu miniaturi"}
+              {bandaDeschisa ? d.ascundeMiniaturi : d.alegeMiniaturi}
             </button>
             {bandaDeschisa && (
-              <div className="ci-scrollbar mt-2 flex gap-2 overflow-x-auto pb-2" role="group" aria-label="Modele, cu miniaturi">
+              <div className="ci-scrollbar mt-2 flex gap-2 overflow-x-auto pb-2" role="group" aria-label={d.modeleMiniaturi}>
                 {miniaturi.map((m) => (
                   <MiniaturaModel key={m.id} html={m.html} activ={m.id === date.model} eticheta={m.eticheta} onAlege={() => actualizeaza({ model: m.id } as Partial<D>)} />
                 ))}
               </div>
             )}
             {p.tipuri && (
-              <Camp className="mt-3" eticheta={p.tipuri.eticheta} ajutor="Alegerea completează textul de pornire; îl poți schimba liber.">
+              <Camp className="mt-3" eticheta={p.tipuri.eticheta} ajutor={d.tipAjutor}>
                 <Select value={val(p.tipuri.cheie)} onChange={(e) => schimbaTip(e.target.value)}>
                   {p.tipuri.optiuni.map((o) => (
                     <option key={o.id} value={o.id}>
@@ -476,9 +480,9 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
           </Card>
 
           <Card>
-            <CardHeader title="Logo-uri și culori" subtitle="Apar în antet. Culorile se pot lua dintr-un logo." />
+            <CardHeader title={d.logouriTitlu} subtitle={d.logouriSubtitlu} />
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <CampLogo eticheta="Logo organizație" valoare={val(p.logoOng.cheie)} onFisier={(f) => alegeLogo(p.logoOng.cheie, f, true)} onSterge={() => actualizeaza({ [p.logoOng.cheie]: "" } as Partial<D>)} extra={p.logoOng.implicit && val(p.logoOng.cheie) !== p.logoOng.implicit ? <Button size="sm" variant="ghost" onClick={() => actualizeaza({ [p.logoOng.cheie]: p.logoOng.implicit } as Partial<D>)}>Logoul din Setări</Button> : null} />
+              <CampLogo eticheta={d.logoOrganizatie} valoare={val(p.logoOng.cheie)} onFisier={(f) => alegeLogo(p.logoOng.cheie, f, true)} onSterge={() => actualizeaza({ [p.logoOng.cheie]: "" } as Partial<D>)} extra={p.logoOng.implicit && val(p.logoOng.cheie) !== p.logoOng.implicit ? <Button size="sm" variant="ghost" onClick={() => actualizeaza({ [p.logoOng.cheie]: p.logoOng.implicit } as Partial<D>)}>{d.logoSetari}</Button> : null} />
               {p.logoDestinatar && <CampLogo eticheta={p.logoDestinatar.eticheta} valoare={val(p.logoDestinatar.cheie)} onFisier={(f) => alegeLogo(p.logoDestinatar!.cheie, f, false)} onSterge={() => actualizeaza({ [p.logoDestinatar!.cheie]: "" } as Partial<D>)} />}
             </div>
             {eroareLogo && (
@@ -492,25 +496,25 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
                   <span key={i} className="size-7 rounded-full border border-[var(--ci-border)]" style={{ background: c }} />
                 ))}
               </div>
-              <p className="min-w-0 flex-1 text-[12.5px] text-[var(--ci-text-muted)]">{paleta ? (paleta.sursa === "logo" ? "Culori preluate din logo." : "Logo alb-negru: nuanțe neutre.") : "Alege culorile mai jos sau preia-le dintr-un logo."}</p>
+              <p className="min-w-0 flex-1 text-[12.5px] text-[var(--ci-text-muted)]">{paleta ? (paleta.sursa === "logo" ? d.culoriLogo : d.logoAlbNegru) : d.alegeCulori}</p>
             </div>
             <div className="mt-2 flex flex-wrap gap-2">
               <Button size="sm" onClick={() => culoriDinLogo(p.logoOng.cheie)} disabled={!val(p.logoOng.cheie)}>
-                <Palette className="size-3.5" aria-hidden /> Din logoul organizației
+                <Palette className="size-3.5" aria-hidden /> {d.dinLogoOrg}
               </Button>
               {p.logoDestinatar && (
                 <Button size="sm" onClick={() => culoriDinLogo(p.logoDestinatar!.cheie)} disabled={!val(p.logoDestinatar.cheie)}>
-                  <Palette className="size-3.5" aria-hidden /> Din logoul destinatarului
+                  <Palette className="size-3.5" aria-hidden /> {d.dinLogoDest}
                 </Button>
               )}
               {p.culoareOrganizatie && (
                 <Button size="sm" variant="ghost" onClick={() => { const pl = paletaDinHex(p.culoareOrganizatie!); if (pl) { setPaleta(null); actualizeaza(culoriDin(pl)); } }}>
-                  <RotateCcw className="size-3.5" aria-hidden /> Culoarea organizației
+                  <RotateCcw className="size-3.5" aria-hidden /> {d.culoareaOrg}
                 </Button>
               )}
             </div>
             <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
-              {([["accent", "Principală"], ["accent2", "Închisă"], ["accent3", "Fundal deschis"]] as const).map(([k, e]) => (
+              {([["accent", d.principala], ["accent2", d.inchisa], ["accent3", d.fundalDeschis]] as const).map(([k, e]) => (
                 <Camp key={k} eticheta={e}>
                   <input type="color" value={date[k]} onChange={(ev) => actualizeaza({ [k]: ev.target.value } as Partial<D>)} className="h-9 w-full cursor-pointer rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-1 focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none" />
                 </Camp>
@@ -531,7 +535,7 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
                     actiune={
                       p.numerotare?.cheie === c.cheie ? (
                         <button type="button" onClick={numarAutomat} disabled={seteazaNumar} className="mb-1 text-[12px] font-semibold text-[var(--ci-primary)] underline focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none disabled:opacity-50">
-                          {seteazaNumar ? "Se atribuie…" : "Număr automat"}
+                          {seteazaNumar ? d.seAtribuie : d.numarAutomat}
                         </button>
                       ) : undefined
                     }
@@ -560,10 +564,10 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
             </Card>
           ))}
           {avertisment && <p role="status" className="rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface-2)] px-3 py-2 text-[12.5px] text-[var(--ci-text)]">{avertisment}</p>}
-          <p className="text-[12px] text-[var(--ci-text-muted)]">Ciorna se păstrează doar în acest browser (fără numele persoanelor), cel mult {ZILE_CIORNA} de zile. Documentele exportate se înregistrează în istoricul organizației.</p>
+          <p className="text-[12px] text-[var(--ci-text-muted)]">{d.ciornaNota(ZILE_CIORNA)}</p>
           <div className="pb-2">
             <Button size="sm" variant="ghost" onClick={reseteaza}>
-              <RotateCcw className="size-3.5" aria-hidden /> Începe de la capăt
+              <RotateCcw className="size-3.5" aria-hidden /> {d.incepeCapat}
             </Button>
           </div>
         </div>
@@ -571,10 +575,10 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
         <div className={`min-w-0 lg:sticky lg:top-4 ${vedere === "editez" ? "hidden lg:block" : ""}`}>
           <Card className="!p-0 overflow-hidden">
             <div className="flex items-center justify-between border-b border-[var(--ci-border)] px-4 py-2.5">
-              <p className="text-[13px] font-semibold text-[var(--ci-text)]">Design · {modelAles.eticheta}</p>
-              <p className="text-[12px] text-[var(--ci-text-muted)]">Exact ce se exportă</p>
+              <p className="text-[13px] font-semibold text-[var(--ci-text)]">{d.design} · {modelAles.eticheta}</p>
+              <p className="text-[12px] text-[var(--ci-text-muted)]">{d.exactExporta}</p>
             </div>
-            <iframe ref={cadru} title="Previzualizare" srcDoc={html} sandbox="allow-same-origin allow-modals allow-popups allow-popups-to-escape-sandbox" className="block h-[70vh] w-full bg-[#ebe8e8] lg:h-[calc(100vh-9rem)]" />
+            <iframe ref={cadru} title={d.previzualizare} srcDoc={html} sandbox="allow-same-origin allow-modals allow-popups allow-popups-to-escape-sandbox" className="block h-[70vh] w-full bg-[#ebe8e8] lg:h-[calc(100vh-9rem)]" />
           </Card>
         </div>
       </div>
@@ -585,6 +589,7 @@ export function GeneratorDocument<D extends Date_>(p: GeneratorProps<D>) {
 // Un logo: previzualizare pe fundal în pătrățele (se vede transparența), încărcare și ștergere.
 function CampLogo({ eticheta, valoare, onFisier, onSterge, extra }: { eticheta: string; valoare: string; onFisier: (f?: File) => void; onSterge: () => void; extra?: React.ReactNode }) {
   const id = useId();
+  const d = INSTRUMENTE_UI_DICT[useLocale()].generator;
   return (
     <div className="min-w-0">
       <Label htmlFor={id}>{eticheta}</Label>
@@ -594,17 +599,17 @@ function CampLogo({ eticheta, valoare, onFisier, onSterge, extra }: { eticheta: 
             // eslint-disable-next-line @next/next/no-img-element
             <img src={valoare} alt={eticheta} className="max-h-14 max-w-[10rem] object-contain" />
           ) : (
-            <span className="px-2 text-center text-[11px] text-[var(--ci-text-faint)]">Fără logo</span>
+            <span className="px-2 text-center text-[11px] text-[var(--ci-text-faint)]">{d.faraLogo}</span>
           )}
         </div>
         <div className="flex min-w-0 flex-wrap items-center gap-1.5">
           <label htmlFor={id} className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3 text-[13px] font-medium text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)] focus-within:ring-2 focus-within:ring-[var(--ci-primary)]">
-            <Upload className="size-3.5" aria-hidden /> {valoare ? "Schimbă" : "Încarcă"}
+            <Upload className="size-3.5" aria-hidden /> {valoare ? d.schimba : d.incarca}
           </label>
           <input id={id} type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml" className="sr-only" onChange={(e) => { onFisier(e.target.files?.[0]); e.target.value = ""; }} />
           {valoare && (
             <Button size="sm" variant="ghost" onClick={onSterge}>
-              <Trash2 className="size-3.5" aria-hidden /> Șterge
+              <Trash2 className="size-3.5" aria-hidden /> {d.sterge}
             </Button>
           )}
           {extra}

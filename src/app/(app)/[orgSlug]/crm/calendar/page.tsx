@@ -1,5 +1,6 @@
 import { requireOrgAccess } from "@/lib/auth/guard";
 import { grilaLuna, lunaDinParametru } from "@/lib/calendar-fundraising";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { aziBucuresti } from "@/lib/granturi/stari";
 
 import { obtineEvenimente } from "./queries";
@@ -17,5 +18,6 @@ export default async function CalendarPage({ params, searchParams }: { params: P
   const { an, luna } = lunaDinParametru(sp.luna, azi);
   const grila = grilaLuna(an, luna, azi);
   const evenimente = await obtineEvenimente(orgSlug, grila.de, grila.pana);
-  return <CalendarVedere orgSlug={orgSlug} an={an} luna={luna} azi={azi} evenimente={evenimente} />;
+  const locale = await getLocale();
+  return <CalendarVedere orgSlug={orgSlug} an={an} luna={luna} azi={azi} evenimente={evenimente} locale={locale} />;
 }

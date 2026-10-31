@@ -8,6 +8,7 @@ import { isPlatformAdmin } from "@/lib/billing/trial";
 import { feedbackPlatforma } from "@/lib/db/schema";
 import { notificaChestionarCuProblema, notificaSugestieNoua } from "@/lib/feedback/notificare";
 import { chestionarulCerePrompt } from "@/lib/feedback/notificare-continut";
+import { getLocale } from "@/lib/i18n/get-locale";
 import {
   CATEGORII_SUGESTIE,
   MAX_SUGESTII_PE_ZI,
@@ -76,7 +77,8 @@ export const obtineDateFeedback = withOrgSession(async (ctx): Promise<DateFeedba
 });
 
 export const trimiteChestionarAction = withOrgSession(async (ctx, input: ChestionarInput): Promise<Rezultat> => {
-  const r = valideazaChestionar(input);
+  const locale = await getLocale();
+  const r = valideazaChestionar(input, locale);
   if (!r.ok) return { ok: false, eroare: r.eroare };
   const [ultimul] = await ctx.db
     .select({ la: feedbackPlatforma.createdAt })
@@ -85,7 +87,7 @@ export const trimiteChestionarAction = withOrgSession(async (ctx, input: Chestio
     .orderBy(desc(feedbackPlatforma.createdAt))
     .limit(1);
   if (zileRamaseChestionar(ultimul?.la ?? null, new Date()) > 0) {
-    return { ok: false, eroare: `Ai trimis deja chestionarul în ultimele ${ZILE_INTRE_CHESTIONARE} de zile. Mulțumim! Poți trimite oricând o sugestie.` };
+    return { ok: false, eroare: locale === "en" ? `You have already sent the survey in the last ${ZILE_INTRE_CHESTIONARE} days. Thank you! You can send a suggestion at any time.` : `Ai trimis deja chestionarul în ultimele ${ZILE_INTRE_CHESTIONARE} de zile. Mulțumim! Poți trimite oricând o sugestie.` };
   }
   const v = r.v;
   await ctx.db.insert(feedbackPlatforma).values({
@@ -109,7 +111,8 @@ export const trimiteChestionarAction = withOrgSession(async (ctx, input: Chestio
 });
 
 export const trimiteSugestieAction = withOrgSession(async (ctx, input: SugestieInput): Promise<Rezultat> => {
-  const r = valideazaSugestie(input);
+  const locale = await getLocale();
+  const r = valideazaSugestie(input, locale);
   if (!r.ok) return { ok: false, eroare: r.eroare };
   // Plafon pe organizație: apără de trimiteri în serie (greșeală sau abuz), fără să încurce pe cine are mai multe idei.
   const dinUltimaZi = await ctx.db
@@ -118,7 +121,7 @@ export const trimiteSugestieAction = withOrgSession(async (ctx, input: SugestieI
     .where(and(eq(feedbackPlatforma.orgId, ctx.orgId), eq(feedbackPlatforma.tip, "sugestie"), gte(feedbackPlatforma.createdAt, new Date(Date.now() - MS_ZI))))
     .limit(MAX_SUGESTII_PE_ZI);
   if (dinUltimaZi.length >= MAX_SUGESTII_PE_ZI) {
-    return { ok: false, eroare: `Ați trimis deja ${MAX_SUGESTII_PE_ZI} sugestii azi. Le citim pe toate; revino mâine cu următoarele.` };
+    return { ok: false, eroare: locale === "en" ? `You have already sent ${MAX_SUGESTII_PE_ZI} suggestions today. We read them all; come back tomorrow with the next ones.` : `Ați trimis deja ${MAX_SUGESTII_PE_ZI} sugestii azi. Le citim pe toate; revino mâine cu următoarele.` };
   }
   const v = r.v;
   await ctx.db.insert(feedbackPlatforma).values({

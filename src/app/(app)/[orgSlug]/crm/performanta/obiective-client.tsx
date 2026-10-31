@@ -4,12 +4,15 @@ import { GanttChart, ListTree, Network, Plus, Search } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
+import { PERFORMANTA_UI_DICT } from "@/lib/i18n/dictionaries/performanta-ui";
+import { PERFORMANTA_UI3_DICT } from "@/lib/i18n/dictionaries/performanta-ui-3";
 import type { StareRitm } from "@/lib/performanta-masurare";
-import { ETICHETE_NIVEL, type NivelObiectiv, type ObiectivDto, type OptiuniPerformanta } from "@/lib/performanta-tipuri";
+import type { ObiectivDto, OptiuniPerformanta } from "@/lib/performanta-tipuri";
 
 import { Button } from "../components/ui/button";
 import { Input, Select } from "../components/ui/input";
 import { EmptyState } from "../components/ui/states";
+import { useLocale } from "../lib/locale-context";
 import { DetaliuObiectiv } from "./obiectiv-detaliu";
 import { ObiectivForm } from "./obiectiv-form";
 import type { SablonEfectiv } from "@/lib/performanta-sabloane";
@@ -21,15 +24,18 @@ import { StareBadge } from "./ui-comune";
 type Vedere = "lista" | "arbore" | "cronologie";
 type Sortare = "implicit" | "risc" | "progres" | "termen";
 
-const VEDERI: { id: Vedere; eticheta: string; Icon: typeof ListTree }[] = [
-  { id: "lista", eticheta: "Listă", Icon: ListTree },
-  { id: "arbore", eticheta: "Arbore", Icon: Network },
-  { id: "cronologie", eticheta: "Cronologie", Icon: GanttChart },
+const VEDERI: { id: Vedere; Icon: typeof ListTree }[] = [
+  { id: "lista", Icon: ListTree },
+  { id: "arbore", Icon: Network },
+  { id: "cronologie", Icon: GanttChart },
 ];
 
 const SEVERITATE: Record<StareRitm, number> = { intarziat: 0, in_risc: 1, fara_date: 2, neinceput: 3, in_grafic: 4, finalizat: 5, anulat: 6 };
 
 export function ObiectiveClient({ orgSlug, sabloane, obiective, optiuni, perioada, azi }: { orgSlug: string; sabloane: SablonEfectiv[]; obiective: ObiectivDto[]; optiuni: OptiuniPerformanta; perioada: { start: string; end: string; cod: string }; azi: string }) {
+  const locale = useLocale();
+  const dict = PERFORMANTA_UI3_DICT[locale].client;
+  const comune = PERFORMANTA_UI_DICT[locale].comune;
   const router = useRouter();
   const pathname = usePathname();
   const sp = useSearchParams();
@@ -84,11 +90,11 @@ export function ObiectiveClient({ orgSlug, sabloane, obiective, optiuni, perioad
   const activ = obiective.filter((o) => o.status === "activ");
   const numara = (st: StareRitm[]) => activ.filter((o) => st.includes(o.stare)).length;
   const sumar: { eticheta: string; n: number; stare?: StareRitm }[] = [
-    { eticheta: "Obiective active", n: activ.length },
-    { eticheta: "În grafic", n: numara(["in_grafic", "finalizat"]), stare: "in_grafic" },
-    { eticheta: "În risc", n: numara(["in_risc"]), stare: "in_risc" },
-    { eticheta: "Întârziate", n: numara(["intarziat"]), stare: "intarziat" },
-    { eticheta: "Fără date", n: numara(["fara_date", "neinceput"]), stare: "fara_date" },
+    { eticheta: dict.obiectiveActive, n: activ.length },
+    { eticheta: "in_grafic", n: numara(["in_grafic", "finalizat"]), stare: "in_grafic" },
+    { eticheta: "in_risc", n: numara(["in_risc"]), stare: "in_risc" },
+    { eticheta: "intarziat", n: numara(["intarziat"]), stare: "intarziat" },
+    { eticheta: "fara_date", n: numara(["fara_date", "neinceput"]), stare: "fara_date" },
   ];
 
   const filtreActive = ["dep", "resp", "nivel", "status", "q"].some((k) => sp.get(k));
@@ -97,7 +103,7 @@ export function ObiectiveClient({ orgSlug, sabloane, obiective, optiuni, perioad
   function dupaSalvare(id: string) {
     setFormDeschis(false);
     setEditat(null);
-    setMesaj("Obiectivul a fost salvat.");
+    setMesaj(dict.obiectivSalvat);
     router.refresh();
     setSelectatId(id);
   }
@@ -108,18 +114,18 @@ export function ObiectiveClient({ orgSlug, sabloane, obiective, optiuni, perioad
         <SelectorPerioada />
         <div className="flex flex-wrap gap-2">
         <Button disabled={!poateCrea} onClick={() => setSablon(true)}>
-          Din șablon de rol
+          {dict.dinSablon}
         </Button>
         <Button
           variant="primary"
           disabled={!poateCrea}
-          title={poateCrea ? undefined : "Ai nevoie de un profil de angajat în „Organizație & Echipă” ca să creezi obiective."}
+          title={poateCrea ? undefined : dict.aiNevoieProfil}
           onClick={() => {
             setEditat(null);
             setFormDeschis(true);
           }}
         >
-          <Plus className="size-4" aria-hidden /> Obiectiv nou
+          <Plus className="size-4" aria-hidden /> {dict.obiectivNou}
         </Button>
         </div>
       </div>
@@ -133,21 +139,21 @@ export function ObiectiveClient({ orgSlug, sabloane, obiective, optiuni, perioad
         ))}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2" role="search" aria-label="Filtre obiective">
+      <div className="flex flex-wrap items-center gap-2" role="search" aria-label={dict.filtre}>
         <div className="min-w-[12rem] flex-1 sm:max-w-xs">
-          <Input aria-label="Caută în obiective" icon={<Search className="size-4" aria-hidden />} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Caută obiectiv sau rezultat-cheie" />
+          <Input aria-label={dict.cautaAria} icon={<Search className="size-4" aria-hidden />} value={q} onChange={(e) => setQ(e.target.value)} placeholder={dict.cautaPlaceholder} />
         </div>
-        <Select aria-label="Departament" className="!w-auto min-w-36" value={sp.get("dep") ?? ""} onChange={(e) => seteaza({ dep: e.target.value || null })}>
-          <option value="">Toate departamentele</option>
+        <Select aria-label={dict.departament} className="!w-auto min-w-36" value={sp.get("dep") ?? ""} onChange={(e) => seteaza({ dep: e.target.value || null })}>
+          <option value="">{dict.toateDepartamentele}</option>
           {optiuni.departamente.map((d) => (
             <option key={d.id} value={d.id}>
               {d.nume}
             </option>
           ))}
         </Select>
-        <Select aria-label="Responsabil" className="!w-auto min-w-36" value={sp.get("resp") ?? ""} onChange={(e) => seteaza({ resp: e.target.value || null })}>
-          <option value="">Toți responsabilii</option>
-          {optiuni.euAngajatId && <option value={optiuni.euAngajatId}>Ale mele</option>}
+        <Select aria-label={dict.responsabil} className="!w-auto min-w-36" value={sp.get("resp") ?? ""} onChange={(e) => seteaza({ resp: e.target.value || null })}>
+          <option value="">{dict.totiResponsabilii}</option>
+          {optiuni.euAngajatId && <option value={optiuni.euAngajatId}>{dict.aleMele}</option>}
           {optiuni.angajati
             .filter((a) => a.id !== optiuni.euAngajatId)
             .map((a) => (
@@ -156,26 +162,26 @@ export function ObiectiveClient({ orgSlug, sabloane, obiective, optiuni, perioad
               </option>
             ))}
         </Select>
-        <Select aria-label="Nivel" className="!w-auto min-w-32" value={sp.get("nivel") ?? ""} onChange={(e) => seteaza({ nivel: e.target.value || null })}>
-          <option value="">Toate nivelurile</option>
-          {(Object.keys(ETICHETE_NIVEL) as NivelObiectiv[]).map((n) => (
+        <Select aria-label={dict.nivel} className="!w-auto min-w-32" value={sp.get("nivel") ?? ""} onChange={(e) => seteaza({ nivel: e.target.value || null })}>
+          <option value="">{dict.toateNivelurile}</option>
+          {Object.keys(comune.nivel).map((n) => (
             <option key={n} value={n}>
-              {ETICHETE_NIVEL[n]}
+              {comune.nivel[n]}
             </option>
           ))}
         </Select>
-        <Select aria-label="Stare" className="!w-auto min-w-32" value={sp.get("status") ?? ""} onChange={(e) => seteaza({ status: e.target.value || null })}>
-          <option value="">Active și finalizate</option>
-          <option value="activ">Doar active</option>
-          <option value="finalizat">Finalizate</option>
-          <option value="anulat">Anulate</option>
-          <option value="toate">Toate</option>
+        <Select aria-label={dict.stare} className="!w-auto min-w-32" value={sp.get("status") ?? ""} onChange={(e) => seteaza({ status: e.target.value || null })}>
+          <option value="">{dict.activeSiFinalizate}</option>
+          <option value="activ">{dict.doarActive}</option>
+          <option value="finalizat">{dict.finalizate}</option>
+          <option value="anulat">{dict.anulate}</option>
+          <option value="toate">{dict.toate}</option>
         </Select>
-        <Select aria-label="Sortare" className="!w-auto min-w-36" value={sortare} onChange={(e) => seteaza({ sortare: e.target.value === "implicit" ? null : e.target.value })}>
-          <option value="implicit">Ordine implicită</option>
-          <option value="risc">Cele mai la risc întâi</option>
-          <option value="progres">Cel mai mic progres întâi</option>
-          <option value="termen">După sfârșitul perioadei</option>
+        <Select aria-label={dict.sortare} className="!w-auto min-w-36" value={sortare} onChange={(e) => seteaza({ sortare: e.target.value === "implicit" ? null : e.target.value })}>
+          <option value="implicit">{dict.ordineImplicita}</option>
+          <option value="risc">{dict.celeMaiLaRisc}</option>
+          <option value="progres">{dict.celMaiMicProgres}</option>
+          <option value="termen">{dict.dupaSfarsit}</option>
         </Select>
         {filtreActive && (
           <Button
@@ -186,11 +192,11 @@ export function ObiectiveClient({ orgSlug, sabloane, obiective, optiuni, perioad
               seteaza({ dep: null, resp: null, nivel: null, status: null, q: null });
             }}
           >
-            Șterge filtrele
+            {dict.stergeFiltrele}
           </Button>
         )}
-        <div role="group" aria-label="Vedere" className="ml-auto flex rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-0.5">
-          {VEDERI.map(({ id, eticheta, Icon }) => (
+        <div role="group" aria-label={dict.vedere} className="ml-auto flex rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-0.5">
+          {VEDERI.map(({ id, Icon }) => (
             <button
               key={id}
               type="button"
@@ -199,7 +205,7 @@ export function ObiectiveClient({ orgSlug, sabloane, obiective, optiuni, perioad
               className={`inline-flex items-center gap-1.5 rounded-[calc(var(--ci-radius-btn)-2px)] px-2.5 py-1 text-[12.5px] font-medium focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none ${vedere === id ? "bg-[var(--ci-surface-2)] text-[var(--ci-text)]" : "text-[var(--ci-text-muted)] hover:text-[var(--ci-text)]"}`}
             >
               <Icon className="size-4" aria-hidden />
-              <span className="max-sm:sr-only">{eticheta}</span>
+              <span className="max-sm:sr-only">{dict.vederi[id]}</span>
             </button>
           ))}
         </div>
@@ -211,12 +217,12 @@ export function ObiectiveClient({ orgSlug, sabloane, obiective, optiuni, perioad
 
       {lista.length === 0 ? (
         <EmptyState
-          title={filtreActive ? "Niciun obiectiv nu se potrivește filtrelor" : "Niciun obiectiv în această perioadă"}
-          description={filtreActive ? "Încearcă să scoți un filtru sau să schimbi perioada." : "Un obiectiv leagă munca echipei de ce vrea organizația să obțină, iar rezultatele-cheie arată cum măsurăm."}
+          title={filtreActive ? dict.golFiltrateTitlu : dict.golTitlu}
+          description={filtreActive ? dict.golFiltrateDescriere : dict.golDescriere}
           action={
             poateCrea && !filtreActive ? (
               <Button variant="primary" onClick={() => setFormDeschis(true)}>
-                <Plus className="size-4" aria-hidden /> Creează primul obiectiv
+                <Plus className="size-4" aria-hidden /> {dict.creeazaPrimul}
               </Button>
             ) : undefined
           }
@@ -239,7 +245,7 @@ export function ObiectiveClient({ orgSlug, sabloane, obiective, optiuni, perioad
           setFormDeschis(true);
         }}
         onSchimbat={() => {
-          setMesaj("Modificarea a fost salvată.");
+          setMesaj(dict.modificareSalvata);
           router.refresh();
         }}
       />

@@ -1,3 +1,4 @@
+import type { Locale } from "../i18n/config";
 import type { CustomPlanConfigSaved } from "./custom-plan";
 import { PACKAGE_LIMITS, utilizatoriSuplimentariValizi, type OrgPackage } from "./packages";
 
@@ -57,16 +58,27 @@ export function subCota(curent: number, limita: number | null): boolean {
 
 // Numele pachetului în mesajele către utilizator.
 const NUME_PACHET: Record<OrgPackage, string> = { trial: "de probă", start: "START", crestere: "CREȘTERE", impact: "IMPACT", custom: "personalizat" };
+const NUME_PACHET_EN: Record<OrgPackage, string> = { trial: "trial", start: "START", crestere: "CREȘTERE", impact: "IMPACT", custom: "custom" };
 
 // Mesajele de limită: spun ce include pachetul și ce poate face utilizatorul (nu doar „eroare”).
+// Ultimul parametru, `locale` (implicit română), alege limba mesajului.
 export const mesajeCote = {
-  campanii: (pkg: OrgPackage, limita: number) =>
-    `Pachetul ${NUME_PACHET[pkg]} include ${limita} ${limita === 1 ? "campanie activă" : "campanii active"} în același timp. Închide o campanie sau treci la un pachet mai mare din Facturare.`,
-  conturi230: (pkg: OrgPackage, limita: number) =>
-    `Pachetul ${NUME_PACHET[pkg]} include ${limita} ${limita === 1 ? "cont" : "conturi"} de Formular 230. Treci la un pachet mai mare din Facturare ca să adaugi altele.`,
-  rapoarte: (pkg: OrgPackage, limita: number) =>
-    `Pachetul ${NUME_PACHET[pkg]} include ${limita} ${limita === 1 ? "raport" : "rapoarte"} de impact pe lună și le-ai folosit pe toate luna aceasta. Se reia din prima zi a lunii următoare, sau poți trece la un pachet mai mare din Facturare.`,
-  voluntariActivitati: (pkg: OrgPackage) =>
-    `Activitățile pe teren (ture, cod QR, remindere, adeverințe) sunt incluse începând cu pachetul CREȘTERE. Acum ai pachetul ${NUME_PACHET[pkg]}; sarcinile online rămân disponibile.`,
-  domeniuPropriu: (pkg: OrgPackage) => `Domeniul propriu e inclus în pachetul IMPACT. Acum ai pachetul ${NUME_PACHET[pkg]}.`,
+  campanii: (pkg: OrgPackage, limita: number, locale: Locale = "ro") =>
+    locale === "en"
+      ? `The ${NUME_PACHET_EN[pkg]} plan includes ${limita} active ${limita === 1 ? "campaign" : "campaigns"} at the same time. Close a campaign or move to a higher plan from Billing.`
+      : `Pachetul ${NUME_PACHET[pkg]} include ${limita} ${limita === 1 ? "campanie activă" : "campanii active"} în același timp. Închide o campanie sau treci la un pachet mai mare din Facturare.`,
+  conturi230: (pkg: OrgPackage, limita: number, locale: Locale = "ro") =>
+    locale === "en"
+      ? `The ${NUME_PACHET_EN[pkg]} plan includes ${limita} Formular 230 (3.5% income-tax redirect) ${limita === 1 ? "account" : "accounts"}. Move to a higher plan from Billing to add more.`
+      : `Pachetul ${NUME_PACHET[pkg]} include ${limita} ${limita === 1 ? "cont" : "conturi"} de Formular 230. Treci la un pachet mai mare din Facturare ca să adaugi altele.`,
+  rapoarte: (pkg: OrgPackage, limita: number, locale: Locale = "ro") =>
+    locale === "en"
+      ? `The ${NUME_PACHET_EN[pkg]} plan includes ${limita} impact ${limita === 1 ? "report" : "reports"} per month and you have used them all this month. It resets on the first day of next month, or you can move to a higher plan from Billing.`
+      : `Pachetul ${NUME_PACHET[pkg]} include ${limita} ${limita === 1 ? "raport" : "rapoarte"} de impact pe lună și le-ai folosit pe toate luna aceasta. Se reia din prima zi a lunii următoare, sau poți trece la un pachet mai mare din Facturare.`,
+  voluntariActivitati: (pkg: OrgPackage, locale: Locale = "ro") =>
+    locale === "en"
+      ? `Field activities (shifts, QR code, reminders, certificates) are included from the CREȘTERE plan upwards. You currently have the ${NUME_PACHET_EN[pkg]} plan; online tasks remain available.`
+      : `Activitățile pe teren (ture, cod QR, remindere, adeverințe) sunt incluse începând cu pachetul CREȘTERE. Acum ai pachetul ${NUME_PACHET[pkg]}; sarcinile online rămân disponibile.`,
+  domeniuPropriu: (pkg: OrgPackage, locale: Locale = "ro") =>
+    locale === "en" ? `A custom domain is included in the IMPACT plan. You currently have the ${NUME_PACHET_EN[pkg]} plan.` : `Domeniul propriu e inclus în pachetul IMPACT. Acum ai pachetul ${NUME_PACHET[pkg]}.`,
 };

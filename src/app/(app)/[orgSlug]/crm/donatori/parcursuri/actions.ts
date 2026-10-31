@@ -110,7 +110,7 @@ const esteCheie = (x: unknown): x is CheieParcurs => typeof x === "string" && (C
 export const salveazaParcurs = withOrgAdmin(async (ctx, cheie: string, pasi: unknown, activ: boolean, confirmaAcord = false): Promise<RezultatSalvare> => {
   const er = DONATORI_UI4_DICT[await getLocale()].erori;
   if (!esteCheie(cheie)) return { ok: false, eroare: er.necunoscut };
-  const v = valideazaPasi(pasi, cheie);
+  const v = valideazaPasi(pasi, cheie, await getLocale());
   if (!v.ok) return { ok: false, eroare: v.erori[0]?.mesaj ?? er.verificaTextele, erori: v.erori };
   const vrea = activ === true;
   if (vrea && !emailConfigurat()) return { ok: false, eroare: er.emailNeconfigurat };
@@ -142,7 +142,7 @@ export type RezultatTest = { ok: true; catre: string } | { ok: false; eroare: st
 export const trimiteTestParcurs = withOrgAdmin(async (ctx, cheie: string, pasi: unknown, indexPas: number): Promise<RezultatTest> => {
   const er = DONATORI_UI4_DICT[await getLocale()].erori;
   if (!esteCheie(cheie)) return { ok: false, eroare: er.necunoscut };
-  const v = valideazaPasi(pasi, cheie);
+  const v = valideazaPasi(pasi, cheie, await getLocale());
   if (!v.ok) return { ok: false, eroare: v.erori[0]?.mesaj ?? er.verificaTextele };
   const pas = v.pasi[indexPas];
   if (!pas) return { ok: false, eroare: er.pasInexistent };

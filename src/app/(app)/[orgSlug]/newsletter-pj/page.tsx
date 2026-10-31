@@ -1,4 +1,5 @@
 import { requireOrgAccess } from "@/lib/auth/guard";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { titluAbsolut } from "@/lib/page-titles";
 import { orgHasToolAccess } from "@/lib/billing/packages";
 import { NEWSLETTER_PJ_DESIGN_RECOMANDAT } from "@/lib/design-template-recommendations";
@@ -10,7 +11,7 @@ import { ToolLocked } from "@/modules/crm/shared/tool-locked";
 import { CrmToolPage } from "../crm/tool-page";
 import { NewsletterPagina } from "../newsletter-pagina";
 
-const TITLE = "Generator newsletter — persoane juridice";
+const TITLE = { ro: "Generator newsletter — persoane juridice", en: "Newsletter generator — companies" } as const;
 
 export async function generateMetadata() {
   return titluAbsolut("crmNewsletterPj");
@@ -19,9 +20,10 @@ export async function generateMetadata() {
 export default async function NewsletterPjPage({ params }: { params: Promise<{ orgSlug: string }> }) {
   const { orgSlug } = await params;
   const access = await requireOrgAccess(orgSlug);
+  const title = TITLE[await getLocale()];
 
   if (!orgHasToolAccess(access.orgPackage, access.orgCustomPlanConfig, "newsletter-pj")) {
-    return <ToolLocked orgSlug={orgSlug} toolName={TITLE} />;
+    return <ToolLocked orgSlug={orgSlug} toolName={title} />;
   }
 
   return (
@@ -29,7 +31,7 @@ export default async function NewsletterPjPage({ params }: { params: Promise<{ o
       <NewsletterPagina tip="pj">
         <StandaloneToolFrame
               html={neutralizeazaLinkuriPilot(NEWSLETTER_PJ_HTML, orgSlug)}
-              title={TITLE}
+              title={title}
               orgSlug={orgSlug}
               orgName={access.orgName}
               orgLogoUrl={access.orgLogoUrl}

@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 
 import { requireOrgAccess } from "@/lib/auth/guard";
+import { PERFORMANTA_UI_DICT } from "@/lib/i18n/dictionaries/performanta-ui";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { titluAbsolut } from "@/lib/page-titles";
 import { ETICHETE_PRIORITATE, ETICHETE_STATUS_ACT, type Prioritate, type StatusActivitate } from "@/lib/performanta-activitati-reguli";
 
@@ -29,11 +31,12 @@ export default async function SaptamanaPage({ params, searchParams }: { params: 
     status: status === "deschise" || status === "toate" ? status : status in ETICHETE_STATUS_ACT ? (status as StatusActivitate) : null,
     q: unu(sp.q).slice(0, 100),
   });
+  const p = PERFORMANTA_UI_DICT[await getLocale()].pagini.saptamana;
   return (
     <div className="mx-auto max-w-[1500px] space-y-5">
       <div>
-        <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">Planul săptămânii</h1>
-        <p className="mt-0.5 max-w-3xl text-[13px] text-[var(--ci-text-muted)]">Ce facem, cine se ocupă și până când. Activitățile spun ce se face; cât s-a obținut se vede la obiective, nu aici.</p>
+        <h1 className="ci-display text-lg font-bold text-[var(--ci-text)]">{p.titlu}</h1>
+        <p className="mt-0.5 max-w-3xl text-[13px] text-[var(--ci-text-muted)]">{p.descriere}</p>
       </div>
       <Suspense fallback={null}>
         <PerfNav orgSlug={orgSlug} />

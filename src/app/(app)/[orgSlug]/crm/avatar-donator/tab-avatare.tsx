@@ -5,29 +5,35 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 
-import { ETICHETA_INCREDERE, textFisa, type Avatar, type Incredere, type RezultatAvatare, type SursaDate } from "@/lib/avatar-donator/avatare-reale";
+import { AVATAR_UI_DICT } from "@/lib/i18n/dictionaries/avatar-donator-ui";
+import { etichetaIncredere, textFisa, type Avatar, type Incredere, type RezultatAvatare, type SursaDate } from "@/lib/avatar-donator/avatare-reale";
+import type { Locale } from "@/lib/i18n/config";
 
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Card, CardHeader } from "../components/ui/card";
 import { EmptyState } from "../components/ui/states";
+import { useLocale } from "../lib/locale-context";
 
 type Filtru = "toate" | "sigure" | "devalidat";
 
 const TON_INCREDERE: Record<Incredere, "green" | "amber" | "orange"> = { ridicat: "green", mediu: "amber", scazut: "orange" };
-const lei = (n: number) => `${Math.round(n).toLocaleString("ro-RO")} lei`;
+const fmt = (locale: Locale) => (locale === "ro" ? "ro-RO" : "en-GB");
+const leiL = (n: number, locale: Locale) => `${Math.round(n).toLocaleString(fmt(locale))} lei`;
 
 // Avatarele donatorilor din datele reale ale organizației: grupuri comportamentale, nu persoane. Fiecare fișă separă faptele observate
 // de interpretare și de ipoteze, spune cât de sigure sunt concluziile și ce date lipsesc.
 export function TabAvatare({ rezultat, mergiLa }: { rezultat: RezultatAvatare | null; mergiLa: (tab: "simplu" | "buget") => void }) {
   const { orgSlug } = useParams<{ orgSlug: string }>();
+  const locale = useLocale();
+  const d = AVATAR_UI_DICT[locale].avatare;
   const [filtru, setFiltru] = useState<Filtru>("toate");
   const [deschis, setDeschis] = useState<string | null>(null);
 
   if (!rezultat) {
     return (
       <Card>
-        <EmptyState title="Avatarele nu s-au putut calcula acum" description="Datele donatorilor nu au putut fi citite. Reîncarcă pagina; dacă problema continuă, scrie-ne." />
+        <EmptyState title={d.eroareTitlu} description={d.eroareDescriere} />
       </Card>
     );
   }
@@ -37,24 +43,15 @@ export function TabAvatare({ rezultat, mergiLa }: { rezultat: RezultatAvatare | 
 
   return (
     <div className="space-y-5">
-      <p className="max-w-3xl text-[13.5px] leading-relaxed text-[var(--ci-text-muted)]">
-        Grupuri de donatori care se comportă asemănător, construite doar din donațiile din CRM. Nu descriem persoane și nu ghicim motive: cifrele sunt separate de interpretări și de ipoteze, ca echipa să știe ce e dovedit și ce trebuie verificat.
-      </p>
+      <p className="max-w-3xl text-[13.5px] leading-relaxed text-[var(--ci-text-muted)]">{d.intro}</p>
 
       <DateDeBaza rezultat={rezultat} />
 
       {!rezultat.suficient ? (
         <Card>
-          <EmptyState
-            title={baza.donatori === 0 ? "Nu există încă donatori cu donații" : "Încă nu sunt destule date pentru avatare"}
-            description={
-              baza.donatori === 0
-                ? "După primele donații (online, introduse manual sau importate), aici apar grupuri de donatori cu recomandări."
-                : `Avem ${baza.donatori.toLocaleString("ro-RO")} donatori cu donații; pentru grupuri cu concluzii utile e nevoie de cel puțin 20 în total și 10 în fiecare grup. Importă istoricul donațiilor sau continuă să înregistrezi donațiile.`
-            }
-          />
+          <EmptyState title={baza.donatori === 0 ? d.faraDonatori : d.putineDate} description={baza.donatori === 0 ? d.dupaDonatii : d.putineDateDesc(baza.donatori)} />
           {rezultat.grupuriMici.length > 0 && (
-            <p className="mt-3 text-center text-[12.5px] text-[var(--ci-text-muted)]">Grupuri sub 10 donatori (nu se afișează detalii): {rezultat.grupuriMici.map((g) => g.nume).join(", ")}.</p>
+            <p className="mt-3 text-center text-[12.5px] text-[var(--ci-text-muted)]">{d.grupuriMiciPrefix} {rezultat.grupuriMici.map((g) => g.nume).join(", ")}.</p>
           )}
         </Card>
       ) : (
@@ -62,13 +59,13 @@ export function TabAvatare({ rezultat, mergiLa }: { rezultat: RezultatAvatare | 
           <Card padded={false}>
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--ci-border)] px-5 py-3.5">
               <div>
-                <h3 className="ci-display text-[15px] font-semibold">Avatarele tale</h3>
-                <p className="text-[12.5px] text-[var(--ci-text-muted)]">{avatare.length} {avatare.length === 1 ? "grup susținut" : "grupuri susținute"} de date</p>
+                <h3 className="ci-display text-[15px] font-semibold">{d.avatareleTale}</h3>
+                <p className="text-[12.5px] text-[var(--ci-text-muted)]">{d.grupuri(avatare.length)}</p>
               </div>
-              <div role="group" aria-label="Filtrează după încredere" className="flex overflow-hidden rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] text-[12.5px] font-medium">
-                {([["toate", "Toate"], ["sigure", "Încredere medie sau ridicată"], ["devalidat", "De validat"]] as const).map(([k, e]) => (
+              <div role="group" aria-label={d.filtruAria} className="flex overflow-hidden rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] text-[12.5px] font-medium">
+                {(["toate", "sigure", "devalidat"] as const).map((k) => (
                   <button key={k} aria-pressed={filtru === k} onClick={() => setFiltru(k)} className={`px-3 py-1.5 transition-colors ${filtru === k ? "bg-[var(--ci-primary)] text-white" : "hover:bg-[var(--ci-surface-2)]"}`}>
-                    {e}
+                    {d.filtre[k]}
                   </button>
                 ))}
               </div>
@@ -77,12 +74,12 @@ export function TabAvatare({ rezultat, mergiLa }: { rezultat: RezultatAvatare | 
               <table className="w-full min-w-[720px] text-left text-[13px]">
                 <thead className="text-[11.5px] tracking-wide text-[var(--ci-text-muted)] uppercase">
                   <tr>
-                    <th className="px-5 py-2.5 font-semibold">Avatar</th>
-                    <th className="px-3 py-2.5 text-right font-semibold">Donatori</th>
-                    <th className="px-3 py-2.5 text-right font-semibold">% din bază</th>
-                    <th className="px-3 py-2.5 text-right font-semibold">% din sumă</th>
-                    <th className="px-3 py-2.5 font-semibold">Dovadă principală</th>
-                    <th className="px-5 py-2.5 font-semibold">Încredere</th>
+                    <th className="px-5 py-2.5 font-semibold">{d.colAvatar}</th>
+                    <th className="px-3 py-2.5 text-right font-semibold">{d.colDonatori}</th>
+                    <th className="px-3 py-2.5 text-right font-semibold">{d.colBaza}</th>
+                    <th className="px-3 py-2.5 text-right font-semibold">{d.colSuma}</th>
+                    <th className="px-3 py-2.5 font-semibold">{d.colDovada}</th>
+                    <th className="px-5 py-2.5 font-semibold">{d.colIncredere}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--ci-border)]">
@@ -92,23 +89,21 @@ export function TabAvatare({ rezultat, mergiLa }: { rezultat: RezultatAvatare | 
                         <button onClick={() => setDeschis(deschis === a.id ? null : a.id)} className="text-left font-semibold text-[var(--ci-primary)] hover:underline">{a.nume}</button>
                         <p className="text-[12px] text-[var(--ci-text-muted)]">{a.etapa}</p>
                       </td>
-                      <td className="ci-tabular px-3 py-3 text-right font-semibold">{a.nr.toLocaleString("ro-RO")}</td>
+                      <td className="ci-tabular px-3 py-3 text-right font-semibold">{a.nr.toLocaleString(fmt(locale))}</td>
                       <td className="ci-tabular px-3 py-3 text-right">{a.procentBaza}%</td>
                       <td className="ci-tabular px-3 py-3 text-right">{a.procentSuma}%</td>
                       <td className="max-w-[260px] px-3 py-3 text-[12.5px] text-[var(--ci-text-muted)]">{a.dovada}</td>
-                      <td className="px-5 py-3"><Badge tone={TON_INCREDERE[a.incredere]} icon={false} className="whitespace-nowrap">{ETICHETA_INCREDERE[a.incredere]}</Badge></td>
+                      <td className="px-5 py-3"><Badge tone={TON_INCREDERE[a.incredere]} icon={false} className="whitespace-nowrap">{etichetaIncredere(a.incredere, locale)}</Badge></td>
                     </tr>
                   ))}
                   {vizibile.length === 0 && (
-                    <tr><td colSpan={6} className="px-5 py-6 text-center text-[13px] text-[var(--ci-text-muted)]">Niciun avatar nu se potrivește filtrului.</td></tr>
+                    <tr><td colSpan={6} className="px-5 py-6 text-center text-[13px] text-[var(--ci-text-muted)]">{d.niciunFiltru}</td></tr>
                   )}
                 </tbody>
               </table>
             </div>
             {rezultat.grupuriMici.length > 0 && (
-              <p className="border-t border-[var(--ci-border)] px-5 py-3 text-[12.5px] text-[var(--ci-text-muted)]">
-                Nu se afișează detalii despre grupurile sub 10 donatori ({rezultat.grupuriMici.map((g) => g.nume).join(", ")}): cifrele ar putea indica persoane anume.
-              </p>
+              <p className="border-t border-[var(--ci-border)] px-5 py-3 text-[12.5px] text-[var(--ci-text-muted)]">{d.grupuriMici(rezultat.grupuriMici.map((g) => g.nume).join(", "))}</p>
             )}
           </Card>
 
@@ -128,27 +123,31 @@ export function TabAvatare({ rezultat, mergiLa }: { rezultat: RezultatAvatare | 
 
 // ===== Cifrele de bază ale donatorilor (fapte) =====
 function DateDeBaza({ rezultat }: { rezultat: RezultatAvatare }) {
+  const locale = useLocale();
+  const d = AVATAR_UI_DICT[locale].avatare;
+  const b = d.baza;
   const { baza } = rezultat;
   if (baza.donatori === 0) return null;
+  const nr = (n: number) => n.toLocaleString(fmt(locale));
   const celule: { eticheta: string; valoare: string; nota?: string }[] = [
-    { eticheta: "Donatori cu donații", valoare: baza.donatori.toLocaleString("ro-RO") },
-    { eticheta: "Total donat", valoare: lei(baza.suma) },
-    { eticheta: "Donație mediană", valoare: lei(baza.medianaDonatie), nota: "mediana, nu media" },
-    { eticheta: "Donatori lunari activi", valoare: `${baza.recurenti.toLocaleString("ro-RO")} (${Math.round((baza.recurenti / baza.donatori) * 100)}%)` },
+    { eticheta: b.donatoriCuDonatii, valoare: nr(baza.donatori) },
+    { eticheta: b.totalDonat, valoare: leiL(baza.suma, locale) },
+    { eticheta: b.donatieMediana, valoare: leiL(baza.medianaDonatie, locale), nota: b.medianaNota },
+    { eticheta: b.lunariActivi, valoare: `${nr(baza.recurenti)} (${Math.round((baza.recurenti / baza.donatori) * 100)}%)` },
     {
-      eticheta: "Au donat din nou",
+      eticheta: b.auDonatDinNou,
       valoare: baza.revenire.valoare == null ? "—" : `${baza.revenire.valoare}%`,
-      nota: baza.revenire.valoare == null ? "prea puțini donatori mai vechi de 6 luni" : `din ${baza.revenire.eligibili.toLocaleString("ro-RO")} donatori cu prima donație acum >6 luni`,
+      nota: baza.revenire.valoare == null ? b.putiniVechi : b.dinEligibili(nr(baza.revenire.eligibili)),
     },
     {
-      eticheta: "Păstrați după 12 luni",
+      eticheta: b.pastrati,
       valoare: baza.retentie12.valoare == null ? "—" : `${baza.retentie12.valoare}%`,
-      nota: baza.retentie12.valoare == null ? "prea puțini donatori activi acum 12–24 luni" : `din ${baza.retentie12.baza.toLocaleString("ro-RO")} activi acum 12–24 luni`,
+      nota: baza.retentie12.valoare == null ? b.putiniActivi : b.dinActivi(nr(baza.retentie12.baza)),
     },
   ];
   return (
     <Card>
-      <CardHeader title="Date de bază" subtitle="Fapte observate în donațiile din CRM (online, înregistrate manual și importate, nete de rambursări)" action={<Badge tone="blue" icon={false}>Fapt observat</Badge>} />
+      <CardHeader title={b.titlu} subtitle={b.subtitlu} action={<Badge tone="blue" icon={false}>{b.fapt}</Badge>} />
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {celule.map((c) => (
           <div key={c.eticheta} className="rounded-[var(--ci-radius-btn)] bg-[var(--ci-surface-2)] px-3 py-2.5">
@@ -161,30 +160,29 @@ function DateDeBaza({ rezultat }: { rezultat: RezultatAvatare }) {
       {baza.ani.length > 0 && (
         <div className="mt-4 overflow-x-auto">
           <table className="w-full max-w-lg min-w-[420px] text-left text-[12.5px]">
-            <caption className="mb-1.5 text-left text-[12px] font-semibold text-[var(--ci-text-muted)]">Evoluția pe ani</caption>
+            <caption className="mb-1.5 text-left text-[12px] font-semibold text-[var(--ci-text-muted)]">{b.evolutie}</caption>
             <thead className="text-[11px] tracking-wide text-[var(--ci-text-muted)] uppercase">
-              <tr><th className="py-1 pr-3 font-semibold">An</th><th className="px-3 py-1 text-right font-semibold">Donații</th><th className="px-3 py-1 text-right font-semibold">Donatori</th><th className="py-1 pl-3 text-right font-semibold">Sumă</th></tr>
+              <tr><th className="py-1 pr-3 font-semibold">{b.an}</th><th className="px-3 py-1 text-right font-semibold">{b.donatii}</th><th className="px-3 py-1 text-right font-semibold">{b.donatori}</th><th className="py-1 pl-3 text-right font-semibold">{b.suma}</th></tr>
             </thead>
             <tbody className="divide-y divide-[var(--ci-border)]">
               {baza.ani.map((a) => (
-                <tr key={a.an}><td className="py-1.5 pr-3 font-medium">{a.an}</td><td className="ci-tabular px-3 py-1.5 text-right">{a.donatii.toLocaleString("ro-RO")}</td><td className="ci-tabular px-3 py-1.5 text-right">{a.donatori.toLocaleString("ro-RO")}</td><td className="ci-tabular py-1.5 pl-3 text-right">{lei(a.suma)}</td></tr>
+                <tr key={a.an}><td className="py-1.5 pr-3 font-medium">{a.an}</td><td className="ci-tabular px-3 py-1.5 text-right">{nr(a.donatii)}</td><td className="ci-tabular px-3 py-1.5 text-right">{nr(a.donatori)}</td><td className="ci-tabular py-1.5 pl-3 text-right">{leiL(a.suma, locale)}</td></tr>
               ))}
             </tbody>
           </table>
         </div>
       )}
       {baza.surse.length > 0 && (
-        <p className="mt-3 text-[12px] text-[var(--ci-text-muted)]">
-          Sursa înregistrării în CRM: {baza.surse.map((s) => `${s.sursa} (${s.nr.toLocaleString("ro-RO")})`).join(" · ")}. Nu este același lucru cu canalul prin care au aflat de organizație.
-        </p>
+        <p className="mt-3 text-[12px] text-[var(--ci-text-muted)]">{b.sursaCrm(baza.surse.map((s) => `${s.sursa} (${nr(s.nr)})`).join(" · "))}</p>
       )}
     </Card>
   );
 }
 
 function Lista({ titlu, items, icon, ton }: { titlu: string; items: string[]; icon: React.ReactNode; ton?: "blue" | "amber" | "purple" | "neutral" }) {
+  const l = AVATAR_UI_DICT[useLocale()].avatare.lista;
   if (items.length === 0) return null;
-  const eticheta = ton === "blue" ? "Fapt observat" : ton === "amber" ? "Interpretare" : ton === "purple" ? "Ipoteză" : null;
+  const eticheta = ton === "blue" ? l.fapt : ton === "amber" ? l.interpretare : ton === "purple" ? l.ipoteza : null;
   return (
     <section>
       <div className="flex items-center gap-2">
@@ -201,10 +199,12 @@ function Lista({ titlu, items, icon, ton }: { titlu: string; items: string[]; ic
 }
 
 function FisaAvatar({ a, orgSlug, deschis, comuta }: { a: Avatar; orgSlug: string; deschis: boolean; comuta: () => void }) {
+  const locale = useLocale();
+  const f = AVATAR_UI_DICT[locale].avatare.fisa;
   const [copiat, setCopiat] = useState(false);
   async function copiaza() {
     try {
-      await navigator.clipboard.writeText(textFisa(a));
+      await navigator.clipboard.writeText(textFisa(a, locale));
       setCopiat(true);
       setTimeout(() => setCopiat(false), 2000);
     } catch {
@@ -219,49 +219,49 @@ function FisaAvatar({ a, orgSlug, deschis, comuta }: { a: Avatar; orgSlug: strin
           <p className="ci-display text-[15px] font-semibold text-[var(--ci-text)]">{a.nume}</p>
           <p className="text-[12.5px] text-[var(--ci-text-muted)]">{a.etapa}</p>
         </div>
-        <Badge tone={TON_INCREDERE[a.incredere]} icon={false}>{ETICHETA_INCREDERE[a.incredere]}</Badge>
+        <Badge tone={TON_INCREDERE[a.incredere]} icon={false}>{etichetaIncredere(a.incredere, locale)}</Badge>
         <ChevronDown className={`h-4 w-4 shrink-0 text-[var(--ci-text-muted)] transition-transform ${deschis ? "rotate-180" : ""}`} aria-hidden="true" />
       </button>
       {deschis && (
         <div id={idPanou} className="space-y-5 border-t border-[var(--ci-border)] px-5 py-5">
           <p className="rounded-[var(--ci-radius-btn)] bg-[var(--ci-surface-2)] px-3 py-2 text-[12.5px] text-[var(--ci-text-muted)]">{a.motivIncredere}</p>
           <div className="grid gap-5 lg:grid-cols-2">
-            <Lista titlu="Ce arată datele" items={a.fapte} icon={<Info className="h-3.5 w-3.5" />} ton="blue" />
-            <Lista titlu="Ce pare să însemne" items={a.interpretare} icon={<Lightbulb className="h-3.5 w-3.5" />} ton="amber" />
-            <Lista titlu="De validat (nu se poate deduce din date)" items={a.ipoteze} icon={<FlaskConical className="h-3.5 w-3.5" />} ton="purple" />
-            <Lista titlu="Campanii susținute de mai mulți din grup" items={a.campanii.map((c) => `${c.titlu} — ${c.donatori} donatori`)} icon={<Check className="h-3.5 w-3.5" />} ton="blue" />
+            <Lista titlu={f.ceArataDatele} items={a.fapte} icon={<Info className="h-3.5 w-3.5" />} ton="blue" />
+            <Lista titlu={f.cePareSaInsemne} items={a.interpretare} icon={<Lightbulb className="h-3.5 w-3.5" />} ton="amber" />
+            <Lista titlu={f.deValidat} items={a.ipoteze} icon={<FlaskConical className="h-3.5 w-3.5" />} ton="purple" />
+            <Lista titlu={f.campanii} items={a.campanii.map((c) => f.campaniiRand(c.titlu, c.donatori))} icon={<Check className="h-3.5 w-3.5" />} ton="blue" />
           </div>
-          {a.campanii.length === 0 && <p className="text-[12.5px] text-[var(--ci-text-muted)]">Nicio campanie nu a fost susținută de cel puțin 3 donatori din acest grup (sub acest prag nu afișăm alegerile).</p>}
+          {a.campanii.length === 0 && <p className="text-[12.5px] text-[var(--ci-text-muted)]">{f.faraCampanii}</p>}
 
           <div className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-primary-soft)] p-4">
-            <h4 className="text-[13px] font-semibold text-[var(--ci-text)]">Recomandare de testat</h4>
+            <h4 className="text-[13px] font-semibold text-[var(--ci-text)]">{f.recomandare}</h4>
             <dl className="mt-2 grid gap-x-6 gap-y-2 text-[13px] sm:grid-cols-2">
-              {([["Mesaj", a.recomandari.mesaj], ["Apel la acțiune", a.recomandari.cta], ["Canal și format", a.recomandari.canal], ["Frecvență de testat", a.recomandari.frecventa]] as const).map(([k, v]) => (
+              {([[f.mesaj, a.recomandari.mesaj], [f.cta, a.recomandari.cta], [f.canal, a.recomandari.canal], [f.frecventa, a.recomandari.frecventa]] as const).map(([k, v]) => (
                 <div key={k}><dt className="text-[11.5px] font-semibold tracking-wide text-[var(--ci-text-muted)] uppercase">{k}</dt><dd className="mt-0.5">{v}</dd></div>
               ))}
             </dl>
-            <p className="mt-3 text-[13px]"><b>Următorul pas:</b> {a.recomandari.urmatorulPas}</p>
+            <p className="mt-3 text-[13px]"><b>{f.urmatorulPas}</b> {a.recomandari.urmatorulPas}</p>
           </div>
 
           <div className="grid gap-5 lg:grid-cols-2">
-            <Lista titlu="Bariere posibile (de verificat)" items={a.bariere} icon={<FlaskConical className="h-3.5 w-3.5" />} ton="purple" />
-            <Lista titlu="De evitat" items={a.recomandari.evitat} icon={<ShieldCheck className="h-3.5 w-3.5" />} />
-            <Lista titlu="Teste A/B prioritare" items={a.teste} icon={<FlaskConical className="h-3.5 w-3.5" />} />
-            <Lista titlu="Indicatori de urmărit" items={a.indicatori} icon={<Check className="h-3.5 w-3.5" />} />
+            <Lista titlu={f.bariere} items={a.bariere} icon={<FlaskConical className="h-3.5 w-3.5" />} ton="purple" />
+            <Lista titlu={f.deEvitat} items={a.recomandari.evitat} icon={<ShieldCheck className="h-3.5 w-3.5" />} />
+            <Lista titlu={f.teste} items={a.teste} icon={<FlaskConical className="h-3.5 w-3.5" />} />
+            <Lista titlu={f.indicatori} items={a.indicatori} icon={<Check className="h-3.5 w-3.5" />} />
           </div>
-          <Lista titlu="Date care ar confirma sau infirma avatarul" items={a.dateSuplimentare} icon={<Info className="h-3.5 w-3.5" />} />
+          <Lista titlu={f.dateSuplimentare} items={a.dateSuplimentare} icon={<Info className="h-3.5 w-3.5" />} />
 
           <div className="flex flex-wrap gap-2 border-t border-[var(--ci-border)] pt-4">
             <Link href={`/${orgSlug}/crm/rfm`} className="inline-flex h-9 items-center gap-2 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3.5 text-sm font-medium hover:bg-[var(--ci-surface-2)]">
-              <ExternalLink className="h-3.5 w-3.5" /> Vezi segmentele donatorilor
+              <ExternalLink className="h-3.5 w-3.5" /> {f.segmente}
             </Link>
             <Link href={`/${orgSlug}/crm/donatori`} className="inline-flex h-9 items-center gap-2 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3.5 text-sm font-medium hover:bg-[var(--ci-surface-2)]">
-              <ExternalLink className="h-3.5 w-3.5" /> CRM persoane fizice
+              <ExternalLink className="h-3.5 w-3.5" /> {f.crmPf}
             </Link>
             <Link href={`/${orgSlug}/crm/comunicare`} className="inline-flex h-9 items-center gap-2 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] bg-[var(--ci-surface)] px-3.5 text-sm font-medium hover:bg-[var(--ci-surface-2)]">
-              <ExternalLink className="h-3.5 w-3.5" /> Pregătește comunicarea
+              <ExternalLink className="h-3.5 w-3.5" /> {f.comunicare}
             </Link>
-            <Button variant="secondary" onClick={copiaza}>{copiat ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}{copiat ? "Copiat" : "Copiază fișa"}</Button>
+            <Button variant="secondary" onClick={copiaza}>{copiat ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}{copiat ? f.copiat : f.copiaza}</Button>
           </div>
         </div>
       )}
@@ -270,34 +270,34 @@ function FisaAvatar({ a, orgSlug, deschis, comuta }: { a: Avatar; orgSlug: strin
 }
 
 const TON_SURSA: Record<SursaDate["stare"], "green" | "amber" | "neutral"> = { conectat: "green", manual: "amber", lipsa: "neutral" };
-const TEXT_SURSA: Record<SursaDate["stare"], string> = { conectat: "Conectat", manual: "Introdus manual", lipsa: "Lipsește" };
 
 function SurseSiLimite({ rezultat, mergiLa }: { rezultat: RezultatAvatare; mergiLa: (tab: "simplu" | "buget") => void }) {
+  const s = AVATAR_UI_DICT[useLocale()].avatare.surse;
   return (
     <Card>
-      <CardHeader title="Ce date am folosit și ce lipsește" subtitle="Nu pretindem că am analizat surse la care nu avem acces" />
+      <CardHeader title={s.titlu} subtitle={s.subtitlu} />
       <ul className="divide-y divide-[var(--ci-border)]">
-        {rezultat.surse.map((s) => (
-          <li key={s.eticheta} className="flex flex-wrap items-start justify-between gap-2 py-2.5">
+        {rezultat.surse.map((x) => (
+          <li key={x.eticheta} className="flex flex-wrap items-start justify-between gap-2 py-2.5">
             <div className="min-w-0 flex-1">
-              <p className="text-[13px] font-medium text-[var(--ci-text)]">{s.eticheta}</p>
-              <p className="text-[12.5px] text-[var(--ci-text-muted)]">{s.detaliu}</p>
+              <p className="text-[13px] font-medium text-[var(--ci-text)]">{x.eticheta}</p>
+              <p className="text-[12.5px] text-[var(--ci-text-muted)]">{x.detaliu}</p>
             </div>
-            <Badge tone={TON_SURSA[s.stare]} icon={false}>{TEXT_SURSA[s.stare]}</Badge>
+            <Badge tone={TON_SURSA[x.stare]} icon={false}>{s.stare[x.stare]}</Badge>
           </li>
         ))}
       </ul>
-      <button onClick={() => mergiLa("buget")} className="mt-2 text-[12.5px] font-semibold text-[var(--ci-primary)] hover:underline">Completează statisticile canalelor →</button>
+      <button onClick={() => mergiLa("buget")} className="mt-2 text-[12.5px] font-semibold text-[var(--ci-primary)] hover:underline">{s.completeaza}</button>
 
       <div className="mt-5 grid gap-5 lg:grid-cols-2">
         <section>
-          <h4 className="text-[13px] font-semibold">Limite ale analizei</h4>
+          <h4 className="text-[13px] font-semibold">{s.limite}</h4>
           <ul className="mt-2 space-y-1.5 text-[12.5px] leading-relaxed text-[var(--ci-text-muted)]">
             {rezultat.limitari.map((l) => <li key={l}>• {l}</li>)}
           </ul>
         </section>
         <section>
-          <h4 className="text-[13px] font-semibold">Întrebări rămase</h4>
+          <h4 className="text-[13px] font-semibold">{s.intrebari}</h4>
           <ul className="mt-2 space-y-1.5 text-[12.5px] leading-relaxed text-[var(--ci-text-muted)]">
             {rezultat.intrebari.map((l) => <li key={l}>• {l}</li>)}
           </ul>
@@ -308,16 +308,14 @@ function SurseSiLimite({ rezultat, mergiLa }: { rezultat: RezultatAvatare; mergi
 }
 
 function Protectie() {
+  const p = AVATAR_UI_DICT[useLocale()].avatare.protectie;
   return (
     <Card>
-      <CardHeader title="Cum sunt protejate datele" />
+      <CardHeader title={p.titlu} />
       <ul className="grid gap-x-8 gap-y-1.5 text-[12.5px] leading-relaxed text-[var(--ci-text-muted)] sm:grid-cols-2">
-        <li>• Analiza este agregată: afișăm numărători și mediane, nu nume, emailuri sau donații ale unei persoane.</li>
-        <li>• Grupurile sub 10 donatori nu se afișează, iar campaniile apar doar dacă au fost susținute de cel puțin 3 donatori din grup.</li>
-        <li>• Nu deducem venitul, averea, sănătatea, religia sau alte informații sensibile și nu facem profiluri psihologice.</li>
-        <li>• Cine vede pagina e stabilit de rolurile din organizație; lista donatorilor rămâne în CRM Persoane fizice, cu aceleași permisiuni.</li>
-        <li>• Sunt folosite doar câmpurile necesare: suma, data, campania, acordul pentru email și starea abonamentului.</li>
-        <li>• Respectăm dezabonările și acordurile: grupurile nu se contactează fără acord, indiferent de recomandare.</li>
+        {p.puncte.map((x) => (
+          <li key={x}>• {x}</li>
+        ))}
       </ul>
     </Card>
   );

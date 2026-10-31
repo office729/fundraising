@@ -3,7 +3,10 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
+import { INSTRUMENTE_UI_DICT } from "@/lib/i18n/dictionaries/instrumente-ui";
+
 import { Card, CardHeader } from "../../components/ui/card";
+import { useLocale } from "../../lib/locale-context";
 
 export type ModelGalerie = { id: string; eticheta: string; hint: string; html: string; lat?: number; inalt?: number };
 
@@ -37,6 +40,7 @@ function Miniatura({ html, lat, inalt, cadruLat, cadruInalt }: { html: string; l
 // Galeria de șabloane a unui instrument: miniaturi live; un click deschide generatorul cu modelul ales (?model=…).
 // „recomandate”: id-urile arătate la început; restul apar la „Vezi toate modelele”.
 export function GalerieSabloane({ titlu, subtitlu, hrefGenerator, modele, lat, inalt, coloane, recomandate }: { titlu: string; subtitlu: string; hrefGenerator: string; modele: ModelGalerie[]; lat: number; inalt: number; coloane: string; recomandate?: string[] }) {
+  const d = INSTRUMENTE_UI_DICT[useLocale()].comun.galerie;
   const [toate, setToate] = useState(false);
   const esteSelectie = !!recomandate && recomandate.length > 0 && recomandate.length < modele.length;
   const vizibile = esteSelectie && !toate ? modele.filter((m) => recomandate!.includes(m.id)) : modele;
@@ -59,7 +63,7 @@ export function GalerieSabloane({ titlu, subtitlu, hrefGenerator, modele, lat, i
       {esteSelectie && (
         <div className="mt-4 flex justify-center">
           <button type="button" onClick={() => setToate((v) => !v)} aria-expanded={toate} className="rounded-[var(--ci-radius-btn,8px)] border border-[var(--ci-border)] px-4 py-2 text-[13px] font-medium text-[var(--ci-text)] hover:bg-black/5 focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
-            {toate ? "Arată doar modelele recomandate" : `Vezi toate cele ${modele.length} modele`}
+            {toate ? d.doarRecomandate : d.vezi(modele.length)}
           </button>
         </div>
       )}

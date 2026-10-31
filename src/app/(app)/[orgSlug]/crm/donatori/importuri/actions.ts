@@ -29,7 +29,7 @@ export const stergeImportAction = withOrgSession(async (ctx, id: string): Promis
   if (ctx.role !== "owner" && ctx.role !== "admin") return { ok: false, eroare: er.doarAdmin };
   if (!/^[0-9a-f-]{36}$/i.test(String(id))) return { ok: false, eroare: er.importInvalid };
   try {
-    const r = await stergeImport(ctx, id);
+    const r = await stergeImport(ctx, id, await getLocale());
     return { ok: true, donatoriStersi: r.donatoriStersi, donatiiSterse: r.stersi };
   } catch (e) {
     return { ok: false, eroare: e instanceof Error ? e.message : er.nuAmSters };

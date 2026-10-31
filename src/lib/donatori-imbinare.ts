@@ -16,20 +16,21 @@ export type RezultatImbinare = { ok: true; donatiiMutate: number; importuriMutat
 // Îmbină donatorii secundari în cel principal: donațiile și notițele trec la principal, datele de contact lipsă se completează, iar acordurile se combină
 // în sensul cel mai prudent (dezabonare sau refuz de e-mail ale oricăruia rămân valabile). Jurnal de audit.
 // O adresă cu abonament recurent activ nu se îmbină: următoarea plată ar recrea donatorul.
-export async function executaImbinare(ctx: Pick<OrgContext, "db" | "orgId" | "userId">, primarId: string, secundariIds: string[]): Promise<RezultatImbinare> {
+export async function executaImbinare(ctx: Pick<OrgContext, "db" | "orgId" | "userId">, primarId: string, secundariIds: string[], locale: "ro" | "en" = "ro"): Promise<RezultatImbinare> {
+  const en = locale === "en";
   const secundari = [...new Set((Array.isArray(secundariIds) ? secundariIds : []).filter((x) => typeof x === "string" && UUID.test(x) && x !== primarId))];
-  if (!UUID.test(String(primarId)) || secundari.length === 0 || secundari.length > 10) return { ok: false, eroare: "Alege donatorul de păstrat și cel puțin un donator de îmbinat (cel mult 10)." };
+  if (!UUID.test(String(primarId)) || secundari.length === 0 || secundari.length > 10) return { ok: false, eroare: en ? "Choose the donor to keep and at least one donor to merge (at most 10)." : "Alege donatorul de păstrat și cel puțin un donator de îmbinat (cel mult 10)." };
 
   await ctx.db.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`${ctx.orgId}:donatori-import`}, 0))`);
   const toti = await ctx.db.select().from(donatoriReali).where(and(eq(donatoriReali.orgId, ctx.orgId), inArray(donatoriReali.id, [primarId, ...secundari])));
   const primar = toti.find((d) => d.id === primarId);
   const sec = secundari.map((id) => toti.find((d) => d.id === id));
-  if (!primar || sec.some((d) => !d)) return { ok: false, eroare: "Unul dintre donatori nu mai există. Reîncarcă pagina." };
+  if (!primar || sec.some((d) => !d)) return { ok: false, eroare: en ? "One of the donors no longer exists. Reload the page." : "Unul dintre donatori nu mai există. Reîncarcă pagina." };
   const secundariRanduri = sec as typeof toti;
 
   for (const s of secundariRanduri) {
     const [abon] = (await ctx.db.execute(sql`select 1 as x from fundraising_donations where org_id = ${ctx.orgId} and lower(email_donator) = ${s.email.toLowerCase()} and recurenta and abonament_activ limit 1`)) as unknown as { x: number }[];
-    if (abon) return { ok: false, eroare: `${s.email} are o donație recurentă activă. Îmbinarea ar fi anulată de următoarea plată; îmbină-i după ce abonamentul se oprește.` };
+    if (abon) return { ok: false, eroare: en ? `${s.email} has an active recurring donation. The merge would be undone by the next payment; merge them after the subscription stops.` : `${s.email} are o donație recurentă activă. Îmbinarea ar fi anulată de următoarea plată; îmbină-i după ce abonamentul se oprește.` };
   }
 
   // Câmpuri combinate: completăm ce lipsește la principal; acordurile se combină prudent.

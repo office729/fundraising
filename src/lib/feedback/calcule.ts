@@ -82,12 +82,14 @@ export type ChestionarValid = {
   poateContacta: boolean;
 };
 
-export function valideazaChestionar(input: unknown): { ok: true; v: ChestionarValid } | { ok: false; eroare: string } {
+// `locale` (implicit „ro”) alege limba mesajelor de eroare; textele românești rămân cele verificate de teste.
+export function valideazaChestionar(input: unknown, locale: "ro" | "en" = "ro"): { ok: true; v: ChestionarValid } | { ok: false; eroare: string } {
+  const t = (ro: string, en: string) => (locale === "en" ? en : ro);
   const i = (input && typeof input === "object" ? input : {}) as Record<string, unknown>;
   const nps = intrInterval(i.nps, 0, 10);
-  if (nps === null) return { ok: false, eroare: "Alege un număr de la 0 la 10 la prima întrebare." };
+  if (nps === null) return { ok: false, eroare: t("Alege un număr de la 0 la 10 la prima întrebare.", "Choose a number from 0 to 10 for the first question.") };
   const satisfactie = intrInterval(i.satisfactie, 1, 5);
-  if (satisfactie === null) return { ok: false, eroare: "Spune cât de mulțumit ești în general (de la 1 la 5)." };
+  if (satisfactie === null) return { ok: false, eroare: t("Spune cât de mulțumit ești în general (de la 1 la 5).", "Tell us how satisfied you are overall (from 1 to 5).") };
   const note: Record<string, number> = {};
   const notePrimite = (i.note && typeof i.note === "object" ? i.note : {}) as Record<string, unknown>;
   for (const cheie of CHEI_ARII) {
@@ -103,14 +105,15 @@ export function valideazaChestionar(input: unknown): { ok: true; v: ChestionarVa
 export type SugestieInput = { categorie: string; titlu: string; mesaj: string; poateContacta: boolean };
 export type SugestieValida = { categorie: string; titlu: string; mesaj: string; poateContacta: boolean };
 
-export function valideazaSugestie(input: unknown): { ok: true; v: SugestieValida } | { ok: false; eroare: string } {
+export function valideazaSugestie(input: unknown, locale: "ro" | "en" = "ro"): { ok: true; v: SugestieValida } | { ok: false; eroare: string } {
+  const t = (ro: string, en: string) => (locale === "en" ? en : ro);
   const i = (input && typeof input === "object" ? input : {}) as Record<string, unknown>;
   const categorie = typeof i.categorie === "string" && CHEI_CATEGORII.includes(i.categorie) ? i.categorie : null;
-  if (!categorie) return { ok: false, eroare: "Alege ce fel de sugestie este." };
+  if (!categorie) return { ok: false, eroare: t("Alege ce fel de sugestie este.", "Choose what kind of suggestion this is.") };
   const titlu = text(i.titlu, MAX_TITLU);
-  if (titlu.length < 3) return { ok: false, eroare: "Dă un titlu scurt sugestiei (cel puțin 3 caractere)." };
+  if (titlu.length < 3) return { ok: false, eroare: t("Dă un titlu scurt sugestiei (cel puțin 3 caractere).", "Give your suggestion a short title (at least 3 characters).") };
   const mesaj = text(i.mesaj, MAX_MESAJ);
-  if (mesaj.length < 10) return { ok: false, eroare: "Descrie sugestia în câteva cuvinte (cel puțin 10 caractere)." };
+  if (mesaj.length < 10) return { ok: false, eroare: t("Descrie sugestia în câteva cuvinte (cel puțin 10 caractere).", "Describe your suggestion in a few words (at least 10 characters).") };
   return { ok: true, v: { categorie, titlu, mesaj, poateContacta: i.poateContacta === true } };
 }
 

@@ -166,15 +166,17 @@ export type RezultatNormalizare = {
 const TOTALURI = /^(total|totals|results from|rezultate|grand total|sum)/i;
 
 // Transformă rândurile în costuri zilnice. Rândurile cu aceeași cheie (ex. defalcări pe vârstă) se adună. Sumele negative sunt respinse.
-export function normalizeaza(randuri: string[][], mapare: Mapare, opt: { platformaImplicita?: string } = {}): RezultatNormalizare {
+// `opt.locale` (implicit română) alege limba mesajelor de eroare.
+export function normalizeaza(randuri: string[][], mapare: Mapare, opt: { platformaImplicita?: string; locale?: "ro" | "en" } = {}): RezultatNormalizare {
+  const en = opt.locale === "en";
   const rez: RezultatNormalizare = { randuri: [], erori: [], ignorate: 0, de: null, pana: null, totalMinor: 0, campanii: [] };
   if (mapare.ziua === undefined || mapare.cheltuiala === undefined) {
-    rez.erori.push({ linie: 1, mesaj: "Lipsesc coloanele obligatorii: ziua și suma cheltuită." });
+    rez.erori.push({ linie: 1, mesaj: en ? "The required columns are missing: the day and the amount spent." : "Lipsesc coloanele obligatorii: ziua și suma cheltuită." });
     return rez;
   }
   const date = randuri.slice(1);
   if (date.length > MAX_RANDURI) {
-    rez.erori.push({ linie: 1, mesaj: `Fișierul are peste ${MAX_RANDURI.toLocaleString("ro-RO")} de rânduri. Importă-l pe perioade mai scurte.` });
+    rez.erori.push({ linie: 1, mesaj: en ? `The file has more than ${MAX_RANDURI.toLocaleString("en-GB")} rows. Import it in shorter periods.` : `Fișierul are peste ${MAX_RANDURI.toLocaleString("ro-RO")} de rânduri. Importă-l pe perioade mai scurte.` });
     return rez;
   }
   const text = (r: string[], i: number | undefined) => (i === undefined ? "" : (r[i] ?? "").trim().slice(0, 200));
@@ -195,17 +197,17 @@ export function normalizeaza(randuri: string[][], mapare: Mapare, opt: { platfor
     }
     const ziua = parseData(brutZi);
     if (!ziua) {
-      rez.erori.push({ linie, mesaj: `Data „${brutZi.slice(0, 30)}” nu a fost recunoscută (folosește 2026-10-05 sau 05.10.2026).` });
+      rez.erori.push({ linie, mesaj: en ? `The date “${brutZi.slice(0, 30)}” was not recognised (use 2026-10-05 or 05.10.2026).` : `Data „${brutZi.slice(0, 30)}” nu a fost recunoscută (folosește 2026-10-05 sau 05.10.2026).` });
       return;
     }
     const sumaBrut = text(r, mapare.cheltuiala);
     const suma = parseNumar(sumaBrut);
     if (!Number.isFinite(suma)) {
-      rez.erori.push({ linie, mesaj: `Suma „${sumaBrut.slice(0, 30)}” nu e un număr.` });
+      rez.erori.push({ linie, mesaj: en ? `The amount “${sumaBrut.slice(0, 30)}” is not a number.` : `Suma „${sumaBrut.slice(0, 30)}” nu e un număr.` });
       return;
     }
     if (suma < 0) {
-      rez.erori.push({ linie, mesaj: "Suma cheltuită e negativă; rândul a fost ignorat (corecțiile se fac în sursă)." });
+      rez.erori.push({ linie, mesaj: en ? "The amount spent is negative; the row was ignored (corrections are made at the source)." : "Suma cheltuită e negativă; rândul a fost ignorat (corecțiile se fac în sursă)." });
       return;
     }
     const campanieNume = text(r, mapare.campanieNume);

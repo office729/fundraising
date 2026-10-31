@@ -8,6 +8,8 @@ import { getLimiteleEfective, mesajeCote } from "@/lib/billing/quota";
 import type { Tx } from "@/lib/db";
 import { fundraisingAuditLog, fundraisingPages, volunteerActivities, volunteerPanelLinks, volunteerReports, volunteerShifts, volunteerSignups, volunteerTasks, volunteerVisitors } from "@/lib/db/schema";
 import { emailConfigurat, trimiteEmail } from "@/lib/email";
+import { getLocale } from "@/lib/i18n/get-locale";
+import { getTr } from "@/lib/i18n/tr-server";
 import { emailInvitatie } from "@/lib/voluntari-email-template";
 import { candidatiPentru, MAX_INVITATII, type CandidatInvitatie } from "@/lib/voluntari-invitatii";
 export type { CandidatInvitatie } from "@/lib/voluntari-invitatii";
@@ -68,30 +70,31 @@ const intPozitiv = (v: unknown, max: number): number | null => {
 };
 
 export const salveazaSarcinaAction = withOrgSession(async (ctx, i: SarcinaInput): Promise<Rez<{ id: string }>> => {
+  const t = await getTr();
   const titlu = textCurat(i.titlu, MAX.titlu);
   const descriere = textCurat(i.descriere, MAX.descriere);
-  if (titlu.length < 3) return eroare("Scrie un titlu (cel puțin 3 caractere).");
-  if (descriere.length < 5) return eroare("Spune pe scurt ce trebuie făcut.");
-  if (!esteTipSarcina(i.tip)) return eroare("Alege tipul sarcinii.");
+  if (titlu.length < 3) return eroare(t("Scrie un titlu (cel puțin 3 caractere).", "Write a title (at least 3 characters)."));
+  if (descriere.length < 5) return eroare(t("Spune pe scurt ce trebuie făcut.", "Briefly say what needs to be done."));
+  if (!esteTipSarcina(i.tip)) return eroare(t("Alege tipul sarcinii.", "Choose the task type."));
   const termen = String(i.termen ?? "");
-  if (!DATA.test(termen)) return eroare("Alege un termen.");
+  if (!DATA.test(termen)) return eroare(t("Alege un termen.", "Choose a deadline."));
   const inceput = String(i.inceputLa ?? "");
-  if (inceput && !DATA.test(inceput)) return eroare("Data de început nu e validă.");
-  if (inceput && inceput > termen) return eroare("Data de început trebuie să fie înainte de termen.");
+  if (inceput && !DATA.test(inceput)) return eroare(t("Data de început nu e validă.", "The start date is not valid."));
+  if (inceput && inceput > termen) return eroare(t("Data de început trebuie să fie înainte de termen.", "The start date must be before the deadline."));
 
   let campanieId: string | null = null;
   if (i.campanieId) {
-    if (!UUID_REGEX.test(i.campanieId)) return eroare("Campania aleasă nu e validă.");
+    if (!UUID_REGEX.test(i.campanieId)) return eroare(t("Campania aleasă nu e validă.", "The chosen campaign is not valid."));
     const [c] = await ctx.db.select({ id: fundraisingPages.id }).from(fundraisingPages).where(and(eq(fundraisingPages.id, i.campanieId), eq(fundraisingPages.orgId, ctx.orgId))).limit(1);
-    if (!c) return eroare("Campania aleasă nu mai există.");
+    if (!c) return eroare(t("Campania aleasă nu mai există.", "The chosen campaign no longer exists."));
     campanieId = c.id;
   }
   const linkBrut = String(i.linkBaza ?? "").trim();
   const linkBaza = linkBrut ? normalizeazaLink(linkBrut) : null;
-  if (linkBrut && !linkBaza) return eroare("Linkul trebuie să înceapă cu https://.");
+  if (linkBrut && !linkBaza) return eroare(t("Linkul trebuie să înceapă cu https://.", "The link must start with https://."));
   const imgBrut = String(i.imagineUrl ?? "").trim();
   const imagineUrl = imgBrut ? normalizeazaLink(imgBrut) : null;
-  if (imgBrut && !imagineUrl) return eroare("Linkul imaginii trebuie să înceapă cu https://.");
+  if (imgBrut && !imagineUrl) return eroare(t("Linkul imaginii trebuie să înceapă cu https://.", "The image link must start with https://."));
 
   const valori = {
     titlu,
@@ -113,9 +116,9 @@ export const salveazaSarcinaAction = withOrgSession(async (ctx, i: SarcinaInput)
   };
 
   if (i.id) {
-    if (!UUID_REGEX.test(i.id)) return eroare("Sarcină invalidă.");
+    if (!UUID_REGEX.test(i.id)) return eroare(t("Sarcină invalidă.", "Invalid task."));
     const r = await ctx.db.update(volunteerTasks).set(valori).where(and(eq(volunteerTasks.id, i.id), eq(volunteerTasks.orgId, ctx.orgId))).returning({ id: volunteerTasks.id });
-    if (!r[0]) return eroare("Sarcina nu mai există.");
+    if (!r[0]) return eroare(t("Sarcina nu mai există.", "The task no longer exists."));
     return { ok: true, id: r[0].id };
   }
   const [nou] = await ctx.db.insert(volunteerTasks).values({ ...valori, orgId: ctx.orgId, createdBy: ctx.userId }).returning({ id: volunteerTasks.id });
@@ -124,15 +127,17 @@ export const salveazaSarcinaAction = withOrgSession(async (ctx, i: SarcinaInput)
 });
 
 export const seteazaStareSarcinaAction = withOrgSession(async (ctx, id: string, stare: "publicata" | "inchisa"): Promise<Rez> => {
-  if (!UUID_REGEX.test(String(id)) || !["publicata", "inchisa"].includes(stare)) return eroare("Cerere invalidă.");
+  const t = await getTr();
+  if (!UUID_REGEX.test(String(id)) || !["publicata", "inchisa"].includes(stare)) return eroare(t("Cerere invalidă.", "Invalid request."));
   const r = await ctx.db.update(volunteerTasks).set({ stare, updatedAt: new Date() }).where(and(eq(volunteerTasks.id, id), eq(volunteerTasks.orgId, ctx.orgId))).returning({ id: volunteerTasks.id });
-  return r[0] ? { ok: true } : eroare("Sarcina nu mai există.");
+  return r[0] ? { ok: true } : eroare(t("Sarcina nu mai există.", "The task no longer exists."));
 });
 
 export const stergeSarcinaAction = withOrgSession(async (ctx, id: string): Promise<Rez> => {
-  if (!UUID_REGEX.test(String(id))) return eroare("Cerere invalidă.");
+  const t = await getTr();
+  if (!UUID_REGEX.test(String(id))) return eroare(t("Cerere invalidă.", "Invalid request."));
   const r = await ctx.db.delete(volunteerTasks).where(and(eq(volunteerTasks.id, id), eq(volunteerTasks.orgId, ctx.orgId))).returning({ id: volunteerTasks.id });
-  if (!r[0]) return eroare("Sarcina nu mai există.");
+  if (!r[0]) return eroare(t("Sarcina nu mai există.", "The task no longer exists."));
   await audit(ctx, "voluntari_sarcina_stearsa", id);
   return { ok: true };
 });
@@ -160,29 +165,31 @@ export type ActivitateInput = {
 };
 
 export const salveazaActivitateAction = withOrgSession(async (ctx, i: ActivitateInput): Promise<Rez<{ id: string }>> => {
+  const locale = await getLocale();
+  const t = await getTr();
   // Activitățile pe teren noi sunt incluse de la pachetul CREȘTERE; cele deja create se pot edita în continuare.
-  if (!i.id && !getLimiteleEfective(ctx.orgPackage, ctx.orgCustomPlanConfig).voluntariActivitati) return eroare(mesajeCote.voluntariActivitati(ctx.orgPackage));
+  if (!i.id && !getLimiteleEfective(ctx.orgPackage, ctx.orgCustomPlanConfig).voluntariActivitati) return eroare(mesajeCote.voluntariActivitati(ctx.orgPackage, locale));
   const titlu = textCurat(i.titlu, MAX.titlu);
   const locatie = textCurat(i.locatie, MAX.locatie);
-  if (titlu.length < 3) return eroare("Scrie un titlu (cel puțin 3 caractere).");
-  if (locatie.length < 3) return eroare("Scrie locul unde are loc activitatea.");
+  if (titlu.length < 3) return eroare(t("Scrie un titlu (cel puțin 3 caractere).", "Write a title (at least 3 characters)."));
+  if (locatie.length < 3) return eroare(t("Scrie locul unde are loc activitatea.", "Write where the activity takes place."));
   const inceput = dinOraRo(i.inceputLa);
   const sfarsit = dinOraRo(i.seTerminaLa);
-  if (!inceput || !sfarsit) return eroare("Alege data și ora de început și de sfârșit.");
-  if (sfarsit <= inceput) return eroare("Sfârșitul trebuie să fie după început.");
-  if (!i.id && sfarsit.getTime() < Date.now()) return eroare("Activitatea trebuie să fie în viitor.");
+  if (!inceput || !sfarsit) return eroare(t("Alege data și ora de început și de sfârșit.", "Choose the start and end date and time."));
+  if (sfarsit <= inceput) return eroare(t("Sfârșitul trebuie să fie după început.", "The end must be after the start."));
+  if (!i.id && sfarsit.getTime() < Date.now()) return eroare(t("Activitatea trebuie să fie în viitor.", "The activity must be in the future."));
 
   const turiBrute = Array.isArray(i.ture) && i.ture.length > 0 ? i.ture : [{ nume: "Voluntar", inceputLa: i.inceputLa, seTerminaLa: i.seTerminaLa, locuri: 10 }];
-  if (turiBrute.length > 20) return eroare("Cel mult 20 de ture sau roluri pe activitate.");
+  if (turiBrute.length > 20) return eroare(t("Cel mult 20 de ture sau roluri pe activitate.", "At most 20 shifts or roles per activity."));
   const turi: { id?: string; nume: string; inceputLa: Date; seTerminaLa: Date; locuri: number }[] = [];
-  for (const t of turiBrute) {
-    const ti = dinOraRo(t.inceputLa) ?? inceput;
-    const ts = dinOraRo(t.seTerminaLa) ?? sfarsit;
-    if (ts <= ti) return eroare(`La „${textCurat(t.nume, 40) || "Voluntar"}”, sfârșitul trebuie să fie după început.`);
-    if (ti < inceput || ts > sfarsit) return eroare(`Tura „${textCurat(t.nume, 40) || "Voluntar"}” trebuie să fie în intervalul activității.`);
-    const locuri = Math.floor(Number(t.locuri));
-    if (!Number.isFinite(locuri) || locuri < 1 || locuri > 500) return eroare("Numărul de locuri trebuie să fie între 1 și 500.");
-    turi.push({ id: t.id && UUID_REGEX.test(t.id) ? t.id : undefined, nume: textCurat(t.nume, MAX.nume) || "Voluntar", inceputLa: ti, seTerminaLa: ts, locuri });
+  for (const tu of turiBrute) {
+    const ti = dinOraRo(tu.inceputLa) ?? inceput;
+    const ts = dinOraRo(tu.seTerminaLa) ?? sfarsit;
+    if (ts <= ti) return eroare(locale === "en" ? `At “${textCurat(tu.nume, 40) || "Voluntar"}”, the end must be after the start.` : `La „${textCurat(tu.nume, 40) || "Voluntar"}”, sfârșitul trebuie să fie după început.`);
+    if (ti < inceput || ts > sfarsit) return eroare(locale === "en" ? `The shift “${textCurat(tu.nume, 40) || "Voluntar"}” must fall within the activity's time slot.` : `Tura „${textCurat(tu.nume, 40) || "Voluntar"}” trebuie să fie în intervalul activității.`);
+    const locuri = Math.floor(Number(tu.locuri));
+    if (!Number.isFinite(locuri) || locuri < 1 || locuri > 500) return eroare(t("Numărul de locuri trebuie să fie între 1 și 500.", "The number of spots must be between 1 and 500."));
+    turi.push({ id: tu.id && UUID_REGEX.test(tu.id) ? tu.id : undefined, nume: textCurat(tu.nume, MAX.nume) || "Voluntar", inceputLa: ti, seTerminaLa: ts, locuri });
   }
 
   const valori = {
@@ -206,9 +213,9 @@ export const salveazaActivitateAction = withOrgSession(async (ctx, i: Activitate
 
   let id: string;
   if (i.id) {
-    if (!UUID_REGEX.test(i.id)) return eroare("Activitate invalidă.");
+    if (!UUID_REGEX.test(i.id)) return eroare(t("Activitate invalidă.", "Invalid activity."));
     const r = await ctx.db.update(volunteerActivities).set(valori).where(and(eq(volunteerActivities.id, i.id), eq(volunteerActivities.orgId, ctx.orgId))).returning({ id: volunteerActivities.id });
-    if (!r[0]) return eroare("Activitatea nu mai există.");
+    if (!r[0]) return eroare(t("Activitatea nu mai există.", "The activity no longer exists."));
     id = r[0].id;
     // Turele care nu mai apar se șterg doar dacă nu au înscrieri.
     const existente = await ctx.db.select({ id: volunteerShifts.id, nume: volunteerShifts.nume }).from(volunteerShifts).where(and(eq(volunteerShifts.activityId, id), eq(volunteerShifts.orgId, ctx.orgId)));
@@ -219,7 +226,7 @@ export const salveazaActivitateAction = withOrgSession(async (ctx, i: Activitate
         .select({ n: sql<number>`count(*)::int` })
         .from(volunteerSignups)
         .where(and(eq(volunteerSignups.orgId, ctx.orgId), inArray(volunteerSignups.shiftId, deSters.map((d) => d.id))));
-      if ((cuInscrieri?.n ?? 0) > 0) return eroare("O tură cu înscrieri nu poate fi ștearsă. Anulează întâi înscrierile sau lasă tura.");
+      if ((cuInscrieri?.n ?? 0) > 0) return eroare(t("O tură cu înscrieri nu poate fi ștearsă. Anulează întâi înscrierile sau lasă tura.", "A shift with sign-ups cannot be deleted. Cancel the sign-ups first or keep the shift."));
       await ctx.db.delete(volunteerShifts).where(and(eq(volunteerShifts.orgId, ctx.orgId), inArray(volunteerShifts.id, deSters.map((d) => d.id))));
     }
   } else {
@@ -240,17 +247,19 @@ export const salveazaActivitateAction = withOrgSession(async (ctx, i: Activitate
 });
 
 export const seteazaStareActivitateAction = withOrgSession(async (ctx, id: string, stare: "publicata" | "anulata" | "incheiata"): Promise<Rez> => {
-  if (!UUID_REGEX.test(String(id)) || !["publicata", "anulata", "incheiata"].includes(stare)) return eroare("Cerere invalidă.");
+  const t = await getTr();
+  if (!UUID_REGEX.test(String(id)) || !["publicata", "anulata", "incheiata"].includes(stare)) return eroare(t("Cerere invalidă.", "Invalid request."));
   const r = await ctx.db.update(volunteerActivities).set({ stare, updatedAt: new Date() }).where(and(eq(volunteerActivities.id, id), eq(volunteerActivities.orgId, ctx.orgId))).returning({ id: volunteerActivities.id });
-  if (!r[0]) return eroare("Activitatea nu mai există.");
+  if (!r[0]) return eroare(t("Activitatea nu mai există.", "The activity no longer exists."));
   await audit(ctx, `voluntari_activitate_${stare}`, id);
   return { ok: true };
 });
 
 export const stergeActivitateAction = withOrgSession(async (ctx, id: string): Promise<Rez> => {
-  if (!UUID_REGEX.test(String(id))) return eroare("Cerere invalidă.");
+  const t = await getTr();
+  if (!UUID_REGEX.test(String(id))) return eroare(t("Cerere invalidă.", "Invalid request."));
   const r = await ctx.db.delete(volunteerActivities).where(and(eq(volunteerActivities.id, id), eq(volunteerActivities.orgId, ctx.orgId))).returning({ id: volunteerActivities.id });
-  if (!r[0]) return eroare("Activitatea nu mai există.");
+  if (!r[0]) return eroare(t("Activitatea nu mai există.", "The activity no longer exists."));
   await audit(ctx, "voluntari_activitate_stearsa", id);
   return { ok: true };
 });
@@ -269,28 +278,30 @@ async function inscriere(ctx: OrgContext, id: string) {
 
 // Aprobarea sau respingerea unei cereri „în așteptare”.
 export const decideInscriereAction = withOrgSession(async (ctx, id: string, aproba: boolean): Promise<Rez> => {
+  const t = await getTr();
   const i = await inscriere(ctx, id);
-  if (!i) return eroare("Înscrierea nu mai există.");
-  if (i.status !== "in_asteptare") return eroare("Această cerere a primit deja un răspuns.");
+  if (!i) return eroare(t("Înscrierea nu mai există.", "The sign-up no longer exists."));
+  if (i.status !== "in_asteptare") return eroare(t("Această cerere a primit deja un răspuns.", "This request has already received a reply."));
   if (!aproba) {
     await ctx.db.update(volunteerSignups).set({ status: "anulata", updatedAt: new Date() }).where(and(eq(volunteerSignups.id, id), eq(volunteerSignups.orgId, ctx.orgId)));
     await promoveazaDinRezerva(ctx.db as unknown as Tx, ctx.orgId, i.shiftId);
     return { ok: true };
   }
   const tura = await blocheazaTura(ctx.db as unknown as Tx, ctx.orgId, i.shiftId);
-  if (!tura) return eroare("Tura nu mai există.");
+  if (!tura) return eroare(t("Tura nu mai există.", "The shift no longer exists."));
   // Cererea însăși ocupă deja un loc (in_asteptare), deci aprobarea nu schimbă numărul de locuri ocupate.
   const ocupate = await locuriOcupate(ctx.db as unknown as Tx, ctx.orgId, i.shiftId);
-  if (ocupate > tura.locuri) return eroare("Tura are mai multe cereri decât locuri. Mărește numărul de locuri sau respinge o cerere.");
+  if (ocupate > tura.locuri) return eroare(t("Tura are mai multe cereri decât locuri. Mărește numărul de locuri sau respinge o cerere.", "The shift has more requests than spots. Increase the number of spots or decline a request."));
   await ctx.db.update(volunteerSignups).set({ status: "confirmata", updatedAt: new Date() }).where(and(eq(volunteerSignups.id, id), eq(volunteerSignups.orgId, ctx.orgId)));
   return { ok: true };
 });
 
 export const marcheazaPrezentaAction = withOrgSession(async (ctx, id: string, status: "prezent" | "absent" | "confirmata"): Promise<Rez> => {
-  if (!["prezent", "absent", "confirmata"].includes(status)) return eroare("Cerere invalidă.");
+  const t = await getTr();
+  if (!["prezent", "absent", "confirmata"].includes(status)) return eroare(t("Cerere invalidă.", "Invalid request."));
   const i = await inscriere(ctx, id);
-  if (!i) return eroare("Înscrierea nu mai există.");
-  if (["anulata", "rezerva", "in_asteptare"].includes(i.status)) return eroare("Doar înscrierile confirmate pot fi marcate prezente sau absente.");
+  if (!i) return eroare(t("Înscrierea nu mai există.", "The sign-up no longer exists."));
+  if (["anulata", "rezerva", "in_asteptare"].includes(i.status)) return eroare(t("Doar înscrierile confirmate pot fi marcate prezente sau absente.", "Only confirmed sign-ups can be marked present or absent."));
   const ore = status === "prezent" ? (i.oreCalculate != null ? Number(i.oreCalculate) : calculeazaOre(i.inceputLa, i.seTerminaLa)) : null;
   await ctx.db
     .update(volunteerSignups)
@@ -300,11 +311,12 @@ export const marcheazaPrezentaAction = withOrgSession(async (ctx, id: string, st
 });
 
 export const seteazaOreAction = withOrgSession(async (ctx, id: string, ore: number): Promise<Rez> => {
+  const t = await getTr();
   const valoare = Math.round(Number(ore) * 4) / 4;
-  if (!Number.isFinite(valoare) || valoare < 0 || valoare > 24) return eroare("Orele trebuie să fie între 0 și 24.");
+  if (!Number.isFinite(valoare) || valoare < 0 || valoare > 24) return eroare(t("Orele trebuie să fie între 0 și 24.", "Hours must be between 0 and 24."));
   const i = await inscriere(ctx, id);
-  if (!i) return eroare("Înscrierea nu mai există.");
-  if (i.status !== "prezent") return eroare("Orele se setează doar pentru cei marcați prezenți.");
+  if (!i) return eroare(t("Înscrierea nu mai există.", "The sign-up no longer exists."));
+  if (i.status !== "prezent") return eroare(t("Orele se setează doar pentru cei marcați prezenți.", "Hours can only be set for those marked present."));
   await ctx.db
     .update(volunteerSignups)
     .set({ oreCalculate: String(valoare), oreValidate: null, validatLa: null, validatDe: null, updatedAt: new Date() })
@@ -315,9 +327,10 @@ export const seteazaOreAction = withOrgSession(async (ctx, id: string, ore: numb
 // Validarea orelor și închiderea activității: doar orele validate intră în adeverințe și rapoarte.
 export const valideazaOreActivitateAction = withOrgSession(
   async (ctx, activityId: string, rezultatValoare: number | null): Promise<Rez<{ validate: number }>> => {
-    if (!UUID_REGEX.test(String(activityId))) return eroare("Cerere invalidă.");
+    const t = await getTr();
+    if (!UUID_REGEX.test(String(activityId))) return eroare(t("Cerere invalidă.", "Invalid request."));
     const [a] = await ctx.db.select({ id: volunteerActivities.id }).from(volunteerActivities).where(and(eq(volunteerActivities.id, activityId), eq(volunteerActivities.orgId, ctx.orgId))).limit(1);
-    if (!a) return eroare("Activitatea nu mai există.");
+    if (!a) return eroare(t("Activitatea nu mai există.", "The activity no longer exists."));
     const prezenti = await ctx.db
       .select({ id: volunteerSignups.id, oreCalculate: volunteerSignups.oreCalculate, inceputLa: volunteerShifts.inceputLa, seTerminaLa: volunteerShifts.seTerminaLa })
       .from(volunteerSignups)
@@ -343,34 +356,37 @@ export const valideazaOreActivitateAction = withOrgSession(
 
 // ===== Raportări =====
 export const rezolvaRaportareAction = withOrgSession(async (ctx, id: string): Promise<Rez> => {
-  if (!UUID_REGEX.test(String(id))) return eroare("Cerere invalidă.");
+  const t = await getTr();
+  if (!UUID_REGEX.test(String(id))) return eroare(t("Cerere invalidă.", "Invalid request."));
   const r = await ctx.db.update(volunteerReports).set({ stare: "rezolvata" }).where(and(eq(volunteerReports.id, id), eq(volunteerReports.orgId, ctx.orgId))).returning({ id: volunteerReports.id });
-  return r[0] ? { ok: true } : eroare("Raportarea nu mai există.");
+  return r[0] ? { ok: true } : eroare(t("Raportarea nu mai există.", "The report no longer exists."));
 });
 
 // ===== Linkul coordonatorului =====
 // Un cod secret pe activitate (24 de caractere). Un cod nou îl înlocuiește pe cel vechi; valabil până la 3 zile după încheiere.
 export const genereazaLinkCoordonatorAction = withOrgSession(async (ctx, activityId: string): Promise<Rez<{ link: string }>> => {
-  if (!UUID_REGEX.test(String(activityId))) return eroare("Cerere invalidă.");
+  const t = await getTr();
+  if (!UUID_REGEX.test(String(activityId))) return eroare(t("Cerere invalidă.", "Invalid request."));
   const cod = genereazaCodScurt(24);
   const r = await ctx.db
     .update(volunteerActivities)
     .set({ coordinatorToken: cod, updatedAt: new Date() })
     .where(and(eq(volunteerActivities.id, activityId), eq(volunteerActivities.orgId, ctx.orgId)))
     .returning({ id: volunteerActivities.id });
-  if (!r[0]) return eroare("Activitatea nu mai există.");
+  if (!r[0]) return eroare(t("Activitatea nu mai există.", "The activity no longer exists."));
   await audit(ctx, "voluntari_link_coordonator_generat", activityId);
   return { ok: true, link: `${URL_BAZA()}/coordonator/${cod}` };
 });
 
 export const opresteLinkCoordonatorAction = withOrgSession(async (ctx, activityId: string): Promise<Rez> => {
-  if (!UUID_REGEX.test(String(activityId))) return eroare("Cerere invalidă.");
+  const t = await getTr();
+  if (!UUID_REGEX.test(String(activityId))) return eroare(t("Cerere invalidă.", "Invalid request."));
   const r = await ctx.db
     .update(volunteerActivities)
     .set({ coordinatorToken: null, updatedAt: new Date() })
     .where(and(eq(volunteerActivities.id, activityId), eq(volunteerActivities.orgId, ctx.orgId)))
     .returning({ id: volunteerActivities.id });
-  if (!r[0]) return eroare("Activitatea nu mai există.");
+  if (!r[0]) return eroare(t("Activitatea nu mai există.", "The activity no longer exists."));
   await audit(ctx, "voluntari_link_coordonator_oprit", activityId);
   return { ok: true };
 });
@@ -380,31 +396,33 @@ export const opresteLinkCoordonatorAction = withOrgSession(async (ctx, activityI
 // terminat o sarcină sau au distribuit) și nu au primit o invitație în ultimele 7 zile. Cei deja înscriși la activitate nu apar.
 export const candidatiInvitatiiAction = withOrgSession(
   async (ctx, activityId: string): Promise<Rez<{ candidati: CandidatInvitatie[]; emailActiv: boolean; linkActiv: boolean }>> => {
-    if (!UUID_REGEX.test(String(activityId))) return eroare("Cerere invalidă.");
+    const t = await getTr();
+    if (!UUID_REGEX.test(String(activityId))) return eroare(t("Cerere invalidă.", "Invalid request."));
     const [link] = await ctx.db.select({ activ: volunteerPanelLinks.activ }).from(volunteerPanelLinks).where(eq(volunteerPanelLinks.orgId, ctx.orgId)).limit(1);
     return { ok: true, candidati: await candidatiPentru(ctx, activityId), emailActiv: emailConfigurat(), linkActiv: !!link?.activ };
   },
 );
 
 export const trimiteInvitatiiAction = withOrgSession(async (ctx, activityId: string, ids: string[]): Promise<Rez<{ trimise: number; esuate: number }>> => {
-  if (!UUID_REGEX.test(String(activityId))) return eroare("Cerere invalidă.");
-  if (!emailConfigurat()) return eroare("Emailul nu e configurat pe acest server, deci nu putem trimite invitații.");
+  const t = await getTr();
+  if (!UUID_REGEX.test(String(activityId))) return eroare(t("Cerere invalidă.", "Invalid request."));
+  if (!emailConfigurat()) return eroare(t("Emailul nu e configurat pe acest server, deci nu putem trimite invitații.", "Email is not configured on this server, so we cannot send invitations."));
   const alesi = new Set((Array.isArray(ids) ? ids : []).filter((x) => UUID_REGEX.test(String(x))).slice(0, MAX_INVITATII));
-  if (alesi.size === 0) return eroare("Alege cel puțin un voluntar.");
+  if (alesi.size === 0) return eroare(t("Alege cel puțin un voluntar.", "Choose at least one volunteer."));
   const [a] = await ctx.db
     .select({ titlu: volunteerActivities.titlu, locatie: volunteerActivities.locatie, inceputLa: volunteerActivities.inceputLa, seTerminaLa: volunteerActivities.seTerminaLa, stare: volunteerActivities.stare })
     .from(volunteerActivities)
     .where(and(eq(volunteerActivities.id, activityId), eq(volunteerActivities.orgId, ctx.orgId)))
     .limit(1);
-  if (!a) return eroare("Activitatea nu mai există.");
-  if (a.stare !== "publicata" || a.seTerminaLa.getTime() < Date.now()) return eroare("Invitațiile se trimit doar pentru activități publicate care nu s-au încheiat.");
+  if (!a) return eroare(t("Activitatea nu mai există.", "The activity no longer exists."));
+  if (a.stare !== "publicata" || a.seTerminaLa.getTime() < Date.now()) return eroare(t("Invitațiile se trimit doar pentru activități publicate care nu s-au încheiat.", "Invitations are sent only for published activities that have not ended."));
   const [link] = await ctx.db.select({ cod: volunteerPanelLinks.cod, activ: volunteerPanelLinks.activ }).from(volunteerPanelLinks).where(eq(volunteerPanelLinks.orgId, ctx.orgId)).limit(1);
-  if (!link?.activ) return eroare("Pornește linkul voluntarilor înainte să trimiți invitații.");
+  if (!link?.activ) return eroare(t("Pornește linkul voluntarilor înainte să trimiți invitații.", "Turn on the volunteer link before sending invitations."));
 
   // Se reia verificarea de eligibilitate pe server: nu ne bazăm pe lista primită de la browser.
   const eligibili = new Set((await candidatiPentru(ctx, activityId)).map((c) => c.id));
   const tinte = [...alesi].filter((id) => eligibili.has(id));
-  if (tinte.length === 0) return eroare("Nimeni dintre cei aleși nu mai poate primi invitația (au primit una recent sau s-au înscris deja).");
+  if (tinte.length === 0) return eroare(t("Nimeni dintre cei aleși nu mai poate primi invitația (au primit una recent sau s-au înscris deja).", "None of those chosen can receive the invitation any more (they received one recently or have already signed up)."));
   const adrese = await ctx.db
     .select({ id: volunteerVisitors.id, prenume: volunteerVisitors.prenume, email: volunteerVisitors.email })
     .from(volunteerVisitors)

@@ -6,7 +6,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { dateImpactExemplu, MODELE_IMPACT, type ModelImpact } from "@/lib/raport-impact";
 import { randeazaRaportImpact } from "@/lib/raport-impact-modele";
 
+import { INSTRUMENTE_UI_DICT } from "@/lib/i18n/dictionaries/instrumente-ui";
+
 import { Card, CardHeader } from "../../components/ui/card";
+import { useLocale } from "../../lib/locale-context";
+import { traduElemente } from "../_comun/tradu";
 
 // Lățimea la care se desenează modelul înainte de micșorare (certificatul și prezentarea sunt pe orizontală).
 const LATIME: Partial<Record<ModelImpact, number>> = { prezentare: 1040, analitic: 940, "o-pagina": 900 };
@@ -47,13 +51,16 @@ function Miniatura({ html, latime }: { html: string; latime: number }) {
 }
 
 export function GalerieModele({ orgSlug, organizatie, logoOng, culoare, azi }: { orgSlug: string; organizatie: string; logoOng: string; culoare: string | null; azi: string }) {
+  const locale = useLocale();
+  const d = INSTRUMENTE_UI_DICT[locale].raportCompanii;
+  const modele = useMemo(() => traduElemente(MODELE_IMPACT, "impact", locale), [locale]);
   const exemplu = useMemo(() => ({ ...dateImpactExemplu(culoare ?? undefined), logoOng }), [culoare, logoOng]);
   const html = useMemo(() => Object.fromEntries(MODELE_IMPACT.map((m) => [m.id, randeazaRaportImpact(exemplu, { organizatie, azi }, m.id)])), [exemplu, organizatie, azi]);
   return (
     <Card>
-      <CardHeader title="Raport de impact: alege un model" subtitle={`${MODELE_IMPACT.length} modele, cu date de exemplu. Apasă pe unul ca să-l completezi pentru o firmă.`} />
+      <CardHeader title={d.galerieTitlu} subtitle={d.galerieSubtitlu(MODELE_IMPACT.length)} />
       <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        {MODELE_IMPACT.map((m) => (
+        {modele.map((m) => (
           <li key={m.id} className="min-w-0">
             <Link
               href={`/${orgSlug}/crm/instrumente/raport-companii/impact?model=${m.id}`}

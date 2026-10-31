@@ -17,12 +17,14 @@ function gazda(u: URL): string {
   return u.hostname.toLowerCase().replace(/^(www|m|mobile|ro)\./, "");
 }
 
-export function valideazaLinkedin(brut: string): RezultatLink {
+// Mesajele de eroare sunt în limba cerută prin `locale` (implicit română).
+export function valideazaLinkedin(brut: string, locale: "ro" | "en" = "ro"): RezultatLink {
+  const en = locale === "en";
   const u = parseUrl(brut);
-  if (!u || gazda(u) !== "linkedin.com") return { ok: false, eroare: "Linkul trebuie să fie de pe linkedin.com." };
+  if (!u || gazda(u) !== "linkedin.com") return { ok: false, eroare: en ? "The link must be from linkedin.com." : "Linkul trebuie să fie de pe linkedin.com." };
   const [tip, slug] = u.pathname.split("/").filter(Boolean);
   if (!tip || !slug || !["company", "showcase", "school"].includes(tip.toLowerCase())) {
-    return { ok: false, eroare: "Pune linkul paginii firmei (linkedin.com/company/…), nu al unei persoane." };
+    return { ok: false, eroare: en ? "Use the company page link (linkedin.com/company/…), not a person's." : "Pune linkul paginii firmei (linkedin.com/company/…), nu al unei persoane." };
   }
   return { ok: true, url: `https://www.linkedin.com/${tip.toLowerCase()}/${slug}` };
 }
@@ -33,22 +35,23 @@ const FB_REZERVATE = new Set([
   "gaming", "policies", "help", "privacy", "settings", "friends", "messages", "notifications", "search", "public",
 ]);
 
-export function valideazaFacebook(brut: string): RezultatLink {
+export function valideazaFacebook(brut: string, locale: "ro" | "en" = "ro"): RezultatLink {
+  const en = locale === "en";
   const u = parseUrl(brut);
   const g = u ? gazda(u) : "";
-  if (!u || (g !== "facebook.com" && g !== "fb.com")) return { ok: false, eroare: "Linkul trebuie să fie de pe facebook.com." };
+  if (!u || (g !== "facebook.com" && g !== "fb.com")) return { ok: false, eroare: en ? "The link must be from facebook.com." : "Linkul trebuie să fie de pe facebook.com." };
   const segmente = u.pathname.split("/").filter(Boolean);
   const primul = segmente[0]?.toLowerCase();
-  if (!primul) return { ok: false, eroare: "Pune linkul paginii firmei." };
+  if (!primul) return { ok: false, eroare: en ? "Use the company page link." : "Pune linkul paginii firmei." };
   if (primul === "profile.php") {
     const id = u.searchParams.get("id");
     if (id && /^\d+$/.test(id)) return { ok: true, url: `https://www.facebook.com/profile.php?id=${id}` };
-    return { ok: false, eroare: "Link de pagină invalid." };
+    return { ok: false, eroare: en ? "Invalid page link." : "Link de pagină invalid." };
   }
-  if (FB_REZERVATE.has(primul)) return { ok: false, eroare: "Acesta nu e o pagină de firmă (grup, eveniment, distribuire sau autentificare)." };
+  if (FB_REZERVATE.has(primul)) return { ok: false, eroare: en ? "This is not a company page (group, event, share or login)." : "Acesta nu e o pagină de firmă (grup, eveniment, distribuire sau autentificare)." };
   if (primul === "pages" && segmente.length >= 3) return { ok: true, url: `https://www.facebook.com/pages/${segmente[1]}/${segmente[2]}` };
   if (primul === "p" && segmente[1]) return { ok: true, url: `https://www.facebook.com/p/${segmente[1]}` };
-  if (primul === "pages" || primul === "p") return { ok: false, eroare: "Link de pagină incomplet." };
+  if (primul === "pages" || primul === "p") return { ok: false, eroare: en ? "Incomplete page link." : "Link de pagină incomplet." };
   return { ok: true, url: `https://www.facebook.com/${segmente[0]}` };
 }
 

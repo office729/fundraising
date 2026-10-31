@@ -4,7 +4,9 @@ import { useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useMemo, useState, useTransition } from "react";
 import type { ReactNode } from "react";
 
-import { ETICHETE_PRIORITATE, ETICHETE_RECURENTA, valideazaActivitate, valideazaBlocaj, type ActivitateInput, type Prioritate, type Recurenta, type StatusActivitate } from "@/lib/performanta-activitati-reguli";
+import { PERFORMANTA_UI_DICT } from "@/lib/i18n/dictionaries/performanta-ui";
+import { PERFORMANTA_UI2_DICT } from "@/lib/i18n/dictionaries/performanta-ui-2";
+import { valideazaActivitate, valideazaBlocaj, type ActivitateInput, type Prioritate, type Recurenta, type StatusActivitate } from "@/lib/performanta-activitati-reguli";
 import type { ActivitateDto, BlocajDto } from "@/lib/performanta-activitati-tipuri";
 import { aziRo } from "@/lib/performanta-masurare";
 import type { ObiectivSimplu } from "@/lib/performanta-pagini";
@@ -13,6 +15,7 @@ import type { OptiuniPerformanta } from "@/lib/performanta-tipuri";
 import { Button } from "../components/ui/button";
 import { Dialog } from "../components/ui/dialog";
 import { Input, Label, Select, Textarea } from "../components/ui/input";
+import { useLocale } from "../lib/locale-context";
 import { amanaBlocajAction, aprobaActivitateAction, inchideBlocajAction, raporteazaBlocajAction, salveazaActivitateAction, schimbaStatusActivitateAction, stergeActivitateAction } from "./activitati-actions";
 
 // Acțiunile pe activități și blocaje, împreună cu dialogurile lor, disponibile oricărei vederi (listă, tablă, calendar, Spațiul meu).
@@ -58,6 +61,7 @@ const cheieDubla = (a: ActivitateDto | null): ActivitateInput | null =>
 
 export function ActivitatiProvider({ orgSlug, optiuni, obiective, dependente, children }: { orgSlug: string; optiuni: OptiuniPerformanta; obiective: ObiectivSimplu[]; dependente: { id: string; titlu: string }[]; children: ReactNode }) {
   const router = useRouter();
+  const dict = PERFORMANTA_UI2_DICT[useLocale()].ctx;
   const [mesaj, setMesaj] = useState<Ctx["mesaj"]>(null);
   const [ocupat, start] = useTransition();
   const [form, setForm] = useState<{ cheie: number; initial: ActivitateInput } | null>(null);
@@ -69,9 +73,9 @@ export function ActivitatiProvider({ orgSlug, optiuni, obiective, dependente, ch
       if (r.ok) {
         setMesaj({ text, eroare: false });
         router.refresh();
-      } else setMesaj({ text: r.eroare ?? "Nu s-a putut salva.", eroare: true });
+      } else setMesaj({ text: r.eroare ?? dict.nuSaSalvat, eroare: true });
     },
-    [router],
+    [router, dict],
   );
 
   const ctx = useMemo<Ctx>(
@@ -84,28 +88,28 @@ export function ActivitatiProvider({ orgSlug, optiuni, obiective, dependente, ch
       deschideBlocaj: (t) => setBlocaj({ cheie: Date.now(), ...t }),
       deschideInchidere: setInchidere,
       actiune: (a, tip) => {
-        if (tip === "sterge" && !window.confirm(`Ștergi activitatea „${a.titlu}”? Nu se poate anula.`)) return;
-        if (tip === "anuleaza" && !window.confirm(`Anulezi activitatea „${a.titlu}”?`)) return;
+        if (tip === "sterge" && !window.confirm(dict.confirmaSterge(a.titlu))) return;
+        if (tip === "anuleaza" && !window.confirm(dict.confirmaAnuleaza(a.titlu))) return;
         start(async () => {
-          if (tip === "aproba") dupa(await aprobaActivitateAction(orgSlug, a.id), "Activitatea a fost aprobată.");
-          else if (tip === "sterge") dupa(await stergeActivitateAction(orgSlug, a.id), "Activitatea a fost ștearsă.");
+          if (tip === "aproba") dupa(await aprobaActivitateAction(orgSlug, a.id), dict.aprobata);
+          else if (tip === "sterge") dupa(await stergeActivitateAction(orgSlug, a.id), dict.stearsa);
           else {
             const r = await schimbaStatusActivitateAction(orgSlug, a.id, STATUS_PENTRU[tip]);
-            dupa(r, tip === "finalizeaza" ? (r.ok && "urmatoareaId" in r && r.urmatoareaId ? "Finalizată. Următoarea ocurență a fost creată." : "Activitatea e finalizată.") : "Starea a fost schimbată.");
+            dupa(r, tip === "finalizeaza" ? (r.ok && "urmatoareaId" in r && r.urmatoareaId ? dict.finalizataUrmatoare : dict.finalizata) : dict.stareSchimbata);
           }
         });
       },
       mesaj,
       ocupat,
     }),
-    [optiuni.euAngajatId, orgSlug, dupa, mesaj, ocupat],
+    [optiuni.euAngajatId, orgSlug, dupa, mesaj, ocupat, dict],
   );
 
   return (
     <Context.Provider value={ctx}>
       {children}
       {form && <FormularActivitate key={form.cheie} orgSlug={orgSlug} initial={form.initial} optiuni={optiuni} obiective={obiective} dependente={dependente} onClose={() => setForm(null)} onSalvat={(t) => { setForm(null); dupa({ ok: true }, t); }} />}
-      {blocaj && <DialogBlocaj key={blocaj.cheie} orgSlug={orgSlug} t={blocaj} optiuni={optiuni} onClose={() => setBlocaj(null)} onSalvat={() => { setBlocaj(null); dupa({ ok: true }, "Blocajul a fost raportat."); }} />}
+      {blocaj && <DialogBlocaj key={blocaj.cheie} orgSlug={orgSlug} t={blocaj} optiuni={optiuni} onClose={() => setBlocaj(null)} onSalvat={() => { setBlocaj(null); dupa({ ok: true }, dict.blocajRaportat); }} />}
       {inchidere && <DialogInchidere key={inchidere.id} orgSlug={orgSlug} b={inchidere} onClose={() => setInchidere(null)} onGata={(t) => { setInchidere(null); dupa({ ok: true }, t); }} />}
     </Context.Provider>
   );
@@ -128,6 +132,8 @@ function alocabili(o: OptiuniPerformanta) {
 }
 
 function FormularActivitate({ orgSlug, initial, optiuni, obiective, dependente, onClose, onSalvat }: { orgSlug: string; initial: ActivitateInput; optiuni: OptiuniPerformanta; obiective: ObiectivSimplu[]; dependente: { id: string; titlu: string }[]; onClose: () => void; onSalvat: (t: string) => void }) {
+  const dict = PERFORMANTA_UI2_DICT[useLocale()].ctx;
+  const comune = PERFORMANTA_UI_DICT[useLocale()].comune;
   const [f, setF] = useState<ActivitateInput>(initial);
   const [eroare, setEroare] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -143,12 +149,12 @@ function FormularActivitate({ orgSlug, initial, optiuni, obiective, dependente, 
     start(async () => {
       const r = await salveazaActivitateAction(orgSlug, input);
       if (!r.ok) return setEroare(r.eroare);
-      onSalvat(f.id ? "Activitatea a fost salvată." : "Activitatea a fost adăugată.");
+      onSalvat(f.id ? dict.salvata : dict.adaugata);
     });
   }
 
   return (
-    <Dialog open onClose={onClose} title={f.id ? "Editează activitatea" : "Activitate nouă"} width="max-w-2xl">
+    <Dialog open onClose={onClose} title={f.id ? dict.formEdit : dict.formNou} width="max-w-2xl">
       <form
         noValidate
         className="grid gap-3 sm:grid-cols-2"
@@ -158,13 +164,13 @@ function FormularActivitate({ orgSlug, initial, optiuni, obiective, dependente, 
         }}
       >
         <div className="sm:col-span-2">
-          <Label htmlFor="ac-t">Ce trebuie făcut</Label>
-          <Input id="ac-t" autoFocus value={f.titlu} maxLength={200} onChange={(e) => set("titlu", e.target.value)} placeholder="ex. Trimite raportul către sponsor" />
+          <Label htmlFor="ac-t">{dict.ceDeFacut}</Label>
+          <Input id="ac-t" autoFocus value={f.titlu} maxLength={200} onChange={(e) => set("titlu", e.target.value)} placeholder={dict.ceDeFacutPlaceholder} />
         </div>
         <div>
-          <Label htmlFor="ac-r">Cine se ocupă</Label>
+          <Label htmlFor="ac-r">{dict.cineSeOcupa}</Label>
           <Select id="ac-r" value={f.responsabilId ?? ""} onChange={(e) => set("responsabilId", e.target.value || null)}>
-            <option value="">Alege…</option>
+            <option value="">{dict.alege}</option>
             {alocabil.map((a) => (
               <option key={a.id} value={a.id}>
                 {a.nume}
@@ -173,28 +179,28 @@ function FormularActivitate({ orgSlug, initial, optiuni, obiective, dependente, 
           </Select>
         </div>
         <div>
-          <Label htmlFor="ac-p">Prioritate</Label>
+          <Label htmlFor="ac-p">{dict.prioritate}</Label>
           <Select id="ac-p" value={f.prioritate} onChange={(e) => set("prioritate", e.target.value as Prioritate)}>
-            {(Object.keys(ETICHETE_PRIORITATE) as Prioritate[]).map((p) => (
+            {Object.keys(comune.prioritate).map((p) => (
               <option key={p} value={p}>
-                {ETICHETE_PRIORITATE[p]}
+                {comune.prioritate[p]}
               </option>
             ))}
           </Select>
         </div>
         <div>
-          <Label htmlFor="ac-te">Termen</Label>
+          <Label htmlFor="ac-te">{dict.termen}</Label>
           <Input id="ac-te" type="date" value={f.termen ?? ""} onChange={(e) => set("termen", e.target.value || null)} />
         </div>
         <div>
-          <Label htmlFor="ac-ef">Efort estimat (ore)</Label>
-          <Input id="ac-ef" inputMode="decimal" value={f.efortOre ?? ""} onChange={(e) => set("efortOre", e.target.value.trim() === "" ? null : Number(e.target.value.replace(",", ".")))} placeholder="ex. 2,5" />
-          <p className="mt-1 text-[12px] text-[var(--ci-text-muted)]">Din el se calculează încărcarea săptămânii.</p>
+          <Label htmlFor="ac-ef">{dict.efort}</Label>
+          <Input id="ac-ef" inputMode="decimal" value={f.efortOre ?? ""} onChange={(e) => set("efortOre", e.target.value.trim() === "" ? null : Number(e.target.value.replace(",", ".")))} placeholder={dict.efortPlaceholder} />
+          <p className="mt-1 text-[12px] text-[var(--ci-text-muted)]">{dict.efortNota}</p>
         </div>
         <div>
-          <Label htmlFor="ac-ob">Obiectiv (opțional)</Label>
+          <Label htmlFor="ac-ob">{dict.obiectivOpt}</Label>
           <Select id="ac-ob" value={f.obiectivId ?? ""} onChange={(e) => setF((x) => ({ ...x, obiectivId: e.target.value || null, rezultatId: null }))}>
-            <option value="">Fără obiectiv</option>
+            <option value="">{dict.faraObiectiv}</option>
             {obiective.map((o) => (
               <option key={o.id} value={o.id}>
                 {o.titlu}
@@ -203,9 +209,9 @@ function FormularActivitate({ orgSlug, initial, optiuni, obiective, dependente, 
           </Select>
         </div>
         <div>
-          <Label htmlFor="ac-kr">Rezultat-cheie (opțional)</Label>
+          <Label htmlFor="ac-kr">{dict.rezultatOpt}</Label>
           <Select id="ac-kr" disabled={!ob} value={f.rezultatId ?? ""} onChange={(e) => set("rezultatId", e.target.value || null)}>
-            <option value="">{ob ? "Fără rezultat-cheie" : "Alege întâi obiectivul"}</option>
+            <option value="">{ob ? dict.faraRezultat : dict.alegeIntaiObiectivul}</option>
             {ob?.rezultate.map((r) => (
               <option key={r.id} value={r.id}>
                 {r.titlu}
@@ -214,9 +220,9 @@ function FormularActivitate({ orgSlug, initial, optiuni, obiective, dependente, 
           </Select>
         </div>
         <div>
-          <Label htmlFor="ac-dep">Depinde de (opțional)</Label>
+          <Label htmlFor="ac-dep">{dict.dependeOpt}</Label>
           <Select id="ac-dep" value={f.dependeDe ?? ""} onChange={(e) => set("dependeDe", e.target.value || null)}>
-            <option value="">Nu depinde de altă activitate</option>
+            <option value="">{dict.nuDepinde}</option>
             {dependente
               .filter((d) => d.id !== f.id)
               .map((d) => (
@@ -227,33 +233,33 @@ function FormularActivitate({ orgSlug, initial, optiuni, obiective, dependente, 
           </Select>
         </div>
         <div>
-          <Label htmlFor="ac-rc">Repetare</Label>
+          <Label htmlFor="ac-rc">{dict.repetare}</Label>
           <Select id="ac-rc" value={f.recurenta} onChange={(e) => set("recurenta", e.target.value as Recurenta)}>
-            {(Object.keys(ETICHETE_RECURENTA) as Recurenta[]).map((r) => (
+            {Object.keys(comune.recurenta).map((r) => (
               <option key={r} value={r}>
-                {ETICHETE_RECURENTA[r]}
+                {comune.recurenta[r]}
               </option>
             ))}
           </Select>
-          {f.recurenta !== "nu" && <p className="mt-1 text-[12px] text-[var(--ci-text-muted)]">La finalizare se creează automat următoarea, cu termenul mutat.</p>}
+          {f.recurenta !== "nu" && <p className="mt-1 text-[12px] text-[var(--ci-text-muted)]">{dict.repetareNota}</p>}
         </div>
         <div className="sm:col-span-2">
-          <Label htmlFor="ac-re">Rezultat așteptat (opțional)</Label>
-          <Textarea id="ac-re" rows={2} value={f.rezultatAsteptat ?? ""} onChange={(e) => set("rezultatAsteptat", e.target.value)} placeholder="Ce ar trebui să existe după ce activitatea e gata." />
+          <Label htmlFor="ac-re">{dict.rezultatAsteptatOpt}</Label>
+          <Textarea id="ac-re" rows={2} value={f.rezultatAsteptat ?? ""} onChange={(e) => set("rezultatAsteptat", e.target.value)} placeholder={dict.rezultatAsteptatPlaceholder} />
         </div>
         <div className="sm:col-span-2">
-          <Label htmlFor="ac-cf">Criteriu de finalizare (opțional)</Label>
-          <Textarea id="ac-cf" rows={2} value={f.criteriuFinalizare ?? ""} onChange={(e) => set("criteriuFinalizare", e.target.value)} placeholder="Cum știm că e gata, fără discuții." />
+          <Label htmlFor="ac-cf">{dict.criteriuOpt}</Label>
+          <Textarea id="ac-cf" rows={2} value={f.criteriuFinalizare ?? ""} onChange={(e) => set("criteriuFinalizare", e.target.value)} placeholder={dict.criteriuPlaceholder} />
         </div>
         <div className="sm:col-span-2">
-          <Label htmlFor="ac-de">Descriere (opțional)</Label>
+          <Label htmlFor="ac-de">{dict.descriereOpt}</Label>
           <Textarea id="ac-de" rows={2} value={f.descriere ?? ""} onChange={(e) => set("descriere", e.target.value)} />
         </div>
         <label className="flex cursor-pointer items-start gap-2 text-[13px] text-[var(--ci-text)] sm:col-span-2">
           <input type="checkbox" className="mt-0.5 size-4" checked={f.aprobareNecesara} onChange={(e) => set("aprobareNecesara", e.target.checked)} />
           <span>
-            Cere aprobarea managerului înainte de finalizare
-            <span className="block text-[12px] text-[var(--ci-text-muted)]">Utilă pentru ce iese în exterior: rapoarte, mesaje către sponsori, comunicate.</span>
+            {dict.cereAprobare}
+            <span className="block text-[12px] text-[var(--ci-text-muted)]">{dict.cereAprobareNota}</span>
           </span>
         </label>
         {eroare && (
@@ -263,10 +269,10 @@ function FormularActivitate({ orgSlug, initial, optiuni, obiective, dependente, 
         )}
         <div className="flex justify-end gap-2 pt-1 sm:col-span-2">
           <Button type="button" onClick={onClose}>
-            Renunță
+            {dict.renunta}
           </Button>
           <Button type="submit" variant="primary" loading={pending}>
-            {f.id ? "Salvează" : "Adaugă activitatea"}
+            {f.id ? dict.salveaza : dict.adaugaActivitatea}
           </Button>
         </div>
       </form>
@@ -277,6 +283,7 @@ function FormularActivitate({ orgSlug, initial, optiuni, obiective, dependente, 
 const plus = (zile: number) => new Date(Date.now() + zile * 86400000).toISOString().slice(0, 10);
 
 function DialogBlocaj({ orgSlug, t, optiuni, onClose, onSalvat }: { orgSlug: string; t: { activitateId?: string; obiectivId?: string; titlu: string }; optiuni: OptiuniPerformanta; onClose: () => void; onSalvat: () => void }) {
+  const dict = PERFORMANTA_UI2_DICT[useLocale()].ctx;
   const [motiv, setMotiv] = useState("");
   const [rez, setRez] = useState<string>("");
   const [termen, setTermen] = useState(plus(3));
@@ -297,7 +304,7 @@ function DialogBlocaj({ orgSlug, t, optiuni, onClose, onSalvat }: { orgSlug: str
   }
 
   return (
-    <Dialog open onClose={onClose} title="Raportează un blocaj" width="max-w-lg">
+    <Dialog open onClose={onClose} title={dict.blocajTitlu} width="max-w-lg">
       <form
         noValidate
         className="space-y-3.5"
@@ -307,16 +314,17 @@ function DialogBlocaj({ orgSlug, t, optiuni, onClose, onSalvat }: { orgSlug: str
         }}
       >
         <p className="text-[13px] text-[var(--ci-text-muted)]">
-          Pentru: <strong className="text-[var(--ci-text)]">{t.titlu}</strong>. Un blocaj nu e o vină: îl vede cine îl poate rezolva, iar activitatea își schimbă starea singură când îl închizi.
+          {dict.pentru} <strong className="text-[var(--ci-text)]">{t.titlu}</strong>
+          {dict.blocajIntro}
         </p>
         <div>
-          <Label htmlFor="bl-m">Ce te oprește</Label>
-          <Textarea id="bl-m" autoFocus rows={3} maxLength={1000} value={motiv} onChange={(e) => setMotiv(e.target.value)} placeholder="ex. Așteptăm aprobarea juridică a contractului." />
+          <Label htmlFor="bl-m">{dict.ceTeOpreste}</Label>
+          <Textarea id="bl-m" autoFocus rows={3} maxLength={1000} value={motiv} onChange={(e) => setMotiv(e.target.value)} placeholder={dict.ceTeOprestePlaceholder} />
         </div>
         <div>
-          <Label htmlFor="bl-r">Cine îl poate rezolva</Label>
+          <Label htmlFor="bl-r">{dict.cineRezolva}</Label>
           <Select id="bl-r" value={rez} onChange={(e) => setRez(e.target.value)}>
-            <option value="">Alege…</option>
+            <option value="">{dict.alege}</option>
             {optiuni.angajati
               .filter((a) => a.activ)
               .map((a) => (
@@ -327,14 +335,14 @@ function DialogBlocaj({ orgSlug, t, optiuni, onClose, onSalvat }: { orgSlug: str
           </Select>
         </div>
         <div>
-          <Label htmlFor="bl-t">Când revii asupra lui</Label>
+          <Label htmlFor="bl-t">{dict.candRevii}</Label>
           <Input id="bl-t" type="date" min={azi} value={termen} onChange={(e) => setTermen(e.target.value)} />
         </div>
         <label className="flex cursor-pointer items-start gap-2 text-[13px] text-[var(--ci-text)]">
           <input type="checkbox" className="mt-0.5 size-4" checked={decizie} onChange={(e) => setDecizie(e.target.checked)} />
           <span>
-            Are nevoie de o decizie
-            <span className="block text-[12px] text-[var(--ci-text-muted)]">Apare pe pagina de prezentare, ca să nu rămână uitat.</span>
+            {dict.areNevoieDecizie}
+            <span className="block text-[12px] text-[var(--ci-text-muted)]">{dict.areNevoieDecizieNota}</span>
           </span>
         </label>
         {eroare && (
@@ -344,10 +352,10 @@ function DialogBlocaj({ orgSlug, t, optiuni, onClose, onSalvat }: { orgSlug: str
         )}
         <div className="flex justify-end gap-2">
           <Button type="button" onClick={onClose}>
-            Renunță
+            {dict.renunta}
           </Button>
           <Button type="submit" variant="primary" loading={pending}>
-            Raportează blocajul
+            {dict.raporteazaBlocajul}
           </Button>
         </div>
       </form>
@@ -356,6 +364,7 @@ function DialogBlocaj({ orgSlug, t, optiuni, onClose, onSalvat }: { orgSlug: str
 }
 
 function DialogInchidere({ orgSlug, b, onClose, onGata }: { orgSlug: string; b: BlocajDto; onClose: () => void; onGata: (t: string) => void }) {
+  const dict = PERFORMANTA_UI2_DICT[useLocale()].ctx;
   const [text, setText] = useState("");
   const [termen, setTermen] = useState(plus(3));
   const [eroare, setEroare] = useState<string | null>(null);
@@ -363,39 +372,39 @@ function DialogInchidere({ orgSlug, b, onClose, onGata }: { orgSlug: string; b: 
   const rula = (f: () => Promise<{ ok: boolean; eroare?: string }>, mesaj: string) =>
     start(async () => {
       const r = await f();
-      if (!r.ok) return setEroare(r.eroare ?? "Nu s-a putut salva.");
+      if (!r.ok) return setEroare(r.eroare ?? dict.nuSaSalvat);
       onGata(mesaj);
     });
   return (
-    <Dialog open onClose={onClose} title="Blocaj" width="max-w-lg">
+    <Dialog open onClose={onClose} title={dict.inchidereTitlu} width="max-w-lg">
       <div className="space-y-3.5">
         <div className="rounded-[var(--ci-radius-btn)] bg-[var(--ci-surface-2)] p-3 text-[13px]">
-          <p className="font-medium text-[var(--ci-text)]">{b.activitateTitlu ?? b.obiectivTitlu ?? "Blocaj"}</p>
+          <p className="font-medium text-[var(--ci-text)]">{b.activitateTitlu ?? b.obiectivTitlu ?? dict.blocaj}</p>
           <p className="mt-1 text-[var(--ci-text-muted)]">{b.motiv}</p>
           <p className="mt-1.5 text-[12px] text-[var(--ci-text-muted)]">
-            De rezolvat de {b.rezolvatorNume ?? "—"} · revenire până la {b.termenRevenire.split("-").reverse().join(".")}
-            {b.necesitaDecizie && " · cere o decizie"}
+            {dict.deRezolvat(b.rezolvatorNume ?? "—", dict.dataLegacy(b.termenRevenire))}
+            {b.necesitaDecizie && dict.cereDecizie}
           </p>
         </div>
         <div>
-          <Label htmlFor="inc-t">Cum s-a rezolvat</Label>
-          <Textarea id="inc-t" rows={2} maxLength={1000} value={text} onChange={(e) => setText(e.target.value)} placeholder="Pe scurt, ca să rămână în istoric." />
+          <Label htmlFor="inc-t">{dict.cumSaRezolvat}</Label>
+          <Textarea id="inc-t" rows={2} maxLength={1000} value={text} onChange={(e) => setText(e.target.value)} placeholder={dict.cumSaRezolvatPlaceholder} />
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="primary" loading={pending} onClick={() => rula(() => inchideBlocajAction(orgSlug, b.id, "rezolvat", text), "Blocajul a fost rezolvat.")}>
-            Marchează rezolvat
+          <Button variant="primary" loading={pending} onClick={() => rula(() => inchideBlocajAction(orgSlug, b.id, "rezolvat", text), dict.blocajRezolvat)}>
+            {dict.marcheazaRezolvat}
           </Button>
-          <Button loading={pending} onClick={() => rula(() => inchideBlocajAction(orgSlug, b.id, "anulat", text), "Blocajul a fost anulat.")}>
-            Nu mai e valabil
+          <Button loading={pending} onClick={() => rula(() => inchideBlocajAction(orgSlug, b.id, "anulat", text), dict.blocajAnulat)}>
+            {dict.nuMaiE}
           </Button>
         </div>
         <div className="flex flex-wrap items-end gap-2 border-t border-[var(--ci-border)] pt-3">
           <div>
-            <Label htmlFor="inc-a">Amână revenirea până la</Label>
+            <Label htmlFor="inc-a">{dict.amanaPanaLa}</Label>
             <Input id="inc-a" type="date" min={aziRo()} value={termen} onChange={(e) => setTermen(e.target.value)} />
           </div>
-          <Button loading={pending} onClick={() => rula(() => amanaBlocajAction(orgSlug, b.id, termen), "Termenul de revenire a fost mutat.")}>
-            Amână
+          <Button loading={pending} onClick={() => rula(() => amanaBlocajAction(orgSlug, b.id, termen), dict.termenMutat)}>
+            {dict.amana}
           </Button>
         </div>
         {eroare && (

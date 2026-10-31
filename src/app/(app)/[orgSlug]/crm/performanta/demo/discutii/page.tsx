@@ -1,3 +1,5 @@
+import { PERFORMANTA_UI_DICT } from "@/lib/i18n/dictionaries/performanta-ui";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { dateDemo } from "@/lib/performanta-demo-date";
 
 import { DiscutiiClient } from "../../discutii-client";
@@ -10,8 +12,9 @@ export default async function DemoDiscutii({ params, searchParams }: { params: P
   const sp = await searchParams;
   const ang = Array.isArray(sp.angajat) ? sp.angajat[0] : sp.angajat;
   const d = dateDemo();
+  const p = PERFORMANTA_UI_DICT[await getLocale()].demo.discutii;
   return (
-    <PaginaDemo orgSlug={orgSlug} titlu="Discuții și evaluări · exemplu" descriere="Actualizări săptămânale, 1:1, review trimestrial, autoevaluare, feedback și obiective de dezvoltare. Alege o persoană ca să vezi istoricul ei.">
+    <PaginaDemo orgSlug={orgSlug} titlu={p.titlu} descriere={p.descriere}>
       <DiscutiiClient orgSlug={orgSlug} d={d.discutii(ang ?? null)} />
     </PaginaDemo>
   );

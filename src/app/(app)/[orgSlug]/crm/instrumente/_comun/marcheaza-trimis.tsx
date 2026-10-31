@@ -4,10 +4,14 @@ import { Check } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
+import { INSTRUMENTE_UI_DICT } from "@/lib/i18n/dictionaries/instrumente-ui";
+
+import { useLocale } from "../../lib/locale-context";
 import { marcheazaTrimisAction, type TipDoc } from "./documente-actions";
 
 // „Exportat” nu înseamnă „trimis”: o bifă simplă pe document spune echipei ce a plecat deja și ce mai e de trimis.
 export function MarcheazaTrimis({ orgSlug, tip, id, trimis }: { orgSlug: string; tip: TipDoc; id: string; trimis: boolean }) {
+  const d = INSTRUMENTE_UI_DICT[useLocale()].comun.marcheaza;
   const router = useRouter();
   const [ocupat, start] = useTransition();
   const [eroare, setEroare] = useState(false);
@@ -32,7 +36,7 @@ export function MarcheazaTrimis({ orgSlug, tip, id, trimis }: { orgSlug: string;
       }`}
     >
       {trimis && <Check className="size-3.5" aria-hidden />}
-      {eroare ? "Nu s-a salvat" : trimis ? "Trimis" : "Marchează trimis"}
+      {eroare ? d.nesalvat : trimis ? d.trimis : d.marcheaza}
     </button>
   );
 }

@@ -3,7 +3,8 @@
 import { CalendarDays, Check, Copy, Download, Link2, MapPin, Pencil, Plus, Trash2, Users } from "lucide-react";
 import { useState } from "react";
 
-import { ETICHETE_INSCRIERE, laOraRo, MAX } from "@/lib/voluntari-activitati";
+import { VOLUNTARI_UI_DICT } from "@/lib/i18n/dictionaries/voluntari-ui";
+import { laOraRo, MAX } from "@/lib/voluntari-activitati";
 
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -11,6 +12,7 @@ import { Card } from "../components/ui/card";
 import { Dialog } from "../components/ui/dialog";
 import { Input, Label, Select, Textarea } from "../components/ui/input";
 import { EmptyState } from "../components/ui/states";
+import { useLocale } from "../lib/locale-context";
 
 import {
   candidatiInvitatiiAction,
@@ -31,9 +33,9 @@ import {
 } from "./actions";
 import { dataOra, descarcaCsv, MesajActiune, ora, PastilaStatus, Sectiune, useActiune } from "./ui";
 
-const stareActivitate: Record<string, string> = { ciorna: "Ciornă", publicata: "Publicată", incheiata: "Încheiată", anulata: "Anulată" };
-
 export function ActivitatiTab({ orgSlug, date, deschis, inchideFormular }: { orgSlug: string; date: DateVoluntari; deschis: boolean; inchideFormular: () => void }) {
+  const dict = VOLUNTARI_UI_DICT[useLocale()];
+  const d = dict.activitati;
   const [detaliu, setDetaliu] = useState<string | null>(null);
   const [editare, setEditare] = useState<ActivitateEchipa | null>(null);
   const acum = new Date(date.acumIso).getTime();
@@ -54,24 +56,24 @@ export function ActivitatiTab({ orgSlug, date, deschis, inchideFormular }: { org
               <div className="flex items-center gap-1.5">
                 {cereri > 0 && (
                   <Badge tone="amber" icon={false}>
-                    {cereri} {cereri === 1 ? "cerere" : "cereri"}
+                    {cereri} {d.cerere(cereri)}
                   </Badge>
                 )}
                 <Badge tone={a.stare === "publicata" ? "green" : "neutral"} icon={false}>
-                  {stareActivitate[a.stare] ?? a.stare}
+                  {dict.stareActivitate[a.stare] ?? a.stare}
                 </Badge>
               </div>
             </div>
             <dl className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-[12.5px] text-[var(--ci-text-muted)]">
               <div className="flex items-center gap-1.5">
-                <CalendarDays className="h-3.5 w-3.5" aria-hidden /> {dataOra(a.inceputLa)} – {ora(a.seTerminaLa)}
+                <CalendarDays className="h-3.5 w-3.5" aria-hidden /> {dataOra(a.inceputLa, dict.numere)} – {ora(a.seTerminaLa, dict.numere)}
               </div>
               <div className="flex items-center gap-1.5">
                 <MapPin className="h-3.5 w-3.5" aria-hidden /> {a.locatie}
                 {a.localitate ? `, ${a.localitate}` : ""}
               </div>
               <div className="flex items-center gap-1.5">
-                <Users className="h-3.5 w-3.5" aria-hidden /> {ocupate} / {locuri} locuri
+                <Users className="h-3.5 w-3.5" aria-hidden /> {d.locuri(ocupate, locuri)}
               </div>
             </dl>
           </Card>
@@ -82,21 +84,21 @@ export function ActivitatiTab({ orgSlug, date, deschis, inchideFormular }: { org
 
   return (
     <div className="space-y-4">
-      <Sectiune titlu="Activități pe teren" descriere="Evenimente și acțiuni la care voluntarii vin fizic: colectări, evenimente, vizite. Fiecare are ture sau roluri cu locuri, iar la final se confirmă prezența și orele." />
+      <Sectiune titlu={d.titlu} descriere={d.desc} />
 
       {date.activitati.length === 0 ? (
-        <EmptyState icon={CalendarDays} title="Nicio activitate încă" description="Creează prima activitate: dată, loc și câte locuri ai. Voluntarii se pot înscrie imediat de pe pagina lor." />
+        <EmptyState icon={CalendarDays} title={d.golTitlu} description={d.golDesc} />
       ) : (
         <>
           {viitoare.length > 0 && (
             <div className="space-y-2">
-              <h3 className="text-[12px] font-semibold tracking-wide text-[var(--ci-text-muted)] uppercase">Urmează</h3>
+              <h3 className="text-[12px] font-semibold tracking-wide text-[var(--ci-text-muted)] uppercase">{d.urmeaza}</h3>
               <ul className="space-y-2">{viitoare.map(rand)}</ul>
             </div>
           )}
           {trecute.length > 0 && (
             <div className="space-y-2">
-              <h3 className="text-[12px] font-semibold tracking-wide text-[var(--ci-text-muted)] uppercase">Încheiate sau anulate</h3>
+              <h3 className="text-[12px] font-semibold tracking-wide text-[var(--ci-text-muted)] uppercase">{d.incheiate}</h3>
               <ul className="space-y-2">{trecute.map(rand)}</ul>
             </div>
           )}
@@ -121,6 +123,9 @@ export function ActivitatiTab({ orgSlug, date, deschis, inchideFormular }: { org
 
 // ===== Detaliu: înscriși, prezență, ore =====
 function DetaliuActivitate({ orgSlug, a, acumIso, onClose, onEdit }: { orgSlug: string; a: ActivitateEchipa; acumIso: string; onClose: () => void; onEdit: () => void }) {
+  const dict = VOLUNTARI_UI_DICT[useLocale()];
+  const d = dict.activitati;
+  const etInscriere = (s: string) => dict.statusInscriere[s] ?? s;
   const { pending, mesaj, ruleaza } = useActiune();
   const [rezultat, setRezultat] = useState(a.rezultatValoare != null ? String(a.rezultatValoare) : "");
   const [confirmaSterge, setConfirmaSterge] = useState(false);
@@ -133,19 +138,19 @@ function DetaliuActivitate({ orgSlug, a, acumIso, onClose, onEdit }: { orgSlug: 
       <div className="space-y-4">
         <div className="flex flex-wrap items-center gap-2 text-[13px] text-[var(--ci-text-muted)]">
           <Badge tone={a.stare === "publicata" ? "green" : "neutral"} icon={false}>
-            {stareActivitate[a.stare] ?? a.stare}
+            {dict.stareActivitate[a.stare] ?? a.stare}
           </Badge>
           <span>
-            {dataOra(a.inceputLa)} – {ora(a.seTerminaLa)} · {a.locatie}
+            {dataOra(a.inceputLa, dict.numere)} – {ora(a.seTerminaLa, dict.numere)} · {a.locatie}
             {a.localitate ? `, ${a.localitate}` : ""}
           </span>
-          {a.cuMinori && <Badge tone="amber" icon={false}>Cu minori</Badge>}
+          {a.cuMinori && <Badge tone="amber" icon={false}>{d.cuMinori}</Badge>}
         </div>
         {(a.coordonatorNume || a.contactZi) && (
           <p className="text-[13px] text-[var(--ci-text-muted)]">
-            Coordonator: <b className="text-[var(--ci-text)]">{a.coordonatorNume || "—"}</b>
+            {d.coordonator} <b className="text-[var(--ci-text)]">{a.coordonatorNume || "—"}</b>
             {a.coordonatorTelefon ? ` · ${a.coordonatorTelefon}` : ""}
-            {a.contactZi ? ` · Contact în ziua activității: ${a.contactZi}` : ""}
+            {a.contactZi ? ` · ${d.contactZi} ${a.contactZi}` : ""}
           </p>
         )}
 
@@ -153,9 +158,9 @@ function DetaliuActivitate({ orgSlug, a, acumIso, onClose, onEdit }: { orgSlug: 
           <table className="w-full min-w-[520px] text-left text-[13px]">
             <thead className="bg-[var(--ci-surface-2)] text-[11.5px] tracking-wide text-[var(--ci-text-muted)] uppercase">
               <tr>
-                <th className="px-3 py-2 font-semibold">Tură / rol</th>
-                <th className="px-3 py-2 font-semibold">Interval</th>
-                <th className="px-3 py-2 text-right font-semibold">Locuri</th>
+                <th className="px-3 py-2 font-semibold">{d.tura}</th>
+                <th className="px-3 py-2 font-semibold">{d.interval}</th>
+                <th className="px-3 py-2 text-right font-semibold">{d.locuriCap}</th>
               </tr>
             </thead>
             <tbody>
@@ -163,7 +168,7 @@ function DetaliuActivitate({ orgSlug, a, acumIso, onClose, onEdit }: { orgSlug: 
                 <tr key={t.id} className="border-t border-[var(--ci-border)]">
                   <td className="px-3 py-2 font-medium text-[var(--ci-text)]">{t.nume}</td>
                   <td className="px-3 py-2 text-[var(--ci-text-muted)]">
-                    {ora(t.inceputLa)} – {ora(t.seTerminaLa)}
+                    {ora(t.inceputLa, dict.numere)} – {ora(t.seTerminaLa, dict.numere)}
                   </td>
                   <td className="ci-tabular px-3 py-2 text-right">
                     {t.ocupate} / {t.locuri}
@@ -179,23 +184,23 @@ function DetaliuActivitate({ orgSlug, a, acumIso, onClose, onEdit }: { orgSlug: 
 
         <div>
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-            <h3 className="text-[14px] font-semibold text-[var(--ci-text)]">Înscriși ({a.inscrisi.filter((i) => i.status !== "anulata").length})</h3>
+            <h3 className="text-[14px] font-semibold text-[var(--ci-text)]">{d.inscrisi(a.inscrisi.filter((i) => i.status !== "anulata").length)}</h3>
             {a.inscrisi.length > 0 && (
               <Button
                 size="sm"
                 onClick={() =>
                   descarcaCsv(`voluntari-${a.titlu.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 40)}.csv`, [
-                    ["Voluntar", "Telefon", "Email", "Tură / rol", "Status", "Ore", "Ore validate"],
-                    ...a.inscrisi.map((i) => [i.voluntar, i.telefon, i.email, i.tura, ETICHETE_INSCRIERE[i.status as keyof typeof ETICHETE_INSCRIERE] ?? i.status, i.oreCalculate, i.oreValidate]),
+                    d.csvCap,
+                    ...a.inscrisi.map((i) => [i.voluntar, i.telefon, i.email, i.tura, etInscriere(i.status), i.oreCalculate, i.oreValidate]),
                   ])
                 }
               >
-                <Download className="h-3.5 w-3.5" /> Export CSV
+                <Download className="h-3.5 w-3.5" /> {dict.comun.exportCsv}
               </Button>
             )}
           </div>
           {a.inscrisi.length === 0 ? (
-            <p className="rounded-lg bg-[var(--ci-surface-2)] px-3 py-3 text-[13px] text-[var(--ci-text-muted)]">Nimeni nu s-a înscris încă.</p>
+            <p className="rounded-lg bg-[var(--ci-surface-2)] px-3 py-3 text-[13px] text-[var(--ci-text-muted)]">{d.nimeniInscris}</p>
           ) : (
             <ul className="divide-y divide-[var(--ci-border)] rounded-[var(--ci-radius-card)] border border-[var(--ci-border)]">
               {a.inscrisi.map((i) => (
@@ -209,24 +214,24 @@ function DetaliuActivitate({ orgSlug, a, acumIso, onClose, onEdit }: { orgSlug: 
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <PastilaStatus valoare={i.status} eticheta={ETICHETE_INSCRIERE[i.status as keyof typeof ETICHETE_INSCRIERE] ?? i.status} />
+                    <PastilaStatus valoare={i.status} eticheta={etInscriere(i.status)} />
                     {i.status === "in_asteptare" && (
                       <>
-                        <Button size="sm" variant="primary" disabled={pending} onClick={() => ruleaza(() => decideInscriereAction(orgSlug, i.id, true), "Cererea a fost aprobată.")}>
-                          Aprobă
+                        <Button size="sm" variant="primary" disabled={pending} onClick={() => ruleaza(() => decideInscriereAction(orgSlug, i.id, true), d.aprobata)}>
+                          {d.aproba}
                         </Button>
-                        <Button size="sm" disabled={pending} onClick={() => ruleaza(() => decideInscriereAction(orgSlug, i.id, false), "Cererea a fost respinsă.")}>
-                          Respinge
+                        <Button size="sm" disabled={pending} onClick={() => ruleaza(() => decideInscriereAction(orgSlug, i.id, false), d.respinsa)}>
+                          {d.respinge}
                         </Button>
                       </>
                     )}
                     {(i.status === "confirmata" || i.status === "prezent" || i.status === "absent") && (
                       <>
-                        <Button size="sm" variant={i.status === "prezent" ? "primary" : "secondary"} disabled={pending} onClick={() => ruleaza(() => marcheazaPrezentaAction(orgSlug, i.id, i.status === "prezent" ? "confirmata" : "prezent"), "Prezența a fost actualizată.")}>
-                          Prezent
+                        <Button size="sm" variant={i.status === "prezent" ? "primary" : "secondary"} disabled={pending} onClick={() => ruleaza(() => marcheazaPrezentaAction(orgSlug, i.id, i.status === "prezent" ? "confirmata" : "prezent"), d.prezentaActualizata)}>
+                          {d.prezent}
                         </Button>
-                        <Button size="sm" disabled={pending} onClick={() => ruleaza(() => marcheazaPrezentaAction(orgSlug, i.id, i.status === "absent" ? "confirmata" : "absent"), "Prezența a fost actualizată.")}>
-                          Absent
+                        <Button size="sm" disabled={pending} onClick={() => ruleaza(() => marcheazaPrezentaAction(orgSlug, i.id, i.status === "absent" ? "confirmata" : "absent"), d.prezentaActualizata)}>
+                          {d.absent}
                         </Button>
                       </>
                     )}
@@ -240,19 +245,19 @@ function DetaliuActivitate({ orgSlug, a, acumIso, onClose, onEdit }: { orgSlug: 
 
         {(trecuta || a.stare === "incheiata") && prezenti.length > 0 && (
           <div className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface-2)] p-3.5">
-            <h3 className="text-[14px] font-semibold text-[var(--ci-text)]">Închide activitatea</h3>
+            <h3 className="text-[14px] font-semibold text-[var(--ci-text)]">{d.inchideTitlu}</h3>
             <p className="mt-0.5 text-[12.5px] text-[var(--ci-text-muted)]">
-              {prezenti.length} {prezenti.length === 1 ? "voluntar prezent" : "voluntari prezenți"}. Doar orele validate intră în adeverințe și în rapoarte{deValidat ? "; unele încă nu sunt validate" : ""}.
+              {d.prezenti(prezenti.length)}{d.doarValidate}{deValidat ? d.nuToateValidate : ""}.
             </p>
             <div className="mt-2.5 flex flex-wrap items-end gap-3">
               {a.rezultatEticheta && (
                 <div>
                   <Label htmlFor="vr-rez">{a.rezultatEticheta}</Label>
-                  <Input id="vr-rez" className="w-40" inputMode="decimal" value={rezultat} onChange={(e) => setRezultat(e.target.value.replace(",", "."))} placeholder="valoare" />
+                  <Input id="vr-rez" className="w-40" inputMode="decimal" value={rezultat} onChange={(e) => setRezultat(e.target.value.replace(",", "."))} placeholder={d.valoare} />
                 </div>
               )}
-              <Button variant="primary" disabled={pending} onClick={() => ruleaza(() => valideazaOreActivitateAction(orgSlug, a.id, a.rezultatEticheta && rezultat ? Number(rezultat) : null), "Orele sunt validate, iar activitatea e încheiată.")}>
-                Validează orele și încheie
+              <Button variant="primary" disabled={pending} onClick={() => ruleaza(() => valideazaOreActivitateAction(orgSlug, a.id, a.rezultatEticheta && rezultat ? Number(rezultat) : null), d.validate)}>
+                {d.valideaza}
               </Button>
             </div>
           </div>
@@ -263,32 +268,32 @@ function DetaliuActivitate({ orgSlug, a, acumIso, onClose, onEdit }: { orgSlug: 
         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[var(--ci-border)] pt-3">
           <div className="flex flex-wrap gap-1.5">
             <Button size="sm" onClick={onEdit}>
-              <Pencil className="h-3.5 w-3.5" /> Editează
+              <Pencil className="h-3.5 w-3.5" /> {dict.comun.editeaza}
             </Button>
             {a.stare === "publicata" && (
-              <Button size="sm" disabled={pending} onClick={() => ruleaza(() => seteazaStareActivitateAction(orgSlug, a.id, "anulata"), "Activitatea a fost anulată.")}>
-                Anulează activitatea
+              <Button size="sm" disabled={pending} onClick={() => ruleaza(() => seteazaStareActivitateAction(orgSlug, a.id, "anulata"), d.anulata)}>
+                {d.anuleaza}
               </Button>
             )}
             {a.stare === "anulata" && (
-              <Button size="sm" disabled={pending} onClick={() => ruleaza(() => seteazaStareActivitateAction(orgSlug, a.id, "publicata"), "Activitatea e din nou publicată.")}>
-                Republică
+              <Button size="sm" disabled={pending} onClick={() => ruleaza(() => seteazaStareActivitateAction(orgSlug, a.id, "publicata"), d.republicata)}>
+                {d.republica}
               </Button>
             )}
-            <Button size="sm" variant="ghost" onClick={() => setConfirmaSterge(true)} aria-label="Șterge activitatea">
+            <Button size="sm" variant="ghost" onClick={() => setConfirmaSterge(true)} aria-label={d.stergeAria}>
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
           </div>
-          <Button onClick={onClose}>Închide</Button>
+          <Button onClick={onClose}>{dict.comun.inchide}</Button>
         </div>
 
         {confirmaSterge && (
-          <div role="alertdialog" aria-label="Confirmare ștergere" className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface-2)] p-3 text-[13px]">
-            <p className="text-[var(--ci-text)]">Ștergi „{a.titlu}” împreună cu înscrierile și orele? Nu se poate anula. Dacă a fost doar amânată, folosește „Anulează activitatea”.</p>
+          <div role="alertdialog" aria-label={d.confirmareAria} className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface-2)] p-3 text-[13px]">
+            <p className="text-[var(--ci-text)]">{d.stergiText(a.titlu)}</p>
             <div className="mt-2 flex gap-2">
-              <Button size="sm" onClick={() => setConfirmaSterge(false)}>Renunț</Button>
-              <Button size="sm" variant="primary" disabled={pending} onClick={() => ruleaza(() => stergeActivitateAction(orgSlug, a.id), "Activitatea a fost ștearsă.", () => onClose())}>
-                Șterge definitiv
+              <Button size="sm" onClick={() => setConfirmaSterge(false)}>{dict.comun.renunt}</Button>
+              <Button size="sm" variant="primary" disabled={pending} onClick={() => ruleaza(() => stergeActivitateAction(orgSlug, a.id), d.stearsa, () => onClose())}>
+                {d.stergeDefinitiv}
               </Button>
             </div>
           </div>
@@ -300,6 +305,8 @@ function DetaliuActivitate({ orgSlug, a, acumIso, onClose, onEdit }: { orgSlug: 
 
 // Invitații către voluntari care au bifat că vor invitații: cei care au mai făcut ceva cu organizația și nu s-au înscris încă.
 function Invitatii({ orgSlug, activityId }: { orgSlug: string; activityId: string }) {
+  const dict = VOLUNTARI_UI_DICT[useLocale()];
+  const d = dict.activitati.invita;
   const { pending, mesaj, ruleaza, setMesaj } = useActiune();
   const [stare, setStare] = useState<{ candidati: CandidatInvitatie[]; emailActiv: boolean; linkActiv: boolean } | null>(null);
   const [alesi, setAlesi] = useState<Set<string>>(new Set());
@@ -314,7 +321,7 @@ function Invitatii({ orgSlug, activityId }: { orgSlug: string; activityId: strin
         }
         return r;
       },
-      "Lista a fost încărcată.",
+      d.incarcata,
     );
   }
 
@@ -322,21 +329,21 @@ function Invitatii({ orgSlug, activityId }: { orgSlug: string; activityId: strin
     <div className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] p-3.5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="min-w-0">
-          <h3 className="text-[14px] font-semibold text-[var(--ci-text)]">Invită voluntari</h3>
-          <p className="mt-0.5 text-[12.5px] text-[var(--ci-text-muted)]">Doar cei care au bifat că vor invitații, au mai făcut ceva cu organizația și nu au primit o invitație în ultimele 7 zile.</p>
+          <h3 className="text-[14px] font-semibold text-[var(--ci-text)]">{d.titlu}</h3>
+          <p className="mt-0.5 text-[12.5px] text-[var(--ci-text-muted)]">{d.desc}</p>
         </div>
         {!stare && (
           <Button size="sm" disabled={pending} onClick={incarca}>
-            Vezi cui poți trimite
+            {d.vezi}
           </Button>
         )}
       </div>
       {stare && (
         <div className="mt-3 space-y-2">
-          {!stare.emailActiv && <p className="rounded-lg bg-[var(--ci-amber-soft)] px-3 py-2 text-[12.5px] text-[var(--ci-text)]">Emailul nu e configurat pe acest server, deci invitațiile nu pot pleca.</p>}
-          {!stare.linkActiv && <p className="rounded-lg bg-[var(--ci-amber-soft)] px-3 py-2 text-[12.5px] text-[var(--ci-text)]">Linkul voluntarilor nu e pornit; invitația trimite voluntarii acolo.</p>}
+          {!stare.emailActiv && <p className="rounded-lg bg-[var(--ci-amber-soft)] px-3 py-2 text-[12.5px] text-[var(--ci-text)]">{d.faraEmail}</p>}
+          {!stare.linkActiv && <p className="rounded-lg bg-[var(--ci-amber-soft)] px-3 py-2 text-[12.5px] text-[var(--ci-text)]">{d.faraLink}</p>}
           {stare.candidati.length === 0 ? (
-            <p className="text-[13px] text-[var(--ci-text-muted)]">Nu există voluntari de invitat acum.</p>
+            <p className="text-[13px] text-[var(--ci-text-muted)]">{d.nimeni}</p>
           ) : (
             <>
               <ul className="max-h-48 divide-y divide-[var(--ci-border)] overflow-auto rounded-lg border border-[var(--ci-border)]">
@@ -357,9 +364,9 @@ function Invitatii({ orgSlug, activityId }: { orgSlug: string; activityId: strin
                       />
                       <span className="font-medium text-[var(--ci-text)]">{c.prenume}</span>
                       <span className="text-[12px] text-[var(--ci-text-muted)]">
-                        {c.activitati > 0 ? `${c.activitati} ${c.activitati === 1 ? "activitate" : "activități"}` : ""}
+                        {c.activitati > 0 ? d.activitati(c.activitati) : ""}
                         {c.activitati > 0 && c.sarcini > 0 ? " · " : ""}
-                        {c.sarcini > 0 ? `${c.sarcini} ${c.sarcini === 1 ? "sarcină" : "sarcini"}` : ""}
+                        {c.sarcini > 0 ? d.sarcini(c.sarcini) : ""}
                       </span>
                     </label>
                   </li>
@@ -373,16 +380,16 @@ function Invitatii({ orgSlug, activityId }: { orgSlug: string; activityId: strin
                     async () => {
                       const r = await trimiteInvitatiiAction(orgSlug, activityId, [...alesi]);
                       if (r.ok) {
-                        setMesaj({ tip: r.esuate > 0 ? "eroare" : "ok", text: `Trimise: ${r.trimise}${r.esuate > 0 ? `; ${r.esuate} nu au putut pleca` : ""}.` });
+                        setMesaj({ tip: r.esuate > 0 ? "eroare" : "ok", text: d.trimise(r.trimise, r.esuate) });
                         setStare(null);
                       }
                       return r;
                     },
-                    "Invitațiile au fost trimise.",
+                    d.trimiteOk,
                   )
                 }
               >
-                Trimite invitația ({alesi.size})
+                {d.trimite(alesi.size)}
               </Button>
             </>
           )}
@@ -395,6 +402,8 @@ function Invitatii({ orgSlug, activityId }: { orgSlug: string; activityId: strin
 
 // Linkul coordonatorului: fără cont, valabil până la 3 zile după activitate; arată lista tură cu tură, prezența dintr-un clic și codul QR.
 function LinkCoordonator({ orgSlug, a }: { orgSlug: string; a: ActivitateEchipa }) {
+  const dict = VOLUNTARI_UI_DICT[useLocale()];
+  const d = dict.activitati.link;
   const { pending, mesaj, ruleaza } = useActiune();
   const [copiat, setCopiat] = useState(false);
   const [nou, setNou] = useState<string | null>(null);
@@ -414,24 +423,24 @@ function LinkCoordonator({ orgSlug, a }: { orgSlug: string; a: ActivitateEchipa 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="min-w-0">
           <h3 className="flex items-center gap-1.5 text-[14px] font-semibold text-[var(--ci-text)]">
-            <Link2 className="h-4 w-4 text-[var(--ci-primary)]" aria-hidden /> Link pentru coordonator
+            <Link2 className="h-4 w-4 text-[var(--ci-primary)]" aria-hidden /> {d.titlu}
           </h3>
-          <p className="mt-0.5 text-[12.5px] text-[var(--ci-text-muted)]">Fără cont. Coordonatorul marchează prezența și arată codul QR de check-in. Valabil până la 3 zile după activitate.</p>
+          <p className="mt-0.5 text-[12.5px] text-[var(--ci-text-muted)]">{d.desc}</p>
         </div>
         {!link ? (
-          <Button size="sm" variant="primary" disabled={pending} onClick={() => ruleaza(async () => { const r = await genereazaLinkCoordonatorAction(orgSlug, a.id); if (r.ok) setNou(r.link); return r; }, "Linkul a fost creat.")}>
-            Creează linkul
+          <Button size="sm" variant="primary" disabled={pending} onClick={() => ruleaza(async () => { const r = await genereazaLinkCoordonatorAction(orgSlug, a.id); if (r.ok) setNou(r.link); return r; }, d.creat)}>
+            {d.creeaza}
           </Button>
         ) : (
           <div className="flex flex-wrap gap-1.5">
             <Button size="sm" onClick={copiaza}>
-              {copiat ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />} {copiat ? "Copiat" : "Copiază"}
+              {copiat ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />} {copiat ? dict.comun.copiat : dict.comun.copiaza}
             </Button>
-            <Button size="sm" disabled={pending} onClick={() => ruleaza(async () => { const r = await genereazaLinkCoordonatorAction(orgSlug, a.id); if (r.ok) setNou(r.link); return r; }, "Link nou creat; cel vechi nu mai funcționează.")}>
-              Link nou
+            <Button size="sm" disabled={pending} onClick={() => ruleaza(async () => { const r = await genereazaLinkCoordonatorAction(orgSlug, a.id); if (r.ok) setNou(r.link); return r; }, d.noutCreat)}>
+              {d.nou}
             </Button>
-            <Button size="sm" variant="ghost" disabled={pending} onClick={() => ruleaza(async () => { const r = await opresteLinkCoordonatorAction(orgSlug, a.id); if (r.ok) setNou(""); return r; }, "Linkul a fost oprit.")}>
-              Oprește
+            <Button size="sm" variant="ghost" disabled={pending} onClick={() => ruleaza(async () => { const r = await opresteLinkCoordonatorAction(orgSlug, a.id); if (r.ok) setNou(""); return r; }, d.oprit)}>
+              {d.opreste}
             </Button>
           </div>
         )}
@@ -443,12 +452,13 @@ function LinkCoordonator({ orgSlug, a }: { orgSlug: string; a: ActivitateEchipa 
 }
 
 function OreInput({ orgSlug, id, ore, validat }: { orgSlug: string; id: string; ore: number | null; validat: boolean }) {
+  const d = VOLUNTARI_UI_DICT[useLocale()].activitati.ore;
   const { pending, ruleaza } = useActiune();
   const [valoare, setValoare] = useState(ore != null ? String(ore) : "");
   return (
     <span className="inline-flex items-center gap-1 text-[12px] text-[var(--ci-text-muted)]">
       <label htmlFor={`ore-${id}`} className="sr-only">
-        Ore
+        {d.eticheta}
       </label>
       <Input
         id={`ore-${id}`}
@@ -458,14 +468,14 @@ function OreInput({ orgSlug, id, ore, validat }: { orgSlug: string; id: string; 
         onChange={(e) => setValoare(e.target.value.replace(",", "."))}
         onBlur={() => {
           const n = Number(valoare);
-          if (valoare !== "" && Number.isFinite(n) && n !== ore) ruleaza(() => seteazaOreAction(orgSlug, id, n), "Orele au fost actualizate.");
+          if (valoare !== "" && Number.isFinite(n) && n !== ore) ruleaza(() => seteazaOreAction(orgSlug, id, n), d.actualizate);
         }}
         aria-describedby={validat ? `v-${id}` : undefined}
       />
-      <span>ore{validat ? " ✓" : ""}</span>
+      <span>{d.ore}{validat ? " ✓" : ""}</span>
       {validat && (
         <span id={`v-${id}`} className="sr-only">
-          validate
+          {d.validate}
         </span>
       )}
       {pending ? "…" : ""}
@@ -477,6 +487,8 @@ function OreInput({ orgSlug, id, ore, validat }: { orgSlug: string; id: string; 
 type TuraForm = { id?: string; nume: string; inceputLa: string; seTerminaLa: string; locuri: string };
 
 function FormularActivitate({ orgSlug, initial, onClose }: { orgSlug: string; initial: ActivitateEchipa | null; onClose: () => void }) {
+  const dict = VOLUNTARI_UI_DICT[useLocale()];
+  const d = dict.activitati.form;
   const { pending, mesaj, ruleaza } = useActiune();
   const [titlu, setTitlu] = useState(initial?.titlu ?? "");
   const [inceputLa, setInceputLa] = useState(initial ? laOraRo(initial.inceputLa) : "");
@@ -522,57 +534,57 @@ function FormularActivitate({ orgSlug, initial, onClose }: { orgSlug: string; in
       ture: turiTrimise,
       stare,
     };
-    ruleaza(() => salveazaActivitateAction(orgSlug, input), stare === "ciorna" ? "Ciorna a fost salvată." : "Activitatea e publicată.", () => onClose());
+    ruleaza(() => salveazaActivitateAction(orgSlug, input), stare === "ciorna" ? d.ciornaSalvata : d.publicata, () => onClose());
   }
 
   return (
-    <Dialog open onClose={onClose} title={initial ? "Editează activitatea" : "Activitate nouă"} width="max-w-2xl">
+    <Dialog open onClose={onClose} title={initial ? d.editeaza : d.noua} width="max-w-2xl">
       <div className="space-y-4">
         <div>
-          <Label htmlFor="va-titlu">Titlu</Label>
-          <Input id="va-titlu" value={titlu} maxLength={MAX.titlu} onChange={(e) => setTitlu(e.target.value)} placeholder="ex. Colectă de alimente, magazin din centru" />
+          <Label htmlFor="va-titlu">{d.titlu}</Label>
+          <Input id="va-titlu" value={titlu} maxLength={MAX.titlu} onChange={(e) => setTitlu(e.target.value)} placeholder={d.titluPlaceholder} />
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <Label htmlFor="va-start">Începe</Label>
+            <Label htmlFor="va-start">{d.incepe}</Label>
             <Input id="va-start" type="datetime-local" value={inceputLa} onChange={(e) => setInceputLa(e.target.value)} />
           </div>
           <div>
-            <Label htmlFor="va-end">Se termină</Label>
+            <Label htmlFor="va-end">{d.seTermina}</Label>
             <Input id="va-end" type="datetime-local" value={seTerminaLa} onChange={(e) => setSeTerminaLa(e.target.value)} />
           </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-3">
           <div className="sm:col-span-2">
-            <Label htmlFor="va-loc">Locul</Label>
-            <Input id="va-loc" value={locatie} maxLength={MAX.locatie} onChange={(e) => setLocatie(e.target.value)} placeholder="Adresa sau numele locului" />
+            <Label htmlFor="va-loc">{d.locul}</Label>
+            <Input id="va-loc" value={locatie} maxLength={MAX.locatie} onChange={(e) => setLocatie(e.target.value)} placeholder={d.locPlaceholder} />
           </div>
           <div>
-            <Label htmlFor="va-loca">Localitatea</Label>
+            <Label htmlFor="va-loca">{d.localitatea}</Label>
             <Input id="va-loca" value={localitate} maxLength={80} onChange={(e) => setLocalitate(e.target.value)} />
           </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <Label htmlFor="va-cn">Coordonator</Label>
-            <Input id="va-cn" value={coordonatorNume} maxLength={MAX.nume} onChange={(e) => setCoordonatorNume(e.target.value)} placeholder="Nume" />
+            <Label htmlFor="va-cn">{d.coordonator}</Label>
+            <Input id="va-cn" value={coordonatorNume} maxLength={MAX.nume} onChange={(e) => setCoordonatorNume(e.target.value)} placeholder={d.numePlaceholder} />
           </div>
           <div>
-            <Label htmlFor="va-ct">Telefon coordonator</Label>
+            <Label htmlFor="va-ct">{d.telCoord}</Label>
             <Input id="va-ct" inputMode="tel" value={coordonatorTelefon} maxLength={30} onChange={(e) => setCoordonatorTelefon(e.target.value)} />
           </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <Label htmlFor="va-aprobare">Înscrierea</Label>
+            <Label htmlFor="va-aprobare">{d.inscrierea}</Label>
             <Select id="va-aprobare" value={aprobare} onChange={(e) => setAprobare(e.target.value as "automata" | "manuala")}>
-              <option value="automata">Se confirmă automat (cu listă de rezervă)</option>
-              <option value="manuala">O aprob eu, una câte una</option>
+              <option value="automata">{d.automata}</option>
+              <option value="manuala">{d.manuala}</option>
             </Select>
           </div>
           {!pePeTure && (
             <div>
-              <Label htmlFor="va-locuri">Locuri</Label>
+              <Label htmlFor="va-locuri">{d.locuri}</Label>
               <Input id="va-locuri" inputMode="numeric" value={locuri} onChange={(e) => setLocuri(e.target.value.replace(/\D/g, ""))} />
             </div>
           )}
@@ -580,7 +592,7 @@ function FormularActivitate({ orgSlug, initial, onClose }: { orgSlug: string; in
 
         <div className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] p-3.5">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-[13px] text-[var(--ci-text-muted)]">{pePeTure ? "Ture și roluri" : "Un singur rol: „Voluntar”, pe tot intervalul."}</p>
+            <p className="text-[13px] text-[var(--ci-text-muted)]">{pePeTure ? d.ture : d.unRol}</p>
             <Button
               size="sm"
               onClick={() => {
@@ -592,61 +604,61 @@ function FormularActivitate({ orgSlug, initial, onClose }: { orgSlug: string; in
                 }
               }}
             >
-              {pePeTure ? "Revin la un singur rol" : "Împarte pe ture sau roluri"}
+              {pePeTure ? d.revin : d.imparte}
             </Button>
           </div>
           {pePeTure && (
             <div className="mt-3 space-y-3">
               {ture.map((t, idx) => (
                 <div key={idx} className="grid gap-2 rounded-lg bg-[var(--ci-surface-2)] p-2.5 sm:grid-cols-[1.4fr_1fr_1fr_5rem_auto]">
-                  <Input aria-label="Numele turei sau rolului" value={t.nume} onChange={(e) => setTure((x) => x.map((y, k) => (k === idx ? { ...y, nume: e.target.value } : y)))} placeholder="ex. Primire" />
-                  <Input aria-label="Începe (gol = ca activitatea)" type="datetime-local" value={t.inceputLa} onChange={(e) => setTure((x) => x.map((y, k) => (k === idx ? { ...y, inceputLa: e.target.value } : y)))} />
-                  <Input aria-label="Se termină (gol = ca activitatea)" type="datetime-local" value={t.seTerminaLa} onChange={(e) => setTure((x) => x.map((y, k) => (k === idx ? { ...y, seTerminaLa: e.target.value } : y)))} />
-                  <Input aria-label="Locuri" inputMode="numeric" value={t.locuri} onChange={(e) => setTure((x) => x.map((y, k) => (k === idx ? { ...y, locuri: e.target.value.replace(/\D/g, "") } : y)))} />
-                  <Button size="sm" variant="ghost" aria-label="Scoate rândul" disabled={ture.length === 1} onClick={() => setTure((x) => x.filter((_, k) => k !== idx))}>
+                  <Input aria-label={d.numeTura} value={t.nume} onChange={(e) => setTure((x) => x.map((y, k) => (k === idx ? { ...y, nume: e.target.value } : y)))} placeholder={d.numeTuraPlaceholder} />
+                  <Input aria-label={d.incepeGol} type="datetime-local" value={t.inceputLa} onChange={(e) => setTure((x) => x.map((y, k) => (k === idx ? { ...y, inceputLa: e.target.value } : y)))} />
+                  <Input aria-label={d.seTerminaGol} type="datetime-local" value={t.seTerminaLa} onChange={(e) => setTure((x) => x.map((y, k) => (k === idx ? { ...y, seTerminaLa: e.target.value } : y)))} />
+                  <Input aria-label={d.locuri} inputMode="numeric" value={t.locuri} onChange={(e) => setTure((x) => x.map((y, k) => (k === idx ? { ...y, locuri: e.target.value.replace(/\D/g, "") } : y)))} />
+                  <Button size="sm" variant="ghost" aria-label={d.scoateRand} disabled={ture.length === 1} onClick={() => setTure((x) => x.filter((_, k) => k !== idx))}>
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               ))}
-              <p className="text-[12px] text-[var(--ci-text-muted)]">Ora lăsată goală înseamnă „la fel ca activitatea”.</p>
+              <p className="text-[12px] text-[var(--ci-text-muted)]">{d.oraGoala}</p>
               <Button size="sm" onClick={() => setTure((x) => [...x, { nume: "", inceputLa: "", seTerminaLa: "", locuri: "5" }])}>
-                <Plus className="h-3.5 w-3.5" /> Adaugă rând
+                <Plus className="h-3.5 w-3.5" /> {d.adaugaRand}
               </Button>
             </div>
           )}
         </div>
 
         <button type="button" className="text-[13px] font-semibold text-[var(--ci-primary)] hover:underline" aria-expanded={maiMulte} onClick={() => setMaiMulte((x) => !x)}>
-          {maiMulte ? "Ascunde opțiunile" : "Mai multe opțiuni (descriere, cerințe, siguranță, rezultat)"}
+          {maiMulte ? d.ascunde : d.maiMulte}
         </button>
         {maiMulte && (
           <div className="space-y-4 rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] p-3.5">
             <div>
-              <Label htmlFor="va-desc">Descriere</Label>
+              <Label htmlFor="va-desc">{d.descriere}</Label>
               <Textarea id="va-desc" rows={2} value={descriere} maxLength={MAX.descriere} onChange={(e) => setDescriere(e.target.value)} />
             </div>
             <div>
-              <Label htmlFor="va-cer">Cerințe (vârstă, competențe, echipament, documente)</Label>
+              <Label htmlFor="va-cer">{d.cerinte}</Label>
               <Textarea id="va-cer" rows={2} value={cerinte} maxLength={MAX.instructiuni} onChange={(e) => setCerinte(e.target.value)} />
             </div>
             <div>
-              <Label htmlFor="va-ins">Instrucțiuni (acces, transport, masă, siguranță)</Label>
+              <Label htmlFor="va-ins">{d.instructiuni}</Label>
               <Textarea id="va-ins" rows={2} value={instructiuni} maxLength={MAX.instructiuni} onChange={(e) => setInstructiuni(e.target.value)} />
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
-                <Label htmlFor="va-cz">Contact în ziua activității</Label>
-                <Input id="va-cz" value={contactZi} maxLength={200} onChange={(e) => setContactZi(e.target.value)} placeholder="nume și telefon" />
+                <Label htmlFor="va-cz">{d.contactZi}</Label>
+                <Input id="va-cz" value={contactZi} maxLength={200} onChange={(e) => setContactZi(e.target.value)} placeholder={d.contactPlaceholder} />
               </div>
               <div>
-                <Label htmlFor="va-rez">Ce măsurăm la final (opțional)</Label>
-                <Input id="va-rez" value={rezultatEticheta} maxLength={60} onChange={(e) => setRezultatEticheta(e.target.value)} placeholder="ex. kg colectate" />
+                <Label htmlFor="va-rez">{d.ceMasuram}</Label>
+                <Input id="va-rez" value={rezultatEticheta} maxLength={60} onChange={(e) => setRezultatEticheta(e.target.value)} placeholder={d.masuramPlaceholder} />
               </div>
             </div>
             <label className="flex items-start gap-2 text-[13px] text-[var(--ci-text)]">
               <input type="checkbox" className="mt-0.5" checked={cuMinori} onChange={(e) => setCuMinori(e.target.checked)} />
               <span>
-                Lucrăm cu minori sau persoane vulnerabile. <span className="text-[var(--ci-text-muted)]">Se marchează activitatea; regulile concrete (acord parental, supraveghere, verificări) le stabilești cu juristul.</span>
+                {d.minori} <span className="text-[var(--ci-text-muted)]">{d.minoriNota}</span>
               </span>
             </label>
           </div>
@@ -654,12 +666,12 @@ function FormularActivitate({ orgSlug, initial, onClose }: { orgSlug: string; in
 
         <MesajActiune mesaj={mesaj} />
         <div className="flex flex-wrap justify-end gap-2 border-t border-[var(--ci-border)] pt-3">
-          <Button onClick={onClose}>Renunț</Button>
+          <Button onClick={onClose}>{dict.comun.renunt}</Button>
           <Button disabled={pending} onClick={() => trimite("ciorna")}>
-            Salvează ciorna
+            {dict.comun.salveazaCiorna}
           </Button>
           <Button variant="primary" loading={pending} onClick={() => trimite("publicata")}>
-            Publică
+            {dict.comun.publica}
           </Button>
         </div>
       </div>

@@ -3,14 +3,17 @@
 import { ChevronDown, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState, useTransition } from "react";
 
-import { METODE, type FrecventaActualizare, type Metoda, type TipTinta } from "@/lib/performanta-masurare";
+import { PERFORMANTA_UI_DICT } from "@/lib/i18n/dictionaries/performanta-ui";
+import { PERFORMANTA_UI3_DICT } from "@/lib/i18n/dictionaries/performanta-ui-3";
+import { type FrecventaActualizare, type Metoda, type TipTinta } from "@/lib/performanta-masurare";
 import { METRICI_CRM, METRICA_PE_ID } from "@/lib/performanta-metrici";
-import { ETICHETE_FRECVENTA, ETICHETE_NIVEL, ETICHETE_VIZIBILITATE, type NivelObiectiv, type ObiectivDto, type OptiuniPerformanta, type SursaRezultat, type Vizibilitate } from "@/lib/performanta-tipuri";
+import { type NivelObiectiv, type ObiectivDto, type OptiuniPerformanta, type SursaRezultat, type Vizibilitate } from "@/lib/performanta-tipuri";
 import { MAX_REZULTATE, valideazaObiectiv, type ObiectivInput, type RezultatInput } from "@/lib/performanta-validare";
 
 import { Button } from "../components/ui/button";
 import { Input, Label, Select, Textarea } from "../components/ui/input";
 import { SidePanel } from "../components/ui/side-panel";
+import { useLocale } from "../lib/locale-context";
 import { obiectiveAlegereAction, salveazaObiectivAction } from "./obiective-actions";
 
 type KrForm = RezultatInput & { cheie: string; deschis: boolean };
@@ -94,11 +97,7 @@ function dinObiectiv(o: ObiectivDto): { form: ObiectivInput; kr: KrForm[] } {
   };
 }
 
-const LEGATURI = [
-  { id: "sprijina", eticheta: "Sprijină" },
-  { id: "depinde_de", eticheta: "Depinde de" },
-  { id: "legat", eticheta: "Legat de" },
-] as const;
+const LEGATURI = ["sprijina", "depinde_de", "legat"] as const;
 
 export function ObiectivForm(p: {
   orgSlug: string;
@@ -110,8 +109,9 @@ export function ObiectivForm(p: {
   parentImplicit?: string | null;
   onSalvat: (id: string) => void;
 }) {
+  const dict = PERFORMANTA_UI3_DICT[useLocale()].form;
   return (
-    <SidePanel open={p.open} onClose={p.onClose} lat title={p.editat ? "Editează obiectivul" : "Obiectiv nou"} subtitle="Un obiectiv are un singur responsabil, oricâți colaboratori și până la 10 rezultate-cheie.">
+    <SidePanel open={p.open} onClose={p.onClose} lat title={p.editat ? dict.editeaza : dict.nou} subtitle={dict.subtitlu(MAX_REZULTATE)}>
       {/* Conținutul se montează la fiecare deschidere, deci formularul pornește mereu curat (sau din obiectivul editat). */}
       {p.open && <FormularObiectiv {...p} />}
     </SidePanel>
@@ -119,6 +119,9 @@ export function ObiectivForm(p: {
 }
 
 function FormularObiectiv({ orgSlug, onClose, editat, optiuni, perioada, parentImplicit, onSalvat }: { orgSlug: string; onClose: () => void; editat: ObiectivDto | null; optiuni: OptiuniPerformanta; perioada: { start: string; end: string }; parentImplicit?: string | null; onSalvat: (id: string) => void }) {
+  const locale = useLocale();
+  const dict = PERFORMANTA_UI3_DICT[locale].form;
+  const comune = PERFORMANTA_UI_DICT[locale].comune;
   const [initial] = useState(() => (editat ? dinObiectiv(editat) : { form: golForm(optiuni, perioada, parentImplicit), kr: [] as KrForm[] }));
   const [form, setForm] = useState<ObiectivInput>(initial.form);
   const [kr, setKr] = useState<KrForm[]>(initial.kr);
@@ -196,27 +199,27 @@ function FormularObiectiv({ orgSlug, onClose, editat, optiuni, perioada, parentI
       >
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <Label htmlFor="ob-titlu">Titlul obiectivului</Label>
-            <Input id="ob-titlu" value={form.titlu} maxLength={200} onChange={(e) => set("titlu", e.target.value)} placeholder="ex. Creștem baza de donatori lunari" required />
+            <Label htmlFor="ob-titlu">{dict.titlul}</Label>
+            <Input id="ob-titlu" value={form.titlu} maxLength={200} onChange={(e) => set("titlu", e.target.value)} placeholder={dict.titluPlaceholder} required />
           </div>
           <div className="sm:col-span-2">
-            <Label htmlFor="ob-desc">Descriere (opțional)</Label>
-            <Textarea id="ob-desc" value={form.descriere ?? ""} onChange={(e) => set("descriere", e.target.value)} rows={2} placeholder="De ce contează și ce schimbă pentru organizație." />
+            <Label htmlFor="ob-desc">{dict.descriere}</Label>
+            <Textarea id="ob-desc" value={form.descriere ?? ""} onChange={(e) => set("descriere", e.target.value)} rows={2} placeholder={dict.descrierePlaceholder} />
           </div>
           <div>
-            <Label htmlFor="ob-nivel">Nivel</Label>
+            <Label htmlFor="ob-nivel">{dict.nivel}</Label>
             <Select id="ob-nivel" value={form.nivel} onChange={(e) => set("nivel", e.target.value as NivelObiectiv)}>
-              {(Object.keys(ETICHETE_NIVEL) as NivelObiectiv[]).map((n) => (
+              {Object.keys(comune.nivel).map((n) => (
                 <option key={n} value={n}>
-                  {ETICHETE_NIVEL[n]}
+                  {comune.nivel[n]}
                 </option>
               ))}
             </Select>
           </div>
           <div>
-            <Label htmlFor="ob-resp">Responsabil principal</Label>
+            <Label htmlFor="ob-resp">{dict.responsabilPrincipal}</Label>
             <Select id="ob-resp" value={form.responsabilId ?? ""} onChange={(e) => set("responsabilId", e.target.value || null)} required>
-              <option value="">Alege…</option>
+              <option value="">{dict.alege}</option>
               {angajatiActivi.map((a) => (
                 <option key={a.id} value={a.id}>
                   {a.nume}
@@ -225,9 +228,9 @@ function FormularObiectiv({ orgSlug, onClose, editat, optiuni, perioada, parentI
             </Select>
           </div>
           <div>
-            <Label htmlFor="ob-dep">Departament</Label>
+            <Label htmlFor="ob-dep">{dict.departament}</Label>
             <Select id="ob-dep" value={form.departmentId ?? ""} onChange={(e) => set("departmentId", e.target.value || null)}>
-              <option value="">Fără departament</option>
+              <option value="">{dict.faraDepartament}</option>
               {optiuni.departamente.map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.nume}
@@ -236,30 +239,30 @@ function FormularObiectiv({ orgSlug, onClose, editat, optiuni, perioada, parentI
             </Select>
           </div>
           <div>
-            <Label htmlFor="ob-viz">Cine îl vede</Label>
+            <Label htmlFor="ob-viz">{dict.cineVede}</Label>
             <Select id="ob-viz" value={form.vizibilitate} onChange={(e) => set("vizibilitate", e.target.value as Vizibilitate)}>
-              {(Object.keys(ETICHETE_VIZIBILITATE) as Vizibilitate[]).map((v) => (
+              {Object.keys(comune.vizibilitate).map((v) => (
                 <option key={v} value={v}>
-                  {ETICHETE_VIZIBILITATE[v]}
+                  {comune.vizibilitate[v]}
                 </option>
               ))}
             </Select>
           </div>
           <div>
-            <Label htmlFor="ob-start">Început</Label>
+            <Label htmlFor="ob-start">{dict.inceput}</Label>
             <Input id="ob-start" type="date" value={form.perioadaStart} onChange={(e) => set("perioadaStart", e.target.value)} required />
           </div>
           <div>
-            <Label htmlFor="ob-end">Sfârșit</Label>
+            <Label htmlFor="ob-end">{dict.sfarsit}</Label>
             <Input id="ob-end" type="date" value={form.perioadaEnd} min={form.perioadaStart} onChange={(e) => set("perioadaEnd", e.target.value)} required />
           </div>
           <div className="sm:col-span-2">
-            <Label htmlFor="ob-parent">Sprijină obiectivul (aliniere)</Label>
+            <Label htmlFor="ob-parent">{dict.sprijina}</Label>
             <Select id="ob-parent" value={form.parentId ?? ""} onChange={(e) => set("parentId", e.target.value || null)}>
-              <option value="">Niciun obiectiv superior</option>
+              <option value="">{dict.niciunSuperior}</option>
               {alegere.map((o) => (
                 <option key={o.id} value={o.id}>
-                  {ETICHETE_NIVEL[o.nivel as NivelObiectiv] ?? o.nivel}: {o.titlu}
+                  {comune.nivel[o.nivel] ?? o.nivel}: {o.titlu}
                 </option>
               ))}
             </Select>
@@ -267,7 +270,7 @@ function FormularObiectiv({ orgSlug, onClose, editat, optiuni, perioada, parentI
         </div>
 
         <fieldset>
-          <legend className="mb-1.5 text-[13px] font-medium text-[var(--ci-text)]">Colaboratori</legend>
+          <legend className="mb-1.5 text-[13px] font-medium text-[var(--ci-text)]">{dict.colaboratori}</legend>
           <div className="ci-scrollbar flex max-h-32 flex-wrap gap-1.5 overflow-y-auto">
             {angajatiActivi
               .filter((a) => a.id !== form.responsabilId)
@@ -280,36 +283,36 @@ function FormularObiectiv({ orgSlug, onClose, editat, optiuni, perioada, parentI
                   </label>
                 );
               })}
-            {angajatiActivi.length <= 1 && <p className="text-[12.5px] text-[var(--ci-text-muted)]">Adaugă membri în „Organizație & Echipă” ca să-i poți alege.</p>}
+            {angajatiActivi.length <= 1 && <p className="text-[12.5px] text-[var(--ci-text-muted)]">{dict.adaugaMembri}</p>}
           </div>
         </fieldset>
 
         <fieldset>
-          <legend className="mb-1.5 text-[13px] font-medium text-[var(--ci-text)]">Legături cu alte obiective</legend>
+          <legend className="mb-1.5 text-[13px] font-medium text-[var(--ci-text)]">{dict.legaturiCu}</legend>
           <div className="space-y-2">
             {form.legaturi.map((l, i) => (
               <div key={l.id} className="flex items-center gap-2">
-                <Select aria-label="Tipul legăturii" className="max-w-36" value={l.tip} onChange={(e) => set("legaturi", form.legaturi.map((x, j) => (j === i ? { ...x, tip: e.target.value as typeof l.tip } : x)))}>
+                <Select aria-label={dict.tipLegatura} className="max-w-36" value={l.tip} onChange={(e) => set("legaturi", form.legaturi.map((x, j) => (j === i ? { ...x, tip: e.target.value as typeof l.tip } : x)))}>
                   {LEGATURI.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.eticheta}
+                    <option key={t} value={t}>
+                      {dict.tipuriLeg[t]}
                     </option>
                   ))}
                 </Select>
-                <span className="min-w-0 flex-1 truncate text-[13px] text-[var(--ci-text)]">{alegere.find((o) => o.id === l.id)?.titlu ?? "Obiectiv din altă perioadă"}</span>
-                <Button type="button" variant="ghost" size="icon" aria-label="Scoate legătura" onClick={() => set("legaturi", form.legaturi.filter((_, j) => j !== i))}>
+                <span className="min-w-0 flex-1 truncate text-[13px] text-[var(--ci-text)]">{alegere.find((o) => o.id === l.id)?.titlu ?? dict.altaPerioada}</span>
+                <Button type="button" variant="ghost" size="icon" aria-label={dict.scoateLegatura} onClick={() => set("legaturi", form.legaturi.filter((_, j) => j !== i))}>
                   <Trash2 className="size-4" aria-hidden />
                 </Button>
               </div>
             ))}
             <Select
-              aria-label="Adaugă o legătură"
+              aria-label={dict.adaugaLegatura}
               value=""
               onChange={(e) => {
                 if (e.target.value) set("legaturi", [...form.legaturi, { id: e.target.value, tip: "legat" }]);
               }}
             >
-              <option value="">Adaugă o legătură…</option>
+              <option value="">{dict.adaugaLegaturaOpt}</option>
               {alegere
                 .filter((o) => !form.legaturi.some((l) => l.id === o.id))
                 .map((o) => (
@@ -323,16 +326,20 @@ function FormularObiectiv({ orgSlug, onClose, editat, optiuni, perioada, parentI
 
         <div>
           <div className="mb-2 flex items-center justify-between gap-2">
-            <h3 className="ci-display text-[14px] font-semibold text-[var(--ci-text)]">Rezultate-cheie ({kr.length}/{MAX_REZULTATE})</h3>
+            <h3 className="ci-display text-[14px] font-semibold text-[var(--ci-text)]">{dict.rezultateCheie(kr.length, MAX_REZULTATE)}</h3>
             <Button type="button" size="sm" disabled={kr.length >= MAX_REZULTATE} onClick={() => setKr((l) => [...l, krGol()])}>
-              <Plus className="size-4" aria-hidden /> Rezultat-cheie
+              <Plus className="size-4" aria-hidden /> {dict.rezultatCheie}
             </Button>
           </div>
           <p className="mb-3 text-[12.5px] text-[var(--ci-text-muted)]">
-            Un rezultat-cheie spune <strong>cât</strong> trebuie atins și <strong>cum</strong> se măsoară. Activitățile (ce facem) se planifică separat și nu se amestecă cu rezultatele.
-            {kr.length > 1 && <> Ponderile însumează {sumaPonderi}; progresul obiectivului e media ponderată a rezultatelor care au date.</>}
+            {dict.explicatieStart}
+            <strong>{dict.cat}</strong>
+            {dict.explicatieMijloc}
+            <strong>{dict.cum}</strong>
+            {dict.explicatieFinal}
+            {kr.length > 1 && dict.ponderi(sumaPonderi)}
           </p>
-          {kr.length === 0 && <p className="rounded-[var(--ci-radius-card)] border border-dashed border-[var(--ci-border)] p-4 text-center text-[13px] text-[var(--ci-text-muted)]">Fără rezultate-cheie, obiectivul rămâne fără progres măsurat. Adaugă cel puțin unul.</p>}
+          {kr.length === 0 && <p className="rounded-[var(--ci-radius-card)] border border-dashed border-[var(--ci-border)] p-4 text-center text-[13px] text-[var(--ci-text-muted)]">{dict.faraRk}</p>}
           <div className="space-y-2">
             {kr.map((r, i) => (
               <EditorRezultat key={r.cheie} r={r} index={i} optiuni={optiuni} angajati={angajatiActivi} perioada={{ start: form.perioadaStart, end: form.perioadaEnd }} onChange={(p) => setKr1(r.cheie, p)} onSterge={() => setKr((l) => l.filter((x) => x.cheie !== r.cheie))} />
@@ -347,10 +354,10 @@ function FormularObiectiv({ orgSlug, onClose, editat, optiuni, perioada, parentI
         )}
         <div className="sticky bottom-0 -mx-5 -mb-5 flex justify-end gap-2 border-t border-[var(--ci-border)] bg-[var(--ci-surface)] px-5 py-3">
           <Button type="button" variant="secondary" onClick={onClose}>
-            Renunță
+            {dict.renunta}
           </Button>
           <Button type="submit" variant="primary" loading={pending}>
-            {editat ? "Salvează modificările" : "Creează obiectivul"}
+            {editat ? dict.salveazaModificarile : dict.creeaza}
           </Button>
         </div>
       </form>
@@ -393,88 +400,93 @@ function EditorRezultat({
   onChange: (p: Partial<KrForm>) => void;
   onSterge: () => void;
 }) {
+  const locale = useLocale();
+  const dict = PERFORMANTA_UI3_DICT[locale].form;
+  const comune = PERFORMANTA_UI_DICT[locale].comune;
+  const metriciEn = PERFORMANTA_UI3_DICT[locale].metrici;
   const pref = `kr-${r.cheie}`;
-  const metrica = r.metrica ? METRICA_PE_ID.get(r.metrica) : null;
+  const metricaLib = r.metrica ? METRICA_PE_ID.get(r.metrica) : null;
+  const metrica = metricaLib ? { ...metricaLib, ...(metriciEn[metricaLib.id] ?? {}) } : null;
   const unitateAfisata = r.unitate || metrica?.unitate || "";
   return (
     <div className="rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)]">
       <div className="flex items-center gap-2 px-3 py-2">
         <button type="button" aria-expanded={r.deschis} aria-controls={`${pref}-corp`} onClick={() => onChange({ deschis: !r.deschis })} className="flex min-w-0 flex-1 items-center gap-2 text-left focus-visible:ring-2 focus-visible:ring-[var(--ci-primary)] focus-visible:outline-none">
           {r.deschis ? <ChevronDown className="size-4 shrink-0 text-[var(--ci-text-muted)]" aria-hidden /> : <ChevronRight className="size-4 shrink-0 text-[var(--ci-text-muted)]" aria-hidden />}
-          <span className="truncate text-[13.5px] font-medium text-[var(--ci-text)]">{r.titlu.trim() || `Rezultat-cheie ${index + 1}`}</span>
-          {!r.deschis && <span className="ci-tabular ml-auto shrink-0 text-[12px] text-[var(--ci-text-muted)]">{rezumatTinta(r, unitateAfisata)}</span>}
+          <span className="truncate text-[13.5px] font-medium text-[var(--ci-text)]">{r.titlu.trim() || dict.rkN(index + 1)}</span>
+          {!r.deschis && <span className="ci-tabular ml-auto shrink-0 text-[12px] text-[var(--ci-text-muted)]">{rezumatTinta(r, unitateAfisata, dict)}</span>}
         </button>
-        <Button type="button" variant="ghost" size="icon" aria-label={`Șterge rezultatul-cheie ${index + 1}`} onClick={onSterge}>
+        <Button type="button" variant="ghost" size="icon" aria-label={dict.stergeRk(index + 1)} onClick={onSterge}>
           <Trash2 className="size-4" aria-hidden />
         </Button>
       </div>
       {r.deschis && (
         <div id={`${pref}-corp`} className="grid gap-3 border-t border-[var(--ci-border)] p-3 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <Label htmlFor={`${pref}-t`}>Ce vrem să obținem</Label>
-            <Input id={`${pref}-t`} value={r.titlu} maxLength={200} onChange={(e) => onChange({ titlu: e.target.value })} placeholder="ex. Donatori lunari activi" />
+            <Label htmlFor={`${pref}-t`}>{dict.ceVremSaObtinem}</Label>
+            <Input id={`${pref}-t`} value={r.titlu} maxLength={200} onChange={(e) => onChange({ titlu: e.target.value })} placeholder={dict.ceVremPlaceholder} />
           </div>
           <div>
-            <Label htmlFor={`${pref}-m`}>Cum se măsoară</Label>
+            <Label htmlFor={`${pref}-m`}>{dict.cumSeMasoara}</Label>
             <Select id={`${pref}-m`} value={r.metoda} onChange={(e) => onChange({ metoda: e.target.value as Metoda })}>
-              {METODE.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.eticheta}
+              {Object.keys(comune.metoda).map((m) => (
+                <option key={m} value={m}>
+                  {comune.metoda[m].eticheta}
                 </option>
               ))}
             </Select>
-            <p className="mt-1 text-[12px] text-[var(--ci-text-muted)]">{METODE.find((m) => m.id === r.metoda)?.explicatie}</p>
+            <p className="mt-1 text-[12px] text-[var(--ci-text-muted)]">{comune.metoda[r.metoda]?.explicatie}</p>
           </div>
           <div>
-            <Label htmlFor={`${pref}-tt`}>Tipul țintei</Label>
+            <Label htmlFor={`${pref}-tt`}>{dict.tipulTintei}</Label>
             <Select id={`${pref}-tt`} value={r.tipTinta} onChange={(e) => onChange({ tipTinta: e.target.value as TipTinta })}>
-              <option value="cumulativ">Cumulativă (se adună în perioadă)</option>
-              <option value="periodic">Periodică (valoarea de la final)</option>
+              <option value="cumulativ">{dict.cumulativa}</option>
+              <option value="periodic">{dict.periodica}</option>
             </Select>
           </div>
           {r.metoda !== "binar" && (
             <>
               {r.metoda !== "interval" && (
                 <div>
-                  <Label htmlFor={`${pref}-ni`}>Nivel de pornire</Label>
+                  <Label htmlFor={`${pref}-ni`}>{dict.nivelPornire}</Label>
                   <Input id={`${pref}-ni`} inputMode="decimal" value={r.nivelInitial ?? ""} onChange={(e) => onChange({ nivelInitial: num(e.target.value) })} placeholder="0" />
                 </div>
               )}
               <div>
-                <Label htmlFor={`${pref}-ti`}>{r.metoda === "interval" ? "Limita de jos" : "Ținta"}</Label>
+                <Label htmlFor={`${pref}-ti`}>{r.metoda === "interval" ? dict.limitaJos : dict.tinta}</Label>
                 <Input id={`${pref}-ti`} inputMode="decimal" value={r.tinta ?? ""} onChange={(e) => onChange({ tinta: num(e.target.value) })} />
               </div>
               {r.metoda === "interval" && (
                 <div>
-                  <Label htmlFor={`${pref}-tx`}>Limita de sus</Label>
+                  <Label htmlFor={`${pref}-tx`}>{dict.limitaSus}</Label>
                   <Input id={`${pref}-tx`} inputMode="decimal" value={r.tintaMax ?? ""} onChange={(e) => onChange({ tintaMax: num(e.target.value) })} />
                 </div>
               )}
               <div>
-                <Label htmlFor={`${pref}-u`}>Unitate</Label>
-                <Input id={`${pref}-u`} value={r.unitate ?? ""} maxLength={20} onChange={(e) => onChange({ unitate: e.target.value })} placeholder={metrica?.unitate ?? "lei, %, donatori…"} />
+                <Label htmlFor={`${pref}-u`}>{dict.unitate}</Label>
+                <Input id={`${pref}-u`} value={r.unitate ?? ""} maxLength={20} onChange={(e) => onChange({ unitate: e.target.value })} placeholder={metrica?.unitate ?? dict.unitatePlaceholder} />
               </div>
             </>
           )}
           <div>
-            <Label htmlFor={`${pref}-p`}>Pondere (1–100)</Label>
+            <Label htmlFor={`${pref}-p`}>{dict.pondere}</Label>
             <Input id={`${pref}-p`} type="number" min={1} max={100} value={Number.isFinite(r.pondere) ? r.pondere : ""} onChange={(e) => onChange({ pondere: Number(e.target.value) })} />
           </div>
           <div>
-            <Label htmlFor={`${pref}-s`}>De unde vine valoarea</Label>
+            <Label htmlFor={`${pref}-s`}>{dict.deUndeVine}</Label>
             <Select id={`${pref}-s`} value={r.sursa} onChange={(e) => onChange({ sursa: e.target.value as SursaRezultat })}>
-              <option value="manual">Introdusă manual</option>
-              <option value="crm">Calculată din CRM</option>
-              {r.sursa === "kpi" && <option value="kpi">Preluată dintr-un KPI (vechi)</option>}
+              <option value="manual">{dict.manual}</option>
+              <option value="crm">{dict.dinCrm}</option>
+              {r.sursa === "kpi" && <option value="kpi">{dict.dinKpi}</option>}
             </Select>
           </div>
           {r.sursa === "manual" && (
             <div>
-              <Label htmlFor={`${pref}-f`}>Cât de des se actualizează</Label>
+              <Label htmlFor={`${pref}-f`}>{dict.catDesActualizeaza}</Label>
               <Select id={`${pref}-f`} value={r.frecventaActualizare} onChange={(e) => onChange({ frecventaActualizare: e.target.value as FrecventaActualizare })}>
-                {(Object.keys(ETICHETE_FRECVENTA) as FrecventaActualizare[]).map((f) => (
+                {Object.keys(comune.frecventa).map((f) => (
                   <option key={f} value={f}>
-                    {ETICHETE_FRECVENTA[f]}
+                    {comune.frecventa[f]}
                   </option>
                 ))}
               </Select>
@@ -482,22 +494,22 @@ function EditorRezultat({
           )}
           {r.sursa === "crm" && (
             <div className="sm:col-span-2">
-              <Label htmlFor={`${pref}-mc`}>Metrica din CRM</Label>
+              <Label htmlFor={`${pref}-mc`}>{dict.metricaCrm}</Label>
               <Select id={`${pref}-mc`} value={r.metrica ?? ""} onChange={(e) => onChange({ metrica: e.target.value || null, unitate: METRICA_PE_ID.get(e.target.value)?.unitate ?? r.unitate })}>
-                <option value="">Alege metrica…</option>
+                <option value="">{dict.alegeMetrica}</option>
                 {METRICI_CRM.map((m) => (
                   <option key={m.id} value={m.id}>
-                    {m.eticheta}
+                    {metriciEn[m.id]?.eticheta ?? m.eticheta}
                   </option>
                 ))}
               </Select>
               {metrica && (
                 <div className="mt-1.5 space-y-1 rounded-[var(--ci-radius-btn)] bg-[var(--ci-surface-2)] p-2.5 text-[12px] text-[var(--ci-text-muted)]">
                   <p>
-                    <strong className="text-[var(--ci-text)]">Cum se calculează:</strong> {metrica.formula}
+                    <strong className="text-[var(--ci-text)]">{dict.cumSeCalculeaza}</strong> {metrica.formula}
                   </p>
                   <p>
-                    <strong className="text-[var(--ci-text)]">Limite:</strong> {metrica.limite}
+                    <strong className="text-[var(--ci-text)]">{dict.limite}</strong> {metrica.limite}
                   </p>
                 </div>
               )}
@@ -506,9 +518,9 @@ function EditorRezultat({
           {r.sursa === "kpi" && (
             <>
               <div>
-                <Label htmlFor={`${pref}-k`}>KPI</Label>
+                <Label htmlFor={`${pref}-k`}>{dict.kpi}</Label>
                 <Select id={`${pref}-k`} value={r.kpiDefinitieId ?? ""} onChange={(e) => onChange({ kpiDefinitieId: e.target.value || null })}>
-                  <option value="">Alege KPI-ul…</option>
+                  <option value="">{dict.alegeKpi}</option>
                   {optiuni.kpiuri.map((k) => (
                     <option key={k.id} value={k.id}>
                       {k.nume}
@@ -517,9 +529,9 @@ function EditorRezultat({
                 </Select>
               </div>
               <div>
-                <Label htmlFor={`${pref}-ka`}>Valorile cui</Label>
+                <Label htmlFor={`${pref}-ka`}>{dict.valorileCui}</Label>
                 <Select id={`${pref}-ka`} value={r.kpiAngajatId ?? ""} onChange={(e) => onChange({ kpiAngajatId: e.target.value || null })}>
-                  <option value="">Alege angajatul…</option>
+                  <option value="">{dict.alegeAngajatul}</option>
                   {angajati.map((a) => (
                     <option key={a.id} value={a.id}>
                       {a.nume}
@@ -531,23 +543,23 @@ function EditorRezultat({
           )}
           {r.sursa !== "manual" && (
             <div>
-              <Label htmlFor={`${pref}-ag`}>Cum se adună valorile din perioadă</Label>
+              <Label htmlFor={`${pref}-ag`}>{dict.cumSeAduna}</Label>
               <Select id={`${pref}-ag`} value={r.agregare ?? ""} onChange={(e) => onChange({ agregare: (e.target.value || null) as RezultatInput["agregare"] })}>
-                <option value="">Implicit ({r.tipTinta === "periodic" ? "ultima valoare" : "suma"})</option>
-                <option value="suma">Suma valorilor</option>
-                <option value="ultima">Ultima valoare</option>
-                <option value="medie">Media valorilor</option>
+                <option value="">{dict.implicit(r.tipTinta === "periodic")}</option>
+                <option value="suma">{dict.suma}</option>
+                <option value="ultima">{dict.ultima}</option>
+                <option value="medie">{dict.media}</option>
               </Select>
             </div>
           )}
           <div>
-            <Label htmlFor={`${pref}-te`}>Termen (opțional)</Label>
+            <Label htmlFor={`${pref}-te`}>{dict.termenOpt}</Label>
             <Input id={`${pref}-te`} type="date" min={perioada.start} max={perioada.end} value={r.termen ?? ""} onChange={(e) => onChange({ termen: e.target.value || null })} />
           </div>
           <div>
-            <Label htmlFor={`${pref}-r`}>Cine îl actualizează (opțional)</Label>
+            <Label htmlFor={`${pref}-r`}>{dict.cineActualizeaza}</Label>
             <Select id={`${pref}-r`} value={r.responsabilId ?? ""} onChange={(e) => onChange({ responsabilId: e.target.value || null })}>
-              <option value="">Responsabilul obiectivului</option>
+              <option value="">{dict.responsabilulObiectivului}</option>
               {angajati.map((a) => (
                 <option key={a.id} value={a.id}>
                   {a.nume}
@@ -556,16 +568,16 @@ function EditorRezultat({
             </Select>
           </div>
           <div className="sm:col-span-2">
-            <Label htmlFor={`${pref}-fo`}>Formula / definiția (opțional)</Label>
-            <Textarea id={`${pref}-fo`} rows={2} value={r.formula ?? ""} onChange={(e) => onChange({ formula: e.target.value })} placeholder="Cum se calculează exact și ce se numără." />
+            <Label htmlFor={`${pref}-fo`}>{dict.formulaOpt}</Label>
+            <Textarea id={`${pref}-fo`} rows={2} value={r.formula ?? ""} onChange={(e) => onChange({ formula: e.target.value })} placeholder={dict.formulaPlaceholder} />
           </div>
           <div>
-            <Label htmlFor={`${pref}-re`}>Ce include și ce exclude</Label>
-            <Textarea id={`${pref}-re`} rows={2} value={r.reguli ?? ""} onChange={(e) => onChange({ reguli: e.target.value })} placeholder="ex. fără promisiuni nesemnate" />
+            <Label htmlFor={`${pref}-re`}>{dict.includeExcludeLabel}</Label>
+            <Textarea id={`${pref}-re`} rows={2} value={r.reguli ?? ""} onChange={(e) => onChange({ reguli: e.target.value })} placeholder={dict.includeExcludePlaceholder} />
           </div>
           <div>
-            <Label htmlFor={`${pref}-at`}>Limite de atribuire</Label>
-            <Textarea id={`${pref}-at`} rows={2} value={r.atribuire ?? ""} onChange={(e) => onChange({ atribuire: e.target.value })} placeholder="ex. contribuție comună, nu individuală" />
+            <Label htmlFor={`${pref}-at`}>{dict.limiteAtribuire}</Label>
+            <Textarea id={`${pref}-at`} rows={2} value={r.atribuire ?? ""} onChange={(e) => onChange({ atribuire: e.target.value })} placeholder={dict.limiteAtribuirePlaceholder} />
           </div>
         </div>
       )}
@@ -573,9 +585,9 @@ function EditorRezultat({
   );
 }
 
-function rezumatTinta(r: RezultatInput, unitate: string): string {
-  if (r.metoda === "binar") return "Realizat / nerealizat";
-  if (r.tinta === null || r.tinta === undefined) return "Fără țintă";
+function rezumatTinta(r: RezultatInput, unitate: string, dict: { binarRezumat: string; faraTintaRezumat: string }): string {
+  if (r.metoda === "binar") return dict.binarRezumat;
+  if (r.tinta === null || r.tinta === undefined) return dict.faraTintaRezumat;
   const u = unitate ? ` ${unitate}` : "";
   if (r.metoda === "interval") return `${r.tinta}–${r.tintaMax ?? r.tinta}${u}`;
   return `${r.metoda === "descrescator" ? "≤" : "≥"} ${r.tinta}${u}`;
