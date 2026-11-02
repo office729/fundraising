@@ -6,6 +6,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { AbonareNewsletter } from "@/components/abonare-newsletter";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { NetopiaLogo } from "@/components/netopia-logo";
 import type { Locale } from "@/lib/i18n/config";
@@ -293,6 +294,7 @@ export function SiteFooter({ dict }: { dict: MarketingDict }) {
           </div>
         </div>
       </div>
+      <AbonareNewsletter t={dict.footer.newsletter} />
       <div className="mx-auto mt-10 grid max-w-6xl grid-cols-1 gap-8 border-t border-white/10 pt-8 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <p className="text-xs font-bold tracking-wide text-white/50 uppercase">{dict.footer.companyTitle}</p>
