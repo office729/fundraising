@@ -217,7 +217,7 @@ function Formular({ ales, date, deja, laInapoi, laNoua }: { ales: InscrisPentruP
           {erori.nume && <span className="text-red-700">{erori.nume}</span>}
         </label>
         <label className={eticheta}>
-          Email (aici ajunge invitația cu linkul Zoom)
+          Email (aici ajunge confirmarea cu linkul întâlnirii)
           <input type="email" value={persoana.email} onChange={(e) => setPersoana({ ...persoana, email: e.target.value })} aria-invalid={!!erori.email} className={`${camp} mt-1`} />
           {erori.email && <span className="text-red-700">{erori.email}</span>}
         </label>
@@ -232,7 +232,7 @@ function Formular({ ales, date, deja, laInapoi, laNoua }: { ales: InscrisPentruP
         </label>
       </div>
       <label className={`${eticheta} mt-3`}>
-        Notă pentru întâlnire (se vede în Zoom ca agendă, opțional)
+        Notă pentru întâlnire (agenda din Zoom sau din evenimentul tău Google, opțional; persoana nu o primește)
         <textarea value={persoana.mesaj} onChange={(e) => setPersoana({ ...persoana, mesaj: e.target.value })} rows={2} className={`${camp} mt-1 h-auto py-2`} />
       </label>
 
