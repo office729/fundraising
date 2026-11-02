@@ -12,6 +12,8 @@ import { emailFaraLink, layoutEmail, paragraf } from "@/lib/email-layout";
 import { esteEmailTemporar } from "@/lib/email-temporar";
 import { escHtml } from "@/lib/html-escape";
 import { raporteazaEroare } from "@/lib/monitoring";
+import { creeazaIntalnireZoom, stergeIntalnireZoom, zoomConfigurat } from "@/lib/zoom";
+import { esteAdresaWeb, esteLinkZoom } from "@/lib/zoom-link";
 
 import {
   curataSetari,
@@ -115,9 +117,10 @@ export async function sloturiZi(tipId: string, data: string): Promise<Slot[]> {
 
 // ---------- rezervare ----------
 
-export type RezultatRezervare = { ok: true; token: string; startLa: string; sfarsitLa: string; mesaj: string } | { ok: false; eroare: string; campuri?: Record<string, string>; slotOcupat?: boolean };
+export type RezultatRezervare = { ok: true; token: string; startLa: string; sfarsitLa: string; mesaj: string; locatie?: string | null } | { ok: false; eroare: string; campuri?: Record<string, string>; slotOcupat?: boolean };
 
-export type IntrareRezervare = { tipId: string; startUtc: string; persoana: unknown; capcana?: string; sursa?: string; orgId?: string | null };
+// `echipa`: programare făcută de echipa platformei pentru un înscris (telefonul nu e obligatoriu, iar echipa nu primește și emailul „Programare nouă”).
+export type IntrareRezervare = { tipId: string; startUtc: string; persoana: unknown; capcana?: string; sursa?: string; orgId?: string | null; echipa?: boolean };
 
 export async function rezerva(i: IntrareRezervare): Promise<RezultatRezervare> {
   // Capcană pentru roboți: un câmp ascuns oamenilor. Dacă are conținut, răspundem ca la succes și nu salvăm nimic.
@@ -143,7 +146,7 @@ export async function salveazaRezervare(i: IntrareRezervare): Promise<RezultatRe
       await tx.execute(sql`select pg_advisory_xact_lock(74610001)`);
       const c = await incarcaCalendar(tx, i.tipId);
       if (!c) return { ok: false as const, eroare: "Acest tip de întâlnire nu mai e disponibil." };
-      const v = valideazaPersoana(i.persoana, c.setari.cereTelefon);
+      const v = valideazaPersoana(i.persoana, c.setari.cereTelefon && !i.echipa);
       if (!v.ok) return { ok: false as const, eroare: "Verifică câmpurile marcate.", campuri: v.erori as Record<string, string> };
       if (esteEmailTemporar(v.date.email)) return { ok: false as const, eroare: "Folosește o adresă de email reală, nu una temporară.", campuri: { email: "Folosește o adresă de email reală." } };
       if (!esteSlotValid(start, { durataMin: c.tip.durataMin, config: c.setari, saptamanal: c.saptamanal, exceptii: c.exceptii, ocupate: c.ocupate, acum: c.acum })) {
@@ -179,9 +182,32 @@ export async function salveazaRezervare(i: IntrareRezervare): Promise<RezultatRe
   }
   if (rezultat.ok && dateEmail) {
     const d = dateEmail as { setari: SetariProgramari; p: typeof programari.$inferSelect };
-    await trimiteEmailuriProgramare(d.p, d.setari, "noua");
+    // Link Zoom creat special pentru această întâlnire (dacă Zoom e conectat); altfel rămâne linkul fix al tipului. Emailurile pleacă cu linkul final.
+    const cuZoom = await ataseazaZoom(d.p);
+    const p = cuZoom ?? d.p;
+    await trimiteEmailuriProgramare(p, d.setari, "noua");
+    rezultat = { ...rezultat, locatie: p.locatie };
   }
   return rezultat;
+}
+
+// Creează întâlnirea Zoom după ce programarea e salvată (nu în tranzacția cu blocare: apelul de rețea nu trebuie să țină slotul blocat) și îi pune linkul în „locatie”.
+// Dacă Zoom nu răspunde, programarea rămâne valabilă, cu linkul fix al tipului; eroarea se raportează.
+async function ataseazaZoom(p: typeof programari.$inferSelect): Promise<typeof programari.$inferSelect | null> {
+  if (!zoomConfigurat()) return null;
+  const z = await creeazaIntalnireZoom({ subiect: `${p.tipTitlu}: ${p.nume}${p.organizatie ? ` (${p.organizatie})` : ""}`, start: p.startLa, durataMin: p.durataMin, agenda: p.mesaj });
+  if (!z.ok) {
+    raporteazaEroare("programare-zoom", new Error(z.eroare));
+    return null;
+  }
+  try {
+    const [u] = await inContextPlatforma((tx) => tx.update(programari).set({ locatie: z.linkIntrare }).where(eq(programari.id, p.id)).returning());
+    return u ?? null;
+  } catch (e) {
+    raporteazaEroare("programare-zoom-salvare", e);
+    await stergeIntalnireZoom(z.linkIntrare);
+    return null;
+  }
 }
 
 // ---------- vizualizare / anulare prin token ----------
@@ -227,6 +253,7 @@ export async function anuleazaDupaToken(token: string): Promise<{ ok: boolean; e
     }
   });
   if (!anulata || !setari) return { ok: false, eroare: "Programarea nu mai poate fi anulată (era deja anulată sau s-a încheiat)." };
+  await stergeIntalnireZoom((anulata as typeof programari.$inferSelect).locatie);
   await trimiteEmailuriProgramare(anulata, setari, "anulata");
   return { ok: true };
 }
@@ -244,7 +271,13 @@ async function trimiteEmailuriProgramare(p: typeof programari.$inferSelect, seta
   if (!emailConfigurat()) return;
   const cand = formatData(p.startLa);
   const link = linkProgramare(p.token);
-  const loc = p.locatie ? paragraf(`<strong>Unde:</strong> ${escHtml(p.locatie)}`) : "";
+  const adresa = p.locatie && esteAdresaWeb(p.locatie) ? p.locatie.trim() : null;
+  const loc = !p.locatie
+    ? ""
+    : adresa
+      ? paragraf(`<strong>${esteLinkZoom(adresa) ? "Intri în ședință (Zoom)" : "Link întâlnire"}:</strong> <a href="${escHtml(adresa)}">${escHtml(adresa)}</a>`) +
+        (esteLinkZoom(adresa) ? paragraf("Intră cu 2–3 minute înainte. Gazda te primește din sala de așteptare Zoom.") : "")
+      : paragraf(`<strong>Unde:</strong> ${escHtml(p.locatie)}`);
   try {
     if (tip === "noua") {
       await trimiteEmail({
@@ -279,8 +312,9 @@ async function trimiteEmailuriProgramare(p: typeof programari.$inferSelect, seta
   } catch (e) {
     raporteazaEroare("programare-email-persoana", e);
   }
-  // Când echipa anulează, echipa știe deja: se anunță doar persoana.
+  // Când echipa anulează sau programează ea însăși, echipa știe deja: se anunță doar persoana.
   if (tip === "anulata-echipa") return;
+  if (tip === "noua" && p.sursa?.startsWith("echipa")) return;
   try {
     const rand = (e: string, v: string) => paragraf(`<strong>${escHtml(e)}:</strong> ${v}`);
     await trimiteEmail({
@@ -319,6 +353,7 @@ export async function listeazaProgramari(): Promise<RandProgramare[]> {
 }
 
 export type DateAdmin = {
+  zoomConfigurat: boolean;
   setari: SetariProgramari;
   tipuri: { id: string; titlu: string; descriere: string; durataMin: number; locatie: string; activ: boolean }[];
   saptamanal: Interval[];
@@ -332,6 +367,7 @@ export async function dateAdministrare(): Promise<DateAdmin> {
     const { saptamanal } = await citesteProgram(tx);
     const exc = await tx.select().from(programariExceptii).where(gte(programariExceptii.data, sql`(current_date - 1)`)).orderBy(asc(programariExceptii.data));
     return {
+      zoomConfigurat: zoomConfigurat(),
       setari,
       tipuri: tipuri.map((t) => ({ id: t.id, titlu: t.titlu, descriere: t.descriere ?? "", durataMin: t.durataMin, locatie: t.locatie ?? "", activ: t.activ })),
       saptamanal,
@@ -354,8 +390,26 @@ export async function schimbaStareDeEchipa(id: string, stare: "confirmata" | "an
     setari = await citesteSetari(tx);
   });
   if (!p) return false;
+  if (stare === "anulata") await stergeIntalnireZoom((p as typeof programari.$inferSelect).locatie);
   if (stare === "anulata" && setari) await trimiteEmailuriProgramare(p, setari, "anulata-echipa");
   return true;
+}
+
+// Programarea unui înscris (organizație cu cont sau lead), făcută de echipa platformei: același calendar și aceleași reguli de disponibilitate ca la rezervarea publică,
+// dar fără limitele de cereri ale vizitatorilor. Persoana primește confirmarea 1 la 1, cu linkul Zoom al întâlnirii.
+export type OriginePersoana = "organizatie" | "lead" | "alta";
+export async function programeazaDeEchipa(i: { tipId: string; startUtc: string; persoana: unknown; orgId?: string | null; origine: OriginePersoana }): Promise<RezultatRezervare> {
+  if (i.orgId != null && !UUID_RE.test(i.orgId)) return { ok: false, eroare: "Organizație invalidă." };
+  const origine: OriginePersoana = i.origine === "organizatie" || i.origine === "lead" ? i.origine : "alta";
+  return salveazaRezervare({ tipId: i.tipId, startUtc: i.startUtc, persoana: i.persoana, orgId: origine === "organizatie" ? (i.orgId ?? null) : null, sursa: `echipa-${origine}`, echipa: true });
+}
+
+export async function randDupaToken(token: string): Promise<RandProgramare | null> {
+  if (typeof token !== "string" || !/^[A-Za-z0-9_-]{20,80}$/.test(token)) return null;
+  return inContextPlatforma(async (tx) => {
+    const [p] = await tx.select().from(programari).where(eq(programari.token, token)).limit(1);
+    return p ? { id: p.id, tipTitlu: p.tipTitlu, durataMin: p.durataMin, locatie: p.locatie, startLa: p.startLa.toISOString(), nume: p.nume, email: p.email, telefon: p.telefon, organizatie: p.organizatie, mesaj: p.mesaj, stare: p.stare, sursa: p.sursa, creatLa: p.creatLa.toISOString() } : null;
+  });
 }
 
 export { localDinUtc };

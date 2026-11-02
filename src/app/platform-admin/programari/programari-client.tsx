@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, type Dispatch, type SetStateAction } from "react";
 
 import type { DateAdmin, RandProgramare } from "@/lib/programari/server";
 import type { SetariProgramari } from "@/lib/programari/sloturi";
 
+import { ProgrameazaInscris } from "./programeaza-inscris";
 import { salveazaExceptiiAction, salveazaProgramAction, salveazaSetariAction, salveazaTipuriAction, schimbaStareProgramareAction, type Rezultat } from "./actions";
 
 const ZILE = ["Luni", "Marți", "Miercuri", "Joi", "Vineri", "Sâmbătă", "Duminică"];
@@ -18,9 +19,10 @@ const STARE: Record<string, { eticheta: string; clasa: string }> = {
   anulata: { eticheta: "Anulată", clasa: "bg-red-100 text-red-900" },
 };
 
-type Tab = "programari" | "program" | "exceptii" | "tipuri" | "setari";
+type Tab = "programari" | "programeaza" | "program" | "exceptii" | "tipuri" | "setari";
 const TABURI: { cheie: Tab; eticheta: string }[] = [
   { cheie: "programari", eticheta: "Programări" },
+  { cheie: "programeaza", eticheta: "Programează un înscris" },
   { cheie: "program", eticheta: "Program disponibil" },
   { cheie: "exceptii", eticheta: "Zile libere și program special" },
   { cheie: "tipuri", eticheta: "Tipuri de întâlniri" },
@@ -29,6 +31,8 @@ const TABURI: { cheie: Tab; eticheta: string }[] = [
 
 export function ProgramariClient({ randuri: initiale, date }: { randuri: RandProgramare[]; date: DateAdmin }) {
   const [tab, setTab] = useState<Tab>("programari");
+  // Lista e în părinte: o programare nouă (din „Programează un înscris”) apare imediat în „Programări”, fără reîncărcarea paginii.
+  const [randuri, setRanduri] = useState(initiale);
   return (
     <div className="mt-6">
       <nav aria-label="Secțiuni" className="flex flex-wrap gap-1.5 border-b border-line pb-3">
@@ -39,7 +43,8 @@ export function ProgramariClient({ randuri: initiale, date }: { randuri: RandPro
         ))}
       </nav>
       <div className="mt-5">
-        {tab === "programari" && <Lista initiale={initiale} />}
+        {tab === "programari" && <Lista randuri={randuri} setRanduri={setRanduri} />}
+        {tab === "programeaza" && <ProgrameazaInscris date={date} randuri={randuri} laNoua={(r) => setRanduri((l) => [r, ...l])} />}
         {tab === "program" && <Program initial={date.saptamanal} />}
         {tab === "exceptii" && <Exceptii initial={date.exceptii} />}
         {tab === "tipuri" && <Tipuri initial={date.tipuri} />}
@@ -76,8 +81,7 @@ function Mesaj({ m }: { m: { ok: boolean; text: string } | null }) {
 
 // ---------- programări primite ----------
 
-function Lista({ initiale }: { initiale: RandProgramare[] }) {
-  const [randuri, setRanduri] = useState(initiale);
+function Lista({ randuri, setRanduri }: { randuri: RandProgramare[]; setRanduri: Dispatch<SetStateAction<RandProgramare[]>> }) {
   const [filtru, setFiltru] = useState<"viitoare" | "trecute" | "anulate" | "toate">("viitoare");
   const { pending, mesaj, ruleaza } = useSalvare();
   const [acum] = useState(() => Date.now());
@@ -113,7 +117,19 @@ function Lista({ initiale }: { initiale: RandProgramare[] }) {
                 <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${STARE[r.stare]?.clasa ?? ""}`}>{STARE[r.stare]?.eticheta ?? r.stare}</span>
               </div>
               <p className="mt-0.5 text-sm text-muted">
-                {r.tipTitlu} · {r.durataMin} min{r.locatie ? ` · ${r.locatie}` : ""}
+                {r.tipTitlu} · {r.durataMin} min
+                {r.locatie ? (
+                  /^https?:\/\//i.test(r.locatie.trim()) ? (
+                    <>
+                      {" · "}
+                      <a href={r.locatie.trim()} target="_blank" rel="noopener noreferrer" className="font-medium text-brand-blue underline">
+                        {/zoom\.(us|com)\//i.test(r.locatie) ? "Link Zoom" : "Link întâlnire"}
+                      </a>
+                    </>
+                  ) : (
+                    ` · ${r.locatie}`
+                  )
+                ) : null}
               </p>
               <p className="mt-2 text-sm text-ink">
                 <strong>{r.nume}</strong>

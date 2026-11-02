@@ -8,8 +8,11 @@ import { getAuthUser } from "@/lib/auth/dal";
 import { isPlatformAdmin } from "@/lib/billing/trial";
 import { programariConfig, programariDisponibilitate, programariExceptii, programariTipuri } from "@/lib/db/schema";
 import { EroareUtilizator } from "@/lib/erori";
-import { dateAdministrare, inContextPlatforma, listeazaProgramari, schimbaStareDeEchipa, type DateAdmin, type RandProgramare } from "@/lib/programari/server";
-import { curataSetari, esteData, esteOra, oraScurta, type Interval } from "@/lib/programari/sloturi";
+import { ETICHETE_STARE as ETICHETE_STARE_LEAD } from "@/lib/lead-uri";
+import { dateAdministrare, inContextPlatforma, listeazaProgramari, programeazaDeEchipa, randDupaToken, schimbaStareDeEchipa, sloturiZi, zileDisponibile, type DateAdmin, type RandProgramare } from "@/lib/programari/server";
+import { curataSetari, esteData, esteOra, oraScurta, type Interval, type Slot } from "@/lib/programari/sloturi";
+import { listeazaOrganizatiiAction } from "../actions";
+import { listeazaLeaduriAction } from "../lead-uri/actions";
 
 // Doar contul platformei: programul disponibil, tipurile de întâlniri, setările și programările primite.
 async function cerePlatformAdmin(): Promise<string> {
@@ -125,3 +128,83 @@ export async function schimbaStareProgramareAction(id: string, stare: string): P
   return ok ? { ok: true } : { ok: false, eroare: "Programarea nu a fost găsită." };
 }
 
+// ---------- programează un înscris (doar echipa platformei) ----------
+
+export type InscrisPentruProgramare = {
+  cheie: string;
+  origine: "organizatie" | "lead";
+  orgId: string | null;
+  nume: string;
+  email: string;
+  telefon: string;
+  organizatie: string;
+  info: string;
+  creatLa: string;
+};
+
+// „Înscrișii” pe care îi poți programa: organizațiile cu cont (persoana de contact = proprietarul contului) și lead-urile din formularul „Descoperă Alexandrit”.
+export async function incarcaInscrisiAction(): Promise<InscrisPentruProgramare[]> {
+  await cerePlatformAdmin();
+  const [organizatii, leaduri] = await Promise.all([listeazaOrganizatiiAction(), listeazaLeaduriAction()]);
+  const dinOrg: InscrisPentruProgramare[] = organizatii
+    .filter((o) => o.proprietarEmail)
+    .map((o) => ({
+      cheie: `org:${o.id}`,
+      origine: "organizatie" as const,
+      orgId: o.id,
+      nume: o.proprietarNume ?? "",
+      email: o.proprietarEmail ?? "",
+      telefon: o.telefon ?? "",
+      organizatie: o.nume,
+      info: `Cont în platformă · pachet ${o.package}`,
+      creatLa: o.createdAt.toISOString(),
+    }));
+  const dinLead: InscrisPentruProgramare[] = leaduri.map((l) => ({
+    cheie: `lead:${l.id}`,
+    origine: "lead" as const,
+    orgId: null,
+    nume: l.nume,
+    email: l.email,
+    telefon: l.telefon ?? "",
+    organizatie: l.organizatie,
+    info: `Lead · ${ETICHETE_STARE_LEAD[l.stare] ?? l.stare}${l.areCont ? " · are cont" : ""}`,
+    creatLa: l.creatLa,
+  }));
+  return [...dinOrg, ...dinLead];
+}
+
+// Zilele cu cel puțin o oră liberă, în luna curentă și în cea următoare (ora României), pentru tipul ales.
+export async function zileLibereAction(tipId: string): Promise<string[]> {
+  await cerePlatformAdmin();
+  const [an, luna] = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Bucharest", year: "numeric", month: "2-digit" }).format(new Date()).split("-").map(Number) as [number, number];
+  const urmatoarea: [number, number] = luna === 12 ? [an + 1, 1] : [an, luna + 1];
+  const [a, b] = await Promise.all([zileDisponibile(String(tipId), an, luna), zileDisponibile(String(tipId), urmatoarea[0], urmatoarea[1])]);
+  return [...new Set([...a, ...b])].sort();
+}
+
+export async function oreLibereAction(tipId: string, data: string): Promise<Slot[]> {
+  await cerePlatformAdmin();
+  return sloturiZi(String(tipId), String(data));
+}
+
+export type PersoanaProgramata = { nume: string; email: string; telefon: string; organizatie: string; mesaj: string };
+export type RezultatProgramare = { ok: true; rand: RandProgramare; linkIntalnire: string | null; zoom: boolean } | { ok: false; eroare: string; campuri?: Record<string, string> };
+
+export async function programeazaInscrisAction(intrare: { tipId: string; startUtc: string; origine: "organizatie" | "lead"; orgId: string | null; persoana: PersoanaProgramata }): Promise<RezultatProgramare> {
+  await cerePlatformAdmin();
+  const p = intrare?.persoana;
+  const persoana = {
+    nume: String(p?.nume ?? "").trim(),
+    email: String(p?.email ?? "").trim(),
+    telefon: String(p?.telefon ?? "").trim(),
+    organizatie: String(p?.organizatie ?? "").trim(),
+    mesaj: String(p?.mesaj ?? "").trim(),
+  };
+  const r = await programeazaDeEchipa({ tipId: String(intrare?.tipId ?? ""), startUtc: String(intrare?.startUtc ?? ""), persoana, orgId: intrare?.orgId ?? null, origine: intrare?.origine === "organizatie" ? "organizatie" : "lead" });
+  reimprospateaza();
+  if (!r.ok) return { ok: false, eroare: r.eroare, campuri: r.campuri };
+  const rand = await randDupaToken(r.token);
+  if (!rand) return { ok: false, eroare: "Programarea s-a salvat, dar nu am putut-o reciti. Reîncarcă pagina." };
+  const link = r.locatie && /^https?:\/\//i.test(r.locatie.trim()) ? r.locatie.trim() : null;
+  return { ok: true, rand, linkIntalnire: link, zoom: Boolean(link && /zoom\.(us|com)\//i.test(link)) };
+}

@@ -6,6 +6,7 @@ import { AnuleazaProgramare } from "@/components/programari/rezervare";
 import { PROGRAMARE_UI_DICT } from "@/lib/i18n/dictionaries/programare-ui";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { programareDupaToken } from "@/lib/programari/server";
+import { esteAdresaWeb, esteLinkZoom } from "@/lib/zoom-link";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata(): Promise<Metadata> {
@@ -28,7 +29,14 @@ export default async function ProgramarePersonalaPage({ params }: { params: Prom
         <p className="text-sm font-bold tracking-wide text-brand-green uppercase">{p.stare === "anulata" ? t.personala.anulata : p.stare === "efectuata" ? t.personala.incheiata : t.personala.aTa}</p>
         <h1 className="font-display mt-1 text-2xl font-bold text-ink">{p.tipTitlu}</h1>
         <p className="mt-2 text-[16px] text-ink first-letter:uppercase">{dataOra(p.startLa, t.numere)}</p>
-        <p className="text-sm text-muted">{t.oraRomaniei} · {t.minute(p.durataMin)}{p.locatie ? ` · ${p.locatie}` : ""}</p>
+        <p className="text-sm text-muted">{t.oraRomaniei} · {t.minute(p.durataMin)}{p.locatie && !esteAdresaWeb(p.locatie) ? ` · ${p.locatie}` : ""}</p>
+        {p.stare === "confirmata" && !trecuta && p.locatie && esteAdresaWeb(p.locatie) && (
+          <p className="mt-3">
+            <a href={p.locatie.trim()} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center rounded-lg bg-brand-blue px-5 text-sm font-bold text-white hover:opacity-90">
+              {esteLinkZoom(p.locatie) ? t.personala.intraZoom : t.personala.intraLink}
+            </a>
+          </p>
+        )}
         <p className="mt-4 text-[15px] text-body">{t.personala.buna(p.nume)}</p>
         {p.stare === "confirmata" && !trecuta && (
           <>

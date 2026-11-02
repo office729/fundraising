@@ -65,6 +65,8 @@ export const PROGRAMARE_UI_DICT = {
       buna: (nume: string) => `Bună, ${nume}!`,
       mutare: "Ca să muți programarea, anuleaz-o și alege altă oră.",
       noua: "Programează o întâlnire nouă",
+      intraZoom: "Intră în ședința Zoom",
+      intraLink: "Intră în întâlnire",
     },
   },
   en: {
@@ -145,6 +147,8 @@ export const PROGRAMARE_UI_DICT = {
       buna: (nume: string) => `Hello, ${nume}!`,
       mutare: "To reschedule, cancel the booking and pick another time.",
       noua: "Book a new meeting",
+      intraZoom: "Join the Zoom meeting",
+      intraLink: "Join the meeting",
     },
   },
 } satisfies Record<Locale, unknown>;
