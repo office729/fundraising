@@ -163,6 +163,15 @@ export default async function OrgLayout({
                 DB
               </Link>
             )}
+            {isPlatformAdmin(access.userEmail) && (
+              <Link prefetch={false}
+                href="/platform-admin/programari?tab=programeaza"
+                className="text-[13px] font-medium text-muted transition hover:text-brand-blue"
+                title={locale === "ro" ? "Programează un înscris, cu link Zoom (doar contul platformei)" : "Book a registrant with a Zoom link (platform account only)"}
+              >
+                {locale === "ro" ? "Programări" : "Bookings"}
+              </Link>
+            )}
             <span
               className="rounded-full border px-2.5 py-1 text-xs font-medium text-muted"
             >

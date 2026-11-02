@@ -29,8 +29,9 @@ const TABURI: { cheie: Tab; eticheta: string }[] = [
   { cheie: "setari", eticheta: "Setări și texte" },
 ];
 
-export function ProgramariClient({ randuri: initiale, date }: { randuri: RandProgramare[]; date: DateAdmin }) {
-  const [tab, setTab] = useState<Tab>("programari");
+export function ProgramariClient({ randuri: initiale, date, tabInitial }: { randuri: RandProgramare[]; date: DateAdmin; tabInitial?: string }) {
+  // Se poate deschide direct pe o filă (de exemplu ?tab=programeaza, din meniul dashboardului); o valoare necunoscută duce la „Programări”.
+  const [tab, setTab] = useState<Tab>(TABURI.some((t) => t.cheie === tabInitial) ? (tabInitial as Tab) : "programari");
   // Lista e în părinte: o programare nouă (din „Programează un înscris”) apare imediat în „Programări”, fără reîncărcarea paginii.
   const [randuri, setRanduri] = useState(initiale);
   return (
