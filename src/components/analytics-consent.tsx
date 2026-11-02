@@ -7,9 +7,12 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 import { CONSENT_KEY as STORAGE_KEY, ensureAnalyticsInit, GA_ID } from "@/lib/analytics";
 import { stergeIdentificatori } from "@/lib/atribuire/identificatori";
 import { CONSENT_MARKETING_KEY, initMetaPixel, paginaNouaMeta, pixelConfigurat, revocaMeta } from "@/lib/meta-pixel";
+import { initNewsman, newsmanConfigurat, revocaNewsman } from "@/lib/newsman";
 
 const REOPEN_EVENT = "fa-cookie-consent-reopen";
 const CHANGE_EVENT = "fa-cookie-consent-change";
+
+const marketingConfigurat = () => pixelConfigurat() || newsmanConfigurat();
 
 type Alegere = "granted" | "denied";
 
@@ -19,13 +22,17 @@ export type BannerTexts = {
   accept: string;
   refuz: string;
   politica: string;
-  // Alegerea separată pentru publicitate (Pixelul Meta): apare doar dacă NEXT_PUBLIC_META_PIXEL_ID e setat.
+  // Alegerea separată pentru marketing (Newsman, Pixelul Meta): apare doar dacă măcar unul e configurat (NEXT_PUBLIC_NEWSMAN_SITE_ID, NEXT_PUBLIC_META_PIXEL_ID).
   textCuPublicitate: string;
   statistici: string;
   publicitate: string;
   salveaza: string;
   acceptaToate: string;
   refuzaToate: string;
+  // Marketing prin email (Newsman): textul de deschidere când Pixelul Meta nu e configurat, eticheta casetei și completarea la textul cu Meta.
+  textCuMarketing: string;
+  marketing: string;
+  suplimentNewsman: string;
 };
 
 function citeste(cheie: string): Alegere | null {
@@ -91,7 +98,9 @@ export function AnalyticsConsent({ texts }: { texts: BannerTexts }) {
   const stare = useSyncExternalStore(aboneaza, snapshotClient, snapshotServer);
   const pathname = usePathname();
   const [redeschis, setRedeschis] = useState(false);
-  const cuPublicitate = pixelConfigurat();
+  const cuPublicitate = marketingConfigurat();
+  const cuMeta = pixelConfigurat();
+  const cuNewsman = newsmanConfigurat();
   const [bifaStatistici, setBifaStatistici] = useState(false);
   const [bifaPublicitate, setBifaPublicitate] = useState(false);
   const ultimaCale = useRef(pathname);
@@ -109,7 +118,7 @@ export function AnalyticsConsent({ texts }: { texts: BannerTexts }) {
 
   const aplica = useCallback((statistici: boolean, publicitate: boolean) => {
     salveaza(STORAGE_KEY, statistici ? "granted" : "denied");
-    if (pixelConfigurat()) salveaza(CONSENT_MARKETING_KEY, publicitate ? "granted" : "denied");
+    if (marketingConfigurat()) salveaza(CONSENT_MARKETING_KEY, publicitate ? "granted" : "denied");
     window.dispatchEvent(new Event(CHANGE_EVENT));
     setRedeschis(false);
     if (!statistici) {
@@ -119,6 +128,8 @@ export function AnalyticsConsent({ texts }: { texts: BannerTexts }) {
     }
     else (window as unknown as Record<string, unknown>)[`ga-disable-${GA_ID}`] = false;
     if (pixelConfigurat() && !publicitate) revocaMeta();
+    if (newsmanConfigurat() && !publicitate) revocaNewsman();
+    if (publicitate) initNewsman();
   }, []);
 
   const statisticiAcceptate = stare.analytics === "granted";
@@ -133,14 +144,20 @@ export function AnalyticsConsent({ texts }: { texts: BannerTexts }) {
   }, [statisticiAcceptate, esteWidget]);
 
   useEffect(() => {
-    if (publicitateAcceptata && !esteWidget) initMetaPixel();
+    if (publicitateAcceptata && !esteWidget) {
+      initMetaPixel();
+      initNewsman();
+    }
   }, [publicitateAcceptata, esteWidget]);
 
   // PageView Meta la navigarea între pagini (prima încărcare e trimisă de initMetaPixel).
   useEffect(() => {
     if (ultimaCale.current === pathname) return;
     ultimaCale.current = pathname;
-    if (publicitateAcceptata && !esteWidget) paginaNouaMeta();
+    if (publicitateAcceptata && !esteWidget) {
+      paginaNouaMeta();
+      initNewsman(); // idempotent: pornește Newsman la prima pagină publică permisă, dacă vizitatorul a venit dintr-una exclusă
+    }
   }, [pathname, publicitateAcceptata, esteWidget]);
 
   return (
@@ -155,7 +172,7 @@ export function AnalyticsConsent({ texts }: { texts: BannerTexts }) {
             {texts.titlu}
           </p>
           <p className="mt-1.5 text-[13px] leading-relaxed text-body">
-            {cuPublicitate ? texts.textCuPublicitate : texts.text}{" "}
+            {cuMeta ? `${texts.textCuPublicitate}${cuNewsman ? ` ${texts.suplimentNewsman}` : ""}` : cuNewsman ? texts.textCuMarketing : texts.text}{" "}
             <Link href="/cookies" className="font-medium text-brand-green underline">
               {texts.politica}
             </Link>
@@ -168,7 +185,7 @@ export function AnalyticsConsent({ texts }: { texts: BannerTexts }) {
               </label>
               <label className="flex items-start gap-2">
                 <input type="checkbox" checked={bifaPublicitate} onChange={(e) => setBifaPublicitate(e.target.checked)} className="mt-0.5 h-4 w-4 rounded border-line" />
-                <span>{texts.publicitate}</span>
+                <span>{[cuNewsman && texts.marketing, cuMeta && texts.publicitate].filter(Boolean).join(" · ")}</span>
               </label>
             </div>
           )}

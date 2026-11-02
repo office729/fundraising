@@ -6,7 +6,7 @@ export const COOKIES_DICT = {
     eyebrow: "Legal",
     titlu: "Politica de cookies",
     actualizatLabel: "Ultima actualizare",
-    actualizat: "12 octombrie 2026",
+    actualizat: "2 noiembrie 2026",
     banner: {
       titlu: "Cookie-uri și statistici",
       text: "Folosim cookie-uri strict necesare pentru autentificare. Cu acordul tău, folosim și Google Analytics pentru statistici despre utilizarea site-ului (date pseudonimizate, nu complet anonime). Poți schimba alegerea oricând.",
@@ -19,6 +19,9 @@ export const COOKIES_DICT = {
       salveaza: "Salvează alegerea",
       acceptaToate: "Accept toate",
       refuzaToate: "Refuz toate",
+      textCuMarketing: "Folosim cookie-uri strict necesare pentru autentificare. Cu acordul tău, pe care îl poți da separat pentru fiecare scop, folosim și Google Analytics (statistici despre utilizarea site-ului) și Newsman (ca să știm dacă ai ajuns pe site dintr-un email de la noi). Poți schimba alegerea oricând.",
+      marketing: "Marketing prin email (Newsman): ne arată dacă ai ajuns pe site dintr-un email de la noi și ce pagini ai vizitat",
+      suplimentNewsman: "Folosim și Newsman, pentru marketing prin email.",
     },
     setariLabel: "Modifică alegerea pentru cookie-uri",
     s1: {
@@ -30,7 +33,7 @@ export const COOKIES_DICT = {
       introBefore: "Platforma Alexandrit folosește",
       introBold: "strict necesare",
       introAfter: "pentru autentificare, fără acordul tău separat, fiindcă fără ele nu poți intra în cont. Nu folosim cookie-uri de marketing sau publicitate.",
-      introAfterCuPublicitate: "pentru autentificare, fără acordul tău separat, fiindcă fără ele nu poți intra în cont. Cookie-urile de analiză și de publicitate se folosesc doar cu acordul tău (secțiunile următoare).",
+      introAfterCuPublicitate: "pentru autentificare, fără acordul tău separat, fiindcă fără ele nu poți intra în cont. Cookie-urile de analiză, de marketing și de publicitate se folosesc doar cu acordul tău (secțiunile următoare).",
       tabelHeaders: { cookie: "Cookie", scop: "Scop", durata: "Durată" },
       randuri: [
         { nume: "sb-*-auth-token", scop: "Menține sesiunea de autentificare (Supabase Auth) — te ține conectat între vizite.", durata: "Sesiune sau persistent, în funcție de „Rămâi conectat” bifat la autentificare" },
@@ -60,10 +63,20 @@ export const COOKIES_DICT = {
         { nume: "_fbc", scop: "Păstrează click-ul pe o reclamă Meta, ca să putem măsura rezultatul ei (apare doar dacă ai ajuns pe site dintr-o reclamă).", durata: "Până la 3 luni" },
       ],
     },
+    sMarketing: {
+      titlu: "3b. Cookie-uri de marketing prin email (doar cu acordul tău)",
+      text: "Dacă bifezi „Marketing prin email (Newsman)” în banner, încărcăm scriptul de remarketing Newsman (platforma prin care trimitem emailuri abonaților, procesator al nostru) doar pe paginile publice de prezentare ale site-ului (nu în aplicație, nu pe paginile de campanie sau de donație și nu pe Formularul 230). Dacă ai ajuns pe site dintr-un email trimis de noi, Newsman recunoaște abonatul respectiv și ne arată ce pagini a vizitat și dacă a făcut o acțiune după email, ca să putem măsura rezultatul emailurilor și să-ți trimitem informații relevante. Nu trimitem către Newsman date de contact de pe site. Poți retrage oricând acordul din butonul de mai jos, iar cookie-urile se șterg.",
+      tabelHeaders: { cookie: "Cookie", scop: "Scop", durata: "Durată" },
+      randuri: [
+        { nume: "_nzm_id_*", scop: "Se salvează când un abonat este recunoscut după ce a ajuns pe site dintr-un newsletter (sau după autentificare); leagă vizitele de abonatul respectiv.", durata: "Până la 10 ani" },
+        { nume: "_nzm_idnl_*", scop: "Păstrează identificatorul newsletterului din care ai venit, ca să atribuim acțiunile tale acelui email (în ultimele 5 zile).", durata: "Până la 10 ani" },
+        { nume: "_nzm_*", scop: "Alte valori tehnice ale Newsman (de exemplu, dacă ai ales să nu primești ferestre de abonare).", durata: "Variabilă" },
+      ],
+    },
     s3: {
       titlu: "4. Stocare locală (nu e tehnic un cookie)",
       textBefore: "Folosim și",
-      textAfter: "în browser — nu se trimite către server — pentru preferința de temă (light/dark), pentru alegerea ta privind cookie-urile de analiză, pentru a ține minte ce mesaje de întâmpinare ai închis în aplicație, pentru starea instrumentelor din CRM (datele pe care le introduci în ele, înainte să fie salvate) și, în modulele demonstrative, pentru datele de test introduse local. Pe pagina de rezultat a unei plăți de abonament, în sessionStorage ținem temporar numărul comenzii, ca să nu raportăm de două ori aceeași plată. Se șterge dacă ștergi datele site-ului din browser.",
+      textAfter: "în browser — nu se trimite către server — pentru preferința de temă (light/dark), pentru alegerea ta privind cookie-urile de analiză și de marketing, pentru a ține minte ce mesaje de întâmpinare ai închis în aplicație, pentru starea instrumentelor din CRM (datele pe care le introduci în ele, înainte să fie salvate) și, în modulele demonstrative, pentru datele de test introduse local. Pe pagina de rezultat a unei plăți de abonament, în sessionStorage ținem temporar numărul comenzii, ca să nu raportăm de două ori aceeași plată. Se șterge dacă ștergi datele site-ului din browser.",
     },
     s4: {
       titlu: "5. Cookie-uri terțe",
@@ -73,7 +86,7 @@ export const COOKIES_DICT = {
     },
     s5: {
       titlu: "6. Cum gestionezi cookie-urile",
-      text: "Îți poți schimba alegerea privind cookie-urile de analiză oricând, cu butonul de mai jos. Poți șterge sau bloca cookie-urile și din setările browserului — reține că blocarea cookie-ului de sesiune te va deconecta din platformă la fiecare vizită.",
+      text: "Îți poți schimba alegerea privind cookie-urile de analiză și de marketing oricând, cu butonul de mai jos. Poți șterge sau bloca cookie-urile și din setările browserului — reține că blocarea cookie-ului de sesiune te va deconecta din platformă la fiecare vizită.",
     },
   },
   en: {
@@ -81,7 +94,7 @@ export const COOKIES_DICT = {
     eyebrow: "Legal",
     titlu: "Cookie Policy",
     actualizatLabel: "Last updated",
-    actualizat: "October 12, 2026",
+    actualizat: "November 2, 2026",
     banner: {
       titlu: "Cookies and statistics",
       text: "We use strictly necessary cookies for sign-in. With your consent, we also use Google Analytics for statistics about how the site is used (pseudonymized data, not fully anonymous). You can change your choice at any time.",
@@ -94,6 +107,9 @@ export const COOKIES_DICT = {
       salveaza: "Save choice",
       acceptaToate: "Accept all",
       refuzaToate: "Decline all",
+      textCuMarketing: "We use strictly necessary cookies for sign-in. With your consent, which you can give separately for each purpose, we also use Google Analytics (statistics about how the site is used) and Newsman (so we know whether you reached the site from one of our emails). You can change your choice at any time.",
+      marketing: "Email marketing (Newsman): shows us whether you reached the site from one of our emails and which pages you visited",
+      suplimentNewsman: "We also use Newsman, for email marketing.",
     },
     setariLabel: "Change your cookie choice",
     s1: {
@@ -105,7 +121,7 @@ export const COOKIES_DICT = {
       introBefore: "The Alexandrit platform uses",
       introBold: "strictly necessary",
       introAfter: "cookies for authentication, without separate consent, because you can't sign in without them. We do not use marketing or advertising cookies.",
-      introAfterCuPublicitate: "for sign-in, without your separate consent, because you cannot sign in without them. Analytics and advertising cookies are used only with your consent (next sections).",
+      introAfterCuPublicitate: "for sign-in, without your separate consent, because you cannot sign in without them. Analytics, marketing and advertising cookies are used only with your consent (next sections).",
       tabelHeaders: { cookie: "Cookie", scop: "Purpose", durata: "Duration" },
       randuri: [
         { nume: "sb-*-auth-token", scop: "Maintains the authentication session (Supabase Auth) — keeps you signed in between visits.", durata: "Session or persistent, depending on whether \"Stay signed in\" was checked at login" },
@@ -135,10 +151,20 @@ export const COOKIES_DICT = {
         { nume: "_fbc", scop: "Stores a click on a Meta ad so we can measure its result (appears only if you reached the site from an ad).", durata: "Up to 3 months" },
       ],
     },
+    sMarketing: {
+      titlu: "3b. Email marketing cookies (only with your consent)",
+      text: "If you tick “Email marketing (Newsman)” in the banner, we load the Newsman remarketing script (the platform we use to send emails to subscribers, our processor) only on the site's public presentation pages (not in the app, not on campaign or donation pages and not on Form 230). If you reached the site from an email we sent, Newsman recognises that subscriber and shows us which pages they visited and whether they took an action after the email, so we can measure how the emails perform and send you relevant information. We send Newsman no contact data from the site. You can withdraw consent at any time with the button below, and the cookies are deleted.",
+      tabelHeaders: { cookie: "Cookie", scop: "Purpose", durata: "Duration" },
+      randuri: [
+        { nume: "_nzm_id_*", scop: "Saved when a subscriber is recognised after reaching the site from a newsletter (or after signing in); ties visits to that subscriber.", durata: "Up to 10 years" },
+        { nume: "_nzm_idnl_*", scop: "Keeps the identifier of the newsletter you came from, so we can attribute your actions to that email (within the last 5 days).", durata: "Up to 10 years" },
+        { nume: "_nzm_*", scop: "Other technical Newsman values (for example, whether you chose not to receive subscription pop-ups).", durata: "Varies" },
+      ],
+    },
     s3: {
       titlu: "4. Local storage (not technically a cookie)",
       textBefore: "We also use",
-      textAfter: "in the browser — never sent to the server — for the theme preference (light/dark), for your analytics-cookie choice, to remember which welcome messages you closed in the app, for the state of the CRM tools (the data you enter in them, before it is saved) and, in the demo modules, for locally entered test data. On the result page of a subscription payment we keep the order number temporarily in sessionStorage, so the same payment is not reported twice. It's cleared if you clear the site's data from your browser.",
+      textAfter: "in the browser — never sent to the server — for the theme preference (light/dark), for your analytics and marketing cookie choice, to remember which welcome messages you closed in the app, for the state of the CRM tools (the data you enter in them, before it is saved) and, in the demo modules, for locally entered test data. On the result page of a subscription payment we keep the order number temporarily in sessionStorage, so the same payment is not reported twice. It's cleared if you clear the site's data from your browser.",
     },
     s4: {
       titlu: "5. Third-party cookies",
@@ -148,7 +174,7 @@ export const COOKIES_DICT = {
     },
     s5: {
       titlu: "6. Managing cookies",
-      text: "You can change your analytics-cookie choice at any time with the button below. You can also delete or block cookies from your browser settings — note that blocking the session cookie will sign you out of the platform on every visit.",
+      text: "You can change your analytics and marketing cookie choice at any time with the button below. You can also delete or block cookies from your browser settings — note that blocking the session cookie will sign you out of the platform on every visit.",
     },
   },
 } satisfies Record<Locale, unknown>;

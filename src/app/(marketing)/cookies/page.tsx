@@ -1,5 +1,6 @@
 import { CookieSettingsButton } from "@/components/analytics-consent";
 import { getLocale } from "@/lib/i18n/get-locale";
+import { newsmanConfigurat } from "@/lib/newsman";
 import { COOKIES_DICT } from "@/lib/i18n/dictionaries/cookies";
 
 import { LegalLayout, Sectiune } from "../legal-shared";
@@ -8,8 +9,9 @@ import { metadatePagina } from "@/lib/page-titles";
 export default async function CookiesPage() {
   const locale = await getLocale();
   const dict = COOKIES_DICT[locale];
-  // Secțiunea despre publicitate apare doar dacă Pixelul Meta este configurat (NEXT_PUBLIC_META_PIXEL_ID).
+  // Secțiunile despre publicitate și marketing apar doar dacă integrarea e configurată (NEXT_PUBLIC_META_PIXEL_ID; Newsman: NEXT_PUBLIC_NEWSMAN_SITE_ID, activ implicit).
   const pixel = Boolean(process.env.NEXT_PUBLIC_META_PIXEL_ID);
+  const newsman = newsmanConfigurat();
 
   return (
     <LegalLayout
@@ -26,7 +28,7 @@ export default async function CookiesPage() {
 
       <Sectiune titlu={dict.s2.titlu}>
         <p>
-          {dict.s2.introBefore} <strong>{dict.s2.introBold}</strong> {pixel ? dict.s2.introAfterCuPublicitate : dict.s2.introAfter}
+          {dict.s2.introBefore} <strong>{dict.s2.introBold}</strong> {pixel || newsman ? dict.s2.introAfterCuPublicitate : dict.s2.introAfter}
         </p>
         <div className="overflow-x-auto rounded-lg border border-line">
           <table className="w-full text-left text-[13px]">
@@ -88,6 +90,32 @@ export default async function CookiesPage() {
               </thead>
               <tbody>
                 {dict.sPublicitate.randuri.map((c) => (
+                  <tr key={c.nume} className="border-t border-line">
+                    <td className="p-2.5 font-mono text-[12px] text-brand-blue">{c.nume}</td>
+                    <td className="p-2.5 text-body">{c.scop}</td>
+                    <td className="p-2.5 text-muted-2">{c.durata}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Sectiune>
+      )}
+
+      {newsman && (
+        <Sectiune titlu={dict.sMarketing.titlu}>
+          <p>{dict.sMarketing.text}</p>
+          <div className="overflow-x-auto rounded-lg border border-line">
+            <table className="w-full text-left text-[13px]">
+              <thead className="bg-panel-2">
+                <tr>
+                  <th className="p-2.5 font-semibold text-ink">{dict.sMarketing.tabelHeaders.cookie}</th>
+                  <th className="p-2.5 font-semibold text-ink">{dict.sMarketing.tabelHeaders.scop}</th>
+                  <th className="p-2.5 font-semibold text-ink">{dict.sMarketing.tabelHeaders.durata}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dict.sMarketing.randuri.map((c) => (
                   <tr key={c.nume} className="border-t border-line">
                     <td className="p-2.5 font-mono text-[12px] text-brand-blue">{c.nume}</td>
                     <td className="p-2.5 text-body">{c.scop}</td>
