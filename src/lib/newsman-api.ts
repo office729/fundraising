@@ -20,7 +20,8 @@ export function construiesteCerereInitSubscribe(c: CredentialeNewsman, a: Abonar
   corp.set("firstname", "");
   corp.set("lastname", "");
   corp.set("ip", a.ip);
-  // Eticheta (tag) arată în Newsman de unde vine abonatul; cheile cu prefixul `tag_` din `props` devin etichete.
+  // `props` e listat ca obligatoriu în documentație, de aceea îl trimitem. Verificat pe site: la initSubscribe cheia `tag_…` NU creează o etichetă în listă (prefixul `tag_` e documentat doar la saveSubscribe);
+  // abonatul apare oricum cu sursa „web_confirm” și data confirmării.
   corp.set("props[tag_sursa-site]", "site");
   // `options` e obligatoriu (poate fi gol de conținut): nu cerem verificarea „deja abonat”, ca răspunsul să fie același pentru orice adresă.
   corp.set("options[check_already_subscribed]", "0");
