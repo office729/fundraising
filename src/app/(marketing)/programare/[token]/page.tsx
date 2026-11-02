@@ -6,7 +6,7 @@ import { AnuleazaProgramare } from "@/components/programari/rezervare";
 import { PROGRAMARE_UI_DICT } from "@/lib/i18n/dictionaries/programare-ui";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { programareDupaToken } from "@/lib/programari/server";
-import { esteAdresaWeb, esteLinkZoom } from "@/lib/zoom-link";
+import { esteAdresaWeb, esteLinkMeet, esteLinkZoom } from "@/lib/zoom-link";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata(): Promise<Metadata> {
@@ -33,7 +33,7 @@ export default async function ProgramarePersonalaPage({ params }: { params: Prom
         {p.stare === "confirmata" && !trecuta && p.locatie && esteAdresaWeb(p.locatie) && (
           <p className="mt-3">
             <a href={p.locatie.trim()} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center rounded-lg bg-brand-blue px-5 text-sm font-bold text-white hover:opacity-90">
-              {esteLinkZoom(p.locatie) ? t.personala.intraZoom : t.personala.intraLink}
+              {esteLinkZoom(p.locatie) ? t.personala.intraZoom : esteLinkMeet(p.locatie) ? t.personala.intraMeet : t.personala.intraLink}
             </a>
           </p>
         )}

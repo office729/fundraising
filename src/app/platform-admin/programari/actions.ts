@@ -1,6 +1,6 @@
 "use server";
 
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -8,6 +8,8 @@ import { getAuthUser } from "@/lib/auth/dal";
 import { isPlatformAdmin } from "@/lib/billing/trial";
 import { programariConfig, programariDisponibilitate, programariExceptii, programariTipuri } from "@/lib/db/schema";
 import { EroareUtilizator } from "@/lib/erori";
+import { deconecteazaGoogle } from "@/lib/google-meet";
+import { pastreazaConexiuneGoogle } from "@/lib/google-meet-corp";
 import { ETICHETE_STARE as ETICHETE_STARE_LEAD } from "@/lib/lead-uri";
 import { dateAdministrare, inContextPlatforma, listeazaProgramari, programeazaDeEchipa, randDupaToken, schimbaStareDeEchipa, sloturiZi, zileDisponibile, type DateAdmin, type RandProgramare } from "@/lib/programari/server";
 import { curataSetari, esteData, esteOra, oraScurta, type Interval, type Slot } from "@/lib/programari/sloturi";
@@ -36,12 +38,15 @@ export type Rezultat = { ok: true } | { ok: false; eroare: string };
 export async function salveazaSetariAction(setari: unknown): Promise<Rezultat> {
   const email = await cerePlatformAdmin();
   const curate = curataSetari(setari);
-  await inContextPlatforma((tx) =>
-    tx
+  await inContextPlatforma(async (tx) => {
+    // Conexiunea Google (criptată) trăiește în aceeași linie de configurare: o salvare a setărilor din formular nu trebuie să o șteargă.
+    const [vechi] = await tx.select({ config: programariConfig.config }).from(programariConfig).where(eq(programariConfig.id, 1)).limit(1);
+    const config = pastreazaConexiuneGoogle(curate as unknown as Record<string, unknown>, vechi?.config);
+    await tx
       .insert(programariConfig)
-      .values({ id: 1, config: curate, actualizatLa: new Date(), actualizatDe: email })
-      .onConflictDoUpdate({ target: programariConfig.id, set: { config: curate, actualizatLa: new Date(), actualizatDe: email } }),
-  );
+      .values({ id: 1, config, actualizatLa: new Date(), actualizatDe: email })
+      .onConflictDoUpdate({ target: programariConfig.id, set: { config, actualizatLa: new Date(), actualizatDe: email } });
+  });
   reimprospateaza();
   return { ok: true };
 }
@@ -207,4 +212,12 @@ export async function programeazaInscrisAction(intrare: { tipId: string; startUt
   if (!rand) return { ok: false, eroare: "Programarea s-a salvat, dar nu am putut-o reciti. Reîncarcă pagina." };
   const link = r.locatie && /^https?:\/\//i.test(r.locatie.trim()) ? r.locatie.trim() : null;
   return { ok: true, rand, linkIntalnire: link, zoom: Boolean(link && /zoom\.(us|com)\//i.test(link)), emailTrimis: r.emailTrimis === true };
+}
+
+// Deconectează contul Google (linkurile Meet nu se mai creează automat până la o nouă conectare). Programările existente își păstrează linkurile.
+export async function deconecteazaGoogleAction(): Promise<Rezultat> {
+  const email = await cerePlatformAdmin();
+  await deconecteazaGoogle(email);
+  reimprospateaza();
+  return { ok: true };
 }

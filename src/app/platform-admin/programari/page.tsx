@@ -11,8 +11,8 @@ export const dynamic = "force-dynamic";
 
 // Doar pentru contul platformei: calendarul intern de programări (înlocuiește Calendly). Programul disponibil, tipurile de întâlniri, zilele libere, textele
 // paginii și programările primite. Pagina publică: /programare.
-export default async function ProgramariPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
-  const { tab } = await searchParams;
+export default async function ProgramariPage({ searchParams }: { searchParams: Promise<{ tab?: string; google?: string }> }) {
+  const { tab, google } = await searchParams;
   const authUser = await getAuthUser();
   if (!authUser?.email) redirect("/login");
   if (!isPlatformAdmin(authUser.email)) notFound();
@@ -32,7 +32,7 @@ export default async function ProgramariPage({ searchParams }: { searchParams: P
         , pe pagina de prețuri și în panoul organizațiilor. Fiecare programare ajunge și pe email, iar persoana primește confirmare cu link de anulare.
       </p>
       <p className="mt-2 max-w-3xl text-xs text-muted">Calendarul nu vede alte calendare (Google, Outlook): marchează în „Zile libere” zilele în care nu ești disponibil din alte motive.</p>
-      <ProgramariClient randuri={randuri} date={date} tabInitial={tab} />
+      <ProgramariClient randuri={randuri} date={date} tabInitial={tab} mesajGoogle={google} />
     </main>
   );
 }

@@ -12,8 +12,9 @@ import { emailFaraLink, layoutEmail, paragraf } from "@/lib/email-layout";
 import { esteEmailTemporar } from "@/lib/email-temporar";
 import { escHtml } from "@/lib/html-escape";
 import { raporteazaEroare } from "@/lib/monitoring";
+import { creeazaIntalnireMeet, stareGoogle, stergeIntalnireMeet } from "@/lib/google-meet";
 import { creeazaIntalnireZoom, stergeIntalnireZoom, zoomConfigurat } from "@/lib/zoom";
-import { esteAdresaWeb, esteLinkZoom } from "@/lib/zoom-link";
+import { esteAdresaWeb, esteLinkMeet, esteLinkZoom } from "@/lib/zoom-link";
 
 import {
   curataSetari,
@@ -190,32 +191,46 @@ export async function salveazaRezervare(i: IntrareRezervare): Promise<RezultatRe
   }
   if (rezultat.ok && dateEmail) {
     const d = dateEmail as { setari: SetariProgramari; p: typeof programari.$inferSelect; linkAles: boolean };
-    // Link Zoom creat special pentru această întâlnire (dacă Zoom e conectat și echipa nu a ales alt link); altfel rămâne linkul ales sau cel fix al tipului. Emailurile pleacă cu linkul final.
-    const cuZoom = d.linkAles ? null : await ataseazaZoom(d.p);
-    const p = cuZoom ?? d.p;
+    // Link Google Meet sau Zoom creat special pentru această întâlnire (dacă e conectat unul dintre ele și echipa nu a ales alt link); altfel rămâne linkul ales sau cel fix al tipului. Emailurile pleacă cu linkul final.
+    const cuLink = d.linkAles ? null : await ataseazaLinkAutomat(d.p);
+    const p = cuLink ?? d.p;
     const emailTrimis = await trimiteEmailuriProgramare(p, d.setari, "noua");
     rezultat = { ...rezultat, locatie: p.locatie, emailTrimis };
   }
   return rezultat;
 }
 
-// Creează întâlnirea Zoom după ce programarea e salvată (nu în tranzacția cu blocare: apelul de rețea nu trebuie să țină slotul blocat) și îi pune linkul în „locatie”.
-// Dacă Zoom nu răspunde, programarea rămâne valabilă, cu linkul fix al tipului; eroarea se raportează.
-async function ataseazaZoom(p: typeof programari.$inferSelect): Promise<typeof programari.$inferSelect | null> {
-  if (!zoomConfigurat()) return null;
-  const z = await creeazaIntalnireZoom({ subiect: `${p.tipTitlu}: ${p.nume}${p.organizatie ? ` (${p.organizatie})` : ""}`, start: p.startLa, durataMin: p.durataMin, agenda: p.mesaj });
-  if (!z.ok) {
+// Creează linkul întâlnirii după ce programarea e salvată (nu în tranzacția cu blocare: apelul de rețea nu trebuie să țină slotul blocat) și îl pune în „locatie”.
+// Întâi Google Meet (dacă contul Google e conectat), apoi Zoom (dacă e configurat). Dacă niciunul nu răspunde, programarea rămâne valabilă, cu linkul fix al tipului; eroarea se raportează.
+async function ataseazaLinkAutomat(p: typeof programari.$inferSelect): Promise<typeof programari.$inferSelect | null> {
+  const subiect = `${p.tipTitlu}: ${p.nume}${p.organizatie ? ` (${p.organizatie})` : ""}`;
+  const salveaza = async (link: string, curata: () => Promise<unknown>, eticheta: string) => {
+    try {
+      const [u] = await inContextPlatforma((tx) => tx.update(programari).set({ locatie: link }).where(eq(programari.id, p.id)).returning());
+      return u ?? null;
+    } catch (e) {
+      raporteazaEroare(`programare-${eticheta}-salvare`, e);
+      await curata();
+      return null;
+    }
+  };
+  if ((await stareGoogle()).conectat) {
+    const m = await creeazaIntalnireMeet({ subiect, start: p.startLa, durataMin: p.durataMin, agenda: p.mesaj, tokenProgramare: p.token });
+    if (m.ok) return salveaza(m.linkIntrare, () => stergeIntalnireMeet(p.token), "meet");
+    raporteazaEroare("programare-meet", new Error(m.eroare));
+  }
+  if (zoomConfigurat()) {
+    const z = await creeazaIntalnireZoom({ subiect, start: p.startLa, durataMin: p.durataMin, agenda: p.mesaj });
+    if (z.ok) return salveaza(z.linkIntrare, () => stergeIntalnireZoom(z.linkIntrare), "zoom");
     raporteazaEroare("programare-zoom", new Error(z.eroare));
-    return null;
   }
-  try {
-    const [u] = await inContextPlatforma((tx) => tx.update(programari).set({ locatie: z.linkIntrare }).where(eq(programari.id, p.id)).returning());
-    return u ?? null;
-  } catch (e) {
-    raporteazaEroare("programare-zoom-salvare", e);
-    await stergeIntalnireZoom(z.linkIntrare);
-    return null;
-  }
+  return null;
+}
+
+// La anulare se șterge și întâlnirea creată automat (Meet: evenimentul din calendar, găsit după tokenul programării; Zoom: după id-ul din link). Un link ales de echipă nu se atinge.
+async function stergeLinkAutomat(p: typeof programari.$inferSelect): Promise<void> {
+  if (esteLinkMeet(p.locatie)) await stergeIntalnireMeet(p.token);
+  else await stergeIntalnireZoom(p.locatie);
 }
 
 // ---------- vizualizare / anulare prin token ----------
@@ -261,7 +276,7 @@ export async function anuleazaDupaToken(token: string): Promise<{ ok: boolean; e
     }
   });
   if (!anulata || !setari) return { ok: false, eroare: "Programarea nu mai poate fi anulată (era deja anulată sau s-a încheiat)." };
-  await stergeIntalnireZoom((anulata as typeof programari.$inferSelect).locatie);
+  await stergeLinkAutomat(anulata as typeof programari.$inferSelect);
   await trimiteEmailuriProgramare(anulata, setari, "anulata");
   return { ok: true };
 }
@@ -284,8 +299,8 @@ async function trimiteEmailuriProgramare(p: typeof programari.$inferSelect, seta
   const loc = !p.locatie
     ? ""
     : adresa
-      ? paragraf(`<strong>${esteLinkZoom(adresa) ? "Intri în ședință (Zoom)" : "Link întâlnire"}:</strong> <a href="${escHtml(adresa)}">${escHtml(adresa)}</a>`) +
-        (esteLinkZoom(adresa) ? paragraf("Intră cu 2–3 minute înainte. Gazda te primește din sala de așteptare Zoom.") : "")
+      ? paragraf(`<strong>${esteLinkZoom(adresa) ? "Intri în ședință (Zoom)" : esteLinkMeet(adresa) ? "Intri în ședință (Google Meet)" : "Link întâlnire"}:</strong> <a href="${escHtml(adresa)}">${escHtml(adresa)}</a>`) +
+        (esteLinkZoom(adresa) ? paragraf("Intră cu 2–3 minute înainte. Gazda te primește din sala de așteptare Zoom.") : esteLinkMeet(adresa) ? paragraf("Intră cu 2–3 minute înainte. Dacă Meet îți cere acces, gazda te primește în ședință.") : "")
       : paragraf(`<strong>Unde:</strong> ${escHtml(p.locatie)}`);
   try {
     if (tip === "noua") {
@@ -365,6 +380,7 @@ export async function listeazaProgramari(): Promise<RandProgramare[]> {
 
 export type DateAdmin = {
   zoomConfigurat: boolean;
+  google: { configurat: boolean; conectat: boolean; email: string | null };
   setari: SetariProgramari;
   tipuri: { id: string; titlu: string; descriere: string; durataMin: number; locatie: string; activ: boolean }[];
   saptamanal: Interval[];
@@ -379,6 +395,7 @@ export async function dateAdministrare(): Promise<DateAdmin> {
     const exc = await tx.select().from(programariExceptii).where(gte(programariExceptii.data, sql`(current_date - 1)`)).orderBy(asc(programariExceptii.data));
     return {
       zoomConfigurat: zoomConfigurat(),
+      google: await stareGoogle(),
       setari,
       tipuri: tipuri.map((t) => ({ id: t.id, titlu: t.titlu, descriere: t.descriere ?? "", durataMin: t.durataMin, locatie: t.locatie ?? "", activ: t.activ })),
       saptamanal,
@@ -401,7 +418,7 @@ export async function schimbaStareDeEchipa(id: string, stare: "confirmata" | "an
     setari = await citesteSetari(tx);
   });
   if (!p) return false;
-  if (stare === "anulata") await stergeIntalnireZoom((p as typeof programari.$inferSelect).locatie);
+  if (stare === "anulata") await stergeLinkAutomat(p as typeof programari.$inferSelect);
   if (stare === "anulata" && setari) await trimiteEmailuriProgramare(p, setari, "anulata-echipa");
   return true;
 }

@@ -25,6 +25,17 @@ test("id-ul întâlnirii din linkul Zoom", () => {
   assert.equal(Z.idDinLinkZoom(42), null);
 });
 
+test("linkul Google Meet: format abc-defg-hij, doar https pe meet.google.com", () => {
+  assert.equal(Z.esteLinkMeet("https://meet.google.com/abc-defg-hij"), true);
+  assert.equal(Z.esteLinkMeet("https://meet.google.com/abc-defg-hij?authuser=0"), true);
+  assert.equal(Z.esteLinkMeet("  https://meet.google.com/xyz-wxyz-abc  "), true);
+  assert.equal(Z.esteLinkMeet("http://meet.google.com/abc-defg-hij"), false);
+  assert.equal(Z.esteLinkMeet("https://meet.google.com.evil.example/abc-defg-hij"), false);
+  assert.equal(Z.esteLinkMeet("https://meet.google.com/new"), false, "pagina de creare nu e un link de ședință");
+  assert.equal(Z.esteLinkMeet("https://zoom.us/j/123456789"), false);
+  assert.equal(Z.esteLinkMeet(null), false);
+});
+
 test("locația ca adresă web: doar http(s) fără spații sau ghilimele", () => {
   assert.equal(Z.esteAdresaWeb("https://meet.google.com/abc-defg-hij"), true);
   assert.equal(Z.esteAdresaWeb("http://exemplu.ro/intalnire"), true);

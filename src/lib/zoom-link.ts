@@ -11,6 +11,9 @@ export function idDinLinkZoom(link: unknown): string | null {
   return m ? m[1]! : null;
 }
 
+// Linkul unei ședințe Google Meet: https://meet.google.com/abc-defg-hij (3-4-3 litere).
+export const esteLinkMeet = (v: unknown): v is string => typeof v === "string" && /^https:\/\/meet\.google\.com\/[a-z]{3}-[a-z]{4}-[a-z]{3}(?:[/?#]|$)/i.test(v.trim());
+
 // O locație care e adresă web (Zoom, Meet, Teams…) se arată ca link; orice altceva rămâne text.
 export const esteAdresaWeb = (v: unknown): v is string => typeof v === "string" && /^https?:\/\/[^\s<>"']+$/i.test(v.trim());
 

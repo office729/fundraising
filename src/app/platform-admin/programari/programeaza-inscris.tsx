@@ -6,7 +6,7 @@ import { normalizeazaCautare } from "@/lib/lead-uri";
 import type { DateAdmin, RandProgramare } from "@/lib/programari/server";
 import type { Slot } from "@/lib/programari/sloturi";
 
-import { incarcaInscrisiAction, oreLibereAction, programeazaInscrisAction, zileLibereAction, type InscrisPentruProgramare } from "./actions";
+import { deconecteazaGoogleAction, incarcaInscrisiAction, oreLibereAction, programeazaInscrisAction, zileLibereAction, type InscrisPentruProgramare } from "./actions";
 
 const camp = "h-9 w-full rounded-lg border border-line bg-panel px-2.5 text-sm text-ink";
 const eticheta = "block text-xs font-medium text-muted";
@@ -18,7 +18,7 @@ type Persoana = { nume: string; email: string; telefon: string; organizatie: str
 
 // Echipa platformei programează un înscris: alege persoana (organizație cu cont sau lead), ziua și ora din calendarul intern, iar persoana primește pe email
 // confirmarea cu linkul Zoom al întâlnirii. Nimeni altcineva nu poate programa în numele altora: acțiunile cer contul platformei.
-export function ProgrameazaInscris({ date, randuri, laNoua }: { date: DateAdmin; randuri: RandProgramare[]; laNoua: (r: RandProgramare) => void }) {
+export function ProgrameazaInscris({ date, randuri, laNoua, mesajGoogle }: { date: DateAdmin; randuri: RandProgramare[]; laNoua: (r: RandProgramare) => void; mesajGoogle?: string }) {
   const [inscrisi, setInscrisi] = useState<InscrisPentruProgramare[] | null>(null);
   const [eroareIncarcare, setEroareIncarcare] = useState("");
   const [sursa, setSursa] = useState<"organizatie" | "lead">("organizatie");
@@ -50,17 +50,7 @@ export function ProgrameazaInscris({ date, randuri, laNoua }: { date: DateAdmin;
 
   return (
     <div>
-      <div className={`rounded-xl border p-3.5 text-sm ${date.zoomConfigurat ? "border-brand-green bg-brand-green-soft text-ink" : "border-amber-300 bg-amber-50 text-amber-950"}`}>
-        {date.zoomConfigurat ? (
-          <p>
-            <strong>Zoom e conectat.</strong> Pentru fiecare programare se creează automat o întâlnire Zoom, cu sală de așteptare, iar linkul ajunge pe email la persoană. Dacă o programare se anulează, se șterge și întâlnirea Zoom.
-          </p>
-        ) : (
-          <p>
-            <strong>Zoom nu e conectat încă.</strong> Lipești linkul întâlnirii (Zoom, Meet…) chiar la programare, în câmpul „Link întâlnire”, sau îl pui o dată pentru toate în „Tipuri de întâlniri”. Zoom automat se poate conecta oricând: <code>documentation/zoom.md</code>.
-          </p>
-        )}
-      </div>
+      <BannerLinkuri date={date} mesajGoogle={mesajGoogle} />
 
       {!ales ? (
         <div className="mt-5">
@@ -196,7 +186,7 @@ function Formular({ ales, date, deja, laInapoi, laNoua }: { ales: InscrisPentruP
         )}
         {gata.link ? (
           <p className="mt-2 text-sm text-ink">
-            {gata.zoom ? "Link Zoom (creat pentru această întâlnire)" : "Linkul întâlnirii"}:{" "}
+            {gata.zoom ? "Link Zoom (creat pentru această întâlnire)" : /meet\.google\.com\//i.test(gata.link) ? "Link Google Meet" : "Linkul întâlnirii"}:{" "}
             <a href={gata.link} target="_blank" rel="noopener noreferrer" className="font-semibold break-all text-brand-blue underline">
               {gata.link}
             </a>
@@ -261,14 +251,22 @@ function Formular({ ales, date, deja, laInapoi, laNoua }: { ales: InscrisPentruP
 
         <label className={`${eticheta} max-w-xl`}>
           Link întâlnire (Zoom, Meet…): ajunge în emailul de confirmare
-          <input type="url" inputMode="url" value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://us02web.zoom.us/j/…" aria-invalid={!!erori.locatie} className={`${camp} mt-1`} />
+          <input type="url" inputMode="url" value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://meet.google.com/abc-defg-hij" aria-invalid={!!erori.locatie} className={`${camp} mt-1`} />
           {erori.locatie && <span className="text-red-700">{erori.locatie}</span>}
+          <span className="mt-1.5 flex flex-wrap items-center gap-2 font-normal">
+            <a href="https://meet.google.com/new" target="_blank" rel="noopener noreferrer" className="inline-flex h-8 items-center rounded-lg border border-line bg-panel px-3 text-xs font-semibold text-brand-blue hover:bg-panel-2">
+              Creează un link Google Meet ↗
+            </a>
+            <span>Se deschide Meet într-o filă nouă: copiază linkul (începe cu meet.google.com) și lipește-l aici.</span>
+          </span>
           <span className="mt-1 block font-normal">
             {link.trim()
               ? "Se folosește linkul de mai sus pentru această programare."
-              : date.zoomConfigurat
-                ? "Gol: se creează automat un link Zoom pentru această programare."
-                : "Gol: persoana primește confirmarea fără link. Lipește un link sau completează-l în „Tipuri de întâlniri”."}
+              : date.google.conectat
+                ? "Gol: se creează automat un link Google Meet unic pentru această programare."
+                : date.zoomConfigurat
+                  ? "Gol: se creează automat un link Zoom pentru această programare."
+                  : "Gol: persoana primește confirmarea fără link. Lipește un link sau conectează Google Meet pentru linkuri automate."}
           </span>
         </label>
 
@@ -318,6 +316,81 @@ function Formular({ ales, date, deja, laInapoi, laNoua }: { ales: InscrisPentruP
           <p role="alert" className="text-sm text-red-700">
             {mesaj.text}
           </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const NOTE_GOOGLE: Record<string, { ok: boolean; text: string }> = {
+  ok: { ok: true, text: "Google Meet a fost conectat. De acum, fiecare programare primește automat un link Meet." },
+  refuzat: { ok: false, text: "Nu ai acceptat permisiunile Google. Reia conectarea și acceptă accesul la Calendar." },
+  eroare: { ok: false, text: "Conectarea Google nu a reușit. Încearcă din nou; dacă se repetă, verifică adresa de redirectare din Google Cloud (documentation/google-meet.md)." },
+  neconfigurat: { ok: false, text: "Google nu e configurat încă în Vercel (GOOGLE_CLIENT_ID și GOOGLE_CLIENT_SECRET). Vezi documentation/google-meet.md." },
+};
+
+// Cum se obține linkul întâlnirii: Google Meet automat (contul Google conectat o dată), Zoom automat sau link lipit/fix.
+function BannerLinkuri({ date, mesajGoogle }: { date: DateAdmin; mesajGoogle?: string }) {
+  const g = date.google;
+  const [deconectat, setDeconectat] = useState(false);
+  const [pending, start] = useTransition();
+  const nota = mesajGoogle ? NOTE_GOOGLE[mesajGoogle] : undefined;
+  const conectat = g.conectat && !deconectat;
+  const buton = "inline-flex h-8 items-center rounded-lg border border-line bg-panel px-3 text-xs font-semibold text-brand-blue hover:bg-panel-2 disabled:opacity-50";
+  return (
+    <div className="space-y-2">
+      {nota && (
+        <p role={nota.ok ? "status" : "alert"} className={`rounded-lg p-2.5 text-sm font-semibold ${nota.ok ? "bg-brand-green-soft text-brand-green" : "bg-red-50 text-red-800"}`}>
+          {nota.text}
+        </p>
+      )}
+      <div className={`rounded-xl border p-3.5 text-sm ${conectat || date.zoomConfigurat ? "border-brand-green bg-brand-green-soft text-ink" : "border-amber-300 bg-amber-50 text-amber-950"}`}>
+        {conectat ? (
+          <>
+            <p>
+              <strong>Google Meet e conectat{g.email ? ` (${g.email})` : ""}.</strong> Pentru fiecare programare se creează automat un link Meet unic, într-un eveniment privat din calendarul tău Google. Dacă programarea se anulează, evenimentul se șterge. Persoana primește linkul pe email de la Alexandrit.
+            </p>
+            <p className="mt-1 text-xs">La prima intrare, Meet poate cere gazdei să primească persoana în ședință: fii online la ora întâlnirii.</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- route handler care redirecționează la Google: <Link> l-ar prefetcha */}
+              <a href="/api/google/conectare" className={buton}>
+                Reconectează
+              </a>
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => {
+                  if (window.confirm("Deconectezi contul Google? Programările noi nu vor mai primi link Meet automat. Cele existente își păstrează linkurile.")) start(async () => { await deconecteazaGoogleAction(); setDeconectat(true); });
+                }}
+                className={buton}
+              >
+                Deconectează
+              </button>
+            </div>
+          </>
+        ) : date.zoomConfigurat ? (
+          <p>
+            <strong>Zoom e conectat.</strong> Pentru fiecare programare se creează automat o întâlnire Zoom, cu sală de așteptare, iar linkul ajunge pe email la persoană. Dacă o programare se anulează, se șterge și întâlnirea Zoom.
+          </p>
+        ) : (
+          <>
+            <p>
+              <strong>Linkuri automate: neactivate.</strong> Acum lipești linkul întâlnirii (Zoom, Meet…) în câmpul „Link întâlnire” de mai jos, sau îl pui o dată pentru toate în „Tipuri de întâlniri”.
+            </p>
+            {g.configurat ? (
+              <div className="mt-2">
+                <p className="text-xs">Ca fiecare programare să primească singură un link Google Meet unic, conectează contul tău Google o singură dată.</p>
+                {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- route handler care redirecționează la Google: <Link> l-ar prefetcha */}
+                <a href="/api/google/conectare" className={`${buton} mt-2`}>
+                  Conectează Google Meet
+                </a>
+              </div>
+            ) : (
+              <p className="mt-1 text-xs">
+                Ca fiecare programare să primească singură un link Google Meet unic: fișierul <code>documentation/google-meet.md</code> (o configurare unică în Google Cloud, apoi 2 variabile în Vercel: <code>GOOGLE_CLIENT_ID</code> și <code>GOOGLE_CLIENT_SECRET</code>). După aceea apare aici butonul „Conectează Google Meet”.
+              </p>
+            )}
+          </>
         )}
       </div>
     </div>

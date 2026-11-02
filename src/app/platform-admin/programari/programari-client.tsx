@@ -29,7 +29,7 @@ const TABURI: { cheie: Tab; eticheta: string }[] = [
   { cheie: "setari", eticheta: "Setări și texte" },
 ];
 
-export function ProgramariClient({ randuri: initiale, date, tabInitial }: { randuri: RandProgramare[]; date: DateAdmin; tabInitial?: string }) {
+export function ProgramariClient({ randuri: initiale, date, tabInitial, mesajGoogle }: { randuri: RandProgramare[]; date: DateAdmin; tabInitial?: string; mesajGoogle?: string }) {
   // Se poate deschide direct pe o filă (de exemplu ?tab=programeaza, din meniul dashboardului); o valoare necunoscută duce la „Programări”.
   const [tab, setTab] = useState<Tab>(TABURI.some((t) => t.cheie === tabInitial) ? (tabInitial as Tab) : "programari");
   // Lista e în părinte: o programare nouă (din „Programează un înscris”) apare imediat în „Programări”, fără reîncărcarea paginii.
@@ -45,7 +45,7 @@ export function ProgramariClient({ randuri: initiale, date, tabInitial }: { rand
       </nav>
       <div className="mt-5">
         {tab === "programari" && <Lista randuri={randuri} setRanduri={setRanduri} />}
-        {tab === "programeaza" && <ProgrameazaInscris date={date} randuri={randuri} laNoua={(r) => setRanduri((l) => [r, ...l])} />}
+        {tab === "programeaza" && <ProgrameazaInscris date={date} randuri={randuri} laNoua={(r) => setRanduri((l) => [r, ...l])} mesajGoogle={mesajGoogle} />}
         {tab === "program" && <Program initial={date.saptamanal} />}
         {tab === "exceptii" && <Exceptii initial={date.exceptii} />}
         {tab === "tipuri" && <Tipuri initial={date.tipuri} />}
@@ -124,7 +124,7 @@ function Lista({ randuri, setRanduri }: { randuri: RandProgramare[]; setRanduri:
                     <>
                       {" · "}
                       <a href={r.locatie.trim()} target="_blank" rel="noopener noreferrer" className="font-medium text-brand-blue underline">
-                        {/zoom\.(us|com)\//i.test(r.locatie) ? "Link Zoom" : "Link întâlnire"}
+                        {/zoom\.(us|com)\//i.test(r.locatie) ? "Link Zoom" : /meet\.google\.com\//i.test(r.locatie) ? "Link Google Meet" : "Link întâlnire"}
                       </a>
                     </>
                   ) : (
