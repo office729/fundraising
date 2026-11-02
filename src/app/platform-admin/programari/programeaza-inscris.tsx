@@ -57,7 +57,7 @@ export function ProgrameazaInscris({ date, randuri, laNoua }: { date: DateAdmin;
           </p>
         ) : (
           <p>
-            <strong>Zoom nu e conectat încă.</strong> Până îl conectezi, confirmarea conține linkul fix din „Tipuri de întâlniri” (câmpul „Locul sau linkul întâlnirii”). Pași de conectare: fișierul <code>documentation/zoom.md</code> (3 variabile în Vercel: <code>ZOOM_ACCOUNT_ID</code>, <code>ZOOM_CLIENT_ID</code>, <code>ZOOM_CLIENT_SECRET</code>).
+            <strong>Zoom nu e conectat încă.</strong> Lipești linkul întâlnirii (Zoom, Meet…) chiar la programare, în câmpul „Link întâlnire”, sau îl pui o dată pentru toate în „Tipuri de întâlniri”. Zoom automat se poate conecta oricând: <code>documentation/zoom.md</code>.
           </p>
         )}
       </div>
@@ -120,13 +120,15 @@ function Formular({ ales, date, deja, laInapoi, laNoua }: { ales: InscrisPentruP
   const tipuri = date.tipuri.filter((t) => t.activ);
   const [persoana, setPersoana] = useState<Persoana>({ nume: ales.nume, email: ales.email, telefon: ales.telefon, organizatie: ales.organizatie, mesaj: "" });
   const [tipId, setTipId] = useState(tipuri[0]?.id ?? "");
+  // Linkul întâlnirii pentru această programare: pornește de la linkul fix al tipului (dacă are) și îl poți schimba sau lipi altul.
+  const [link, setLink] = useState(tipuri[0]?.locatie ?? "");
   const [zile, setZile] = useState<string[] | null>(null);
   const [zi, setZi] = useState("");
   const [ore, setOre] = useState<Slot[] | null>(null);
   const [ora, setOra] = useState("");
   const [erori, setErori] = useState<Record<string, string>>({});
   const [mesaj, setMesaj] = useState<{ ok: boolean; text: string } | null>(null);
-  const [gata, setGata] = useState<{ rand: RandProgramare; link: string | null; zoom: boolean } | null>(null);
+  const [gata, setGata] = useState<{ rand: RandProgramare; link: string | null; zoom: boolean; emailTrimis: boolean } | null>(null);
   const [incarca, startIncarca] = useTransition();
   const [pending, start] = useTransition();
 
@@ -148,6 +150,7 @@ function Formular({ ales, date, deja, laInapoi, laNoua }: { ales: InscrisPentruP
 
   const alegeTip = (id: string) => {
     setTipId(id);
+    setLink(tipuri.find((t) => t.id === id)?.locatie ?? "");
     setZile(null);
     setZi("");
     setOre(null);
@@ -164,10 +167,10 @@ function Formular({ ales, date, deja, laInapoi, laNoua }: { ales: InscrisPentruP
     start(async () => {
       setMesaj(null);
       setErori({});
-      const r = await programeazaInscrisAction({ tipId, startUtc: ora, origine: ales.origine, orgId: ales.orgId, persoana }).catch(() => ({ ok: false as const, eroare: "Nu am putut programa. Încearcă din nou." }));
+      const r = await programeazaInscrisAction({ tipId, startUtc: ora, origine: ales.origine, orgId: ales.orgId, persoana, linkIntalnire: link }).catch(() => ({ ok: false as const, eroare: "Nu am putut programa. Încearcă din nou." }));
       if (r.ok) {
         laNoua(r.rand);
-        setGata({ rand: r.rand, link: r.linkIntalnire, zoom: r.zoom });
+        setGata({ rand: r.rand, link: r.linkIntalnire, zoom: r.zoom, emailTrimis: r.emailTrimis });
       } else {
         setMesaj({ ok: false, text: r.eroare });
         if ("campuri" in r && r.campuri) setErori(r.campuri);
@@ -181,10 +184,16 @@ function Formular({ ales, date, deja, laInapoi, laNoua }: { ales: InscrisPentruP
         <p className="mt-1 text-sm text-ink first-letter:uppercase">
           {dataOra(gata.rand.startLa)} (ora României) · {gata.rand.tipTitlu}
         </p>
-        <p className="mt-2 text-sm text-ink">
-          Confirmarea a plecat pe email la <strong>{gata.rand.email}</strong>
-          {gata.link ? ", cu linkul întâlnirii." : "."}
-        </p>
+        {gata.emailTrimis ? (
+          <p className="mt-2 text-sm text-ink">
+            Confirmarea a plecat pe email la <strong>{gata.rand.email}</strong>
+            {gata.link ? ", cu linkul întâlnirii." : "."}
+          </p>
+        ) : (
+          <p role="alert" className="mt-2 rounded-lg bg-amber-100 p-2.5 text-sm font-semibold text-amber-950">
+            Programarea e salvată, dar emailul către {gata.rand.email} NU a plecat (trimiterea de emailuri nu e configurată sau a dat eroare). Trimite-i tu linkul și ora.
+          </p>
+        )}
         {gata.link ? (
           <p className="mt-2 text-sm text-ink">
             {gata.zoom ? "Link Zoom (creat pentru această întâlnire)" : "Linkul întâlnirii"}:{" "}
@@ -249,6 +258,19 @@ function Formular({ ales, date, deja, laInapoi, laNoua }: { ales: InscrisPentruP
           </select>
         </label>
         {tipuri.length === 0 && <p className="text-sm text-red-700">Nu ai niciun tip de întâlnire activ. Adaugă unul în tabul „Tipuri de întâlniri”.</p>}
+
+        <label className={`${eticheta} max-w-xl`}>
+          Link întâlnire (Zoom, Meet…): ajunge în emailul de confirmare
+          <input type="url" inputMode="url" value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://us02web.zoom.us/j/…" aria-invalid={!!erori.locatie} className={`${camp} mt-1`} />
+          {erori.locatie && <span className="text-red-700">{erori.locatie}</span>}
+          <span className="mt-1 block font-normal">
+            {link.trim()
+              ? "Se folosește linkul de mai sus pentru această programare."
+              : date.zoomConfigurat
+                ? "Gol: se creează automat un link Zoom pentru această programare."
+                : "Gol: persoana primește confirmarea fără link. Lipește un link sau completează-l în „Tipuri de întâlniri”."}
+          </span>
+        </label>
 
         <div>
           <p className={eticheta}>Ziua (doar zilele cu ore libere, luna aceasta și următoarea)</p>

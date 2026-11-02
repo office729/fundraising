@@ -188,9 +188,9 @@ export async function oreLibereAction(tipId: string, data: string): Promise<Slot
 }
 
 export type PersoanaProgramata = { nume: string; email: string; telefon: string; organizatie: string; mesaj: string };
-export type RezultatProgramare = { ok: true; rand: RandProgramare; linkIntalnire: string | null; zoom: boolean } | { ok: false; eroare: string; campuri?: Record<string, string> };
+export type RezultatProgramare = { ok: true; rand: RandProgramare; linkIntalnire: string | null; zoom: boolean; emailTrimis: boolean } | { ok: false; eroare: string; campuri?: Record<string, string> };
 
-export async function programeazaInscrisAction(intrare: { tipId: string; startUtc: string; origine: "organizatie" | "lead"; orgId: string | null; persoana: PersoanaProgramata }): Promise<RezultatProgramare> {
+export async function programeazaInscrisAction(intrare: { tipId: string; startUtc: string; origine: "organizatie" | "lead"; orgId: string | null; persoana: PersoanaProgramata; linkIntalnire?: string }): Promise<RezultatProgramare> {
   await cerePlatformAdmin();
   const p = intrare?.persoana;
   const persoana = {
@@ -200,11 +200,11 @@ export async function programeazaInscrisAction(intrare: { tipId: string; startUt
     organizatie: String(p?.organizatie ?? "").trim(),
     mesaj: String(p?.mesaj ?? "").trim(),
   };
-  const r = await programeazaDeEchipa({ tipId: String(intrare?.tipId ?? ""), startUtc: String(intrare?.startUtc ?? ""), persoana, orgId: intrare?.orgId ?? null, origine: intrare?.origine === "organizatie" ? "organizatie" : "lead" });
+  const r = await programeazaDeEchipa({ tipId: String(intrare?.tipId ?? ""), startUtc: String(intrare?.startUtc ?? ""), persoana, orgId: intrare?.orgId ?? null, origine: intrare?.origine === "organizatie" ? "organizatie" : "lead", locatie: String(intrare?.linkIntalnire ?? "").trim() || null });
   reimprospateaza();
   if (!r.ok) return { ok: false, eroare: r.eroare, campuri: r.campuri };
   const rand = await randDupaToken(r.token);
   if (!rand) return { ok: false, eroare: "Programarea s-a salvat, dar nu am putut-o reciti. Reîncarcă pagina." };
   const link = r.locatie && /^https?:\/\//i.test(r.locatie.trim()) ? r.locatie.trim() : null;
-  return { ok: true, rand, linkIntalnire: link, zoom: Boolean(link && /zoom\.(us|com)\//i.test(link)) };
+  return { ok: true, rand, linkIntalnire: link, zoom: Boolean(link && /zoom\.(us|com)\//i.test(link)), emailTrimis: r.emailTrimis === true };
 }
