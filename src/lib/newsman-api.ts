@@ -22,6 +22,8 @@ export function construiesteCerereInitSubscribe(c: CredentialeNewsman, a: Abonar
   corp.set("ip", a.ip);
   // Eticheta (tag) arată în Newsman de unde vine abonatul; cheile cu prefixul `tag_` din `props` devin etichete.
   corp.set("props[tag_sursa-site]", "site");
+  // `options` e obligatoriu (poate fi gol de conținut): nu cerem verificarea „deja abonat”, ca răspunsul să fie același pentru orice adresă.
+  corp.set("options[check_already_subscribed]", "0");
   return { url: `${NEWSMAN_API_BAZA}/${encodeURIComponent(c.userId)}/${encodeURIComponent(c.apiKey)}/subscriber.initSubscribe.json`, corp: corp.toString() };
 }
 
@@ -29,7 +31,7 @@ export type RezultatAbonare = "confirmare_trimisa" | "deja_abonat" | "prea_des" 
 
 // Codurile de eroare ale API-ului pentru initSubscribe (vezi documentația): 130 = deja abonat, 128 = o singură cerere pe adresă la 10 minute, 123 = adresă invalidă,
 // 122 = IP invalid (de exemplu 127.0.0.1). Orice altceva (listă ștearsă, acces refuzat, eroare internă, răspuns neînțeles) e „eroare”.
-export function interpreteazaRaspunsInit(status: number, text: string): { rezultat: RezultatAbonare; cod?: number } {
+export function interpreteazaRaspunsInit(status: number, text: string): { rezultat: RezultatAbonare; cod?: number; mesaj?: string } {
   let json: unknown = null;
   try {
     json = JSON.parse(text);
@@ -39,7 +41,9 @@ export function interpreteazaRaspunsInit(status: number, text: string): { rezult
   if (json && typeof json === "object" && !Array.isArray(json) && (json as { err?: unknown }).err) {
     const cod = Number((json as { code?: unknown }).code);
     const rezultat: RezultatAbonare = cod === 130 ? "deja_abonat" : cod === 128 ? "prea_des" : cod === 123 ? "email_invalid" : cod === 122 ? "ip_invalid" : "eroare";
-    return { rezultat, cod: Number.isFinite(cod) ? cod : undefined };
+    // Mesajul se păstrează doar pentru codurile ale căror texte nu conțin date ale abonatului (altele, ca „adresă invalidă” sau „dezabonat”, includ adresa de email), ca să poată intra în jurnal.
+    const mesajSigur = [407, 101, 108, 144, 10001].includes(cod) && typeof (json as { message?: unknown }).message === "string" ? (json as { message: string }).message.slice(0, 120) : undefined;
+    return { rezultat, cod: Number.isFinite(cod) ? cod : undefined, ...(mesajSigur ? { mesaj: mesajSigur } : {}) };
   }
   // Succes: ID-ul acțiunii, un număr (cu sau fără ghilimele).
   const id = typeof json === "number" || typeof json === "string" ? String(json) : text.trim().replace(/^"|"$/g, "");

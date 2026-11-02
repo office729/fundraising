@@ -21,9 +21,9 @@ export async function aboneazaNewsman(email: string, ip: string): Promise<Rezult
   try {
     const r = await fetch(url, { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: corp, signal: AbortSignal.timeout(10_000), cache: "no-store" });
     const text = await r.text();
-    const { rezultat, cod } = interpreteazaRaspunsInit(r.status, text);
+    const { rezultat, cod, mesaj } = interpreteazaRaspunsInit(r.status, text);
     // Jurnal fără adresa cererii (conține cheia) și fără emailul vizitatorului: doar starea și codul Newsman.
-    if (rezultat === "eroare" || rezultat === "ip_invalid") console.error(`[newsman] abonare eșuată: ${rezultat}, status HTTP ${r.status}${cod !== undefined ? `, cod ${cod}` : ""}`);
+    if (rezultat === "eroare" || rezultat === "ip_invalid") console.error(`[newsman] abonare eșuată: ${rezultat}, status HTTP ${r.status}${cod !== undefined ? `, cod ${cod}` : ""}${mesaj ? `, mesaj „${mesaj}”` : ""}`);
     return rezultat;
   } catch (e) {
     console.error(`[newsman] abonare eșuată: ${e instanceof Error ? e.name : "eroare necunoscută"}`);

@@ -15,6 +15,7 @@ test("cererea de abonare cu confirmare: adresa API 1.2 cu cheia codificată, to�
   assert.equal(p.get("firstname"), "");
   assert.equal(p.get("lastname"), "");
   assert.ok(p.has("props[tag_sursa-site]"));
+  assert.equal(p.get("options[check_already_subscribed]"), "0");
 });
 
 test("se folosește doar initSubscribe (confirmare), niciodată saveSubscribe (abonare directă)", () => {
@@ -42,4 +43,11 @@ test("răspunsuri neașteptate nu sunt considerate succes", () => {
   assert.equal(interpreteazaRaspunsInit(200, "[]").rezultat, "eroare");
   assert.equal(interpreteazaRaspunsInit(200, "null").rezultat, "eroare");
   assert.equal(interpreteazaRaspunsInit(200, JSON.stringify({ err: true })).rezultat, "eroare", "eroare fără cod");
+});
+
+test("mesajul erorii intră în jurnal doar pentru codurile fără date ale abonatului", () => {
+  const r = (code, message) => interpreteazaRaspunsInit(400, JSON.stringify({ err: true, message, code }));
+  assert.equal(r(407, "Missing required param options").mesaj, "Missing required param options");
+  assert.equal(r(126, "Optout email received a@b.ro").mesaj, undefined, "conține adresa de email");
+  assert.equal(r(123, "Invalid email address a@b").mesaj, undefined);
 });
