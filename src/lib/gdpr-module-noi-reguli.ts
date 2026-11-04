@@ -5,6 +5,10 @@
 // apoi se anonimizează (rândul rămâne, pentru statistici). Analizele ONG și căutările profunde AI nu sunt afectate de această regulă.
 export const LUNI_RETENTIE_EMAILURI = 24;
 
+// Retenție pentru influencerii „Nu mai contactăm”: după 12 luni de la marcare, fișa se reduce la amprentele de excludere (aceeași logică ca la ștergerea la cerere).
+// Refuzul rămâne respectat prin amprente; datele de contact și istoricul nu mai au un scop de păstrat.
+export const LUNI_RETENTIE_INFLUENCERI_BLOCATI = 12;
+
 // Valori puse în locul datelor personale. „[șters]” = la cererea persoanei, „[expirat]” = la expirarea retenției.
 export const VALOARE_STEARSA = "[șters]";
 export const VALOARE_EXPIRATA = "[expirat]";

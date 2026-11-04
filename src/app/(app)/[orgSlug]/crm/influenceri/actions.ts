@@ -8,6 +8,7 @@ import { citesteConfigAi, inregistreazaConsum, mesajFaraCheieAi } from "@/lib/ai
 import { inregistreazaAudit } from "@/lib/audit";
 import { verificaLimitaRata } from "@/lib/auth/rate-limit";
 import { withOrgAdmin, withOrgFaze, withOrgSession, type OrgContext } from "@/lib/auth/guard";
+import { curataPii } from "@/lib/curata-pii";
 import { EroareUtilizator, mesajSigur } from "@/lib/erori";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { getTr } from "@/lib/i18n/tr-server";
@@ -18,7 +19,6 @@ import {
   curataSetari,
   esteCanal,
   esteUuid,
-  text,
   type Canal,
   type FiltreLista,
   type SetariUrmarire,
@@ -188,7 +188,7 @@ export const mesajeAction = withOrgFaze<[string, string, string, string, boolean
       if (!caz) throw new EroareUtilizator(t("Campania nu poate fi distribuită public (trebuie să fie activă și cu pagină publică).", "The campaign cannot be shared publicly (it must be active and have a public page)."));
       if (!(await verificaLimitaRata("influenceri-mesaje", ctx.userId, 80, 60))) throw new EroareUtilizator(t("Prea multe mesaje pregătite într-o oră. Încearcă puțin mai târziu.", "Too many messages prepared in an hour. Please try a little later."));
       const setari = await citesteSetari(ctx.db, ctx.orgId);
-      const link = await linkPentru(ctx.db, ctx.orgId, ctx.userId, siteUrl(), id, caz, canal, inf.numePublic);
+      const link = await linkPentru(ctx.db, ctx.orgId, ctx.userId, siteUrl(), id, caz, canal);
       const coordonare = await citesteCoordonare(ctx.db, ctx.orgId, id, ctx.userId, setari.blocareColegZile);
       const date: DateMesaj = {
         influencer: { nume: inf.numePublic, categorie: CATEGORII.find((c) => c.k === inf.categorie)?.ro ?? inf.categorie, domeniu: inf.domeniu, oras: inf.oras, tara: inf.tara },
@@ -196,7 +196,8 @@ export const mesajeAction = withOrgFaze<[string, string, string, string, boolean
         link: link.url,
         expeditor: ctx.userName ?? ctx.userEmail.split("@")[0] ?? "",
         organizatie: ctx.orgName,
-        indicatii: text(indicatii, 400),
+        // textul liber pleacă la Anthropic: emailurile, telefoanele și conturile se elimină pe server
+        indicatii: curataPii(indicatii, 400) || null,
       };
       let ai: PregatitMesaje["ai"] = null;
       let avertisment: string | null = null;

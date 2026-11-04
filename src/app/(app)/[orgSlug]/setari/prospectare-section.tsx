@@ -382,7 +382,7 @@ export function ProspectareSection({ orgSlug, stare, limitaZilnica }: { orgSlug:
                 <li key={x.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
                   <span className="min-w-0 break-all text-ink">
                     <span className="mr-2 rounded bg-panel-2 px-1.5 py-0.5 text-xs text-muted">{d.tipExcludere[x.tip] ?? x.tip}</span>
-                    {x.valoare}
+                    {x.valoare ?? d.valoareProtejata}
                     <span className="ml-2 text-muted">
                       {x.motiv ? `${x.motiv} · ` : ""}
                       {fmt(x.la)}

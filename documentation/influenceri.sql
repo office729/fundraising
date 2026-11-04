@@ -151,12 +151,20 @@ create policy influenceri_excluderi_tenant_isolation on influenceri_excluderi
   using (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
   with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid);
 
--- Ruta publică /r/<cod> (fără sesiune): găsește linkul după cod și numără clicul, în contextul de încredere app.public_lookup.
--- Linkul nu conține date despre persoană (doar codul, organizația, campania și platforma); interogările din rută au predicat explicit pe cod / link_id.
+-- Ruta publică /r/<cod> (fără sesiune): vede linkul cu codul cerut (app.link_slug) și numără clicul DOAR pe el. Politicile restrânse sunt explicate în influenceri-rls-v2.sql
+-- (varianta inițială, cu app.public_lookup fără restricție de rând, lăsa orice cod public să citească linkurile tuturor organizațiilor).
 drop policy if exists influenceri_linkuri_public_lookup on influenceri_linkuri;
 create policy influenceri_linkuri_public_lookup on influenceri_linkuri for select
-  using (nullif(current_setting('app.public_lookup', true), '') = 'true');
+  using (slug = nullif(current_setting('app.link_slug', true), ''));
+
 drop policy if exists influenceri_clicuri_public_lookup on influenceri_clicuri;
-create policy influenceri_clicuri_public_lookup on influenceri_clicuri for all
-  using (nullif(current_setting('app.public_lookup', true), '') = 'true')
-  with check (nullif(current_setting('app.public_lookup', true), '') = 'true');
+drop policy if exists influenceri_clicuri_public_select on influenceri_clicuri;
+drop policy if exists influenceri_clicuri_public_insert on influenceri_clicuri;
+drop policy if exists influenceri_clicuri_public_update on influenceri_clicuri;
+create policy influenceri_clicuri_public_select on influenceri_clicuri for select
+  using (exists (select 1 from influenceri_linkuri l where l.id = influenceri_clicuri.link_id and l.org_id = influenceri_clicuri.org_id and l.slug = nullif(current_setting('app.link_slug', true), '')));
+create policy influenceri_clicuri_public_insert on influenceri_clicuri for insert
+  with check (exists (select 1 from influenceri_linkuri l where l.id = influenceri_clicuri.link_id and l.org_id = influenceri_clicuri.org_id and l.slug = nullif(current_setting('app.link_slug', true), '')));
+create policy influenceri_clicuri_public_update on influenceri_clicuri for update
+  using (exists (select 1 from influenceri_linkuri l where l.id = influenceri_clicuri.link_id and l.org_id = influenceri_clicuri.org_id and l.slug = nullif(current_setting('app.link_slug', true), '')))
+  with check (exists (select 1 from influenceri_linkuri l where l.id = influenceri_clicuri.link_id and l.org_id = influenceri_clicuri.org_id and l.slug = nullif(current_setting('app.link_slug', true), '')));

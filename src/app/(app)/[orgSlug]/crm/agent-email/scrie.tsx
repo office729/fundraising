@@ -238,6 +238,7 @@ export function ScrieTab({ orgSlug, date, anunta, deschide }: { orgSlug: string;
         <div>
           <Label>{d.indicatii}</Label>
           <Textarea value={instructiuni} onChange={(e) => setInstructiuni(e.target.value.slice(0, 400))} rows={2} placeholder={d.indicatiiExemplu} />
+          <p className="mt-1 text-[11.5px] text-[var(--ci-text-muted)]">{d.notaAi}</p>
         </div>
       </div>
 

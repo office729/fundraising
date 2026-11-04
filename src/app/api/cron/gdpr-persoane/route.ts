@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { cronAutorizat } from "@/lib/cron-auth";
 import { db } from "@/lib/db";
 import { organizations } from "@/lib/db/schema";
-import { anonimizeazaEmailuriExpirate } from "@/lib/gdpr-module-noi";
+import { anonimizeazaEmailuriExpirate, expiraInfluenceriBlocati } from "@/lib/gdpr-module-noi";
 import { raporteazaEroare } from "@/lib/monitoring";
 
 // Rulat zilnic (vercel.json) — retenție GDPR pentru persoanele găsite dar încă neaprobate: cele din lista „De aprobat” a unei
@@ -14,6 +14,7 @@ import { raporteazaEroare } from "@/lib/monitoring";
 // Retenție pentru Agentul email: emailurile TRIMISE (agent_email_mesaje.stare = 'trimis') și răspunsurile primite la ele păstrează datele destinatarului
 // 24 de luni de la trimitere; apoi destinatarul, textul și istoricul se anonimizează („[expirat]”), iar rândul rămâne pentru statistici.
 // Analizele ONG (analize_ong) și căutările profunde AI (deep_search_ai) nu fac parte din regula asta. Logica e în lib/gdpr-module-noi.ts (testată pe baza reală).
+// Retenție pentru Influenceri: fișele marcate „Nu mai contactăm” de peste 12 luni se reduc la amprentele de excludere (ca la ștergerea la cerere).
 const ZILE_NEAPROBATE = 60;
 
 export async function GET(req: Request) {
@@ -50,6 +51,13 @@ export async function GET(req: Request) {
           await tx.transaction((sp) => anonimizeazaEmailuriExpirate(sp as unknown as typeof db, org.id));
         } catch (e) {
           raporteazaEroare("gdpr-email-retentie", e, { orgId: org.id });
+        }
+        // Influencerii „Nu mai contactăm” de peste 12 luni se reduc la amprentele de excludere; tot într-un punct de salvare, ca să nu strice restul curățării.
+        try {
+          const r = await tx.transaction((sp) => expiraInfluenceriBlocati(sp as unknown as typeof db, org.id));
+          if (r.esuate > 0) raporteazaEroare("gdpr-influenceri-retentie", r.primaEroare, { orgId: org.id, esuate: r.esuate });
+        } catch (e) {
+          raporteazaEroare("gdpr-influenceri-retentie", e, { orgId: org.id });
         }
         return curate;
       });

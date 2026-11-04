@@ -1,9 +1,10 @@
 import "server-only";
 
-import { createHash, randomBytes } from "node:crypto";
+import { randomBytes } from "node:crypto";
 
 import { sql, type SQL } from "drizzle-orm";
 
+import { amprentaInfluencerNoua, amprentaInfluencerVeche } from "@/lib/amprente-hmac";
 import type { OrgContext } from "@/lib/auth/guard";
 import { patternLike, sqlFaraDiacritice } from "@/lib/cautare";
 import { EroareUtilizator } from "@/lib/erori";
@@ -261,25 +262,32 @@ async function noteaza(db: Db, orgId: string, influencerId: string, tip: TipActi
 
 // ───────── Excluderi (ștergere la cerere / nu mai contactăm) ─────────
 
-const amprenta = (orgId: string, cheie: string) => createHash("sha256").update(`${orgId}|influenceri|${cheie}`).digest("hex").slice(0, 32);
+// GDPR: amprenta e HMAC cu ORG_SECRETS_KEY (nu se ghicește dintr-un dicționar de handle-uri / emailuri). Scrierile folosesc doar forma nouă; la verificare se caută și forma veche
+// (SHA-256 simplu, 32 de caractere), ca excluderile existente să rămână valabile.
+const amprenteDeVerificat = (orgId: string, cheie: string): string[] => [amprentaInfluencerNoua(orgId, cheie), amprentaInfluencerVeche(orgId, cheie)];
 
 async function incarcaExcluderi(db: Db, orgId: string, chei?: string[]): Promise<Set<string>> {
   if (chei && chei.length === 0) return new Set();
   const r = rows(
     await db.execute(
       chei
-        ? sql`select amprenta from influenceri_excluderi where org_id = ${orgId} and amprenta = any(${sqlArray(chei.map((k) => amprenta(orgId, k)))})`
+        ? sql`select amprenta from influenceri_excluderi where org_id = ${orgId} and amprenta = any(${sqlArray(chei.flatMap((k) => amprenteDeVerificat(orgId, k)))})`
         : sql`select amprenta from influenceri_excluderi where org_id = ${orgId}`,
     ),
   );
   return new Set(r.map((x) => String(x.amprenta)));
 }
 
-const sunteExcluse = (orgId: string, chei: string[], excluderi: Set<string>) => chei.some((k) => excluderi.has(amprenta(orgId, k)));
+// Cel puțin una dintre chei e pe lista de excludere (forma nouă sau cea veche). Folosit la salvarea unui profil nou; import-ul citește lista o singură dată pentru tot lotul.
+export async function profilExclus(db: Db, orgId: string, chei: string[]): Promise<boolean> {
+  return sunteExcluse(orgId, chei, await incarcaExcluderi(db, orgId, chei));
+}
+
+const sunteExcluse = (orgId: string, chei: string[], excluderi: Set<string>) => chei.some((k) => amprenteDeVerificat(orgId, k).some((h) => excluderi.has(h)));
 
 async function adaugaExcluderi(db: Db, orgId: string, chei: string[], motiv: "stergere" | "nu_mai_contactam"): Promise<void> {
   for (const k of chei) {
-    await db.execute(sql`insert into influenceri_excluderi (org_id, amprenta, motiv) values (${orgId}, ${amprenta(orgId, k)}, ${motiv}) on conflict (org_id, amprenta) do nothing`);
+    await db.execute(sql`insert into influenceri_excluderi (org_id, amprenta, motiv) values (${orgId}, ${amprentaInfluencerNoua(orgId, k)}, ${motiv}) on conflict (org_id, amprenta) do nothing`);
   }
 }
 
@@ -501,7 +509,7 @@ export async function salveazaInfluencer(db: Db, orgId: string, userId: string, 
   // Un profil care a cerut ștergerea nu se readaugă. La o fișă existentă contează doar profilurile noi (o fișă „Nu mai contactăm” rămâne editabilă).
   const cheiVechi = new Set(listaChei(vechi));
   const cheiNoi = listaChei(c).filter((k) => !cheiVechi.has(k));
-  if (sunteExcluse(orgId, cheiNoi, await incarcaExcluderi(db, orgId, cheiNoi))) {
+  if (await profilExclus(db, orgId, cheiNoi)) {
     throw new EroareUtilizator(t("Acest profil a cerut să nu mai fie contactat sau să fie șters — nu îl mai adăugăm.", "This profile asked not to be contacted or to be deleted — we do not add it again."));
   }
   const dub = await gasesteDublura(db, orgId, c, id);
@@ -607,15 +615,16 @@ type StareFisa = {
 } & ContacteInfluencer;
 
 async function blocheaza(db: Db, orgId: string, id: string): Promise<StareFisa> {
-  const t = await getTr();
-  if (!esteUuid(id)) throw new EroareUtilizator(t("Influencerul nu mai există.", "The influencer no longer exists."));
+  // limba se citește doar când trebuie un mesaj de eroare (retenția din cron rulează fără cerere de utilizator)
+  const nuExista = async () => new EroareUtilizator((await getTr())("Influencerul nu mai există.", "The influencer no longer exists."));
+  if (!esteUuid(id)) throw await nuExista();
   const [r] = rows(
     await db.execute(sql`
       select id::text as id, nu_contacta as "nuContacta", etapa, ultima_contactare as "ultimaContactare", nr_reveniri as "nrReveniri", responsabil_id::text as "responsabilId", caz_id::text as "cazId",
         instagram, facebook, tiktok, youtube, email
       from influenceri where org_id = ${orgId} and id = ${id}::uuid for update`),
   );
-  if (!r) throw new EroareUtilizator(t("Influencerul nu mai există.", "The influencer no longer exists."));
+  if (!r) throw await nuExista();
   const ultima = iso(r.ultimaContactare);
   return {
     id: String(r.id),
@@ -769,9 +778,10 @@ export async function preia(db: Db, orgId: string, userId: string, id: string, n
 
 // Ștergere la cerere (dreptul la ștergere): dispar fișa, istoricul și numele din descrierea linkurilor; rămân doar amprentele (hash) ale tuturor handle-urilor și ale emailului.
 // Linkurile rămân active (au fost deja distribuite), dar nu mai sunt legate de nicio persoană; clicurile și donațiile atribuite rămân în statistici.
-export async function stergeLaCerere(db: Db, orgId: string, id: string): Promise<void> {
+// `motiv` rămâne „nu_mai_contactam” când reducerea vine din retenția celor marcați „Nu mai contactăm” (fără cerere de ștergere).
+export async function stergeLaCerere(db: Db, orgId: string, id: string, motiv: "stergere" | "nu_mai_contactam" = "stergere"): Promise<void> {
   const s = await blocheaza(db, orgId, id);
-  await adaugaExcluderi(db, orgId, listaChei(s), "stergere");
+  await adaugaExcluderi(db, orgId, listaChei(s), motiv);
   await db.execute(sql`update influenceri_linkuri set descriere = 'profil șters la cerere' where org_id = ${orgId} and influencer_id = ${s.id}::uuid`);
   await db.execute(sql`delete from influenceri_activitati where org_id = ${orgId} and influencer_id = ${s.id}::uuid`);
   await db.execute(sql`delete from influenceri where org_id = ${orgId} and id = ${s.id}::uuid`);
@@ -782,11 +792,12 @@ export async function stergeLaCerere(db: Db, orgId: string, id: string): Promise
 export type LinkPregatit = { id: string; slug: string; url: string; nou: boolean };
 
 // Linkul unic pentru influencer × campanie × platformă: se creează o singură dată, apoi se reutilizează.
-export async function linkPentru(db: Db, orgId: string, userId: string, siteUrl: string, influencerId: string, caz: CazDistribuibil, canal: Canal, numeInfluencer: string): Promise<LinkPregatit> {
+export async function linkPentru(db: Db, orgId: string, userId: string, siteUrl: string, influencerId: string, caz: CazDistribuibil, canal: Canal): Promise<LinkPregatit> {
   const [ex] = rows(await db.execute(sql`select id::text as id, slug from influenceri_linkuri where org_id = ${orgId} and influencer_id = ${influencerId}::uuid and caz_id = ${caz.id}::uuid and platforma = ${canal} limit 1`));
   if (ex) return { id: String(ex.id), slug: String(ex.slug), url: adresaLink(siteUrl, String(ex.slug)), nou: false };
   const etichetaCanal = PLATFORME.find((p) => p.k === canal)?.ro ?? "Email";
-  const descriere = `${caz.titlu} · ${etichetaCanal} · ${numeInfluencer}`.slice(0, 300);
+  // Descrierea NU poartă numele persoanei: ruta publică /r/<cod> citește linkurile, iar numele e dat personal (rămâne doar în fișa din `influenceri`, prin influencer_id).
+  const descriere = `${caz.titlu} · ${etichetaCanal}`.slice(0, 300);
   for (let incercare = 0; incercare < 6; incercare++) {
     const cod = codDinOcteti(randomBytes(32));
     if (!cod) continue;

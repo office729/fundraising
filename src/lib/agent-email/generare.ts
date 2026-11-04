@@ -8,6 +8,7 @@ import { UTILIZARE_GOALA, type Utilizare } from "@/lib/ai-org/pret";
 import type { Loc } from "@/lib/ai-org/protocol";
 import type { OrgContext } from "@/lib/auth/guard";
 import { agentEmailMesaje, appUsers, companies, companySponsorizari, contacts, fundraisingPages, memberships } from "@/lib/db/schema";
+import { curataPii } from "@/lib/curata-pii";
 import { ferestreFiscale } from "@/lib/ferestre-fiscale";
 import { esteEligibilaD177, sumaEfectiva } from "@/lib/prioritizare-firme";
 import { sarbatoriRo } from "@/lib/sarbatori-ro";
@@ -17,6 +18,7 @@ import { citesteEmail, mesajEmail, MAX_INSTRUCTIUNI, systemEmail, type CerereEma
 import {
   alegeDestinatar,
   asiguraSalut,
+  doarCuAcordEfectiv,
   extrageJson,
   firmaEligibila,
   MAX_FIRME_PE_GENERARE,
@@ -84,7 +86,7 @@ const prenumeSiNume = (u: { name: string | null; email: string }): string => (u.
 export function textMotivContact(t: Tr, motive: MotivRespins[], doarCuAcord: boolean): string {
   if (!motive.length) return t("nu are nicio persoană de contact în CRM.", "has no contact person in the CRM.");
   const are = (m: MotivRespins) => motive.includes(m);
-  if (doarCuAcord && are("fara_acord")) return t("persoanele de contact nu au acord pentru email (debifează „Doar contacte cu acord pentru email” ca să apară și cele cu acord necunoscut).", "the contacts have no email consent (untick “Only contacts with email consent” to include those with unknown consent).");
+  if (doarCuAcord && are("fara_acord")) return t("persoanele de contact nu au acord pentru email (un administrator poate include și contactele cu acord necunoscut, debifând „Doar contacte cu acord pentru email”).", "the contacts have no email consent (an administrator can include contacts with unknown consent by unticking “Only contacts with email consent”).");
   if (are("acord_refuzat")) return t("persoanele de contact cu email au refuzat să fie contactate.", "the contacts with an email address declined to be contacted.");
   if (are("suprimat")) return t("adresa e pe lista de dezabonări sau „nu mai căuta”.", "the address is on the unsubscribe or “do not contact” list.");
   if (are("email_marcat_invalid") || are("email_invalid")) return t("adresele de email ale persoanelor de contact sunt invalide.", "the contacts' email addresses are invalid.");
@@ -125,6 +127,8 @@ export async function pregatesteGenerare(
   p: ParametriGenerare,
 ): Promise<{ gata: { ok: false; error: string } } | { pregatit: PregatitGenerare }> {
   const ids = [...new Set(p.companyIds)].filter(esteUuid).slice(0, MAX_FIRME_PE_GENERARE);
+  // Ciornele către contacte cu acord necunoscut le pot genera doar owner/admin: restricția se impune aici, pe server, nu doar prin bifa din interfață.
+  p = { ...p, doarCuAcord: doarCuAcordEfectiv(p.doarCuAcord, ctx.role) };
   if (!ids.length) return { gata: { ok: false, error: t("Alege cel puțin o firmă.", "Choose at least one company.") } };
   if (!esteUuid(p.deId)) return { gata: { ok: false, error: t("Alege expeditorul.", "Choose the sender.") } };
 
@@ -267,7 +271,8 @@ export async function pregatesteGenerare(
         sloturi,
         stil: STILURI_EMAIL[stilIdx++ % STILURI_EMAIL.length],
         deEvitat: [...deEvitat],
-        instructiuni: p.instructiuni.slice(0, MAX_INSTRUCTIUNI),
+        // textul liber pleacă la Anthropic: emailurile, telefoanele și conturile se elimină pe server (prompt.ts rămâne pur, fără importuri)
+        instructiuni: curataPii(p.instructiuni, MAX_INSTRUCTIUNI),
         varianta_anterioara: p.variantaAnterioara ?? null,
       },
     });

@@ -4,7 +4,8 @@ import { and, count, eq, gte, ne, sql } from "drizzle-orm";
 
 import type { OrgContext } from "@/lib/auth/guard";
 import { companies, companyNotite, contacts, prospectareCandidati, prospectareChei, prospectareJurnal, prospectareSuprimati } from "@/lib/db/schema";
-import { amprentePersoana } from "@/lib/gdpr-persoane";
+import { SetSuprimate, valoareSuprimare, type TipSuprimare } from "@/lib/amprente-hmac";
+import { amprentePersoana, amprentePersoanaDeVerificat } from "@/lib/gdpr-persoane";
 import { decripteaza } from "@/lib/secret-box";
 
 import { cheieStocata, type CandidatDeep } from "./deep-search";
@@ -82,8 +83,7 @@ export async function incarcaExcluderi(db: Db, orgId: string, companyId: string)
     const l = linkedinNormalizat(c.linkedin);
     if (l) cunoscute.linkedin.add(l);
   }
-  const supr = seturiGoale();
-  for (const s of suprimate) (s.tip === "email" ? supr.emailuri : s.tip === "linkedin" ? supr.linkedin : supr.chei).add(s.valoare);
+  const supr = seturiSuprimate(orgId, suprimate);
   const extra = (firma?.extra ?? {}) as { nuMaiCauta?: unknown };
   const amprente = new Set(Array.isArray(extra.nuMaiCauta) ? extra.nuMaiCauta.filter((x): x is string => typeof x === "string") : []);
   return { cunoscute, suprimate: supr, amprente, domeniuAlternativ: deLaFirma.map((c) => domeniuDinEmail(c.email)).find(Boolean) ?? null };
@@ -96,7 +96,7 @@ export function esteExclus(e: Excluderi, orgId: string, companyId: string, p: { 
   if (k && (e.suprimate.chei.has(k) || e.cunoscute.chei.has(k))) return true;
   if (email && (e.suprimate.emailuri.has(email) || e.cunoscute.emailuri.has(email))) return true;
   if (l && (e.suprimate.linkedin.has(l) || e.cunoscute.linkedin.has(l))) return true;
-  return e.amprente.size > 0 && amprentePersoana(orgId, companyId, p.nume, p.linkedin).some((h) => e.amprente.has(h));
+  return e.amprente.size > 0 && amprentePersoanaDeVerificat(orgId, companyId, p.nume, p.linkedin).some((h) => e.amprente.has(h));
 }
 
 // Cine a cerut să nu mai fie propus (lista organizației) nu se aprobă, nici dacă era deja în listă de la altă căutare.
@@ -108,9 +108,24 @@ export function esteSuprimataOrg(supr: Seturi, p: { numeNorm: string; email: str
 
 export async function incarcaSuprimate(db: Db, orgId: string): Promise<Seturi> {
   const randuri = await db.select({ tip: prospectareSuprimati.tip, valoare: prospectareSuprimati.valoare }).from(prospectareSuprimati).where(eq(prospectareSuprimati.orgId, orgId));
-  const s = seturiGoale();
-  for (const r of randuri) (r.tip === "email" ? s.emailuri : r.tip === "linkedin" ? s.linkedin : s.chei).add(r.valoare);
-  return s;
+  return seturiSuprimate(orgId, randuri);
+}
+
+// Lista de suprimare conține valori în clar (rânduri vechi) și amprente HMAC (rânduri noi, vezi valoareSuprimare): seturile răspund la ambele forme.
+export function seturiSuprimate(orgId: string, randuri: readonly { tip: string; valoare: string }[]): Seturi {
+  const dupaTip = (tip: TipSuprimare) => randuri.filter((r) => (r.tip === "email" ? "email" : r.tip === "linkedin" ? "linkedin" : "nume") === tip).map((r) => r.valoare);
+  return { chei: new SetSuprimate(orgId, "nume", dupaTip("nume")), emailuri: new SetSuprimate(orgId, "email", dupaTip("email")), linkedin: new SetSuprimate(orgId, "linkedin", dupaTip("linkedin")) };
+}
+
+// Rândurile de scris în lista de suprimare ale unei persoane: doar amprente (HMAC), niciodată numele, emailul sau profilul în clar.
+export function suprimariPersoana(orgId: string, p: { numeNorm?: string | null; email?: string | null; linkedin?: string | null }, motiv: string): { orgId: string; tip: TipSuprimare; valoare: string; motiv: string }[] {
+  const out: { orgId: string; tip: TipSuprimare; valoare: string; motiv: string }[] = [];
+  const email = (p.email ?? "").trim().toLowerCase();
+  const l = linkedinNormalizat(p.linkedin);
+  if (p.numeNorm) out.push({ orgId, tip: "nume", valoare: valoareSuprimare(orgId, "nume", p.numeNorm), motiv });
+  if (email) out.push({ orgId, tip: "email", valoare: valoareSuprimare(orgId, "email", email), motiv });
+  if (l) out.push({ orgId, tip: "linkedin", valoare: valoareSuprimare(orgId, "linkedin", l), motiv });
+  return out;
 }
 
 // ===== Candidații =====

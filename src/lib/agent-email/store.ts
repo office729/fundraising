@@ -6,6 +6,7 @@ import { and, desc, eq, inArray, isNull, sql, type SQL } from "drizzle-orm";
 
 import type { db as dbGlobal } from "@/lib/db";
 import { agentEmailConturi, agentEmailContor, agentEmailMesaje, agentEmailPdf, agentEmailRaspunsuri, agentEmailSetari, emailSuppression, fundraisingPages, prospectareSuprimati } from "@/lib/db/schema";
+import { esteAmprentaHmac, SetSuprimate } from "@/lib/amprente-hmac";
 import { hashSuprimare } from "@/lib/dezabonare";
 import { decripteaza } from "@/lib/secret-box";
 
@@ -237,7 +238,8 @@ export async function construiesteSuprimare(db: Db, orgId: string): Promise<(ema
     db.select({ v: prospectareSuprimati.valoare }).from(prospectareSuprimati).where(and(eq(prospectareSuprimati.orgId, orgId), eq(prospectareSuprimati.tip, "email"))),
   ]);
   const h = new Set(hashuri.map((x) => x.h));
-  const e = new Set(prospectare.map((x) => x.v.trim().toLowerCase()));
+  // Rândurile vechi sunt adrese în clar, cele noi amprente HMAC: setul le recunoaște pe ambele.
+  const e = new SetSuprimate(orgId, "email", prospectare.map((x) => (esteAmprentaHmac(x.v) ? x.v : x.v.trim().toLowerCase())));
   return (email) => e.has(email) || h.has(hashSuprimare(orgId, email));
 }
 

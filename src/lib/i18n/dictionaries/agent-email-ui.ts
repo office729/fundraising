@@ -82,6 +82,7 @@ export const AGENT_EMAIL_UI_DICT = {
       campanieNota: "Se folosesc doar datele deja publice ale paginii (titlu, loc, sume, link): niciodată povestea, diagnosticul sau poza.",
       indicatii: "Indicații pentru AI (opțional)",
       indicatiiExemplu: "ex. ton mai personal, menționează evenimentul din decembrie",
+      notaAi: "Textul se trimite la Anthropic. Nu scrie date medicale sau personale.",
       genereaza: (n: number) => `Scrie ciornele cu AI (${n})`,
       seGenereaza: (n: number) => `AI scrie ${n} ${n === 1 ? "email" : "emailuri"}… (circa 10 secunde fiecare)`,
       create: (n: number) => `${n} ${n === 1 ? "ciornă scrisă" : "ciorne scrise"}. Citește-le în fila „Ciorne” înainte de trimitere.`,
@@ -217,6 +218,8 @@ export const AGENT_EMAIL_UI_DICT = {
       limitaAjutor: "Protejează reputația domeniului. Implicit 40.",
       pixel: "Pixel de deschidere (opțional)",
       pixelAjutor: "Adaugă în email o imagine 1×1 care arată dacă a fost deschis. Orientativ: unii destinatari blochează imaginile. Oprit implicit.",
+      pixelAvertisment:
+        "Atenție: monitorizarea deschiderii este o prelucrare suplimentară a datelor destinatarului. Fiecare email trimis cu pixelul activ va spune în subsol că poate conține un pixel de deschidere, iar în anumite situații poate fi nevoie și de acordul destinatarului. Verifică cu un jurist înainte să-l activezi.",
       salveaza: "Salvează alegerile",
     },
     comun: { seIncarca: "Se încarcă…", eroare: "A apărut o eroare. Încearcă din nou.", reincarca: "Reîncarcă" },
@@ -301,6 +304,7 @@ export const AGENT_EMAIL_UI_DICT = {
       campanieNota: "Only the already-public data of the page is used (title, place, amounts, link): never the story, diagnosis or photo.",
       indicatii: "Hints for the AI (optional)",
       indicatiiExemplu: "e.g. more personal tone, mention the December event",
+      notaAi: "The text is sent to Anthropic. Do not write medical or personal data.",
       genereaza: (n: number) => `Write drafts with AI (${n})`,
       seGenereaza: (n: number) => `AI is writing ${n} ${n === 1 ? "email" : "emails"}… (about 10 seconds each)`,
       create: (n: number) => `${n} ${n === 1 ? "draft written" : "drafts written"}. Read them in the “Drafts” tab before sending.`,
@@ -436,6 +440,8 @@ export const AGENT_EMAIL_UI_DICT = {
       limitaAjutor: "Protects the domain's reputation. Default 40.",
       pixel: "Open-tracking pixel (optional)",
       pixelAjutor: "Adds a 1×1 image to the email that shows whether it was opened. Indicative only: some recipients block images. Off by default.",
+      pixelAvertisment:
+        "Warning: tracking opens is additional processing of the recipient's data. Every email sent with the pixel on will say in its footer that it may contain an open-tracking pixel, and in some situations the recipient's consent may also be needed. Check with a lawyer before you turn it on.",
       salveaza: "Save choices",
     },
     comun: { seIncarca: "Loading…", eroare: "Something went wrong. Please try again.", reincarca: "Reload" },

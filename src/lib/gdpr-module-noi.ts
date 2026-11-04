@@ -6,7 +6,7 @@ import { adaugaSuprimare } from "@/lib/agent-email/store";
 import type { OrgContext } from "@/lib/auth/guard";
 import { agentEmailMesaje, agentEmailRaspunsuri, companies, contacts, emailSuppression, influenceri, influenceriActivitati, influenceriLinkuri, prospectareCandidati } from "@/lib/db/schema";
 import { hashSuprimare } from "@/lib/dezabonare";
-import { slugLinkedinDinHandle, VALOARE_EXPIRATA, VALOARE_STEARSA, limitaRetentieEmailuri } from "@/lib/gdpr-module-noi-reguli";
+import { LUNI_RETENTIE_INFLUENCERI_BLOCATI, slugLinkedinDinHandle, VALOARE_EXPIRATA, VALOARE_STEARSA, limitaRetentieEmailuri } from "@/lib/gdpr-module-noi-reguli";
 import { amprentePersoana } from "@/lib/gdpr-persoane";
 import { normEmail, normFacebook, normInstagram, normTiktok, normYoutube } from "@/lib/influenceri/reguli";
 import { stergeLaCerere } from "@/lib/influenceri/server";
@@ -356,4 +356,35 @@ export async function anonimizeazaEmailuriExpirate(db: Db, orgId: string, acum: 
     .where(expirate)
     .returning({ id: agentEmailMesaje.id });
   return { emailuri: emailuri.length, raspunsuri: raspunsuri.length };
+}
+
+// Retenția influencerilor „Nu mai contactăm”: la 12 luni de la marcare, fișa se reduce la amprentele de excludere (stergeLaCerere: dispar fișa, istoricul și numele din linkuri;
+// refuzul rămâne respectat prin amprente). Data marcării = ultima trecere în „Nu mai contactăm” din jurnalul fișei; dacă jurnalul nu o are, ultima modificare a fișei.
+// Fișele marcate recent sau nemarcate nu se ating. Un rând care eșuează (savepoint propriu) nu oprește celelalte rânduri; plafon pe rulare, restul rămâne pe a doua zi.
+export async function expiraInfluenceriBlocati(db: Db, orgId: string, acum: Date = new Date()): Promise<{ reduse: number; esuate: number; primaEroare: unknown }> {
+  const limita = limitaRetentieEmailuri(acum, LUNI_RETENTIE_INFLUENCERI_BLOCATI).toISOString();
+  const expirate = (await db.execute(sql`
+    select i.id::text as id from influenceri i
+    where i.org_id = ${orgId} and i.nu_contacta = true
+      and coalesce(
+        (select max(a.created_at) from influenceri_activitati a
+         where a.org_id = ${orgId} and a.influencer_id = i.id and (a.tip = 'nu_contacta' or (a.tip = 'etapa' and a.text like ${"→ stop%"}))),
+        i.updated_at
+      ) < ${limita}::timestamptz
+    order by i.created_at
+    limit 200`)) as unknown as { id: string }[];
+  let reduse = 0;
+  let esuate = 0;
+  let primaEroare: unknown = null;
+  for (const f of expirate) {
+    try {
+      await db.transaction((sp) => stergeLaCerere(sp as unknown as Db, orgId, f.id, "nu_mai_contactam"));
+      reduse++;
+    } catch (e) {
+      primaEroare ??= e;
+      // un rând care nu se poate reduce acum (ex. blocat de altă tranzacție) se reia la următoarea rulare; cron-ul raportează numărul
+      esuate++;
+    }
+  }
+  return { reduse, esuate, primaEroare };
 }

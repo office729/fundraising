@@ -2,7 +2,7 @@ import "server-only";
 
 import { raporteazaEroare } from "@/lib/monitoring";
 
-import { anteteCerere, codDinHttp, corpCerere, esteHaiku, mesajEroare, parseazaRaspuns, URL_MESAJE, URL_MODELE, type CerereClaude, type CodEroare, type Loc, type MesajClaude, type Sursa } from "./protocol";
+import { anteteCerere, codDinHttp, corpCerere, curataMesajAi, esteHaiku, mesajEroare, parseazaRaspuns, URL_MESAJE, URL_MODELE, type CerereClaude, type CodEroare, type Loc, type MesajClaude, type Sursa } from "./protocol";
 import { adunaUtilizare, costUsd, UTILIZARE_GOALA, type Utilizare } from "./pret";
 
 // Clientul Claude al ORGANIZAȚIEI: folosește exclusiv cheia ei (criptată în baza de date), niciodată o cheie a platformei.
@@ -16,6 +16,12 @@ export type RezultatClaude =
   | { ok: false; cod: CodEroare; eroare: string; model: string; utilizare: Utilizare; costUsd: number };
 
 type Brut = { ok: true; corp: unknown } | { ok: false; status: number; corp: unknown } | { ok: false; status: 0; corp: null };
+
+// Mesajul de eroare al furnizorului, fără cheia folosită (ca șir întreg) și fără șiruri sk-ant-…; scurtat la 240 de caractere (curataMesajAi).
+function faraCheie(detaliu: string, cheie: string): string {
+  const fara = cheie.trim().length >= 8 ? detaliu.split(cheie.trim()).join("[cheie]") : detaliu;
+  return curataMesajAi(fara);
+}
 
 async function trimite(c: CerereClaude, mesaje: MesajClaude[], fallback: boolean, timeoutMs: number): Promise<Brut> {
   try {
@@ -58,8 +64,10 @@ export async function apeleazaClaude(c: CerereClaude): Promise<RezultatClaude> {
     }
     if (!r.ok) {
       if (r.status === 0) return { ok: false, cod: "retea", eroare: mesajEroare("retea", locale), model, utilizare, costUsd: costTotal };
-      const { cod, detaliu } = codDinHttp(r.status, r.corp);
-      if (cod === "cerere" || cod === "necunoscut") raporteazaEroare("ai-org-cerere", new Error(`Anthropic ${r.status}: ${detaliu.slice(0, 200)}`), { status: r.status });
+      const { cod, detaliu: detaliuBrut } = codDinHttp(r.status, r.corp);
+      // Detaliul vine de la un server extern: nicio cheie (nici cea trimisă de noi, nici una în formă sk-ant-…) nu ajunge în loguri sau în mesajul către utilizator.
+      const detaliu = faraCheie(detaliuBrut, c.cheie);
+      if (cod === "cerere" || cod === "necunoscut") raporteazaEroare("ai-org-cerere", new Error(`Anthropic ${r.status}: ${detaliu}`), { status: r.status });
       return { ok: false, cod, eroare: mesajEroare(cod, locale, detaliu), model, utilizare, costUsd: costTotal };
     }
     const p = parseazaRaspuns(r.corp, c.model);
@@ -86,7 +94,7 @@ export async function verificaCheieAnthropic(cheie: string, locale: Loc = "ro"):
     const r = await fetch(URL_MODELE, { headers: anteteCerere(cheie, false), signal: AbortSignal.timeout(15_000), cache: "no-store" });
     if (r.ok) return { ok: true };
     const { cod, detaliu } = codDinHttp(r.status, await r.json().catch(() => null));
-    return { ok: false, cod, eroare: mesajEroare(cod, locale, cod === "cerere" ? detaliu : undefined) };
+    return { ok: false, cod, eroare: mesajEroare(cod, locale, cod === "cerere" ? faraCheie(detaliu, cheie) : undefined) };
   } catch {
     return { ok: false, cod: "retea", eroare: mesajEroare("retea", locale) };
   }

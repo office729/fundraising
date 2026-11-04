@@ -430,6 +430,7 @@ function CentruContactare({ orgSlug, fisa, date, onSchimbat }: { orgSlug: string
         <label className="flex flex-col gap-1 text-[12.5px] text-[var(--ci-text-muted)] sm:col-span-2">
           {c.indicatii}
           <Input value={indicatii} onChange={(e) => setIndicatii(e.target.value)} placeholder={c.indicatiiPlaceholder} maxLength={400} />
+          <span className="text-[11.5px]">{c.notaAi}</span>
         </label>
       </div>
       <div className="flex flex-wrap items-center gap-3">

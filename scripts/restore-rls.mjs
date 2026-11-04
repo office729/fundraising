@@ -985,12 +985,14 @@ const POLICIES = [
   ),
   `create policy agent_email_mesaje_pixel_citire on agent_email_mesaje for select using (pixel is not null and pixel = nullif(current_setting('app.agent_pixel', true), ''))`,
   `create policy agent_email_mesaje_pixel_actualizare on agent_email_mesaje for update using (pixel is not null and pixel = nullif(current_setting('app.agent_pixel', true), '')) with check (pixel is not null and pixel = nullif(current_setting('app.agent_pixel', true), ''))`,
-  // Influenceri (documentation/influenceri.sql): izolare pe organizație; ruta publică /r/<cod> (fără sesiune) găsește linkul și numără clicul doar în contextul app.public_lookup.
+  // Influenceri (documentation/influenceri.sql + influenceri-rls-v2.sql): izolare pe organizatie; ruta publica /r/<cod> (fara sesiune) vede si numara clicul DOAR pe linkul cu codul din app.link_slug.
   ...["influenceri", "influenceri_activitati", "influenceri_linkuri", "influenceri_clicuri", "influenceri_excluderi"].map(
     (t) => `create policy ${t}_tenant_isolation on ${t} using (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid) with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
   ),
-  `create policy influenceri_linkuri_public_lookup on influenceri_linkuri for select using (nullif(current_setting('app.public_lookup', true), '') = 'true')`,
-  `create policy influenceri_clicuri_public_lookup on influenceri_clicuri for all using (nullif(current_setting('app.public_lookup', true), '') = 'true') with check (nullif(current_setting('app.public_lookup', true), '') = 'true')`,
+  `create policy influenceri_linkuri_public_lookup on influenceri_linkuri for select using (slug = nullif(current_setting('app.link_slug', true), ''))`,
+  `create policy influenceri_clicuri_public_select on influenceri_clicuri for select using (exists (select 1 from influenceri_linkuri l where l.id = influenceri_clicuri.link_id and l.org_id = influenceri_clicuri.org_id and l.slug = nullif(current_setting('app.link_slug', true), '')))`,
+  `create policy influenceri_clicuri_public_insert on influenceri_clicuri for insert with check (exists (select 1 from influenceri_linkuri l where l.id = influenceri_clicuri.link_id and l.org_id = influenceri_clicuri.org_id and l.slug = nullif(current_setting('app.link_slug', true), '')))`,
+  `create policy influenceri_clicuri_public_update on influenceri_clicuri for update using (exists (select 1 from influenceri_linkuri l where l.id = influenceri_clicuri.link_id and l.org_id = influenceri_clicuri.org_id and l.slug = nullif(current_setting('app.link_slug', true), ''))) with check (exists (select 1 from influenceri_linkuri l where l.id = influenceri_clicuri.link_id and l.org_id = influenceri_clicuri.org_id and l.slug = nullif(current_setting('app.link_slug', true), '')))`,
   // Analize AI (documentation/analize-ai.sql): reclame și ONG-uri; izolare pe organizație.
   ...["analize_reclame", "analize_ong"].map(
     (t) => `create policy ${t}_tenant_isolation on ${t} using (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid) with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,

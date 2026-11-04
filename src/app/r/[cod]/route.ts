@@ -22,8 +22,10 @@ const ROBOT = /bot|crawl|spider|slurp|preview|facebookexternalhit|facebot|meta-e
 
 async function gasesteTinta(cod: string): Promise<Tinta | null> {
   return db.transaction(async (tx) => {
-    // Contextul de încredere al rutelor publice (fără sesiune); interogarea are predicat explicit pe cod.
+    // Contextul de încredere al rutelor publice (fără sesiune). `app.link_slug` restrânge politica RLS a linkurilor la rândul cu acest cod (documentation/influenceri-rls-v2.sql):
+    // fără el, ruta nu vede niciun link; `app.public_lookup` rămâne doar pentru organizație și pagina campaniei din același select.
     await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
+    await tx.execute(sql`select set_config('app.link_slug', ${cod}, true)`);
     const r = (await tx.execute(sql`
       select l.id::text as id, l.platforma, o.slug as "orgSlug", p.slug as "pageSlug"
       from influenceri_linkuri l
@@ -35,9 +37,10 @@ async function gasesteTinta(cod: string): Promise<Tinta | null> {
   });
 }
 
-async function numaraClic(tinta: Tinta): Promise<void> {
+async function numaraClic(tinta: Tinta, cod: string): Promise<void> {
   await db.transaction(async (tx) => {
-    await tx.execute(sql`select set_config('app.public_lookup', 'true', true)`);
+    // Politicile clicurilor lasă să scrii doar pe linkul cu acest cod (app.link_slug), nu pe oricare altul.
+    await tx.execute(sql`select set_config('app.link_slug', ${cod}, true)`);
     await tx.execute(sql`
       insert into influenceri_clicuri (link_id, org_id, ziua, nr)
       select l.id, l.org_id, (now() at time zone 'Europe/Bucharest')::date, 1 from influenceri_linkuri l where l.id = ${tinta.id}::uuid
@@ -65,7 +68,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const prefetch = request.headers.get("purpose") === "prefetch" || request.headers.get("sec-purpose")?.includes("prefetch");
   if (request.method === "GET" && !prefetch && ua && !ROBOT.test(ua)) {
     try {
-      if (await verificaLimitaRata("influenceri-click", await obtineIpClient(), 120, 10)) await numaraClic(tinta);
+      if (await verificaLimitaRata("influenceri-click", await obtineIpClient(), 120, 10)) await numaraClic(tinta, cod);
     } catch (e) {
       // Numărătoarea nu are voie să strice redirecționarea.
       raporteazaEroare("influenceri-click", e);

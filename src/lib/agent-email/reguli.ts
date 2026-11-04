@@ -270,6 +270,12 @@ export function emailValid(e: string | null | undefined): boolean {
 
 export type OptiuniEligibilitate = { doarCuAcord: boolean; suprimat?: (emailMinuscule: string) => boolean };
 
+// „Doar contacte cu acord pentru email” se impune pe SERVER: doar owner/admin pot cere și contacte cu acord necunoscut (bifa din interfață nu e o protecție);
+// pentru un membru simplu e mereu activ. Fără o valoare explicită „false”, rămâne activ pentru toți. Acordul „nu” rămâne blocat oricum (contactEligibil).
+export function doarCuAcordEfectiv(cerut: boolean | null | undefined, rol: string): boolean {
+  return rol === "owner" || rol === "admin" ? cerut !== false : true;
+}
+
 export function contactEligibil(c: Pick<ContactCandidat, "email" | "acord" | "emailStatus">, opt: OptiuniEligibilitate): { ok: true } | { ok: false; motiv: MotivRespins } {
   const email = (c.email ?? "").trim().toLowerCase();
   if (!email) return { ok: false, motiv: "fara_email" };
@@ -377,6 +383,14 @@ export function semnaturaHtml(semnatura: string): string {
 }
 
 export type SubsolEmail = { text: string; linkDezabonare?: string; etichetaLink?: string };
+
+// Fraza fixă din subsol, DOAR când emailul poartă pixelul de deschidere (monitorizarea deschiderii e o prelucrare în plus: destinatarul trebuie informat).
+export const FRAZA_PIXEL = "Acest email poate conține un pixel care ne arată dacă a fost deschis.";
+
+// Textul subsolului (informarea art. 14 GDPR: cine scrie, temeiul, sursa datelor), înaintea dezabonării; la el se adaugă linkul semnat. Răspunsul „STOP” e mereu valabil.
+export function textSubsol(orgNume: string, cuPixel: boolean): string {
+  return `Vă scriem ca persoană de contact profesională a firmei, pe baza interesului legitim al ${orgNume} (datele provin din surse publice sau profesionale).${cuPixel ? ` ${FRAZA_PIXEL}` : ""} Dacă nu doriți să mai primiți mesaje, răspundeți cu STOP sau`;
+}
 
 // Subsolul de dezabonare: răspunsul „STOP” e mereu valabil; linkul semnat (lib/dezabonare.ts) se adaugă când e disponibil.
 export function subsolHtml(s: SubsolEmail): string {

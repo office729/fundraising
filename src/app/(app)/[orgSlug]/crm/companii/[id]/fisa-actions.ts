@@ -5,7 +5,7 @@ import { randomUUID } from "node:crypto";
 import { and, eq, sql } from "drizzle-orm";
 
 import { type OrgContext, withOrgSession } from "@/lib/auth/guard";
-import { amprentePersoana } from "@/lib/gdpr-persoane";
+import { amprentePersoana, amprentePersoanaDeVerificat } from "@/lib/gdpr-persoane";
 import { companies, contacts } from "@/lib/db/schema";
 import { valideazaFacebook, valideazaLinkedin } from "@/lib/pagini-sociale";
 import { stadiuD177Valid } from "@/lib/stadii-d177";
@@ -169,7 +169,7 @@ export const propunePersoane = withOrgSession(
     let nrExcluse = 0;
     for (const p of persoane.slice(0, 100)) {
       if (!p.nume?.trim()) continue;
-      if (amprentePersoana(ctx.orgId, companyId, p.nume, p.linkedin).some((h) => excluse.has(h))) {
+      if (amprentePersoanaDeVerificat(ctx.orgId, companyId, p.nume, p.linkedin).some((h) => excluse.has(h))) {
         nrExcluse++;
         continue;
       }

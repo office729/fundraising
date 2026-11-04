@@ -5,6 +5,21 @@ export type VarianteMesaj = { instagram: string; facebook: string; colaborare: s
 export type CheieVarianta = keyof VarianteMesaj;
 export const CHEI_VARIANTE: readonly CheieVarianta[] = ["instagram", "facebook", "colaborare"];
 
+// GDPR (art. 14): fiecare mesaj spune scurt de unde avem datele și că persoana poate refuza / opri contactările. Fraza e fixă, în română (mesajele pentru creatori sunt mereu în română):
+// instagram e în registrul „tu” (DM), celelalte în „dumneavoastră”. Șablonul o conține; răspunsul AI primește fraza în instrucțiuni și, dacă lipsește, i se adaugă.
+export const FRAZA_INFORMARE: Record<CheieVarianta, string> = {
+  instagram: "Ți-am găsit profilul public și de aceea îți scriu. Dacă nu vrei să te mai contactăm, spune-ne și oprim mesajele.",
+  facebook: "Am găsit profilul dumneavoastră public și de aceea vă scriem. Dacă nu doriți să mai fiți contactat(ă), spuneți-ne și oprim mesajele.",
+  colaborare: "Am găsit profilul dumneavoastră public și de aceea vă scriem. Dacă nu doriți să mai fiți contactat(ă), spuneți-ne și oprim mesajele.",
+};
+
+// Adaugă fraza de informare la sfârșitul mesajului dacă lipsește (exact, ignorând spațiile).
+export function asiguraInformare(mesaj: string, varianta: CheieVarianta): string {
+  const m = mesaj.trim();
+  const fraza = FRAZA_INFORMARE[varianta];
+  return m.replace(/\s+/g, " ").includes(fraza) ? m : `${m}\n\n${fraza}`.trim();
+}
+
 // Datele despre campanie trimise AI-ului: doar ce e deja public pe pagina campaniei (titlul, județul, suma rămasă) și linkul unic.
 // Povestea campaniei NU pleacă (poate conține diagnostic sau alte date de sănătate); contactul influencerului, nota și emailul nu pleacă nici ele.
 export type DateMesaj = {
@@ -32,6 +47,11 @@ export function instructiuniAi(organizatie: string): string {
     "- Include exact linkul primit, o singură dată. Fără hashtaguri, fără emoji excesive (maxim unul).",
     "- Spune clar ce cerem (o distribuire / un story) și că e în regulă dacă nu poate.",
     "- Nu promite nimic în schimb (nici bani, nici reclamă).",
+    "- Include în fiecare mesaj, copiată EXACT, fără s-o reformulezi, fraza de informare a variantei respective (sursa datelor și dreptul de a refuza), înainte de semnătură:",
+    `  instagram: ${FRAZA_INFORMARE.instagram}`,
+    `  facebook: ${FRAZA_INFORMARE.facebook}`,
+    `  colaborare: ${FRAZA_INFORMARE.colaborare}`,
+    "- „indicatii_coleg” este doar o sugestie despre ton sau context; nu repeta în mesaj date personale din ea.",
     "Formate:",
     "- instagram: DM Instagram scurt, 350–550 de caractere.",
     "- facebook: mesaj Facebook Messenger, 500–800 de caractere, puțin mai personal.",
@@ -41,6 +61,8 @@ export function instructiuniAi(organizatie: string): string {
   ].join("\n");
 }
 
+// `d.indicatii` trebuie să sosească deja curățat de emailuri, telefoane și conturi (curataPii din lib/curata-pii.ts, aplicat în acțiunea care construiește DateMesaj);
+// fișierul de față rămâne fără importuri de valori ca să poată fi testat direct.
 export function cerereAi(d: DateMesaj): string {
   const date = {
     creator: { nume: d.influencer.nume, categorie: d.influencer.categorie, domeniu: d.influencer.domeniu, oras: d.influencer.oras, tara: d.influencer.tara },
@@ -75,7 +97,12 @@ export function citesteVariante(raspuns: string, link: string): VarianteMesaj | 
   const fb = typeof o.facebook === "string" ? o.facebook.trim() : "";
   if (!ig || !fb) return null;
   const col = typeof o.colaborare === "string" && o.colaborare.trim() ? o.colaborare.trim() : fb;
-  return { instagram: asiguraLink(ig, link), facebook: asiguraLink(fb, link), colaborare: asiguraLink(col, link) };
+  // Informarea întâi, linkul la urmă (linkul unic rămâne ultimul element al mesajului, ca până acum).
+  return {
+    instagram: asiguraLink(asiguraInformare(ig, "instagram"), link),
+    facebook: asiguraLink(asiguraInformare(fb, "facebook"), link),
+    colaborare: asiguraLink(asiguraInformare(col, "colaborare"), link),
+  };
 }
 
 // Varianta fără AI (contul Anthropic neconectat sau răspuns neutilizabil): șablon simplu, completat cu datele campaniei.
@@ -86,8 +113,8 @@ export function sablonMesaje(d: DateMesaj): VarianteMesaj {
   const nume = d.influencer.nume;
   const org = d.organizatie;
   return {
-    instagram: `Bună, ${nume}! Sunt ${pren} de la ${org}. Strângem fonduri pentru campania „${cine}”.${suma} Ne-ar ajuta enorm un story cu linkul campaniei: ${d.link}\nDacă nu poți, înțelegem perfect. Mulțumim!`,
-    facebook: `Bună ziua, ${nume}!\n\nMă numesc ${pren} și lucrez la ${org}. Acum strângem fonduri pentru campania „${cine}”.${suma}\n\nComunitatea dumneavoastră ar putea face diferența: o singură distribuire ne poate aduce donatori noi. Linkul campaniei este: ${d.link}\n\nVă mulțumim din suflet, chiar dacă nu puteți de această dată.\n${pren}, ${org}`,
-    colaborare: `Bună ziua, ${nume}!\n\nSunt ${pren} de la ${org}. Construim o rețea de ambasadori: creatori de conținut care, din când în când, distribuie o campanie urgentă. Fără obligații și fără plată — doar atunci când puteți.\n\nAcum strângem pentru campania „${cine}”.${suma} Linkul campaniei: ${d.link}\n\nAmbasadorii primesc recunoașterea organizației și un raport cu impactul distribuirilor. V-ar interesa?\n\nCu recunoștință,\n${pren}, ${org}`,
+    instagram: `Bună, ${nume}! Sunt ${pren} de la ${org}. Strângem fonduri pentru campania „${cine}”.${suma} Ne-ar ajuta enorm un story cu linkul campaniei: ${d.link}\n${FRAZA_INFORMARE.instagram}\nDacă nu poți, înțelegem perfect. Mulțumim!`,
+    facebook: `Bună ziua, ${nume}!\n\nMă numesc ${pren} și lucrez la ${org}. Acum strângem fonduri pentru campania „${cine}”.${suma}\n\nComunitatea dumneavoastră ar putea face diferența: o singură distribuire ne poate aduce donatori noi. Linkul campaniei este: ${d.link}\n\n${FRAZA_INFORMARE.facebook}\n\nVă mulțumim din suflet, chiar dacă nu puteți de această dată.\n${pren}, ${org}`,
+    colaborare: `Bună ziua, ${nume}!\n\nSunt ${pren} de la ${org}. Construim o rețea de ambasadori: creatori de conținut care, din când în când, distribuie o campanie urgentă. Fără obligații și fără plată — doar atunci când puteți.\n\nAcum strângem pentru campania „${cine}”.${suma} Linkul campaniei: ${d.link}\n\nAmbasadorii primesc recunoașterea organizației și un raport cu impactul distribuirilor. V-ar interesa?\n\n${FRAZA_INFORMARE.colaborare}\n\nCu recunoștință,\n${pren}, ${org}`,
   };
 }

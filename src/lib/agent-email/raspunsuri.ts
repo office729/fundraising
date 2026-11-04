@@ -11,7 +11,7 @@ import { raporteazaEroare } from "@/lib/monitoring";
 
 import { citesteRaspunsuriImap, type ConexiuneImap, type RaspunsBrut } from "./conexiuni";
 import { mesajEticheta, systemEticheta } from "./prompt";
-import { esteRaspunsAutomat, etichetaRapida, fragmentRaspuns, parseazaEticheta, potrivesteMesaj, type MesajAsteptat } from "./raspunsuri-reguli";
+import { decideActiuniRaspuns, esteRaspunsAutomat, etichetaRapida, evalueazaAutenticitate, faraMarcaj, fragmentRaspuns, marcheazaNeverificat, parseazaEticheta, potrivesteMesaj, redactaPentruAi, type MesajAsteptat, type VerdictAutenticitate } from "./raspunsuri-reguli";
 import { ETAPE_INITIALE, type EtichetaRaspuns } from "./reguli";
 import { adaugaSuprimare, parolaCont, type Db } from "./store";
 
@@ -62,6 +62,9 @@ export type RaspunsProcesat = {
   fragment: string;
   eticheta: EtichetaRaspuns;
   automat: boolean;
+  // Verdictul DKIM/SPF/DMARC al serverului de email: un răspuns „neverificat” se salvează și se arată, dar nu declanșează nicio acțiune automată.
+  verdict: VerdictAutenticitate;
+  motivAutenticitate: string;
   ai: { utilizare: Utilizare; costUsd: number; model: string } | null;
 };
 
@@ -144,7 +147,7 @@ async function laLimita<T, R>(items: readonly T[], n: number, fn: (x: T) => Prom
 async function eticheteazaAi(p: PregatitCitire, subiect: string, fragment: string): Promise<{ eticheta: EtichetaRaspuns; ai: RaspunsProcesat["ai"] }> {
   if (!p.ai || !fragment.trim()) return { eticheta: "altul", ai: null };
   try {
-    const r = await apeleazaClaude({ cheie: p.ai.cheie, model: p.ai.model, system: systemEticheta(p.orgNume), mesaje: [{ role: "user", content: mesajEticheta(subiect, fragment) }], maxTokens: 2000, efort: "low", timeoutMs: 40_000, locale: p.locale });
+    const r = await apeleazaClaude({ cheie: p.ai.cheie, model: p.ai.model, system: systemEticheta(p.orgNume), mesaje: [{ role: "user", content: mesajEticheta(redactaPentruAi(subiect, 200), redactaPentruAi(fragment)) }], maxTokens: 2000, efort: "low", timeoutMs: 40_000, locale: p.locale });
     return { eticheta: r.ok ? parseazaEticheta(r.text) : "altul", ai: { utilizare: r.utilizare, costUsd: r.costUsd, model: r.model } };
   } catch {
     return { eticheta: "altul", ai: { utilizare: UTILIZARE_GOALA, costUsd: 0, model: p.ai.model } };
@@ -172,6 +175,8 @@ export async function ruleazaCitirea(p: PregatitCitire): Promise<RezultatCitire>
       const fragment = fragmentRaspuns(brut.text);
       const automat = esteRaspunsAutomat({ antete: brut.antete, subiect: brut.subiect, text: fragment, deLa: brut.deLa });
       const rapid = automat ? ("automat" as const) : etichetaRapida(brut.subiect, fragment);
+      const aut = evalueazaAutenticitate(brut.antete.authenticationResults, brut.deLa);
+      const neverificat = aut.verdict === "neverificat" && !automat;
       const r: RaspunsProcesat = {
         mesajId: m.id,
         companyId: m.companyId,
@@ -184,13 +189,16 @@ export async function ruleazaCitirea(p: PregatitCitire): Promise<RezultatCitire>
         deLa: brut.deLa,
         primitLa: brut.primitLa ?? new Date(),
         subiect: brut.subiect,
-        fragment: fragment || "(mesaj fără text)",
+        fragment: neverificat ? marcheazaNeverificat(fragment || "(mesaj fără text)") : fragment || "(mesaj fără text)",
         eticheta: rapid ?? "altul",
         automat,
+        verdict: aut.verdict,
+        motivAutenticitate: aut.motiv,
         ai: null,
       };
       raspunsuri.push(r);
-      if (!rapid) deEtichetat.push({ r, brut });
+      // Un răspuns neverificat nu mai pleacă la AI: eticheta lui nu declanșează nimic, iar textul poate fi scris de oricine.
+      if (!rapid && !neverificat) deEtichetat.push({ r, brut });
     }
     // Etichetarea AI: câteva odată, cu plafon pe rulare (costul e al organizației).
     const deFacut = deEtichetat.slice(0, Math.max(0, MAX_ETICHETARI_AI - etichetariAi));
@@ -232,18 +240,22 @@ export async function salveazaCitirea(db: Db, p: PregatitCitire, rez: RezultatCi
       // Consumul AI se înregistrează oricum (apelul s-a făcut și a costat), chiar dacă răspunsul fusese salvat între timp.
       if (r.ai) await inregistreazaConsum(db, { orgId: p.orgId, userId: r.deUserId, instrument: "agent_email", model: r.ai.model, utilizare: r.ai.utilizare, costUsd: r.ai.costUsd });
       if (!adaugat) continue;
-      if (r.automat || r.eticheta === "automat") continue; // un răspuns automat (concediu) se păstrează, dar nu e un răspuns al omului
+      const decizie = decideActiuniRaspuns({ eticheta: r.eticheta, automat: r.automat, verdict: r.verdict });
+      if (!decizie.nota) continue; // un răspuns automat (concediu) se păstrează, dar nu e un răspuns al omului
       noiCont++;
       try {
         await db.transaction(async (sp) => {
           const s = sp as unknown as Db;
-          await s.insert(companyNotite).values({ orgId: p.orgId, companyId: r.companyId, text: `Răspuns de la ${r.catreNume} la emailul agentului („${r.subiectMesaj.slice(0, 120)}”) — ${ETICHETE_NOTA[r.eticheta]}: ${r.fragment.slice(0, 400)}`.slice(0, 1000), createdBy: r.deUserId });
-          if (r.eticheta === "stop" || r.eticheta === "refuz") {
+          const text = decizie.deConfirmat
+            ? `Răspuns NEVERIFICAT de la ${r.catreNume} la emailul agentului („${r.subiectMesaj.slice(0, 120)}”): expeditorul nu a trecut verificarea ${r.motivAutenticitate || "DKIM/SPF/DMARC"}, deci nu s-a aplicat nicio acțiune automată (opoziție, etapă, consimțământ). De confirmat de un om. Textul primit: ${faraMarcaj(r.fragment).slice(0, 300)}`
+            : `Răspuns de la ${r.catreNume} la emailul agentului („${r.subiectMesaj.slice(0, 120)}”) — ${ETICHETE_NOTA[r.eticheta]}: ${r.fragment.slice(0, 400)}`;
+          await s.insert(companyNotite).values({ orgId: p.orgId, companyId: r.companyId, text: text.slice(0, 1000), createdBy: r.deUserId });
+          if (decizie.suprima) {
             // Dreptul de opoziție: persoana nu mai primește emailuri de la noi (acord = nu, adresa intră în lista de suprimare).
             if (r.contactId) await s.update(contacts).set({ consentStatus: "nu", consentAt: new Date(), consentSource: `răspuns la emailul agentului (${r.eticheta})` }).where(and(eq(contacts.orgId, p.orgId), eq(contacts.id, r.contactId)));
             await adaugaSuprimare(s, p.orgId, r.deLa, `raspuns_${r.eticheta}`);
           }
-          if (r.eticheta === "interesat" || r.eticheta === "detalii") {
+          if (decizie.mutaEtapa) {
             // Pasul următor pe pipeline: discuția telefonică, dacă firma era încă la început de drum.
             const [f] = await s.select({ stage: companies.stage, status: companies.status }).from(companies).where(and(eq(companies.orgId, p.orgId), eq(companies.id, r.companyId))).limit(1);
             if (f && [...ETAPE_INITIALE, "onepager"].includes(f.stage)) {

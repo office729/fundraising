@@ -136,6 +136,7 @@ export const SETARI_PROSPECTARE_UI_DICT = {
     seIncarca: "Se încarcă…",
     nicioExclusa: "Nicio persoană exclusă.",
     tipExcludere: { email: "e-mail", linkedin: "LinkedIn", nume: "nume" } as Record<string, string>,
+    valoareProtejata: "protejat: se păstrează doar o amprentă, nu datele persoanei",
     scoate: "Scoate din listă",
     // Cardul webhook Waalaxy
     webhook: {
@@ -225,6 +226,7 @@ export const SETARI_PROSPECTARE_UI_DICT = {
     seIncarca: "Loading…",
     nicioExclusa: "No one excluded.",
     tipExcludere: { email: "email", linkedin: "LinkedIn", nume: "name" } as Record<string, string>,
+    valoareProtejata: "protected: only a fingerprint is kept, not the person's data",
     scoate: "Remove from list",
     webhook: {
       titlu: "Replies from LinkedIn (webhook)",

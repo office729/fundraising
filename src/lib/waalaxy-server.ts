@@ -6,6 +6,7 @@ import { sql } from "drizzle-orm";
 
 import type { db } from "@/lib/db";
 import { patternLike, sqlFaraDiacritice } from "@/lib/cautare";
+import { valoareSuprimare } from "@/lib/amprente-hmac";
 import { hashSuprimare } from "@/lib/dezabonare";
 import { raporteazaAvertisment, raporteazaEroare } from "@/lib/monitoring";
 import { adaugaZileLucratoare, aziBucuresti } from "@/lib/prospectare/limite";
@@ -142,12 +143,13 @@ export async function propagaOpozitie(
   const cheie = cheieNume(p.nume);
   const l = linkedinNormalizat(p.linkedin);
   const email = p.email.trim().toLowerCase();
-  const suprimari: [string, string][] = [];
+  // GDPR: doar amprente (HMAC) în lista de suprimare, nu numele, profilul sau emailul în clar.
+  const suprimari: ["nume" | "linkedin" | "email", string][] = [];
   if (cheie) suprimari.push(["nume", cheie]);
   if (l) suprimari.push(["linkedin", l]);
   if (email) suprimari.push(["email", email]);
   for (const [tip, valoare] of suprimari) {
-    await tx.execute(sql`insert into prospectare_suprimati (org_id, tip, valoare, motiv) values (${orgId}, ${tip}, ${valoare}, ${motiv}) on conflict do nothing`);
+    await tx.execute(sql`insert into prospectare_suprimati (org_id, tip, valoare, motiv) values (${orgId}, ${tip}, ${valoareSuprimare(orgId, tip, valoare)}, ${motiv}) on conflict do nothing`);
   }
   // E-mailul intră și în lista generală de suprimare (aceeași ca la dezabonări): nicio campanie de e-mail nu o mai atinge.
   if (email) await tx.execute(sql`insert into email_suppression (org_id, email_hash, motiv) values (${orgId}, ${hashSuprimare(orgId, email)}, 'refuz_linkedin') on conflict do nothing`);

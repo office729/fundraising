@@ -13,7 +13,7 @@ import { anteteDezabonare } from "@/lib/formular230-email-template";
 import { raporteazaAvertisment } from "@/lib/monitoring";
 
 import { trimiteMesajSmtp, type ConexiuneSmtp, type RezultatTrimitere as RezultatSmtp } from "./conexiuni";
-import { areProbleme, ciornaExpirata, corpEmailHtml, corpEmailText, ETAPE_INITIALE, genereazaMessageId, salutPentru, verificaCiorna, type SubsolEmail } from "./reguli";
+import { areProbleme, ciornaExpirata, corpEmailHtml, corpEmailText, ETAPE_INITIALE, genereazaMessageId, salutPentru, textSubsol, verificaCiorna, type SubsolEmail } from "./reguli";
 import { blocheazaFirma, bazaUrl, citesteCont, citesteMesaj, citesteSetari, elibereazaLimita, esteUuid, linkPaginaPublica, parolaCont, pdfPentru, revendicaPentruTrimitere, rezervaLimita, type Db } from "./store";
 import { textEroareConexiune } from "./texte";
 import type { RezultatTrimitere } from "./tipuri";
@@ -58,8 +58,9 @@ export type PregatitTrimitere = {
 const curataText = (s: string, max: number) => s.replace(/\r/g, "").trim().slice(0, max);
 
 // Subsolul emailurilor către firme: informarea scurtă (art. 14 GDPR: cine scrie, temeiul, sursa datelor) și dezabonarea; răspunsul „STOP” e mereu valabil, iar linkul semnat duce la lista de suprimare a organizației.
-function subsol(orgNume: string, orgId: string, email: string): SubsolEmail {
-  return { text: `Vă scriem ca persoană de contact profesională a firmei, pe baza interesului legitim al ${orgNume} (datele provin din surse publice sau profesionale). Dacă nu doriți să mai primiți mesaje, răspundeți cu STOP sau`, linkDezabonare: linkDezabonare(bazaUrl(), orgId, email), etichetaLink: "dezabonați-vă aici." };
+// `cuPixel` = emailul poartă pixelul de deschidere: atunci destinatarul e informat și despre asta (textul e în reguli.ts, testat).
+function subsol(orgNume: string, orgId: string, email: string, cuPixel: boolean): SubsolEmail {
+  return { text: textSubsol(orgNume, cuPixel), linkDezabonare: linkDezabonare(bazaUrl(), orgId, email), etichetaLink: "dezabonați-vă aici." };
 }
 
 type CorpIn = { mesaj: string; semnatura: string; sub: SubsolEmail; pixel: string | null };
@@ -159,7 +160,7 @@ export async function pregatesteTrimiterea(ctx: OrgContext, t: Tr, i: IntrareTri
     throw new EroareUtilizator(t(`Ai atins limita de ${setari.limitaZi} de emailuri pe zi (protejează reputația domeniului tău). Continuă mâine.`, `You have reached the limit of ${setari.limitaZi} emails per day (it protects your domain's reputation). Continue tomorrow.`));
   }
 
-  const sub = subsol(ctx.orgName, ctx.orgId, m.catreEmail);
+  const sub = subsol(ctx.orgName, ctx.orgId, m.catreEmail, pixel !== null);
   const { html, text } = corpuri({ mesaj, semnatura: cont.semnatura, sub, pixel });
   return {
     pregatit: {
@@ -281,7 +282,7 @@ export async function pregatesteTestul(ctx: OrgContext, t: Tr, i: IntrareTrimite
     if (!pdf) return nu(t("Nu există niciun PDF de atașat (One Pager).", "There is no PDF to attach (One Pager)."));
     if (i.pdfHash && i.pdfHash !== pdf.hash) return nu(t("PDF-ul s-a schimbat între timp. Deschide din nou confirmarea.", "The PDF changed in the meantime. Open the confirmation again."));
   }
-  const sub = subsol(ctx.orgName, ctx.orgId, ctx.userEmail);
+  const sub = subsol(ctx.orgName, ctx.orgId, ctx.userEmail, false);
   const { html, text } = corpuri({ mesaj, semnatura: cont.semnatura, sub, pixel: null });
   return {
     pregatit: {

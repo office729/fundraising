@@ -177,6 +177,11 @@ function PanouAdmin({ orgSlug, date, anunta }: { orgSlug: string; date: DatePagi
           </span>
         </label>
       </div>
+      {pixel && (
+        <p role="note" className="rounded-[var(--ci-radius-card)] bg-[var(--ci-amber-soft)] px-3 py-2 text-[12.5px] font-semibold text-[var(--ci-text)]">
+          {d.pixelAvertisment}
+        </p>
+      )}
       <Button
         variant="primary"
         disabled={ocupat}

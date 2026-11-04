@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 
 import { inregistreazaAudit } from "@/lib/audit";
 import { withOrgAdmin, withOrgFaze } from "@/lib/auth/guard";
+import { esteAmprentaHmac } from "@/lib/amprente-hmac";
 import { prospectareChei, prospectareJurnal, prospectareSuprimati } from "@/lib/db/schema";
 import { EroareUtilizator, mesajSigur } from "@/lib/erori";
 import { apolloValideaza, CONECTORI, curataMesaj, hunterValideaza, lushaValideaza, NUME_CONECTOR, prospeoValideaza, waalaxyListe, waalaxyValideaza, type Conector, type ElementWaalaxy, type Rezultat } from "@/lib/prospectare/motor";
@@ -212,7 +213,8 @@ export async function salveazaAlegereWaalaxy(orgSlug: string, alegere: SetariWaa
 
 // ---- Persoane excluse de la prospectare (au cerut să nu mai fie propuse): listă vizibilă și reversibilă pentru administratori
 
-export type Excludere = { id: string; tip: string; valoare: string; motiv: string | null; la: string };
+// valoare: null = rând păstrat doar ca amprentă (HMAC); nu se poate afișa nici măcar administratorilor, de aceea nu se citește „cine” a fost exclus.
+export type Excludere = { id: string; tip: string; valoare: string | null; motiv: string | null; la: string };
 
 const citesteExcluderi = withOrgAdmin(
   async (ctx): Promise<Excludere[]> => {
@@ -222,7 +224,7 @@ const citesteExcluderi = withOrgAdmin(
       .where(eq(prospectareSuprimati.orgId, ctx.orgId))
       .orderBy(desc(prospectareSuprimati.createdAt))
       .limit(300);
-    return randuri.map((r) => ({ ...r, la: r.la.toISOString() }));
+    return randuri.map((r) => ({ ...r, valoare: esteAmprentaHmac(r.valoare) ? null : r.valoare, la: r.la.toISOString() }));
   },
   OPTIUNI,
 );

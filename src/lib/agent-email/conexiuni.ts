@@ -181,6 +181,9 @@ export type CerereCitire = {
 
 const sir = (v: unknown): string | null => (typeof v === "string" ? v : Array.isArray(v) ? String(v[0] ?? "") : v && typeof v === "object" && "text" in v ? String((v as { text: unknown }).text) : null);
 
+// Toate valorile unui antet care poate apărea de mai multe ori (Authentication-Results: câte unul pe fiecare server prin care a trecut mesajul).
+const siruri = (v: unknown): string[] => (Array.isArray(v) ? v : [v]).filter((x): x is string => typeof x === "string" && x.trim() !== "").map((x) => x.slice(0, 2000)).slice(0, 8);
+
 export async function citesteRaspunsuriImap(c: ConexiuneImap, cerere: CerereCitire): Promise<{ ok: true; mesaje: RaspunsBrut[] } | { ok: false; eroare: EroareConexiune; mesaje: RaspunsBrut[] }> {
   const r = await rezolvaPublic(c.host);
   if (!r.ok) return { ok: false, eroare: { cod: "host", detaliu: "" }, mesaje: [] };
@@ -221,6 +224,7 @@ export async function citesteRaspunsuriImap(c: ConexiuneImap, cerere: CerereCiti
               xAutorespond: sir(h.get("x-autorespond")),
               xAutoResponseSuppress: sir(h.get("x-auto-response-suppress")),
               returnPath: sir(h.get("return-path")),
+              authenticationResults: siruri(h.get("authentication-results")),
             },
           });
         }

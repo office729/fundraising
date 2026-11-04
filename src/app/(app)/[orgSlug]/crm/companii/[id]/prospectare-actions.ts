@@ -3,6 +3,7 @@
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
+import { SetSuprimate } from "@/lib/amprente-hmac";
 import { inregistreazaAudit } from "@/lib/audit";
 import { withOrgFaze, withOrgSession } from "@/lib/auth/guard";
 import { appUsers, companies, contacts, deepSearchAi, prospectareCandidati, prospectareChei, prospectareJurnal, prospectareSuprimati } from "@/lib/db/schema";
@@ -23,7 +24,7 @@ import {
   type RezultatCautare,
 } from "@/lib/prospectare/motor";
 import { APELURI_REZERVATE_PER_CAUTARE, COOLDOWN_CAUTARE_ORE, LIMITA_APELURI_PE_ZI } from "@/lib/prospectare/limite";
-import { apeluriFolosite, respingeCuAmprenta } from "@/lib/prospectare/server";
+import { apeluriFolosite, respingeCuAmprenta, suprimariPersoana } from "@/lib/prospectare/server";
 import { esteMemoratProaspat } from "@/lib/deep-search-ai/validare";
 import { aprobaCandidatiAction } from "./deep-search-actions";
 import { decripteaza } from "@/lib/secret-box";
@@ -166,6 +167,7 @@ export type RezultatActiune = {
 };
 
 type Pregatit = {
+  orgId: string;
   companyId: string;
   firma: { nume: string; site: string | null; angajati: number | null };
   domeniuAlternativ: string | null;
@@ -268,6 +270,7 @@ export const cautaDecidentiAction = withOrgFaze<[string, boolean], Pregatit, Rez
     const domeniuAlternativ = deLaFirma.map((c) => domeniuDinEmail(c.email)).find(Boolean) ?? null;
     return {
       pregatit: {
+        orgId: ctx.orgId,
         companyId,
         firma: { nume: firma.nume, site: firma.site, angajati: firma.angajati },
         domeniuAlternativ,
@@ -285,7 +288,8 @@ export const cautaDecidentiAction = withOrgFaze<[string, boolean], Pregatit, Rez
       domeniuAlternativ: p.domeniuAlternativ,
       chei: p.chei,
       cunoscute: { chei: new Set(p.cunoscute.chei), emailuri: new Set(p.cunoscute.emailuri), linkedin: new Set(p.cunoscute.linkedin) },
-      suprimate: { chei: new Set(p.suprimate.chei), emailuri: new Set(p.suprimate.emailuri), linkedin: new Set(p.suprimate.linkedin) },
+      // valorile din listă pot fi în clar (vechi) sau amprente HMAC (noi): seturile le recunosc pe ambele
+      suprimate: { chei: new SetSuprimate(p.orgId, "nume", p.suprimate.chei), emailuri: new SetSuprimate(p.orgId, "email", p.suprimate.emailuri), linkedin: new SetSuprimate(p.orgId, "linkedin", p.suprimate.linkedin) },
       limite: { apeluriRamase: p.rezerva },
       fetchFn: fetch,
     }),
@@ -358,9 +362,8 @@ export const respingeCandidat = withOrgSession(
     if (nuMaiPropune === true) {
       const l = linkedinNormalizat(c.linkedin);
       const email = c.email ? c.email.toLowerCase() : "";
-      const suprimari: { orgId: string; tip: string; valoare: string; motiv: string }[] = [{ orgId: ctx.orgId, tip: "nume", valoare: c.numeNorm, motiv: "a cerut să nu fie contactată" }];
-      if (email) suprimari.push({ orgId: ctx.orgId, tip: "email", valoare: email, motiv: "a cerut să nu fie contactată" });
-      if (l) suprimari.push({ orgId: ctx.orgId, tip: "linkedin", valoare: l, motiv: "a cerut să nu fie contactată" });
+      // GDPR: în lista de suprimare intră doar amprente (HMAC), nu numele, emailul sau profilul în clar.
+      const suprimari = suprimariPersoana(ctx.orgId, { numeNorm: c.numeNorm, email, linkedin: c.linkedin }, "a cerut să nu fie contactată");
       await ctx.db.insert(prospectareSuprimati).values(suprimari).onConflictDoNothing();
       const deAprobat = await ctx.db.select().from(prospectareCandidati).where(and(eq(prospectareCandidati.orgId, ctx.orgId), eq(prospectareCandidati.stare, "nou")));
       deInchis = deAprobat.filter((x) => x.id === c.id || x.numeNorm === c.numeNorm || (email !== "" && (x.email || "").toLowerCase() === email) || (l !== "" && linkedinNormalizat(x.linkedin) === l));

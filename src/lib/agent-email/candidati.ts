@@ -8,7 +8,7 @@ import { patternLike, sqlFaraDiacritice } from "@/lib/cautare";
 import { esteEligibilaD177, sumaEfectiva } from "@/lib/prioritizare-firme";
 import { calculeazaScor } from "@/lib/scor-companie";
 
-import { alegeDestinatar, ETAPE_INITIALE, ZILE_FARA_DUBLURA, type ContactCandidat } from "./reguli";
+import { alegeDestinatar, doarCuAcordEfectiv, ETAPE_INITIALE, ZILE_FARA_DUBLURA, type ContactCandidat } from "./reguli";
 import { construiesteSuprimare, esteUuid, firmeCuPdf } from "./store";
 import type { CandidatAgent, FiltreCandidati, RezultatCandidati } from "./tipuri";
 
@@ -19,20 +19,21 @@ const PLAFON_LISTA = 200;
 const PLAFON_FIRME = 1500;
 const bucati = <T,>(v: readonly T[], n: number): T[][] => Array.from({ length: Math.ceil(v.length / n) }, (_, i) => v.slice(i * n, i * n + n));
 
-export function curataFiltre(f: Partial<FiltreCandidati>): FiltreCandidati {
+// `rol`: doar owner/admin pot scoate restricția „doar contacte cu acord”; pentru un membru simplu rămâne activă oricâte valori ar trimite clientul (vezi doarCuAcordEfectiv).
+export function curataFiltre(f: Partial<FiltreCandidati>, rol: string): FiltreCandidati {
   return {
     q: String(f.q ?? "").trim().slice(0, 80),
     responsabilId: esteUuid(f.responsabilId) ? f.responsabilId : "",
     tip: f.tip === "sponsori" || f.tip === "noi" ? f.tip : "toate",
     mecanism: f.mecanism === "d177" || f.mecanism === "mec20" ? f.mecanism : "toate",
     scorMin: Math.max(0, Math.min(100, Math.floor(Number(f.scorMin) || 0))),
-    doarCuAcord: f.doarCuAcord !== false,
+    doarCuAcord: doarCuAcordEfectiv(f.doarCuAcord, rol),
     ordine: f.ordine === "nume" ? "nume" : "scor",
   };
 }
 
 export async function cautaCandidati(ctx: OrgContext, brut: Partial<FiltreCandidati>): Promise<RezultatCandidati> {
-  const f = curataFiltre(brut);
+  const f = curataFiltre(brut, ctx.role);
   // Scris cu numele tabelului, nu cu coloanele Drizzle: în lista SELECT Drizzle omite prefixul tabelului, iar în subinterogare "id" ar însemna s.id.
   const sponsorSql = sql`(coalesce(companies.suma_sponsorizata, 0) > 0 or companies.status = 'won' or exists (select 1 from company_sponsorizari s where s.company_id = companies.id and s.org_id = companies.org_id))`;
   const conditii = [eq(companies.orgId, ctx.orgId), isNull(companies.deletedAt), sql`${companies.status} <> 'lost'`];
