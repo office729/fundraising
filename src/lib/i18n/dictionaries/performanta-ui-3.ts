@@ -491,6 +491,11 @@ export const PERFORMANTA_UI3_DICT = {
         formula: "The percentage of donors with phone, city and county filled in.",
         limite: "A point-in-time value. Donors without donations are not excluded.",
       },
+      influenceri_identificati: {
+        eticheta: "Influencers identified",
+        formula: "How many influencer profiles were created (added or imported) in the period, from the Influencers page. Counted automatically; profiles deleted on request are no longer counted.",
+        limite: "It does not say how many replied or shared. The value is the organization's; on the Influencers page each colleague also sees how many profiles they created today. Missing if the Influencers module is not used yet.",
+      },
     } as Record<string, MetricaEn>,
   },
 } satisfies Record<Locale, unknown>;

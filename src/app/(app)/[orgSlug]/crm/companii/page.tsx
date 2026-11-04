@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { requireOrgAccess } from "@/lib/auth/guard";
@@ -20,9 +21,11 @@ import { D177Badge } from "./d177-badge";
 import { AddCompanyButton, CalendarLucruButton, ImportCsvButton, TopButton } from "./header-actions";
 import { FereastraFiscala } from "./fereastra-fiscala";
 import { FilterBar } from "./filter-bar";
+import { waalaxyPermis } from "./lib/filtre-extra";
 import { numarFiltreActive, parseFiltru } from "./lib/filters";
+import { numereFiltreMemorate } from "./numere-filtre";
 import { PaginaNav } from "./pagina-nav";
-import { getPaginaCompanii } from "./queries";
+import { getPaginaCompanii, getUltimaLista } from "./queries";
 import { titluAbsolut } from "@/lib/page-titles";
 
 export default function CompaniiPage({ params, searchParams }: { params: Promise<{ orgSlug: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
@@ -48,9 +51,17 @@ async function CompaniiContent({
     if (Array.isArray(v)) v.forEach((val) => sp.append(k, val));
     else sp.set(k, v);
   }
-  const filtru = parseFiltru(sp);
-  // Prioritizarea pe benzi A/B/C e inclusă din pachetul IMPACT: fără el, parametrii din adresă sunt ignorați.
   const access = await requireOrgAccess(orgSlug);
+  // Fiecare coleg revine, la intrarea din meniu (fără parametri), la ultima lui listă — inclusiv „Doar firme lucrate”. „r=1” = pornește de la zero.
+  if (Object.keys(spRaw).length === 0) {
+    const ultima = await getUltimaLista(orgSlug).catch(() => "");
+    if (ultima) redirect(`/${orgSlug}/crm/companii?${ultima}`);
+  }
+  const filtru = parseFiltru(sp);
+  // Waalaxy e doar pentru administrator (owner / admin): pentru ceilalți parametrul din adresă se ignoră.
+  const esteAdmin = access.role === "owner" || access.role === "admin";
+  filtru.waalaxy = waalaxyPermis(filtru.waalaxy, esteAdmin);
+  // Prioritizarea pe benzi A/B/C e inclusă din pachetul IMPACT: fără el, parametrii din adresă sunt ignorați.
   const areBenzi = areModul(pachetPentruModule(access.orgPackage, access.userEmail), "prioritizare-firme");
   if (!areBenzi) {
     filtru.banda = "";
@@ -65,7 +76,11 @@ async function CompaniiContent({
   const ui = COMPANII_UI_DICT[locale].lista;
   const nf = intlLocale(locale);
 
-  const { totalFirme, stats, lista, responsabili, dupaJudet, functiiNr, benziNr, caiCalde } = await getPaginaCompanii(orgSlug, filtru);
+  // Numerele din selecte rulează în paralel cu pagina, au limită de 5 secunde (fără ele, etichetele apar fără număr) și sunt memorate 2 minute pe combinația de filtre.
+  const [{ totalFirme, stats, lista, responsabili, dupaJudet, functiiNr, benziNr, caiCalde }, numere] = await Promise.all([
+    getPaginaCompanii(orgSlug, filtru),
+    numereFiltreMemorate(orgSlug, access.orgId, access.userId, filtru, esteAdmin),
+  ]);
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-5">
@@ -102,7 +117,7 @@ async function CompaniiContent({
         <StatCard label={dict.stats.medieCompanie} value={`${stats.medieCompanie.toLocaleString(nf)} RON`} />
       </div>
 
-      <FilterBar responsabili={responsabili} functiiNr={functiiNr} prioritizare={areBenzi} benziNr={benziNr} caiCalde={caiCalde} />
+      <FilterBar responsabili={responsabili} functiiNr={functiiNr} prioritizare={areBenzi} benziNr={benziNr} caiCalde={caiCalde} numere={numere} esteAdmin={esteAdmin} />
 
       <Card padded={false}>
         {lista.rows.length === 0 ? (

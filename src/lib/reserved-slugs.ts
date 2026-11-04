@@ -41,6 +41,8 @@ const RESERVED_SLUGS = new Set([
   "programare",
   "reset-local-data",
   "reset-password",
+  // Linkurile unice ale influencerilor (/r/<cod>).
+  "r",
   "s",
   "signup",
   "strangere-fonduri",

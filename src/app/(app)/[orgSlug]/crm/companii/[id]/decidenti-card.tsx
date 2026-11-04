@@ -1,12 +1,16 @@
 "use client";
 
-import { ExternalLink, Search, UserCheck, UserX } from "lucide-react";
+import { ExternalLink, Globe, Search, UserCheck, UserX } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 
+import { tipTelefon } from "@/lib/deep-search-ai/validare";
 import { vechime } from "@/lib/i18n/dictionaries/decidenti-ui";
 import { COMPANII_UI_DICT } from "@/lib/i18n/dictionaries/companii-ui";
+import { PROSPECTARE_DEEP_DICT } from "@/lib/i18n/dictionaries/prospectare-deep-ui";
+import { antetFurnizori } from "@/lib/prospectare/deep-search";
 import { NUME_FURNIZOR, type Furnizor } from "@/lib/prospectare/motor";
 
 import { Badge } from "../../components/ui/badge";
@@ -14,101 +18,214 @@ import { Button } from "../../components/ui/button";
 import { Card, CardHeader } from "../../components/ui/card";
 import { useLocale } from "../../lib/locale-context";
 import { CrediteFurnizori } from "./credite-furnizori";
-import { aprobaCandidatAction, cautaDecidentiPentruFirma, respingeCandidatAction, type RezultatActiune, type StareProspectare } from "./prospectare-actions";
+import { cautaDecidentiWebAi } from "./deep-search-ai-actions";
+import { aprobaCandidatiAction, cautaDeepSearch, respingeCandidatiAction, type RezultatAprobareLot, type RezultatDeepSearch } from "./deep-search-actions";
+import { respingeCandidatAction, type StareProspectare } from "./prospectare-actions";
 
-// „Decidenți găsiți”: caută persoane de decizie pentru firmă cu conturile organizației (Apollo, Prospeo, Hunter, Lusha) și le păstrează în „De aprobat” până le aprobă cineva.
-// La aprobare, persoana poate fi trimisă și în lista Waalaxy aleasă de organizație (abordare pe LinkedIn).
-export function DecidentiCard({ orgSlug, companyId, stare }: { orgSlug: string; companyId: string; stare: StareProspectare }) {
+// Siglele furnizorilor (pictogramele din public/furnizori): doar ca să se recunoască de unde vine fiecare persoană.
+const SIGLA: Record<Furnizor, string> = { lusha: "/furnizori/lusha.png", apollo: "/furnizori/apollo.svg", prospeo: "/furnizori/prospeo.png", hunter: "/furnizori/hunter.png" };
+const eFurnizor = (s: string): s is Furnizor => s in SIGLA;
+
+type Ocupat = "deep" | "lant" | "ai" | "aproba" | null;
+
+// „Decidenți găsiți”: Deep Search la toți furnizorii conectați (Apollo întâi, apoi ceilalți în paralel), căutare pe internet cu AI sau în lanț (economic). Persoanele găsite stau în „De aprobat”
+// până le aprobă cineva; abia la „Aprobă” se aduc emailul/telefonul, de la furnizorul care a găsit persoana, doar pentru cei bifați.
+export function DecidentiCard({ orgSlug, companyId, stare, aiDisponibil }: { orgSlug: string; companyId: string; stare: StareProspectare; aiDisponibil: boolean }) {
   const router = useRouter();
   const locale = useLocale();
   const ui = COMPANII_UI_DICT[locale].decidenti;
+  const d = PROSPECTARE_DEEP_DICT[locale].deep;
   const [pending, startTransition] = useTransition();
-  const [rezultat, setRezultat] = useState<RezultatActiune | null>(null);
+  const [ocupat, setOcupat] = useState<Ocupat>(null);
   const [eroare, setEroare] = useState<string | null>(null);
   const [notita, setNotita] = useState<string | null>(null);
-  const [avertisment, setAvertisment] = useState<string | null>(null);
-  const [inWaalaxy, setInWaalaxy] = useState<Record<string, boolean>>({});
+  const [avertismente, setAvertismente] = useState<string[]>([]);
+  const [antet, setAntet] = useState<string | null>(null);
+  const [rezumat, setRezumat] = useState<string | null>(null);
+  const [selectati, setSelectati] = useState<Set<string>>(new Set());
+  const [cuTelefon, setCuTelefon] = useState(false);
+  const [inWaalaxy, setInWaalaxy] = useState(false);
   const [confirmaExcludere, setConfirmaExcludere] = useState<string | null>(null);
   const [versiuneCredite, setVersiuneCredite] = useState(0); // crește după fiecare căutare, ca să se recitească creditele
   const faraChei = stare.furnizoriConfigurati.length === 0;
   const numeFurnizori = stare.furnizoriConfigurati.map((f: Furnizor) => NUME_FURNIZOR[f]);
-  const areLinkedin = stare.candidati.some((c) => c.linkedin);
+  const vazute = useRef<Set<string>>(new Set());
+
+  // Persoanele noi din listă se bifează singure doar dacă aprobarea lor nu costă nimic (au deja emailul sau vin de pe internet) sau dacă sunt foarte potrivite.
+  useEffect(() => {
+    const noi = stare.candidati.filter((c) => !vazute.current.has(c.id));
+    if (noi.length === 0) return;
+    for (const c of noi) vazute.current.add(c.id);
+    setSelectati((acum) => {
+      const urm = new Set([...acum].filter((id) => stare.candidati.some((c) => c.id === id)));
+      for (const c of noi) if (c.sursa === "web-ai" || c.email || c.scor >= 80) urm.add(c.id);
+      return urm;
+    });
+  }, [stare.candidati]);
 
   // Notița de reușită dispare singură.
   useEffect(() => {
     if (!notita) return;
-    const t = setTimeout(() => setNotita(null), 7000);
+    const t = setTimeout(() => setNotita(null), 9000);
     return () => clearTimeout(t);
   }, [notita]);
 
-  const cauta = (forteaza = false) =>
+  const curata = () => {
+    setEroare(null);
+    setNotita(null);
+    setAvertismente([]);
+    setRezumat(null);
+  };
+  const numeSursa = (s: string) => (s === "web-ai" ? d.sursaInternet : (NUME_FURNIZOR[s as Furnizor] ?? s));
+
+  const aratRezultat = (r: RezultatDeepSearch) => {
+    if (!r.ok) return setEroare(r.eroare ?? null);
+    const stari = r.stari ?? [];
+    setAntet(stari.length ? d.antetFurnizori(antetFurnizori(stari, numeSursa, d.memorat)) : null);
+    setRezumat(r.toateMemorate ? d.toateMemorate : r.noi ? d.amGasit(r.noi) : d.niciunNou);
+  };
+
+  const cauta = (mod: "deep" | "lant", forteaza = false) => {
+    curata();
+    setOcupat(mod);
     startTransition(async () => {
-      setEroare(null);
-      setNotita(null);
-      setAvertisment(null);
-      setRezultat(null);
-      const r = await cautaDecidentiPentruFirma(orgSlug, companyId, forteaza);
-      setRezultat(r);
+      const r = await cautaDeepSearch(orgSlug, companyId, mod, forteaza);
+      aratRezultat(r);
       setVersiuneCredite((v) => v + 1);
+      setOcupat(null);
       router.refresh();
     });
+  };
 
-  const ruleaza = (f: () => Promise<{ error: string | null; avertisment?: string }>, reusit: string) =>
+  const cautaAi = (forteaza = false) => {
+    curata();
+    setOcupat("ai");
     startTransition(async () => {
-      setEroare(null);
-      setNotita(null);
-      setAvertisment(null);
-      const r = await f();
-      if (r.error) setEroare(r.error);
+      const r = await cautaDecidentiWebAi(orgSlug, companyId, forteaza);
+      if (!r.ok) setEroare(r.eroare ?? null);
       else {
-        setNotita(reusit);
-        if (r.avertisment) setAvertisment(r.avertisment);
+        setAntet(d.antetFurnizori(`${d.sursaInternet}: ${r.gasiti ?? 0}${r.dinMemorie ? ` (${d.memoratAi})` : ""}`));
+        setRezumat(r.dinMemorie ? PROSPECTARE_DEEP_DICT[locale].msg.webMemorat : r.noi ? d.amGasit(r.noi) : d.niciunNou);
       }
+      setOcupat(null);
+      router.refresh();
+    });
+  };
+
+  const aproba = () => {
+    const ids = stare.candidati.filter((c) => selectati.has(c.id)).map((c) => c.id);
+    if (ids.length === 0) return;
+    curata();
+    setOcupat("aproba");
+    startTransition(async () => {
+      const r: RezultatAprobareLot = await aprobaCandidatiAction(orgSlug, ids, { cuTelefon, trimiteWaalaxy: inWaalaxy && stare.waalaxyGata });
+      if (r.eroare && r.adaugati === 0) setEroare(r.eroare);
+      if (r.adaugati > 0) setNotita(d.rezultatAprobare(r.adaugati, r.faraEmail));
+      const probleme = r.esuati.map((e) => d.esecFurnizor(e.furnizor, e.mesaj));
+      if (r.ramase.length > 0) probleme.push(d.ramaseReincercare(r.ramase.length));
+      if (r.excluse > 0) probleme.push(d.excluse(r.excluse));
+      setAvertismente([...probleme, ...r.avertismente]);
+      setSelectati(new Set(r.ramase));
+      setVersiuneCredite((v) => v + 1);
+      setOcupat(null);
+      router.refresh();
+    });
+  };
+
+  const respingeBifatii = () => {
+    const ids = stare.candidati.filter((c) => selectati.has(c.id)).map((c) => c.id);
+    if (ids.length === 0) return;
+    curata();
+    startTransition(async () => {
+      const r = await respingeCandidatiAction(orgSlug, ids);
+      if (r.error) setEroare(r.error);
+      else setNotita(d.respinsBifati(r.respinsi));
+      setSelectati(new Set());
+      router.refresh();
+    });
+  };
+
+  const excludeComplet = (id: string, nume: string) => {
+    curata();
+    startTransition(async () => {
+      const r = await respingeCandidatAction(orgSlug, id, true);
+      if (r.error) setEroare(r.error);
+      else setNotita(ui.exclus(nume));
       setConfirmaExcludere(null);
       router.refresh();
     });
+  };
 
-  // Căutarea nu a reușit deloc (toți furnizorii au dat eroare) ≠ căutarea n-a găsit pe nimeni.
-  const cautareEsuata = rezultat?.ok === true && (rezultat.noi ?? 0) === 0 && (rezultat.gasiti ?? 0) === 0 && (rezultat.avertismente?.length ?? 0) > 0;
-  const deja = rezultat && !rezultat.ok ? rezultat.deja : undefined;
-  const eroareCautare = rezultat && !rezultat.ok && !rezultat.deja ? rezultat.eroare : null;
+  const comuta = (id: string) =>
+    setSelectati((acum) => {
+      const urm = new Set(acum);
+      if (urm.has(id)) urm.delete(id);
+      else urm.add(id);
+      return urm;
+    });
+  const nrSel = stare.candidati.filter((c) => selectati.has(c.id)).length;
+  const toti = stare.candidati.length > 0 && nrSel === stare.candidati.length;
+  const arataTelefon = stare.candidati.some((c) => selectati.has(c.id) && c.sursa === "prospeo" && !c.telefon);
+  const arataWaalaxy = stare.waalaxyGata && stare.candidati.some((c) => selectati.has(c.id) && c.linkedin);
+  const areAi = stare.candidati.some((c) => c.sursa === "web-ai");
+  const ai = stare.webAi;
 
+  const buton = "min-h-10";
   return (
     <Card>
       <div aria-busy={pending}>
         <CardHeader
           title={ui.titlu(stare.candidati.length)}
-          subtitle={
-            faraChei
-              ? stare.esteAdmin
-                ? ui.subtitluAdmin
-                : ui.subtitluMembru
-              : ui.subtitluCautare(numeFurnizori.join(", "))
-          }
+          subtitle={faraChei ? (stare.esteAdmin ? ui.subtitluAdmin : ui.subtitluMembru) : ui.subtitluCautare(numeFurnizori.join(", "))}
           action={
-            faraChei ? (
-              stare.esteAdmin ? (
-                <Link href={`/${orgSlug}/crm/setari#prospectare`} className="inline-flex min-h-10 items-center rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-3 text-sm font-semibold text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]">
-                  {ui.adaugaCheile}
-                </Link>
-              ) : null
-            ) : (
-              <Button variant="primary" className="min-h-10" onClick={() => cauta(false)} loading={pending}>
-                <Search className="h-4 w-4" aria-hidden /> {pending ? ui.seCauta : ui.cautaBtn}
-              </Button>
-            )
+            faraChei && stare.esteAdmin ? (
+              <Link href={`/${orgSlug}/crm/setari#prospectare`} className="inline-flex min-h-10 items-center rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-3 text-sm font-semibold text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]">
+                {ui.adaugaCheile}
+              </Link>
+            ) : null
           }
         />
+
+        {!faraChei && (
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <Button variant="primary" className={buton} onClick={() => cauta("deep")} loading={ocupat === "deep"} disabled={pending} title={d.btnHint}>
+              {ocupat !== "deep" && <Search className="h-4 w-4" aria-hidden />} {ocupat === "deep" ? d.btnBusy : d.btn}
+            </Button>
+            {aiDisponibil && (
+              <Button className={`${buton} !bg-emerald-600 !text-white hover:!bg-emerald-700`} onClick={() => cautaAi(false)} loading={ocupat === "ai"} disabled={pending} title={d.webHint}>
+                {ocupat !== "ai" && <Globe className="h-4 w-4" aria-hidden />} {ocupat === "ai" ? d.webBusy : d.web}
+              </Button>
+            )}
+            <button type="button" onClick={() => cauta("lant")} disabled={pending} title={d.lantHint} className="min-h-10 px-1 text-[13px] font-medium text-[var(--ci-text-muted)] underline-offset-2 hover:underline disabled:opacity-50">
+              {ocupat === "lant" ? d.lantBusy : d.lant}
+            </button>
+            {stare.esteAdmin && (
+              <button type="button" onClick={() => cauta("deep", true)} disabled={pending} className="min-h-10 px-1 text-[12px] text-[var(--ci-text-muted)] underline-offset-2 hover:underline disabled:opacity-50">
+                {d.cautaDinNouDeep}
+              </button>
+            )}
+          </div>
+        )}
 
         <CrediteFurnizori orgSlug={orgSlug} versiune={versiuneCredite} />
 
         {!faraChei && (
           <p className="mb-3 text-xs leading-relaxed text-[var(--ci-text-muted)]">
-            {pending ? ui.seCautaLa(numeFurnizori.join(", ")) : ui.poateConsuma}
-            {stare.ultimaCautare && !pending && (
+            {pending && ocupat !== "aproba" ? ui.seCautaLa(numeFurnizori.join(", ")) : ui.poateConsuma}
+            {stare.ultimaCautare && !pending && <> {ui.ultimaCautare(vechime(stare.ultimaCautare.la, locale), stare.ultimaCautare.deCine)}</>}
+            {ai && !pending && (
               <>
                 {" "}
-                {ui.ultimaCautare(vechime(stare.ultimaCautare.la, locale), stare.ultimaCautare.deCine)}
+                {d.aiMemorie(vechime(ai.la, locale), ai.gasiti)}
+                {ai.proaspat && stare.esteAdmin && (
+                  <>
+                    {" "}
+                    <button type="button" onClick={() => cautaAi(true)} disabled={pending} className="text-[var(--ci-primary)] underline-offset-2 hover:underline">
+                      {d.cautaDinNouAi}
+                    </button>
+                  </>
+                )}
+                {ai.proaspat && !stare.esteAdmin && <span title={d.cautaDinNouAiHint}> ({d.memoratAi})</span>}
               </>
             )}
           </p>
@@ -119,55 +236,10 @@ export function DecidentiCard({ orgSlug, companyId, stare }: { orgSlug: string; 
             {eroare}
           </p>
         )}
-        {eroareCautare && (
-          <p role="alert" className="mb-3 rounded-lg bg-[var(--ci-red-soft)] px-3 py-2 text-[13px] text-[#9b1c1c]">
-            {eroareCautare}
-          </p>
-        )}
-        {deja && (
-          <div role="status" className="mb-3 rounded-lg bg-[var(--ci-amber-soft)] px-3 py-2 text-[13px] text-[#7a3e00]">
-            <p>{ui.cautataRecent(vechime(deja.la, locale), deja.deCine, deja.poateForta)}</p>
-            {deja.poateForta && (
-              <div className="mt-2 flex gap-2">
-                <Button variant="primary" size="sm" className="min-h-10" onClick={() => cauta(true)} disabled={pending}>
-                  {ui.cautaDinNou}
-                </Button>
-                <Button size="sm" className="min-h-10" onClick={() => setRezultat(null)}>
-                  {ui.renunta}
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
-        {rezultat?.ok && cautareEsuata && (
-          <div role="alert" className="mb-3 rounded-lg bg-[var(--ci-red-soft)] px-3 py-2 text-[13px] text-[#9b1c1c]">
-            <p className="font-semibold">{ui.cautareIncompleta}</p>
-            <ul className="mt-1 list-disc space-y-0.5 pl-5">
-              {rezultat.avertismente?.map((a, i) => (
-                <li key={i}>{a}</li>
-              ))}
-            </ul>
-            <Button size="sm" className="mt-2 min-h-10" onClick={() => cauta(true)} disabled={pending || !stare.esteAdmin} title={stare.esteAdmin ? undefined : ui.doarAdminRepeta}>
-              {ui.incearcaDinNou}
-            </Button>
-          </div>
-        )}
-        {rezultat?.ok && !cautareEsuata && (
+        {(antet || rezumat) && !eroare && (
           <div role="status" className="mb-3 rounded-lg bg-[var(--ci-surface-2)] px-3 py-2 text-[13px] text-[var(--ci-text-muted)]">
-            <p>
-              {rezultat.noi
-                ? ui.amGasit(rezultat.noi)
-                : rezultat.gasiti
-                  ? ui.dejaInContacte
-                  : ui.niciuna}
-            </p>
-            {rezultat.avertismente && rezultat.avertismente.length > 0 && (
-              <ul className="mt-1 list-disc space-y-0.5 pl-5 text-[#7a3e00]">
-                {rezultat.avertismente.map((a, i) => (
-                  <li key={i}>{a}</li>
-                ))}
-              </ul>
-            )}
+            {rezumat && <p className="font-medium text-[var(--ci-text)]">{rezumat}</p>}
+            {antet && <p className="mt-0.5 break-words">{antet}</p>}
           </div>
         )}
         {notita && (
@@ -175,38 +247,83 @@ export function DecidentiCard({ orgSlug, companyId, stare }: { orgSlug: string; 
             {notita}
           </p>
         )}
-        {avertisment && (
-          <p role="status" className="mb-3 rounded-lg bg-[var(--ci-amber-soft)] px-3 py-2 text-[13px] text-[#7a3e00]">
-            {avertisment}
-          </p>
+        {avertismente.length > 0 && (
+          <ul role="status" className="mb-3 list-disc space-y-0.5 rounded-lg bg-[var(--ci-amber-soft)] py-2 pr-3 pl-7 text-[13px] text-[#7a3e00]">
+            {avertismente.map((a, i) => (
+              <li key={i}>{a}</li>
+            ))}
+          </ul>
         )}
 
         {stare.candidati.length > 0 ? (
           <>
-            <p className="mb-2 text-xs text-[var(--ci-text-muted)]">{ui.deAprobatOrdonate}</p>
+            <p className="mb-2 text-xs leading-relaxed text-[var(--ci-text-muted)]">
+              {d.intro} {areAi && d.introAi}
+            </p>
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <button type="button" onClick={() => setSelectati(toti ? new Set() : new Set(stare.candidati.map((c) => c.id)))} className="min-h-10 px-1 text-[13px] font-medium text-[var(--ci-primary)] hover:underline">
+                {toti ? d.niciunul : d.bifeazaTot}
+              </button>
+              <Button variant="primary" className={buton} onClick={aproba} loading={ocupat === "aproba"} disabled={pending || nrSel === 0}>
+                {ocupat !== "aproba" && <UserCheck className="h-4 w-4" aria-hidden />} {ocupat === "aproba" ? d.aprobaBusy : d.aproba(nrSel)}
+              </Button>
+              <Button className={buton} onClick={respingeBifatii} disabled={pending || nrSel === 0}>
+                <UserX className="h-4 w-4" aria-hidden /> {d.respingeBifatii(nrSel)}
+              </Button>
+            </div>
+            {arataTelefon && (
+              <label className="mb-2 flex cursor-pointer items-start gap-2 text-xs text-[var(--ci-text-muted)]">
+                <input type="checkbox" className="mt-0.5 h-4 w-4" checked={cuTelefon} onChange={(e) => setCuTelefon(e.target.checked)} />
+                <span>
+                  <b>{d.cereTelefon}</b> — {d.cereTelefonText}
+                </span>
+              </label>
+            )}
+            {arataWaalaxy && (
+              <label className="mb-2 flex min-h-8 cursor-pointer items-start gap-2 text-xs text-[var(--ci-text-muted)]">
+                <input type="checkbox" className="mt-0.5 h-4 w-4" checked={inWaalaxy} onChange={(e) => setInWaalaxy(e.target.checked)} />
+                <span>{d.trimiteWaalaxy}</span>
+              </label>
+            )}
             <ul className="space-y-2">
               {stare.candidati.map((c) => {
-                const trimiteWaalaxy = Boolean(inWaalaxy[c.id] && c.linkedin);
+                const tel = tipTelefon(c.telefon);
                 return (
                   <li key={c.id} className="rounded-lg border border-[var(--ci-border)] bg-[var(--ci-surface)] p-3">
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="text-[14px] font-semibold text-[var(--ci-text)]">
+                    <div className="flex items-start gap-3">
+                      <input type="checkbox" className="mt-1 h-5 w-5 shrink-0" checked={selectati.has(c.id)} onChange={() => comuta(c.id)} aria-label={d.bifeaza(c.nume)} />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[14px] font-semibold break-words text-[var(--ci-text)]">
                           {c.nume}
                           {c.rol && <span className="font-normal text-[var(--ci-text-muted)]"> · {c.rol}</span>}
                         </p>
-                        <p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[var(--ci-text-muted)]">
+                        <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[var(--ci-text-muted)]">
                           {c.eticheta && (
                             <Badge tone="green" icon={false}>
                               {c.eticheta}
                             </Badge>
                           )}
-                          <Badge tone="blue" icon={false}>
-                            {NUME_FURNIZOR[c.sursa as Furnizor] ?? c.sursa}
-                          </Badge>
+                          {c.sursa === "web-ai" ? (
+                            <span title={d.sursaInternetTitle}>
+                              <Badge tone="teal" icon={false}>
+                                {d.sursaInternet}
+                              </Badge>
+                            </span>
+                          ) : (
+                            <Badge tone="blue" icon={false}>
+                              {eFurnizor(c.sursa) && <Image src={SIGLA[c.sursa]} alt="" aria-hidden width={14} height={14} unoptimized className="mr-1 inline h-3.5 w-3.5 rounded-sm bg-white object-contain" />}
+                              {numeSursa(c.sursa)}
+                            </Badge>
+                          )}
+                          {c.sursa === "web-ai" && c.sursaUrl && /^https?:\/\//i.test(c.sursaUrl) && (
+                            <a href={c.sursaUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-0.5 text-[var(--ci-blue)] underline-offset-2 hover:underline">
+                              {d.sursaLink} <ExternalLink className="h-3 w-3" aria-hidden />
+                            </a>
+                          )}
+                          {c.alteSurse.length > 0 && <span>{d.gasitSiIn(c.alteSurse.map(numeSursa).join(", "))}</span>}
                           {c.dept && <span>{c.dept}</span>}
                           {c.email ? (
-                            <span>
+                            <span className="break-all">
                               {c.email}{" "}
                               {c.emailStatus === "valid" && (
                                 <Badge tone="green" icon={false}>
@@ -222,6 +339,11 @@ export function DecidentiCard({ orgSlug, companyId, stare }: { orgSlug: string; 
                           ) : (
                             <span>{c.linkedin ? ui.faraEmail : ui.faraDateContact}</span>
                           )}
+                          {c.telefon && (
+                            <span title={tel === "fix" ? d.telefonFixHint : tel === "mobil" ? d.telefonMobilHint : undefined}>
+                              {tel === "fix" ? d.telefonFix : tel === "mobil" ? d.telefonMobil : "☎"} {c.telefon}
+                            </span>
+                          )}
                           {c.linkedin && (
                             <a href={c.linkedin} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-0.5 text-[var(--ci-blue)] underline-offset-2 hover:underline">
                               LinkedIn <ExternalLink className="h-3 w-3" aria-hidden />
@@ -230,28 +352,7 @@ export function DecidentiCard({ orgSlug, companyId, stare }: { orgSlug: string; 
                           <span>{ui.gasit(vechime(c.gasitLa, locale))}</span>
                         </p>
                       </div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Button
-                          variant="primary"
-                          className="min-h-10"
-                          disabled={pending}
-                          aria-label={ui.adaugaAria(trimiteWaalaxy, c.nume)}
-                          onClick={() => ruleaza(() => aprobaCandidatAction(orgSlug, c.id, trimiteWaalaxy), ui.adaugat(c.nume, trimiteWaalaxy))}
-                        >
-                          <UserCheck className="h-4 w-4" aria-hidden /> {trimiteWaalaxy ? ui.adaugaSiTrimite : ui.adaugaLaContacte}
-                        </Button>
-                        <Button className="min-h-10" disabled={pending} aria-label={ui.respingeAria(c.nume)} onClick={() => ruleaza(() => respingeCandidatAction(orgSlug, c.id, false), ui.respins(c.nume))}>
-                          <UserX className="h-4 w-4" aria-hidden /> {ui.respinge}
-                        </Button>
-                      </div>
                     </div>
-
-                    {stare.waalaxyGata && c.linkedin && (
-                      <label className="mt-2 flex min-h-8 items-center gap-2 py-1 text-xs text-[var(--ci-text-muted)]">
-                        <input type="checkbox" className="h-4 w-4" checked={Boolean(inWaalaxy[c.id])} onChange={(e) => setInWaalaxy((v) => ({ ...v, [c.id]: e.target.checked }))} />
-                        {ui.trimiteWaalaxyBifa}
-                      </label>
-                    )}
 
                     {confirmaExcludere === c.id ? (
                       <div role="alertdialog" aria-label={ui.excludeAria(c.nume)} className="mt-2 rounded-md bg-[var(--ci-surface-2)] p-3 text-[13px] text-[var(--ci-text)]">
@@ -259,7 +360,7 @@ export function DecidentiCard({ orgSlug, companyId, stare }: { orgSlug: string; 
                           <strong>{c.nume}</strong> {ui.excludeText}
                         </p>
                         <div className="mt-2 flex gap-2">
-                          <Button variant="danger" size="sm" className="min-h-10" disabled={pending} onClick={() => ruleaza(() => respingeCandidatAction(orgSlug, c.id, true), ui.exclus(c.nume))}>
+                          <Button variant="danger" size="sm" className="min-h-10" disabled={pending} onClick={() => excludeComplet(c.id, c.nume)}>
                             {ui.confirmaExcluderea}
                           </Button>
                           <Button size="sm" className="min-h-10" onClick={() => setConfirmaExcludere(null)}>
@@ -268,7 +369,7 @@ export function DecidentiCard({ orgSlug, companyId, stare }: { orgSlug: string; 
                         </div>
                       </div>
                     ) : (
-                      <button type="button" disabled={pending} onClick={() => setConfirmaExcludere(c.id)} className="mt-1 min-h-8 text-xs text-[var(--ci-text-muted)] underline underline-offset-2 hover:text-[var(--ci-text)]">
+                      <button type="button" disabled={pending} onClick={() => setConfirmaExcludere(c.id)} className="mt-1 ml-8 min-h-8 text-xs text-[var(--ci-text-muted)] underline underline-offset-2 hover:text-[var(--ci-text)]">
                         {ui.ceaCerut}
                       </button>
                     )}
@@ -276,16 +377,12 @@ export function DecidentiCard({ orgSlug, companyId, stare }: { orgSlug: string; 
                 );
               })}
             </ul>
-            {!stare.waalaxyGata && areLinkedin && stare.esteAdmin && (
-              <p className="mt-2 text-xs text-[var(--ci-text-muted)]">{ui.waalaxyInfo}</p>
-            )}
+            {!stare.waalaxyGata && stare.candidati.some((c) => c.linkedin) && stare.esteAdmin && <p className="mt-2 text-xs text-[var(--ci-text-muted)]">{ui.waalaxyInfo}</p>}
           </>
         ) : (
           !faraChei &&
           !pending && (
-            <p className="rounded-lg border border-dashed border-[var(--ci-border)] px-3 py-4 text-center text-[13px] text-[var(--ci-text-muted)]">
-              {ui.nicioPersoana}
-            </p>
+            <p className="rounded-lg border border-dashed border-[var(--ci-border)] px-3 py-4 text-center text-[13px] text-[var(--ci-text-muted)]">{ui.nicioPersoana}</p>
           )
         )}
 

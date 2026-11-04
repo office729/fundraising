@@ -32,5 +32,12 @@ export const METRICI_CRM: MetricaCrm[] = [
     limite: "Valoare de moment. Donatorii fără donații nu sunt excluși.",
     snapshot: true,
   },
+  {
+    id: "influenceri_identificati",
+    eticheta: "Influenceri identificați",
+    unitate: "influenceri",
+    formula: "Câte fișe de influencer au fost create (adăugate sau importate) în perioadă, din pagina Influenceri. Se numără automat; cele șterse la cerere nu mai intră.",
+    limite: "Nu spune câți au răspuns sau au distribuit. Valoarea e a organizației; pe pagina Influenceri fiecare coleg vede și câte fișe a creat el azi. Lipsește dacă modulul Influenceri nu e folosit încă.",
+  },
 ];
 export const METRICA_PE_ID = new Map(METRICI_CRM.map((m) => [m.id, m]));

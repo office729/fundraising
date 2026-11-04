@@ -2,15 +2,18 @@
 
 import { ChevronDown, Settings } from "lucide-react";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Input, Select } from "../components/ui/input";
 import { useLocale } from "../lib/locale-context";
 import { COMPANII_DICT } from "@/lib/i18n/dictionaries/companii";
+import { COMPANII_FILTRE_DICT } from "@/lib/i18n/dictionaries/companii-filtre-ui";
 import { COMPANII_UI_DICT, intlLocale } from "@/lib/i18n/dictionaries/companii-ui";
 import { CHEI_FUNCTII, FUNCTIE_NESPECIFICATA } from "@/lib/functii-contact";
 import { BENZI, type Banda } from "@/lib/prioritizare-firme";
 import { recalculeazaCaiCaldeAction } from "./cai-calde-actions";
+import { salveazaUltimaLista } from "./lista-actions";
+import { curataQsLista, filtreActive, parametriSponsor, type FiltruActiv, type NumereFiltre } from "./lib/filtre-extra";
 import { JUDETE, numarFiltreActive, parseFiltru, type PerioadaTip } from "./lib/filters";
 
 const PERIOADA_KEYS = ["toate", "q1", "q2", "q3", "q4", "an", "luna", "saptamana"] as const satisfies readonly PerioadaTip[];
@@ -25,24 +28,44 @@ function pill(activ: boolean) {
   }`;
 }
 
+// Butoanele de pe rândul principal (înalte de 36 px, ca să se apese ușor și pe telefon).
+function buton(activ: boolean) {
+  return `inline-flex h-9 shrink-0 items-center gap-1.5 rounded-[var(--ci-radius-btn)] border px-3 text-[13px] font-medium transition-colors ${
+    activ
+      ? "border-[var(--ci-primary)] bg-[var(--ci-primary)] text-white"
+      : "border-[var(--ci-border)] bg-[var(--ci-surface)] text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]"
+  }`;
+}
+
+function selectPrincipal(activ: boolean) {
+  return `h-9 max-w-full shrink-0 rounded-[var(--ci-radius-btn)] border px-2.5 text-[13px] font-medium ${
+    activ ? "border-[var(--ci-primary)] bg-[var(--ci-primary)] text-white" : "border-[var(--ci-border)] bg-[var(--ci-surface)] text-[var(--ci-text)]"
+  }`;
+}
+
 export function FilterBar({
   responsabili,
   functiiNr,
   prioritizare,
   benziNr,
   caiCalde,
+  numere,
+  esteAdmin,
 }: {
   responsabili: { id: string; name: string | null }[];
   functiiNr: Record<string, number>;
   prioritizare: boolean; // pachetul include prioritizarea pe benzi A/B/C
   benziNr: Record<Banda, number> & { eligibile: number; sprint: number };
   caiCalde: { n: number; la: string } | null; // câte firme au o cale caldă la ultima recalculare
+  numere: NumereFiltre | null; // numerele din selectele Contact și Waalaxy (null = interogare lentă: etichetele apar fără număr)
+  esteAdmin: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const locale = useLocale();
   const dict = COMPANII_DICT[locale].filterBar;
+  const df = COMPANII_FILTRE_DICT[locale];
   const ui = COMPANII_UI_DICT[locale].lista;
   const nf = intlLocale(locale);
   const f = parseFiltru(searchParams);
@@ -54,7 +77,7 @@ export function FilterBar({
   // Rândurile de filtre detaliate ocupă mult spațiu pe verticală — se restrâng
   // implicit, în spatele rotiței (doar căutarea rapidă rămâne vizibilă); numărul
   // de filtre active apare lângă rotiță, ca să se vadă că sunt aplicate.
-  const filtreActive = numarFiltreActive(f);
+  const filtreActiveNr = numarFiltreActive(f);
   const [extins, setExtins] = useState(false);
   const { orgSlug } = useParams<{ orgSlug: string }>();
   const [recalculeaza, setRecalculeaza] = useState(false);
@@ -68,6 +91,21 @@ export function FilterBar({
     }
   }
 
+  // Fiecare coleg revine, la intrarea din meniu, la ultima lui listă (inclusiv „Doar firme lucrate”): după o scurtă pauză, parametrii curenți se memorează.
+  const ultimulSalvat = useRef<string | null>(null);
+  const qsCurent = searchParams.toString();
+  useEffect(() => {
+    const qs = curataQsLista(qsCurent);
+    if (qs === ultimulSalvat.current) return;
+    const t = setTimeout(() => {
+      ultimulSalvat.current = qs;
+      salveazaUltimaLista(orgSlug, qs).catch(() => {
+        ultimulSalvat.current = null; // se reîncearcă la următoarea schimbare
+      });
+    }, 800);
+    return () => clearTimeout(t);
+  }, [qsCurent, orgSlug]);
+
   function push(next: Record<string, string | string[] | null>) {
     const sp = new URLSearchParams(searchParams.toString());
     for (const [k, v] of Object.entries(next)) {
@@ -77,6 +115,7 @@ export function FilterBar({
       else sp.set(k, v);
     }
     sp.delete("pagina"); // orice schimbare de filtru reîncepe de la pagina 1
+    sp.delete("r");
     router.push(`${pathname}?${sp.toString()}`);
   }
 
@@ -98,6 +137,43 @@ export function FilterBar({
     push({ functie: [...set] });
   }
 
+  // „r=1” = pornește de la zero: fără el, intrarea următoare din meniu ar relua lista memorată.
+  const curataTot = () => router.push(`${pathname}?r=1`);
+
+  const etichetaActiva = (a: FiltruActiv): string => {
+    const e = df.etichete;
+    switch (a.id) {
+      case "lucrate":
+        return e.lucrate;
+      case "perioada":
+        return e.perioada(dict.perioade[a.valoare as keyof typeof dict.perioade] ?? a.valoare ?? "");
+      case "judet":
+        return e.judet(a.valoare ?? "");
+      case "contact":
+        return e.contact(a.valoare ?? "");
+      case "functie":
+        return e.functie(
+          (a.valoare ?? "")
+            .split(", ")
+            .map((x) => dict.functii[x as keyof typeof dict.functii] ?? x)
+            .join(", "),
+        );
+      case "banda":
+        return e.banda(a.valoare ?? "");
+      case "ordine":
+        return e.ordine;
+      case "eligibil":
+        return e.eligibil;
+      case "sprint":
+        return e.sprint;
+      case "cald":
+        return e.cald;
+      default:
+        return e.imbogatit;
+    }
+  };
+  const active = filtreActive(f);
+
   return (
     <div className="space-y-3 rounded-[var(--ci-radius-card)] border border-[var(--ci-border)] bg-[var(--ci-surface)] p-3.5">
       <form
@@ -110,11 +186,15 @@ export function FilterBar({
         <Input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder={dict.cautaPlaceholder}
-          className="h-9 w-full sm:w-72"
+          placeholder={f.deep ? df.deepPlaceholder : dict.cautaPlaceholder}
+          className="h-9 w-full sm:w-72 lg:w-96"
         />
         <button type="submit" className="h-9 rounded-[var(--ci-radius-btn)] bg-[var(--ci-primary)] px-4 text-[13px] font-semibold text-white hover:opacity-90">
           {dict.cauta}
+        </button>
+        <button type="button" onClick={() => push({ deep: f.deep ? null : "1", q: q.trim() || null })} aria-pressed={f.deep} title={df.deepTitle} className={buton(f.deep)}>
+          🔎 {df.deep}
+          {f.deep && <span aria-hidden> ✓</span>}
         </button>
         <button
           type="button"
@@ -132,14 +212,98 @@ export function FilterBar({
         >
           <Settings className={`h-4 w-4 transition-transform duration-300 ${extins ? "rotate-90" : ""}`} />
           {dict.filtre}
-          {filtreActive > 0 && (
+          {filtreActiveNr > 0 && (
             <span className="ci-tabular rounded-full bg-[var(--ci-primary-soft)] px-1.5 py-0.5 text-[11px] font-semibold text-[var(--ci-primary)]">
-              {filtreActive}
+              {filtreActiveNr}
             </span>
           )}
           <ChevronDown className={`h-3.5 w-3.5 transition-transform ${extins ? "rotate-180" : ""}`} />
         </button>
       </form>
+
+      {/* Filtrele folosite zilnic, mereu la vedere: sponsori / nu sunt sponsori, responsabil, D177 / Decembrie / Caz, Contact și (administrator) Waalaxy. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <button type="button" onClick={() => push(parametriSponsor(f.sponsor === "da" ? "" : "da"))} aria-pressed={f.sponsor === "da"} title={f.sponsor === "da" ? df.scoateFiltrul : df.sponsoriHint} className={buton(f.sponsor === "da")}>
+          {df.sponsori}
+          {f.sponsor === "da" && <span aria-hidden>✕</span>}
+        </button>
+        <button type="button" onClick={() => push(parametriSponsor(f.sponsor === "nu" ? "" : "nu"))} aria-pressed={f.sponsor === "nu"} title={f.sponsor === "nu" ? df.scoateFiltrul : df.nesponsoriHint} className={buton(f.sponsor === "nu")}>
+          {df.nesponsori}
+          {f.sponsor === "nu" && <span aria-hidden>✕</span>}
+        </button>
+        <select
+          value={f.responsabil === "toti" ? "" : f.responsabil}
+          onChange={(e) => push({ responsabil: e.target.value || null })}
+          className={selectPrincipal(f.responsabil !== "toti")}
+          title={df.responsabilTitle}
+          aria-label={df.responsabilAria}
+        >
+          <option value="">{df.responsabilToti}</option>
+          {responsabili.map((r) => (
+            <option key={r.id} value={r.id}>
+              {r.name || dict.faraNume}
+            </option>
+          ))}
+        </select>
+        <button type="button" onClick={() => toggleMarcaj("d177")} aria-pressed={f.marcaje.includes("d177")} title={f.marcaje.includes("d177") ? df.scoateFiltrul : df.d177Hint} className={buton(f.marcaje.includes("d177"))}>
+          D177
+          {f.marcaje.includes("d177") && <span aria-hidden>✕</span>}
+        </button>
+        <button type="button" onClick={() => toggleMarcaj("decembrie")} aria-pressed={f.marcaje.includes("decembrie")} title={f.marcaje.includes("decembrie") ? df.scoateFiltrul : df.decembrieHint} className={buton(f.marcaje.includes("decembrie"))}>
+          {dict.decembrie}
+          {f.marcaje.includes("decembrie") && <span aria-hidden>✕</span>}
+        </button>
+        <button type="button" onClick={() => toggleMarcaj("caz")} aria-pressed={f.marcaje.includes("caz")} title={f.marcaje.includes("caz") ? df.scoateFiltrul : df.cazHint} className={buton(f.marcaje.includes("caz"))}>
+          {df.caz}
+          {f.marcaje.includes("caz") && <span aria-hidden>✕</span>}
+        </button>
+        <select
+          value={f.contact === "toate" ? "" : f.contact}
+          onChange={(e) => push({ contact: e.target.value || null })}
+          className={selectPrincipal(f.contact !== "toate")}
+          title={df.contactTitle}
+          aria-label={df.contactAria}
+        >
+          <option value="">{df.contactToate(numere?.cu ?? null, numere?.fara ?? null)}</option>
+          <option value="cu">{df.contactCu(numere?.cu ?? null)}</option>
+          <option value="fara">{df.contactFara(numere?.fara ?? null)}</option>
+          <option value="ai">{df.contactAi(numere?.ai ?? null)}</option>
+        </select>
+        {esteAdmin && (
+          <select
+            value={f.waalaxy}
+            onChange={(e) => push({ waalaxy: e.target.value || null })}
+            className={selectPrincipal(f.waalaxy !== "")}
+            title={df.waalaxyTitle}
+            aria-label={df.waalaxyAria}
+          >
+            <option value="">{df.waalaxyToate(numere?.netrimise ?? null, numere?.trimise ?? null)}</option>
+            <option value="netrimise">{df.waalaxyNetrimise(numere?.netrimise ?? null)}</option>
+            <option value="trimise">{df.waalaxyTrimise(numere?.trimise ?? null)}</option>
+          </select>
+        )}
+      </div>
+
+      {/* Filtrele active, ca etichete cu ✕: se văd și cu panoul „Filtre” închis, ca să nu pară că lipsesc firme fără motiv. */}
+      {active.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-[var(--ci-radius-btn)] bg-[var(--ci-amber-soft)] px-3 py-2 text-[12.5px]">
+          <span className="font-semibold text-[var(--ci-text)]">{df.activeTitlu}</span>
+          {active.map((a) => (
+            <button
+              key={a.id}
+              type="button"
+              onClick={() => push(a.scoate)}
+              title={df.scoate}
+              className="inline-flex min-h-8 items-center gap-1 rounded-full border border-[var(--ci-border)] bg-[var(--ci-surface)] px-2.5 py-0.5 font-medium text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]"
+            >
+              {etichetaActiva(a)} <span aria-hidden>✕</span>
+            </button>
+          ))}
+          <button type="button" onClick={curataTot} className="min-h-8 px-1 font-medium text-[var(--ci-text-muted)] underline underline-offset-2 hover:text-[var(--ci-text)]">
+            {df.curataTot}
+          </button>
+        </div>
+      )}
 
       {extins && (
       <>
@@ -198,20 +362,6 @@ export function FilterBar({
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-[12px] font-semibold text-[var(--ci-text-muted)]">{dict.responsabil}</span>
-        <button type="button" onClick={() => push({ responsabil: null })} className={pill(f.responsabil === "toti")}>
-          {dict.toti}
-        </button>
-        <Select value={f.responsabil === "toti" ? "" : f.responsabil} onChange={(e) => push({ responsabil: e.target.value || null })} className="h-8 w-full text-[12px] sm:w-52">
-          <option value="">{dict.alegeResponsabil}</option>
-          {responsabili.map((r) => (
-            <option key={r.id} value={r.id}>
-              {r.name || dict.faraNume}
-            </option>
-          ))}
-        </Select>
-
-        <span className="mx-1 text-[var(--ci-border)]">|</span>
         <span className="text-[12px] font-semibold text-[var(--ci-text-muted)]">{dict.judet}</span>
         <Select value={f.judet} onChange={(e) => push({ judet: e.target.value === "toate" ? null : e.target.value })} className="h-8 w-full text-[12px] sm:w-40">
           <option value="toate">{dict.toateJudetele}</option>
@@ -221,15 +371,6 @@ export function FilterBar({
             </option>
           ))}
         </Select>
-
-        <span className="mx-1 text-[var(--ci-border)]">|</span>
-        <span className="text-[12px] font-semibold text-[var(--ci-text-muted)]">{dict.contact}</span>
-        <button type="button" onClick={() => push({ contact: f.contact === "cu" ? null : "cu" })} className={pill(f.contact === "cu")}>
-          {dict.cuContact}
-        </button>
-        <button type="button" onClick={() => push({ contact: f.contact === "fara" ? null : "fara" })} className={pill(f.contact === "fara")}>
-          {dict.faraContact}
-        </button>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -300,18 +441,6 @@ export function FilterBar({
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-[12px] font-semibold text-[var(--ci-text-muted)]">{dict.marcaj}</span>
-        <button type="button" onClick={() => toggleMarcaj("d177")} className={pill(f.marcaje.includes("d177"))}>
-          D177
-        </button>
-        <button type="button" onClick={() => toggleMarcaj("decembrie")} className={pill(f.marcaje.includes("decembrie"))}>
-          {dict.decembrie}
-        </button>
-        <button type="button" onClick={() => toggleMarcaj("caz")} className={pill(f.marcaje.includes("caz"))}>
-          {dict.proiect}
-        </button>
-
-        <span className="mx-1 text-[var(--ci-border)]">|</span>
         <span className="text-[12px] font-semibold text-[var(--ci-text-muted)]">{dict.vezi}</span>
         <button type="button" onClick={() => push({ vezi: null })} className={pill(f.vezi === "toata")}>
           {dict.toataBaza}

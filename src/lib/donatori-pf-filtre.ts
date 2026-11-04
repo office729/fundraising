@@ -54,6 +54,7 @@ export type Sortare = (typeof SORTARI)[number];
 
 export type FiltruPf = {
   q: string;
+  deep: boolean; // Deep Search: textul se caută și în telefon, județ, notițe și în toate proiectele donatorului; toate cuvintele trebuie să apară undeva
   pagina: number;
   seg: string[]; // chei de segmente, combinate cu ȘI
   an: number | null; // anul primei donații (cohortă)
@@ -88,6 +89,7 @@ export function parseFiltruPf(sp: URLSearchParams): FiltruPf {
   const an = Number(sp.get("an"));
   return {
     q: (sp.get("q") ?? "").slice(0, 120),
+    deep: sp.get("deep") === "1",
     pagina: Math.max(1, Math.min(100000, Number(sp.get("pagina")) || 1)),
     seg: (sp.get("seg") ?? "").split(",").filter((k) => CHEI_SEGMENTE.has(k)),
     an: Number.isInteger(an) && an >= 1990 && an <= 2100 ? an : null,
@@ -115,6 +117,7 @@ export function filtruLaParametri(f: Partial<FiltruPf>): URLSearchParams {
     if (v !== "" && v !== null && v !== undefined) sp.set(k, String(v));
   };
   pune("q", f.q);
+  if (f.deep) sp.set("deep", "1");
   if (f.seg?.length) sp.set("seg", f.seg.join(","));
   pune("an", f.an);
   pune("proiect", f.proiect);

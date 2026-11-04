@@ -23,6 +23,7 @@ import { Card } from "../components/ui/card";
 import { DropdownItem, DropdownMenu } from "../components/ui/dropdown-menu";
 import { Input, Select } from "../components/ui/input";
 import { EmptyState } from "../components/ui/states";
+import { DONATORI_DEEP_DICT } from "@/lib/i18n/dictionaries/donatori-deep-ui";
 import { useLocale } from "../lib/locale-context";
 
 import { PanouDonatorView } from "./panou-donator";
@@ -52,6 +53,7 @@ export function ListaPfClient({ orgSlug, lista }: { orgSlug: string; lista: List
   const locale = useLocale();
   const ui = DONATORI_UI_DICT[locale];
   const t = ui.lista;
+  const deepT = DONATORI_DEEP_DICT[locale];
   const { lei, nr } = formatariPf(locale);
   const f = parseFiltruPf(searchParams);
   const [, start] = useTransition();
@@ -195,10 +197,14 @@ export function ListaPfClient({ orgSlug, lista }: { orgSlug: string; lista: List
       >
         <div className="flex flex-wrap items-center gap-2">
           <div className="min-w-[240px] flex-1">
-            <Input icon={<Search className="size-4" />} value={q} onChange={(e) => setQ(e.target.value)} placeholder={t.cautaPlaceholder} aria-label={t.cautaAria} />
+            <Input icon={<Search className="size-4" />} value={q} onChange={(e) => setQ(e.target.value)} placeholder={f.deep ? deepT.deepPlaceholder : t.cautaPlaceholder} aria-label={t.cautaAria} />
           </div>
           <Button type="submit" variant="primary">
             {t.cauta}
+          </Button>
+          <Button type="button" variant={f.deep ? "primary" : "secondary"} aria-pressed={f.deep} title={deepT.deepTitle} onClick={() => push({ deep: f.deep ? null : "1", q: q.trim() || null })}>
+            🔎 {deepT.deep}
+            {f.deep ? " ✓" : ""}
           </Button>
           <Button type="button" onClick={() => setExtins((x) => !x)} aria-expanded={extins}>
             <Filter className="size-4" aria-hidden /> {t.filtre}{nrFiltre > 0 ? ` (${nrFiltre})` : ""}

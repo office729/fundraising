@@ -2,18 +2,21 @@ import { listeazaDefinitii } from "@/lib/campuri-personalizate-server";
 import { and, desc, eq, inArray, or, sql, type SQL } from "drizzle-orm";
 
 import { withOrgSession, type OrgContext } from "@/lib/auth/guard";
-import { appUsers, companies, fundraisingPages, companyNotite, companySponsorizari, companyStageLog, contacts, memberships } from "@/lib/db/schema";
+import { appUsers, companies, crmKv, fundraisingPages, companyNotite, companySponsorizari, companyStageLog, contacts, memberships } from "@/lib/db/schema";
 
 import { citesteSegment, hexFaraCratime, LUNGIME_SUFIX, segmentFirma, slugFirma } from "@/lib/id-scurt";
-import { cifreCui, patternLike, sqlFaraDiacritice } from "@/lib/cautare";
+import { cifreCui, faraDiacritice, patternLike, sqlFaraDiacritice } from "@/lib/cautare";
 import { codJudetDinTextLiber } from "@/lib/judete";
 import { CHEI_FUNCTII, esteCheieFunctie, FUNCTIE_NESPECIFICATA, regexFunctie } from "@/lib/functii-contact";
 import { COTA_IMPOZIT_PROFIT, PLAFON_SPONSORIZARE_CA, PLAFON_SPONSORIZARE_IMPOZIT, PRAG_BANDA_B, PRAG_MICRO_CA } from "@/lib/prioritizare-firme";
 import { sectiuneSigura } from "@/lib/sectiune-sigura";
 import { citesteSet } from "./cai-calde-global";
+import { TIP_EVENIMENT_TRIMIS } from "@/lib/waalaxy-trimis";
+import { curataQsLista, type NumereFiltre } from "./lib/filtre-extra";
 import { calculeazaInterval, type FiltruCompanii, RECENTE_LIMIT, TOP_LIMIT } from "./lib/filters";
 
 const PAGE_SIZE = 25;
+const esteAdminCtx = (ctx: OrgContext) => ctx.role === "owner" || ctx.role === "admin";
 
 // Benzile A/B/C (lib/prioritizare-firme.ts): aceleași reguli, scrise în SQL ca să se poată filtra și sorta pe ele.
 const eligibilaD177Sql = sql`(${companies.regimFiscal} = 'profit' or (${companies.regimFiscal} = 'necunoscut' and coalesce(${companies.profit}, 0) > 0 and coalesce(${companies.ca}, 0) >= ${PRAG_MICRO_CA}))`;
@@ -54,14 +57,50 @@ function conditieContactFunctie(f: FiltruCompanii): SQL | null {
   return conditii.length ? and(...conditii)! : null;
 }
 
+// Firma are cel puțin un contact trimis în Waalaxy (invitație LinkedIn): un contact cu stare de outreach sau un eveniment de invitație (vezi lib/waalaxy-trimis.ts).
+const trimisWaalaxySql = sql`(exists (select 1 from ${contacts} wk where wk.company_id = ${companies.id} and wk.outreach_stare is not null) or exists (select 1 from outreach_evenimente we where we.company_id = ${companies.id} and we.tip = ${TIP_EVENIMENT_TRIMIS}))`;
+// Firmele care au sponsorizat (câștigate sau cu sumă primită), ca la „Sponsorii noștri”.
+const esteSponsorSql = sql`(${companies.status} = 'won' or coalesce(${companies.sumaSponsorizata}, 0) > 0)`;
+
+// Deep Search (?deep=1): fiecare cuvânt căutat trebuie să apară undeva — în firmă (nume, CUI, oraș, județ, domeniu / CAEN, site, administrator, notă, istoric), în contactele ei
+// (nume, funcție, departament, email, telefon, LinkedIn, detalii) sau în notițe. Fără diacritice, insensibil la majuscule; un număr de telefon se potrivește după ultimele 9 cifre.
+function cautareProfunda(q: string): SQL {
+  const text = q.trim();
+  const cifre = text.replace(/\D/g, "");
+  if (cifre.length >= 6 && /^[\s\d+().-]+$/.test(text)) {
+    const ultime = "%" + cifre.slice(-9);
+    return sql`(exists (select 1 from ${contacts} k where k.company_id = ${companies.id} and regexp_replace(coalesce(k.telefon, ''), '[^0-9]', '', 'g') like ${ultime})
+      or regexp_replace(coalesce(${companies.extra}->>'telefon', ''), '[^0-9]', '', 'g') like ${ultime}
+      or regexp_replace(coalesce(${companies.cui}, ''), '[^0-9]', '', 'g') = ${cifre})`;
+  }
+  // „RO 12.345.678” (cu prefixul RO): ca la căutarea simplă, se compară doar cifrele CUI-ului.
+  const cui = cifreCui(text);
+  if (cui && cui.length >= 6) return sql`regexp_replace(coalesce(${companies.cui}, ''), '[^0-9]', '', 'g') = ${cui}`;
+  const cuvinte = faraDiacritice(text).split(/\s+/).filter(Boolean).slice(0, 6);
+  const firma = sqlFaraDiacritice(
+    sql`concat_ws(' ', ${companies.nume}, ${companies.cui}, ${companies.localitate}, ${companies.judet}, ${companies.industrie}, ${companies.caen}, ${companies.site}, ${companies.administrator}, ${companies.nota}, ${companies.extra}->>'email', ${companies.extra}->>'telefon', ${companies.istoric}::text)`,
+  );
+  const contact = sqlFaraDiacritice(sql`concat_ws(' ', k.nume, k.rol, k.dept, k.loc, k.email, k.telefon, k.linkedin, k.detalii)`);
+  const notita = sqlFaraDiacritice(sql`n.text`);
+  const parti = cuvinte.map((w) => {
+    const p = patternLike(w);
+    return sql`(${firma} like ${p}
+      or exists (select 1 from ${contacts} k where k.company_id = ${companies.id} and ${contact} like ${p})
+      or exists (select 1 from ${companyNotite} n where n.company_id = ${companies.id} and ${notita} like ${p}))`;
+  });
+  return sql`(${sql.join(parti, sql` and `)})`;
+}
+
 // Condiții COMUNE listei și statisticilor — orice filtru nou trebuie adăugat
 // AICI o singură dată, ca lista și cardurile de sus să rămână mereu coerente
 // (aceleași firme numărate = aceleași firme afișate).
-function conditiiComune(f: FiltruCompanii, userId: string) {
+function conditiiComune(f: FiltruCompanii, userId: string, esteAdmin: boolean) {
   const cond = [sql`1=1`];
   // Căutare insensibilă la diacritice și la majuscule (fără extensia unaccent) — vezi lib/cautare.ts.
   // Dacă textul e doar cifre (eventual cu „RO”, spații, puncte) se caută și după CUI, comparând doar cifrele.
-  if (f.q.trim()) {
+  if (f.deep && f.q.trim().length >= 2) {
+    cond.push(cautareProfunda(f.q));
+  } else if (f.q.trim()) {
     const dupaNume = sql`${sqlFaraDiacritice(companies.nume)} like ${patternLike(f.q)}`;
     const cifre = cifreCui(f.q);
     cond.push(cifre ? sql`(${dupaNume} or regexp_replace(coalesce(${companies.cui}, ''), '[^0-9]', '', 'g') = ${cifre})` : dupaNume);
@@ -74,6 +113,12 @@ function conditiiComune(f: FiltruCompanii, userId: string) {
   } else if (f.contact === "fara") {
     cond.push(sql`not exists (select 1 from ${contacts} where ${contacts.companyId} = ${companies.id} and (${contacts.telefon} is not null or ${contacts.email} is not null))`);
   }
+  if (f.contact === "ai") cond.push(sql`exists (select 1 from ${contacts} where ${contacts.companyId} = ${companies.id} and ${contacts.provenienta} = 'web-ai')`);
+  if (f.sponsor === "da") cond.push(esteSponsorSql);
+  else if (f.sponsor === "nu") cond.push(sql`not ${esteSponsorSql}`);
+  // Waalaxy e doar pentru administrator: pentru ceilalți parametrul se ignoră.
+  if (esteAdmin && f.waalaxy === "trimise") cond.push(trimisWaalaxySql);
+  else if (esteAdmin && f.waalaxy === "netrimise") cond.push(sql`not ${trimisWaalaxySql}`);
   const dupaFunctie = conditieContactFunctie(f);
   if (dupaFunctie) cond.push(sql`exists (select 1 from ${contacts} where ${contacts.companyId} = ${companies.id} and ${dupaFunctie})`);
   if (f.banda) cond.push(sql`${bandaSql} = ${f.banda}`);
@@ -125,7 +170,7 @@ export type RandCompanie = {
 };
 
 const getCompaniiListaImpl = async (ctx: OrgContext, filtru: FiltruCompanii) => {
-  const where = and(eq(companies.orgId, ctx.orgId), sql`${companies.deletedAt} is null`, conditiiComune(filtru, ctx.userId));
+  const where = and(eq(companies.orgId, ctx.orgId), sql`${companies.deletedAt} is null`, conditiiComune(filtru, ctx.userId, esteAdminCtx(ctx)));
 
   const recente = filtru.vezi === "recente";
   const [{ total: totalReal }] = await ctx.db.select({ total: sql<number>`count(*)::int` }).from(companies).where(where);
@@ -218,7 +263,7 @@ const getStatisticiCompaniiImpl = async (ctx: OrgContext, filtru: FiltruCompanii
   const dataCond = start && end ? sql`and ${companySponsorizari.data} >= ${start} and ${companySponsorizari.data} < ${end}` : sql``;
 
   const filtruFaraPerioada: FiltruCompanii = { ...filtru, perioadaTip: "toate" };
-  const condCompanii = conditiiComune(filtruFaraPerioada, ctx.userId);
+  const condCompanii = conditiiComune(filtruFaraPerioada, ctx.userId, esteAdminCtx(ctx));
 
   const [row] = await ctx.db
     .select({
@@ -408,6 +453,38 @@ export const getPaginaCompanii = withOrgSession(async (ctx, filtru: FiltruCompan
     citesteSet(ctx),
   ]);
   return { totalFirme, stats, lista, responsabili, dupaJudet, functiiNr, benziNr, caiCalde };
+});
+
+// Numerele din selectele „Contact” și „Waalaxy”: câte firme rămân cu fiecare opțiune, ținând cont de TOATE celelalte filtre active. Rulează în paralel, într-o singură tranzacție
+// separată de pagină (ca o numărătoare lentă să nu țină pagina pe loc). Waalaxy: doar pentru administrator (null altfel). Memorarea și limita de timp sunt în page.tsx.
+export const getNumereFiltre = withOrgSession(async (ctx, filtru: FiltruCompanii): Promise<NumereFiltre> => {
+  const admin = esteAdminCtx(ctx);
+  const numara = async (patch: Partial<FiltruCompanii>): Promise<number> => {
+    const [r] = await ctx.db
+      .select({ n: sql<number>`count(*)::int` })
+      .from(companies)
+      .where(and(eq(companies.orgId, ctx.orgId), sql`${companies.deletedAt} is null`, conditiiComune({ ...filtru, ...patch }, ctx.userId, admin)));
+    return r?.n ?? 0;
+  };
+  const [cu, fara, ai, netrimise, trimise] = await Promise.all([
+    numara({ contact: "cu" }),
+    numara({ contact: "fara" }),
+    numara({ contact: "ai" }),
+    admin ? numara({ waalaxy: "netrimise" }) : Promise.resolve(null),
+    admin ? numara({ waalaxy: "trimise" }) : Promise.resolve(null),
+  ]);
+  return { cu, fara, ai, netrimise, trimise };
+});
+
+// Ultima listă a fiecărui coleg (parametrii din adresă), ca la intrarea din meniu să reia ce avea: „Doar firme lucrate”, județ, responsabil etc. (crm_kv „lista_companii:<utilizator>”, pe organizație).
+export const getUltimaLista = withOrgSession(async (ctx): Promise<string> => {
+  const [r] = await ctx.db
+    .select({ data: crmKv.data })
+    .from(crmKv)
+    .where(and(eq(crmKv.orgId, ctx.orgId), eq(crmKv.path, `lista_companii:${ctx.userId}`)))
+    .limit(1);
+  const qs = (r?.data as { qs?: unknown } | null)?.qs;
+  return typeof qs === "string" ? curataQsLista(qs) : "";
 });
 
 // Firme similare: același cod CAEN (primele 4 cifre). Cele care n-au sponsorizat vin primele, apoi după suma cu care se lucrează (de mână sau estimată).

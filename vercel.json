@@ -38,6 +38,10 @@
       "schedule": "30 6 * * 1"
     },
     {
+      "path": "/api/cron/reclame-analiza",
+      "schedule": "0 6 * * 1"
+    },
+    {
       "path": "/api/cron/parcursuri-donatori",
       "schedule": "0 8 * * *"
     },
@@ -48,6 +52,10 @@
     {
       "path": "/api/cron/webhook-livrari",
       "schedule": "30 7 * * *"
+    },
+    {
+      "path": "/api/cron/agent-email-raspunsuri",
+      "schedule": "10 5,8,11,14,17 * * 1-5"
     }
   ],
   "regions": [

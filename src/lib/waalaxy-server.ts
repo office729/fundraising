@@ -11,6 +11,7 @@ import { raporteazaAvertisment, raporteazaEroare } from "@/lib/monitoring";
 import { adaugaZileLucratoare, aziBucuresti } from "@/lib/prospectare/limite";
 import { cheieNume, hunterVerifica, linkedinNormalizat } from "@/lib/prospectare/motor";
 import { decripteaza } from "@/lib/secret-box";
+import { STARE_CONTACT_TRIMIS, TIP_EVENIMENT_TRIMIS } from "@/lib/waalaxy-trimis";
 import {
   cheieIdempotenta,
   cuvantulCelMaiLung,
@@ -323,8 +324,8 @@ export async function noteazaInvitatie(exec: Database, orgId: string, p: { conta
   const cheie = createHash("sha256").update(`${orgId}|trimis|${p.contactId}`).digest("hex");
   await exec.execute(sql`
     insert into outreach_evenimente (org_id, company_id, contact_id, tip, refuz, campanie, extern_id)
-    values (${orgId}, ${p.companyId}, ${p.contactId}, 'invitat', false, ${p.campanie ?? null}, ${cheie}) on conflict (org_id, extern_id) do nothing`);
-  await exec.execute(sql`update contacts set outreach_stare = 'invitat', outreach_stare_la = now() where id = ${p.contactId} and org_id = ${orgId} and outreach_stare is null`);
+    values (${orgId}, ${p.companyId}, ${p.contactId}, ${TIP_EVENIMENT_TRIMIS}, false, ${p.campanie ?? null}, ${cheie}) on conflict (org_id, extern_id) do nothing`);
+  await exec.execute(sql`update contacts set outreach_stare = ${STARE_CONTACT_TRIMIS}, outreach_stare_la = now() where id = ${p.contactId} and org_id = ${orgId} and outreach_stare is null`);
 }
 
 // ===== Pâlnie și liste de urmărit =====

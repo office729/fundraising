@@ -1,24 +1,41 @@
 import "server-only";
 
+import { apeleazaClaude } from "@/lib/ai-org/client";
+import { citesteConfigAi, inregistreazaConsum, mesajFaraCheieAi, rulezaCaOrganizatie } from "@/lib/ai-org/consum-server";
+import type { InstrumentAi } from "@/lib/ai-org/consum";
+import type { Efort, Loc } from "@/lib/ai-org/protocol";
+import { db as dbGlobal } from "@/lib/db";
 import { raporteazaEroare } from "@/lib/monitoring";
 import { extrageApeluri, normalizeazaUrl, type ApelGasit } from "@/lib/granturi/stari";
 import type { ContinutCanal, DateCampanie } from "@/lib/promovare/generator";
 
-// Integrare AI (Anthropic) pentru generarea de conținut de promovare — inițializare
-// LAZY (ca la email.ts/twilio.ts): nimic nu se citește la evaluarea modulului, ca
-// `next build` să nu depindă de cheie. Complet inertă fără ANTHROPIC_API_KEY —
-// apelantul cade automat pe generatorul determinist (src/lib/promovare/generator.ts).
+// Funcțiile AI de promovare și granturi rulează pe contul Anthropic al ORGANIZAȚIEI (cheia ei, modelul ales de ea): platforma nu are cheie proprie.
+// Fără cont conectat apelantul primește mesajul „Conectează contul Anthropic…” (contextAi) și cade pe generatorul determinist unde există.
+// Consumul fiecărui apel se înregistrează în Consum AI (nu blochează niciodată generarea).
 //
 // GARDĂ DE CONȚINUT (secțiunea 5 din cerință): AI-ul primește DOAR informațiile
 // aprobate ale campaniei (poveste, titlu, org, URL, sume) și are interdicție
 // explicită să inventeze diagnostice, sume, declarații, termene sau date medicale.
 
-const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
-const DEFAULT_MODEL = "claude-sonnet-5";
+// Contextul unui apel: cheia și modelul organizației, citite în faza scurtă cu baza de date; trece prin `pregatit` ca date simple.
+// `eroare` se completează când apelul eșuează (credite epuizate, cheie invalidă…), ca apelantul să arate motivul exact.
+export type ContextAi = { orgId: string; userId: string; cheie: string; model: string; locale: Loc; instrument: InstrumentAi; eroare: string | null };
 
-export function aiConfigurat(): boolean {
-  return Boolean(process.env.ANTHROPIC_API_KEY);
+export async function contextAi(
+  ctx: { db: typeof dbGlobal; orgId: string; userId: string },
+  instrument: InstrumentAi,
+  locale: Loc,
+): Promise<{ ok: true; ai: ContextAi } | { ok: false; eroare: string }> {
+  const cfg = await citesteConfigAi(ctx.db, ctx.orgId);
+  if (!cfg.conectat || !cfg.cheie) return { ok: false, eroare: mesajFaraCheieAi(locale, cfg.ilizibila) };
+  return { ok: true, ai: { orgId: ctx.orgId, userId: ctx.userId, cheie: cfg.cheie, model: cfg.model, locale, instrument, eroare: null } };
 }
+
+// Eroare deja explicată utilizatorului (cheie, credite, limită): nu se raportează ca defecțiune.
+class EroareAiOrg extends Error {}
+const raporteaza = (zona: string, e: unknown) => {
+  if (!(e instanceof EroareAiOrg)) raporteazaEroare(zona, e);
+};
 
 type CanalContinut = ContinutCanal["canal"];
 
@@ -31,72 +48,36 @@ const ETICHETA_CANAL: Record<CanalContinut, string> = {
   comunicat: "comunicat de presă",
 };
 
-// Un document atașat (PDF) — trimis ca bloc "document" alături de textul
-// promptului, în aceeași cerere. Anthropic citește nativ tabelele din PDF,
-// nu trece prin OCR/parsare separată.
-export type DocumentAtasat = { mediaType: "application/pdf"; base64: string };
+type ParamsApel = { system: string; prompt: string; maxTokens: number; efort?: Efort; timeoutMs?: number; cautareWeb?: { maxUtilizari: number }; maxTure?: number };
 
-// Apel low-level la Anthropic. Întoarce textul răspunsului sau aruncă.
-// `documente` (opțional) transformă `content`-ul mesajului dintr-un string
-// simplu într-un array de blocuri (document + text) — superset al formei
-// existente, cei trei apelanți vechi (text simplu) rămân neschimbați.
-// `timeoutMs` (implicit 30s, ca înainte) — extragerea din document are nevoie
-// de mai mult (prompt + fișier mai mari), de-aici parametrul separat.
-async function apeleazaAI(params: {
-  system: string;
-  prompt: string;
-  maxTokens?: number;
-  documente?: DocumentAtasat[];
-  timeoutMs?: number;
-}): Promise<string> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) throw new Error("ANTHROPIC_API_KEY lipsește din mediu — AI-ul nu e configurat.");
-  const model = process.env.ANTHROPIC_MODEL || DEFAULT_MODEL;
-
-  const content = params.documente?.length
-    ? [
-        ...params.documente.map((d) => ({
-          type: "document" as const,
-          source: { type: "base64" as const, media_type: d.mediaType, data: d.base64 },
-        })),
-        { type: "text" as const, text: params.prompt },
-      ]
-    : params.prompt;
-
-  const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), params.timeoutMs ?? 30000);
-  let res: Response;
+// Apelul către Claude cu cheia organizației. maxTokens include și raționamentul modelului, de aceea limitele sunt largi (se plătesc doar tokenii folosiți).
+async function apeleaza(ai: ContextAi, p: ParamsApel) {
+  const r = await apeleazaClaude({
+    cheie: ai.cheie,
+    model: ai.model,
+    system: p.system,
+    mesaje: [{ role: "user", content: p.prompt }],
+    maxTokens: p.maxTokens,
+    efort: p.efort ?? "low",
+    timeoutMs: p.timeoutMs ?? 60_000,
+    cautareWeb: p.cautareWeb ?? null,
+    maxTure: p.maxTure,
+    locale: ai.locale,
+  });
   try {
-    res = await fetch(ANTHROPIC_URL, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model,
-        max_tokens: params.maxTokens ?? 1024,
-        system: params.system,
-        messages: [{ role: "user", content }],
-      }),
-      signal: ctrl.signal,
-    });
-  } finally {
-    clearTimeout(t);
+    await rulezaCaOrganizatie(ai.orgId, (db) => inregistreazaConsum(db, { orgId: ai.orgId, userId: ai.userId, instrument: ai.instrument, model: r.model, utilizare: r.utilizare, costUsd: r.costUsd }));
+  } catch (e) {
+    raporteazaEroare("ai-consum-scriere", e, { orgId: ai.orgId });
   }
-  if (!res.ok) {
-    const detaliu = await res.text().catch(() => "");
-    throw new Error(`AI a răspuns ${res.status}. ${detaliu.slice(0, 200)}`);
-  }
-  const data = (await res.json()) as { content?: Array<{ type: string; text?: string }> };
-  const text = (data.content ?? [])
-    .filter((b) => b.type === "text" && typeof b.text === "string")
-    .map((b) => b.text)
-    .join("")
-    .trim();
-  if (!text) throw new Error("AI a întors un răspuns gol.");
-  return text;
+  if (!r.ok) ai.eroare = r.eroare;
+  return r;
+}
+
+async function apeleazaAI(ai: ContextAi, p: ParamsApel): Promise<string> {
+  const r = await apeleaza(ai, p);
+  if (!r.ok) throw new EroareAiOrg(r.eroare);
+  if (!r.text) throw new Error("AI a întors un răspuns gol.");
+  return r.text;
 }
 
 // Sistemul comun — regulile de conținut se aplică la orice generare.
@@ -139,11 +120,11 @@ function curata(s: string): string {
 // Generează materialul pentru UN canal. Întoarce forma ContinutCanal sau null
 // (fără cheie / eroare) — apelantul cade pe generatorul determinist.
 export async function genereazaContinutCanalAI(
+  ai: ContextAi,
   date: DateCampanie,
   canal: CanalContinut,
   variatie?: number,
 ): Promise<ContinutCanal | null> {
-  if (!aiConfigurat()) return null;
   const scurtNota = variatie ? `\n\nAceasta este varianta ${variatie + 1} — scrie un unghi diferit față de variantele obișnuite, dar respectând aceleași reguli.` : "";
   const cere =
     canal === "comunicat"
@@ -174,7 +155,7 @@ export async function genereazaContinutCanalAI(
   ].join("\n");
 
   try {
-    const raw = curata(await apeleazaAI({ system: systemPrompt(), prompt, maxTokens: canal === "comunicat" ? 1400 : 800 }));
+    const raw = curata(await apeleazaAI(ai, { system: systemPrompt(), prompt, maxTokens: canal === "comunicat" ? 6000 : 4000 }));
     const parsed = JSON.parse(raw) as { titlu?: unknown; textComplet?: unknown; textScurt?: unknown; indemn?: unknown };
     const textComplet = typeof parsed.textComplet === "string" ? parsed.textComplet.trim() : "";
     if (!textComplet) return null;
@@ -188,7 +169,7 @@ export async function genereazaContinutCanalAI(
   } catch (e) {
     // Orice eroare (cheie invalidă, timeout, JSON stricat) → null, apelantul cade pe șablon —
     // dar o raportăm, altfel un AI căzut (cheie expirată, credit epuizat) trece neobservat.
-    raporteazaEroare("ai", e);
+    raporteaza("ai", e);
     return null;
   }
 }
@@ -197,12 +178,12 @@ export async function genereazaContinutCanalAI(
 // public pe care beneficiarul îl postează pentru a mulțumi firmei. Întoarce null
 // (fără cheie / eroare) → apelantul cere completare manuală.
 export async function genereazaTextMultumireAI(
+  ai: ContextAi,
   date: DateCampanie,
   companie: string,
   suma: number | null,
   moneda: string | null,
 ): Promise<string | null> {
-  if (!aiConfigurat()) return null;
   const sumaTxt = suma ? `${suma.toLocaleString("ro-RO")} ${moneda || "lei"}` : null;
   const prompt = [
     formatDate(date),
@@ -213,10 +194,10 @@ export async function genereazaTextMultumireAI(
     "Nu inventa detalii despre companie sau despre caz. Răspunde DOAR cu textul mesajului, fără ghilimele, fără explicații.",
   ].join("\n");
   try {
-    const text = curata(await apeleazaAI({ system: systemPrompt(), prompt, maxTokens: 500 }));
+    const text = curata(await apeleazaAI(ai, { system: systemPrompt(), prompt, maxTokens: 2500 }));
     return text || null;
   } catch (e) {
-    raporteazaEroare("ai", e);
+    raporteaza("ai", e);
     return null;
   }
 }
@@ -234,8 +215,7 @@ export type DateDraftGrant = {
   limba: "ro" | "en";
 };
 
-export async function genereazaDraftGrantAI(d: DateDraftGrant): Promise<string | null> {
-  if (!aiConfigurat()) return null;
+export async function genereazaDraftGrantAI(ai: ContextAi, d: DateDraftGrant): Promise<string | null> {
   const ro = d.limba === "ro";
   const system = [
     "Ești specialist în scrierea de cereri de finanțare pentru organizații non-profit din România.",
@@ -265,10 +245,10 @@ export async function genereazaDraftGrantAI(d: DateDraftGrant): Promise<string |
     .filter((l, i, a) => l !== "" || a[i - 1] !== "")
     .join("\n");
   try {
-    const text = curata(await apeleazaAI({ system, prompt, maxTokens: 3000, timeoutMs: 90000 }));
+    const text = curata(await apeleazaAI(ai, { system, prompt, maxTokens: 14000, efort: "medium", timeoutMs: 120_000 }));
     return text || null;
   } catch (e) {
-    raporteazaEroare("ai-grant", e);
+    raporteaza("ai-grant", e);
     return null;
   }
 }
@@ -277,10 +257,7 @@ export async function genereazaDraftGrantAI(d: DateDraftGrant): Promise<string |
 // apărut într-un rezultat real al căutării — modelul nu poate propune un link inventat. Termenul se păstrează doar dacă e o dată viitoare validă.
 export type RezultatCautareApeluri = { ok: true; apeluri: ApelGasit[] } | { ok: false; eroare: string };
 
-export async function cautaApeluriAI(p: { domeniu: string; zona: string; observatii: string; azi: string }): Promise<RezultatCautareApeluri> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return { ok: false, eroare: "Căutarea cu AI nu e configurată pe această platformă." };
-  const model = process.env.ANTHROPIC_MODEL || DEFAULT_MODEL;
+export async function cautaApeluriAI(ai: ContextAi, p: { domeniu: string; zona: string; observatii: string; azi: string }): Promise<RezultatCautareApeluri> {
   const system = [
     "Ești cercetător de oportunități de finanțare pentru organizații non-profit din România.",
     "Folosește căutarea web ca să găsești apeluri sau programe de finanțare DESCHISE sau care se repetă anual și sunt potrivite cererii.",
@@ -300,49 +277,21 @@ export async function cautaApeluriAI(p: { domeniu: string; zona: string; observa
     .filter(Boolean)
     .join("\n");
 
-  const messages: unknown[] = [{ role: "user", content: prompt }];
-  const gasite = new Set<string>();
-  let text = "";
   try {
-    // „pause_turn”: căutarea lungă e întreruptă de API și se continuă retrimițând răspunsul parțial (o singură dată: două ture de cel mult 50 s, sub limita paginii).
-    for (let tura = 0; tura < 2; tura++) {
-      const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), 50_000);
-      let res: Response;
-      try {
-        res = await fetch(ANTHROPIC_URL, {
-          method: "POST",
-          headers: { "content-type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
-          body: JSON.stringify({ model, max_tokens: 3000, system, messages, tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 3 }] }),
-          signal: ctrl.signal,
-        });
-      } finally {
-        clearTimeout(t);
-      }
-      if (!res.ok) {
-        const detaliu = await res.text().catch(() => "");
-        if (res.status === 400 && /web.?search/i.test(detaliu)) return { ok: false, eroare: "Căutarea web nu e activată pentru contul Anthropic al platformei." };
-        throw new Error(`AI a răspuns ${res.status}. ${detaliu.slice(0, 200)}`);
-      }
-      const data = (await res.json()) as { content?: Array<{ type: string; text?: string; content?: unknown }>; stop_reason?: string };
-      for (const b of data.content ?? []) {
-        if (b.type === "text" && typeof b.text === "string") text += b.text;
-        if (b.type === "web_search_tool_result" && Array.isArray(b.content)) {
-          for (const r of b.content as Array<{ url?: string }>) {
-            const n = r.url ? normalizeazaUrl(r.url) : null;
-            if (n) gasite.add(n);
-          }
-        }
-      }
-      if (data.stop_reason !== "pause_turn") break;
-      messages.push({ role: "assistant", content: data.content });
+    // Căutarea lungă poate fi întreruptă de API (pause_turn); apeleazaClaude o reia, dar ținem două ture de cel mult 50 s, sub limita paginii.
+    const r = await apeleaza(ai, { system, prompt, maxTokens: 8000, timeoutMs: 50_000, maxTure: 2, cautareWeb: { maxUtilizari: 3 } });
+    if (!r.ok) return { ok: false, eroare: r.eroare };
+    // Garda principală: păstrăm doar linkurile care au apărut într-un rezultat real al căutării (sau într-o citare din acestea).
+    const gasite = new Set<string>();
+    for (const sursa of r.surse) {
+      const n = normalizeazaUrl(sursa.url);
+      if (n) gasite.add(n);
     }
+    return { ok: true, apeluri: extrageApeluri(r.text, gasite, p.azi) };
   } catch (e) {
-    raporteazaEroare("ai-cautare-apeluri", e);
-    return { ok: false, eroare: "Căutarea nu a reușit acum. Încearcă din nou în câteva momente." };
+    raporteaza("ai-cautare-apeluri", e);
+    return { ok: false, eroare: ai.locale === "en" ? "The search did not succeed right now. Try again in a few moments." : "Căutarea nu a reușit acum. Încearcă din nou în câteva momente." };
   }
-
-  return { ok: true, apeluri: extrageApeluri(text, gasite, p.azi) };
 }
 
 export type PostCalendarAI = { obiectiv: string; text: string };
@@ -350,8 +299,7 @@ export type PostCalendarAI = { obiectiv: string; text: string };
 // Generează un plan de N zile de postări, adaptat la stadiul real al campaniei
 // (procent, sumă rămasă). Întoarce null (fără cheie / eroare) → apelantul cade pe
 // generatorul determinist.
-export async function genereazaCalendarZilnicAI(date: DateCampanie, zile = 7): Promise<PostCalendarAI[] | null> {
-  if (!aiConfigurat()) return null;
+export async function genereazaCalendarZilnicAI(ai: ContextAi, date: DateCampanie, zile = 7): Promise<PostCalendarAI[] | null> {
   const prompt = [
     formatDate(date),
     "",
@@ -364,7 +312,7 @@ export async function genereazaCalendarZilnicAI(date: DateCampanie, zile = 7): P
   ].join("\n");
 
   try {
-    const raw = curata(await apeleazaAI({ system: systemPrompt(), prompt, maxTokens: 2200 }));
+    const raw = curata(await apeleazaAI(ai, { system: systemPrompt(), prompt, maxTokens: 9000 }));
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return null;
     const out: PostCalendarAI[] = [];
@@ -376,7 +324,7 @@ export async function genereazaCalendarZilnicAI(date: DateCampanie, zile = 7): P
     }
     return out.length ? out.slice(0, zile) : null;
   } catch (e) {
-    raporteazaEroare("ai", e);
+    raporteaza("ai", e);
     return null;
   }
 }

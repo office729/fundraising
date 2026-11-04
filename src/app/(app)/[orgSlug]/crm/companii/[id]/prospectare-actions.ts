@@ -1,11 +1,11 @@
 "use server";
 
-import { and, count, desc, eq, gte, inArray, ne, sql } from "drizzle-orm";
+import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 import { inregistreazaAudit } from "@/lib/audit";
 import { withOrgFaze, withOrgSession } from "@/lib/auth/guard";
-import { appUsers, companies, companyNotite, contacts, prospectareCandidati, prospectareChei, prospectareJurnal, prospectareSuprimati } from "@/lib/db/schema";
+import { appUsers, companies, contacts, deepSearchAi, prospectareCandidati, prospectareChei, prospectareJurnal, prospectareSuprimati } from "@/lib/db/schema";
 import { EroareUtilizator, mesajSigur } from "@/lib/erori";
 import {
   apolloImbogatesteFirma,
@@ -15,22 +15,18 @@ import {
   domeniuDinEmail,
   domeniuDinSite,
   FURNIZORI,
-  grupRol,
   linkedinNormalizat,
-  linkedinSigur,
-  NUME_FURNIZOR,
-  prenumeSiNume,
-  waalaxyTrimite,
   type Credite,
   type DateFirmaApollo,
   type Furnizor,
-  type ProspectWaalaxy,
   type Rezultat,
   type RezultatCautare,
 } from "@/lib/prospectare/motor";
-import { adaugaZileLucratoare, APELURI_REZERVATE_PER_CAUTARE, aziBucuresti, COOLDOWN_CAUTARE_ORE, LIMITA_APELURI_PE_ZI, REZERVARE_EXPIRA_MIN } from "@/lib/prospectare/limite";
+import { APELURI_REZERVATE_PER_CAUTARE, COOLDOWN_CAUTARE_ORE, LIMITA_APELURI_PE_ZI } from "@/lib/prospectare/limite";
+import { apeluriFolosite, respingeCuAmprenta } from "@/lib/prospectare/server";
+import { esteMemoratProaspat } from "@/lib/deep-search-ai/validare";
+import { aprobaCandidatiAction } from "./deep-search-actions";
 import { decripteaza } from "@/lib/secret-box";
-import { noteazaInvitatie } from "@/lib/waalaxy-server";
 import { traduEroareProspectare } from "@/lib/i18n/dictionaries/lib-mesaje-ui";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { COMPANII_UI_DICT } from "@/lib/i18n/dictionaries/companii-ui";
@@ -55,6 +51,9 @@ export type CandidatRand = {
   email: string | null;
   emailStatus: string | null;
   sursa: string;
+  alteSurse: string[]; // ceilalți furnizori care au găsit-o („găsit și în …”)
+  telefon: string | null;
+  sursaUrl: string | null; // doar „Internet (AI)”: pagina unde a fost găsită
   scor: number;
   eticheta: string | null;
   gasitLa: string;
@@ -67,26 +66,16 @@ export type StareProspectare = {
   apeluriAzi: number;
   limitaApeluri: number;
   ultimaCautare: { la: string; deCine: string | null } | null;
+  // „Caută pe internet (AI)”: când s-a făcut ultima dată pe această firmă (memorat 30 de zile) și câte persoane a găsit.
+  webAi: { la: string; gasiti: number; proaspat: boolean } | null;
   candidati: CandidatRand[];
 };
 
-// Apelurile reale făcute în ultimele 24 de ore plus rezervările active (căutări în curs); rezervările uitate expiră.
-async function apeluriFolosite(db: Parameters<Parameters<typeof withOrgSession>[0]>[0]["db"], orgId: string): Promise<number> {
-  const [reale, rezervate] = await Promise.all([
-    db.select({ n: count() }).from(prospectareJurnal).where(and(eq(prospectareJurnal.orgId, orgId), ne(prospectareJurnal.operatie, "rezervare"), gte(prospectareJurnal.createdAt, sql`now() - interval '24 hours'`))),
-    db
-      .select({ n: sql<number>`coalesce(sum(${prospectareJurnal.unitati}), 0)::int` })
-      .from(prospectareJurnal)
-      .where(and(eq(prospectareJurnal.orgId, orgId), eq(prospectareJurnal.operatie, "rezervare"), gte(prospectareJurnal.createdAt, sql`now() - make_interval(mins => ${REZERVARE_EXPIRA_MIN})`))),
-  ]);
-  return (reale[0]?.n ?? 0) + (rezervate[0]?.n ?? 0);
-}
-
 export const getStareProspectare = withOrgSession(
   async (ctx, companyId: string): Promise<StareProspectare> => {
-    const gol: StareProspectare = { furnizoriConfigurati: [], waalaxyGata: false, esteAdmin: esteAdminRol(ctx.role), apeluriAzi: 0, limitaApeluri: LIMITA_APELURI_PE_ZI, ultimaCautare: null, candidati: [] };
+    const gol: StareProspectare = { furnizoriConfigurati: [], waalaxyGata: false, esteAdmin: esteAdminRol(ctx.role), apeluriAzi: 0, limitaApeluri: LIMITA_APELURI_PE_ZI, ultimaCautare: null, webAi: null, candidati: [] };
     if (!UUID.test(companyId)) return gol;
-    const [chei, azi, ultima, candidati] = await Promise.all([
+    const [chei, azi, ultima, candidati, webAi] = await Promise.all([
       ctx.db.select({ furnizor: prospectareChei.provider, setari: prospectareChei.setari }).from(prospectareChei).where(eq(prospectareChei.orgId, ctx.orgId)),
       apeluriFolosite(ctx.db, ctx.orgId),
       ctx.db
@@ -101,6 +90,7 @@ export const getStareProspectare = withOrgSession(
         .from(prospectareCandidati)
         .where(and(eq(prospectareCandidati.orgId, ctx.orgId), eq(prospectareCandidati.companyId, companyId), eq(prospectareCandidati.stare, "nou")))
         .orderBy(desc(prospectareCandidati.scor)),
+      ctx.db.select({ la: deepSearchAi.createdAt, gasiti: deepSearchAi.gasiti }).from(deepSearchAi).where(and(eq(deepSearchAi.orgId, ctx.orgId), eq(deepSearchAi.companyId, companyId))).limit(1),
     ]);
     return {
       ...gol,
@@ -108,6 +98,7 @@ export const getStareProspectare = withOrgSession(
       waalaxyGata: chei.some((c) => c.furnizor === "waalaxy" && Boolean(c.setari?.listaId)),
       apeluriAzi: azi,
       ultimaCautare: ultima[0] ? { la: ultima[0].la.toISOString(), deCine: ultima[0].nume || (ultima[0].email ? ultima[0].email.split("@")[0] : null) } : null,
+      webAi: webAi[0] ? { la: webAi[0].la.toISOString(), gasiti: webAi[0].gasiti, proaspat: esteMemoratProaspat(webAi[0].la.toISOString()) } : null,
       candidati: candidati.map((c) => ({
         id: c.id,
         nume: c.nume,
@@ -117,6 +108,9 @@ export const getStareProspectare = withOrgSession(
         email: c.email,
         emailStatus: c.emailStatus,
         sursa: c.sursa,
+        alteSurse: c.alteSurse ?? [],
+        telefon: c.telefon,
+        sursaUrl: c.sursaUrl,
         scor: c.scor,
         eticheta: c.eticheta,
         gasitLa: c.gasitLa.toISOString(),
@@ -318,6 +312,9 @@ export const cautaDecidentiAction = withOrgFaze<[string, boolean], Pregatit, Rez
             email: c.email && c.emailStatus !== "invalid" ? c.email : null,
             emailStatus: c.email && c.emailStatus !== "invalid" ? c.emailStatus : null,
             sursa: c.sursa,
+            ids: Object.fromEntries(Object.entries(c.ids ?? {}).filter((e): e is [string, string] => typeof e[1] === "string")),
+            cerereLusha: c.cerereLusha ?? null,
+            telefon: c.telefon || null,
             scor: c.scor,
             prioritate: c.prioritate,
             eticheta: c.eticheta || null,
@@ -334,129 +331,30 @@ export const cautaDecidentiAction = withOrgFaze<[string, boolean], Pregatit, Rez
   },
 });
 
-// Verifică dacă o persoană a cerut să nu mai fie propusă (după nume, e-mail sau LinkedIn).
-async function esteSuprimata(
-  db: Parameters<Parameters<typeof withOrgSession>[0]>[0]["db"],
-  orgId: string,
-  c: { numeNorm: string; email: string | null; linkedin: string | null },
-): Promise<boolean> {
-  const randuri = await db.select({ tip: prospectareSuprimati.tip, valoare: prospectareSuprimati.valoare }).from(prospectareSuprimati).where(eq(prospectareSuprimati.orgId, orgId));
-  const email = (c.email || "").toLowerCase();
-  const linkedin = linkedinNormalizat(c.linkedin);
-  return randuri.some((r) => (r.tip === "nume" && r.valoare === c.numeNorm) || (r.tip === "email" && email !== "" && r.valoare === email) || (r.tip === "linkedin" && linkedin !== "" && r.valoare === linkedin));
-}
-
-// Aprobarea: persoana devine contact al firmei, cu un responsabil (cine aprobă) și un prim pas cu termen în 2 zile lucrătoare (coada „De contactat azi”).
-// Când persoana e adăugată din date de la un terț, organizația trebuie s-o informeze (art. 14 GDPR).
-// Opțional, persoana (dacă are profil LinkedIn) e trimisă și în lista Waalaxy aleasă de organizație (abordare pe LinkedIn); campania se alege după rolul ei,
-// dacă organizația a stabilit una pentru acel rol. Apelul Waalaxy se face în afara tranzacției. Poarta de aprobare e atomică: un singur apel reușește.
-type PregatitAprobare = { candidatId: string; waalaxy: { cheie: string; listaId: string; campanieId: string; prospect: ProspectWaalaxy } | null };
-type ExternAprobare = { trimis: boolean; eroare?: string };
+// Aprobarea unei singure persoane (folosită de „Decidenți → De aprobat”, în lot): trece prin aceeași aprobare ca lista din fișa firmei (deep-search-actions.ts) —
+// suprimări, poartă atomică, emailul/telefonul de la furnizorul care a găsit persoana, responsabil, termen, notă, opțional Waalaxy.
 export type RezultatAprobare = { error: string | null; avertisment?: string };
 
-export const aprobaCandidat = withOrgFaze<[string, boolean], PregatitAprobare, ExternAprobare, RezultatAprobare>({
-  opts: OPTIUNI,
-  pregateste: async (ctx, candidatId, trimiteWaalaxy) => {
+export async function aprobaCandidat(orgSlug: string, candidatId: string, trimiteWaalaxy: boolean): Promise<RezultatAprobare> {
+  const r = await aprobaCandidatiAction(orgSlug, [candidatId], { trimiteWaalaxy: trimiteWaalaxy === true, waalaxyObligatoriu: true });
+  if (r.eroare) return { error: r.eroare };
+  if (r.adaugati === 0) {
     const m = await mesaje();
-    if (!UUID.test(candidatId)) throw new EroareUtilizator(m.candidatNegasit);
-    const [c] = await ctx.db
-      .select({
-        stare: prospectareCandidati.stare,
-        nume: prospectareCandidati.nume,
-        numeNorm: prospectareCandidati.numeNorm,
-        rol: prospectareCandidati.rol,
-        email: prospectareCandidati.email,
-        linkedin: prospectareCandidati.linkedin,
-        prioritate: prospectareCandidati.prioritate,
-        firma: companies.nume,
-      })
-      .from(prospectareCandidati)
-      .innerJoin(companies, eq(companies.id, prospectareCandidati.companyId))
-      .where(and(eq(prospectareCandidati.id, candidatId), eq(prospectareCandidati.orgId, ctx.orgId)))
-      .limit(1);
-    if (!c || c.stare !== "nou") throw new EroareUtilizator(m.candidatNuMaiEInLista);
-    // Cine a cerut să nu mai fie propusă nu se aprobă (nici dacă era deja în listă de la altă căutare); rândul se marchează respins.
-    if (await esteSuprimata(ctx.db, ctx.orgId, c)) {
-      await ctx.db.update(prospectareCandidati).set({ stare: "respins", hotaratDe: ctx.userId, hotaratLa: new Date() }).where(and(eq(prospectareCandidati.id, candidatId), eq(prospectareCandidati.stare, "nou")));
-      return { gata: { error: m.persoanaCeruta } };
-    }
-    if (trimiteWaalaxy !== true) return { pregatit: { candidatId, waalaxy: null } };
-    const linkedin = linkedinSigur(c.linkedin);
-    if (!linkedin) throw new EroareUtilizator(m.faraLinkedinValid);
-    const [w] = await ctx.db.select({ enc: prospectareChei.cheieEnc, setari: prospectareChei.setari }).from(prospectareChei).where(and(eq(prospectareChei.orgId, ctx.orgId), eq(prospectareChei.provider, "waalaxy"))).limit(1);
-    if (!w?.setari?.listaId) throw new EroareUtilizator(m.conecteazaWaalaxy);
-    let cheie: string;
-    try {
-      cheie = decripteaza(w.enc);
-    } catch {
-      throw new EroareUtilizator(m.waalaxyIlizibila);
-    }
-    const grup = grupRol(c.prioritate);
-    const campanieId = (grup !== "altul" && w.setari[`campanie_${grup}`]) || w.setari.campanieId || "";
-    const { prenume, nume } = prenumeSiNume(c.nume);
-    return { pregatit: { candidatId, waalaxy: { cheie, listaId: w.setari.listaId, campanieId, prospect: { linkedinUrl: linkedin, prenume, nume, firma: c.firma, rol: c.rol ?? undefined } } } };
-  },
-  extern: async (p): Promise<ExternAprobare> => {
-    if (!p.waalaxy) return { trimis: false };
-    const r = await waalaxyTrimite(p.waalaxy.cheie, { listaId: p.waalaxy.listaId, campanieId: p.waalaxy.campanieId || undefined, prospecti: [p.waalaxy.prospect] }, fetch);
-    return r.ok ? { trimis: true } : { trimis: false, eroare: traduEroareProspectare(r.eroare, await getLocale()) };
-  },
-  salveaza: async (ctx, p, extern): Promise<RezultatAprobare> => {
-    const m = await mesaje();
-    // Poarta atomică: doar cine trece rândul din „nou” în „aprobat” continuă; un al doilea apel simultan nu găsește nimic și se oprește.
-    const [c] = await ctx.db
-      .update(prospectareCandidati)
-      .set({ stare: "aprobat", hotaratDe: ctx.userId, hotaratLa: new Date(), responsabilId: ctx.userId, stadiu: "de_contactat", urmatorPasLa: adaugaZileLucratoare(aziBucuresti(), 2) })
-      .where(and(eq(prospectareCandidati.id, p.candidatId), eq(prospectareCandidati.orgId, ctx.orgId), eq(prospectareCandidati.stare, "nou")))
-      .returning();
-    if (!c) throw new EroareUtilizator(m.candidatNuMaiEInLista);
-    if (await esteSuprimata(ctx.db, ctx.orgId, c)) throw new EroareUtilizator(m.persoanaCeruta);
-    const prioritar = c.prioritate !== null && c.prioritate <= 2;
-    const azi = new Date().toLocaleDateString("ro-RO", { day: "2-digit", month: "2-digit", year: "numeric" });
-    const [contact] = await ctx.db
-      .insert(contacts)
-      .values({
-        orgId: ctx.orgId,
-        companyId: c.companyId,
-        nume: c.nume,
-        rol: c.rol,
-        dept: c.dept,
-        email: c.email,
-        linkedin: linkedinSigur(c.linkedin) || null,
-        cheie: prioritar, // decidentul și omul de la finanțe sunt persoanele-cheie ale firmei
-        consentSource: `prospectare:${c.sursa}`,
-        detalii: `Găsit prin prospectare (${NUME_FURNIZOR[c.sursa as Furnizor] ?? c.sursa}) la ${azi}${c.eticheta ? `; rol: ${c.eticheta}` : ""}. De informat despre prelucrarea datelor (art. 14 GDPR).`,
-        createdBy: ctx.userId,
-      })
-      .returning({ id: contacts.id });
-    await ctx.db.update(prospectareCandidati).set({ contactId: contact.id }).where(eq(prospectareCandidati.id, c.id));
-    // Ajunsă în Waalaxy, persoana e „invitat” (pâlnia și listele de urmărit pornesc de aici); răspunsurile vin apoi prin webhook.
-    if (p.waalaxy && extern.trimis) await noteazaInvitatie(ctx.db, ctx.orgId, { contactId: contact.id, companyId: c.companyId, campanie: p.waalaxy.campanieId || null });
-    // Notă pe firmă, ca echipa să vadă de unde vine contactul și care e următorul pas.
-    await ctx.db.insert(companyNotite).values({
-      orgId: ctx.orgId,
-      companyId: c.companyId,
-      text: `Prospectare: ${c.nume}${c.rol ? ` (${c.rol})` : ""} adăugat(ă) ca persoană de contact. Sursă: ${NUME_FURNIZOR[c.sursa as Furnizor] ?? c.sursa}. Primul contact până la ${c.urmatorPasLa ?? "—"}.`,
-      createdBy: ctx.userId,
-    });
-    // Firma fără responsabil primește, pe cel care aprobă.
-    await ctx.db.update(companies).set({ ownerId: ctx.userId }).where(and(eq(companies.id, c.companyId), eq(companies.orgId, ctx.orgId), sql`${companies.ownerId} is null`));
-    await inregistreazaAudit(ctx.db, { orgId: ctx.orgId, actorAppUserId: ctx.userId, actiune: "prospectare_candidat_aprobat", entitate: "contact", entitateId: contact.id, detalii: { sursa: c.sursa, waalaxy: p.waalaxy ? (extern.trimis ? "trimis" : "esuat") : "nu" } });
-    revalidatePath(`/${ctx.orgSlug}/crm/companii`);
-    revalidatePath(`/${ctx.orgSlug}/crm/prospectare`);
-    return { error: null, avertisment: p.waalaxy && !extern.trimis ? m.waalaxyNeajuns(extern.eroare ?? m.eroareNecunoscuta) : undefined };
-  },
-});
+    return { error: r.excluse > 0 ? m.persoanaCeruta : m.candidatNuMaiEInLista };
+  }
+  return { error: null, avertisment: r.avertismente[0] };
+}
 
-// Respingerea: persoana nu se mai propune pentru această firmă. „Ea a cerut să nu fie contactată” (nuMaiPropune) o exclude pentru toată organizația și
-// scoate din „De aprobat” și celelalte rânduri ale ei (de la alte firme), ca să nu fie aprobată din greșeală.
+// Respingerea: persoana nu mai se propune pentru această firmă (rămâne doar amprenta, fără nume). „Ea a cerut să nu fie contactată” (nuMaiPropune) o exclude pentru toată
+// organizația și scoate din „De aprobat” și celelalte rânduri ale ei (de la alte firme), ca să nu fie aprobată din greșeală.
 export const respingeCandidat = withOrgSession(
   async (ctx, candidatId: string, nuMaiPropune: boolean): Promise<void> => {
     const m = await mesaje();
     if (!UUID.test(candidatId)) throw new EroareUtilizator(m.candidatNegasit);
     const [c] = await ctx.db.select().from(prospectareCandidati).where(and(eq(prospectareCandidati.id, candidatId), eq(prospectareCandidati.orgId, ctx.orgId))).limit(1);
     if (!c || c.stare !== "nou") throw new EroareUtilizator(m.candidatNuMaiEInLista);
-    await ctx.db.update(prospectareCandidati).set({ stare: "respins", hotaratDe: ctx.userId, hotaratLa: new Date() }).where(and(eq(prospectareCandidati.id, c.id), eq(prospectareCandidati.stare, "nou")));
+    // Rândurile aceleiași persoane (de la alte firme) se caută ÎNAINTE ca datele să fie șterse din rândul respins.
+    let deInchis = [c];
     if (nuMaiPropune === true) {
       const l = linkedinNormalizat(c.linkedin);
       const email = c.email ? c.email.toLowerCase() : "";
@@ -464,31 +362,16 @@ export const respingeCandidat = withOrgSession(
       if (email) suprimari.push({ orgId: ctx.orgId, tip: "email", valoare: email, motiv: "a cerut să nu fie contactată" });
       if (l) suprimari.push({ orgId: ctx.orgId, tip: "linkedin", valoare: l, motiv: "a cerut să nu fie contactată" });
       await ctx.db.insert(prospectareSuprimati).values(suprimari).onConflictDoNothing();
-      // Aceeași persoană, de la alte firme, încă în „De aprobat”.
-      const deAprobat = await ctx.db
-        .select({ id: prospectareCandidati.id, numeNorm: prospectareCandidati.numeNorm, email: prospectareCandidati.email, linkedin: prospectareCandidati.linkedin })
-        .from(prospectareCandidati)
-        .where(and(eq(prospectareCandidati.orgId, ctx.orgId), eq(prospectareCandidati.stare, "nou")));
-      const ids = deAprobat
-        .filter((x) => x.numeNorm === c.numeNorm || (email !== "" && (x.email || "").toLowerCase() === email) || (l !== "" && linkedinNormalizat(x.linkedin) === l))
-        .map((x) => x.id);
-      if (ids.length > 0) await ctx.db.update(prospectareCandidati).set({ stare: "respins", hotaratDe: ctx.userId, hotaratLa: new Date() }).where(and(inArray(prospectareCandidati.id, ids), eq(prospectareCandidati.stare, "nou")));
+      const deAprobat = await ctx.db.select().from(prospectareCandidati).where(and(eq(prospectareCandidati.orgId, ctx.orgId), eq(prospectareCandidati.stare, "nou")));
+      deInchis = deAprobat.filter((x) => x.id === c.id || x.numeNorm === c.numeNorm || (email !== "" && (x.email || "").toLowerCase() === email) || (l !== "" && linkedinNormalizat(x.linkedin) === l));
       await inregistreazaAudit(ctx.db, { orgId: ctx.orgId, actorAppUserId: ctx.userId, actiune: "prospectare_persoana_exclusa", entitate: "organizatie", entitateId: ctx.orgId, detalii: { sursa: c.sursa } });
     }
+    await respingeCuAmprenta(ctx, deInchis);
     revalidatePath(`/${ctx.orgSlug}/crm/companii`);
     revalidatePath(`/${ctx.orgSlug}/crm/prospectare`);
   },
   OPTIUNI,
 );
-
-export async function aprobaCandidatAction(orgSlug: string, candidatId: string, trimiteWaalaxy = false): Promise<RezultatAprobare> {
-  const m = await mesaje();
-  try {
-    return await aprobaCandidat(orgSlug, candidatId, trimiteWaalaxy === true);
-  } catch (e) {
-    return { error: mesajSigur(e, m.nuAmPututAdauga, "prospectare-aprobare") };
-  }
-}
 
 export async function respingeCandidatAction(orgSlug: string, candidatId: string, nuMaiPropune = false): Promise<{ error: string | null }> {
   const m = await mesaje();

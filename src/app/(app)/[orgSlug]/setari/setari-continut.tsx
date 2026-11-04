@@ -19,6 +19,10 @@ import { DpaSection } from "./dpa-section";
 import { areModul } from "@/lib/billing/packages";
 import { pachetPentruModule } from "@/lib/billing/trial";
 import { ModulBlocatInline } from "../crm/components/modul-blocat-inline";
+import { obtineStareAi } from "./ai-actions";
+import { AiSection } from "./ai-section";
+import { obtineStareContEmail } from "./agent-email-actions";
+import { ContEmailSection } from "./agent-email-section";
 import { obtineStareChei } from "./prospectare-actions";
 import { ProspectareSection } from "./prospectare-section";
 import { obtineStareSuport } from "./suport-actions";
@@ -42,7 +46,12 @@ export async function SetariContinut({ orgSlug }: { orgSlug: string }) {
     obtineStareSuport(orgSlug),
   ]);
   const areProspectare = areModul(pachetPentruModule(access.orgPackage, access.userEmail), "prospectare-multi");
-  const stareChei = areProspectare ? await obtineStareChei(orgSlug).catch(() => null) : null;
+  const [stareChei, stareAi, stareContEmail] = await Promise.all([
+    areProspectare ? obtineStareChei(orgSlug).catch(() => null) : null,
+    obtineStareAi(orgSlug).catch(() => null),
+    // Căsuța de email proprie (Agent email): doar cu modulul „ai-agenti”; fără el, secțiunea nu apare.
+    obtineStareContEmail(orgSlug).catch(() => null),
+  ]);
   const hdrs = await headers();
   const webhookOrigin = `${hdrs.get("x-forwarded-proto") ?? "https"}://${hdrs.get("x-forwarded-host") ?? hdrs.get("host")}`;
 
@@ -62,6 +71,8 @@ export async function SetariContinut({ orgSlug }: { orgSlug: string }) {
             ["plati-donatii", locale === "ro" ? "Plăți donații" : "Donation payments"],
             ["recomanda", locale === "ro" ? "Recomandă" : "Refer"],
             ...(DPA_ACTIV ? [["dpa", locale === "ro" ? "Acord date (DPA)" : "Data agreement (DPA)"]] : []),
+            ["ai", locale === "ro" ? "Integrări & AI" : "Integrations & AI"],
+            ["cont-email", locale === "ro" ? "Căsuța mea de email" : "My mailbox"],
             ["prospectare", locale === "ro" ? "Prospectare" : "Prospecting"],
             ["campuri", locale === "ro" ? "Câmpuri personalizate" : "Custom fields"],
             ["api", locale === "ro" ? "API și webhook-uri" : "API and webhooks"],
@@ -127,6 +138,8 @@ export async function SetariContinut({ orgSlug }: { orgSlug: string }) {
             versiuneCurenta={access.orgDpaVersion === DPA_VERSIUNE}
           />
         )}
+        {stareAi && <AiSection orgSlug={orgSlug} stare={stareAi} />}
+        {stareContEmail && <ContEmailSection orgSlug={orgSlug} stare={stareContEmail} />}
         {stareChei ? (
           <ProspectareSection orgSlug={orgSlug} stare={stareChei} limitaZilnica={LIMITA_APELURI_PE_ZI} />
         ) : (

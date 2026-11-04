@@ -4,6 +4,7 @@ import { ChevronDown, Download, Info, Megaphone, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 
+import { ANALIZE_AI_UI_DICT } from "@/lib/i18n/dictionaries/analize-ai-ui";
 import { RECLAME_UI_DICT } from "@/lib/i18n/dictionaries/reclame-ui";
 import { MODEL_ATRIBUIRE } from "@/lib/reclame/atribuire";
 import { calculeazaIndicatori, esteEsantionSuficient, PRAG_MINIM_DONATII, PRESETURI, rata, variatie, type Indicatori } from "@/lib/reclame/calcule";
@@ -26,6 +27,8 @@ import { TabConexiuni } from "./tab-conexiuni";
 import { TabImport } from "./tab-import";
 import { TabGhid } from "./tab-ghid";
 import { TabLinkuri } from "./tab-linkuri";
+import { TabAnaliza } from "./tab-analiza";
+import type { AnalizeReclamePagina } from "./analiza-actions";
 
 type Bun = "sus" | "jos" | "neutru"; // ce sens al variației e favorabil
 
@@ -83,7 +86,7 @@ function propozitieRezumat(d: (typeof RECLAME_UI_DICT)["ro"]["propozitie"], f: F
 
 type Sortare = "cheltuieli" | "donatii" | "net" | "roas";
 
-export function ReclameVedere({ orgSlug, date }: { orgSlug: string; date: DateReclame }) {
+export function ReclameVedere({ orgSlug, date, ai }: { orgSlug: string; date: DateReclame; ai: AnalizeReclamePagina }) {
   const locale = useLocale();
   const dict = RECLAME_UI_DICT[locale];
   const f = formatariReclame(locale);
@@ -245,6 +248,7 @@ export function ReclameVedere({ orgSlug, date }: { orgSlug: string; date: DateRe
       <Tabs
         tabs={[
           { key: "rezumat", label: dict.taburi.rezumat },
+          { key: "analiza", label: ANALIZE_AI_UI_DICT[locale].reclame.tab },
           { key: "linkuri", label: dict.taburi.linkuri },
           { key: "conexiuni", label: dict.taburi.conexiuni },
           { key: "import", label: dict.taburi.import },
@@ -512,6 +516,9 @@ export function ReclameVedere({ orgSlug, date }: { orgSlug: string; date: DateRe
               )}
             </div>
 
+            <div hidden={activ !== "analiza"}>
+              <TabAnaliza orgSlug={orgSlug} analize={ai.analize} aiConectat={ai.aiConectat} />
+            </div>
             <div hidden={activ !== "linkuri"}>
               <TabLinkuri orgSlug={orgSlug} date={date} />
             </div>

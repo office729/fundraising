@@ -12,6 +12,9 @@ import { EmptyState } from "../../components/ui/states";
 import { useLocale } from "../../lib/locale-context";
 import { COMPANII_DICT } from "@/lib/i18n/dictionaries/companii";
 import { COMPANII_UI_DICT } from "@/lib/i18n/dictionaries/companii-ui";
+import { PROSPECTARE_DEEP_DICT } from "@/lib/i18n/dictionaries/prospectare-deep-ui";
+import { tipTelefon } from "@/lib/deep-search-ai/validare";
+import { NUME_FURNIZOR, type Furnizor } from "@/lib/prospectare/motor";
 import { categoriiPersoana, senioritate } from "@/lib/functii-contact";
 import { urlWebSigur } from "@/lib/validation";
 import { esteStareOutreach } from "@/lib/waalaxy-evenimente";
@@ -23,6 +26,7 @@ type Contact = {
   id: string; nume: string; rol: string | null; email: string | null; telefon: string | null; linkedin: string | null;
   dept?: string | null; cheie?: boolean; consentStatus?: string | null;
   outreachStare?: string | null; emailStatus?: string | null;
+  provenienta?: string | null; // „web-ai” = găsit de AI pe internet
 };
 
 type Prefill = { nume: string; rol: string; dept: string };
@@ -49,6 +53,7 @@ export function ContactePanel({
   const dict = COMPANII_DICT[locale].detail.contacte;
   const ui = COMPANII_UI_DICT[locale].contacte;
   const functii = COMPANII_DICT[locale].filterBar.functii;
+  const deep = PROSPECTARE_DEEP_DICT[locale].deep;
   const [open, setOpen] = useState(false);
   const [prefill, setPrefill] = useState<Prefill>(GOL);
   const [pending, setPending] = useState(false);
@@ -121,9 +126,10 @@ export function ContactePanel({
                 <button
                   type="button"
                   onClick={() => comutaCheie(c.id, !!c.cheie)}
-                  title={ui.prioritar}
+                  title={c.provenienta === "web-ai" ? (c.cheie ? deep.inimaDirectAi : deep.inimaAi) : ui.prioritar}
                   aria-pressed={!!c.cheie}
-                  className={`mt-0.5 flex min-h-8 min-w-8 shrink-0 items-center justify-center ${c.cheie ? "text-[var(--ci-red)]" : "text-[var(--ci-text-faint)] hover:text-[var(--ci-red)]"}`}
+                  // Inima verde = găsit de AI pe internet (plină dacă e contact direct, conturată altfel); restul rămân în culoarea platformei.
+                  className={`mt-0.5 flex min-h-8 min-w-8 shrink-0 items-center justify-center ${c.provenienta === "web-ai" ? "text-[var(--ci-green)]" : c.cheie ? "text-[var(--ci-red)]" : "text-[var(--ci-text-faint)] hover:text-[var(--ci-red)]"}`}
                 >
                   <Heart className={`h-5 w-5 ${c.cheie ? "fill-current" : ""}`} />
                 </button>
@@ -146,6 +152,11 @@ export function ContactePanel({
                         {c.emailStatus === "valid" ? ui.emailValid : c.emailStatus === "invalid" ? ui.emailInvalid : ui.emailNesigur}
                       </span>
                     )}
+                    {c.provenienta && (
+                      <span title={c.provenienta === "web-ai" ? deep.sursaInternetTitle : undefined} className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ${c.provenienta === "web-ai" ? "bg-[var(--ci-green-soft)] text-[var(--ci-green)]" : "bg-[var(--ci-surface-2)] text-[var(--ci-text-muted)]"}`}>
+                        {c.provenienta === "web-ai" ? deep.sursaInternet : (NUME_FURNIZOR[c.provenienta as Furnizor] ?? c.provenienta)}
+                      </span>
+                    )}
                     {c.consentStatus === "nu" && <span className="rounded-full bg-[var(--ci-red-soft)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--ci-red)]">{ui.refuzat}</span>}
                     {(() => {
                       const niv = senioritate(c.rol);
@@ -166,6 +177,11 @@ export function ContactePanel({
                   <p className="mt-1 text-[13px] break-all text-[var(--ci-text-muted)]">
                     {c.email || dict.faraEmail}
                     {c.telefon ? ` · ${c.telefon}` : ""}
+                    {c.telefon && tipTelefon(c.telefon) && (
+                      <span title={tipTelefon(c.telefon) === "fix" ? deep.telefonFixHint : deep.telefonMobilHint} className="ml-1.5 text-[11px] whitespace-nowrap">
+                        {tipTelefon(c.telefon) === "fix" ? deep.telefonFix : deep.telefonMobil}
+                      </span>
+                    )}
                   </p>
                 </div>
               </div>

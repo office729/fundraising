@@ -7,6 +7,7 @@ import { PRAG_VECHIME_MIN } from "@/lib/reclame/meta-api";
 import { sincronizeazaDacaVeche } from "@/lib/reclame/meta-sync";
 
 import { obtineDateReclame } from "./actions";
+import { obtineAnalizeReclame } from "./analiza-actions";
 import { ReclameVedere } from "./vedere";
 
 export const dynamic = "force-dynamic";
@@ -31,5 +32,7 @@ export default async function ReclamePage({ params, searchParams }: { params: Pr
   // Conexiune Meta activă și date mai vechi de o oră: se reîmprospătează ultimele 7 zile în fundal, după trimiterea paginii.
   const meta = date.conexiuni.find((c) => c.platforma === "meta" && c.stare === "activ");
   if (meta) after(() => sincronizeazaDacaVeche(access.orgId, meta.ultimaReusita, meta.ultimaSincronizare, PRAG_VECHIME_MIN));
-  return <ReclameVedere orgSlug={orgSlug} date={date} />;
+  // Analizele AI (tabul „Analiză AI”): doar adăugiri pe pagina existentă.
+  const ai = await obtineAnalizeReclame(orgSlug);
+  return <ReclameVedere orgSlug={orgSlug} date={date} ai={ai} />;
 }

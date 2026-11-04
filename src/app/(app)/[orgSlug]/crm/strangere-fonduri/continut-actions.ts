@@ -4,7 +4,8 @@ import { caleCampanie } from "@/lib/link-campanie";
 import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 
-import { aiConfigurat, genereazaCalendarZilnicAI, genereazaContinutCanalAI, type PostCalendarAI } from "@/lib/ai";
+import { contextAi, genereazaCalendarZilnicAI, genereazaContinutCanalAI, type ContextAi, type PostCalendarAI } from "@/lib/ai";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { limitaAIDepasita, MESAJ_LIMITA_AI } from "@/lib/ai-limit";
 import { withOrgAdmin, withOrgFaze, withOrgSession } from "@/lib/auth/guard";
 import { listCalendarCampanieImpl, listContinutCampanieImpl } from "./detaliu-queries";
@@ -79,7 +80,7 @@ export const genereazaCalendarAction = withOrgAdmin(async (ctx, pageId: string):
 // cele în lucru/publicate).
 export const genereazaCalendarAIAction = withOrgFaze<
   [string],
-  { date: DateCampanie },
+  { date: DateCampanie; ai: ContextAi },
   PostCalendarAI[] | null,
   GenereazaState & { aiFolosit?: boolean }
 >({
@@ -88,11 +89,13 @@ export const genereazaCalendarAIAction = withOrgFaze<
   pregateste: async (ctx, pageId) => {
     const date = await dateCampanie(ctx.db, pageId, ctx.orgId, ctx.orgSlug, ctx.orgName);
     if (!date) return { gata: { error: "Pagina nu a fost găsită.", ok: false } };
-    if (!aiConfigurat()) return { gata: { error: "AI-ul nu e configurat (ANTHROPIC_API_KEY lipsește). Folosește «Generează (șablon)».", ok: false } };
+    const locale = await getLocale();
+    const cai = await contextAi(ctx, "promovare", locale);
+    if (!cai.ok) return { gata: { error: `${cai.eroare} ${locale === "ro" ? "Între timp poți folosi «Generează (șablon)»." : "Meanwhile you can use “Generate (template)”."}`, ok: false } };
     if (await limitaAIDepasita(ctx)) return { gata: { error: MESAJ_LIMITA_AI, ok: false } };
-    return { pregatit: { date } };
+    return { pregatit: { date, ai: cai.ai } };
   },
-  extern: ({ date }) => genereazaCalendarZilnicAI(date, 7),
+  extern: ({ date, ai }) => genereazaCalendarZilnicAI(ai, date, 7),
   salveaza: async (ctx, { date }, aiItems, pageId) => {
     const items = aiItems ?? genereazaCalendarZilnic(date).map((it) => ({ obiectiv: it.unghi, text: it.text }));
 
@@ -149,12 +152,12 @@ export const genereazaContinutAction = withOrgAdmin(async (ctx, pageId: string):
   return { error: null, ok: true };
 });
 
-// Generează materialele pe canal CU AI (dacă ANTHROPIC_API_KEY e setat), cu
+// Generează materialele pe canal CU AI (dacă organizația și-a conectat contul Anthropic), cu
 // fallback per canal la șablonul determinist când AI-ul nu e configurat sau
 // eșuează. Șterge doar rândurile "draft" (nu atinge aprobat/publicat).
 export const genereazaContinutAIAction = withOrgFaze<
   [string],
-  { date: DateCampanie },
+  { date: DateCampanie; ai: ContextAi },
   { item: ContinutCanal; aiFolosit: boolean }[],
   GenereazaState & { aiFolosit?: boolean }
 >({
@@ -162,17 +165,19 @@ export const genereazaContinutAIAction = withOrgFaze<
   pregateste: async (ctx, pageId) => {
     const date = await dateCampanie(ctx.db, pageId, ctx.orgId, ctx.orgSlug, ctx.orgName);
     if (!date) return { gata: { error: "Pagina nu a fost găsită.", ok: false } };
-    if (!aiConfigurat()) return { gata: { error: "AI-ul nu e configurat (ANTHROPIC_API_KEY lipsește). Folosește «Generează (șablon)».", ok: false } };
+    const locale = await getLocale();
+    const cai = await contextAi(ctx, "promovare", locale);
+    if (!cai.ok) return { gata: { error: `${cai.eroare} ${locale === "ro" ? "Între timp poți folosi «Generează (șablon)»." : "Meanwhile you can use “Generate (template)”."}`, ok: false } };
     if (await limitaAIDepasita(ctx)) return { gata: { error: MESAJ_LIMITA_AI, ok: false } };
-    return { pregatit: { date } };
+    return { pregatit: { date, ai: cai.ai } };
   },
   // Generăm fiecare canal cu AI în paralel (până la 30 s/apel), FĂRĂ conexiune DB; per canal, fallback la șablon.
-  extern: async ({ date }) => {
+  extern: async ({ date, ai: contextul }) => {
     const sablon = genereazaContinutPeCanal(date);
     const sablonDupaCanal = new Map<ContinutCanal["canal"], ContinutCanal>(sablon.map((s) => [s.canal, s]));
     return Promise.all(
       sablon.map(async (s) => {
-        const ai = await genereazaContinutCanalAI(date, s.canal);
+        const ai = await genereazaContinutCanalAI(contextul, date, s.canal);
         return { item: ai ?? (sablonDupaCanal.get(s.canal) as ContinutCanal), aiFolosit: Boolean(ai) };
       }),
     );
@@ -205,7 +210,7 @@ export const genereazaContinutAIAction = withOrgFaze<
 // dacă AI-ul nu e disponibil, întoarce eroare (nu suprascrie cu șablon identic).
 export const regenereazaVariantaContinutAction = withOrgFaze<
   [string],
-  { date: DateCampanie; canal: ContinutCanal["canal"] },
+  { date: DateCampanie; canal: ContinutCanal["canal"]; ai: ContextAi },
   Awaited<ReturnType<typeof genereazaContinutCanalAI>>,
   GenereazaState
 >({
@@ -219,16 +224,17 @@ export const regenereazaVariantaContinutAction = withOrgFaze<
     const cur = rows[0];
     if (!cur) return { gata: { error: "Materialul nu a fost găsit.", ok: false } };
     if (cur.status !== "draft") return { gata: { error: "Doar materialele în stadiul «draft» pot fi regenerate.", ok: false } };
-    if (!aiConfigurat()) return { gata: { error: "AI-ul nu e configurat (ANTHROPIC_API_KEY lipsește).", ok: false } };
+    const cai = await contextAi(ctx, "promovare", await getLocale());
+    if (!cai.ok) return { gata: { error: cai.eroare, ok: false } };
 
     const date = await dateCampanie(ctx.db, cur.campaignPageId, ctx.orgId, ctx.orgSlug, ctx.orgName);
     if (!date) return { gata: { error: "Pagina nu a fost găsită.", ok: false } };
     if (await limitaAIDepasita(ctx)) return { gata: { error: MESAJ_LIMITA_AI, ok: false } };
-    return { pregatit: { date, canal: cur.canal } };
+    return { pregatit: { date, canal: cur.canal, ai: cai.ai } };
   },
-  extern: ({ date, canal }) => genereazaContinutCanalAI(date, canal, Math.floor(Math.random() * 1000)),
-  salveaza: async (ctx, _p, ai, contentId) => {
-    if (!ai) return { error: "AI-ul nu a putut genera o variantă. Încearcă din nou.", ok: false };
+  extern: ({ date, canal, ai }) => genereazaContinutCanalAI(ai, date, canal, Math.floor(Math.random() * 1000)),
+  salveaza: async (ctx, p, ai, contentId) => {
+    if (!ai) return { error: p.ai.eroare ?? "AI-ul nu a putut genera o variantă. Încearcă din nou.", ok: false };
 
     await ctx.db
       .update(fundraisingGeneratedContent)

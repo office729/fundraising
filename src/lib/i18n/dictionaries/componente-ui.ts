@@ -54,6 +54,7 @@ export const COMPONENTE_UI_DICT = {
         "parcursuri-donatori": "Parcursuri pentru donatori (Welcome, Save, Upgrade)",
         "campuri-personalizate": "Câmpuri personalizate la donatori și firme",
         "api-webhooks": "API și webhook-uri",
+        influenceri: "Influenceri (fișe, linkuri unice, mesaje și rezultate)",
       } as Record<string, string>,
     },
     harta: {
@@ -237,6 +238,7 @@ export const COMPONENTE_UI_DICT = {
         "parcursuri-donatori": "Donor journeys (Welcome, Save, Upgrade)",
         "campuri-personalizate": "Custom fields for donors and companies",
         "api-webhooks": "API and webhooks",
+        influenceri: "Influencers (profiles, unique links, messages and results)",
       } as Record<string, string>,
     },
     harta: {

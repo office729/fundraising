@@ -50,6 +50,7 @@ const TITLURI = {
   crmDonatoriDubluri: { ro: "Donatori dubli — CRM", en: "Duplicate donors — CRM" },
   crmDonatoriParcursuri: { ro: "Parcursuri pentru donatori — CRM", en: "Donor journeys — CRM" },
   crmDecidenti: { ro: "Decidenți — CRM", en: "Decision makers — CRM" },
+  crmAgentEmail: { ro: "Agent email — CRM", en: "Email agent — CRM" },
   crmBeneficiari: { ro: "Beneficiari & proiecte — CRM", en: "Beneficiaries & projects — CRM" },
   crmDonatii: { ro: "Donații — CRM", en: "Donations — CRM" },
   crmStrangereFonduri: { ro: "Strângere fonduri — CRM", en: "Fundraising pages — CRM" },
@@ -88,6 +89,10 @@ const TITLURI = {
   crmVoluntariPanou: { ro: "Panoul voluntarilor — CRM", en: "Volunteer panel — CRM" },
   crmVoluntari: { ro: "CRM Voluntari", en: "Volunteers CRM" },
   crmFacturare: { ro: "Facturare — CRM", en: "Billing — CRM" },
+  crmConsumAi: { ro: "Consum AI — CRM", en: "AI usage — CRM" },
+  crmAnalizaOng: { ro: "Analiză ONG-uri — CRM", en: "NGO analysis — CRM" },
+  // Fără numele influencerului: titlurile ajung în istoricul browserului și în rapoartele de analiză.
+  crmInfluenceri: { ro: "Influenceri — CRM", en: "Influencers — CRM" },
   crmPerformanta: { ro: "Echipă & Performanță — CRM", en: "Team & Performance — CRM" },
   crmPerformantaObiective: { ro: "Obiective și rezultate — CRM", en: "Objectives and results — CRM" },
   crmPerformantaSaptamana: { ro: "Planul săptămânii — CRM", en: "Weekly plan — CRM" },

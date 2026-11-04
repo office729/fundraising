@@ -962,9 +962,11 @@ const POLICIES = [
   `create policy org_timp_membri_citire on org_timp for select using (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid and (pornit_la is null or oprit_la is not null) and exists (select 1 from org_personalizare p where p.org_id = org_timp.org_id and p.config ->> 'arataTimp' = 'true'))`,
   `create policy org_timp_tarife_platforma on org_timp_tarife for all using (nullif(current_setting('app.platform_admin', true), '') = 'true') with check (nullif(current_setting('app.platform_admin', true), '') = 'true')`,
   // Prospectare de decidenți (documentation/prospectare.sql): izolare pe organizație.
-  ...["prospectare_chei", "prospectare_candidati", "prospectare_jurnal", "prospectare_suprimati", "parcursuri_donatori", "parcursuri_trimiteri"].map(
+  ...["prospectare_chei", "prospectare_candidati", "prospectare_jurnal", "prospectare_suprimati", "parcursuri_donatori", "parcursuri_trimiteri", "ai_consum", "ai_setari"].map(
     (t) => `create policy ${t}_tenant_isolation on ${t} using (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid) with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
   ),
+  // Deep Search decidenți / „Caută pe internet (AI)” (documentation/deep-search-ai.sql): izolare pe organizație.
+  `create policy deep_search_ai_tenant_isolation on deep_search_ai using (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid) with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
   // Câmpuri personalizate, chei API și webhook-uri (documentation/api-campuri.sql): izolare pe organizație; cheile API se pot căuta și după hash (app.api_cheie_hash).
   ...["campuri_personalizate", "api_chei", "webhook_endpointuri", "webhook_livrari"].map(
     (t) => `create policy ${t}_tenant_isolation on ${t} using (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid) with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
@@ -977,6 +979,22 @@ const POLICIES = [
   // Lead-uri de pe site (documentation/interese-ong.sql): formularul public (app.interes_site) și echipa platformei (app.platform_admin).
   `create policy interese_ong_site on interese_ong using (nullif(current_setting('app.interes_site', true), '') = 'true') with check (nullif(current_setting('app.interes_site', true), '') = 'true')`,
   `create policy interese_ong_admin on interese_ong using (nullif(current_setting('app.platform_admin', true), '') = 'true') with check (nullif(current_setting('app.platform_admin', true), '') = 'true')`,
+  // Agentul email (documentation/agent-email.sql): izolare pe organizație; pixelul de deschidere (fără sesiune) vede și actualizează doar rândul cu tokenul din app.agent_pixel.
+  ...["agent_email_conturi", "agent_email_mesaje", "agent_email_raspunsuri", "agent_email_pdf", "agent_email_contor", "agent_email_setari"].map(
+    (t) => `create policy ${t}_tenant_isolation on ${t} using (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid) with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  ),
+  `create policy agent_email_mesaje_pixel_citire on agent_email_mesaje for select using (pixel is not null and pixel = nullif(current_setting('app.agent_pixel', true), ''))`,
+  `create policy agent_email_mesaje_pixel_actualizare on agent_email_mesaje for update using (pixel is not null and pixel = nullif(current_setting('app.agent_pixel', true), '')) with check (pixel is not null and pixel = nullif(current_setting('app.agent_pixel', true), ''))`,
+  // Influenceri (documentation/influenceri.sql): izolare pe organizație; ruta publică /r/<cod> (fără sesiune) găsește linkul și numără clicul doar în contextul app.public_lookup.
+  ...["influenceri", "influenceri_activitati", "influenceri_linkuri", "influenceri_clicuri", "influenceri_excluderi"].map(
+    (t) => `create policy ${t}_tenant_isolation on ${t} using (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid) with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  ),
+  `create policy influenceri_linkuri_public_lookup on influenceri_linkuri for select using (nullif(current_setting('app.public_lookup', true), '') = 'true')`,
+  `create policy influenceri_clicuri_public_lookup on influenceri_clicuri for all using (nullif(current_setting('app.public_lookup', true), '') = 'true') with check (nullif(current_setting('app.public_lookup', true), '') = 'true')`,
+  // Analize AI (documentation/analize-ai.sql): reclame și ONG-uri; izolare pe organizație.
+  ...["analize_reclame", "analize_ong"].map(
+    (t) => `create policy ${t}_tenant_isolation on ${t} using (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid) with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
+  ),
 ];
 
 const FORCE_TABLES = [
@@ -1094,6 +1112,7 @@ const FORCE_TABLES = [
   "prospectare_candidati",
   "prospectare_jurnal",
   "prospectare_suprimati",
+  "deep_search_ai",
   "parcursuri_donatori",
   "parcursuri_trimiteri",
   "interese_ong",
@@ -1103,6 +1122,21 @@ const FORCE_TABLES = [
   "webhook_endpointuri",
   "webhook_livrari",
   "outreach_evenimente",
+  "ai_consum",
+  "ai_setari",
+  "agent_email_conturi",
+  "agent_email_mesaje",
+  "agent_email_raspunsuri",
+  "agent_email_pdf",
+  "agent_email_contor",
+  "agent_email_setari",
+  "influenceri",
+  "influenceri_activitati",
+  "influenceri_linkuri",
+  "influenceri_clicuri",
+  "influenceri_excluderi",
+  "analize_reclame",
+  "analize_ong",
 ];
 
 try {

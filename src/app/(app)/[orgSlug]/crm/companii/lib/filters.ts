@@ -5,6 +5,8 @@
 import { curataSelectieFunctii } from "@/lib/functii-contact";
 import { esteBanda, type Banda } from "@/lib/prioritizare-firme";
 
+import { parseFiltreExtra, type ContactFiltru, type SponsorFiltru, type WaalaxyFiltru } from "./filtre-extra";
+
 export { JUDETE } from "@/lib/judete";
 
 export type PerioadaTip = "toate" | "q1" | "q2" | "q3" | "q4" | "an" | "luna" | "saptamana" | "interval";
@@ -22,7 +24,10 @@ export type FiltruCompanii = {
   dataSfarsit: string;
   responsabil: string; // "toti" sau id (uuid) de app_user
   judet: string; // "toate" sau un județ din JUDETE
-  contact: "toate" | "cu" | "fara";
+  contact: ContactFiltru; // „ai” = cel puțin un contact găsit de AI pe internet
+  sponsor: SponsorFiltru; // „da” = Sponsorii noștri, „nu” = Nu sunt sponsori (prospecte)
+  waalaxy: WaalaxyFiltru; // doar administrator: cel puțin un contact al firmei trimis în Waalaxy (trimise) sau niciunul (netrimise)
+  deep: boolean; // Deep Search: textul se caută și în contacte, oraș, județ, domeniu, site, notițe, istoric
   functie: string[]; // categorii de funcții ale persoanelor de contact (vezi lib/functii-contact.ts); firma are cel puțin o persoană în oricare dintre ele
   functieText: string; // text liber căutat în funcția/departamentul aceleiași persoane (ex. „director”)
   banda: Banda | ""; // banda de prioritizare A/B/C (vezi lib/prioritizare-firme.ts); doar pentru pachetul IMPACT
@@ -50,6 +55,8 @@ export function numarFiltreActive(f: FiltruCompanii): number {
     (f.responsabil !== "toti" ? 1 : 0) +
     (f.judet !== "toate" ? 1 : 0) +
     (f.contact !== "toate" ? 1 : 0) +
+    (f.sponsor ? 1 : 0) +
+    (f.waalaxy ? 1 : 0) +
     (f.functie.length > 0 || f.functieText.trim() ? 1 : 0) +
     (f.banda ? 1 : 0) +
     (f.ordine ? 1 : 0) +
@@ -72,6 +79,7 @@ export function parseFiltru(sp: URLSearchParams): FiltruCompanii {
   const perioadaTip = sp.get("perioada");
   const anAcum = new Date().getFullYear();
   const marcajeRaw = sp.getAll("marcaj");
+  const extra = parseFiltreExtra(sp);
   return {
     perioadaTip: perioadaTip && PERIOADA_VALIDA.has(perioadaTip as PerioadaTip) ? (perioadaTip as PerioadaTip) : "toate",
     an: Number(sp.get("an")) || anAcum,
@@ -81,7 +89,10 @@ export function parseFiltru(sp: URLSearchParams): FiltruCompanii {
     dataSfarsit: sp.get("dataSfarsit") ?? "",
     responsabil: sp.get("responsabil") ?? "toti",
     judet: sp.get("judet") ?? "toate",
-    contact: sp.get("contact") === "cu" || sp.get("contact") === "fara" ? (sp.get("contact") as "cu" | "fara") : "toate",
+    contact: extra.contact,
+    sponsor: extra.sponsor,
+    waalaxy: extra.waalaxy,
+    deep: extra.deep,
     functie: curataSelectieFunctii(sp.getAll("functie")),
     functieText: (sp.get("functieq") ?? "").slice(0, 60),
     banda: esteBanda(sp.get("banda")) ? (sp.get("banda") as Banda) : "",

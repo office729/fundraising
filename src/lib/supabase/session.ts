@@ -122,6 +122,8 @@ export async function updateSession(request: NextRequest, rewriteTo?: URL) {
     // Link-uri scurte (/s/<cod>) — redirecționează spre pagini publice
     // (Formularul 230, deocamdată), deci trebuie să rămână afară din gate.
     path.startsWith("/s/") ||
+    // Linkurile unice ale influencerilor (/r/<cod>): oricine le deschide, fără cont; ruta numără clicul și duce la pagina campaniei.
+    path.startsWith("/r/") ||
     // Panoul voluntarilor (/voluntar/<cod>): pagină publică, fără cont; accesul îl dă codul din link, verificat în server.
     path.startsWith("/voluntar/") ||
     // Pagina coordonatorului unei activități (/coordonator/<cod secret>): fără cont, accesul îl dă codul.

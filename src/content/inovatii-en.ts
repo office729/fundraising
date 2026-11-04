@@ -5,6 +5,42 @@ import type { Inovatie } from "./inovatii";
 export type InovatieEn = { titlu: string; descriere: string; categorie: string; cumFolosesti?: string };
 
 export const INOVATII_EN: Record<string, InovatieEn> = {
+  "2026-11-04-ai-contul-organizatiei": {
+    titlu: "AI on your own Anthropic account and the AI usage page",
+    descriere: "In Settings → Integrations & AI you connect your Anthropic account (the key is saved encrypted and never shown again). The AI features in Alexandrit, from campaign promotion and grants to the email agent and analyses, now use your account: you pay only for what you use, directly to Anthropic. The AI usage page shows the cost by tool and by day, the end-of-month estimate and your reference budget.",
+    categorie: "Platform",
+    cumFolosesti: "Connect the account, set a spending limit in the Anthropic console and watch in AI usage what each tool costs you.",
+  },
+  "2026-11-04-analiza-ong": {
+    titlu: "NGO analysis: find out how another NGO raises money",
+    descriere: "Type an NGO's name and the AI (on your own Anthropic account) searches the internet and writes a report: channels, campaigns, communication, public figures, what we can take over and what not. It runs in the background, with sources listed with links.",
+    categorie: "Fundraising",
+    cumFolosesti: "Pick an NGO that raises money well, read “What we can take over” and try one idea in your next campaign.",
+  },
+  "2026-11-04-analiza-reclame": {
+    titlu: "Weekly ad analysis, with AI",
+    descriere: "Every Monday morning, the AI on your own Anthropic account analyzes the last 7 days of ads: what works, what loses money and at most three concrete suggestions, with new ad text. You can also start it manually, from Ads.",
+    categorie: "Reports and statistics",
+    cumFolosesti: "Read the suggestions on Monday morning, copy the new text into Ads Manager and compare the results a week later.",
+  },
+  "2026-11-04-one-pager-editabil": {
+    titlu: "One Pager editable right on the page",
+    descriere: "The contact details and the text of the “Get involved” band are corrected with one click, directly on the A4 document, and the PDF uses them right away. The administrator can save them as defaults for the whole team.",
+    categorie: "Companies and sponsorships",
+    cumFolosesti: "Before sending the presentation to a company, put in the name and phone of the colleague who will call them and download the PDF.",
+  },
+  "2026-11-04-agent-email-companii": {
+    titlu: "Email agent for companies (IMPACT)",
+    descriere: "The AI (on your own Anthropic account) writes drafts for your companies; you correct and approve them, and the email leaves from your own mailbox, with your signature and the One Pager attached. Replies are read from the same mailbox and labelled; with no reply in 5 working days you get a follow-up and the call script. Nothing is sent without your click.",
+    categorie: "Fundraising",
+    cumFolosesti: "Connect your mailbox in Settings, pick ten companies with a contact person and let the AI write the drafts; fix a couple of lines, press “Send” and see the replies in the “Today” tab.",
+  },
+  "2026-11-04-influenceri": {
+    titlu: "Influencers: profiles, unique links and results",
+    descriere: "For the IMPACT plan: keep track of the content creators you ask to share your campaigns, prepare the message with a unique link (AI on your own Anthropic account or a template) and send it yourself, manually. See the clicks and received donations for each link, with scheduled checks and follow-ups.",
+    categorie: "Fundraising",
+    cumFolosesti: "Pick an urgent campaign, prepare the message for ten fitting creators and see which link brings in donations.",
+  },
   "2026-10-30-cod-qr-stand-eveniment": {
     titlu: "QR code for a stand or event",
     descriere: "In the link generator under “Statistics and sources” you now see each link's QR code, show it full-screen on a phone or download it for a poster. The new “Stand or event” type counts the donations from each event separately.",

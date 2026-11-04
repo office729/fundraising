@@ -34,6 +34,8 @@ export const contacts = pgTable(
     outreachStare: text("outreach_stare"),
     outreachStareLa: timestamp("outreach_stare_la", { withTimezone: true }),
     emailStatus: text("email_status"),
+    // De unde vine contactul când l-a adus prospectarea: apollo | prospeo | lusha | hunter | web-ai (găsit de AI pe internet). Separat de consent_source, care se șterge când se schimbă acordul.
+    provenienta: text("provenienta"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     createdBy: uuid("created_by").references(() => appUsers.id),
   },

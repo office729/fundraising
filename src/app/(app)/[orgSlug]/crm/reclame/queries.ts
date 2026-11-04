@@ -10,6 +10,9 @@ import type { LegaturaCampanie, RandCostAgg, RandDonatieAgg } from "@/lib/reclam
 // Donațiile se numără doar când sunt confirmate (reusita) sau confirmate și apoi rambursate integral (rambursata): o donație „in_asteptare” sau „esuata”
 // nu intră niciodată. Ziua se calculează în ora României.
 
+// Interogările au nevoie doar de conexiunea legată de organizație și de id-ul ei: le poate rula și un job din fundal (analiza AI), nu doar o acțiune cu sesiune.
+export type CtxDb = Pick<OrgContext, "db" | "orgId">;
+
 const N = (x: unknown): number => (x === null || x === undefined ? 0 : Number(x));
 const NN = (x: unknown): number | null => (x === null || x === undefined ? null : Number(x));
 const rows = <T,>(r: unknown): T[] => r as T[];
@@ -17,7 +20,7 @@ const rows = <T,>(r: unknown): T[] => r as T[];
 const ZI_DONATIE = sql`(d.created_at at time zone 'Europe/Bucharest')::date`;
 const CONFIRMATA = sql`d.status in ('reusita', 'rambursata')`;
 
-export async function costuriPeriodei(ctx: OrgContext, de: string, pana: string): Promise<RandCostAgg[]> {
+export async function costuriPeriodei(ctx: CtxDb, de: string, pana: string): Promise<RandCostAgg[]> {
   const r = await ctx.db.execute(sql`
     select platforma, plasament, ziua::text as ziua, campanie_cheie, max(campanie_nume) as campanie_nume,
            sum(cheltuiala_ron_minor)::bigint as cost, sum(afisari)::bigint as afisari, sum(clicuri_link)::bigint as clicuri
@@ -39,7 +42,7 @@ export async function costuriPeriodei(ctx: OrgContext, de: string, pana: string)
 
 // Donații confirmate atribuite reclamelor plătite, în fereastra de atribuire aleasă (zile între clic și donație), pe zi/platformă/cod campanie/tip donator.
 // „Nou” = niciun alt rând confirmat anterior cu același e-mail în organizație; fără e-mail, donatorul rămâne neclasificat.
-export async function donatiiAtribuite(ctx: OrgContext, de: string, pana: string, fereastraZile: number): Promise<RandDonatieAgg[]> {
+export async function donatiiAtribuite(ctx: CtxDb, de: string, pana: string, fereastraZile: number): Promise<RandDonatieAgg[]> {
   const r = await ctx.db.execute(sql`
     select ${ZI_DONATIE}::text as ziua, a.platforma, a.utm_source, a.utm_campaign,
            case when coalesce(d.email_donator, '') = '' then 'necl'
@@ -72,7 +75,7 @@ export async function donatiiAtribuite(ctx: OrgContext, de: string, pana: string
 }
 
 // Cât s-a încasat DUPĂ prima plată de la abonamentele atribuite (reînnoiri), separat de donațiile inițiale; reînnoirile nu primesc atribuire proprie.
-export async function reinnoiriAbonamenteAtribuite(ctx: OrgContext, de: string, pana: string, fereastraZile: number): Promise<{ abonamente: number; incasatBani: number }> {
+export async function reinnoiriAbonamenteAtribuite(ctx: CtxDb, de: string, pana: string, fereastraZile: number): Promise<{ abonamente: number; incasatBani: number }> {
   const r = await ctx.db.execute(sql`
     select count(distinct d.id)::int as abonamente, (coalesce(sum(r.suma - r.suma_rambursata), 0) * 100)::bigint as incasat
     from fundraising_donations d
@@ -92,7 +95,7 @@ export type Parcurs = { vizitatori: number; deschideri: number; incercari: numbe
 
 // Parcursul observat pentru traficul din campaniile legate de un cod UTM: vizitatori pe zi (amprentă zilnică, fără cookie-uri) → formular deschis →
 // încercări de donație (rânduri create înainte de procesator) → plăți confirmate. Unitățile diferă (vizitatori-zi vs donații), deci pașii nu sunt o cohortă strictă.
-export async function parcursObservat(ctx: OrgContext, de: string, pana: string): Promise<Parcurs> {
+export async function parcursObservat(ctx: CtxDb, de: string, pana: string): Promise<Parcurs> {
   // Doar traficul și donațiile al căror cod UTM e legat de o campanie publicitară (deci reclame cunoscute).
   const legat = (coloana: string) => sql`exists (select 1 from reclame_campanii c where c.org_id = ${ctx.orgId} and c.utm_campanie = ${sql.raw(coloana)})`;
   const ev = await ctx.db.execute(sql`
@@ -126,7 +129,7 @@ export type CalitateDate = {
   surse: { platforma: string; ultimaZi: string | null; actualizatLa: string | null }[];
 };
 
-export async function calitateDate(ctx: OrgContext, de: string, pana: string): Promise<CalitateDate> {
+export async function calitateDate(ctx: CtxDb, de: string, pana: string): Promise<CalitateDate> {
   const d = await ctx.db.execute(sql`
     select (count(*) filter (where ${CONFIRMATA}))::int as confirmate,
            (count(*) filter (where ${CONFIRMATA} and a.donatie_id is not null))::int as cu_atribuire,
@@ -152,7 +155,7 @@ export async function calitateDate(ctx: OrgContext, de: string, pana: string): P
   };
 }
 
-export async function legaturiCampanii(ctx: OrgContext): Promise<LegaturaCampanie[]> {
+export async function legaturiCampanii(ctx: CtxDb): Promise<LegaturaCampanie[]> {
   const r = await ctx.db.execute(sql`select platforma, campanie_cheie, campanie_nume, utm_campanie from reclame_campanii where org_id = ${ctx.orgId} order by platforma, campanie_nume`);
   return rows<{ platforma: string; campanie_cheie: string; campanie_nume: string; utm_campanie: string | null }>(r).map((x) => ({
     platforma: x.platforma,

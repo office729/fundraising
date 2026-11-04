@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 
 import type { OrgContext } from "@/lib/auth/guard";
 import { bazaDonatori, donCte } from "@/lib/donatori-pf";
+import { valoareInfluenceriIdentificati } from "@/lib/influenceri/kpi";
 export { METRICA_PE_ID, METRICI_CRM, type MetricaCrm } from "@/lib/performanta-metrici";
 
 // Sursele „CRM” ale rezultatelor-cheie: valori calculate din datele deja existente în platformă, ca să nu se reintroducă manual.
@@ -66,6 +67,9 @@ export async function valoareCrm(db: Db, orgId: string, metrica: string, start: 
       const total = n(r.total) ?? 0;
       return total > 0 ? Math.round(((n(r.complet) ?? 0) / total) * 1000) / 10 : null;
     }
+    case "influenceri_identificati":
+      // Tabelul îl creează modulul Influenceri; fără el valoarea lipsește (verificat cu to_regclass, fără DDL).
+      return valoareInfluenceriIdentificati(db, orgId, de, pana);
     default:
       return null;
   }

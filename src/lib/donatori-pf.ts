@@ -1,6 +1,6 @@
 import { sql, type SQL } from "drizzle-orm";
 
-import { patternLike, sqlFaraDiacritice } from "@/lib/cautare";
+import { faraDiacritice, patternLike, sqlFaraDiacritice } from "@/lib/cautare";
 import { PRAGURI, SEGMENTE_META, type FiltruPf, type SegmentMeta, type Sortare } from "@/lib/donatori-pf-filtre";
 
 // Re-exportate ca serverul să importe tot dintr-un singur loc.
@@ -108,11 +108,34 @@ function ziuaUrmatoare(d: string): string {
   return x.toISOString().slice(0, 10);
 }
 
+// Deep Search în persoane fizice: fiecare cuvânt trebuie să apară undeva la donator — nume, email, telefon, localitate, județ, responsabil, sursă, proiectele pentru care a donat
+// sau notițele lui. Fără diacritice, insensibil la majuscule; un număr de telefon se potrivește după ultimele 9 cifre, oricum ar fi scris (+40 / 0 / spații).
+// Folosește CTE-ul `don` (donațiile reușite) din bazaDonatori, deci merge doar în interogările construite peste ea.
+function cautareProfundaPf(q: string, orgId: string): SQL {
+  const cifre = q.replace(/\D/g, "");
+  if (cifre.length >= 6 && /^[\s\d+().-]+$/.test(q)) return sql`regexp_replace(coalesce(b.telefon, ''), '[^0-9]', '', 'g') like ${"%" + cifre.slice(-9)}`;
+  const cuvinte = faraDiacritice(q).split(/\s+/).filter(Boolean).slice(0, 6);
+  const camp = sqlFaraDiacritice(sql`concat_ws(' ', b.nume, b.email, b.telefon, b.localitate, b.judet, b.responsabil, b.sursa, b.primul_proiect, b.ultimul_proiect)`);
+  const notita = sqlFaraDiacritice(sql`n.text`);
+  const proiect = sqlFaraDiacritice(sql`coalesce(x.proiect, '')`);
+  return sql`(${sql.join(
+    cuvinte.map((w) => {
+      const p = patternLike(w);
+      return sql`(${camp} like ${p}
+        or exists (select 1 from donator_notite n where n.donator_id = b.id and n.org_id = ${orgId} and ${notita} like ${p})
+        or exists (select 1 from don x where x.email = lower(b.email) and ${proiect} like ${p}))`;
+    }),
+    sql` and `,
+  )})`;
+}
+
 // Condițiile filtrelor (fără segmente), pe alias-ul `b` (baza). `orgId` pentru subinterogările pe donații.
 export function conditiiFiltre(f: FiltruPf, orgId: string): SQL[] {
   const c: SQL[] = [];
   const q = f.q.trim();
-  if (q) {
+  if (q && f.deep && q.length >= 2) {
+    c.push(cautareProfundaPf(q, orgId));
+  } else if (q) {
     const p = patternLike(q);
     c.push(
       sql`(${sqlFaraDiacritice(sql`b.nume`)} like ${p} or lower(b.email) like ${`%${q.toLowerCase()}%`} or ${sqlFaraDiacritice(sql`coalesce(b.localitate, '')`)} like ${p}

@@ -18,7 +18,7 @@ import { normalizeazaTelefonE164 } from "@/lib/telefon";
 import { urlWebSigur } from "@/lib/validation";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { COMPANII_UI_DICT } from "@/lib/i18n/dictionaries/companii-ui";
-import { apeluri, companies, companyNotite, companySponsorizari, companyStageLog, contacts, crmKv } from "@/lib/db/schema";
+import { apeluri, companies, companyNotite, companySponsorizari, companyStageLog, contacts, crmKv, prospectareCandidati } from "@/lib/db/schema";
 
 export type ActionState = { error: string | null };
 
@@ -351,6 +351,11 @@ export const stergeContact = withOrgSession(async (ctx, id: string): Promise<Act
     .where(and(eq(contacts.id, id), eq(contacts.orgId, ctx.orgId)))
     .limit(1);
   if (!contact) return { error: null };
+  // GDPR: rândul din prospectare (cel din care a apărut contactul; legătura dispare la ștergere, deci se curăță ÎNAINTE) își pierde datele personale și iese din „De contactat azi”; rămâne doar în numărătoare.
+  await ctx.db
+    .update(prospectareCandidati)
+    .set({ nume: "[șters]", numeNorm: sql`'sters:' || ${prospectareCandidati.id}::text`, rol: null, dept: null, linkedin: null, email: null, emailStatus: null, telefon: null, ids: {}, alteSurse: [], cerereLusha: null, sursaUrl: null, eticheta: null, stadiu: "inchis", urmatorPasLa: null })
+    .where(and(eq(prospectareCandidati.contactId, id), eq(prospectareCandidati.orgId, ctx.orgId)));
   await ctx.db.delete(contacts).where(and(eq(contacts.id, id), eq(contacts.orgId, ctx.orgId)));
   // GDPR: ștergerea înseamnă ștergere efectivă — și din jurnalul de apeluri, unde rămăsese numele / telefonul ca „snapshot”.
   // Apelurile rămân (pentru statistici / KPI), dar fără datele persoanei.

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 
 import { withOrgSession } from "@/lib/auth/guard";
 import { crmKv } from "@/lib/db/schema";
+import { curataImplicitOnePager } from "@/lib/one-pager-implicit";
 
 // KV pentru starea ne-relațională a tool-urilor portate (CRM PJ, Prospectare,
 // CRM Voluntari, Program de lucru), per organizație. Doar chei pe listă albă,
@@ -39,6 +40,8 @@ const ALLOWED_KEYS = new Set([
   "grupuri-config",
   "grupuri-note",
   "grupuri-stare",
+  // One Pager: datele de contact și textul din banda de jos, salvate ca implicit pe organizație (editate direct pe document).
+  "onepager-implicit",
 ]);
 const ALLOWED_GET = ALLOWED_KEYS;
 // Lista de voluntari se scrie DOAR prin /api/<org>/voluntari-roster (îmbinare pe modificări): un PUT cu întreaga listă ar suprascrie
@@ -47,7 +50,7 @@ const ALLOWED_PUT = new Set([...ALLOWED_KEYS].filter((k) => k !== "voluntari-ros
 // Documente de configurare a organizației (date ONG, setări comune ale tool-urilor):
 // citite de toți membrii, scrise doar de owner/admin — la fel ca salveazaDateOng,
 // care modifică același document. Fără asta, orice membru le rescria prin API.
-const ADMIN_ONLY_PUT = new Set(["config"]);
+const ADMIN_ONLY_PUT = new Set(["config", "onepager-implicit"]);
 
 // Un document de stare al unui tool nu are ce căuta la sute de MB.
 const MAX_BYTES = 2 * 1024 * 1024;
@@ -78,6 +81,8 @@ const putKv = withOrgSession(async (ctx, path: string, req: Request) => {
   } catch {
     return NextResponse.json({ error: "bad_request" }, { status: 400 });
   }
+  // Implicitul One Pager-ului: doar câmpurile cunoscute, ca text curat (nu avem încredere în ce trimite browserul).
+  if (path === "onepager-implicit") body = curataImplicitOnePager(body);
   await ctx.db
     .insert(crmKv)
     .values({ orgId: ctx.orgId, path, data: body as object, updatedAt: new Date() })

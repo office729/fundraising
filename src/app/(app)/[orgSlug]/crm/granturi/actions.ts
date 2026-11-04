@@ -4,11 +4,12 @@ import { randomUUID } from "node:crypto";
 
 import { and, eq } from "drizzle-orm";
 
-import { aiConfigurat, cautaApeluriAI, genereazaDraftGrantAI, type RezultatCautareApeluri } from "@/lib/ai";
+import { cautaApeluriAI, contextAi, genereazaDraftGrantAI, type ContextAi, type RezultatCautareApeluri } from "@/lib/ai";
+import { citesteConfigAi } from "@/lib/ai-org/consum-server";
 import { limitaAIDepasita, limitaCautareDepasita, mesajLimitaAi, mesajLimitaCautare } from "@/lib/ai-limit";
 import { withOrgAdmin, withOrgFaze, withOrgSession } from "@/lib/auth/guard";
 import { areModul } from "@/lib/billing/packages";
-import { isPlatformAdmin, pachetPentruModule } from "@/lib/billing/trial";
+import { pachetPentruModule } from "@/lib/billing/trial";
 import { appUsers, granturi, granturiDosar, memberships, type FisierGrant } from "@/lib/db/schema";
 import { EroareUtilizator } from "@/lib/erori";
 import { BUCKET_PRIVAT, caleDinReferinta, referintaPrivata, stergeFisierePrivate } from "@/lib/fisiere-private";
@@ -53,8 +54,8 @@ export type DateGranturi = {
   membri: Membru[];
   azi: string;
   aiDisponibil: boolean;
-  // Funcțiile AI din Granturi (căutarea de apeluri, schița cererii) consumă creditele Anthropic ale platformei și nu sunt promise în niciun pachet:
-  // le văd doar conturile administratorilor platformei (vezi isPlatformAdmin). Clienții nu le văd în interfață, iar acțiunile le refuză și pe server.
+  // Funcțiile AI din Granturi (căutarea de apeluri, schița cererii) rulează pe contul Anthropic al organizației (Setări → Integrări & AI);
+  // `aiDisponibil` = contul e conectat. Pachetul Granturi (IMPACT) le include pentru toți membrii.
   aiPermis: boolean;
 };
 
@@ -101,8 +102,8 @@ export const obtineDateGranturi = withOrgSession(async (ctx): Promise<DateGrantu
     dosar: curataDosar(dosar[0]?.continut),
     membri: membri.map((m) => ({ id: m.id, nume: m.nume?.trim() || m.email })),
     azi: aziBucuresti(),
-    aiDisponibil: aiConfigurat(),
-    aiPermis: isPlatformAdmin(ctx.userEmail),
+    aiDisponibil: (await citesteConfigAi(ctx.db, ctx.orgId, false)).conectat,
+    aiPermis: true,
   };
 });
 
@@ -304,16 +305,15 @@ const ZONE = ["România", "Europa", "Internațional"];
 
 export const cautaApeluriAction = withOrgFaze<
   [string, string, string],
-  { domeniu: string; zona: string; observatii: string; azi: string },
+  { domeniu: string; zona: string; observatii: string; azi: string; ai: ContextAi },
   RezultatCautareApeluri,
   RezultatCautareApeluri
 >({
   pregateste: async (ctx, domeniu, zona, observatii) => {
     await cuModul(ctx);
     const locale = await getLocale();
-    const m = await mesaje();
-    if (!isPlatformAdmin(ctx.userEmail)) throw new EroareUtilizator(m.cautareIndisponibila);
-    if (!aiConfigurat()) return { gata: { ok: false, eroare: m.cautareNeconfigurata } };
+    const cai = await contextAi(ctx, "granturi", locale);
+    if (!cai.ok) return { gata: { ok: false, eroare: cai.eroare } };
     if (await limitaCautareDepasita(ctx)) return { gata: { ok: false, eroare: mesajLimitaCautare(locale) } };
     return {
       pregatit: {
@@ -321,10 +321,11 @@ export const cautaApeluriAction = withOrgFaze<
         zona: ZONE.includes(zona) ? zona : "România",
         observatii: String(observatii ?? "").trim().slice(0, 300),
         azi: aziBucuresti(),
+        ai: cai.ai,
       },
     };
   },
-  extern: (p) => cautaApeluriAI(p),
+  extern: ({ ai, ...p }) => cautaApeluriAI(ai, p),
 });
 
 export type RezultatDraft = { ok: true; draft: string } | { ok: false; eroare: string };
@@ -335,7 +336,7 @@ const FORMAT_SUMA = (n: string | null, moneda: string) => (n ? `${Number(n).toLo
 // apelul către model e în afara tranzacției (vezi withOrgFaze), iar numărul de generări pe zi e plafonat ca la celelalte funcții AI.
 export const genereazaDraftGrantAction = withOrgFaze<
   [string, string],
-  { cerere: Parameters<typeof genereazaDraftGrantAI>[0] },
+  { cerere: Parameters<typeof genereazaDraftGrantAI>[1]; ai: ContextAi },
   string | null,
   RezultatDraft
 >({
@@ -343,8 +344,8 @@ export const genereazaDraftGrantAction = withOrgFaze<
     await cuModul(ctx);
     const locale = await getLocale();
     const m = await mesaje();
-    if (!isPlatformAdmin(ctx.userEmail)) throw new EroareUtilizator(m.draftIndisponibil);
-    if (!aiConfigurat()) return { gata: { ok: false, eroare: m.draftNeconfigurat } };
+    const cai = await contextAi(ctx, "granturi", locale);
+    if (!cai.ok) return { gata: { ok: false, eroare: cai.eroare } };
     const [g] = await ctx.db.select().from(granturi).where(and(eq(granturi.id, grantId), eq(granturi.orgId, ctx.orgId))).limit(1);
     if (!g) return { gata: { ok: false, eroare: m.cerereNegasita } };
     if (await limitaAIDepasita(ctx)) return { gata: { ok: false, eroare: mesajLimitaAi(locale) } };
@@ -363,13 +364,14 @@ export const genereazaDraftGrantAction = withOrgFaze<
           eligibilitate: g.eligibilitate.map((e) => e.text),
           limba: limba === "en" ? "en" : "ro",
         },
+        ai: cai.ai,
       },
     };
   },
-  extern: ({ cerere }) => genereazaDraftGrantAI(cerere),
-  salveaza: async (ctx, _pregatit, draft, grantId) => {
+  extern: ({ cerere, ai }) => genereazaDraftGrantAI(ai, cerere),
+  salveaza: async (ctx, pregatit, draft, grantId) => {
     const m = await mesaje();
-    if (!draft) return { ok: false, eroare: m.draftEsuat };
+    if (!draft) return { ok: false, eroare: pregatit.ai.eroare ?? m.draftEsuat };
     const r = await ctx.db
       .update(granturi)
       .set({ draft, updatedAt: new Date() })

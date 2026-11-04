@@ -118,6 +118,11 @@
   #galleryView .ghead h1 { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; font-size:22px; font-weight:700; letter-spacing:-.01em; }
   @media (max-width:640px){ .top .btns .menu { right:auto; left:0; min-width:min(300px, 86vw); } .top .btns { margin-left:0; } }
 </style>
+<style id="ed-stil">
+  .edbtns { display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; }
+  .edbtns button { border:1px solid #D9D3C9; background:#fff; color:#3A352F; border-radius:8px; padding:8px 12px; font-size:12.5px; font-weight:600; cursor:pointer; font-family:inherit; }
+  .edbtns button:hover { background:#F6F3EE; border-color:#C9C2B6; }
+</style>
 <script src="/vendor/jspdf.umd.min.js"></script>
 <script src="/vendor/qrcode.js"></script>
 <script>(function(){function d(){return document.querySelector('.top .more');}document.addEventListener('click',function(e){var m=d();if(m&&m.open&&(!m.contains(e.target)||(e.target.closest&&e.target.closest('.menu button'))))m.open=false;});document.addEventListener('keydown',function(e){var m=d();if(e.key==='Escape'&&m&&m.open){m.open=false;var s=m.querySelector('summary');if(s)s.focus();}});})();</script>
@@ -200,6 +205,11 @@
     <div class="hint">Dacă completezi, jos apare un cod QR care duce la acest link. Linkurile primesc automat etichete utm (sursa „onepager”), ca să vezi în statistici ce a adus documentul.</div>
 
     <h2>Hai să vorbim</h2>
+    <div class="hint">Poți edita și direct pe document: dă clic pe nume, telefon, email, site, adresă sau pe textul din banda „Implică-te”.</div>
+    <div class="grid2">
+      <div><label>Persoana de contact</label><input type="text" id="CONTACT_NUME" value="" maxlength="80" placeholder="Nume și prenume"></div>
+      <div><label>Funcția</label><input type="text" id="CONTACT_FUNCTIE" value="" maxlength="80" placeholder="ex. Director"></div>
+    </div>
     <div class="grid2">
       <div><label>Telefon</label><input type="text" id="CONTACT_TEL" value="+40 7xx xxx xxx"></div>
       <div><label>Email</label><input type="text" id="CONTACT_EMAIL" value="contact@salveazaoinima.ro"></div>
@@ -208,6 +218,8 @@
     <input type="text" id="CONTACT_WEB" value="salveazaoinima.ro">
     <label>Adresă</label>
     <input type="text" id="CONTACT_ADRESA" value="București, România">
+    <div class="edbtns"><button type="button" id="edSalveaza">Salvează ca implicit</button><button type="button" id="edIncarca">Folosește implicitul</button></div>
+    <div class="hint">Implicitul organizației (contact + banda „Implică-te”) se aplică la prima deschidere. Îl poate salva doar administratorul.</div>
   </div>
   <div id="dragHandle" title="Trage pentru a redimensiona"></div>
   <div class="prev">
@@ -3845,16 +3857,155 @@ function cuQr(html){
   return '<!DOCTYPE html>\n' + d.documentElement.outerHTML;
 }
 
-function build(){
+/* ===== Editare directă pe document =====
+   Datele de contact și textul din banda „Implică-te” se editează cu un clic pe documentul A4. Valoarea editată ajunge în câmpul din formular
+   (deci în PDF și în ciornă) și poate fi salvată ca implicit pe organizație. Funcția de curățare are o copie pe server (src/lib/one-pager-implicit.ts):
+   aceleași reguli, verificate de același test. Textul rămâne text simplu — se escapează la inserarea în document (esc). */
+/*FA-ED-START*/
+var ED_LIMITE = { CONTACT_NUME:80, CONTACT_FUNCTIE:80, CONTACT_TEL:40, CONTACT_EMAIL:120, CONTACT_WEB:120, CONTACT_ADRESA:160, IMPLICA_TEXT:300, IMPLICA_CTA:60 };
+function curataTextEditabil(id, brut){
+  if(typeof brut !== 'string' || !ED_LIMITE.hasOwnProperty(id)) return '';
+  var t = brut.replace(/[\u0000-\u001F\u007F-\u009F\u200B-\u200F\u2028-\u202E\u2060-\u2069\uFEFF]/g, ' ').replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, '');
+  t = t.replace(/^\s*(?:👤|📞|✉️?|🌐|📍)\s*/, '').replace(/^\s+|\s+$/g, '');
+  if(/^\[[^\]]*\]$/.test(t)) return '';
+  var max = ED_LIMITE[id];
+  if(t.length > max){
+    t = t.slice(0, max);
+    var ultim = t.charCodeAt(t.length - 1);
+    if(ultim >= 0xD800 && ultim <= 0xDBFF) t = t.slice(0, -1);
+    t = t.replace(/^\s+|\s+$/g, '');
+  }
+  return t;
+}
+/*FA-ED-END*/
+var ED_ETICHETA = { CONTACT_NUME:'Nume și prenume', CONTACT_FUNCTIE:'Funcția', CONTACT_TEL:'Telefon', CONTACT_EMAIL:'Email', CONTACT_WEB:'Website', CONTACT_ADRESA:'Adresă', IMPLICA_TEXT:'Text invitație', IMPLICA_CTA:'Text buton' };
+/* HTML-ul unei valori editabile (doar în previzualizare). Valoarea goală apare ca loc gol cu eticheta câmpului, șters la tipărire. */
+function campEd(id, v){
+  var gol = !/\S/.test(v || '');
+  var t = gol ? esc('[' + ED_ETICHETA[id] + ']') : esc(v).replace(/\n/g, '<br>');
+  return '<span data-ed="' + id + '"' + (gol ? ' data-ph="1"' : '') + ' title="Clic pentru a edita">' + t + '</span>';
+}
+var ED_STIL = '[data-ed]{cursor:text;border-radius:4px;transition:background .12s}' +
+  '[data-ed]:hover{outline:2px dashed #F5B301;outline-offset:2px;background:rgba(245,179,1,.16)}' +
+  '[data-ed]:focus{outline:2px solid #F5B301;outline-offset:2px;background:rgba(245,179,1,.24)}' +
+  '[data-ed][data-ph]{opacity:.6;font-style:italic}' +
+  '@media print{[data-ed]{outline:none!important;background:none!important}[data-ed][data-ph]{display:none!important}}';
+/* Codul care rulează ÎN documentul A4 din previzualizare (vezi edScript). De ce în document și nu din instrument: instrumentul rulează într-un iframe sandbox cu
+   origine opacă, iar documentul A4 e un cadru în el — accesul direct la conținutul lui nu e garantat. Documentul trimite instrumentului ce s-a editat (postMessage)
+   și primește înapoi textul curățat. Funcția e serializată ca text (Function.toString), deci nu poate folosi nimic din afara ei. */
+function edCopil(stil, etichete){
+  var P = window.parent;
+  var st = document.createElement('style');
+  st.textContent = stil;
+  document.head.appendChild(st);
+  /* în previzualizare linkurile nu se deschid: un clic pe butonul din bandă înseamnă „vreau să editez textul” */
+  document.addEventListener('click', function(e){ var a = e.target && e.target.closest ? e.target.closest('a') : null; if(a) e.preventDefault(); }, true);
+  var els = document.querySelectorAll('[data-ed]');
+  Array.prototype.forEach.call(els, function(el){
+    el.contentEditable = 'plaintext-only';
+    if(el.contentEditable !== 'plaintext-only') el.contentEditable = 'true';
+    el.spellcheck = false;
+    var initial = el.textContent;
+    el.addEventListener('mousedown', function(ev){ if(document.activeElement !== el){ ev.preventDefault(); el.focus(); } });
+    el.addEventListener('focus', function(){
+      var r = document.createRange(); r.selectNodeContents(el);
+      var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+      initial = el.textContent;
+    });
+    el.addEventListener('keydown', function(ev){
+      if(ev.key === 'Enter'){ ev.preventDefault(); el.blur(); }
+      else if(ev.key === 'Escape'){ ev.preventDefault(); el.textContent = initial; el.blur(); }
+    });
+    el.addEventListener('paste', function(ev){
+      ev.preventDefault();
+      var txt = (ev.clipboardData && ev.clipboardData.getData('text/plain')) || '';
+      txt = txt.replace(/\s+/g, ' ');
+      if(txt) document.execCommand('insertText', false, txt);
+    });
+    el.addEventListener('drop', function(ev){ ev.preventDefault(); });
+    el.addEventListener('blur', function(){
+      try { P.postMessage({ faEd: 1, id: el.getAttribute('data-ed'), text: el.textContent }, '*'); } catch(e){}
+    });
+  });
+  window.addEventListener('message', function(ev){
+    var m = ev.data;
+    if(!m || m.faEdOk !== 1 || ev.source !== P) return;
+    Array.prototype.forEach.call(els, function(el){
+      if(el.getAttribute('data-ed') !== m.id) return;
+      if(m.text){ el.textContent = m.text; el.removeAttribute('data-ph'); }
+      else { el.textContent = '[' + (etichete[m.id] || '') + ']'; el.setAttribute('data-ph', '1'); }
+    });
+  });
+}
+/* Scriptul de inserat în documentul din previzualizare (doar acolo, niciodată în PDF sau în codul HTML copiat). */
+function edScript(){
+  var arg = function(x){ return JSON.stringify(x).replace(/</g, '\\u003c'); };
+  return '<scr' + 'ipt>(' + edCopil.toString() + ')(' + arg(ED_STIL) + ',' + arg(ED_ETICHETA) + ');</scr' + 'ipt>';
+}
+/* Ce s-a editat în document ajunge în câmpul din formular (deci în PDF și în ciornă); răspunsul cu textul curățat se întoarce în document. */
+window.addEventListener('message', function(ev){
+  var m = ev.data, fr = document.getElementById('frame');
+  if(!m || m.faEd !== 1 || !fr || ev.source !== fr.contentWindow) return;
+  var id = typeof m.id === 'string' ? m.id : '';
+  if(!ED_LIMITE.hasOwnProperty(id)) return;
+  var nou = curataTextEditabil(id, typeof m.text === 'string' ? m.text : '');
+  var camp = document.getElementById(id);
+  if(camp && nou !== curataTextEditabil(id, camp.value)){ camp.value = nou; saveDraft(); }
+  try { fr.contentWindow.postMessage({ faEdOk: 1, id: id, text: nou }, '*'); } catch(e){}
+});
+
+/* Valorile implicite ale organizației (contact + banda de jos), păstrate pe server (crm_kv, cheia onepager-implicit). Se aplică la prima deschidere
+   (fără ciornă locală) sau cu butonul; le salvează doar administratorul. */
+var ED_API = '/api/__FA_ORG_SLUG__/crm-kv/onepager-implicit';
+function valoriEditabile(){
+  var o = {};
+  Object.keys(ED_LIMITE).forEach(function(id){ var el = document.getElementById(id); o[id] = curataTextEditabil(id, el ? el.value : ''); });
+  return o;
+}
+function aplicaImplicit(d){
+  var n = 0;
+  if(!d || typeof d !== 'object') return 0;
+  Object.keys(ED_LIMITE).forEach(function(id){
+    var el = document.getElementById(id);
+    if(el && typeof d[id] === 'string' && d[id]){ el.value = curataTextEditabil(id, d[id]); n++; }
+  });
+  if(n) refresh();
+  return n;
+}
+function incarcaImplicit(explicit){
+  fetch(ED_API).then(function(r){ return r.ok ? r.json() : null; }).then(function(d){
+    var n = aplicaImplicit(d);
+    if(explicit) toast(n ? 'Am încărcat datele implicite ale organizației.' : 'Organizația nu are încă date implicite salvate.');
+  }).catch(function(){ if(explicit) toast('Nu am putut citi datele implicite.'); });
+}
+function salveazaImplicit(){
+  fetch(ED_API, { method:'PUT', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(valoriEditabile()) }).then(function(r){
+    if(r.status === 403) toast('Doar administratorul organizației poate salva datele implicite.');
+    else if(!r.ok) toast('Nu am putut salva. Încearcă din nou.');
+    else toast('Salvat. Datele de contact și banda de jos devin implicite pentru organizație.');
+  }).catch(function(){ toast('Nu am putut salva. Încearcă din nou.'); });
+}
+document.getElementById('edSalveaza').onclick = salveazaImplicit;
+document.getElementById('edIncarca').onclick = function(){ incarcaImplicit(true); };
+
+function build(edit){
   var out = tplCurent();
+  /* Persoana de contact: rând nou înaintea telefonului — în previzualizare mereu (loc de editat), în rezultat doar dacă e completată. */
+  var numeC = curataTextEditabil('CONTACT_NUME', document.getElementById('CONTACT_NUME').value);
+  var fctC = curataTextEditabil('CONTACT_FUNCTIE', document.getElementById('CONTACT_FUNCTIE').value);
+  var randTel = '<span>📞 {{CONTACT_TEL}}</span>';
+  if(out.indexOf(randTel) >= 0 && (edit || numeC || fctC)){
+    var persoana = edit ? campEd('CONTACT_NUME', numeC) + ', ' + campEd('CONTACT_FUNCTIE', fctC) : esc([numeC, fctC].filter(Boolean).join(', '));
+    out = out.replace(randTel, function(){ return '<span>👤 ' + persoana + '</span>' + randTel; });
+  }
   ['ORG_NUME','TAGLINE','INTRO_TITLU','PROBLEMA_TITLU','CEFACEM_TITLU','IMPLICA_CTA','LINK','CONTACT_TEL','CONTACT_EMAIL','CONTACT_WEB','CONTACT_ADRESA','N1','L1','N2','L2','N3','L3','N4','L4'].forEach(function(id){
     var v = document.getElementById(id).value;
     if(id === 'LINK') v = cuUtm(v, 'onepager');
-    out = out.split('{{' + id + '}}').join(esc(v));
+    out = out.split('{{' + id + '}}').join(edit && ED_LIMITE.hasOwnProperty(id) ? campEd(id, v) : esc(v));
   });
   ['INTRO_TEXT','MISIUNE_TEXT','PROBLEMA_TEXT','CEFACEM_TEXT','IMPLICA_TEXT'].forEach(function(id){
     var v = document.getElementById(id).value;
-    out = out.split('{{' + id + '}}').join(esc(v).replace(/\n/g, '<br>'));
+    out = out.split('{{' + id + '}}').join(edit && ED_LIMITE.hasOwnProperty(id) ? campEd(id, v) : esc(v).replace(/\n/g, '<br>'));
   });
   var logoSrc = files.LOGO_IMG || '';
   out = out.split('{{LOGO_IMG}}').join(logoSrc);
@@ -3866,11 +4017,12 @@ function build(){
   out = out.split('{{BR_PRIMARY}}').join(br.primary);
   out = out.split('{{BR_DARK}}').join(br.dark);
   out = out.split('{{BR_LIGHT}}').join(br.light);
+  if(edit) out = out.replace(/<\/body>/i, function(){ return edScript() + '</body>'; });
   return cuQr(out);
 }
 
 function refresh(){
-  document.getElementById('frame').srcdoc = build();
+  document.getElementById('frame').srcdoc = build(true);
   saveDraft();
   updateLayoutTriggerLabel();
 }
@@ -3892,9 +4044,12 @@ function restoreDraft(){
     draftFields().forEach(function(el){ if(el.id && el.id in d) el.value = d[el.id]; });
   } catch(e){}
 }
+var aveaCiorna = false;
+try { aveaCiorna = !!localStorage.getItem(DRAFT_KEY); } catch(e){}
 restoreDraft();
 draftFields().forEach(function(el){ el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', refresh); });
 refresh();
+if(!aveaCiorna) incarcaImplicit(false);
 
 /* ===== PDF direct =====
    Documentul se desenează în browser (SVG foreignObject → canvas), cu fonturile Google înglobate, apoi se așază pe pagini A4 (jsPDF).
@@ -3949,15 +4104,50 @@ function pdfTaiePagini(radacina, total, inalt){
   }
   return pagini.length ? pagini : [[0, total]];
 }
+/* Măsurarea paginii pentru PDF rulează ÎN documentul A4 (cadru ascuns), nu din instrument: instrumentul e într-un iframe sandbox cu origine opacă și nu poate citi
+   conținutul unui cadru copil (contentDocument e null). Documentul își măsoară singur dimensiunile și zonele de tăiere și le trimite instrumentului (postMessage),
+   împreună cu textul XHTML al paginii (de acolo se desenează PDF-ul). Funcția e serializată ca text (Function.toString), deci nu poate folosi nimic din afara ei,
+   în afară de pdfTaiePagini, trimisă alături. */
+function pdfCopil(A4W, A4H){
+  var scriptul = document.currentScript;
+  function trimite(m){ m.faPdf = 1; try { window.parent.postMessage(m, '*'); } catch(e){} }
+  (async function(){
+    try {
+      var pag = document.querySelector('.page');
+      if(!pag) throw new Error('pagina');
+      var W = Math.round(parseFloat(window.getComputedStyle(pag).maxWidth) || 850);
+      var st = document.createElement('style');
+      st.textContent = 'html,body{background:#fff!important;margin:0!important}.page{margin:0!important;max-width:none!important;width:' + W + 'px!important;box-shadow:none!important;border-radius:0!important}';
+      document.head.appendChild(st);
+      await document.fonts.ready;
+      await Promise.all(Array.from(document.fonts).map(function(f){ return f.load().catch(function(){}); }));
+      var H = Math.ceil(pag.getBoundingClientRect().height);
+      if(!W || !H) throw new Error('dimensiuni');
+      var inaltPag = Math.round(W * A4H / A4W);
+      /* o pagină puțin mai înaltă decât A4 se micșorează ca să încapă pe una singură */
+      var zone = H <= inaltPag * 1.06 ? [[0, H]] : pdfTaiePagini(pag, H, inaltPag);
+      if(scriptul && scriptul.parentNode) scriptul.parentNode.removeChild(scriptul);
+      var xhtml = new XMLSerializer().serializeToString(document.documentElement);
+      trimite({ W: W, H: H, zone: zone, xhtml: xhtml });
+    } catch(e){
+      trimite({ eroare: String((e && e.message) || e) });
+    }
+  })();
+}
 function descarcaPdf(){
   var limita = new Promise(function(_, nu){ setTimeout(function(){ nu(new Error('timeout')); }, 60000); });
   return Promise.race([descarcaPdfInterior(), limita]).catch(function(e){ var b = document.getElementById('printBtn'); b.disabled = false; pdfEsec(e); });
 }
 function pdfEsec(e){
   toast('Nu am putut crea PDF-ul direct în acest browser. Se deschide tipărirea: alege „Salvează ca PDF”.');
-  var w = document.getElementById('frame').contentWindow;
-  w.focus();
-  w.print();
+  /* documentul A4 e un cadru cu origine diferită în instrumentul sandbox: print() poate fi refuzat */
+  try {
+    var w = document.getElementById('frame').contentWindow;
+    w.focus();
+    w.print();
+  } catch(e){
+    toast('Nu am putut crea PDF-ul în acest browser. Încearcă din Chrome sau Edge, sau copiază codul HTML.');
+  }
 }
 async function descarcaPdfInterior(){
   var btn = document.getElementById('printBtn'), eticheta = btn.innerHTML, cadru = null;
@@ -3968,27 +4158,26 @@ async function descarcaPdfInterior(){
     var h = await pdfInglobeazaFonturi(build());
     cadru = document.createElement('iframe');
     cadru.setAttribute('aria-hidden', 'true');
-    cadru.setAttribute('sandbox', 'allow-same-origin');
+    /* scripturi permise doar pentru codul de măsurare de mai jos; documentul nu are alte scripturi (textele din formular sunt escapate) */
+    cadru.setAttribute('sandbox', 'allow-scripts');
     cadru.tabIndex = -1;
     cadru.style.cssText = 'position:fixed;left:-10000px;top:0;width:1000px;height:800px;border:0;visibility:hidden';
-    cadru.srcdoc = h.html;
-    var incarcat = new Promise(function(ok){ cadru.addEventListener('load', ok, { once: true }); });
+    var scrisPdf = '<scr' + 'ipt>var pdfTaiePagini=' + pdfTaiePagini.toString() + ';(' + pdfCopil.toString() + ')(' + PDF_A4W + ',' + PDF_A4H + ');</scr' + 'ipt>';
+    cadru.srcdoc = h.html.replace(/<\/body>/i, function(){ return scrisPdf + '</body>'; });
+    var masura = new Promise(function(ok, nu){
+      var timp = setTimeout(function(){ window.removeEventListener('message', la); nu(new Error('masurare')); }, 40000);
+      function la(ev){
+        var m = ev.data;
+        if(!m || m.faPdf !== 1 || ev.source !== cadru.contentWindow) return;
+        window.removeEventListener('message', la);
+        clearTimeout(timp);
+        if(m.eroare || typeof m.xhtml !== 'string') nu(new Error(m.eroare || 'masurare')); else ok(m);
+      }
+      window.addEventListener('message', la);
+    });
     document.body.appendChild(cadru);
-    await incarcat;
-    var doc = cadru.contentDocument, pag = doc && doc.querySelector('.page');
-    if(!pag) throw new Error('pagina');
-    var W = Math.round(parseFloat(cadru.contentWindow.getComputedStyle(pag).maxWidth) || 850);
-    var st = doc.createElement('style');
-    st.textContent = 'html,body{background:#fff!important;margin:0!important}.page{margin:0!important;max-width:none!important;width:' + W + 'px!important;box-shadow:none!important;border-radius:0!important}';
-    doc.head.appendChild(st);
-    await doc.fonts.ready;
-    await Promise.all(Array.from(doc.fonts).map(function(f){ return f.load().catch(function(){}); }));
-    var H = Math.ceil(pag.getBoundingClientRect().height);
-    if(!W || !H) throw new Error('dimensiuni');
-    var inaltPag = Math.round(W * PDF_A4H / PDF_A4W);
-    /* o pagină puțin mai înaltă decât A4 se micșorează ca să încapă pe una singură */
-    var zone = H <= inaltPag * 1.06 ? [[0, H]] : pdfTaiePagini(pag, H, inaltPag);
-    var xhtml = new XMLSerializer().serializeToString(doc.documentElement);
+    var masurat = await masura;
+    var W = masurat.W, H = masurat.H, zone = masurat.zone, xhtml = masurat.xhtml;
     var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '"><foreignObject x="0" y="0" width="' + W + '" height="' + H + '">' + xhtml + '</foreignObject></svg>';
     var img = new Image();
     var imgGata = new Promise(function(ok, nu){ img.onload = ok; img.onerror = function(){ nu(new Error('svg')); }; });

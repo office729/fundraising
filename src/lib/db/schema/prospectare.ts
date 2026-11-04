@@ -53,6 +53,13 @@ export const prospectareCandidati = pgTable(
     urmatorPasLa: date("urmator_pas_la", { mode: "string" }),
     contactatLa: timestamp("contactat_la", { withTimezone: true }),
     nrAtingeri: integer("nr_atingeri").notNull().default(0),
+    // Deep Search (documentation/deep-search-ai.sql): telefonul dat deja de furnizor sau publicat pe internet, id-urile persoanei la fiecare furnizor care a găsit-o
+    // (emailul se cumpără la „Aprobă”, de la furnizorul care a găsit-o), celelalte surse care au găsit-o, linkul sursei (Internet (AI)) și cererea Lusha.
+    telefon: text("telefon"),
+    ids: jsonb("ids").$type<Record<string, string>>().notNull().default({}),
+    alteSurse: text("alte_surse").array().notNull().default([]),
+    cerereLusha: text("cerere_lusha"),
+    sursaUrl: text("sursa_url"),
   },
   (t) => [uniqueIndex("prospectare_candidati_unic").on(t.companyId, t.numeNorm), index("prospectare_candidati_org_idx").on(t.orgId, t.companyId, t.stare)],
 ).enableRLS();

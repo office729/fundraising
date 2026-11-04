@@ -15,6 +15,8 @@ import {
   FileSignature,
   Gauge,
   GraduationCap,
+  Coins,
+  SearchCheck,
   HandCoins,
   HandHeart,
   HeartHandshake,
@@ -25,6 +27,7 @@ import {
   MapPin,
   LogOut,
   Link2,
+  Mail,
   Menu,
   MessageSquare,
   Network,
@@ -33,6 +36,7 @@ import {
   UserPlus,
   ScanFace,
   Settings,
+  Share2,
   Target,
   BarChart3,
   Sparkles,
@@ -104,8 +108,11 @@ const MODUL_PE_INTRARE: Record<string, ModulPachet> = {
   "/program-lucru": "program-lucru",
   granturi: "granturi",
   decidenti: "prospectare-multi",
+  influenceri: "influenceri",
+  "agent-email": "ai-agenti",
   calendar: "calendar",
   reclame: "reclame",
+  "analiza-ong": "ai-agenti",
 };
 
 // Etichetele vin din dicționarul RO/EN (vezi lib/i18n/dictionaries/dashboard.ts)
@@ -121,6 +128,8 @@ export function buildNav(dict: DashboardDict, orgSlug: string, role: string, per
       items: [
         { href: "companii", label: dict.nav.companii, hint: dict.hints.companii, icon: Building2 },
         { href: "decidenti", label: dict.nav.decidenti, hint: dict.hints.decidenti, icon: UserSearch },
+        { href: "agent-email", label: dict.nav.agentEmail, hint: dict.hints.agentEmail, icon: Mail },
+        { href: "influenceri", label: dict.nav.influenceri, hint: dict.hints.influenceri, icon: Share2 },
         { href: "d177", label: dict.nav.companiiD177, hint: dict.hints.companiiD177, icon: Landmark },
         { href: "donatori", label: dict.nav.donatori, hint: dict.hints.donatori, icon: Users },
         ...(AVATAR_DONATOR_ACTIV ? [{ href: "avatar-donator", label: dict.nav.avatarDonator, hint: dict.hints.avatarDonator, icon: ScanFace }] : []),
@@ -166,6 +175,8 @@ export function buildNav(dict: DashboardDict, orgSlug: string, role: string, per
         { href: "instrumente", label: dict.nav.instrumente, hint: dict.hints.instrumente, icon: Wrench },
         { href: "consultanta", label: dict.nav.consultanta, hint: dict.hints.consultanta, icon: GraduationCap },
         { href: "inovare", label: dict.nav.inovare, hint: dict.hints.inovare, icon: Lightbulb },
+        ...(role === "owner" || role === "admin" ? [{ href: "consum-ai", label: dict.nav.consumAi, hint: dict.hints.consumAi, icon: Coins }] : []),
+        ...(role === "owner" || role === "admin" ? [{ href: "analiza-ong", label: dict.nav.analizaOng, hint: dict.hints.analizaOng, icon: SearchCheck }] : []),
         { href: "feedback", label: dict.nav.feedback, hint: dict.hints.feedback, icon: MessageSquareHeart },
         // Registrul de timp al muncii custom și al suportului: doar dacă echipa platformei l-a activat pentru organizație, și doar pentru owner/admin.
         ...(persEfectiva.arataTimp && (role === "owner" || role === "admin") ? [{ href: "timp-alocat", label: dict.nav.timpAlocat, hint: dict.hints.timpAlocat, icon: Clock }] : []),

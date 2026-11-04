@@ -332,7 +332,7 @@ export function DeAprobatGlobal({ orgSlug, date }: { orgSlug: string; date: Date
                   </Badge>
                 )}
                 <Badge tone="blue" icon={false}>
-                  {NUME_FURNIZOR[r.sursa as Furnizor] ?? r.sursa}
+                  {r.sursa === "web-ai" ? "Internet (AI)" : (NUME_FURNIZOR[r.sursa as Furnizor] ?? r.sursa)}
                 </Badge>
                 {r.email ? (
                   <span>

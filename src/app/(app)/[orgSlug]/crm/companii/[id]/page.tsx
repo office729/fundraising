@@ -40,6 +40,9 @@ import { CampuriPersonalizateCard } from "../../components/campuri-personalizate
 import { valoriDinJson } from "@/lib/campuri-personalizate";
 import { TagPills } from "./tag-pills";
 
+// „Caută pe internet (AI)” rulează o căutare web de câteva zeci de secunde, din acțiunea apelată de pe această pagină.
+export const maxDuration = 180;
+
 const CONTRACT_TONE: Record<string, StatusTone> = { trimis: "blue", asteptare: "amber", semnat: "green", anulat: "red" };
 
 const TABURI_VALIDE = ["prezentare", "contacte", "financiar", "sponsorizari", "contract", "notite", "activitate", "documente", "editare"];
@@ -69,6 +72,7 @@ export default async function CompanieProfilPage({
   const similare = arePrioritizare && data.companie.caen ? await getCompaniiSimilare(orgSlug, data.companie.id, data.companie.caen).catch(() => []) : [];
   const areProspectare = areModul(pachetPentruModule(access.orgPackage, access.userEmail), "prospectare-multi");
   const prospectare = areProspectare ? await getStareProspectare(orgSlug, data.companie.id) : null;
+  const areAi = areModul(pachetPentruModule(access.orgPackage, access.userEmail), "ai-agenti");
 
   const { companie: c, sponsorizari, notite, contacte, responsabili, jurnalEtape, orgNume, userEmail, campanii, campuriDefs } = data;
   // Suma cu care se lucrează: cea introdusă de mână, altfel estimarea din bilanț (nu se scrie în baza de date).
@@ -196,7 +200,7 @@ export default async function CompanieProfilPage({
       {prospectare?.furnizoriConfigurati.includes("apollo") && (!(c.industrie ?? "").trim() || c.nrAngajati == null) && <ImbogatesteFirma orgSlug={orgSlug} companyId={c.id} />}
 
       {prospectare ? (
-        <DecidentiCard orgSlug={orgSlug} companyId={c.id} stare={prospectare} />
+        <DecidentiCard orgSlug={orgSlug} companyId={c.id} stare={prospectare} aiDisponibil={areAi} />
       ) : (
         <ModulBlocatInline
           orgSlug={orgSlug}

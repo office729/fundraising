@@ -6,7 +6,8 @@ import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 
-import { aiConfigurat, genereazaTextMultumireAI } from "@/lib/ai";
+import { contextAi, genereazaTextMultumireAI, type ContextAi } from "@/lib/ai";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { limitaAIDepasita, MESAJ_LIMITA_AI } from "@/lib/ai-limit";
 import { withOrgAdmin, withOrgFaze, withOrgSession } from "@/lib/auth/guard";
 import { listAttachmentsCampanieImpl, listTaskuriCampanieImpl } from "./detaliu-queries";
@@ -92,13 +93,14 @@ export const creeazaTaskAction = withOrgAdmin(
 // să poată fi editat înainte de salvare. Fără cheie AI → error clar.
 export const genereazaTextMultumireAIAction = withOrgFaze<
   [string, string, number | null, string | null],
-  { pagina: { titlu: string; poveste: string; sumaStransa: number; sumaTinta: number | null }; url: string; orgName: string; companie: string; suma: number | null; moneda: string | null },
+  { pagina: { titlu: string; poveste: string; sumaStransa: number; sumaTinta: number | null }; url: string; orgName: string; companie: string; suma: number | null; moneda: string | null; ai: ContextAi },
   { error: string | null; text: string | null },
   { error: string | null; text: string | null }
 >({
   admin: true,
   pregateste: async (ctx, pageId, companie, suma, moneda) => {
-    if (!aiConfigurat()) return { gata: { error: "AI-ul nu e configurat (ANTHROPIC_API_KEY lipsește).", text: null } };
+    const cai = await contextAi(ctx, "promovare", await getLocale());
+    if (!cai.ok) return { gata: { error: cai.eroare, text: null } };
     if (!companie.trim()) return { gata: { error: "Completează numele companiei mai întâi.", text: null } };
     if (await limitaAIDepasita(ctx)) return { gata: { error: MESAJ_LIMITA_AI, text: null } };
 
@@ -121,18 +123,20 @@ export const genereazaTextMultumireAIAction = withOrgFaze<
         companie: companie.trim(),
         suma,
         moneda,
+        ai: cai.ai,
       },
     };
   },
   // Fără scriere în baza de date: răspunsul fazei externe e rezultatul (fără o a doua tranzacție inutilă).
-  extern: async ({ pagina, url, orgName, companie, suma, moneda }) => {
+  extern: async ({ pagina, url, orgName, companie, suma, moneda, ai }) => {
     const text = await genereazaTextMultumireAI(
+      ai,
       { titlu: pagina.titlu, poveste: pagina.poveste, orgName, url, sumaStransa: pagina.sumaStransa, sumaTinta: pagina.sumaTinta },
       companie,
       suma,
       moneda,
     );
-    return text ? { error: null, text } : { error: "AI-ul nu a putut genera textul. Încearcă din nou.", text: null };
+    return text ? { error: null, text } : { error: ai.eroare ?? "AI-ul nu a putut genera textul. Încearcă din nou.", text: null };
   },
 });
 

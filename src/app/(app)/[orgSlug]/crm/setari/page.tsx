@@ -10,6 +10,8 @@ import { ApiSection } from "../../setari/api-section";
 import { obtineStareApi } from "../../setari/api-actions";
 import { listeazaCampuri } from "../../setari/campuri-actions";
 import { CampuriSection } from "../../setari/campuri-section";
+import { obtineStareContEmail } from "../../setari/agent-email-actions";
+import { ContEmailSection } from "../../setari/agent-email-section";
 import { SetariContinut } from "../../setari/setari-continut";
 import { ModulBlocatInline } from "../components/modul-blocat-inline";
 import { RoluriIntegrari } from "./roluri-integrari";
@@ -28,12 +30,21 @@ export default async function CrmSetariPage({ params }: { params: Promise<{ orgS
     esteAdmin && areCampuri ? listeazaCampuri(orgSlug).catch(() => null) : null,
     esteAdmin && areApi ? obtineStareApi(orgSlug).catch(() => null) : null,
   ]);
+  // Colegii fără rol de administrator își conectează aici propria căsuță de email (pentru Agentul email); administratorii o au în secțiunea „Integrări & AI” de mai sus.
+  const stareContEmail = esteAdmin ? null : await obtineStareContEmail(orgSlug).catch(() => null);
   const hdrs = await headers();
   const origine = `${hdrs.get("x-forwarded-proto") ?? "https"}://${hdrs.get("x-forwarded-host") ?? hdrs.get("host")}`;
 
   return (
     <div className="mx-auto max-w-[960px] space-y-8">
       {esteAdmin && <SetariContinut orgSlug={orgSlug} />}
+      {stareContEmail && (
+        <div className="rounded-2xl border border-line bg-canvas p-5 text-body sm:p-8">
+          <div className="mx-auto max-w-xl">
+            <ContEmailSection orgSlug={orgSlug} stare={stareContEmail} />
+          </div>
+        </div>
+      )}
       {esteAdmin && (
         <div id="campuri" className="scroll-mt-4">
           {campuri ? (

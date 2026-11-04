@@ -4,7 +4,8 @@ import { caleCampanie } from "@/lib/link-campanie";
 import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 
-import { aiConfigurat, genereazaContinutCanalAI } from "@/lib/ai";
+import { contextAi, genereazaContinutCanalAI, type ContextAi } from "@/lib/ai";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { limitaAIDepasita, MESAJ_LIMITA_AI } from "@/lib/ai-limit";
 import { withOrgAdmin, withOrgFaze, withOrgSession } from "@/lib/auth/guard";
 import { areModul } from "@/lib/billing/packages";
@@ -67,7 +68,7 @@ export const genereazaComunicatAction = withOrgAdmin(async (ctx, pageId: string)
 // sau eșuează. Pornește tot ca 'draft'; înlocuiește draftul existent.
 export const genereazaComunicatAIAction = withOrgFaze<
   [string],
-  { date: DateCampanie },
+  { date: DateCampanie; ai: ContextAi },
   Awaited<ReturnType<typeof genereazaContinutCanalAI>>,
   { error: string | null; ok: boolean; aiFolosit?: boolean }
 >({
@@ -76,12 +77,13 @@ export const genereazaComunicatAIAction = withOrgFaze<
     if (!areModul(pachetPentruModule(ctx.orgPackage, ctx.userEmail), "comunicat-presa")) return { gata: { error: MESAJ_PRESA_IMPACT, ok: false } };
     const date = await dateCampanie(ctx.db, pageId, ctx.orgId, ctx.orgSlug, ctx.orgName);
     if (!date) return { gata: { error: "Pagina nu a fost găsită.", ok: false } };
-    if (!aiConfigurat())
-      return { gata: { error: "AI-ul nu e configurat (ANTHROPIC_API_KEY lipsește). Folosește «Generează (șablon)».", ok: false } };
+    const locale = await getLocale();
+    const cai = await contextAi(ctx, "promovare", locale);
+    if (!cai.ok) return { gata: { error: `${cai.eroare} ${locale === "ro" ? "Între timp poți folosi «Generează (șablon)»." : "Meanwhile you can use “Generate (template)”."}`, ok: false } };
     if (await limitaAIDepasita(ctx)) return { gata: { error: MESAJ_LIMITA_AI, ok: false } };
-    return { pregatit: { date } };
+    return { pregatit: { date, ai: cai.ai } };
   },
-  extern: ({ date }) => genereazaContinutCanalAI(date, "comunicat"),
+  extern: ({ date, ai }) => genereazaContinutCanalAI(ai, date, "comunicat"),
   salveaza: async (ctx, { date }, ai, pageId) => {
     const continut = ai?.textComplet ?? genereazaComunicatPresa(date);
 

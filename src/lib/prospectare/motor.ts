@@ -203,6 +203,7 @@ export type CandidatBrut = {
   linkedin: string;
   email: string;
   emailStatus: string | null; // valid | risky | invalid | null (neverificat)
+  telefon?: string; // doar dacă furnizorul îl dă deja la căutare (Hunter) sau la îmbogățire (Prospeo cu mobil, Lusha)
   sursa: Furnizor;
   ids?: Partial<Record<Furnizor, string>>; // id-ul persoanei la fiecare furnizor care a găsit-o
   cerereLusha?: string; // Lusha leagă îmbogățirea de cererea de căutare
@@ -339,8 +340,23 @@ export async function apolloImbogatesteFirma(cheie: string, firma: { nume: strin
   }
 }
 
+// Site-ul (domeniul) unei firme care nu-l are completat, din căutarea de companii Apollo (după nume, în România): doar dacă există o singură firmă cu exact acest nume.
+// Deep Search îl află o singură dată, înainte ca ceilalți furnizori să înceapă (Hunter caută doar după domeniu).
+export async function apolloGasesteDomeniu(cheie: string, nume: string, f: FetchFn): Promise<Rezultat<string | null>> {
+  try {
+    const corp = { page: 1, per_page: 5, q_organization_name: nume, organization_locations: ["Romania"] };
+    const res = await f(`${APOLLO}/mixed_companies/search`, { method: "POST", headers: headereApollo(cheie), body: JSON.stringify(corp), signal: AbortSignal.timeout(15000), cache: "no-store", redirect: "error" });
+    const j = (await res.json().catch(() => ({}))) as { organizations?: OrganizatieApollo[]; accounts?: OrganizatieApollo[]; error?: string; error_message?: string };
+    if (!res.ok) return { ok: false, eroare: eroareHttp("apollo", res.status, j.error_message || j.error), status: res.status };
+    const gasita = alegeOrganizatieApollo([...(j.organizations ?? []), ...(j.accounts ?? [])], { nume, domeniu: null });
+    return { ok: true, date: gasita ? domeniuDinSite(gasita.primary_domain || gasita.website_url) : null };
+  } catch (e) {
+    return { ok: false, eroare: eroareRetea("apollo", e) };
+  }
+}
+
 // ===== Hunter =====
-type EmailHunter = { value?: string; first_name?: string; last_name?: string; position?: string; department?: string; seniority?: string; confidence?: number; linkedin?: string; verification?: { status?: string } };
+type EmailHunter = { value?: string; first_name?: string; last_name?: string; position?: string; department?: string; seniority?: string; confidence?: number; linkedin?: string; phone_number?: string | null; verification?: { status?: string } };
 const headereHunter = (cheie: string) => ({ "X-API-KEY": cheie });
 
 export async function hunterValideaza(cheie: string, f: FetchFn): Promise<Rezultat<true>> {
@@ -377,6 +393,7 @@ export async function hunterDomeniu(cheie: string, domeniu: string, f: FetchFn):
         linkedin: e.linkedin || "",
         email: String(e.value),
         emailStatus: statusHunter(e.verification?.status),
+        telefon: String(e.phone_number || "").trim().slice(0, 40) || undefined,
         sursa: "hunter" as const,
         seniority: e.seniority || "",
       }))
@@ -444,6 +461,7 @@ type PersoanaProspeo = {
   current_job_title?: string | null;
   linkedin_url?: string | null;
   email?: { status?: string | null; revealed?: boolean | null; email?: string | null } | null;
+  mobile?: { status?: string | null; revealed?: boolean | null; mobile?: string | null; mobile_international?: string | null } | null;
 };
 
 // Răspunsul vine fie direct, fie împachetat în { data | response }.
@@ -490,10 +508,11 @@ export async function prospeoCauta(cheie: string, firma: { nume: string; domeniu
 }
 
 // E-mailul persoanelor alese (după id). CONSUMĂ credite Prospeo: 1 pe e-mail găsit.
-export async function prospeoImbogateste(cheie: string, ids: string[], f: FetchFn): Promise<Rezultat<Record<string, { email: string; verificat: boolean }>>> {
+// Cu `mobil` cere și numărul de mobil (credite în plus la Prospeo); numărul vine direct în răspuns, ca text gol dacă furnizorul nu are unul.
+export async function prospeoImbogateste(cheie: string, ids: string[], f: FetchFn, optiuni: { mobil?: boolean } = {}): Promise<Rezultat<Record<string, { email: string; verificat: boolean; telefon: string }>>> {
   if (ids.length === 0) return { ok: true, date: {} };
   try {
-    const res = await f(`${PROSPEO}/bulk-enrich-person`, { method: "POST", headers: headerePr(cheie), body: JSON.stringify({ only_verified_email: false, enrich_mobile: false, data: ids.slice(0, 25).map((id) => ({ identifier: id, person_id: id })) }), signal: AbortSignal.timeout(45000), cache: "no-store", redirect: "error" });
+    const res = await f(`${PROSPEO}/bulk-enrich-person`, { method: "POST", headers: headerePr(cheie), body: JSON.stringify({ only_verified_email: false, enrich_mobile: optiuni.mobil === true, data: ids.slice(0, 25).map((id) => ({ identifier: id, person_id: id })) }), signal: AbortSignal.timeout(45000), cache: "no-store", redirect: "error" });
     const j = (await res.json().catch(() => ({}))) as unknown;
     if (!res.ok) {
       const o = (j || {}) as { error_code?: string; message?: string };
@@ -501,12 +520,14 @@ export async function prospeoImbogateste(cheie: string, ids: string[], f: FetchF
       return { ok: false, eroare: eroareHttp("prospeo", res.status, o.message), status: res.status };
     }
     const b = corpProspeo<{ matched?: { identifier?: string; person?: PersoanaProspeo }[] }>(j);
-    const rezultat: Record<string, { email: string; verificat: boolean }> = {};
+    const rezultat: Record<string, { email: string; verificat: boolean; telefon: string }> = {};
     for (const m of b.matched ?? []) {
       const p = m?.person;
       const email = p?.email?.revealed !== false && p?.email?.email && !p.email.email.includes("*") ? p.email.email : "";
+      const mobil = optiuni.mobil ? String(p?.mobile?.mobile_international || p?.mobile?.mobile || "") : "";
+      const telefon = mobil && !mobil.includes("*") ? mobil.trim().slice(0, 40) : "";
       const id = String(m?.identifier || p?.person_id || "");
-      if (id && email) rezultat[id] = { email, verificat: p?.email?.status === "VERIFIED" };
+      if (id && (email || telefon)) rezultat[id] = { email, verificat: p?.email?.status === "VERIFIED", telefon };
     }
     return { ok: true, date: rezultat };
   } catch (e) {
@@ -547,6 +568,9 @@ export async function lushaCauta(cheie: string, firma: { nume: string; domeniu: 
       const res = await f(`${LUSHA}/prospecting/contact/search`, { method: "POST", headers: headereLusha(cheie), body: JSON.stringify({ pages: { page: 0, size: 25 }, filters: { companies: companii, contacts: { include } } }), signal: AbortSignal.timeout(20000), cache: "no-store", redirect: "error" });
       cereri++;
       const j = (await res.json().catch(() => ({}))) as { requestId?: string; data?: PersoanaLusha[]; message?: string };
+      // Treapta fără filtru de țară poate fi refuzată de Lusha („cel puțin un filtru de contact”): atunci rezultatul real e „0 găsiți”, nu o eroare.
+      // Doar refuzul primei trepte (cheie greșită, credite, limită) e o eroare adevărată.
+      if (!res.ok && treapta > 0 && res.status !== 401 && res.status !== 403 && res.status !== 429 && res.status < 500) return { ok: true, date: { candidati: [], cereri } };
       if (!res.ok) return { ok: false, eroare: eroareHttp("lusha", res.status, j.message), status: res.status };
       const candidati: CandidatBrut[] = (j.data ?? [])
         .filter((c) => c.contactId && c.name)
@@ -571,21 +595,23 @@ export async function lushaCauta(cheie: string, firma: { nume: string; domeniu: 
 }
 
 // E-mailul persoanelor alese (după cererea de căutare). CONSUMĂ credite Lusha. Rezultatul se potrivește pe nume (Lusha nu întoarce id-ul la îmbogățire).
-export async function lushaImbogateste(cheie: string, cerereId: string, ids: string[], f: FetchFn): Promise<Rezultat<{ nume: string; email: string; linkedin: string }[]>> {
+export async function lushaImbogateste(cheie: string, cerereId: string, ids: string[], f: FetchFn): Promise<Rezultat<{ nume: string; email: string; linkedin: string; telefon: string }[]>> {
   if (ids.length === 0) return { ok: true, date: [] };
   try {
     const res = await f(`${LUSHA}/prospecting/contact/enrich`, { method: "POST", headers: headereLusha(cheie), body: JSON.stringify({ requestId: cerereId, contactIds: ids }), signal: AbortSignal.timeout(30000), cache: "no-store", redirect: "error" });
     const j = (await res.json().catch(() => ({}))) as { contacts?: { isSuccess?: boolean; data?: Record<string, unknown> }[]; message?: string };
     if (!res.ok) return { ok: false, eroare: eroareHttp("lusha", res.status, j.message), status: res.status };
-    const rezultat: { nume: string; email: string; linkedin: string }[] = [];
+    const rezultat: { nume: string; email: string; linkedin: string; telefon: string }[] = [];
     for (const c of j.contacts ?? []) {
       if (!c?.isSuccess || !c.data) continue;
       const d = c.data;
       const emailuri = (d.emailAddresses as { email?: string }[] | undefined) || [];
+      const telefoane = (d.phoneNumbers as { number?: string }[] | undefined) || [];
       const social = (d.socialLinks as { linkedin?: string } | undefined) || {};
       const nume = String(d.fullName || `${d.firstName || ""} ${d.lastName || ""}`.trim());
       const email = String(emailuri[0]?.email || "");
-      if (nume && (email || social.linkedin)) rezultat.push({ nume, email, linkedin: String(social.linkedin || "") });
+      const telefon = String(telefoane[0]?.number || "").trim().slice(0, 40);
+      if (nume && (email || telefon || social.linkedin)) rezultat.push({ nume, email, linkedin: String(social.linkedin || ""), telefon });
     }
     return { ok: true, date: rezultat };
   } catch (e) {
@@ -763,7 +789,7 @@ export type RezultatCautare = { domeniu: string | null; candidati: CandidatGasit
 const LIMITA_ATINSA = "Limita zilnică de căutări a organizației a fost atinsă; continuă mâine.";
 const TIMP_DEPASIT = "Căutarea a durat prea mult și s-a oprit; rezultatele de până acum au fost păstrate. Încearcă din nou.";
 // Ordinea descoperirii: gratuit întâi.
-const ORDINE_DESCOPERIRE: Furnizor[] = ["apollo", "prospeo", "hunter", "lusha"];
+export const ORDINE_DESCOPERIRE: Furnizor[] = ["apollo", "prospeo", "hunter", "lusha"];
 // E-mailul se cere întâi de la furnizorii care îl dau după id (Prospeo, Lusha), apoi de la Hunter (după nume și domeniu), la urmă de la Apollo.
 const EMAIL_INTAI: Furnizor[] = ["prospeo", "lusha"];
 

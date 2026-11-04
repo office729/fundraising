@@ -23,7 +23,7 @@ export type ToolId =
 
 // Module incluse începând cu un anumit pachet (pe lângă cotele din PACKAGE_LIMITS). Ce nu e listat aici (CRM-ul de bază, campaniile,
 // Formularul 230, contractele, newsletterul, rapoartele) e în toate pachetele. Probă și plan personalizat: toate deschise.
-export type ModulPachet = "program-lucru" | "kpi" | "instrumente-design" | "voluntari" | "comunicat-presa" | "analiza-baze" | "granturi" | "calendar" | "reclame" | "analiza-donator" | "prioritizare-firme" | "cai-calde" | "prospectare-multi" | "parcursuri-donatori" | "campuri-personalizate" | "api-webhooks";
+export type ModulPachet = "program-lucru" | "kpi" | "instrumente-design" | "voluntari" | "comunicat-presa" | "analiza-baze" | "granturi" | "calendar" | "reclame" | "analiza-donator" | "prioritizare-firme" | "cai-calde" | "prospectare-multi" | "parcursuri-donatori" | "campuri-personalizate" | "api-webhooks" | "ai-agenti" | "influenceri";
 
 // `nume` e în română (cum apare în emailuri și pe documente); `numeEn` e pentru interfața în engleză (vezi numeModul).
 export const MODULE_PACHET: Record<ModulPachet, { minim: "crestere" | "impact"; nume: string; numeEn: string }> = {
@@ -48,6 +48,11 @@ export const MODULE_PACHET: Record<ModulPachet, { minim: "crestere" | "impact"; 
   "campuri-personalizate": { minim: "crestere", nume: "Câmpuri personalizate la donatori și firme", numeEn: "Custom fields for donors and companies" },
   // Chei API (citire donatori și donații, câmpuri personalizate) și webhook-uri către sistemele organizației.
   "api-webhooks": { minim: "impact", nume: "API și webhook-uri", numeEn: "API and webhooks" },
+  // Agenții AI noi (agent email, analiza ONG-urilor, analiza reclamelor, căutare decidenți pe internet) rulează pe contul Anthropic al organizației (cheia ei, consumul ei).
+  // Conectarea contului și pagina Consum AI sunt în toate pachetele; funcțiile mai vechi (promovare, granturi) își păstrează pachetul.
+  "ai-agenti": { minim: "impact", nume: "Agenți AI (agent email, analize, căutare decidenți pe internet)", numeEn: "AI agents (email agent, analyses, web decision-maker search)" },
+  // Baza de influenceri cu fișe, linkuri unice, urmărire și rezultate. Se poate folosi și fără AI (mesajele au și un șablon); mesajele cu AI rulează pe contul Anthropic al organizației.
+  influenceri: { minim: "impact", nume: "Influenceri (fișe, linkuri unice, mesaje și rezultate)", numeEn: "Influencers (profiles, unique links, messages and results)" },
 };
 
 // Numele modulului în limba cerută (implicit română, ca în emailuri și pe documente).
