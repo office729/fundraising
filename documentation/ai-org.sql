@@ -43,3 +43,8 @@ drop policy if exists ai_setari_tenant_isolation on ai_setari;
 create policy ai_setari_tenant_isolation on ai_setari
   using (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)
   with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid);
+
+-- v2: alegeri suplimentare ale organizației. poveste_la_ai: povestea campaniei (poate conține date medicale) pleacă la Anthropic doar dacă organizația o cere explicit;
+-- opreste_la_buget: funcțiile AI se opresc când consumul lunii atinge bugetul de referință.
+alter table ai_setari add column if not exists poveste_la_ai boolean not null default false;
+alter table ai_setari add column if not exists opreste_la_buget boolean not null default false;

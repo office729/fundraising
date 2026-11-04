@@ -11,7 +11,7 @@ export const DPA_DICT = {
     eyebrow: "Legal",
     titlu: "Acord de prelucrare a datelor (DPA)",
     actualizatLabel: "Versiune",
-    actualizat: "24 octombrie 2026",
+    actualizat: "4 noiembrie 2026",
     sectiuni: [
       {
         titlu: "1. Părțile și obiectul acordului",
@@ -63,7 +63,9 @@ export const DPA_DICT = {
           "Vercel — găzduirea aplicației;",
           "Supabase — baza de date și autentificarea (regiune UE);",
           "furnizorul de web hosting al platformei (romania-webhosting.com) — serviciul de email al domeniului alexandrit.ro, pentru emailurile trimise la cererea Operatorului;",
-          "Anthropic (Claude) — generare de conținut asistată de AI, doar când Operatorul folosește funcția respectivă. În modulul Granturi, dosarul organizației și cerințele finanțatorului sunt trimise pentru redactarea cererilor de finanțare (contactele și IBAN-ul din dosar nu se trimit), iar căutarea de apeluri folosește căutarea web a Anthropic; Operatorul nu introduce date de sănătate sau date ale beneficiarilor fără temei legal și fără anonimizare;",
+          "Anthropic (Claude) — funcții cu AI, folosite doar când Operatorul le pornește și doar pe contul Anthropic propriu al Operatorului (cheia lui, conectată în Setări; Platforma nu folosește o cheie proprie și transmite cererea la inițiativa Operatorului). Se trimit, după funcție: titlul, sumele și linkul campaniei (povestea campaniei doar dacă Operatorul bifează explicit în Setări); dosarul organizației și cerințele finanțatorului în modulul Granturi (fără contacte și IBAN), cu căutare web pentru apeluri; în Agentul email, datele firmei din CRM, numele și funcția persoanei de contact și textul răspunsurilor primite (pentru etichetare); la căutarea de decidenți pe internet, numele firmei, CUI-ul, localitatea, site-ul și administratorul; în analiza ONG-urilor, numele ONG-ului analizat; în analiza reclamelor, date agregate pe campanie; în Influenceri, numele public, categoria și orașul influencerului. Operatorul nu introduce date de sănătate sau date ale beneficiarilor fără temei legal și fără anonimizare;",
+          "Apollo, Lusha, Prospeo, Hunter, Waalaxy — căutarea de persoane de decizie din firme și contactarea lor, doar cu conturile și cheile proprii ale Operatorului (se trimit numele firmei, domeniul și, la aprobare, numele și funcția persoanelor; se primesc date profesionale de contact). Furnizorii acționează ca împuterniciți ai Operatorului, nu ai Platformei;",
+          "serverele de email SMTP și IMAP ale colegilor Operatorului (Agentul email) — trimiterea emailurilor aprobate de colegi și citirea răspunsurilor, cu credențialele fiecărui coleg stocate criptat și folosite doar de el;",
           "Twilio — apeluri și mesaje, unde funcția este activată de Operator;",
           "Calendly — programarea consilierilor;",
           "Sentry — monitorizarea erorilor tehnice ale Platformei (fără datele din formulare sau din CRM; adresele paginilor sunt curățate de parametri și tokenuri);",
@@ -126,7 +128,7 @@ export const DPA_DICT = {
     eyebrow: "Legal",
     titlu: "Data Processing Agreement (DPA)",
     actualizatLabel: "Version",
-    actualizat: "October 24, 2026",
+    actualizat: "November 4, 2026",
     sectiuni: [
       {
         titlu: "1. Parties and subject matter",
@@ -178,7 +180,9 @@ export const DPA_DICT = {
           "Vercel — application hosting;",
           "Supabase — database and authentication (EU region);",
           "the platform's web hosting provider (romania-webhosting.com) — the alexandrit.ro domain's email service, for emails sent at the Controller's request;",
-          "Anthropic (Claude) — AI-assisted content generation, only when the Controller uses that feature. In the Grants module, the organization's file and the funder's requirements are sent to draft funding applications (the file's contacts and IBAN are not sent), and the search for calls uses Anthropic's web search; the Controller does not enter health data or beneficiaries' data without a legal basis and without anonymisation;",
+          "Anthropic (Claude) — AI features, used only when the Controller turns them on and only on the Controller's own Anthropic account (its key, connected in Settings; the Platform has no key of its own and relays the request at the Controller's initiative). Depending on the feature, the following is sent: the campaign's title, amounts and link (the campaign story only if the Controller explicitly ticks the option in Settings); the organization's file and the funder's requirements in the Grants module (without contacts and IBAN), with web search for calls; in the Email agent, the company's CRM data, the contact person's name and role, and the text of replies received (for labelling); in the web search for decision-makers, the company's name, tax ID, locality, website and administrator; in the NGO analysis, the name of the analysed NGO; in the ad analysis, aggregated data per campaign; in Influencers, the influencer's public name, category and city. The Controller does not enter health data or beneficiaries' data without a legal basis and without anonymisation;",
+          "Apollo, Lusha, Prospeo, Hunter, Waalaxy — finding decision-makers at companies and contacting them, only with the Controller's own accounts and keys (the company name, domain and, on approval, the people's names and roles are sent; professional contact data is received). The providers act as the Controller's processors, not the Platform's;",
+          "the SMTP and IMAP email servers of the Controller's colleagues (the Email agent) — sending the emails approved by colleagues and reading replies, with each colleague's credentials stored encrypted and used only by that colleague;",
           "Twilio — calls and messages, where the Controller enables the feature;",
           "Calendly — scheduling of advisors;",
           "Sentry — monitoring of the Platform's technical errors (without form or CRM data; page addresses are stripped of parameters and tokens);",

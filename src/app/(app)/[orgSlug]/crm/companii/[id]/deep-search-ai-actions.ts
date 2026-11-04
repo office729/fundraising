@@ -66,7 +66,7 @@ const cautaAi = withOrgFaze<[string, boolean], PregatitAi, RezultatClaude, Rezul
 
     const locale = await getLocale();
     const cfg = await citesteConfigAi(ctx.db, ctx.orgId);
-    if (!cfg.conectat || !cfg.cheie) return { gata: { ok: false, eroare: mesajFaraCheieAi(locale, cfg.ilizibila) } };
+    if (!cfg.conectat || !cfg.cheie) return { gata: { ok: false, eroare: mesajFaraCheieAi(locale, cfg.ilizibila, cfg.blocatBuget) } };
 
     const [existente, excluderi] = await Promise.all([
       ctx.db

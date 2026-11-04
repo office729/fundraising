@@ -82,7 +82,7 @@ export const genereazaCalendarAIAction = withOrgFaze<
   [string],
   { date: DateCampanie; ai: ContextAi },
   PostCalendarAI[] | null,
-  GenereazaState & { aiFolosit?: boolean }
+  GenereazaState & { aiFolosit?: boolean; avertisment?: string }
 >({
   admin: true,
   // Faza 1 (tranzacție scurtă): validări + datele campaniei. Faza 2: apelul AI, FĂRĂ conexiune DB deschisă.
@@ -96,7 +96,7 @@ export const genereazaCalendarAIAction = withOrgFaze<
     return { pregatit: { date, ai: cai.ai } };
   },
   extern: ({ date, ai }) => genereazaCalendarZilnicAI(ai, date, 7),
-  salveaza: async (ctx, { date }, aiItems, pageId) => {
+  salveaza: async (ctx, { date, ai }, aiItems, pageId) => {
     const items = aiItems ?? genereazaCalendarZilnic(date).map((it) => ({ obiectiv: it.unghi, text: it.text }));
 
     await ctx.db
@@ -120,7 +120,8 @@ export const genereazaCalendarAIAction = withOrgFaze<
       }),
     );
 
-    return { error: null, ok: true, aiFolosit: Boolean(aiItems) };
+    // Dacă AI-ul a eșuat, calendarul s-a făcut din șablon; utilizatorul află DE CE (credite epuizate, cheie invalidă…).
+    return { error: null, ok: true, aiFolosit: Boolean(aiItems), avertisment: aiItems ? undefined : (ai.eroare ?? undefined) };
   },
 });
 
@@ -159,7 +160,7 @@ export const genereazaContinutAIAction = withOrgFaze<
   [string],
   { date: DateCampanie; ai: ContextAi },
   { item: ContinutCanal; aiFolosit: boolean }[],
-  GenereazaState & { aiFolosit?: boolean }
+  GenereazaState & { aiFolosit?: boolean; avertisment?: string }
 >({
   admin: true,
   pregateste: async (ctx, pageId) => {
@@ -182,7 +183,7 @@ export const genereazaContinutAIAction = withOrgFaze<
       }),
     );
   },
-  salveaza: async (ctx, _p, rezultate, pageId) => {
+  salveaza: async (ctx, p, rezultate, pageId) => {
     await ctx.db
       .delete(fundraisingGeneratedContent)
       .where(and(eq(fundraisingGeneratedContent.campaignPageId, pageId), eq(fundraisingGeneratedContent.status, "draft")));
@@ -201,7 +202,8 @@ export const genereazaContinutAIAction = withOrgFaze<
       })),
     );
 
-    return { error: null, ok: true, aiFolosit: rezultate.some((r) => r.aiFolosit) };
+    const faraAi = !rezultate.some((r) => r.aiFolosit);
+    return { error: null, ok: true, aiFolosit: !faraAi, avertisment: faraAi ? (p.ai.eroare ?? undefined) : undefined };
   },
 });
 

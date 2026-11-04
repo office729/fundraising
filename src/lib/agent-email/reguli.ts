@@ -6,7 +6,7 @@ export type Mecanism = "sponsorizare" | "d177" | "caz";
 export const MECANISME: readonly Mecanism[] = ["sponsorizare", "d177", "caz"];
 export const esteMecanism = (v: unknown): v is Mecanism => typeof v === "string" && (MECANISME as readonly string[]).includes(v);
 
-export type StareMesaj = "ciorna" | "se_trimite" | "trimis" | "eroare";
+export type StareMesaj = "ciorna" | "se_trimite" | "trimis" | "eroare" | "respinsa";
 export type TipMesaj = "prim" | "revenire";
 export type EtichetaRaspuns = "interesat" | "detalii" | "nu_acum" | "refuz" | "alt_contact" | "stop" | "automat" | "altul";
 export const ETICHETE_RASPUNS: readonly EtichetaRaspuns[] = ["interesat", "detalii", "nu_acum", "refuz", "alt_contact", "stop", "automat", "altul"];

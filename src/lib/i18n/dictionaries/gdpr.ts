@@ -9,7 +9,7 @@ export const GDPR_DICT = {
     eyebrow: "Legal",
     titlu: "Politica de confidențialitate (GDPR)",
     actualizatLabel: "Ultima actualizare",
-    actualizat: "24 octombrie 2026",
+    actualizat: "4 noiembrie 2026",
     sectiuni: [
       {
         titlu: "1. Cine suntem și în ce calitate prelucrăm date",
@@ -74,7 +74,9 @@ export const GDPR_DICT = {
           "Google Analytics — statistici de utilizare, doar cu consimțământul tău;",
           "Sentry — monitorizarea erorilor tehnice ale aplicației (mesaje de eroare și informații despre dispozitiv/browser; adresele paginilor sunt curățate de parametri și tokenuri, iar emailurile și datele din formulare nu se trimit);",
           "Google Fonts și Cloudflare (cdnjs) — fonturi și biblioteci încărcate de unele instrumente din zona autentificată a platformei (primesc adresa IP a utilizatorului la încărcare);",
-          "Anthropic (Claude) — generare de conținut asistată de AI în modulul de strângere de fonduri (comunicate de presă, postări pentru rețele sociale, mesaje de mulțumire pentru sponsori), pe baza titlului campaniei, a poveștii, a sumelor și, pentru mesajele de mulțumire, a numelui sponsorului; funcție opțională, folosită doar când organizația apasă „Generează cu AI”. La fel, în modulul de rapoarte pentru companii, documentele financiare încărcate de organizație (Balanță, Bilanț) și datele sponsorizărilor sunt trimise către Anthropic pentru extragerea cifrelor și redactarea raportului. În modulul Granturi, dosarul organizației și cerințele finanțatorului (fără contactele și IBAN-ul din dosar) sunt trimise către Anthropic pentru redactarea cererilor de finanțare, iar căutarea de apeluri folosește căutarea web a Anthropic;",
+          "Anthropic (Claude) — funcții cu AI (promovare, granturi, agentul email, analize, căutare de decidenți, mesaje pentru influenceri), folosite doar când organizația le pornește și doar pe contul Anthropic propriu al organizației. Se trimit datele strict necesare funcției (de exemplu titlul și sumele campaniei; povestea campaniei doar dacă organizația bifează explicit în Setări; numele și funcția unei persoane de contact dintr-o firmă; numele unei firme și CUI-ul). Organizația nu introduce date de sănătate sau date ale beneficiarilor fără temei legal și fără anonimizare;",
+          "Apollo, Lusha, Prospeo, Hunter, Waalaxy — căutarea de persoane de decizie din firme și contactarea lor, doar când organizația și-a conectat propriul cont la serviciul respectiv;",
+          "serverele de email (SMTP/IMAP) ale colegilor din organizație — doar când un coleg își conectează căsuța pentru Agentul email: se trimit emailurile aprobate de el și se citesc răspunsurile primite;",
           "servicii de integrare activate la cerere de client (de exemplu Make.com, BoldSign, Newsman, Brevo, Mailchimp, Canva) — doar pentru clientul care le solicită.",
         ],
         incheiere: ["Nu vindem date personale. Le putem transmite autorităților doar când legea ne obligă. Lista actualizată a sub-procesatorilor ne poate fi cerută oricând la datele de contact de mai sus."],
@@ -153,7 +155,7 @@ export const GDPR_DICT = {
     eyebrow: "Legal",
     titlu: "Privacy Policy (GDPR)",
     actualizatLabel: "Last updated",
-    actualizat: "October 24, 2026",
+    actualizat: "November 4, 2026",
     sectiuni: [
       {
         titlu: "1. Who we are and in what capacity we process data",
@@ -216,7 +218,9 @@ export const GDPR_DICT = {
           "Google Analytics — usage statistics, only with your consent;",
           "Sentry — monitoring of the application's technical errors (error messages and device/browser information; page addresses are stripped of parameters and tokens, and emails and form data are not sent);",
           "Google Fonts and Cloudflare (cdnjs) — fonts and libraries loaded by some tools in the platform's signed-in area (they receive the user's IP address when loading);",
-          "Anthropic (Claude) — AI-assisted content generation in the fundraising module (press releases, social media posts, sponsor thank-you messages), based on the campaign's title, story, amounts and, for thank-you messages, the sponsor's name; optional feature, used only when the organization clicks \"Generate with AI\". Likewise, in the company-reports module, the financial documents uploaded by the organization (Trial balance, Balance sheet) and the sponsorship data are sent to Anthropic to extract the figures and draft the report. In the Grants module, the organization's file and the funder's requirements (without the file's contacts and IBAN) are sent to Anthropic to draft funding applications, and the search for calls uses Anthropic's web search;",
+          "Anthropic (Claude) — AI features (promotion, grants, the email agent, analyses, decision-maker search, messages for influencers), used only when the organization turns them on and only on the organization's own Anthropic account. Only the data strictly needed for the feature is sent (for example the campaign's title and amounts; the campaign story only if the organization explicitly ticks the option in Settings; the name and role of a contact person at a company; a company's name and tax ID). The organization does not enter health data or beneficiaries' data without a legal basis and without anonymisation;",
+          "Apollo, Lusha, Prospeo, Hunter, Waalaxy — finding decision-makers at companies and contacting them, only when the organization has connected its own account to the service;",
+          "the email servers (SMTP/IMAP) of the organization's colleagues — only when a colleague connects their mailbox for the Email agent: the emails they approve are sent and the replies received are read;",
           "integration services enabled on a customer's request (for example Make.com, BoldSign, Newsman, Brevo, Mailchimp, Canva) — only for the customer who requests them.",
         ],
         incheiere: ["We do not sell personal data. We may disclose it to authorities only when required by law. The up-to-date list of sub-processors can be requested at any time at the contact details above."],

@@ -2,6 +2,7 @@
 
 import { and, eq, inArray, or, sql } from "drizzle-orm";
 
+import { adaugaSuprimare } from "@/lib/agent-email/store";
 import { inregistreazaAudit } from "@/lib/audit";
 import { withOrgAdmin } from "@/lib/auth/guard";
 import {
@@ -18,6 +19,8 @@ import {
   fundraisingPages,
   volunteerVisitors,
 } from "@/lib/db/schema";
+import { cautaModuleNoi, exportaModuleNoi, stergeModuleNoi } from "@/lib/gdpr-module-noi";
+import { curataHandle } from "@/lib/gdpr-module-noi-reguli";
 import { normalizeazaTelefon } from "@/lib/voluntari-panou";
 import { EroareUtilizator, mesajSigur } from "@/lib/erori";
 import { EMAIL_RE, normalizeazaEmail } from "@/lib/validation";
@@ -25,17 +28,27 @@ import { getTr } from "@/lib/i18n/tr-server";
 
 // Cereri ale persoanelor vizate (GDPR art. 15 și 17) pentru PERSOANE CARE NU SUNT DONATORI:
 // persoane de contact la companii, voluntari, creatori de pagini de campanie, expeditori de
-// mesaje și contacte media. (Donatorii au panoul lor, pe profilul donatorului — vezi
-// crm/donatori/reali/gdpr-actions.ts; aici apar doar ca informație, cu trimitere spre acel panou.)
-// Doar owner/admin. Căutare după email, fără diferență de litere, în organizația curentă.
+// mesaje și contacte media, plus modulele noi: emailurile Agentului email (și răspunsurile primite),
+// candidații din Prospectare, fișele din Influenceri și lista de suprimare. (Donatorii au panoul lor,
+// pe profilul donatorului — vezi crm/donatori/reali/gdpr-actions.ts; aici apar doar ca informație,
+// cu trimitere spre acel panou.)
+// Doar owner/admin. Căutare după email, fără diferență de litere, și/sau după un handle / link de profil
+// (Influenceri; link LinkedIn pentru Prospectare), în organizația curentă.
 
 export type RezultatCautare = {
-  email: string;
+  email: string | null;
+  handle: string | null;
   contacte: number;
   voluntari: number;
   paginiCreate: number;
   mesaje: number;
   contacteMedia: number;
+  // Modulele noi.
+  emailuriAgent: number;
+  raspunsuriAgent: number;
+  candidatiProspectare: number;
+  influenceri: number;
+  peListaSuprimare: boolean;
   // Informativ — se gestionează din panoul GDPR al donatorului.
   donatorId: string | null;
   donatii: number;
@@ -51,6 +64,14 @@ async function emailValid(brut: string): Promise<string> {
   return email;
 }
 
+// Persoana se caută după email, după handle / link de profil sau după ambele; cel puțin unul e obligatoriu.
+async function identitate(emailBrut: string, handleBrut: string | undefined): Promise<{ email: string | null; handle: string | null }> {
+  const handle = curataHandle(handleBrut);
+  const brut = typeof emailBrut === "string" ? emailBrut.trim() : "";
+  if (!brut && !handle) throw new EroareUtilizator((await getTr())("Introdu o adresă de email sau un profil.", "Enter an email address or a profile."));
+  return { email: brut ? await emailValid(brut) : null, handle };
+}
+
 async function citesteVoluntari(ctx: { db: typeof import("@/lib/db").db; orgId: string }): Promise<{ toti: Voluntar[]; gasiti: (email: string) => Voluntar[] }> {
   const [rand] = await ctx.db
     .select({ data: crmKv.data })
@@ -61,9 +82,15 @@ async function citesteVoluntari(ctx: { db: typeof import("@/lib/db").db; orgId: 
   return { toti, gasiti: (email) => toti.filter((v) => (v.email ?? "").trim().toLowerCase() === email) };
 }
 
-const cauta = withOrgAdmin(async (ctx, emailBrut: string): Promise<RezultatCautare> => {
-  const email = await emailValid(emailBrut);
+const cauta = withOrgAdmin(async (ctx, emailBrut: string, handleBrut?: string): Promise<RezultatCautare> => {
+  const { email, handle } = await identitate(emailBrut, handleBrut);
   const numara = async (q: Promise<unknown[]>) => (await q).length;
+
+  const noi = await cautaModuleNoi(ctx.db, ctx.orgId, { email, handle });
+  // Sursele vechi se caută doar după email; fără email (doar handle) rămân la zero.
+  if (!email) {
+    return { email, handle, contacte: 0, voluntari: 0, paginiCreate: 0, mesaje: 0, contacteMedia: 0, ...noi, donatorId: null, donatii: 0, formulare230: 0 };
+  }
 
   const [contacte, paginiCreate, mesaje, contacteMedia, donator, donatii, formulare, voluntari] = await Promise.all([
     numara(ctx.db.select({ id: contacts.id }).from(contacts).where(and(eq(contacts.orgId, ctx.orgId), sql`lower(${contacts.email}) = ${email}`))),
@@ -78,69 +105,87 @@ const cauta = withOrgAdmin(async (ctx, emailBrut: string): Promise<RezultatCauta
 
   return {
     email,
+    handle,
     contacte,
     voluntari: voluntari.gasiti(email).length,
     paginiCreate,
     mesaje,
     contacteMedia,
+    ...noi,
     donatorId: donator[0]?.id ?? null,
     donatii,
     formulare230: formulare,
   };
 });
 
-export async function cautaPersoanaAction(orgSlug: string, email: string): Promise<{ error: string | null; rezultat: RezultatCautare | null }> {
+export async function cautaPersoanaAction(orgSlug: string, email: string, handle?: string): Promise<{ error: string | null; rezultat: RezultatCautare | null }> {
   try {
-    return { error: null, rezultat: await cauta(orgSlug, email) };
+    return { error: null, rezultat: await cauta(orgSlug, email, handle) };
   } catch (e) {
     return { error: mesajSigur(e, (await getTr())("Căutarea a eșuat.", "The search failed."), "gdpr-cautare"), rezultat: null };
   }
 }
 
 // Export (art. 15): tot ce găsim pentru acea adresă, din sursele acoperite aici + donațiile.
-const exporta = withOrgAdmin(async (ctx, emailBrut: string) => {
-  const email = await emailValid(emailBrut);
-  const [contacte, pagini, mesaje, media, donatii, formulare, voluntari] = await Promise.all([
-    ctx.db.select().from(contacts).where(and(eq(contacts.orgId, ctx.orgId), sql`lower(${contacts.email}) = ${email}`)),
-    ctx.db
-      .select({ titlu: fundraisingPages.titlu, slug: fundraisingPages.slug, numeCreator: fundraisingPages.numeCreator, emailCreator: fundraisingPages.emailCreator, creatLa: fundraisingPages.createdAt })
-      .from(fundraisingPages)
-      .where(and(eq(fundraisingPages.orgId, ctx.orgId), sql`lower(${fundraisingPages.emailCreator}) = ${email}`)),
-    ctx.db
-      .select({ nume: fundraisingMessages.senderNume, email: fundraisingMessages.senderEmail, continut: fundraisingMessages.continut, trimisLa: fundraisingMessages.createdAt })
-      .from(fundraisingMessages)
-      .where(and(eq(fundraisingMessages.orgId, ctx.orgId), sql`lower(${fundraisingMessages.senderEmail}) = ${email}`)),
-    ctx.db.select().from(fundraisingMediaContacts).where(and(eq(fundraisingMediaContacts.orgId, ctx.orgId), sql`lower(${fundraisingMediaContacts.email}) = ${email}`)),
-    ctx.db
-      .select({ data: fundraisingDonations.createdAt, suma: fundraisingDonations.suma, status: fundraisingDonations.status, nume: fundraisingDonations.numeDonator, email: fundraisingDonations.emailDonator, telefon: fundraisingDonations.telefonDonator, mesaj: fundraisingDonations.mesaj })
-      .from(fundraisingDonations)
-      .where(and(eq(fundraisingDonations.orgId, ctx.orgId), sql`lower(${fundraisingDonations.emailDonator}) = ${email}`)),
-    // Formularul 230 conține CNP/semnătură — se exportă doar prezența și data; datele complete le exportă panoul donatorului.
-    ctx.db
-      .select({ creatLa: formular230Submissions.createdAt })
-      .from(formular230Submissions)
-      .where(and(eq(formular230Submissions.orgId, ctx.orgId), sql`lower(${formular230Submissions.email}) = ${email}`)),
-    citesteVoluntari(ctx),
-  ]);
+const exporta = withOrgAdmin(async (ctx, emailBrut: string, handleBrut?: string) => {
+  const { email, handle } = await identitate(emailBrut, handleBrut);
+  const noi = await exportaModuleNoi(ctx.db, ctx.orgId, { email, handle });
 
-  await inregistreazaAudit(ctx.db, { orgId: ctx.orgId, actorAppUserId: ctx.userId, actiune: "persoana_export_gdpr", entitate: "persoana", detalii: { contacte: contacte.length } });
+  const [contacte, pagini, mesaje, media, donatii, formulare, voluntari] = email
+    ? await Promise.all([
+        ctx.db.select().from(contacts).where(and(eq(contacts.orgId, ctx.orgId), sql`lower(${contacts.email}) = ${email}`)),
+        ctx.db
+          .select({ titlu: fundraisingPages.titlu, slug: fundraisingPages.slug, numeCreator: fundraisingPages.numeCreator, emailCreator: fundraisingPages.emailCreator, creatLa: fundraisingPages.createdAt })
+          .from(fundraisingPages)
+          .where(and(eq(fundraisingPages.orgId, ctx.orgId), sql`lower(${fundraisingPages.emailCreator}) = ${email}`)),
+        ctx.db
+          .select({ nume: fundraisingMessages.senderNume, email: fundraisingMessages.senderEmail, continut: fundraisingMessages.continut, trimisLa: fundraisingMessages.createdAt })
+          .from(fundraisingMessages)
+          .where(and(eq(fundraisingMessages.orgId, ctx.orgId), sql`lower(${fundraisingMessages.senderEmail}) = ${email}`)),
+        ctx.db.select().from(fundraisingMediaContacts).where(and(eq(fundraisingMediaContacts.orgId, ctx.orgId), sql`lower(${fundraisingMediaContacts.email}) = ${email}`)),
+        ctx.db
+          .select({ data: fundraisingDonations.createdAt, suma: fundraisingDonations.suma, status: fundraisingDonations.status, nume: fundraisingDonations.numeDonator, email: fundraisingDonations.emailDonator, telefon: fundraisingDonations.telefonDonator, mesaj: fundraisingDonations.mesaj })
+          .from(fundraisingDonations)
+          .where(and(eq(fundraisingDonations.orgId, ctx.orgId), sql`lower(${fundraisingDonations.emailDonator}) = ${email}`)),
+        // Formularul 230 conține CNP/semnătură — se exportă doar prezența și data; datele complete le exportă panoul donatorului.
+        ctx.db
+          .select({ creatLa: formular230Submissions.createdAt })
+          .from(formular230Submissions)
+          .where(and(eq(formular230Submissions.orgId, ctx.orgId), sql`lower(${formular230Submissions.email}) = ${email}`)),
+        citesteVoluntari(ctx),
+      ])
+    : [[], [], [], [], [], [], null];
+
+  await inregistreazaAudit(ctx.db, {
+    orgId: ctx.orgId,
+    actorAppUserId: ctx.userId,
+    actiune: "persoana_export_gdpr",
+    entitate: "persoana",
+    detalii: { contacte: contacte.length, emailuriAgent: noi.emailuriAgent.length, candidatiProspectare: noi.candidatiProspectare.length, influenceri: noi.influenceri.length },
+  });
 
   return {
     generatLa: new Date().toISOString(),
     email,
+    handle,
     contactePersoaneJuridice: contacte,
-    voluntari: voluntari.gasiti(email),
+    voluntari: voluntari && email ? voluntari.gasiti(email) : [],
     paginiDeCampanieCreate: pagini,
     mesajeTrimise: mesaje,
     contacteMedia: media,
     donatii,
     formulare230: { numar: formulare.length, note: "Conținutul (CNP, semnătură) se exportă din panoul GDPR al donatorului." },
+    emailuriAgentEmail: noi.emailuriAgent,
+    raspunsuriLaAlteEmailuri: noi.raspunsuriLaAlteEmailuri,
+    candidatiProspectare: noi.candidatiProspectare,
+    influenceri: noi.influenceri,
+    listaSuprimare: noi.listaSuprimare,
   };
 });
 
-export async function exportaPersoanaAction(orgSlug: string, email: string) {
+export async function exportaPersoanaAction(orgSlug: string, email: string, handle?: string) {
   try {
-    return { error: null as string | null, date: await exporta(orgSlug, email) };
+    return { error: null as string | null, date: await exporta(orgSlug, email, handle) };
   } catch (e) {
     return { error: mesajSigur(e, (await getTr())("Exportul a eșuat.", "The export failed."), "gdpr-export"), date: null };
   }
@@ -148,8 +193,28 @@ export async function exportaPersoanaAction(orgSlug: string, email: string) {
 
 // Ștergere/anonimizare (art. 17) pentru sursele acoperite aici. Donațiile, Formularul 230 și
 // profilul de donator NU se ating — au evidență contabilă/legală și panoul lor dedicat.
-const sterge = withOrgAdmin(async (ctx, emailBrut: string) => {
-  const email = await emailValid(emailBrut);
+const sterge = withOrgAdmin(async (ctx, emailBrut: string, handleBrut?: string) => {
+  const { email, handle } = await identitate(emailBrut, handleBrut);
+
+  // Modulele noi ÎNAINTE de contacte: emailurile Agentului și candidații din Prospectare se găsesc și după legătura cu contactul (contact_id), care dispare la ștergerea lui.
+  const noi = await stergeModuleNoi(ctx.db, ctx.orgId, { email, handle });
+
+  if (!email) {
+    const rezumatNoi = { ...noi, adaugataLaSuprimare: noi.adaugatiLaSuprimare > 0 };
+    await inregistreazaAudit(ctx.db, { orgId: ctx.orgId, actorAppUserId: ctx.userId, actiune: "persoana_sters_gdpr", entitate: "persoana", detalii: rezumatNoi });
+    return {
+      contacteSterse: 0,
+      contacteMediaAnonimizate: 0,
+      paginiAnonimizate: 0,
+      mesajeAnonimizate: 0,
+      voluntariStersi: 0,
+      panouVoluntariSterse: 0,
+      jurnalCampaniiSters: 0,
+      invitatiiSterse: 0,
+      donatiiNeterminateAnonimizate: 0,
+      ...rezumatNoi,
+    };
+  }
 
   const contacteSterse = await ctx.db
     .delete(contacts)
@@ -225,7 +290,7 @@ const sterge = withOrgAdmin(async (ctx, emailBrut: string) => {
     }
   }
 
-  const rezumat = {
+  const rezumatVechi = {
     contacteSterse: contacteSterse.length,
     contacteMediaAnonimizate: media.length,
     paginiAnonimizate: pagini.length,
@@ -236,13 +301,24 @@ const sterge = withOrgAdmin(async (ctx, emailBrut: string) => {
     invitatiiSterse: invitatiiEchipa.length + invitatiiBeneficiar.length,
     donatiiNeterminateAnonimizate: donatiiNeterminate.length,
   };
+
+  // Persoana ștearsă nu mai trebuie contactată de Agentul email (se păstrează doar amprenta adresei). Modulele noi o adaugă deja când au găsit ceva la ele;
+  // aici acoperim și cazul în care doar sursele vechi (contacte, voluntari etc.) au avut date.
+  const ceva = contacteSterse.length + media.length + pagini.length + mesaje.length + voluntariStersi + destinatari.length + invitatiiEchipa.length + invitatiiBeneficiar.length;
+  let adaugataLaSuprimare = noi.adaugatiLaSuprimare > 0;
+  if (ceva > 0 && !adaugataLaSuprimare) {
+    await adaugaSuprimare(ctx.db, ctx.orgId, email, "cerere_gdpr");
+    adaugataLaSuprimare = true;
+  }
+
+  const rezumat = { ...rezumatVechi, ...noi, adaugataLaSuprimare };
   await inregistreazaAudit(ctx.db, { orgId: ctx.orgId, actorAppUserId: ctx.userId, actiune: "persoana_sters_gdpr", entitate: "persoana", detalii: rezumat });
   return rezumat;
 });
 
-export async function stergePersoanaAction(orgSlug: string, email: string) {
+export async function stergePersoanaAction(orgSlug: string, email: string, handle?: string) {
   try {
-    return { error: null as string | null, rezumat: await sterge(orgSlug, email) };
+    return { error: null as string | null, rezumat: await sterge(orgSlug, email, handle) };
   } catch (e) {
     return { error: mesajSigur(e, (await getTr())("Ștergerea a eșuat.", "The deletion failed."), "gdpr-stergere"), rezumat: null };
   }

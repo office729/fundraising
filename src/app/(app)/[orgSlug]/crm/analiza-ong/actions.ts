@@ -28,7 +28,7 @@ const pregatesteAnaliza = withOrgAdmin(
     const v = valideazaCerere(intrare);
     if (!v.ok) return { gata: { ok: false, cod: v.cod } };
     const cfg = await citesteConfigAi(ctx.db, ctx.orgId);
-    if (!cfg.conectat || !cfg.cheie) return { gata: { ok: false, cod: "fara-cheie", mesaj: mesajFaraCheieAi(locale, cfg.ilizibila) } };
+    if (!cfg.conectat || !cfg.cheie) return { gata: { ok: false, cod: "fara-cheie", mesaj: mesajFaraCheieAi(locale, cfg.ilizibila, cfg.blocatBuget) } };
     const claim = await revendicaAnaliza(ctx.db, ctx.orgId, ctx.userId, v.cerere);
     if (!claim.ok) return { gata: { ok: false, cod: "deja-in-lucru" } };
     return { pregatit: pregateste(claim.id, cfg.cheie, cfg.model, ctx.userId, v.cerere, ziBucuresti(new Date())) };

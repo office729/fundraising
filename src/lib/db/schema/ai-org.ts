@@ -1,4 +1,4 @@
-import { index, integer, numeric, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, index, integer, numeric, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 import { appUsers } from "./app-users";
 import { organizations } from "./organizations";
@@ -27,5 +27,7 @@ export const aiSetari = pgTable("ai_setari", {
   orgId: uuid("org_id").primaryKey().references(() => organizations.id, { onDelete: "cascade" }),
   model: text("model"),
   bugetUsd: numeric("buget_usd", { precision: 10, scale: 2 }),
+  povesteLaAi: boolean("poveste_la_ai").notNull().default(false),
+  opresteLaBuget: boolean("opreste_la_buget").notNull().default(false),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }).enableRLS();

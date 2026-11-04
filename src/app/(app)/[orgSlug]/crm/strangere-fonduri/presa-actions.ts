@@ -70,7 +70,7 @@ export const genereazaComunicatAIAction = withOrgFaze<
   [string],
   { date: DateCampanie; ai: ContextAi },
   Awaited<ReturnType<typeof genereazaContinutCanalAI>>,
-  { error: string | null; ok: boolean; aiFolosit?: boolean }
+  { error: string | null; ok: boolean; aiFolosit?: boolean; avertisment?: string }
 >({
   admin: true,
   pregateste: async (ctx, pageId) => {
@@ -84,13 +84,13 @@ export const genereazaComunicatAIAction = withOrgFaze<
     return { pregatit: { date, ai: cai.ai } };
   },
   extern: ({ date, ai }) => genereazaContinutCanalAI(ai, date, "comunicat"),
-  salveaza: async (ctx, { date }, ai, pageId) => {
+  salveaza: async (ctx, { date, ai: ctxAi }, ai, pageId) => {
     const continut = ai?.textComplet ?? genereazaComunicatPresa(date);
 
     await ctx.db.delete(fundraisingPressReleases).where(and(eq(fundraisingPressReleases.campaignPageId, pageId), eq(fundraisingPressReleases.status, "draft")));
     await ctx.db.insert(fundraisingPressReleases).values({ campaignPageId: pageId, orgId: ctx.orgId, continut, status: "draft" });
 
-    return { error: null, ok: true, aiFolosit: Boolean(ai) };
+    return { error: null, ok: true, aiFolosit: Boolean(ai), avertisment: ai ? undefined : (ctxAi.eroare ?? undefined) };
   },
 });
 

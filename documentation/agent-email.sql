@@ -89,7 +89,7 @@ create table if not exists agent_email_mesaje (
   apel_facut_la timestamptz
 );
 alter table agent_email_mesaje drop constraint if exists agent_email_mesaje_stare_chk;
-alter table agent_email_mesaje add constraint agent_email_mesaje_stare_chk check (stare in ('ciorna', 'se_trimite', 'trimis', 'eroare'));
+alter table agent_email_mesaje add constraint agent_email_mesaje_stare_chk check (stare in ('ciorna', 'se_trimite', 'trimis', 'eroare', 'respinsa'));
 alter table agent_email_mesaje drop constraint if exists agent_email_mesaje_tip_chk;
 alter table agent_email_mesaje add constraint agent_email_mesaje_tip_chk check (tip in ('prim', 'revenire'));
 alter table agent_email_mesaje drop constraint if exists agent_email_mesaje_mecanism_chk;

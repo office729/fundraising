@@ -129,7 +129,7 @@ export async function pregatesteGenerare(
   if (!esteUuid(p.deId)) return { gata: { ok: false, error: t("Alege expeditorul.", "Choose the sender.") } };
 
   const cfg = await citesteConfigAi(ctx.db, ctx.orgId);
-  if (!cfg.conectat || !cfg.cheie) return { gata: { ok: false, error: mesajFaraCheieAi(locale, cfg.ilizibila) } };
+  if (!cfg.conectat || !cfg.cheie) return { gata: { ok: false, error: mesajFaraCheieAi(locale, cfg.ilizibila, cfg.blocatBuget) } };
 
   // Expeditorul: un membru simplu scrie doar în numele lui; administratorul poate pregăti ciorne pentru colegii care și-au conectat căsuța.
   const admin = ctx.role === "owner" || ctx.role === "admin";

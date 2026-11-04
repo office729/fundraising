@@ -40,6 +40,8 @@ export function CalendarCard({ orgSlug, pageId, items }: { orgSlug: string; page
       window.alert(res.error);
       return;
     }
+    // AI-ul a eșuat, dar conținutul s-a salvat din șablon: spunem motivul exact.
+    if (res && "avertisment" in res && res.avertisment) window.alert(res.avertisment);
     window.location.reload();
   }
 

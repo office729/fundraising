@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 
+import { totalSurseNoi } from "@/lib/gdpr-module-noi-reguli";
 import { SETARI_GDPR_UI_DICT } from "@/lib/i18n/dictionaries/setari-gdpr-ui";
 
 import { useLocale } from "../../crm/lib/locale-context";
@@ -20,12 +21,14 @@ function Rand({ eticheta, n }: { eticheta: string; n: number }) {
 export function GdprClient({ orgSlug }: { orgSlug: string }) {
   const d = SETARI_GDPR_UI_DICT[useLocale()];
   const [email, setEmail] = useState("");
+  const [handle, setHandle] = useState("");
   const [rezultat, setRezultat] = useState<RezultatCautare | null>(null);
   const [mesaj, setMesaj] = useState<string | null>(null);
   const [eroare, setEroare] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const total = rezultat ? rezultat.contacte + rezultat.voluntari + rezultat.paginiCreate + rezultat.mesaje + rezultat.contacteMedia : 0;
+  const total = rezultat ? rezultat.contacte + rezultat.voluntari + rezultat.paginiCreate + rezultat.mesaje + rezultat.contacteMedia + totalSurseNoi(rezultat) : 0;
+  const persoana = rezultat ? (rezultat.email ?? rezultat.handle ?? "") : "";
 
   function cauta(e: React.FormEvent) {
     e.preventDefault();
@@ -33,7 +36,7 @@ export function GdprClient({ orgSlug }: { orgSlug: string }) {
     setMesaj(null);
     setRezultat(null);
     startTransition(async () => {
-      const r = await cautaPersoanaAction(orgSlug, email);
+      const r = await cautaPersoanaAction(orgSlug, email, handle);
       if (r.error) setEroare(r.error);
       else setRezultat(r.rezultat);
     });
@@ -43,7 +46,7 @@ export function GdprClient({ orgSlug }: { orgSlug: string }) {
     if (!rezultat) return;
     setEroare(null);
     startTransition(async () => {
-      const r = await exportaPersoanaAction(orgSlug, rezultat.email);
+      const r = await exportaPersoanaAction(orgSlug, rezultat.email ?? "", rezultat.handle ?? undefined);
       if (r.error || !r.date) {
         setEroare(r.error ?? d.exportEsuat);
         return;
@@ -60,17 +63,17 @@ export function GdprClient({ orgSlug }: { orgSlug: string }) {
 
   function sterge() {
     if (!rezultat) return;
-    if (!window.confirm(d.confirma(rezultat.email))) return;
+    if (!window.confirm(d.confirma(persoana))) return;
     setEroare(null);
     startTransition(async () => {
-      const r = await stergePersoanaAction(orgSlug, rezultat.email);
+      const r = await stergePersoanaAction(orgSlug, rezultat.email ?? "", rezultat.handle ?? undefined);
       if (r.error || !r.rezumat) {
         setEroare(r.error ?? d.stergereEsuata);
         return;
       }
       const x = r.rezumat;
       setMesaj(d.gata(x));
-      const nou = await cautaPersoanaAction(orgSlug, rezultat.email);
+      const nou = await cautaPersoanaAction(orgSlug, rezultat.email ?? "", rezultat.handle ?? undefined);
       if (nou.rezultat) setRezultat(nou.rezultat);
     });
   }
@@ -82,11 +85,22 @@ export function GdprClient({ orgSlug }: { orgSlug: string }) {
           {d.email}
           <input
             type="email"
-            required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink"
           />
+        </label>
+        <label className="w-full text-sm font-medium text-ink">
+          {d.handle}
+          <input
+            type="text"
+            value={handle}
+            maxLength={300}
+            placeholder={d.handlePlaceholder}
+            onChange={(e) => setHandle(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-line bg-panel px-3 py-2 text-ink"
+          />
+          <span className="mt-1 block text-xs font-normal text-muted">{d.handleAjutor}</span>
         </label>
         <button
           type="submit"
@@ -102,14 +116,19 @@ export function GdprClient({ orgSlug }: { orgSlug: string }) {
 
       {rezultat && (
         <div className="mt-5 rounded-xl border border-line bg-panel p-5">
-          <p className="text-sm font-medium text-ink">{d.gasite(rezultat.email)}</p>
+          <p className="text-sm font-medium text-ink">{d.gasite(persoana)}</p>
           <ul className="mt-2">
             <Rand eticheta={d.randuri.contacte} n={rezultat.contacte} />
             <Rand eticheta={d.randuri.voluntari} n={rezultat.voluntari} />
             <Rand eticheta={d.randuri.pagini} n={rezultat.paginiCreate} />
             <Rand eticheta={d.randuri.mesaje} n={rezultat.mesaje} />
             <Rand eticheta={d.randuri.media} n={rezultat.contacteMedia} />
+            <Rand eticheta={d.randuri.emailuriAgent} n={rezultat.emailuriAgent} />
+            <Rand eticheta={d.randuri.raspunsuriAgent} n={rezultat.raspunsuriAgent} />
+            <Rand eticheta={d.randuri.candidati} n={rezultat.candidatiProspectare} />
+            <Rand eticheta={d.randuri.influenceri} n={rezultat.influenceri} />
           </ul>
+          {rezultat.peListaSuprimare && <p className="mt-2 text-xs leading-relaxed text-muted">{d.suprimat}</p>}
 
           {(rezultat.donatorId || rezultat.donatii > 0 || rezultat.formulare230 > 0) && (
             <p className="mt-3 rounded-lg bg-panel-2 p-3 text-xs leading-relaxed text-muted">

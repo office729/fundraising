@@ -202,7 +202,7 @@ export const mesajeAction = withOrgFaze<[string, string, string, string, boolean
       let avertisment: string | null = null;
       if (cuAi) {
         const cfg = await citesteConfigAi(ctx.db, ctx.orgId);
-        if (!cfg.conectat || !cfg.cheie) avertisment = mesajFaraCheieAi(locale, cfg.ilizibila);
+        if (!cfg.conectat || !cfg.cheie) avertisment = mesajFaraCheieAi(locale, cfg.ilizibila, cfg.blocatBuget);
         else ai = { cheie: cfg.cheie, model: cfg.model };
       }
       return { pregatit: { orgId: ctx.orgId, userId: ctx.userId, link: link.url, coordonare, date, ai, avertisment, locale: locale === "en" ? "en" : "ro" } };

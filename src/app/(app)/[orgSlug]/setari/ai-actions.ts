@@ -28,13 +28,15 @@ export type StareAi = {
   adaugatLa: string | null;
   model: ModelAles;
   bugetUsd: number | null;
+  povesteLaAi: boolean;
+  opresteLaBuget: boolean;
   cursUsdRon: number | null;
 };
 
 export const obtineStareAi = withOrgAdmin(async (ctx): Promise<StareAi> => {
   const [cfg, curs] = await Promise.all([citesteConfigAi(ctx.db, ctx.orgId, false), cursUsdRon()]);
   // Cheia nu se decriptează aici (nu pleacă spre browser): doar dacă există și ce alegeri s-au făcut.
-  return { criptareActiva: criptareConfigurata(), conectat: cfg.conectat, ilizibila: false, amprenta: cfg.amprenta, adaugatLa: cfg.adaugatLa, model: cfg.model, bugetUsd: cfg.bugetUsd, cursUsdRon: curs };
+  return { criptareActiva: criptareConfigurata(), conectat: cfg.conectat, ilizibila: false, amprenta: cfg.amprenta, adaugatLa: cfg.adaugatLa, model: cfg.model, bugetUsd: cfg.bugetUsd, povesteLaAi: cfg.povesteLaAi, opresteLaBuget: cfg.opresteLaBuget, cursUsdRon: curs };
 }, OPTIUNI);
 
 const salveaza = withOrgFaze<[string], { cheie: string }, Awaited<ReturnType<typeof verificaCheieAnthropic>>, void>({
@@ -76,7 +78,7 @@ const testeaza = withOrgFaze<[], { cheie: string }, Awaited<ReturnType<typeof ve
   admin: true,
   opts: OPTIUNI,
   pregateste: async (ctx) => {
-    const cfg = await citesteConfigAi(ctx.db, ctx.orgId);
+    const cfg = await citesteConfigAi(ctx.db, ctx.orgId, true, false);
     const t = await getTr();
     if (!cfg.conectat) return { gata: { error: t("Conectează întâi contul Anthropic.", "Connect your Anthropic account first.") } };
     if (!cfg.cheie) return { gata: { error: t("Cheia salvată nu mai poate fi citită; adaug-o din nou.", "The saved key can no longer be read; add it again.") } };
@@ -113,7 +115,7 @@ export async function deconecteazaAnthropic(orgSlug: string): Promise<{ error: s
 
 const BUGET_MAX = 100_000;
 
-const salveazaAlegeri = withOrgAdmin(async (ctx, alegeri: { model: string; bugetUsd: number | null }): Promise<void> => {
+const salveazaAlegeri = withOrgAdmin(async (ctx, alegeri: { model: string; bugetUsd: number | null; povesteLaAi: boolean; opresteLaBuget: boolean }): Promise<void> => {
   const t = await getTr();
   if (!eModelAles(alegeri?.model)) throw new EroareUtilizator(t("Alege un model din listă.", "Choose a model from the list."));
   let buget: string | null = null;
@@ -124,14 +126,14 @@ const salveazaAlegeri = withOrgAdmin(async (ctx, alegeri: { model: string; buget
   }
   await ctx.db
     .insert(aiSetari)
-    .values({ orgId: ctx.orgId, model: alegeri.model, bugetUsd: buget })
-    .onConflictDoUpdate({ target: aiSetari.orgId, set: { model: alegeri.model, bugetUsd: buget, updatedAt: new Date() } });
-  await inregistreazaAudit(ctx.db, { orgId: ctx.orgId, actorAppUserId: ctx.userId, actiune: "ai_setari_salvate", entitate: "organizatie", entitateId: ctx.orgId, detalii: { model: alegeri.model, buget: buget != null } });
+    .values({ orgId: ctx.orgId, model: alegeri.model, bugetUsd: buget, povesteLaAi: alegeri.povesteLaAi === true, opresteLaBuget: alegeri.opresteLaBuget === true })
+    .onConflictDoUpdate({ target: aiSetari.orgId, set: { model: alegeri.model, bugetUsd: buget, povesteLaAi: alegeri.povesteLaAi === true, opresteLaBuget: alegeri.opresteLaBuget === true, updatedAt: new Date() } });
+  await inregistreazaAudit(ctx.db, { orgId: ctx.orgId, actorAppUserId: ctx.userId, actiune: "ai_setari_salvate", entitate: "organizatie", entitateId: ctx.orgId, detalii: { model: alegeri.model, buget: buget != null, povesteLaAi: alegeri.povesteLaAi === true, opresteLaBuget: alegeri.opresteLaBuget === true } });
   revalidatePath(`/${ctx.orgSlug}/crm/setari`);
   revalidatePath(`/${ctx.orgSlug}/crm/consum-ai`);
 }, OPTIUNI);
 
-export async function salveazaSetariAi(orgSlug: string, alegeri: { model: string; bugetUsd: number | null }): Promise<{ error: string | null }> {
+export async function salveazaSetariAi(orgSlug: string, alegeri: { model: string; bugetUsd: number | null; povesteLaAi: boolean; opresteLaBuget: boolean }): Promise<{ error: string | null }> {
   try {
     await salveazaAlegeri(orgSlug, alegeri);
     return { error: null };

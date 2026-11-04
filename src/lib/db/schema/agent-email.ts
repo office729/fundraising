@@ -63,7 +63,7 @@ export const agentEmailMesaje = pgTable(
     istoric: text("istoric"),
     tip: text("tip").notNull().default("prim"), // prim | revenire
     revenireLa: uuid("revenire_la"),
-    stare: text("stare").notNull().default("ciorna"), // ciorna | se_trimite | trimis | eroare
+    stare: text("stare").notNull().default("ciorna"), // ciorna | se_trimite | trimis | eroare | respinsa (revenire respinsă de om: nu se mai regenerează)
     eroare: text("eroare"),
     creatDe: uuid("creat_de").references(() => appUsers.id, { onDelete: "set null" }),
     creatDeNume: text("creat_de_nume"),

@@ -4,12 +4,16 @@ import { NextResponse } from "next/server";
 import { cronAutorizat } from "@/lib/cron-auth";
 import { db } from "@/lib/db";
 import { organizations } from "@/lib/db/schema";
+import { anonimizeazaEmailuriExpirate } from "@/lib/gdpr-module-noi";
 import { raporteazaEroare } from "@/lib/monitoring";
 
 // Rulat zilnic (vercel.json) — retenție GDPR pentru persoanele găsite dar încă neaprobate: cele din lista „De aprobat” a unei
 // firme (companies.extra.deAprobat) mai vechi de 60 de zile se șterg efectiv. Intrările fără dată (create înainte de această
 // regulă) primesc acum data zilei, ca să expire și ele peste 60 de zile.
 // NOTĂ: în acest proiect nu există un cache de „rezultate de căutare memorate” — nu are ce să se șteargă din el.
+// Retenție pentru Agentul email: emailurile TRIMISE (agent_email_mesaje.stare = 'trimis') și răspunsurile primite la ele păstrează datele destinatarului
+// 24 de luni de la trimitere; apoi destinatarul, textul și istoricul se anonimizează („[expirat]”), iar rândul rămâne pentru statistici.
+// Analizele ONG (analize_ong) și căutările profunde AI (deep_search_ai) nu fac parte din regula asta. Logica e în lib/gdpr-module-noi.ts (testată pe baza reală).
 const ZILE_NEAPROBATE = 60;
 
 export async function GET(req: Request) {
@@ -41,6 +45,12 @@ export async function GET(req: Request) {
           update prospectare_candidati set nume = '[expirat]', nume_norm = 'expirat:' || id::text, rol = null, dept = null, linkedin = null, email = null, email_status = null,
             telefon = null, ids = '{}'::jsonb, alte_surse = '{}'::text[], cerere_lusha = null, sursa_url = null, eticheta = null, stadiu = 'inchis', urmator_pas_la = null
           where org_id = ${org.id} and stare = 'nou' and gasit_la < now() - make_interval(days => ${ZILE_NEAPROBATE}) and nume <> '[expirat]' and nume <> '[respins]' and nume <> '[șters]'`);
+        // Emailurile trimise de peste 24 de luni, într-un punct de salvare: o eroare aici nu anulează curățarea candidaților de mai sus.
+        try {
+          await tx.transaction((sp) => anonimizeazaEmailuriExpirate(sp as unknown as typeof db, org.id));
+        } catch (e) {
+          raporteazaEroare("gdpr-email-retentie", e, { orgId: org.id });
+        }
         return curate;
       });
       firmeCurate += rez.length;

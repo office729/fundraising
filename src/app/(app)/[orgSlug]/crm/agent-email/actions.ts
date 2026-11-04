@@ -23,7 +23,7 @@ import { pregatesteCitirea, ruleazaCitirea, salveazaCitirea, type PregatitCitire
 import { pregatesteReveniri, programeazaApeluri, ruleazaAiReveniri, salveazaReveniri, type PregatitReveniri, type RezultatAiRevenire } from "@/lib/agent-email/reveniri";
 import type { RezultatTrimitere as RezultatSmtp } from "@/lib/agent-email/conexiuni";
 import { LIMITA_ZI_MAXIMA, MAX_FIRME_PE_GENERARE, esteMecanism, curataSemnatura, numeCurat, type Mecanism } from "@/lib/agent-email/reguli";
-import { amprentaPdf, citesteCont, citesteMesaj, citesteSetari, contPublic, esteUuid, listaMesajeClient, pdfGeneralInfo, pdfPentru, trimiseAzi } from "@/lib/agent-email/store";
+import { amprentaPdf, citesteCont, citesteMesaj, citesteSetari, contPublic, esteUuid, listaMesajeClient, pdfGeneralInfo, pdfPentru, respingeReveniri, trimiseAzi } from "@/lib/agent-email/store";
 import type {
   ColegClient,
   DatePaginaAgent,
@@ -257,7 +257,10 @@ const stergeAct = withOrgSession(async (ctx, id: string): Promise<RezultatActiun
   const t = await getTr();
   const m = await ciornaEditabila(ctx, t, id);
   if (m.stare === "trimis" || m.stare === "se_trimite") return fara(t("Emailurile trimise rămân în istoric.", "Sent emails stay in the history."));
-  await ctx.db.delete(agentEmailMesaje).where(and(eq(agentEmailMesaje.orgId, ctx.orgId), eq(agentEmailMesaje.id, m.id), inArray(agentEmailMesaje.stare, ["ciorna", "eroare"])));
+  const deSters = and(eq(agentEmailMesaje.orgId, ctx.orgId), eq(agentEmailMesaje.id, m.id), inArray(agentEmailMesaje.stare, ["ciorna", "eroare"]));
+  // O revenire ștearsă de om nu se șterge de tot: devine „respinsa”, ca agentul să nu o scrie din nou a doua zi.
+  if (m.tip === "revenire") await respingeReveniri(ctx.db, deSters);
+  else await ctx.db.delete(agentEmailMesaje).where(deSters);
   pagina(ctx);
   return { ok: true };
 }, OPT);
@@ -272,7 +275,9 @@ const stergeMasaAct = withOrgSession(async (ctx, care: "vechi" | "toate"): Promi
   const conditii = [eq(agentEmailMesaje.orgId, ctx.orgId), inArray(agentEmailMesaje.stare, ["ciorna", "eroare"])];
   if (!esteAdmin(ctx)) conditii.push(eq(agentEmailMesaje.deUserId, ctx.userId));
   if (care === "vechi") conditii.push(lt(agentEmailMesaje.createdAt, new Date(Date.now() - 7 * 86_400_000)));
-  const sterse = await ctx.db.delete(agentEmailMesaje).where(and(...conditii)).returning({ id: agentEmailMesaje.id });
+  const respinse = await respingeReveniri(ctx.db, and(...conditii, eq(agentEmailMesaje.tip, "revenire")));
+  const stersePrime = await ctx.db.delete(agentEmailMesaje).where(and(...conditii, eq(agentEmailMesaje.tip, "prim"))).returning({ id: agentEmailMesaje.id });
+  const sterse = { length: stersePrime.length + respinse };
   pagina(ctx);
   return { ok: true, sterse: sterse.length, mesaj: sterse.length ? t(`${sterse.length} ciorne șterse.`, `${sterse.length} drafts deleted.`) : t("Nicio ciornă de șters.", "No drafts to delete.") };
 }, OPT);

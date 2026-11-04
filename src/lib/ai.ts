@@ -19,7 +19,7 @@ import type { ContinutCanal, DateCampanie } from "@/lib/promovare/generator";
 
 // Contextul unui apel: cheia și modelul organizației, citite în faza scurtă cu baza de date; trece prin `pregatit` ca date simple.
 // `eroare` se completează când apelul eșuează (credite epuizate, cheie invalidă…), ca apelantul să arate motivul exact.
-export type ContextAi = { orgId: string; userId: string; cheie: string; model: string; locale: Loc; instrument: InstrumentAi; eroare: string | null };
+export type ContextAi = { orgId: string; userId: string; cheie: string; model: string; locale: Loc; instrument: InstrumentAi; povesteLaAi: boolean; eroare: string | null };
 
 export async function contextAi(
   ctx: { db: typeof dbGlobal; orgId: string; userId: string },
@@ -27,8 +27,8 @@ export async function contextAi(
   locale: Loc,
 ): Promise<{ ok: true; ai: ContextAi } | { ok: false; eroare: string }> {
   const cfg = await citesteConfigAi(ctx.db, ctx.orgId);
-  if (!cfg.conectat || !cfg.cheie) return { ok: false, eroare: mesajFaraCheieAi(locale, cfg.ilizibila) };
-  return { ok: true, ai: { orgId: ctx.orgId, userId: ctx.userId, cheie: cfg.cheie, model: cfg.model, locale, instrument, eroare: null } };
+  if (!cfg.conectat || !cfg.cheie) return { ok: false, eroare: mesajFaraCheieAi(locale, cfg.ilizibila, cfg.blocatBuget) };
+  return { ok: true, ai: { orgId: ctx.orgId, userId: ctx.userId, cheie: cfg.cheie, model: cfg.model, locale, instrument, povesteLaAi: cfg.povesteLaAi, eroare: null } };
 }
 
 // Eroare deja explicată utilizatorului (cheie, credite, limită): nu se raportează ca defecțiune.
@@ -97,7 +97,8 @@ function systemPrompt(): string {
   ].join("\n");
 }
 
-function formatDate(date: DateCampanie): string {
+// Povestea campaniei poate conține diagnostic și date despre minori: pleacă la Anthropic doar dacă organizația a bifat asta în Setări → Integrări & AI.
+function formatDate(date: DateCampanie, cuPoveste: boolean): string {
   return [
     `Titlu campanie: ${date.titlu}`,
     `Organizație: ${date.orgName}`,
@@ -105,8 +106,8 @@ function formatDate(date: DateCampanie): string {
     date.sumaTinta != null ? `Sumă necesară: ${date.sumaTinta.toLocaleString("ro-RO")} lei` : "Sumă necesară: necomunicată",
     `Sumă strânsă până acum: ${date.sumaStransa.toLocaleString("ro-RO")} lei`,
     "",
-    "Povestea aprobată a campaniei (singura sursă de fapte):",
-    date.poveste.trim(),
+    cuPoveste ? "Povestea aprobată a campaniei (singura sursă de fapte):" : "Povestea campaniei nu a fost trimisă (setarea organizației). Folosește doar titlul, sumele și linkul de mai sus; nu inventa nicio poveste, diagnostic sau detaliu personal.",
+    cuPoveste ? date.poveste.trim() : "",
   ].join("\n");
 }
 
@@ -143,7 +144,7 @@ export async function genereazaContinutCanalAI(
         ].join("\n");
 
   const prompt = [
-    formatDate(date),
+    formatDate(date, ai.povesteLaAi),
     "",
     cere + scurtNota,
     "",
@@ -187,7 +188,7 @@ export async function genereazaTextMultumireAI(
 ): Promise<string | null> {
   const sumaTxt = suma ? `${suma.toLocaleString("ro-RO")} ${moneda || "lei"}` : null;
   const prompt = [
-    formatDate(date),
+    formatDate(date, ai.povesteLaAi),
     "",
     `Compania „${companie}" a sponsorizat această campanie${sumaTxt ? ` cu ${sumaTxt}` : ""}.`,
     "Scrie un mesaj SCURT și cald de mulțumire publică (pentru Facebook/Instagram), pe care familia/beneficiarul îl poate posta pentru a mulțumi companiei.",
@@ -302,7 +303,7 @@ export type PostCalendarAI = { obiectiv: string; text: string };
 // generatorul determinist.
 export async function genereazaCalendarZilnicAI(ai: ContextAi, date: DateCampanie, zile = 7): Promise<PostCalendarAI[] | null> {
   const prompt = [
-    formatDate(date),
+    formatDate(date, ai.povesteLaAi),
     "",
     `Creează un plan de ${zile} zile de postări pentru promovarea acestei campanii, adaptat stadiului ei curent (procent atins, cât mai e de strâns).`,
     "Fiecare zi: un unghi/obiectiv diferit (prezentare, progres, de ce contează fiecare leu, mulțumire, apel la distribuire, mesajul pragului curent, recapitulare) și un text gata de publicat cu linkul campaniei.",

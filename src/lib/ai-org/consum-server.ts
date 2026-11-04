@@ -25,15 +25,20 @@ export type ConfigAi = {
   adaugatLa: string | null;
   model: ModelAles;
   bugetUsd: number | null;
+  // Povestea campaniei pleacă la Anthropic doar dacă organizația a bifat explicit (poate conține date medicale).
+  povesteLaAi: boolean;
+  opresteLaBuget: boolean;
+  // Bugetul lunar a fost atins și organizația a cerut oprirea: cheia nu se mai oferă apelanților.
+  blocatBuget: boolean;
 };
 
-export async function citesteConfigAi(db: Db, orgId: string, cuCheie = true): Promise<ConfigAi> {
+export async function citesteConfigAi(db: Db, orgId: string, cuCheie = true, aplicaBuget = true): Promise<ConfigAi> {
   const [rand] = await db
     .select({ enc: prospectareChei.cheieEnc, amprenta: prospectareChei.amprenta, la: prospectareChei.updatedAt })
     .from(prospectareChei)
     .where(and(eq(prospectareChei.orgId, orgId), eq(prospectareChei.provider, FURNIZOR_ANTHROPIC)))
     .limit(1);
-  const [setari] = await db.select({ model: aiSetari.model, buget: aiSetari.bugetUsd }).from(aiSetari).where(eq(aiSetari.orgId, orgId)).limit(1);
+  const [setari] = await db.select({ model: aiSetari.model, buget: aiSetari.bugetUsd, poveste: aiSetari.povesteLaAi, opreste: aiSetari.opresteLaBuget }).from(aiSetari).where(eq(aiSetari.orgId, orgId)).limit(1);
   let cheie: string | null = null;
   let ilizibila = false;
   if (rand && cuCheie) {
@@ -44,6 +49,13 @@ export async function citesteConfigAi(db: Db, orgId: string, cuCheie = true): Pr
     }
   }
   const buget = setari?.buget != null ? Number(setari.buget) : null;
+  const bugetValid = buget != null && Number.isFinite(buget) && buget > 0 ? buget : null;
+  const opresteLaBuget = Boolean(setari?.opreste);
+  let blocatBuget = false;
+  if (cuCheie && aplicaBuget && opresteLaBuget && bugetValid != null && rand) {
+    blocatBuget = (await consumLunaUsd(db, orgId)) >= bugetValid;
+    if (blocatBuget) cheie = null;
+  }
   return {
     conectat: Boolean(rand),
     cheie,
@@ -51,12 +63,26 @@ export async function citesteConfigAi(db: Db, orgId: string, cuCheie = true): Pr
     amprenta: rand?.amprenta ?? null,
     adaugatLa: rand ? rand.la.toISOString() : null,
     model: eModelAles(setari?.model) ? setari.model : MODEL_IMPLICIT,
-    bugetUsd: buget != null && Number.isFinite(buget) && buget > 0 ? buget : null,
+    bugetUsd: bugetValid,
+    povesteLaAi: Boolean(setari?.poveste),
+    opresteLaBuget,
+    blocatBuget,
   };
 }
 
+// Consumul lunii curente (ora României) în USD, pentru oprirea la buget.
+export async function consumLunaUsd(db: Db, orgId: string): Promise<number> {
+  const [r] = await db
+    .select({ s: sql<string>`coalesce(sum(${aiConsum.costUsd}), 0)` })
+    .from(aiConsum)
+    .where(and(eq(aiConsum.orgId, orgId), sql`(${aiConsum.createdAt} at time zone 'Europe/Bucharest') >= date_trunc('month', now() at time zone 'Europe/Bucharest')`));
+  const n = Number(r?.s ?? 0);
+  return Number.isFinite(n) ? n : 0;
+}
+
 // Mesajul arătat când funcția are nevoie de AI, dar organizația nu și-a conectat contul: nu o eroare tehnică, ci pasul de făcut.
-export function mesajFaraCheieAi(locale: Loc, ilizibila = false): string {
+export function mesajFaraCheieAi(locale: Loc, ilizibila = false, blocatBuget = false): string {
+  if (blocatBuget) return locale === "ro" ? "Bugetul lunar AI al organizației a fost atins, iar funcțiile AI sunt oprite până luna viitoare. Un administrator poate mări bugetul sau opri această limită în Setări → Integrări & AI." : "The organization's monthly AI budget has been reached and the AI features are paused until next month. An administrator can raise the budget or turn this limit off in Settings → Integrations & AI.";
   if (ilizibila) return locale === "ro" ? "Cheia Anthropic salvată nu mai poate fi citită. Adaug-o din nou în Setări → Integrări & AI." : "The saved Anthropic key can no longer be read. Add it again in Settings → Integrations & AI.";
   return locale === "ro" ? "Conectează contul Anthropic în Setări → Integrări & AI ca să folosești această funcție." : "Connect your Anthropic account in Settings → Integrations & AI to use this feature.";
 }

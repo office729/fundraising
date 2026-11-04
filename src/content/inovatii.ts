@@ -30,6 +30,15 @@ export type Inovatie = {
 
 export const INOVATII: Inovatie[] = [
   {
+    id: "2026-11-04-control-ai-si-date",
+    data: "2026-11-04",
+    titlu: "Mai mult control asupra AI-ului și a datelor personale",
+    descriere: "Povestea campaniei pleacă la AI doar dacă bifezi asta în Setări → Integrări & AI, iar AI-ul se poate opri la bugetul lunar. Revenirile nedorite se pot respinge definitiv, iar la eșec vezi motivul. Cereri GDPR acoperă acum și agentul email, candidații și influencerii; emailurile trimise se anonimizează după 24 de luni.",
+    categorie: "Platformă",
+    tip: "imbunatatire",
+    link: "consum-ai",
+  },
+  {
     id: "2026-11-04-ai-contul-organizatiei",
     data: "2026-11-04",
     titlu: "AI pe propriul tău cont Anthropic și pagina Consum AI",

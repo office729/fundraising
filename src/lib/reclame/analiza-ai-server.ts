@@ -176,7 +176,7 @@ async function revendica(db: CtxDb["db"], orgId: string, opt: OptPregatire, p: {
 export async function pregatesteAnaliza(db: CtxDb["db"], orgId: string, opt: OptPregatire): Promise<{ gata: RezultatAnaliza } | { pregatit: Pregatit }> {
   const m = MESAJE[opt.locale];
   const cfg = await citesteConfigAi(db, orgId);
-  if (!cfg.conectat || !cfg.cheie) return { gata: { ok: false, cod: "fara-cheie", mesaj: mesajFaraCheieAi(opt.locale, cfg.ilizibila) } };
+  if (!cfg.conectat || !cfg.cheie) return { gata: { ok: false, cod: "fara-cheie", mesaj: mesajFaraCheieAi(opt.locale, cfg.ilizibila, cfg.blocatBuget) } };
 
   const azi = opt.azi ?? ziBucuresti(new Date());
   const { date, areDate } = await adunaDateAnaliza({ db, orgId }, azi);

@@ -2,7 +2,7 @@ import "server-only";
 
 import { createHash } from "node:crypto";
 
-import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, sql, type SQL } from "drizzle-orm";
 
 import type { db as dbGlobal } from "@/lib/db";
 import { agentEmailConturi, agentEmailContor, agentEmailMesaje, agentEmailPdf, agentEmailRaspunsuri, agentEmailSetari, emailSuppression, fundraisingPages, prospectareSuprimati } from "@/lib/db/schema";
@@ -103,7 +103,7 @@ export function mapMesaj(r: RandMesaj, raspunsuri: RaspunsClient[], cazLink: str
 // Ciornele netrimise + emailurile trimise în ultimul an. `doarUserId`: un membru simplu își vede doar mesajele lui; administratorul le vede pe toate.
 export async function listaMesajeClient(db: Db, orgId: string, orgSlug: string, doarUserId: string | null): Promise<MesajClient[]> {
   const unAn = new Date(Date.now() - 365 * 86_400_000);
-  const conditii = [eq(agentEmailMesaje.orgId, orgId), sql`(${agentEmailMesaje.stare} <> 'trimis' or coalesce(${agentEmailMesaje.trimisLa}, ${agentEmailMesaje.createdAt}) >= ${unAn.toISOString()}::timestamptz)`];
+  const conditii = [eq(agentEmailMesaje.orgId, orgId), sql`${agentEmailMesaje.stare} <> 'respinsa'`, sql`(${agentEmailMesaje.stare} <> 'trimis' or coalesce(${agentEmailMesaje.trimisLa}, ${agentEmailMesaje.createdAt}) >= ${unAn.toISOString()}::timestamptz)`];
   if (doarUserId) conditii.push(eq(agentEmailMesaje.deUserId, doarUserId));
   const randuri = await db.select().from(agentEmailMesaje).where(and(...conditii)).orderBy(desc(agentEmailMesaje.createdAt)).limit(3000);
   if (!randuri.length) return [];
@@ -249,9 +249,19 @@ export async function adaugaSuprimare(db: Db, orgId: string, email: string, moti
 // Ciornele netrimise mai vechi de `zile` (datele firmei s-au putut schimba) se șterg; emailurile trimise rămân.
 export async function stergeCiorneExpirate(db: Db, orgId: string, zile: number): Promise<number> {
   const limita = new Date(Date.now() - zile * 86_400_000);
+  const expirate = and(eq(agentEmailMesaje.orgId, orgId), inArray(agentEmailMesaje.stare, ["ciorna", "eroare"]), sql`${agentEmailMesaje.createdAt} < ${limita.toISOString()}::timestamptz`);
+  // Revenirile expirate nu se șterg (altfel cron-ul ar scrie alta în ziua următoare, cu cost AI): devin „respinsa”, fără datele persoanei.
+  const respinse = await respingeReveniri(db, and(expirate, eq(agentEmailMesaje.tip, "revenire")));
+  const r = await db.delete(agentEmailMesaje).where(and(expirate, eq(agentEmailMesaje.tip, "prim"))).returning({ id: agentEmailMesaje.id });
+  return r.length + respinse;
+}
+
+// Revenire respinsă (de om sau expirată): rămâne doar marcajul că a existat (ca să nu fie regenerată), fără textul și datele destinatarului.
+export async function respingeReveniri(db: Db, conditie: SQL | undefined): Promise<number> {
   const r = await db
-    .delete(agentEmailMesaje)
-    .where(and(eq(agentEmailMesaje.orgId, orgId), inArray(agentEmailMesaje.stare, ["ciorna", "eroare"]), sql`${agentEmailMesaje.createdAt} < ${limita.toISOString()}::timestamptz`))
+    .update(agentEmailMesaje)
+    .set({ stare: "respinsa", mesaj: "", aiMesaj: null, istoric: null, catreNume: "[respins]", catreEmail: "[respins]", catreRol: null, eroare: null, updatedAt: new Date() })
+    .where(conditie)
     .returning({ id: agentEmailMesaje.id });
   return r.length;
 }

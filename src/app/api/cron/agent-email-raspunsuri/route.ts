@@ -57,7 +57,13 @@ export async function GET(req: Request) {
 
       let reveniri = 0;
       if (dimineata && Date.now() < deadline - 60_000) {
-        const rv = await rulezaCaOrganizatie(org.id, (tx) => pregatesteReveniri(tx, tr, { orgId: org.id, orgNume: org.name, locale: "ro", userId: null, userNume: "Agent email (automat)", doarDe: null, limita: LIMITA_REVENIRI_PE_ORGANIZATIE }));
+        // Limita e pe ZI (nu pe rulare): iarna dimineața are două rulări, iar fără numărătoare din baza de date s-ar ajunge la dublu.
+        const deja = await rulezaCaOrganizatie(org.id, async (tx) => {
+          const [r] = (await tx.execute(sql`select count(*)::int as n from agent_email_mesaje where org_id = ${org.id} and tip = 'revenire' and created_at >= (date_trunc('day', now() at time zone 'Europe/Bucharest') at time zone 'Europe/Bucharest')`)) as unknown as { n: number }[];
+          return r?.n ?? 0;
+        });
+        const limitaRamasa = Math.max(0, LIMITA_REVENIRI_PE_ORGANIZATIE - deja);
+        const rv = limitaRamasa > 0 ? await rulezaCaOrganizatie(org.id, (tx) => pregatesteReveniri(tx, tr, { orgId: org.id, orgNume: org.name, locale: "ro", userId: null, userNume: "Agent email (automat)", doarDe: null, limita: limitaRamasa })) : { gata: null };
         if ("pregatit" in rv) {
           const rez = await ruleazaAiReveniri(rv.pregatit);
           reveniri = (await rulezaCaOrganizatie(org.id, (tx) => salveazaReveniri(tx, rv.pregatit, rez))).create;

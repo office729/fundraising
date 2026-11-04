@@ -5,6 +5,11 @@ import type { Inovatie } from "./inovatii";
 export type InovatieEn = { titlu: string; descriere: string; categorie: string; cumFolosesti?: string };
 
 export const INOVATII_EN: Record<string, InovatieEn> = {
+  "2026-11-04-control-ai-si-date": {
+    titlu: "More control over the AI and personal data",
+    descriere: "The campaign story goes to the AI only if you tick that in Settings → Integrations & AI, and the AI can pause at the monthly budget. Unwanted follow-ups can be rejected for good, and on failure you see the reason. GDPR requests now cover the email agent, candidates and influencers; sent emails are anonymised after 24 months.",
+    categorie: "Platform",
+  },
   "2026-11-04-ai-contul-organizatiei": {
     titlu: "AI on your own Anthropic account and the AI usage page",
     descriere: "In Settings → Integrations & AI you connect your Anthropic account (the key is saved encrypted and never shown again). The AI features in Alexandrit, from campaign promotion and grants to the email agent and analyses, now use your account: you pay only for what you use, directly to Anthropic. The AI usage page shows the cost by tool and by day, the end-of-month estimate and your reference budget.",

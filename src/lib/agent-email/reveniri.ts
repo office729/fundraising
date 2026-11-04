@@ -42,7 +42,7 @@ export async function pregatesteReveniri(
   o: { orgId: string; orgNume: string; locale: Loc; userId: string | null; userNume: string; doarDe: string | null; limita: number; ids?: string[] },
 ): Promise<{ gata: { ok: false; error: string } } | { pregatit: PregatitReveniri }> {
   const cfg = await citesteConfigAi(db, o.orgId);
-  if (!cfg.conectat || !cfg.cheie) return { gata: { ok: false, error: mesajFaraCheieAi(o.locale, cfg.ilizibila) } };
+  if (!cfg.conectat || !cfg.cheie) return { gata: { ok: false, error: mesajFaraCheieAi(o.locale, cfg.ilizibila, cfg.blocatBuget) } };
   const acum = new Date();
   const limitaData = new Date(acum.getTime() - MAX_ZILE_REVENIRE * 86_400_000);
   const conditii = [eq(agentEmailMesaje.orgId, o.orgId), eq(agentEmailMesaje.tip, "prim"), eq(agentEmailMesaje.stare, "trimis"), sql`${agentEmailMesaje.trimisLa} > ${limitaData.toISOString()}::timestamptz`];

@@ -18,6 +18,8 @@ export function AiSection({ orgSlug, stare }: { orgSlug: string; stare: StareAi 
   const [cheie, setCheie] = useState("");
   const [model, setModel] = useState<string>(stare.model);
   const [buget, setBuget] = useState(stare.bugetUsd != null ? String(stare.bugetUsd) : "");
+  const [povesteLaAi, setPovesteLaAi] = useState(stare.povesteLaAi);
+  const [opresteLaBuget, setOpresteLaBuget] = useState(stare.opresteLaBuget);
   const [eroare, setEroare] = useState<string | null>(null);
   const [reusit, setReusit] = useState<string | null>(null);
   const [lucreaza, setLucreaza] = useState<"salveaza" | "testeaza" | "alegeri" | null>(null);
@@ -167,13 +169,23 @@ export function AiSection({ orgSlug, stare }: { orgSlug: string; stare: StareAi 
           <button
             type="button"
             disabled={pending}
-            onClick={() => ruleaza("alegeri", () => salveazaSetariAi(orgSlug, { model, bugetUsd: buget.trim() === "" ? null : Number(buget) }), d.alegeriSalvate)}
+            onClick={() => ruleaza("alegeri", () => salveazaSetariAi(orgSlug, { model, bugetUsd: buget.trim() === "" ? null : Number(buget), povesteLaAi, opresteLaBuget }), d.alegeriSalvate)}
             className="h-10 rounded-md bg-brand-green px-3 text-sm font-semibold text-white transition hover:bg-brand-green-hover disabled:opacity-50"
           >
             {d.salveazaAlegeri}
           </button>
         </div>
         <p className="mt-1 text-xs text-muted">{d.bugetAjutor}</p>
+        <label className="mt-2 flex items-start gap-2 text-xs text-ink">
+          <input type="checkbox" checked={opresteLaBuget} onChange={(e) => setOpresteLaBuget(e.target.checked)} className="mt-0.5 h-4 w-4" />
+          <span>{d.opresteLaBuget}</span>
+        </label>
+        <label className="mt-2 flex items-start gap-2 text-xs text-ink">
+          <input type="checkbox" checked={povesteLaAi} onChange={(e) => setPovesteLaAi(e.target.checked)} className="mt-0.5 h-4 w-4" />
+          <span>
+            {d.povesteLaAi} <span className="text-muted">{d.povesteLaAiAvertisment}</span>
+          </span>
+        </label>
         <Link href={`/${orgSlug}/crm/consum-ai`} className="mt-2 inline-block text-xs font-medium text-ink underline">
           {d.vezi}
         </Link>
