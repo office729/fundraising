@@ -6,7 +6,9 @@ import { notFound } from "next/navigation";
 
 import { withOrgSession } from "@/lib/auth/guard";
 import type { CustomPlanConfigSaved } from "@/lib/billing/custom-plan";
+import { motivNedistribuibil } from "@/lib/campanii/distribuibil";
 import { getTemplatesDisponibile } from "@/lib/campaign-templates";
+import { CAMPANII_ACORDURI_DICT } from "@/lib/i18n/dictionaries/campanii-acorduri";
 import { EroareUtilizator } from "@/lib/erori";
 import { fundraisingDonations, fundraisingPages, fundraisingUpdates, organizations } from "@/lib/db/schema";
 
@@ -65,6 +67,8 @@ export default async function PaginaDetaliuPage({ params }: { params: Promise<{ 
   const dictDetail = dict.detail;
   const ui = STRANGERE_FONDURI_UI_DICT[locale];
   const loc = locale === "ro" ? "ro-RO" : "en-GB";
+  const acorduri = CAMPANII_ACORDURI_DICT[locale];
+  const motivNedistribuire = motivNedistribuibil(pagina);
 
   return (
     <div className="mx-auto max-w-[1100px] space-y-5">
@@ -139,6 +143,11 @@ export default async function PaginaDetaliuPage({ params }: { params: Promise<{ 
           <CardHeader title={ui.detail.poveste.title} subtitle={ui.detail.poveste.subtitle} />
           <EditPageButton orgSlug={orgSlug} pagina={pagina} templateuriDisponibile={templateuriDisponibile} />
         </div>
+        {motivNedistribuire && (
+          <p className="mb-3 rounded-[var(--ci-radius-btn)] bg-[var(--ci-amber-soft)] px-2.5 py-1.5 text-[12px] text-[var(--ci-amber)]">
+            {acorduri.avertisment} {acorduri.motive[motivNedistribuire]}
+          </p>
+        )}
         <p className="text-[13px] leading-relaxed whitespace-pre-wrap text-[var(--ci-text)]">{pagina.poveste}</p>
       </Card>
 

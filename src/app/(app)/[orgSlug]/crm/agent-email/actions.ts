@@ -7,6 +7,7 @@ import { unstable_rethrow } from "next/navigation";
 import { citesteConfigAi } from "@/lib/ai-org/consum-server";
 import type { Loc } from "@/lib/ai-org/protocol";
 import { withOrgAdmin, withOrgFaze, withOrgSession, type OrgContext } from "@/lib/auth/guard";
+import { filtruDistribuibil } from "@/lib/campanii/distribuibil-db";
 import { agentEmailConturi, agentEmailMesaje, agentEmailPdf, agentEmailRaspunsuri, agentEmailSetari, appUsers, companies, contacts, fundraisingPages, memberships } from "@/lib/db/schema";
 import { EroareUtilizator, mesajSigur } from "@/lib/erori";
 import { ferestreFiscale } from "@/lib/ferestre-fiscale";
@@ -114,12 +115,12 @@ export async function cautaCandidatiAction(orgSlug: string, f: Partial<FiltreCan
   }
 }
 
-// Campaniile (cazurile) pe care le putem propune: doar cele cu pagină publică activă și cu acordul pentru publicare.
+// Campaniile (cazurile) pe care le putem propune: doar cele care pot fi distribuite public (pagină activă, acord de publicare, neanonimizate, fără acord retras, minori cu acordul părintelui).
 const cazuriAct = withOrgSession(async (ctx): Promise<{ id: string; titlu: string }[]> => {
   return ctx.db
     .select({ id: fundraisingPages.id, titlu: fundraisingPages.titlu })
     .from(fundraisingPages)
-    .where(and(eq(fundraisingPages.orgId, ctx.orgId), eq(fundraisingPages.status, "activa"), eq(fundraisingPages.consimtamantGdpr, true)))
+    .where(and(eq(fundraisingPages.orgId, ctx.orgId), filtruDistribuibil()))
     .orderBy(asc(fundraisingPages.titlu))
     .limit(200);
 }, OPT);

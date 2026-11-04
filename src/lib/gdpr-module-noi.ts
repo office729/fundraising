@@ -233,7 +233,7 @@ export async function anonimizeazaEmailuriAgent(db: Db, orgId: string, email: st
   if (fRaspunsuriDirecte) {
     const r = await db
       .update(agentEmailRaspunsuri)
-      .set({ deLa: VALOARE_STEARSA, fragment: "" })
+      .set({ deLa: VALOARE_STEARSA, subiect: "", fragment: "" })
       .where(and(fRaspunsuriDirecte, sql`${agentEmailRaspunsuri.deLa} <> ${VALOARE_STEARSA}`))
       .returning({ id: agentEmailRaspunsuri.id });
     raspunsuri += r.length;
@@ -246,13 +246,13 @@ export async function anonimizeazaEmailuriAgent(db: Db, orgId: string, email: st
     .returning({ id: agentEmailMesaje.id });
   const trimise = await db
     .update(agentEmailMesaje)
-    .set({ catreNume: VALOARE_STEARSA, catreEmail: VALOARE_STEARSA, catreRol: null, mesaj: VALOARE_STEARSA, aiMesaj: null, istoric: null, contactId: null })
+    .set({ catreNume: VALOARE_STEARSA, catreEmail: VALOARE_STEARSA, catreRol: null, mesaj: VALOARE_STEARSA, subiect: VALOARE_STEARSA, subiectAlt: null, subiectAles: null, aiSubiect: null, aiMesaj: null, istoric: null, contactId: null })
     .where(f)
     .returning({ id: agentEmailMesaje.id });
   if (trimise.length) {
     const r = await db
       .update(agentEmailRaspunsuri)
-      .set({ deLa: VALOARE_STEARSA, fragment: "" })
+      .set({ deLa: VALOARE_STEARSA, subiect: "", fragment: "" })
       .where(and(eq(agentEmailRaspunsuri.orgId, orgId), inArray(agentEmailRaspunsuri.mesajId, trimise.map((m) => m.id)), sql`${agentEmailRaspunsuri.deLa} <> ${VALOARE_STEARSA}`))
       .returning({ id: agentEmailRaspunsuri.id });
     raspunsuri += r.length;
@@ -347,12 +347,12 @@ export async function anonimizeazaEmailuriExpirate(db: Db, orgId: string, acum: 
   // Răspunsurile întâi, cât timp mesajele încă se disting după destinatar.
   const raspunsuri = await db
     .update(agentEmailRaspunsuri)
-    .set({ deLa: VALOARE_EXPIRATA, fragment: "" })
+    .set({ deLa: VALOARE_EXPIRATA, subiect: "", fragment: "" })
     .where(and(eq(agentEmailRaspunsuri.orgId, orgId), inArray(agentEmailRaspunsuri.mesajId, db.select({ id: agentEmailMesaje.id }).from(agentEmailMesaje).where(expirate)), sql`${agentEmailRaspunsuri.deLa} not in (${VALOARE_EXPIRATA}, ${VALOARE_STEARSA})`))
     .returning({ id: agentEmailRaspunsuri.id });
   const emailuri = await db
     .update(agentEmailMesaje)
-    .set({ catreNume: VALOARE_EXPIRATA, catreEmail: VALOARE_EXPIRATA, catreRol: null, mesaj: VALOARE_EXPIRATA, aiMesaj: null, istoric: null, contactId: null })
+    .set({ catreNume: VALOARE_EXPIRATA, catreEmail: VALOARE_EXPIRATA, catreRol: null, mesaj: VALOARE_EXPIRATA, subiect: VALOARE_EXPIRATA, subiectAlt: null, subiectAles: null, aiSubiect: null, aiMesaj: null, istoric: null, contactId: null })
     .where(expirate)
     .returning({ id: agentEmailMesaje.id });
   return { emailuri: emailuri.length, raspunsuri: raspunsuri.length };

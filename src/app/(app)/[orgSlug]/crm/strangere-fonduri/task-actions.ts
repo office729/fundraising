@@ -7,6 +7,7 @@ import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 
 import { contextAi, genereazaTextMultumireAI, type ContextAi } from "@/lib/ai";
+import { acorduriDin, verdictPromovareAi } from "@/lib/campanii/distribuibil";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { limitaAIDepasita, MESAJ_LIMITA_AI } from "@/lib/ai-limit";
 import { withOrgAdmin, withOrgFaze, withOrgSession } from "@/lib/auth/guard";
@@ -99,7 +100,8 @@ export const genereazaTextMultumireAIAction = withOrgFaze<
 >({
   admin: true,
   pregateste: async (ctx, pageId, companie, suma, moneda) => {
-    const cai = await contextAi(ctx, "promovare", await getLocale());
+    const locale = await getLocale();
+    const cai = await contextAi(ctx, "promovare", locale);
     if (!cai.ok) return { gata: { error: cai.eroare, text: null } };
     if (!companie.trim()) return { gata: { error: "Completează numele companiei mai întâi.", text: null } };
     if (await limitaAIDepasita(ctx)) return { gata: { error: MESAJ_LIMITA_AI, text: null } };
@@ -111,6 +113,8 @@ export const genereazaTextMultumireAIAction = withOrgFaze<
       .limit(1);
     const pagina = rows[0];
     if (!pagina) return { gata: { error: "Pagina nu a fost găsită.", text: null } };
+    const verdict = verdictPromovareAi(acorduriDin(pagina), cai.ai.povesteLaAi, locale);
+    if (!verdict.ok) return { gata: { error: verdict.eroare, text: null } };
 
     const hdrs = await headers();
     const proto = hdrs.get("x-forwarded-proto") ?? "https";
@@ -123,7 +127,7 @@ export const genereazaTextMultumireAIAction = withOrgFaze<
         companie: companie.trim(),
         suma,
         moneda,
-        ai: cai.ai,
+        ai: { ...cai.ai, povesteLaAi: verdict.povesteLaAi },
       },
     };
   },

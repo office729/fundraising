@@ -5,8 +5,11 @@ import { randomUUID } from "node:crypto";
 
 import { and, eq, inArray, sql } from "drizzle-orm";
 
+import { inregistreazaAudit } from "@/lib/audit";
 import { withOrgAdmin } from "@/lib/auth/guard";
 import type { CustomPlanConfigSaved } from "@/lib/billing/custom-plan";
+import { citesteBifa } from "@/lib/campanii/distribuibil";
+import { CAMPANII_ACORDURI_DICT } from "@/lib/i18n/dictionaries/campanii-acorduri";
 import { getLimiteleEfective, mesajeCote, subCota } from "@/lib/billing/quota";
 import { getTemplatesDisponibile, type CampaignPageTemplate } from "@/lib/campaign-templates";
 import {
@@ -209,6 +212,14 @@ export const editeazaPaginaAdminAction = withOrgAdmin(
     if (!numeCreator || !emailCreator || !titlu || !poveste) {
       return { error: t.completeazaObligatorii };
     }
+    // Acordurile și protecția datelor: se salvează doar dacă formularul le-a trimis (marcajul), iar fiecare bifă trebuie să fie exact „1” sau lipsă.
+    let acorduri: { minor: boolean; acordDistribuireMinor: boolean; anonimizat: boolean; acordRetras: boolean; acordDiagnostic: boolean } | null = null;
+    if (formData.get("acorduriTrimise") === "1") {
+      const bife = (["minor", "acordDistribuireMinor", "anonimizat", "acordRetras", "acordDiagnostic"] as const).map((k) => citesteBifa(formData.getAll(k)));
+      if (bife.some((b) => b === null)) return { error: CAMPANII_ACORDURI_DICT[locale].eroareBifa };
+      const [minor, acordDistribuireMinor, anonimizat, acordRetras, acordDiagnostic] = bife as boolean[];
+      acorduri = { minor, acordDistribuireMinor, anonimizat, acordRetras, acordDiagnostic };
+    }
     let sumaTinta: number | null = null;
     if (sumaTintaRaw) {
       const n = Math.round(Number(sumaTintaRaw));
@@ -246,10 +257,16 @@ export const editeazaPaginaAdminAction = withOrgAdmin(
         judet,
         localitate,
         ...(template ? { template } : {}),
+        ...(acorduri ?? {}),
       })
       .where(and(eq(fundraisingPages.id, pageId), eq(fundraisingPages.orgId, ctx.orgId)))
       .returning({ id: fundraisingPages.id });
     if (!r[0]) return { error: t.paginaNegasita };
+
+    // Urmă de audit pentru acorduri (cine le-a schimbat și cum): sunt dovada GDPR a deciziei.
+    if (acorduri) {
+      await inregistreazaAudit(ctx.db, { orgId: ctx.orgId, actorAppUserId: ctx.userId, actiune: "campanie_acorduri_salvate", entitate: "fundraising_pages", entitateId: pageId, detalii: acorduri });
+    }
 
     return { error: null };
   },

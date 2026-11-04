@@ -74,12 +74,9 @@ export const GDPR_DICT = {
           "Google Analytics — statistici de utilizare, doar cu consimțământul tău;",
           "Sentry — monitorizarea erorilor tehnice ale aplicației (mesaje de eroare și informații despre dispozitiv/browser; adresele paginilor sunt curățate de parametri și tokenuri, iar emailurile și datele din formulare nu se trimit);",
           "Google Fonts și Cloudflare (cdnjs) — fonturi și biblioteci încărcate de unele instrumente din zona autentificată a platformei (primesc adresa IP a utilizatorului la încărcare);",
-          "Anthropic (Claude) — funcții cu AI (promovare, granturi, agentul email, analize, căutare de decidenți, mesaje pentru influenceri), folosite doar când organizația le pornește și doar pe contul Anthropic propriu al organizației. Se trimit datele strict necesare funcției (de exemplu titlul și sumele campaniei; povestea campaniei doar dacă organizația bifează explicit în Setări; numele și funcția unei persoane de contact dintr-o firmă; numele unei firme și CUI-ul). Organizația nu introduce date de sănătate sau date ale beneficiarilor fără temei legal și fără anonimizare;",
-          "Apollo, Lusha, Prospeo, Hunter, Waalaxy — căutarea de persoane de decizie din firme și contactarea lor, doar când organizația și-a conectat propriul cont la serviciul respectiv;",
-          "serverele de email (SMTP/IMAP) ale colegilor din organizație — doar când un coleg își conectează căsuța pentru Agentul email: se trimit emailurile aprobate de el și se citesc răspunsurile primite;",
           "servicii de integrare activate la cerere de client (de exemplu Make.com, BoldSign, Newsman, Brevo, Mailchimp, Canva) — doar pentru clientul care le solicită.",
         ],
-        incheiere: ["Nu vindem date personale. Le putem transmite autorităților doar când legea ne obligă. Lista actualizată a sub-procesatorilor ne poate fi cerută oricând la datele de contact de mai sus."],
+        incheiere: ["Servicii conectate de organizație cu conturile proprii (Anthropic pentru funcțiile cu AI; Apollo, Lusha, Prospeo, Hunter și Waalaxy pentru găsirea și contactarea persoanelor de decizie din firme; serverele de email ale colegilor care își conectează căsuța pentru Agentul email). Organizația alege furnizorul și are contractul direct cu el; noi doar stocăm cheile criptat și transmitem cererea la inițiativa organizației. Citim doar răspunsurile la emailurile trimise prin Agentul email.", "Nu vindem date personale. Le putem transmite autorităților doar când legea ne obligă. Lista actualizată a sub-procesatorilor ne poate fi cerută oricând la datele de contact de mai sus."],
       },
       {
         titlu: "5. Transferuri în afara Spațiului Economic European",
@@ -133,7 +130,7 @@ export const GDPR_DICT = {
         paragrafe: [
           "Unele organizații pot introduce în Platformă date despre sănătate sau despre minori (de exemplu în campanii pentru cazuri medicale). Acestea sunt categorii speciale de date (art. 9 GDPR) sau date care necesită protecție sporită. Organizația răspunde de obținerea consimțământului explicit al persoanei sau al reprezentantului legal, separat pentru date medicale, imagine și poveste, de limitarea datelor la ce este strict necesar și de respectarea dreptului de retragere a consimțământului.",
           "Recomandăm organizațiilor să nu introducă în câmpuri libere mai multe detalii medicale decât este necesar și să analizeze, împreună cu un specialist, necesitatea unei evaluări de impact asupra protecției datelor (DPIA) pentru aceste prelucrări.",
-          "Dacă organizația folosește funcția de generare de conținut cu AI (punctul 4), povestea campaniei este transmisă către Anthropic, ca sub-procesator — un motiv în plus să limitezi detaliile medicale din poveste la strictul necesar.",
+          "Dacă organizația folosește funcția de generare de conținut cu AI (punctul 4), povestea campaniei (doar dacă organizația a bifat în Setări) este transmisă către Anthropic, la cererea organizației și pe contul acesteia, nu ca sub-procesator al nostru — un motiv în plus să limitezi detaliile medicale din poveste la strictul necesar.",
         ],
       },
       {
@@ -218,12 +215,9 @@ export const GDPR_DICT = {
           "Google Analytics — usage statistics, only with your consent;",
           "Sentry — monitoring of the application's technical errors (error messages and device/browser information; page addresses are stripped of parameters and tokens, and emails and form data are not sent);",
           "Google Fonts and Cloudflare (cdnjs) — fonts and libraries loaded by some tools in the platform's signed-in area (they receive the user's IP address when loading);",
-          "Anthropic (Claude) — AI features (promotion, grants, the email agent, analyses, decision-maker search, messages for influencers), used only when the organization turns them on and only on the organization's own Anthropic account. Only the data strictly needed for the feature is sent (for example the campaign's title and amounts; the campaign story only if the organization explicitly ticks the option in Settings; the name and role of a contact person at a company; a company's name and tax ID). The organization does not enter health data or beneficiaries' data without a legal basis and without anonymisation;",
-          "Apollo, Lusha, Prospeo, Hunter, Waalaxy — finding decision-makers at companies and contacting them, only when the organization has connected its own account to the service;",
-          "the email servers (SMTP/IMAP) of the organization's colleagues — only when a colleague connects their mailbox for the Email agent: the emails they approve are sent and the replies received are read;",
           "integration services enabled on a customer's request (for example Make.com, BoldSign, Newsman, Brevo, Mailchimp, Canva) — only for the customer who requests them.",
         ],
-        incheiere: ["We do not sell personal data. We may disclose it to authorities only when required by law. The up-to-date list of sub-processors can be requested at any time at the contact details above."],
+        incheiere: ["Services connected by the organization with its own accounts (Anthropic for AI functions; Apollo, Lusha, Prospeo, Hunter and Waalaxy for finding and contacting decision-makers at companies; the email servers of colleagues who connect their mailbox for the Email agent). The organization chooses the provider and has the contract with it directly; we only store the keys encrypted and relay the request at the organization’s initiative. We read only the replies to the emails sent through the Email agent.", "We do not sell personal data. We may disclose it to authorities only when required by law. The up-to-date list of sub-processors can be requested at any time at the contact details above."],
       },
       {
         titlu: "5. Transfers outside the European Economic Area",
@@ -277,7 +271,7 @@ export const GDPR_DICT = {
         paragrafe: [
           "Some organizations may enter health data or data about minors into the Platform (for example in campaigns for medical cases). These are special categories of data (Art. 9 GDPR) or data needing enhanced protection. The organization is responsible for obtaining the explicit consent of the person or legal representative, separately for medical data, image and story, for limiting the data to what is strictly necessary and for respecting the right to withdraw consent.",
           "We recommend that organizations do not enter more medical detail in free-text fields than necessary and assess, with a specialist, whether a data protection impact assessment (DPIA) is needed for such processing.",
-          "If the organization uses the AI content-generation feature (section 4), the campaign story is sent to Anthropic as a sub-processor — one more reason to keep the medical detail in the story to what is strictly necessary.",
+          "If the organization uses the AI content-generation feature (section 4), the campaign story (only if the organization has ticked the option in Settings) is sent to Anthropic, at the organization’s request and on its own account, not as our sub-processor — one more reason to keep the medical detail in the story to what is strictly necessary.",
         ],
       },
       {

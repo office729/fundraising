@@ -262,7 +262,7 @@ export async function stergeCiorneExpirate(db: Db, orgId: string, zile: number):
 export async function respingeReveniri(db: Db, conditie: SQL | undefined): Promise<number> {
   const r = await db
     .update(agentEmailMesaje)
-    .set({ stare: "respinsa", mesaj: "", aiMesaj: null, istoric: null, catreNume: "[respins]", catreEmail: "[respins]", catreRol: null, eroare: null, updatedAt: new Date() })
+    .set({ stare: "respinsa", mesaj: "", subiect: "[respins]", subiectAlt: null, subiectAles: null, aiSubiect: null, aiMesaj: null, istoric: null, catreNume: "[respins]", catreEmail: "[respins]", catreRol: null, eroare: null, updatedAt: new Date() })
     .where(conditie)
     .returning({ id: agentEmailMesaje.id });
   return r.length;

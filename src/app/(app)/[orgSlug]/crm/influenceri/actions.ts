@@ -185,7 +185,7 @@ export const mesajeAction = withOrgFaze<[string, string, string, string, boolean
       const are = canal === "email" ? inf.email : inf[canal as Exclude<Canal, "email">];
       if (!are) throw new EroareUtilizator(MESAJ_FARA_PROFIL(t));
       const [caz] = await cazuriDistribuibile(ctx.db, ctx.orgId, cazId);
-      if (!caz) throw new EroareUtilizator(t("Campania nu poate fi distribuită public (trebuie să fie activă și cu pagină publică).", "The campaign cannot be shared publicly (it must be active and have a public page)."));
+      if (!caz) throw new EroareUtilizator(t("Campania nu poate fi distribuită public (trebuie să fie activă, cu pagină publică și cu acordurile în regulă, la „Acorduri și protecția datelor”).", "The campaign cannot be shared publicly (it must be active, have a public page and valid consents, under “Consents and data protection”)."));
       if (!(await verificaLimitaRata("influenceri-mesaje", ctx.userId, 80, 60))) throw new EroareUtilizator(t("Prea multe mesaje pregătite într-o oră. Încearcă puțin mai târziu.", "Too many messages prepared in an hour. Please try a little later."));
       const setari = await citesteSetari(ctx.db, ctx.orgId);
       const link = await linkPentru(ctx.db, ctx.orgId, ctx.userId, siteUrl(), id, caz, canal);

@@ -9,7 +9,7 @@ export const TERMENI_VERSIUNE = "2026-10-12";
 // Acordul de prelucrare a datelor (DPA, art. 28 GDPR) — acceptat de organizație (owner/admin), nu de fiecare utilizator;
 // stocat pe organizations.dpa_version / dpa_accepted_at / dpa_accepted_by. Se schimbă la modificări de FOND ale
 // textului din i18n/dictionaries/dpa.ts (organizațiile sunt rugate să accepte din nou).
-export const DPA_VERSIUNE = "2026-11-04";
+export const DPA_VERSIUNE = "2026-11-05";
 
 // Comutator pentru TOT mecanismul DPA (banner pentru owner/admin, secțiunea din Setări, mențiunea din bifa de la
 // înscriere). Pune false dacă vrei să-l ascunzi până textul e verificat juridic; pagina publică /dpa rămâne.

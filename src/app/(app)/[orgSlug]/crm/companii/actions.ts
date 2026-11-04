@@ -359,13 +359,13 @@ export const stergeContact = withOrgSession(async (ctx, id: string): Promise<Act
   await ctx.db.delete(agentEmailMesaje).where(and(eq(agentEmailMesaje.orgId, ctx.orgId), inArray(agentEmailMesaje.stare, ["ciorna", "eroare"]), dePersoana));
   const trimise = await ctx.db
     .update(agentEmailMesaje)
-    .set({ catreNume: "[șters]", catreEmail: "[șters]", catreRol: null, mesaj: "[șters]", aiMesaj: null, istoric: null, contactId: null })
+    .set({ catreNume: "[șters]", catreEmail: "[șters]", catreRol: null, mesaj: "[șters]", subiect: "[șters]", subiectAlt: null, subiectAles: null, aiSubiect: null, aiMesaj: null, istoric: null, contactId: null })
     .where(and(eq(agentEmailMesaje.orgId, ctx.orgId), dePersoana))
     .returning({ id: agentEmailMesaje.id });
   if (trimise.length) {
     await ctx.db
       .update(agentEmailRaspunsuri)
-      .set({ deLa: "[șters]", fragment: "" })
+      .set({ deLa: "[șters]", subiect: "", fragment: "" })
       .where(and(eq(agentEmailRaspunsuri.orgId, ctx.orgId), inArray(agentEmailRaspunsuri.mesajId, trimise.map((m) => m.id))));
   }
   if (emailPersoana) await adaugaSuprimare(ctx.db, ctx.orgId, emailPersoana, "contact_sters");

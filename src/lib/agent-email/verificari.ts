@@ -2,6 +2,7 @@ import "server-only";
 
 import { and, eq } from "drizzle-orm";
 
+import { poateFiDistribuit } from "@/lib/campanii/distribuibil";
 import { companies, contacts, fundraisingPages } from "@/lib/db/schema";
 
 import { contactEligibil, firmaEligibila, type TipMesaj } from "./reguli";
@@ -63,8 +64,8 @@ export async function verificaDestinatarAcum(
 // Campania propusă: acordul pentru publicare poate fi retras și pagina poate fi închisă între timp.
 export async function verificaCazAcum(db: Db, orgId: string, pageId: string | null, t: Tr): Promise<string | null> {
   if (!pageId) return null;
-  const [pg] = await db.select({ status: fundraisingPages.status, acord: fundraisingPages.consimtamantGdpr }).from(fundraisingPages).where(and(eq(fundraisingPages.orgId, orgId), eq(fundraisingPages.id, pageId))).limit(1);
+  const [pg] = await db.select({ status: fundraisingPages.status, consimtamantGdpr: fundraisingPages.consimtamantGdpr, minor: fundraisingPages.minor, acordDistribuireMinor: fundraisingPages.acordDistribuireMinor, anonimizat: fundraisingPages.anonimizat, acordRetras: fundraisingPages.acordRetras, acordDiagnostic: fundraisingPages.acordDiagnostic }).from(fundraisingPages).where(and(eq(fundraisingPages.orgId, orgId), eq(fundraisingPages.id, pageId))).limit(1);
   if (!pg) return t("Campania propusă nu mai există. Generează din nou ciorna.", "The proposed campaign no longer exists. Generate the draft again.");
-  if (pg.status !== "activa" || !pg.acord) return t("Pagina publică a campaniei nu mai e activă sau acordul pentru publicare lipsește. Nu o mai putem propune.", "The campaign's public page is no longer active or the publishing consent is missing. We can no longer propose it.");
+  if (!poateFiDistribuit(pg)) return t("Pagina publică a campaniei nu mai e activă sau acordul pentru distribuire lipsește ori a fost retras. Nu o mai putem propune.", "The campaign's public page is no longer active or the consent to share it is missing or was withdrawn. We can no longer propose it.");
   return null;
 }

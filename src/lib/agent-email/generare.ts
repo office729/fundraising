@@ -8,6 +8,7 @@ import { UTILIZARE_GOALA, type Utilizare } from "@/lib/ai-org/pret";
 import type { Loc } from "@/lib/ai-org/protocol";
 import type { OrgContext } from "@/lib/auth/guard";
 import { agentEmailMesaje, appUsers, companies, companySponsorizari, contacts, fundraisingPages, memberships } from "@/lib/db/schema";
+import { poateFiDistribuit } from "@/lib/campanii/distribuibil";
 import { curataPii } from "@/lib/curata-pii";
 import { ferestreFiscale } from "@/lib/ferestre-fiscale";
 import { esteEligibilaD177, sumaEfectiva } from "@/lib/prioritizare-firme";
@@ -154,12 +155,12 @@ export async function pregatesteGenerare(
   if (p.mecanism === "caz") {
     if (!esteUuid(p.cazId)) return { gata: { ok: false, error: t("Alege campania pentru care scrii.", "Choose the campaign you are writing about.") } };
     const [pg] = await ctx.db
-      .select({ id: fundraisingPages.id, slug: fundraisingPages.slug, titlu: fundraisingPages.titlu, judet: fundraisingPages.judet, localitate: fundraisingPages.localitate, sumaTinta: fundraisingPages.sumaTinta, sumaStransa: fundraisingPages.sumaStransa, status: fundraisingPages.status, acord: fundraisingPages.consimtamantGdpr })
+      .select({ id: fundraisingPages.id, slug: fundraisingPages.slug, titlu: fundraisingPages.titlu, judet: fundraisingPages.judet, localitate: fundraisingPages.localitate, sumaTinta: fundraisingPages.sumaTinta, sumaStransa: fundraisingPages.sumaStransa, status: fundraisingPages.status, consimtamantGdpr: fundraisingPages.consimtamantGdpr, minor: fundraisingPages.minor, acordDistribuireMinor: fundraisingPages.acordDistribuireMinor, anonimizat: fundraisingPages.anonimizat, acordRetras: fundraisingPages.acordRetras, acordDiagnostic: fundraisingPages.acordDiagnostic })
       .from(fundraisingPages)
       .where(and(eq(fundraisingPages.orgId, ctx.orgId), eq(fundraisingPages.id, p.cazId)))
       .limit(1);
     if (!pg) return { gata: { ok: false, error: t("Campania nu mai există.", "The campaign no longer exists.") } };
-    if (pg.status !== "activa" || !pg.acord) return { gata: { ok: false, error: t("Campania nu poate fi propusă firmelor: pagina ei publică nu e activă sau lipsește acordul pentru publicare.", "This campaign cannot be proposed to companies: its public page is not active or the publishing consent is missing.") } };
+    if (!poateFiDistribuit(pg)) return { gata: { ok: false, error: t("Campania nu poate fi propusă firmelor: pagina ei publică nu e activă sau lipsește acordul pentru distribuire (verifică „Acorduri și protecția datelor” la campanie).", "This campaign cannot be proposed to companies: its public page is not active or the consent to share it is missing (check “Consents and data protection” on the campaign).") } };
     caz = { titlu: pg.titlu.slice(0, 160), localitate: pg.localitate, judet: pg.judet, link: linkPaginaPublica(ctx.orgSlug, pg.slug), sumaTinta: pg.sumaTinta, sumaStransa: pg.sumaStransa };
     cazPageId = pg.id;
   }

@@ -5,6 +5,7 @@ import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 
 import { contextAi, genereazaContinutCanalAI, type ContextAi } from "@/lib/ai";
+import { acorduriDin, verdictPromovareAi, type CampaniePentruDistribuire } from "@/lib/campanii/distribuibil";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { limitaAIDepasita, MESAJ_LIMITA_AI } from "@/lib/ai-limit";
 import { withOrgAdmin, withOrgFaze, withOrgSession } from "@/lib/auth/guard";
@@ -19,13 +20,16 @@ import {
 } from "@/lib/db/schema";
 import { genereazaComunicatPresa, type DateCampanie } from "@/lib/promovare/generator";
 
+// Datele campaniei + acordurile ei: comunicatul cu AI le verifică în faza 1 (o campanie nedistribuibilă nu ajunge la AI).
+type DateCuAcorduri = DateCampanie & { acorduri: CampaniePentruDistribuire };
+
 async function dateCampanie(
   db: { select: typeof import("@/lib/db").db.select },
   pageId: string,
   orgId: string,
   orgSlug: string,
   orgName: string,
-): Promise<DateCampanie | null> {
+): Promise<DateCuAcorduri | null> {
   const rows = await db
     .select()
     .from(fundraisingPages)
@@ -36,7 +40,7 @@ async function dateCampanie(
   const hdrs = await headers();
   const proto = hdrs.get("x-forwarded-proto") ?? "https";
   const url = `${proto}://${hdrs.get("host")}${caleCampanie(orgSlug, pagina.slug)}`;
-  return { titlu: pagina.titlu, poveste: pagina.poveste, orgName, url, sumaStransa: pagina.sumaStransa, sumaTinta: pagina.sumaTinta };
+  return { titlu: pagina.titlu, poveste: pagina.poveste, orgName, url, sumaStransa: pagina.sumaStransa, sumaTinta: pagina.sumaTinta, acorduri: acorduriDin(pagina) };
 }
 
 // Regenerează comunicatul de presă al campaniei — pornește mereu ca 'draft',
@@ -81,7 +85,9 @@ export const genereazaComunicatAIAction = withOrgFaze<
     const cai = await contextAi(ctx, "promovare", locale);
     if (!cai.ok) return { gata: { error: `${cai.eroare} ${locale === "ro" ? "Între timp poți folosi «Generează (șablon)»." : "Meanwhile you can use “Generate (template)”."}`, ok: false } };
     if (await limitaAIDepasita(ctx)) return { gata: { error: MESAJ_LIMITA_AI, ok: false } };
-    return { pregatit: { date, ai: cai.ai } };
+    const verdict = verdictPromovareAi(date.acorduri, cai.ai.povesteLaAi, locale);
+    if (!verdict.ok) return { gata: { error: verdict.eroare, ok: false } };
+    return { pregatit: { date, ai: { ...cai.ai, povesteLaAi: verdict.povesteLaAi } } };
   },
   extern: ({ date, ai }) => genereazaContinutCanalAI(ai, date, "comunicat"),
   salveaza: async (ctx, { date, ai: ctxAi }, ai, pageId) => {

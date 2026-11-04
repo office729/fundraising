@@ -39,6 +39,14 @@ export const fundraisingPages = pgTable(
     // Creatorul publică propriul nume + o poveste liberă — la fel ca la
     // donații, cere consimțământ explicit pentru procesarea acestor date.
     consimtamantGdpr: boolean("consimtamant_gdpr").notNull().default(false),
+    // Acordurile și protecția datelor (GDPR), editate doar din CRM — regula „ce poate pleca la AI/public” e în lib/campanii/distribuibil.ts.
+    // Vezi documentation/campanii-acorduri.sql. Toate pornesc pe false.
+    minor: boolean("minor").notNull().default(false),
+    acordDistribuireMinor: boolean("acord_distribuire_minor").notNull().default(false),
+    anonimizat: boolean("anonimizat").notNull().default(false),
+    acordRetras: boolean("acord_retras").notNull().default(false),
+    // Acordul pentru diagnostic și descrierea cazului: fără el povestea campaniei nu pleacă la AI.
+    acordDiagnostic: boolean("acord_diagnostic").notNull().default(false),
     status: fundraisingPageStatus("status").notNull().default("activa"),
     // Design-ul vizual al paginii — vezi src/lib/campaign-templates.ts
     // (template = domeniu de activitate). Implicit "altele" = aspectul

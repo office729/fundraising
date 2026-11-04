@@ -6,6 +6,7 @@ import { sql, type SQL } from "drizzle-orm";
 
 import { amprentaInfluencerNoua, amprentaInfluencerVeche } from "@/lib/amprente-hmac";
 import type { OrgContext } from "@/lib/auth/guard";
+import { conditieSqlDistribuibil } from "@/lib/campanii/distribuibil";
 import { patternLike, sqlFaraDiacritice } from "@/lib/cautare";
 import { EroareUtilizator } from "@/lib/erori";
 import { getTr } from "@/lib/i18n/tr-server";
@@ -196,13 +197,13 @@ export async function listaMembri(db: Db, orgId: string): Promise<Membru[]> {
   return r.map((x) => ({ id: String(x.id), nume: String(x.nume ?? "") }));
 }
 
-// Campaniile care pot fi distribuite public: active și cu acordul de publicare dat (aceleași condiții ca pagina publică a campaniei).
+// Campaniile care pot fi distribuite public: active, cu acordul de publicare, neanonimizate, cu acordul neretras și (la minori) cu acordul părintelui — regula din lib/campanii/distribuibil.ts.
 export async function cazuriDistribuibile(db: Db, orgId: string, id?: string): Promise<CazDistribuibil[]> {
   const r = rows(
     await db.execute(sql`
       select p.id::text as id, p.slug, p.titlu, p.judet, p.suma_tinta as "sumaTinta", p.suma_stransa as "sumaStransa"
       from fundraising_pages p
-      where p.org_id = ${orgId} and p.status = 'activa' and p.consimtamant_gdpr = true ${id ? sql`and p.id = ${id}::uuid` : sql``}
+      where p.org_id = ${orgId} and ${sql.raw(conditieSqlDistribuibil("p"))} ${id ? sql`and p.id = ${id}::uuid` : sql``}
       order by p.titlu`),
   );
   return r.map((x) => {
