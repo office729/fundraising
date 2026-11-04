@@ -57,9 +57,9 @@ export type PregatitTrimitere = {
 
 const curataText = (s: string, max: number) => s.replace(/\r/g, "").trim().slice(0, max);
 
-// Subsolul de dezabonare al emailurilor către firme: răspunsul „STOP” e mereu valabil, iar linkul semnat duce la lista de suprimare a organizației.
+// Subsolul emailurilor către firme: informarea scurtă (art. 14 GDPR: cine scrie, temeiul, sursa datelor) și dezabonarea; răspunsul „STOP” e mereu valabil, iar linkul semnat duce la lista de suprimare a organizației.
 function subsol(orgNume: string, orgId: string, email: string): SubsolEmail {
-  return { text: `Dacă nu doriți să mai primiți mesaje de la ${orgNume}, răspundeți cu STOP sau`, linkDezabonare: linkDezabonare(bazaUrl(), orgId, email), etichetaLink: "dezabonați-vă aici." };
+  return { text: `Vă scriem ca persoană de contact profesională a firmei, pe baza interesului legitim al ${orgNume} (datele provin din surse publice sau profesionale). Dacă nu doriți să mai primiți mesaje, răspundeți cu STOP sau`, linkDezabonare: linkDezabonare(bazaUrl(), orgId, email), etichetaLink: "dezabonați-vă aici." };
 }
 
 type CorpIn = { mesaj: string; semnatura: string; sub: SubsolEmail; pixel: string | null };

@@ -149,8 +149,9 @@ export async function listaInfluenceri(db: Db, orgId: string, f: FiltreLista): P
   if (f.categorie) conditii.push(sql`i.categorie = ${f.categorie}`);
   if (f.etapa) conditii.push(sql`i.etapa = ${f.etapa}`);
   if (f.responsabil === "fara") conditii.push(sql`i.responsabil_id is null`);
-  else if (f.responsabil) conditii.push(sql`i.responsabil_id = ${f.responsabil}::uuid`);
-  if (f.caz) conditii.push(sql`i.caz_id = ${f.caz}::uuid`);
+  else if (f.responsabil && RE_UUID_FILTRU.test(f.responsabil)) conditii.push(sql`i.responsabil_id = ${f.responsabil}::uuid`);
+  // Filtrele vin din browser: un id care nu e uuid se ignoră (altfel cast-ul ar da eroare 500).
+  if (f.caz && RE_UUID_FILTRU.test(f.caz)) conditii.push(sql`i.caz_id = ${f.caz}::uuid`);
   // Țara scrisă oricum („romania”, „ROMÂNIA ”, „Romînia”, „RO”) rămâne România; doar restul e diaspora.
   const romania = sql`${sqlFaraDiacritice(sql`trim(coalesce(nullif(trim(i.tara), ''), 'România'))`)} in ('romania', 'ro')`;
   if (f.judet === "diaspora") conditii.push(sql`not (${romania})`);
@@ -832,3 +833,5 @@ export async function pentruMesaj(db: Db, orgId: string, id: string): Promise<{ 
   };
 }
 
+
+const RE_UUID_FILTRU = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

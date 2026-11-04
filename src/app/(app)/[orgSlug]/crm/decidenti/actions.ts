@@ -1,6 +1,6 @@
 "use server";
 
-import { and, count, desc, eq, gte, inArray, ne, sql } from "drizzle-orm";
+import { and, count, desc, eq, gte, inArray, ne, notInArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 import { withOrgSession } from "@/lib/auth/guard";
@@ -242,7 +242,7 @@ export const getFirmeDeCautat = withOrgSession(
   async (ctx, benzi: string): Promise<DateCautareMasa> => {
     const dorite: Banda[] = benzi === "A" ? ["A"] : ["A", "B"];
     const [cheiRand, folositeReale, rezervate, candidate, cautate, firme] = await Promise.all([
-      ctx.db.select({ n: count() }).from(prospectareChei).where(and(eq(prospectareChei.orgId, ctx.orgId), ne(prospectareChei.provider, "waalaxy"))),
+      ctx.db.select({ n: count() }).from(prospectareChei).where(and(eq(prospectareChei.orgId, ctx.orgId), notInArray(prospectareChei.provider, ["waalaxy", "anthropic"]))),
       ctx.db.select({ n: count() }).from(prospectareJurnal).where(and(eq(prospectareJurnal.orgId, ctx.orgId), ne(prospectareJurnal.operatie, "rezervare"), gte(prospectareJurnal.createdAt, sql`now() - interval '24 hours'`))),
       ctx.db
         .select({ n: sql<number>`coalesce(sum(${prospectareJurnal.unitati}), 0)::int` })

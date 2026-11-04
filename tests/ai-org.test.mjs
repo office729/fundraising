@@ -158,3 +158,14 @@ test("afișare: USD cu zecimale, lei doar când există curs", () => {
   assert.match(C.formatLei(10, 4.5, "ro"), /45,00 lei/);
   assert.match(C.formatLei(10, 4.5, "en"), /45\.00 RON/);
 });
+
+test("Haiku: căutarea web de bază și fără parametrul de rezervă; Opus/Sonnet rămân pe varianta nouă cu rezervă", () => {
+  const haiku = R.corpCerere({ cheie: "k", model: "claude-haiku-5-5", mesaje: [], maxTokens: 10, cautareWeb: { maxUtilizari: 3 } });
+  assert.equal(haiku.tools[0].type, "web_search_20250305");
+  assert.equal("fallbacks" in haiku, false);
+  const opus = R.corpCerere({ cheie: "k", model: "claude-opus-5-5", mesaje: [], maxTokens: 10, cautareWeb: { maxUtilizari: 3 } });
+  assert.equal(opus.tools[0].type, "web_search_20260209");
+  assert.equal(opus.fallbacks, "default");
+  assert.equal(R.esteHaiku("claude-haiku-5-5"), true);
+  assert.equal(R.esteHaiku("claude-sonnet-5-5"), false);
+});

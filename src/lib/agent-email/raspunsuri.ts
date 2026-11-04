@@ -144,7 +144,7 @@ async function laLimita<T, R>(items: readonly T[], n: number, fn: (x: T) => Prom
 async function eticheteazaAi(p: PregatitCitire, subiect: string, fragment: string): Promise<{ eticheta: EtichetaRaspuns; ai: RaspunsProcesat["ai"] }> {
   if (!p.ai || !fragment.trim()) return { eticheta: "altul", ai: null };
   try {
-    const r = await apeleazaClaude({ cheie: p.ai.cheie, model: p.ai.model, system: systemEticheta(p.orgNume), mesaje: [{ role: "user", content: mesajEticheta(subiect, fragment) }], maxTokens: 400, efort: "low", timeoutMs: 40_000, locale: p.locale });
+    const r = await apeleazaClaude({ cheie: p.ai.cheie, model: p.ai.model, system: systemEticheta(p.orgNume), mesaje: [{ role: "user", content: mesajEticheta(subiect, fragment) }], maxTokens: 2000, efort: "low", timeoutMs: 40_000, locale: p.locale });
     return { eticheta: r.ok ? parseazaEticheta(r.text) : "altul", ai: { utilizare: r.utilizare, costUsd: r.costUsd, model: r.model } };
   } catch {
     return { eticheta: "altul", ai: { utilizare: UTILIZARE_GOALA, costUsd: 0, model: p.ai.model } };

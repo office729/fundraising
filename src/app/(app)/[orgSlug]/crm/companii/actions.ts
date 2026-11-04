@@ -2,7 +2,7 @@
 
 import { randomUUID } from "node:crypto";
 
-import { and, asc, eq, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNotNull, isNull, or, sql } from "drizzle-orm";
 
 import { parseazaNumarRo } from "@/lib/numere-ro";
 import { type OrgContext, withOrgSession } from "@/lib/auth/guard";
@@ -18,7 +18,8 @@ import { normalizeazaTelefonE164 } from "@/lib/telefon";
 import { urlWebSigur } from "@/lib/validation";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { COMPANII_UI_DICT } from "@/lib/i18n/dictionaries/companii-ui";
-import { apeluri, companies, companyNotite, companySponsorizari, companyStageLog, contacts, crmKv, prospectareCandidati } from "@/lib/db/schema";
+import { adaugaSuprimare } from "@/lib/agent-email/store";
+import { agentEmailMesaje, agentEmailRaspunsuri, apeluri, companies, companyNotite, companySponsorizari, companyStageLog, contacts, crmKv, prospectareCandidati } from "@/lib/db/schema";
 
 export type ActionState = { error: string | null };
 
@@ -346,11 +347,28 @@ export const seteazaRezultat = withOrgSession(async (ctx, companyId: string, rez
 });
 export const stergeContact = withOrgSession(async (ctx, id: string): Promise<ActionState> => {
   const [contact] = await ctx.db
-    .select({ companyId: contacts.companyId, nume: contacts.nume, linkedin: contacts.linkedin, telefon: contacts.telefon })
+    .select({ companyId: contacts.companyId, nume: contacts.nume, linkedin: contacts.linkedin, telefon: contacts.telefon, email: contacts.email })
     .from(contacts)
     .where(and(eq(contacts.id, id), eq(contacts.orgId, ctx.orgId)))
     .limit(1);
   if (!contact) return { error: null };
+  // GDPR: emailurile Agentului email către această persoană. Ciornele netrimise se șterg; cele trimise își pierd destinatarul și textul, iar răspunsurile primite
+  // (expeditor + fragment) se golesc. Adresa intră în lista de suprimare (doar hash), ca agentul să nu-i mai scrie dacă e reimportată.
+  const emailPersoana = contact.email?.trim().toLowerCase() || null;
+  const dePersoana = or(eq(agentEmailMesaje.contactId, id), emailPersoana ? sql`lower(${agentEmailMesaje.catreEmail}) = ${emailPersoana}` : sql`false`);
+  await ctx.db.delete(agentEmailMesaje).where(and(eq(agentEmailMesaje.orgId, ctx.orgId), inArray(agentEmailMesaje.stare, ["ciorna", "eroare"]), dePersoana));
+  const trimise = await ctx.db
+    .update(agentEmailMesaje)
+    .set({ catreNume: "[șters]", catreEmail: "[șters]", catreRol: null, mesaj: "[șters]", aiMesaj: null, istoric: null, contactId: null })
+    .where(and(eq(agentEmailMesaje.orgId, ctx.orgId), dePersoana))
+    .returning({ id: agentEmailMesaje.id });
+  if (trimise.length) {
+    await ctx.db
+      .update(agentEmailRaspunsuri)
+      .set({ deLa: "[șters]", fragment: "" })
+      .where(and(eq(agentEmailRaspunsuri.orgId, ctx.orgId), inArray(agentEmailRaspunsuri.mesajId, trimise.map((m) => m.id))));
+  }
+  if (emailPersoana) await adaugaSuprimare(ctx.db, ctx.orgId, emailPersoana, "contact_sters");
   // GDPR: rândul din prospectare (cel din care a apărut contactul; legătura dispare la ștergere, deci se curăță ÎNAINTE) își pierde datele personale și iese din „De contactat azi”; rămâne doar în numărătoare.
   await ctx.db
     .update(prospectareCandidati)

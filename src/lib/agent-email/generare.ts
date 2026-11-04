@@ -316,6 +316,7 @@ export async function ruleazaAiGenerare(p: PregatitGenerare): Promise<RezultatAi
         maxTokens: 4000,
         efort: "medium",
         timeoutMs: 100_000,
+        termenTotalMs: 110_000,
         locale: p.locale,
       });
       if (!r.ok) return { ok: false, eroare: r.eroare, utilizare: r.utilizare, costUsd: r.costUsd, model: r.model };

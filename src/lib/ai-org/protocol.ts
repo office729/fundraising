@@ -32,10 +32,15 @@ export type CerereClaude = {
   timeoutMs?: number;
   // Continuările după pause_turn (căutarea web lungă); implicit 4.
   maxTure?: number;
+  // Termenul TOTAL al apelului (toate turele): fiecare tură primește doar timpul rămas, ca funcția să nu fie tăiată de platformă înainte să se înregistreze consumul.
+  termenTotalMs?: number;
   locale?: Loc;
   // Refuzurile se retrimit automat pe un model de rezervă (Anthropic, server-side); pornit implicit.
   fallback?: boolean;
 };
+
+// Haiku nu are rezervă server-side (fallbacks) și folosește căutarea web de bază.
+export const esteHaiku = (model: string) => model.includes("haiku");
 
 export const URL_MESAJE = "https://api.anthropic.com/v1/messages";
 export const URL_MODELE = "https://api.anthropic.com/v1/models?limit=1";
@@ -48,7 +53,7 @@ export function anteteCerere(cheie: string, fallback: boolean): Record<string, s
 }
 
 // Corpul cererii. Fără `thinking` (modelele curente rulează adaptiv; Opus 5.5 nu acceptă oprirea) și fără `tool_choice` forțat (refuzat de model).
-export function corpCerere(c: CerereClaude, mesaje: MesajClaude[] = c.mesaje, cuFallback = c.fallback !== false): Record<string, unknown> {
+export function corpCerere(c: CerereClaude, mesaje: MesajClaude[] = c.mesaje, cuFallback = c.fallback !== false && !esteHaiku(c.model)): Record<string, unknown> {
   const corp: Record<string, unknown> = {
     model: c.model,
     max_tokens: c.maxTokens,
@@ -56,7 +61,8 @@ export function corpCerere(c: CerereClaude, mesaje: MesajClaude[] = c.mesaje, cu
     output_config: { effort: c.efort ?? "medium" },
   };
   if (c.system) corp.system = c.system;
-  if (c.cautareWeb) corp.tools = [{ type: "web_search_20260209", name: "web_search", max_uses: Math.max(1, Math.min(30, Math.floor(c.cautareWeb.maxUtilizari))) }];
+  // Varianta cu filtrare dinamică nu e listată pentru Haiku; acolo folosim varianta de bază.
+  if (c.cautareWeb) corp.tools = [{ type: esteHaiku(c.model) ? "web_search_20250305" : "web_search_20260209", name: "web_search", max_uses: Math.max(1, Math.min(30, Math.floor(c.cautareWeb.maxUtilizari))) }];
   // Refuzurile (stop_reason "refusal") sunt rare, dar la ele cererea se reia pe un model de rezervă, fără să plătească organizația o a doua cerere separată.
   if (cuFallback) corp.fallbacks = "default";
   return corp;

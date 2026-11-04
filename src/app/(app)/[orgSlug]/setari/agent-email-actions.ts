@@ -10,6 +10,7 @@ import { valideazaDateCont, type DateCont, type EroareCont } from "@/lib/agent-e
 import { citesteCont, contPublic, parolaCont } from "@/lib/agent-email/store";
 import { textEroareConexiune } from "@/lib/agent-email/texte";
 import type { StareContEmail } from "@/lib/agent-email/tipuri";
+import { verificaLimitaRata } from "@/lib/auth/rate-limit";
 import { withOrgFaze, withOrgSession } from "@/lib/auth/guard";
 import { agentEmailConturi } from "@/lib/db/schema";
 import { EroareUtilizator, mesajSigur } from "@/lib/erori";
@@ -87,6 +88,8 @@ function testFaze(fel: Fel) {
     opts: OPTIUNI,
     pregateste: async (ctx) => {
       const t = await getTr();
+      // Testul face o conexiune reală la serverul scris de utilizator: plafonăm încercările (altfel platforma ar putea fi folosită la scanări).
+      if (!(await verificaLimitaRata("agent-email-test-conexiune", ctx.userId, 20, 60))) return { gata: { error: t("Prea multe teste de conexiune. Încearcă din nou peste o oră.", "Too many connection tests. Try again in an hour.") } };
       const cont = await citesteCont(ctx.db, ctx.orgId, ctx.userId);
       if (!cont) return { gata: { error: t("Salvează întâi datele căsuței.", "Save the mailbox details first.") } };
       const parola = parolaCont(cont);

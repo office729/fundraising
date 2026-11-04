@@ -157,7 +157,7 @@ function Continut({ orgSlug, fisa, date, onEditeaza, onSchimbat, onSters }: { or
           </LinkButon>
         ))}
         {inf.email && (
-          <a href={`mailto:${inf.email}`} className="inline-flex h-9 items-center gap-1.5 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-3.5 text-sm text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]">
+          <a href={`mailto:${encodeURIComponent(inf.email)}`} className="inline-flex h-9 items-center gap-1.5 rounded-[var(--ci-radius-btn)] border border-[var(--ci-border)] px-3.5 text-sm text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)]">
             <Mail className="h-3.5 w-3.5" />
             {inf.email}
           </a>

@@ -22,7 +22,7 @@ import { asambleaza, type LinieRaport, type Raport } from "./raport";
 // Modulul nu modifică niciodată bugete sau reclame: doar propune.
 
 export const PASTREAZA_ANALIZE = 12;
-const MAX_TOKENI = 4500;
+const MAX_TOKENI = 12_000; // include și raționamentul modelului
 
 export type RezultatAnaliza =
   | { ok: true; id: string }

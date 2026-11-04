@@ -17,12 +17,54 @@ export function esteIpPrivat(ip: string): boolean {
     if ([a, b, Number(m4[3]), Number(m4[4])].some((n) => n > 255)) return true;
     return a === 0 || a === 10 || a === 127 || (a === 100 && b >= 64 && b <= 127) || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 192 && b === 0) || (a === 198 && (b === 18 || b === 19)) || a >= 224;
   }
-  if (t.includes(":")) {
-    if (t === "::" || t === "::1") return true;
-    const mapat = t.match(/^::ffff:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/);
-    if (mapat) return esteIpPrivat(mapat[1]);
-    return /^(fc|fd|fe[89ab]|ff)/.test(t);
+  if (t.includes(":")) return esteIpv6Privat(t);
+  return false;
+}
+
+// IPv6 desfăcut în 16 octeți (acceptă „::”, zona %eth0 și coada IPv4). Formă greșită => null (tratată ca privată).
+function octetiIpv6(t: string): number[] | null {
+  const fara = t.split("%")[0];
+  let coada: number[] = [];
+  let corp = fara;
+  const m4 = fara.match(/(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (m4) {
+    coada = [Number(m4[1]), Number(m4[2]), Number(m4[3]), Number(m4[4])];
+    if (coada.some((n) => n > 255)) return null;
+    corp = fara.slice(0, fara.length - m4[0].length) + "0:0";
   }
+  const parti = corp.split("::");
+  if (parti.length > 2) return null;
+  const grupe = (x: string) => (x === "" ? [] : x.split(":"));
+  const st = grupe(parti[0]);
+  const dr = parti.length === 2 ? grupe(parti[1]) : [];
+  const lipsa = 8 - st.length - dr.length;
+  if (parti.length === 1 ? st.length !== 8 : lipsa < 1) return null;
+  const toate = parti.length === 1 ? st : [...st, ...Array<string>(lipsa).fill("0"), ...dr];
+  const octeti: number[] = [];
+  for (const g of toate) {
+    if (!/^[0-9a-f]{1,4}$/.test(g)) return null;
+    const v = parseInt(g, 16);
+    octeti.push(v >> 8, v & 255);
+  }
+  if (coada.length) octeti.splice(12, 4, ...coada);
+  return octeti.length === 16 ? octeti : null;
+}
+
+// IPv6 care nu e adresă publică: loopback, nespecificată, IPv4 încorporat (mapat, compatibil, NAT64, 6to4) cu IPv4 privat, ULA, link-local, multicast, documentație, Teredo.
+function esteIpv6Privat(t: string): boolean {
+  const o = octetiIpv6(t);
+  if (!o) return true;
+  const v4 = (i: number) => esteIpPrivat(`${o[i]}.${o[i + 1]}.${o[i + 2]}.${o[i + 3]}`);
+  const zero = (de: number, pana: number) => o.slice(de, pana).every((x) => x === 0);
+  if (zero(0, 12)) return o[12] === 0 && o[13] === 0 && o[14] === 0 && o[15] <= 1 ? true : v4(12); // ::, ::1 și ::a.b.c.d (compatibil)
+  if (zero(0, 10) && o[10] === 255 && o[11] === 255) return v4(12); // ::ffff:a.b.c.d (mapat)
+  if (o[0] === 0x00 && o[1] === 0x64 && o[2] === 0xff && o[3] === 0x9b && zero(4, 12)) return v4(12); // 64:ff9b::/96 (NAT64)
+  if (o[0] === 0x20 && o[1] === 0x02) return v4(2); // 2002::/16 (6to4)
+  if (o[0] === 0x20 && o[1] === 0x01 && o[2] === 0x00 && (o[3] === 0x00 || o[3] === 0x02)) return true; // Teredo și benchmarking
+  if (o[0] === 0x20 && o[1] === 0x01 && o[2] === 0x0d && o[3] === 0xb8) return true; // documentație
+  if ((o[0] & 0xfe) === 0xfc) return true; // fc00::/7
+  if (o[0] === 0xfe && (o[1] & 0xc0) === 0x80) return true; // fe80::/10
+  if (o[0] === 0xff) return true; // multicast
   return false;
 }
 

@@ -127,6 +127,8 @@ export const salveazaAction = withOrgSession(async (ctx, id: string | null, camp
 // Un lot de până la 200 de rânduri (clientul trimite fișierul pe bucăți); `primulRand` doar pentru mesajele de eroare.
 export const importaAction = withOrgSession(async (ctx, randuri: RandImport[], primulRand: number): Promise<Rez<RezultatImport>> => {
   return incearca("influenceri-import", async () => {
+    // Plafonul de 2000 de rânduri e și în client; aici îl impunem pe server (30 de loturi pe oră pe utilizator).
+    if (!(await verificaLimitaRata("influenceri-import", ctx.userId, 30, 60))) throw new EroareUtilizator((await getTr())("Prea multe importuri într-o oră. Încearcă din nou mai târziu.", "Too many imports in an hour. Try again later."));
     const lista = Array.isArray(randuri) ? randuri.slice(0, 200) : [];
     const campuri: CampuriInfluencer[] = lista
       .filter((r) => r && typeof r === "object")

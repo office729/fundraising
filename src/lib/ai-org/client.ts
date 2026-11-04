@@ -2,7 +2,7 @@ import "server-only";
 
 import { raporteazaEroare } from "@/lib/monitoring";
 
-import { anteteCerere, codDinHttp, corpCerere, mesajEroare, parseazaRaspuns, URL_MESAJE, URL_MODELE, type CerereClaude, type CodEroare, type Loc, type MesajClaude, type Sursa } from "./protocol";
+import { anteteCerere, codDinHttp, corpCerere, esteHaiku, mesajEroare, parseazaRaspuns, URL_MESAJE, URL_MODELE, type CerereClaude, type CodEroare, type Loc, type MesajClaude, type Sursa } from "./protocol";
 import { adunaUtilizare, costUsd, UTILIZARE_GOALA, type Utilizare } from "./pret";
 
 // Clientul Claude al ORGANIZAȚIEI: folosește exclusiv cheia ei (criptată în baza de date), niciodată o cheie a platformei.
@@ -17,13 +17,13 @@ export type RezultatClaude =
 
 type Brut = { ok: true; corp: unknown } | { ok: false; status: number; corp: unknown } | { ok: false; status: 0; corp: null };
 
-async function trimite(c: CerereClaude, mesaje: MesajClaude[], fallback: boolean): Promise<Brut> {
+async function trimite(c: CerereClaude, mesaje: MesajClaude[], fallback: boolean, timeoutMs: number): Promise<Brut> {
   try {
     const r = await fetch(URL_MESAJE, {
       method: "POST",
       headers: anteteCerere(c.cheie, fallback),
       body: JSON.stringify(corpCerere(c, mesaje, fallback)),
-      signal: AbortSignal.timeout(c.timeoutMs ?? 120_000),
+      signal: AbortSignal.timeout(timeoutMs),
       cache: "no-store",
     });
     const corp = await r.json().catch(() => null);
@@ -38,18 +38,23 @@ export async function apeleazaClaude(c: CerereClaude): Promise<RezultatClaude> {
   let mesaje = c.mesaje;
   let utilizare = UTILIZARE_GOALA;
   let model = c.model;
-  let fallback = c.fallback !== false;
+  let fallback = c.fallback !== false && !esteHaiku(c.model);
+  const inceput = Date.now();
   const surse = new Map<string, Sursa>();
   let costTotal = 0;
   const cost = (u: Utilizare, m: string) => costUsd(m, u, c.model);
 
   const ture = Math.max(1, Math.min(MAX_TURE, c.maxTure ?? MAX_TURE));
   for (let tura = 0; tura < ture; tura++) {
-    let r = await trimite(c, mesaje, fallback);
+    // Fiecare tură primește doar timpul rămas din termenul total (dacă există); fără timp, ne oprim cu consumul de până acum.
+    const ramas = c.termenTotalMs != null ? c.termenTotalMs - (Date.now() - inceput) : Infinity;
+    if (ramas < 5_000) return { ok: false, cod: "temporar", eroare: mesajEroare("temporar", locale), model, utilizare, costUsd: Math.round(costTotal * 1e6) / 1e6 };
+    const limitaTura = Math.min(c.timeoutMs ?? 120_000, ramas);
+    let r = await trimite(c, mesaje, fallback, limitaTura);
     // Dacă API-ul nu acceptă parametrul de rezervă pentru această cerere, reluăm o singură dată fără el (nu pierdem generarea).
     if (!r.ok && fallback && r.status === 400 && /fallback/i.test(JSON.stringify(r.corp ?? ""))) {
       fallback = false;
-      r = await trimite(c, mesaje, false);
+      r = await trimite(c, mesaje, false, limitaTura);
     }
     if (!r.ok) {
       if (r.status === 0) return { ok: false, cod: "retea", eroare: mesajEroare("retea", locale), model, utilizare, costUsd: costTotal };

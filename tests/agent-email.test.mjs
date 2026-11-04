@@ -312,3 +312,12 @@ test("semnătura: curățată, maximum 8 rânduri de 120 de caractere", () => {
   assert.equal(R.curataSemnatura(Array.from({ length: 20 }, (_, i) => `r${i}`).join("\n")).split("\n").length, 8);
   assert.equal(R.semnaturaHtml(""), "");
 });
+
+test("SSRF: IPv6 literal în orice formă (scurtă, hex, mapată, NAT64, 6to4) spre adrese interne e respins; adresele publice trec", () => {
+  for (const x of ["0:0:0:0:0:0:0:1", "::ffff:7f00:1", "::ffff:a00:1", "::127.0.0.1", "::1", "::", "fe80::1", "fd00::1", "[::ffff:127.0.0.1]", "64:ff9b::7f00:1", "2002:7f00:1::", "::ffff:a9fe:a9fe", "2001:db8::1", "ff02::1", "garbage:::", "127.0.0.1", "169.254.169.254"]) {
+    assert.equal(N.esteHostInterzis(x), true, x);
+  }
+  for (const x of ["2607:f8b0:4004:c07::6d", "2a00:1450:4001:80b::200e", "8.8.8.8", "::ffff:808:808", "2001:4860:4860::8888"]) {
+    assert.equal(N.esteIpPrivat(x), false, x);
+  }
+});

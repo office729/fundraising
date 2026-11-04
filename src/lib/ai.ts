@@ -48,7 +48,7 @@ const ETICHETA_CANAL: Record<CanalContinut, string> = {
   comunicat: "comunicat de presă",
 };
 
-type ParamsApel = { system: string; prompt: string; maxTokens: number; efort?: Efort; timeoutMs?: number; cautareWeb?: { maxUtilizari: number }; maxTure?: number };
+type ParamsApel = { system: string; prompt: string; maxTokens: number; efort?: Efort; timeoutMs?: number; cautareWeb?: { maxUtilizari: number }; maxTure?: number; termenTotalMs?: number };
 
 // Apelul către Claude cu cheia organizației. maxTokens include și raționamentul modelului, de aceea limitele sunt largi (se plătesc doar tokenii folosiți).
 async function apeleaza(ai: ContextAi, p: ParamsApel) {
@@ -60,6 +60,7 @@ async function apeleaza(ai: ContextAi, p: ParamsApel) {
     maxTokens: p.maxTokens,
     efort: p.efort ?? "low",
     timeoutMs: p.timeoutMs ?? 60_000,
+    termenTotalMs: p.termenTotalMs,
     cautareWeb: p.cautareWeb ?? null,
     maxTure: p.maxTure,
     locale: ai.locale,
@@ -245,7 +246,7 @@ export async function genereazaDraftGrantAI(ai: ContextAi, d: DateDraftGrant): P
     .filter((l, i, a) => l !== "" || a[i - 1] !== "")
     .join("\n");
   try {
-    const text = curata(await apeleazaAI(ai, { system, prompt, maxTokens: 14000, efort: "medium", timeoutMs: 120_000 }));
+    const text = curata(await apeleazaAI(ai, { system, prompt, maxTokens: 14000, efort: "medium", timeoutMs: 90_000, termenTotalMs: 100_000 }));
     return text || null;
   } catch (e) {
     raporteaza("ai-grant", e);
@@ -279,7 +280,7 @@ export async function cautaApeluriAI(ai: ContextAi, p: { domeniu: string; zona: 
 
   try {
     // Căutarea lungă poate fi întreruptă de API (pause_turn); apeleazaClaude o reia, dar ținem două ture de cel mult 50 s, sub limita paginii.
-    const r = await apeleaza(ai, { system, prompt, maxTokens: 8000, timeoutMs: 50_000, maxTure: 2, cautareWeb: { maxUtilizari: 3 } });
+    const r = await apeleaza(ai, { system, prompt, maxTokens: 8000, timeoutMs: 50_000, termenTotalMs: 100_000, maxTure: 2, cautareWeb: { maxUtilizari: 3 } });
     if (!r.ok) return { ok: false, eroare: r.eroare };
     // Garda principală: păstrăm doar linkurile care au apărut într-un rezultat real al căutării (sau într-o citare din acestea).
     const gasite = new Set<string>();

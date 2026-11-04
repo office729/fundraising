@@ -27,7 +27,7 @@ export async function GET(req: Request) {
       const rez = await db.transaction(async (tx) => {
         await tx.execute(sql`select set_config('app.current_org_id', ${org.id}, true)`);
         // CASE: `jsonb_array_length` pe o valoare care nu e array ar da eroare, iar ordinea condițiilor AND nu e garantată.
-        return tx.execute(sql`
+        const curate = await tx.execute(sql`
           update companies c set extra = jsonb_set(coalesce(c.extra, '{}'::jsonb), '{deAprobat}', coalesce((
             select jsonb_agg(e || jsonb_build_object('adaugatLa', coalesce(e->>'adaugatLa', now()::text)))
             from jsonb_array_elements(c.extra->'deAprobat') e
@@ -36,6 +36,12 @@ export async function GET(req: Request) {
           where c.org_id = ${org.id}
             and case when jsonb_typeof(c.extra->'deAprobat') = 'array' then jsonb_array_length(c.extra->'deAprobat') > 0 else false end
           returning c.id`);
+        // Candidații găsiți de furnizori / AI și neaprobați în 60 de zile își pierd datele personale (amprenta „nu mai căuta” rămâne în firmă); la fel memoria căutărilor AI veche.
+        await tx.execute(sql`
+          update prospectare_candidati set nume = '[expirat]', nume_norm = 'expirat:' || id::text, rol = null, dept = null, linkedin = null, email = null, email_status = null,
+            telefon = null, ids = '{}'::jsonb, alte_surse = '{}'::text[], cerere_lusha = null, sursa_url = null, eticheta = null, stadiu = 'inchis', urmator_pas_la = null
+          where org_id = ${org.id} and stare = 'nou' and gasit_la < now() - make_interval(days => ${ZILE_NEAPROBATE}) and nume <> '[expirat]' and nume <> '[respins]' and nume <> '[șters]'`);
+        return curate;
       });
       firmeCurate += rez.length;
     } catch (e) {

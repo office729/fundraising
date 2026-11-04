@@ -90,7 +90,9 @@ const cautaAi = withOrgFaze<[string, boolean], PregatitAi, RezultatClaude, Rezul
       efort: "medium",
       // fără user_location: codul de țară RO nu e acceptat de căutarea web (firma e oricum din România)
       cautareWeb: { maxUtilizari: MAX_CAUTARI_WEB },
-      timeoutMs: 150_000,
+      timeoutMs: 90_000,
+      maxTure: 2,
+      termenTotalMs: 150_000, // pagina are maxDuration 180: lăsăm timp pentru faza de salvare
       locale: p.locale,
     }),
   salveaza: async (ctx, p, r): Promise<RezultatWebAi> => {
