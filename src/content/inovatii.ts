@@ -30,6 +30,16 @@ export type Inovatie = {
 
 export const INOVATII: Inovatie[] = [
   {
+    id: "2026-11-05-surse-donatii",
+    data: "2026-11-05",
+    titlu: "Sursele donațiilor: de unde vin banii strânși",
+    descriere: "Vezi, în EUR, cât aduc donațiile plătite din reclame Facebook și Google, newsletter, căutare sau alte site-uri, cu număr de donații, donație medie și pondere. Filtrezi după perioadă, sursă și campanie și deschizi lista donațiilor din fiecare total.",
+    categorie: "Rapoarte și statistici",
+    tip: "nou",
+    link: "surse-donatii",
+    cumFolosesti: "Etichetează reclamele și newsletterele cu utm_medium și compară sursele, ca să muți bugetul acolo unde vin cele mai multe donații.",
+  },
+  {
     id: "2026-11-04-control-ai-si-date",
     data: "2026-11-04",
     titlu: "Mai mult control asupra AI-ului și a datelor personale",

@@ -49,6 +49,7 @@ import {
   MessageSquareHeart,
   Megaphone,
   Clock,
+  Radar,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -144,6 +145,7 @@ export function buildNav(dict: DashboardDict, orgSlug: string, role: string, per
         { href: "strangere-fonduri", label: dict.nav.strangereFonduri, hint: dict.hints.strangereFonduri, icon: HandCoins },
         { href: "statistici-campanii", label: dict.nav.statisticiCampanii, hint: dict.hints.statisticiCampanii, icon: BarChart3 },
         { href: "surse", label: dict.nav.surse, hint: dict.hints.surse, icon: Compass },
+        { href: "surse-donatii", label: dict.nav.surseDonatii, hint: dict.hints.surseDonatii, icon: Radar },
         { href: "reclame", label: dict.nav.reclame, hint: dict.hints.reclame, icon: Megaphone },
         { href: "granturi", label: dict.nav.granturi, hint: dict.hints.granturi, icon: Award },
         { href: "fonduri-plati", label: dict.nav.fonduriPlati, hint: dict.hints.fonduriPlati, icon: Banknote },

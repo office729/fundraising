@@ -4,6 +4,7 @@ import { useEffect } from "react";
 
 import { refuzStatistici, urmareste } from "@/lib/atribuire/client";
 import { memoreazaTouch } from "@/lib/reclame/touch-client";
+import { reinoiesteMemoria } from "@/lib/surse-donatii/client";
 import { inregistreazaEveniment } from "@/lib/statistici-campanii/inregistreaza";
 
 // Numără vizualizarea paginii de campanie (o dată la încărcare). Fără cookie-uri; cu acordul pentru statistici se păstrează doar un identificator
@@ -12,6 +13,8 @@ import { inregistreazaEveniment } from "@/lib/statistici-campanii/inregistreaza"
 export function UrmarireVizite({ orgSlug, pageSlug }: { orgSlug: string; pageSlug: string }) {
   useEffect(() => {
     memoreazaTouch();
+    // Memoria „Sursele donațiilor” (prima/ultima sursă externă): doar sesiune fără acord, 90 de zile cu acord; se actualizează și la refuz (fără identificatori, fără eveniment).
+    reinoiesteMemoria();
     if (refuzStatistici()) return;
     urmareste("campanie", "vizita", { orgSlug, pageSlug });
     const q = new URLSearchParams(window.location.search);

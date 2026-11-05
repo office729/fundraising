@@ -11,6 +11,11 @@
  * Formularul rulează într-un iframe pe domeniul Alexandrit; plata se face pe pagina Stripe, pe care o deschide această pagină
  * (un iframe nu poate deschide Stripe). Scriptul nu folosește cookie-uri și nu citește nimic din pagina gazdă, în afară de numele ei
  * de domeniu, trimis ca etichetă de sursă (utm_campaign), ca organizația să vadă de unde vin donațiile.
+ *
+ * „Sursele donațiilor”: ca donațiile făcute prin widget să poată fi atribuite (Facebook, newsletter, Google Ads etc.), scriptul trimite formularului
+ * și SEMNALELE VIZITEI CURENTE de pe pagina gazdă, în parametrii x_*: valorile utm_*, doar TIPUL identificatorilor de click prezenți (fbclid, gclid, ... — nu și valoarea),
+ * identificatorul de afiliat (referral_id) și numele de domeniu al paginii de unde a venit vizitatorul. Nu se trimite nimic altceva și nu se scrie nimic pe dispozitiv.
+ * Memoria între vizite (prima/ultima sursă) NU se poate păstra în iframe-ul de pe alt domeniu; ea rămâne pe site-ul gazdă (vezi documentation/surse-donatii.md).
  */
 (function () {
   "use strict";
@@ -25,9 +30,35 @@
     return typeof s === "string" && /^[a-z0-9][a-z0-9-]{0,80}$/i.test(s);
   }
 
+  var CLICK_IDS = ["fbclid", "gclid", "gbraid", "wbraid", "li_fat_id", "msclkid", "ttclid"];
+  var UTM = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"];
+
+  // Semnalele vizitei curente de pe pagina gazdă (vezi nota de sus). Valori scurte, curățate; doar http(s) pentru referrer.
+  function semnaleGazda() {
+    var p = "&x_v=1";
+    try {
+      var qs = new URLSearchParams(location.search);
+      UTM.forEach(function (k) {
+        var v = (qs.get(k) || "").replace(/[\u0000-\u001f]/g, " ").trim().slice(0, 100);
+        if (v) p += "&x_" + k + "=" + encodeURIComponent(v);
+      });
+      var tipuri = CLICK_IDS.filter(function (k) { return (qs.get(k) || "").trim().length > 0; });
+      if (tipuri.length) p += "&x_click=" + tipuri.join(",");
+      var aff = (qs.get("referral_id") || "").trim().slice(0, 60);
+      if (/^[A-Za-z0-9_.:-]+$/.test(aff)) p += "&x_referral_id=" + encodeURIComponent(aff);
+      if (document.referrer) {
+        var r = new URL(document.referrer);
+        if (r.protocol === "https:" || r.protocol === "http:") p += "&x_ref=" + encodeURIComponent(r.hostname.toLowerCase());
+      }
+    } catch (e) {
+      // semnalele sunt opționale: formularul funcționează și fără ele
+    }
+    return p;
+  }
+
   function adresaFormular(org, campanie) {
     var sursa = (location.hostname || "").toLowerCase().replace(/^www[.]/, "").replace(/[^a-z0-9.-]/g, "").slice(0, 60);
-    var q = "utm_source=widget&utm_medium=embed" + (sursa ? "&utm_campaign=" + encodeURIComponent(sursa) : "");
+    var q = "utm_source=widget&utm_medium=embed" + (sursa ? "&utm_campaign=" + encodeURIComponent(sursa) : "") + semnaleGazda();
     return ORIGIN + "/strangere-fonduri/" + encodeURIComponent(org) + "/" + encodeURIComponent(campanie) + "/embed?" + q;
   }
 

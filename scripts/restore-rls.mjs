@@ -962,7 +962,7 @@ const POLICIES = [
   `create policy org_timp_membri_citire on org_timp for select using (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid and (pornit_la is null or oprit_la is not null) and exists (select 1 from org_personalizare p where p.org_id = org_timp.org_id and p.config ->> 'arataTimp' = 'true'))`,
   `create policy org_timp_tarife_platforma on org_timp_tarife for all using (nullif(current_setting('app.platform_admin', true), '') = 'true') with check (nullif(current_setting('app.platform_admin', true), '') = 'true')`,
   // Prospectare de decidenți (documentation/prospectare.sql): izolare pe organizație.
-  ...["prospectare_chei", "prospectare_candidati", "prospectare_jurnal", "prospectare_suprimati", "parcursuri_donatori", "parcursuri_trimiteri", "ai_consum", "ai_setari"].map(
+  ...["prospectare_chei", "prospectare_candidati", "prospectare_jurnal", "prospectare_suprimati", "parcursuri_donatori", "parcursuri_trimiteri", "ai_consum", "ai_setari", "donatie_surse"].map(
     (t) => `create policy ${t}_tenant_isolation on ${t} using (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid) with check (org_id = nullif(current_setting('app.current_org_id', true), '')::uuid)`,
   ),
   // Deep Search decidenți / „Caută pe internet (AI)” (documentation/deep-search-ai.sql): izolare pe organizație.
@@ -1125,6 +1125,7 @@ const FORCE_TABLES = [
   "webhook_livrari",
   "outreach_evenimente",
   "ai_consum",
+  "donatie_surse",
   "ai_setari",
   "agent_email_conturi",
   "agent_email_mesaje",

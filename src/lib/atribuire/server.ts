@@ -16,6 +16,7 @@ import {
   organizations,
 } from "@/lib/db/schema";
 import { raporteazaEroare } from "@/lib/monitoring";
+import { cursPentruDonatie, salveazaSurseDonatie } from "@/lib/surse-donatii/server";
 import {
   clasificaDispozitiv,
   esteBot,
@@ -438,6 +439,8 @@ export async function inregistreazaConversie(
     const ctx: ContextAtribuire | null = parseazaContext(i.ctx);
     const proprii = gazdeProprii(await hostCurent());
     const adresaCurenta = clasifica(ctx?.semnale ?? ({} as Semnale), proprii);
+    // „Sursele donațiilor”: cursul EUR/RON se ia înainte de tranzacție (cerere de rețea) și se reține pe donație, ca valorile vechi să nu se recalculeze niciodată.
+    const cursDonatie = i.tip === "donatie" && i.orgId ? await cursPentruDonatie() : null;
     const executa = async (tx: ContextDb) => {
       const fereastra = i.orgId
         ? await citesteFereastra(tx, i.orgId)
@@ -481,6 +484,16 @@ export async function inregistreazaConversie(
         .insert(atribConversii)
         .values(v as typeof atribConversii.$inferInsert)
         .onConflictDoNothing();
+      // Copia atribuirii pe donație (prima/ultima sursă externă, campania, suma în EUR). Într-un punct de salvare: o eroare aici nu strică conversia sau donația.
+      if (cursDonatie && i.orgId) {
+        try {
+          await tx.transaction(async (sp) => {
+            await salveazaSurseDonatie(sp as unknown as ContextDb, { orgId: i.orgId!, donationId: i.entitateId, ctx: i.ctx, gazdeProprii: proprii, curs: cursDonatie, acum });
+          });
+        } catch (e) {
+          raporteazaEroare("surse-donatii-salvare", e, { orgId: i.orgId });
+        }
+      }
     };
     if (i.dbx) {
       await executa(i.dbx);

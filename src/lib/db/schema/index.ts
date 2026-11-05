@@ -45,3 +45,4 @@ export * from "./ai-org";
 export * from "./agent-email";
 export * from "./influenceri";
 export * from "./analize-ai";
+export * from "./surse-donatii";

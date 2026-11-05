@@ -163,7 +163,7 @@ export async function pregatesteDonatie(
       consimtamantEmail,
       sursaMarketing: curataSursa(formData.get("sursaMarketing")),
       atribuire: String(formData.get("atribuire") ?? "").slice(0, 400) || null,
-      ctxAtribuire: String(formData.get("ctxAtribuire") ?? "").slice(0, 900) || null,
+      ctxAtribuire: String(formData.get("ctxAtribuire") ?? "").slice(0, 3200) || null,
       orgId: rezolvat.orgId,
       pageId: rezolvat.pageId,
       titlu: rezolvat.titlu,

@@ -471,7 +471,7 @@ export function serializeazaContext(c: ContextAtribuire): string {
   return JSON.stringify(o);
 }
 
-export const LUNGIME_MAXIMA_CONTEXT = 900;
+export const LUNGIME_MAXIMA_CONTEXT = 3200; // contextul formularului de donație cuprinde și câmpul „x” (prima/ultima sursă externă, vezi lib/surse-donatii)
 
 // Validare pe server a contextului primit: UUID-uri valide, semnale curățate din nou, nimic în plus.
 export function parseazaContext(brut: unknown): ContextAtribuire | null {
