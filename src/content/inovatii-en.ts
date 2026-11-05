@@ -16,12 +16,6 @@ export const INOVATII_EN: Record<string, InovatieEn> = {
     categorie: "Platform",
     cumFolosesti: "Connect the account, set a spending limit in the Anthropic console and watch in AI usage what each tool costs you.",
   },
-  "2026-11-04-analiza-ong": {
-    titlu: "NGO analysis: find out how another NGO raises money",
-    descriere: "Type an NGO's name and the AI (on your own Anthropic account) searches the internet and writes a report: channels, campaigns, communication, public figures, what we can take over and what not. It runs in the background, with sources listed with links.",
-    categorie: "Fundraising",
-    cumFolosesti: "Pick an NGO that raises money well, read “What we can take over” and try one idea in your next campaign.",
-  },
   "2026-11-04-analiza-reclame": {
     titlu: "Weekly ad analysis, with AI",
     descriere: "Every Monday morning, the AI on your own Anthropic account analyzes the last 7 days of ads: what works, what loses money and at most three concrete suggestions, with new ad text. You can also start it manually, from Ads.",

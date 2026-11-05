@@ -13,7 +13,7 @@ import { raporteazaEroare } from "@/lib/monitoring";
 // NOTĂ: în acest proiect nu există un cache de „rezultate de căutare memorate” — nu are ce să se șteargă din el.
 // Retenție pentru Agentul email: emailurile TRIMISE (agent_email_mesaje.stare = 'trimis') și răspunsurile primite la ele păstrează datele destinatarului
 // 24 de luni de la trimitere; apoi destinatarul, textul și istoricul se anonimizează („[expirat]”), iar rândul rămâne pentru statistici.
-// Analizele ONG (analize_ong) și căutările profunde AI (deep_search_ai) nu fac parte din regula asta. Logica e în lib/gdpr-module-noi.ts (testată pe baza reală).
+// Căutările profunde AI (deep_search_ai) nu fac parte din regula asta. Logica e în lib/gdpr-module-noi.ts (testată pe baza reală).
 // Retenție pentru Influenceri: fișele marcate „Nu mai contactăm” de peste 12 luni se reduc la amprentele de excludere (ca la ștergerea la cerere).
 const ZILE_NEAPROBATE = 60;
 

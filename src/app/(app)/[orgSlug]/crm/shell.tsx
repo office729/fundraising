@@ -16,7 +16,6 @@ import {
   Gauge,
   GraduationCap,
   Coins,
-  SearchCheck,
   HandCoins,
   HandHeart,
   HeartHandshake,
@@ -112,7 +111,6 @@ const MODUL_PE_INTRARE: Record<string, ModulPachet> = {
   "agent-email": "ai-agenti",
   calendar: "calendar",
   reclame: "reclame",
-  "analiza-ong": "ai-agenti",
 };
 
 // Etichetele vin din dicționarul RO/EN (vezi lib/i18n/dictionaries/dashboard.ts)
@@ -176,7 +174,6 @@ export function buildNav(dict: DashboardDict, orgSlug: string, role: string, per
         { href: "consultanta", label: dict.nav.consultanta, hint: dict.hints.consultanta, icon: GraduationCap },
         { href: "inovare", label: dict.nav.inovare, hint: dict.hints.inovare, icon: Lightbulb },
         ...(role === "owner" || role === "admin" ? [{ href: "consum-ai", label: dict.nav.consumAi, hint: dict.hints.consumAi, icon: Coins }] : []),
-        ...(role === "owner" || role === "admin" ? [{ href: "analiza-ong", label: dict.nav.analizaOng, hint: dict.hints.analizaOng, icon: SearchCheck }] : []),
         { href: "feedback", label: dict.nav.feedback, hint: dict.hints.feedback, icon: MessageSquareHeart },
         // Registrul de timp al muncii custom și al suportului: doar dacă echipa platformei l-a activat pentru organizație, și doar pentru owner/admin.
         ...(persEfectiva.arataTimp && (role === "owner" || role === "admin") ? [{ href: "timp-alocat", label: dict.nav.timpAlocat, hint: dict.hints.timpAlocat, icon: Clock }] : []),

@@ -49,16 +49,6 @@ export const INOVATII: Inovatie[] = [
     cumFolosesti: "Conectează contul, pune o limită de cheltuieli în consola Anthropic și urmărește în Consum AI cât te costă fiecare instrument.",
   },
   {
-    id: "2026-11-04-analiza-ong",
-    data: "2026-11-04",
-    titlu: "Analiză ONG-uri: află cum strânge bani alt ONG",
-    descriere: "Scrii numele unui ONG și AI-ul (pe contul tău Anthropic) caută pe internet și scrie un raport: canale, campanii, comunicare, cifre publice, ce putem prelua și ce nu. Rulează în fundal, cu surse listate cu link.",
-    categorie: "Strângere de fonduri",
-    tip: "nou",
-    link: "analiza-ong",
-    cumFolosesti: "Alege un ONG care strânge bine, citește „Ce putem prelua” și încearcă o idee în campania următoare.",
-  },
-  {
     id: "2026-11-04-analiza-reclame",
     data: "2026-11-04",
     titlu: "Analiza săptămânală a reclamelor, cu AI",
