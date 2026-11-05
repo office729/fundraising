@@ -3,6 +3,7 @@ import "server-only";
 import type { Metadata } from "next";
 
 import { getLocale } from "@/lib/i18n/get-locale";
+import { TITLURI_CAUTARE } from "@/lib/seo-titluri";
 
 // Titlurile paginilor publice, în limba aleasă de vizitator. Layout-ul rădăcină
 // (app/layout.tsx) adaugă sufixul „ — Alexandrit". Fără titluri proprii, toate
@@ -242,7 +243,8 @@ const IMAGINE_PREVIZUALIZARE = { url: "/opengraph-image", width: 1200, height: 6
 
 export async function metadatePagina(pagina: PaginaCuTitlu): Promise<Metadata> {
   const locale = await getLocale();
-  const titlu = TITLURI[pagina][locale];
+  // Titlul din rezultatele Google poate fi mai bogat în cuvinte-cheie decât numele scurt din firimituri (lib/seo-titluri.ts).
+  const titlu = (TITLURI_CAUTARE[pagina] ?? TITLURI[pagina])[locale];
   const descriere = DESCRIERI[pagina]?.[locale];
   const cale = CALE_CANONICA[pagina];
   const titluComplet = pagina === "acasa" ? titlu : `${titlu}${SUFIX_TITLU}`;
