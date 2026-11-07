@@ -5,6 +5,11 @@ import type { Inovatie } from "./inovatii";
 export type InovatieEn = { titlu: string; descriere: string; categorie: string; cumFolosesti?: string };
 
 export const INOVATII_EN: Record<string, InovatieEn> = {
+  "2026-11-07-cai-calde-pliate": {
+    titlu: "Warm paths open only when you want them",
+    descriere: "On the company page, the list of warm paths now stays closed and you only see how many there are. You open it with the “Show” button, so the rest of the page is no longer pushed down.",
+    categorie: "Companies and sponsorships",
+  },
   "2026-11-05-surse-donatii": {
     titlu: "Donation sources: where the money you raise comes from",
     descriere: "See, in EUR, how much paid donations bring from Facebook and Google ads, newsletters, search or other websites, with the number of donations, the average donation and the share. Filter by period, source and campaign, and open the list of donations behind each total.",

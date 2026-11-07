@@ -30,6 +30,14 @@ export type Inovatie = {
 
 export const INOVATII: Inovatie[] = [
   {
+    id: "2026-11-07-cai-calde-pliate",
+    data: "2026-11-07",
+    titlu: "Căile calde se deschid doar când vrei",
+    descriere: "Pe fișa firmei, lista căilor calde stă acum închisă și vezi doar câte sunt. O deschizi cu butonul „Arată”, așa că restul fișei nu mai e împins în jos.",
+    categorie: "Companii și sponsorizări",
+    tip: "imbunatatire",
+  },
+  {
     id: "2026-11-05-surse-donatii",
     data: "2026-11-05",
     titlu: "Sursele donațiilor: de unde vin banii strânși",

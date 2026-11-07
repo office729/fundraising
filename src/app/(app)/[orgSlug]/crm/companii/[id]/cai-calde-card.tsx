@@ -1,4 +1,4 @@
-import { Flame, HandCoins, HeartHandshake, Users } from "lucide-react";
+import { ChevronDown, Flame, HandCoins, HeartHandshake, Users } from "lucide-react";
 import Link from "next/link";
 
 import type { CaleCalda, TipCale } from "@/lib/cai-calde";
@@ -38,7 +38,14 @@ export function CaiCaldeCard({ orgSlug, cai, locale }: { orgSlug: string; cai: C
         }
         subtitle={ui.subtitlu(sigure)}
       />
-      <ul className="space-y-2">
+      {/* Lista stă închisă: se deschide doar când vrei s-o vezi (o firmă poate avea zeci de căi și împingeau restul fișei în jos). */}
+      <details className="group">
+        <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-md border border-[var(--ci-border)] px-3 py-1.5 text-[12.5px] font-medium text-[var(--ci-text)] hover:bg-[var(--ci-surface-2)] [&::-webkit-details-marker]:hidden">
+          <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180 motion-reduce:transition-none" aria-hidden />
+          <span className="group-open:hidden">{ui.arata(cai.length)}</span>
+          <span className="hidden group-open:inline">{ui.ascunde}</span>
+        </summary>
+      <ul className="mt-3 space-y-2">
         {cai.map((c, i) => {
           const { icon: Icon } = META[c.tip];
           const eticheta = ui.tip[c.tip];
@@ -84,6 +91,7 @@ export function CaiCaldeCard({ orgSlug, cai, locale }: { orgSlug: string; cai: C
           );
         })}
       </ul>
+      </details>
     </Card>
   );
 }
