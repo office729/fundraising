@@ -54,3 +54,7 @@ sau site-ul gazdă să încarce widgetul cu aceeași adresă etichetată; (3) da
 * Donațiile istorice (dinainte de această funcție) nu au rând; nu se completează retroactiv.
 * Linkurile voluntarilor folosesc `utm_source=voluntari` și nu intră în nicio categorie; pentru „Afiliat” trebuie un `referral_id` în link.
 * „Data plății” din filtre = `fundraising_donations.created_at` (nu există un moment separat de confirmare).
+
+## Linkuri pentru reclame plătite
+
+Generatoarele de linkuri (CRM → Surse, CRM → Reclame, Panou platformă → Surse) au variante **Paid** cu `utm_medium=paid` pentru Facebook, Instagram, TikTok, YouTube, LinkedIn și Google (în plus față de `paid_social` și `cpc`, tot recunoscute). Exemplu: `?utm_source=facebook&utm_medium=paid&utm_campaign=craciun_2026`. TikTok și YouTube nu au categorie proprie în raport: apar la „Alte rețele sociale”, dar sunt marcate ca plătite în Surse și Reclame.

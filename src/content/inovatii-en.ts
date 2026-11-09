@@ -5,6 +5,12 @@ import type { Inovatie } from "./inovatii";
 export type InovatieEn = { titlu: string; descriere: string; categorie: string; cumFolosesti?: string };
 
 export const INOVATII_EN: Record<string, InovatieEn> = {
+  "2026-11-09-linkuri-paid": {
+    titlu: "Links for paid social media ads (Paid)",
+    descriere: "The link generators in Sources and in Ads now have “Paid” variants for Facebook, Instagram, TikTok, YouTube, LinkedIn and Google, with utm_medium=paid. Donations from paid campaigns show up correctly as ads in the source reports, not mixed with organic posts.",
+    categorie: "Reports and statistics",
+    cumFolosesti: "Put the “Paid” link in every paid ad and the organic link in regular posts; then compare in “Donation sources” how much each one brings.",
+  },
   "2026-11-05-surse-donatii": {
     titlu: "Donation sources: where the money you raise comes from",
     descriere: "See, in EUR, how much paid donations bring from Facebook and Google ads, newsletters, search or other websites, with the number of donations, the average donation and the share. Filter by period, source and campaign, and open the list of donations behind each total.",

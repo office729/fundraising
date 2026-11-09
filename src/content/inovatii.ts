@@ -30,6 +30,16 @@ export type Inovatie = {
 
 export const INOVATII: Inovatie[] = [
   {
+    id: "2026-11-09-linkuri-paid",
+    data: "2026-11-09",
+    titlu: "Linkuri pentru reclame plătite (Paid) pe social media",
+    descriere: "Generatoarele de linkuri din Surse și din Reclame au acum variante „Paid” pentru Facebook, Instagram, TikTok, YouTube, LinkedIn și Google, cu utm_medium=paid. Donațiile din campaniile plătite apar corect ca reclame în rapoartele de surse, nu amestecate cu postările organice.",
+    categorie: "Rapoarte și statistici",
+    tip: "imbunatatire",
+    link: "surse",
+    cumFolosesti: "Pune linkul „Paid” în fiecare reclamă plătită și linkul organic în postările obișnuite; apoi compari în „Sursele donațiilor” cât aduce fiecare.",
+  },
+  {
     id: "2026-11-05-surse-donatii",
     data: "2026-11-05",
     titlu: "Sursele donațiilor: de unde vin banii strânși",
