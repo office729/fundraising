@@ -167,6 +167,11 @@
       <option value="raport">Raport de impact partener</option>
       <option value="eveniment">Invitație eveniment</option>
       <option value="bunvenit">Bun venit (partener nou)</option>
+      <option value="design_alx_sponsorizare">✦ Apel de sponsorizare</option>
+      <option value="design_alx_multumire_sponsor">✦ Mulțumire sponsor</option>
+      <option value="design_alx_raport_parteneri">✦ Raport parteneri</option>
+      <option value="design_alx_invitatie_parteneri">✦ Invitație parteneri</option>
+      <option value="design_alx_d177">✦ Direcționare D177</option>
       <option value="design_editorial">✦ Design: Editorial cald</option>
       <option value="design_eveniment_elegant">✦ Design: Eveniment elegant</option>
       <option value="design_foto">✦ Design: Foto-first</option>
@@ -236,7 +241,7 @@
       <label>Text buton</label><input type="text" id="CTA_TEXT" value="Hai să discutăm un parteneriat">
       <label>Link buton</label><input type="text" id="CTA_LINK" value="https://salveazaoinima.ro/directioneaza-20/">
     </div>
-    <div class="tplfields" data-tpl="design_editorial,design_foto,design_bold,design_minimal,design_gazeta,design_warm,design_modular,design_scrisoare,design_manifest,design_chitanta,design_cronologie,design_certificat,design_familie,design_vitalitate,design_comunitate,design_adapost,design_natura,design_avant,design_orizont,design_muzeu,design_impuls,design_hotarare,design_cerc,design_garda,design_semnal,design_laur,design_pagina,design_galerie,design_scut,design_stea,design_blazon,design_refugiu,design_insigna,design_start,design_creion,design_cortina" style="display:none;">
+    <div class="tplfields" data-tpl="design_editorial,design_foto,design_bold,design_minimal,design_gazeta,design_warm,design_modular,design_scrisoare,design_manifest,design_chitanta,design_cronologie,design_certificat,design_familie,design_vitalitate,design_comunitate,design_adapost,design_natura,design_avant,design_orizont,design_muzeu,design_impuls,design_hotarare,design_cerc,design_garda,design_semnal,design_laur,design_pagina,design_galerie,design_scut,design_stea,design_blazon,design_refugiu,design_insigna,design_start,design_creion,design_cortina,design_alx_sponsorizare,design_alx_multumire_sponsor,design_alx_raport_parteneri,design_alx_invitatie_parteneri,design_alx_d177" style="display:none;">
       <h2>Conținut design</h2>
       <div class="hint">Câmpuri pentru șabloanele de <b>design vizual</b>. Eticheta din header, linkul butonului și poza (Foto-first) se iau din câmpurile de mai jos.</div>
       <label>Titlu principal</label>
@@ -257,6 +262,20 @@
       <div class="grid2"><div><label>Cifră 1</label><input type="text" id="D_N1" value="1.600+"></div><div><label>Etichetă 1</label><input type="text" id="D_L1" value="copii sprijiniți"></div></div>
       <div class="grid2"><div><label>Cifră 2</label><input type="text" id="D_N2" value="27 mil €"></div><div><label>Etichetă 2</label><input type="text" id="D_L2" value="mobilizați"></div></div>
       <div class="grid2"><div><label>Cifră 3</label><input type="text" id="D_N3" value="7.200+"></div><div><label>Etichetă 3</label><input type="text" id="D_L3" value="companii partenere"></div></div>
+    </div>
+
+    <div class="tplfields" data-tpl="design_alx_sponsorizare,design_alx_multumire_sponsor,design_alx_raport_parteneri,design_alx_invitatie_parteneri,design_alx_d177" style="display:none;">
+      <h2>Câmpuri suplimentare</h2>
+      <div class="hint">Fiecare șablon folosește doar o parte din aceste câmpuri; cele nefolosite pot rămâne goale.</div>
+      <label>Etichetă scurtă (deasupra titlului)</label>
+      <input type="text" id="D_PILL" value="">
+      <label>Bandă de atenție (termen limită, locuri limitate)</label>
+      <input type="text" id="D_BAND" value="">
+      <label>Datele organizației (Formular 230 / D177)</label>
+      <input type="text" id="D_ONGNUME" value="" placeholder="Denumirea organizației">
+      <div class="grid2"><div><label>CIF</label><input type="text" id="D_CIF" value=""></div><div><label>IBAN</label><input type="text" id="D_IBAN" value=""></div></div>
+      <label>Cât din buget e acoperit (0–100)</label>
+      <input type="text" id="D_PCT" value="55">
     </div>
 
     <h2>Campania D177</h2>
@@ -2158,6 +2177,89 @@
 </table>
 </td></tr></table>
 </body></html></script>
+<script type="text/plain" id="tpl_alx_sponsorizare"><!DOCTYPE html>
+<html lang="ro"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{D_HEADLINE}}</title>
+<!--[if mso]><style>.container{width:600px;}</style><![endif]-->
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&family=Sora:wght@700&display=swap" rel="stylesheet">
+<style>@media only screen and (max-width:600px){.container{width:100%!important}.mh1{font-size:26px!important}.mpad{padding-left:22px!important;padding-right:22px!important}.mcol{display:block!important;width:100%!important;box-sizing:border-box;padding-left:0!important;padding-right:0!important}.mstack{padding-bottom:10px!important}}</style></head>
+<body style="margin:0;padding:0;background-color:#EEF1F5;-webkit-text-size-adjust:100%;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#EEF1F5;">{{PREHEADER}}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#EEF1F5" style="font-family:Manrope,Arial,Helvetica,sans-serif;"><tr><td align="center" style="padding:26px 12px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" class="container" style="width:600px;max-width:600px;background-color:#ffffff;">
+<tr><td bgcolor="#ffffff" class="mpad" style="padding:22px 32px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td valign="middle"><!--LOGO_START--><img src="{{LOGO_IMG}}" alt="" style="display:block;max-height:34px;max-width:170px;width:auto;height:auto;"><!--LOGO_END--><!--LOGOTXT_START--><span style="font-family:Sora,Arial,Helvetica,sans-serif;font-weight:700;font-size:16px;color:{{BR_DARK}};">Asociația salvează o inimă</span><!--LOGOTXT_END--></td><td align="right" valign="middle"><span style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:12px;font-weight:800;color:{{BR_PRIMARY}};">Parteneri</span></td></tr></table></td></tr>
+<tr><td style="padding:0;line-height:0;font-size:0;"><img src="{{HERO}}" width="600" alt="" style="display:block;width:100%;max-width:600px;height:auto;"></td></tr>
+<tr><td class="mpad" style="padding:32px 32px 40px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="#FBF1DE" style="border-radius:20px;padding:6px 12px;font-family:Manrope,Arial,Helvetica,sans-serif;font-size:11px;font-weight:800;color:#8A5A12;">{{D_PILL}}</td></tr></table><div style="height:16px;line-height:16px;font-size:0;">&nbsp;</div><h1 class="mh1" style="margin:0;font-family:Sora,Arial,Helvetica,sans-serif;font-weight:700;font-size:30px;line-height:1.2;color:{{BR_DARK}};text-align:left;">{{D_HEADLINE}}</h1><div style="height:16px;line-height:16px;font-size:0;">&nbsp;</div><p style="margin:0;font-family:Manrope,Arial,Helvetica,sans-serif;font-size:16px;line-height:1.55;color:#374151;">{{D_LEAD}}</p><div style="height:16px;line-height:16px;font-size:0;">&nbsp;</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F7F8FA" style="border-radius:16px;"><tr><td style="padding:22px 24px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td valign="bottom"><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:12px;font-weight:600;color:#4A5A6E;">Buget proiect</div><div style="font-family:Sora,Arial,Helvetica,sans-serif;font-weight:700;font-size:26px;color:{{BR_DARK}};">{{D_STATBIG}}</div></td><td align="right" valign="bottom" style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:13px;font-weight:800;color:{{BR_PRIMARY}};">{{PCT_TXT}} acoperit</td></tr></table><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:12px;"><tr><td width="{{BAR_PCT}}%" height="12" bgcolor="{{BR_PRIMARY}}" style="width:{{BAR_PCT}}%;height:12px;font-size:0;line-height:0;border-radius:6px 0 0 6px;">&nbsp;</td><td width="{{BAR_REST}}%" height="12" bgcolor="#E6E9EE" style="width:{{BAR_REST}}%;height:12px;font-size:0;line-height:0;border-radius:0 6px 6px 0;">&nbsp;</td></tr></table><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:12px;color:#4A5A6E;margin-top:10px;">{{D_STATLABEL}}</div></td></tr></table><div style="height:16px;line-height:16px;font-size:0;">&nbsp;</div><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:{{BR_PRIMARY}};">Ce primește compania dumneavoastră</div><div style="height:16px;line-height:16px;font-size:0;">&nbsp;</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td height="10" style="height:10px;font-size:0;line-height:0;">&nbsp;</td></tr><tr><td><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F7F8FA" style="border-radius:14px;"><tr><td style="padding:14px 16px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td class="mcol" width="112" valign="top" style="width:112px;font-family:Sora,Arial,Helvetica,sans-serif;font-weight:700;font-size:15px;color:{{BR_DARK}};">{{D_N1}}</td><td class="mcol" valign="top" style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:14px;line-height:1.45;color:#374151;">{{D_L1}}</td></tr></table></td></tr></table></td></tr><tr><td height="10" style="height:10px;font-size:0;line-height:0;">&nbsp;</td></tr><tr><td><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F7F8FA" style="border-radius:14px;"><tr><td style="padding:14px 16px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td class="mcol" width="112" valign="top" style="width:112px;font-family:Sora,Arial,Helvetica,sans-serif;font-weight:700;font-size:15px;color:{{BR_DARK}};">{{D_N2}}</td><td class="mcol" valign="top" style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:14px;line-height:1.45;color:#374151;">{{D_L2}}</td></tr></table></td></tr></table></td></tr><tr><td height="10" style="height:10px;font-size:0;line-height:0;">&nbsp;</td></tr><tr><td><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F7F8FA" style="border-radius:14px;"><tr><td style="padding:14px 16px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td class="mcol" width="112" valign="top" style="width:112px;font-family:Sora,Arial,Helvetica,sans-serif;font-weight:700;font-size:15px;color:{{BR_DARK}};">{{D_N3}}</td><td class="mcol" valign="top" style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:14px;line-height:1.45;color:#374151;">{{D_L3}}</td></tr></table></td></tr></table></td></tr></table><div style="height:16px;line-height:16px;font-size:0;">&nbsp;</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" bgcolor="{{BR_PRIMARY}}" style="border-radius:12px;"><a href="{{LINK}}" target="_blank" style="display:block;padding:16px 28px;font-family:Manrope,Arial,Helvetica,sans-serif;font-size:16px;font-weight:800;color:#ffffff;text-decoration:none;">{{D_CTA}}&nbsp;&nbsp;&rarr;</a></td></tr></table></td></tr>
+<tr><td bgcolor="{{BR_DARK}}" class="mpad" style="padding:32px 28px 28px;"><div style="font-family:Sora,Arial,Helvetica,sans-serif;font-weight:700;font-size:17px;color:#ffffff;">Asociația salvează o inimă</div><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:#D5DDEA;margin-top:10px;">Primiți acest mesaj pentru că compania dumneavoastră este partener sau contact al organizației noastre.</div><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:11px;line-height:1.5;color:#B8C3D6;margin-top:10px;"><a href="##NEWSMAN:list_unsubscribe##" style="color:#B8C3D6;text-decoration:underline;">Dezabonare</a> &middot; <a href="##NEWSMAN:view_online##" style="color:#B8C3D6;text-decoration:underline;">Vezi în browser</a></div><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:11px;font-weight:600;color:#B8C3D6;margin-top:10px;">Trimis cu Alexandrit</div></td></tr>
+</table>
+</td></tr></table>
+</body></html></script>
+<script type="text/plain" id="tpl_alx_multumire_sponsor"><!DOCTYPE html>
+<html lang="ro"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{D_HEADLINE}}</title>
+<!--[if mso]><style>.container{width:600px;}</style><![endif]-->
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&family=Sora:wght@700&display=swap" rel="stylesheet">
+<style>@media only screen and (max-width:600px){.container{width:100%!important}.mh1{font-size:26px!important}.mpad{padding-left:22px!important;padding-right:22px!important}.mcol{display:block!important;width:100%!important;box-sizing:border-box;padding-left:0!important;padding-right:0!important}.mstack{padding-bottom:10px!important}}</style></head>
+<body style="margin:0;padding:0;background-color:#EEF1F5;-webkit-text-size-adjust:100%;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#EEF1F5;">{{PREHEADER}}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#EEF1F5" style="font-family:Manrope,Arial,Helvetica,sans-serif;"><tr><td align="center" style="padding:26px 12px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" class="container" style="width:600px;max-width:600px;background-color:#ffffff;">
+<tr><td bgcolor="#ffffff" class="mpad" style="padding:22px 32px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td valign="middle"><!--LOGO_START--><img src="{{LOGO_IMG}}" alt="" style="display:block;max-height:34px;max-width:170px;width:auto;height:auto;"><!--LOGO_END--><!--LOGOTXT_START--><span style="font-family:Sora,Arial,Helvetica,sans-serif;font-weight:700;font-size:16px;color:{{BR_DARK}};">Asociația salvează o inimă</span><!--LOGOTXT_END--></td><td align="right" valign="middle"><span style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:12px;font-weight:800;color:{{BR_PRIMARY}};">Mulțumire</span></td></tr></table></td></tr>
+<tr><td bgcolor="{{BR_LIGHT}}" class="mpad" align="center" style="padding:40px 32px;"><table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0"><tr><td width="64" height="64" align="center" valign="middle" bgcolor="{{BR_PRIMARY}}" style="width:64px;height:64px;border-radius:32px;font-family:Arial,sans-serif;font-size:28px;color:#ffffff;">&#10084;</td></tr></table><div style="height:16px;line-height:16px;font-size:0;">&nbsp;</div><h1 class="mh1" style="margin:0;font-family:Sora,Arial,Helvetica,sans-serif;font-weight:700;font-size:30px;line-height:1.2;color:{{BR_DARK}};text-align:center;">{{D_HEADLINE}}</h1><div style="height:12px;line-height:12px;font-size:0;">&nbsp;</div><p style="margin:0;font-family:Manrope,Arial,Helvetica,sans-serif;font-size:16px;line-height:1.5;color:#374151;text-align:center;">{{D_LEAD}}</p></td></tr>
+<tr><td class="mpad" style="padding:32px 32px 40px;"><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:{{BR_PRIMARY}};">Detalii sponsorizare</div><div style="height:16px;line-height:16px;font-size:0;">&nbsp;</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F7F8FA" style="border-radius:16px;"><tr><td style="padding:6px 24px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding:11px 0;border-bottom:1px solid #E6E9EE;font-family:Manrope,Arial,Helvetica,sans-serif;font-size:13px;color:#4A5A6E;" valign="top">{{D_STATLABEL}}</td><td align="right" style="padding:11px 0 11px 16px;border-bottom:1px solid #E6E9EE;font-family:Manrope,Arial,Helvetica,sans-serif;font-size:14px;font-weight:600;color:{{BR_DARK}};" valign="top">{{D_STATBIG}}</td></tr><tr><td style="padding:11px 0;border-bottom:1px solid #E6E9EE;font-family:Manrope,Arial,Helvetica,sans-serif;font-size:13px;color:#4A5A6E;" valign="top">{{D_L1}}</td><td align="right" style="padding:11px 0 11px 16px;border-bottom:1px solid #E6E9EE;font-family:Manrope,Arial,Helvetica,sans-serif;font-size:14px;font-weight:600;color:{{BR_DARK}};" valign="top">{{D_N1}}</td></tr><tr><td style="padding:11px 0;border-bottom:1px solid #E6E9EE;font-family:Manrope,Arial,Helvetica,sans-serif;font-size:13px;color:#4A5A6E;" valign="top">{{D_L2}}</td><td align="right" style="padding:11px 0 11px 16px;border-bottom:1px solid #E6E9EE;font-family:Manrope,Arial,Helvetica,sans-serif;font-size:14px;font-weight:600;color:{{BR_DARK}};" valign="top">{{D_N2}}</td></tr><tr><td style="padding:11px 0;font-family:Manrope,Arial,Helvetica,sans-serif;font-size:13px;color:#4A5A6E;" valign="top">{{D_L3}}</td><td align="right" style="padding:11px 0 11px 16px;font-family:Manrope,Arial,Helvetica,sans-serif;font-size:14px;font-weight:600;color:{{BR_DARK}};" valign="top">{{D_N3}}</td></tr></table></td></tr></table><div style="height:16px;line-height:16px;font-size:0;">&nbsp;</div><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:{{BR_PRIMARY}};">Ce urmează</div><div style="height:16px;line-height:16px;font-size:0;">&nbsp;</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F7F8FA" style="border-radius:14px;"><tr><td style="padding:14px 16px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td width="32" valign="top" style="width:32px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td width="32" height="32" align="center" valign="middle" bgcolor="{{BR_LIGHT}}" style="width:32px;height:32px;border-radius:16px;font-family:Sora,Arial,Helvetica,sans-serif;font-weight:700;font-size:14px;color:{{BR_DARK}};">1</td></tr></table></td><td width="14" style="width:14px;font-size:0;line-height:0;">&nbsp;</td><td valign="top"><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:14px;font-weight:800;color:{{BR_DARK}};">Suma a ajuns la noi</div><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:13px;line-height:1.45;color:#374151;margin-top:2px;">Sprijinul dumneavoastră a fost înregistrat în contul organizației.</div></td></tr></table></td></tr></table><div style="height:16px;line-height:16px;font-size:0;">&nbsp;</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F7F8FA" style="border-radius:14px;"><tr><td style="padding:14px 16px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td width="32" valign="top" style="width:32px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td width="32" height="32" align="center" valign="middle" bgcolor="{{BR_LIGHT}}" style="width:32px;height:32px;border-radius:16px;font-family:Sora,Arial,Helvetica,sans-serif;font-weight:700;font-size:14px;color:{{BR_DARK}};">2</td></tr></table></td><td width="14" style="width:14px;font-size:0;line-height:0;">&nbsp;</td><td valign="top"><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:14px;font-weight:800;color:{{BR_DARK}};">Banii merg în proiect</div><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:13px;line-height:1.45;color:#374151;margin-top:2px;">Suma este folosită exact pentru proiectul finanțat.</div></td></tr></table></td></tr></table><div style="height:16px;line-height:16px;font-size:0;">&nbsp;</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F7F8FA" style="border-radius:14px;"><tr><td style="padding:14px 16px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td width="32" valign="top" style="width:32px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td width="32" height="32" align="center" valign="middle" bgcolor="{{BR_LIGHT}}" style="width:32px;height:32px;border-radius:16px;font-family:Sora,Arial,Helvetica,sans-serif;font-weight:700;font-size:14px;color:{{BR_DARK}};">3</td></tr></table></td><td width="14" style="width:14px;font-size:0;line-height:0;">&nbsp;</td><td valign="top"><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:14px;font-weight:800;color:{{BR_DARK}};">Veți primi raportul</div><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:13px;line-height:1.45;color:#374151;margin-top:2px;">Vă vom trimite rezultatele proiectului, ca să vedeți ce s-a realizat.</div></td></tr></table></td></tr></table><div style="height:16px;line-height:16px;font-size:0;">&nbsp;</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F7F8FA" style="border-radius:14px;"><tr><td style="padding:20px 22px;"><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:16px;font-weight:600;line-height:1.5;color:{{BR_DARK}};">&#8222;{{D_QUOTE}}&#8221;</div><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:12px;color:#4A5A6E;margin-top:8px;">&mdash; {{D_QAUTHOR}}</div></td></tr></table><div style="height:16px;line-height:16px;font-size:0;">&nbsp;</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" bgcolor="#ffffff" style="border:2px solid {{BR_PRIMARY}};border-radius:12px;"><a href="{{LINK}}" target="_blank" style="display:block;padding:14px 28px;font-family:Manrope,Arial,Helvetica,sans-serif;font-size:16px;font-weight:800;color:{{BR_PRIMARY}};text-decoration:none;">{{D_CTA}}&nbsp;&nbsp;&rarr;</a></td></tr></table></td></tr>
+<tr><td bgcolor="{{BR_DARK}}" class="mpad" style="padding:32px 28px 28px;"><div style="font-family:Sora,Arial,Helvetica,sans-serif;font-weight:700;font-size:17px;color:#ffffff;">Asociația salvează o inimă</div><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:#D5DDEA;margin-top:10px;">Primiți acest mesaj pentru că compania dumneavoastră este partener sau contact al organizației noastre.</div><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:11px;line-height:1.5;color:#B8C3D6;margin-top:10px;"><a href="##NEWSMAN:list_unsubscribe##" style="color:#B8C3D6;text-decoration:underline;">Dezabonare</a> &middot; <a href="##NEWSMAN:view_online##" style="color:#B8C3D6;text-decoration:underline;">Vezi în browser</a></div><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:11px;font-weight:600;color:#B8C3D6;margin-top:10px;">Trimis cu Alexandrit</div></td></tr>
+</table>
+</td></tr></table>
+</body></html></script>
+<script type="text/plain" id="tpl_alx_raport_parteneri"><!DOCTYPE html>
+<html lang="ro"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{D_HEADLINE}}</title>
+<!--[if mso]><style>.container{width:600px;}</style><![endif]-->
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&family=Sora:wght@700&display=swap" rel="stylesheet">
+<style>@media only screen and (max-width:600px){.container{width:100%!important}.mh1{font-size:26px!important}.mpad{padding-left:22px!important;padding-right:22px!important}.mcol{display:block!important;width:100%!important;box-sizing:border-box;padding-left:0!important;padding-right:0!important}.mstack{padding-bottom:10px!important}}</style></head>
+<body style="margin:0;padding:0;background-color:#EEF1F5;-webkit-text-size-adjust:100%;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#EEF1F5;">{{PREHEADER}}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#EEF1F5" style="font-family:Manrope,Arial,Helvetica,sans-serif;"><tr><td align="center" style="padding:26px 12px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" class="container" style="width:600px;max-width:600px;background-color:#ffffff;">
+<tr><td bgcolor="#ffffff" class="mpad" style="padding:22px 32px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td valign="middle"><!--LOGO_START--><img src="{{LOGO_IMG}}" alt="" style="display:block;max-height:34px;max-width:170px;width:auto;height:auto;"><!--LOGO_END--><!--LOGOTXT_START--><span style="font-family:Sora,Arial,Helvetica,sans-serif;font-weight:700;font-size:16px;color:{{BR_DARK}};">Asociația salvează o inimă</span><!--LOGOTXT_END--></td><td align="right" valign="middle"><span style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:12px;font-weight:800;color:{{BR_PRIMARY}};">Raport parteneri</span></td></tr></table></td></tr>
+<tr><td bgcolor="{{BR_DARK}}" class="mpad" style="padding:40px 32px;"><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:{{BR_LIGHT}};">{{D_PILL}}</div><div style="height:10px;line-height:10px;font-size:0;">&nbsp;</div><h1 class="mh1" style="margin:0;font-family:Sora,Arial,Helvetica,sans-serif;font-weight:700;font-size:30px;line-height:1.2;color:#ffffff;text-align:left;">{{D_HEADLINE}}</h1><div style="height:12px;line-height:12px;font-size:0;">&nbsp;</div><p style="margin:0;font-family:Manrope,Arial,Helvetica,sans-serif;font-size:16px;line-height:1.5;color:#E3E9F3;text-align:left;">{{D_LEAD}}</p></td></tr>
+<tr><td class="mpad" style="padding:32px 32px 40px;"><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:{{BR_PRIMARY}};">Anul în cifre</div><div style="height:16px;line-height:16px;font-size:0;">&nbsp;</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td class="mcol mstack" width="50%" valign="top" style="width:50%;padding-right:6px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F7F8FA" style="border-radius:16px;"><tr><td style="padding:20px;"><div style="font-family:Sora,Arial,Helvetica,sans-serif;font-weight:700;font-size:26px;line-height:1.15;color:{{BR_PRIMARY}};">{{D_STATBIG}}</div><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:13px;line-height:1.4;color:#4A5A6E;margin-top:4px;">{{D_STATLABEL}}</div></td></tr></table></td><td class="mcol" width="50%" valign="top" style="width:50%;padding-left:6px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F7F8FA" style="border-radius:16px;"><tr><td style="padding:20px;"><div style="font-family:Sora,Arial,Helvetica,sans-serif;font-weight:700;font-size:26px;line-height:1.15;color:{{BR_PRIMARY}};">{{D_N1}}</div><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:13px;line-height:1.4;color:#4A5A6E;margin-top:4px;">{{D_L1}}</div></td></tr></table></td></tr></table><div style="height:12px;line-height:12px;font-size:0;">&nbsp;</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td class="mcol mstack" width="50%" valign="top" style="width:50%;padding-right:6px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F7F8FA" style="border-radius:16px;"><tr><td style="padding:20px;"><div style="font-family:Sora,Arial,Helvetica,sans-serif;font-weight:700;font-size:26px;line-height:1.15;color:{{BR_PRIMARY}};">{{D_N2}}</div><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:13px;line-height:1.4;color:#4A5A6E;margin-top:4px;">{{D_L2}}</div></td></tr></table></td><td class="mcol" width="50%" valign="top" style="width:50%;padding-left:6px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F7F8FA" style="border-radius:16px;"><tr><td style="padding:20px;"><div style="font-family:Sora,Arial,Helvetica,sans-serif;font-weight:700;font-size:26px;line-height:1.15;color:{{BR_PRIMARY}};">{{D_N3}}</div><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:13px;line-height:1.4;color:#4A5A6E;margin-top:4px;">{{D_L3}}</div></td></tr></table></td></tr></table><div style="height:16px;line-height:16px;font-size:0;">&nbsp;</div><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:{{BR_PRIMARY}};">Un gând despre parteneriat</div><div style="height:16px;line-height:16px;font-size:0;">&nbsp;</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F7F8FA" style="border-radius:14px;"><tr><td style="padding:20px 22px;"><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:16px;font-weight:600;line-height:1.5;color:{{BR_DARK}};">&#8222;{{D_QUOTE}}&#8221;</div><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:12px;color:#4A5A6E;margin-top:8px;">&mdash; {{D_QAUTHOR}}</div></td></tr></table><div style="height:16px;line-height:16px;font-size:0;">&nbsp;</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" bgcolor="{{BR_PRIMARY}}" style="border-radius:12px;"><a href="{{LINK}}" target="_blank" style="display:block;padding:16px 28px;font-family:Manrope,Arial,Helvetica,sans-serif;font-size:16px;font-weight:800;color:#ffffff;text-decoration:none;">{{D_CTA}}&nbsp;&nbsp;&rarr;</a></td></tr></table></td></tr>
+<tr><td bgcolor="{{BR_DARK}}" class="mpad" style="padding:32px 28px 28px;"><div style="font-family:Sora,Arial,Helvetica,sans-serif;font-weight:700;font-size:17px;color:#ffffff;">Asociația salvează o inimă</div><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:#D5DDEA;margin-top:10px;">Primiți acest mesaj pentru că compania dumneavoastră este partener sau contact al organizației noastre.</div><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:11px;line-height:1.5;color:#B8C3D6;margin-top:10px;"><a href="##NEWSMAN:list_unsubscribe##" style="color:#B8C3D6;text-decoration:underline;">Dezabonare</a> &middot; <a href="##NEWSMAN:view_online##" style="color:#B8C3D6;text-decoration:underline;">Vezi în browser</a></div><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:11px;font-weight:600;color:#B8C3D6;margin-top:10px;">Trimis cu Alexandrit</div></td></tr>
+</table>
+</td></tr></table>
+</body></html></script>
+<script type="text/plain" id="tpl_alx_invitatie_parteneri"><!DOCTYPE html>
+<html lang="ro"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{D_HEADLINE}}</title>
+<!--[if mso]><style>.container{width:600px;}</style><![endif]-->
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&family=Sora:wght@700&display=swap" rel="stylesheet">
+<style>@media only screen and (max-width:600px){.container{width:100%!important}.mh1{font-size:26px!important}.mpad{padding-left:22px!important;padding-right:22px!important}.mcol{display:block!important;width:100%!important;box-sizing:border-box;padding-left:0!important;padding-right:0!important}.mstack{padding-bottom:10px!important}}</style></head>
+<body style="margin:0;padding:0;background-color:#EEF1F5;-webkit-text-size-adjust:100%;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#EEF1F5;">{{PREHEADER}}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#EEF1F5" style="font-family:Manrope,Arial,Helvetica,sans-serif;"><tr><td align="center" style="padding:26px 12px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" class="container" style="width:600px;max-width:600px;background-color:#ffffff;">
+<tr><td bgcolor="#ffffff" class="mpad" style="padding:22px 32px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td valign="middle"><!--LOGO_START--><img src="{{LOGO_IMG}}" alt="" style="display:block;max-height:34px;max-width:170px;width:auto;height:auto;"><!--LOGO_END--><!--LOGOTXT_START--><span style="font-family:Sora,Arial,Helvetica,sans-serif;font-weight:700;font-size:16px;color:{{BR_DARK}};">Asociația salvează o inimă</span><!--LOGOTXT_END--></td><td align="right" valign="middle"><span style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:12px;font-weight:800;color:{{BR_PRIMARY}};">Invitație</span></td></tr></table></td></tr>
+<tr><td bgcolor="{{BR_PRIMARY}}" class="mpad" style="padding:40px 32px;"><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#ffffff;">{{D_PILL}}</div><div style="height:10px;line-height:10px;font-size:0;">&nbsp;</div><h1 class="mh1" style="margin:0;font-family:Sora,Arial,Helvetica,sans-serif;font-weight:700;font-size:30px;line-height:1.2;color:#ffffff;text-align:left;">{{D_HEADLINE}}</h1><div style="height:12px;line-height:12px;font-size:0;">&nbsp;</div><p style="margin:0;font-family:Manrope,Arial,Helvetica,sans-serif;font-size:16px;line-height:1.5;color:#ffffff;text-align:left;">{{D_LEAD}}</p></td></tr>
+<tr><td class="mpad" style="padding:32px 32px 16px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td class="mcol mstack" width="33%" valign="top" style="width:33%;padding-right:5px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F7F8FA" style="border-radius:14px;"><tr><td style="padding:16px 14px;"><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:{{BR_PRIMARY}};">{{D_L1}}</div><div style="font-family:Sora,Arial,Helvetica,sans-serif;font-weight:700;font-size:15px;line-height:1.3;color:{{BR_DARK}};margin-top:4px;">{{D_N1}}</div></td></tr></table></td><td class="mcol mstack" width="33%" valign="top" style="width:33%;padding-left:5px;padding-right:5px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F7F8FA" style="border-radius:14px;"><tr><td style="padding:16px 14px;"><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:{{BR_PRIMARY}};">{{D_L2}}</div><div style="font-family:Sora,Arial,Helvetica,sans-serif;font-weight:700;font-size:15px;line-height:1.3;color:{{BR_DARK}};margin-top:4px;">{{D_N2}}</div></td></tr></table></td><td class="mcol" width="33%" valign="top" style="width:33%;padding-left:5px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F7F8FA" style="border-radius:14px;"><tr><td style="padding:16px 14px;"><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:{{BR_PRIMARY}};">{{D_L3}}</div><div style="font-family:Sora,Arial,Helvetica,sans-serif;font-weight:700;font-size:15px;line-height:1.3;color:{{BR_DARK}};margin-top:4px;">{{D_N3}}</div></td></tr></table></td></tr></table><div style="height:16px;line-height:16px;font-size:0;">&nbsp;</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="{{BR_LIGHT}}" style="border-radius:14px;"><tr><td style="padding:18px 22px;"><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:{{BR_PRIMARY}};">Invitat special</div><div style="font-family:Sora,Arial,Helvetica,sans-serif;font-weight:700;font-size:18px;color:{{BR_DARK}};margin-top:6px;">{{D_STATBIG}}</div><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:13px;color:#4A5A6E;margin-top:2px;">{{D_STATLABEL}}</div></td></tr></table></td></tr>
+<tr><td bgcolor="#FBF1DE" class="mpad" style="padding:14px 32px;font-family:Manrope,Arial,Helvetica,sans-serif;font-size:13px;font-weight:800;line-height:1.45;color:#8A5A12;">{{D_BAND}}</td></tr>
+<tr><td class="mpad" style="padding:24px 32px 40px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" bgcolor="{{BR_PRIMARY}}" style="border-radius:12px;"><a href="{{LINK}}" target="_blank" style="display:block;padding:16px 28px;font-family:Manrope,Arial,Helvetica,sans-serif;font-size:16px;font-weight:800;color:#ffffff;text-decoration:none;">{{D_CTA}}&nbsp;&nbsp;&rarr;</a></td></tr></table></td></tr>
+<tr><td bgcolor="{{BR_DARK}}" class="mpad" style="padding:32px 28px 28px;"><div style="font-family:Sora,Arial,Helvetica,sans-serif;font-weight:700;font-size:17px;color:#ffffff;">Asociația salvează o inimă</div><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:#D5DDEA;margin-top:10px;">Primiți acest mesaj pentru că compania dumneavoastră este partener sau contact al organizației noastre.</div><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:11px;line-height:1.5;color:#B8C3D6;margin-top:10px;"><a href="##NEWSMAN:list_unsubscribe##" style="color:#B8C3D6;text-decoration:underline;">Dezabonare</a> &middot; <a href="##NEWSMAN:view_online##" style="color:#B8C3D6;text-decoration:underline;">Vezi în browser</a></div><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:11px;font-weight:600;color:#B8C3D6;margin-top:10px;">Trimis cu Alexandrit</div></td></tr>
+</table>
+</td></tr></table>
+</body></html></script>
+<script type="text/plain" id="tpl_alx_d177"><!DOCTYPE html>
+<html lang="ro"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{D_HEADLINE}}</title>
+<!--[if mso]><style>.container{width:600px;}</style><![endif]-->
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&family=Sora:wght@700&display=swap" rel="stylesheet">
+<style>@media only screen and (max-width:600px){.container{width:100%!important}.mh1{font-size:26px!important}.mpad{padding-left:22px!important;padding-right:22px!important}.mcol{display:block!important;width:100%!important;box-sizing:border-box;padding-left:0!important;padding-right:0!important}.mstack{padding-bottom:10px!important}}</style></head>
+<body style="margin:0;padding:0;background-color:#EEF1F5;-webkit-text-size-adjust:100%;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#EEF1F5;">{{PREHEADER}}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#EEF1F5" style="font-family:Manrope,Arial,Helvetica,sans-serif;"><tr><td align="center" style="padding:26px 12px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" class="container" style="width:600px;max-width:600px;background-color:#ffffff;">
+<tr><td bgcolor="#ffffff" class="mpad" style="padding:22px 32px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td valign="middle"><!--LOGO_START--><img src="{{LOGO_IMG}}" alt="" style="display:block;max-height:34px;max-width:170px;width:auto;height:auto;"><!--LOGO_END--><!--LOGOTXT_START--><span style="font-family:Sora,Arial,Helvetica,sans-serif;font-weight:700;font-size:16px;color:{{BR_DARK}};">Asociația salvează o inimă</span><!--LOGOTXT_END--></td><td align="right" valign="middle"><span style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:12px;font-weight:800;color:{{BR_PRIMARY}};">Pentru companii</span></td></tr></table></td></tr>
+<tr><td bgcolor="{{BR_LIGHT}}" class="mpad" style="padding:40px 32px;"><h1 class="mh1" style="margin:0;font-family:Sora,Arial,Helvetica,sans-serif;font-weight:700;font-size:30px;line-height:1.2;color:{{BR_DARK}};text-align:left;">{{D_HEADLINE}}</h1><div style="height:12px;line-height:12px;font-size:0;">&nbsp;</div><p style="margin:0;font-family:Manrope,Arial,Helvetica,sans-serif;font-size:16px;line-height:1.55;color:#374151;">{{D_LEAD}}</p></td></tr>
+<tr><td bgcolor="#FBF1DE" class="mpad" style="padding:14px 32px;font-family:Manrope,Arial,Helvetica,sans-serif;font-size:13px;font-weight:800;line-height:1.45;color:#8A5A12;">{{D_BAND}}</td></tr>
+<tr><td class="mpad" style="padding:32px 32px 40px;"><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:{{BR_PRIMARY}};">Cum procedați</div><div style="height:16px;line-height:16px;font-size:0;">&nbsp;</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F7F8FA" style="border-radius:14px;"><tr><td style="padding:14px 16px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td width="32" valign="top" style="width:32px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td width="32" height="32" align="center" valign="middle" bgcolor="{{BR_LIGHT}}" style="width:32px;height:32px;border-radius:16px;font-family:Sora,Arial,Helvetica,sans-serif;font-weight:700;font-size:14px;color:{{BR_DARK}};">1</td></tr></table></td><td width="14" style="width:14px;font-size:0;line-height:0;">&nbsp;</td><td valign="top"><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:14px;font-weight:800;color:{{BR_DARK}};">{{D_N1}}</div><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:13px;line-height:1.45;color:#374151;margin-top:2px;">{{D_L1}}</div></td></tr></table></td></tr></table><div style="height:16px;line-height:16px;font-size:0;">&nbsp;</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F7F8FA" style="border-radius:14px;"><tr><td style="padding:14px 16px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td width="32" valign="top" style="width:32px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td width="32" height="32" align="center" valign="middle" bgcolor="{{BR_LIGHT}}" style="width:32px;height:32px;border-radius:16px;font-family:Sora,Arial,Helvetica,sans-serif;font-weight:700;font-size:14px;color:{{BR_DARK}};">2</td></tr></table></td><td width="14" style="width:14px;font-size:0;line-height:0;">&nbsp;</td><td valign="top"><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:14px;font-weight:800;color:{{BR_DARK}};">{{D_N2}}</div><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:13px;line-height:1.45;color:#374151;margin-top:2px;">{{D_L2}}</div></td></tr></table></td></tr></table><div style="height:16px;line-height:16px;font-size:0;">&nbsp;</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F7F8FA" style="border-radius:14px;"><tr><td style="padding:14px 16px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td width="32" valign="top" style="width:32px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td width="32" height="32" align="center" valign="middle" bgcolor="{{BR_LIGHT}}" style="width:32px;height:32px;border-radius:16px;font-family:Sora,Arial,Helvetica,sans-serif;font-weight:700;font-size:14px;color:{{BR_DARK}};">3</td></tr></table></td><td width="14" style="width:14px;font-size:0;line-height:0;">&nbsp;</td><td valign="top"><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:14px;font-weight:800;color:{{BR_DARK}};">{{D_N3}}</div><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:13px;line-height:1.45;color:#374151;margin-top:2px;">{{D_L3}}</div></td></tr></table></td></tr></table><div style="height:16px;line-height:16px;font-size:0;">&nbsp;</div><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:{{BR_PRIMARY}};">Datele organizației</div><div style="height:16px;line-height:16px;font-size:0;">&nbsp;</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F7F8FA" style="border-radius:16px;"><tr><td style="padding:6px 24px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding:11px 0;border-bottom:1px solid #E6E9EE;font-family:Manrope,Arial,Helvetica,sans-serif;font-size:13px;color:#4A5A6E;" valign="top">Denumire</td><td align="right" style="padding:11px 0 11px 16px;border-bottom:1px solid #E6E9EE;font-family:Manrope,Arial,Helvetica,sans-serif;font-size:14px;font-weight:600;color:{{BR_DARK}};" valign="top">{{D_ONGNUME}}</td></tr><tr><td style="padding:11px 0;border-bottom:1px solid #E6E9EE;font-family:Manrope,Arial,Helvetica,sans-serif;font-size:13px;color:#4A5A6E;" valign="top">CIF</td><td align="right" style="padding:11px 0 11px 16px;border-bottom:1px solid #E6E9EE;font-family:Manrope,Arial,Helvetica,sans-serif;font-size:14px;font-weight:600;color:{{BR_DARK}};" valign="top">{{D_CIF}}</td></tr><tr><td style="padding:11px 0;font-family:Manrope,Arial,Helvetica,sans-serif;font-size:13px;color:#4A5A6E;" valign="top">IBAN</td><td align="right" style="padding:11px 0 11px 16px;font-family:Manrope,Arial,Helvetica,sans-serif;font-size:14px;font-weight:600;color:{{BR_DARK}};" valign="top">{{D_IBAN}}</td></tr></table></td></tr></table><div style="height:16px;line-height:16px;font-size:0;">&nbsp;</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" bgcolor="{{BR_PRIMARY}}" style="border-radius:12px;"><a href="{{LINK}}" target="_blank" style="display:block;padding:16px 28px;font-family:Manrope,Arial,Helvetica,sans-serif;font-size:16px;font-weight:800;color:#ffffff;text-decoration:none;">{{D_CTA}}&nbsp;&nbsp;&rarr;</a></td></tr></table></td></tr>
+<tr><td bgcolor="{{BR_DARK}}" class="mpad" style="padding:32px 28px 28px;"><div style="font-family:Sora,Arial,Helvetica,sans-serif;font-weight:700;font-size:17px;color:#ffffff;">Asociația salvează o inimă</div><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:#D5DDEA;margin-top:10px;">Primiți acest mesaj pentru că compania dumneavoastră este partener sau contact al organizației noastre.</div><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:11px;line-height:1.5;color:#B8C3D6;margin-top:10px;"><a href="##NEWSMAN:list_unsubscribe##" style="color:#B8C3D6;text-decoration:underline;">Dezabonare</a> &middot; <a href="##NEWSMAN:view_online##" style="color:#B8C3D6;text-decoration:underline;">Vezi în browser</a></div><div style="font-family:Manrope,Arial,Helvetica,sans-serif;font-size:11px;font-weight:600;color:#B8C3D6;margin-top:10px;">Trimis cu Alexandrit</div></td></tr>
+</table>
+</td></tr></table>
+</body></html></script>
 <script type="text/plain" id="letterDefault">Bună ziua,
 
 Orice antreprenor știe câtă muncă se ascunde în spatele unei companii. În spatele cifrelor din bilanț sunt ani de muncă, investiții, decizii dificile și responsabilități pe care puțini le văd. Sunt nopți în care somnul vine târziu, luni în care fiecare cheltuială trebuie cântărită atent și momente în care grija pentru angajați, clienți și viitorul companiei apasă mai mult decât arată exteriorul.
@@ -2233,13 +2335,98 @@ function syncFields(){
     els[i].style.display = (list.indexOf(t)>=0) ? '' : 'none';
   }
 }
-var DESIGN_TPL={design_editorial:'tpl_editorial',design_eveniment_elegant:'tpl_eveniment_elegant',design_foto:'tpl_foto',design_bold:'tpl_bold',design_minimal:'tpl_minimal',design_gazeta:'tpl_gazeta',design_warm:'tpl_warm',design_modular:'tpl_modular',design_scrisoare:'tpl_scrisoare',design_manifest:'tpl_manifest',design_chitanta:'tpl_chitanta',design_cronologie:'tpl_cronologie',design_certificat:'tpl_certificat',design_familie:'tpl_familie',design_vitalitate:'tpl_vitalitate',design_comunitate:'tpl_comunitate',design_adapost:'tpl_adapost',design_natura:'tpl_natura',design_avant:'tpl_avant',design_orizont:'tpl_orizont',design_muzeu:'tpl_muzeu',design_impuls:'tpl_impuls',design_hotarare:'tpl_hotarare',design_cerc:'tpl_cerc',design_garda:'tpl_garda',design_semnal:'tpl_semnal',design_laur:'tpl_laur',design_pagina:'tpl_pagina',design_galerie:'tpl_galerie',design_scut:'tpl_scut',design_stea:'tpl_stea',design_blazon:'tpl_blazon',design_refugiu:'tpl_refugiu',design_insigna:'tpl_insigna',design_start:'tpl_start',design_creion:'tpl_creion',design_cortina:'tpl_cortina'};
+/* Paleta de brand extrasă din logo (la fel ca la persoane fizice) — folosită de șabloanele noi. */
+function rgbToHsl(r, g, b){
+  r /= 255; g /= 255; b /= 255;
+  var max = Math.max(r, g, b), min = Math.min(r, g, b);
+  var h = 0, s = 0, l = (max + min) / 2;
+  if(max !== min){
+    var d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    if(max === r) h = (g - b) / d + (g < b ? 6 : 0);
+    else if(max === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h *= 60;
+  }
+  return { h: h, s: s, l: l };
+}
+function hex2(n){ var s = Math.max(0, Math.min(255, Math.round(n))).toString(16); return s.length === 1 ? '0' + s : s; }
+function hslToHex(h, s, l){
+  h = ((h % 360) + 360) % 360;
+  var c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = l - c / 2;
+  var r = 0, g = 0, b = 0;
+  if(h < 60){ r = c; g = x; b = 0; } else if(h < 120){ r = x; g = c; b = 0; } else if(h < 180){ r = 0; g = c; b = x; }
+  else if(h < 240){ r = 0; g = x; b = c; } else if(h < 300){ r = x; g = 0; b = c; } else { r = c; g = 0; b = x; }
+  return '#' + hex2((r + m) * 255) + hex2((g + m) * 255) + hex2((b + m) * 255);
+}
+function hexToRgb(hex){
+  var m = /^#?([0-9a-f]{6})$/i.exec((hex || '').trim());
+  if(!m) return null;
+  var n = parseInt(m[1], 16);
+  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+}
+function extractDominantColor(img){
+  try {
+    var size = 48;
+    var c = document.createElement('canvas');
+    c.width = size; c.height = size;
+    var ctx = c.getContext('2d');
+    ctx.drawImage(img, 0, 0, size, size);
+    var data = ctx.getImageData(0, 0, size, size).data;
+    var buckets = {};
+    for(var i = 0; i < data.length; i += 4){
+      var r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
+      if(a < 128) continue;
+      var hsl = rgbToHsl(r, g, b);
+      if(hsl.l < 0.12 || hsl.l > 0.92 || hsl.s < 0.15) continue;
+      var key = Math.round(r / 20) + ',' + Math.round(g / 20) + ',' + Math.round(b / 20);
+      if(!buckets[key]) buckets[key] = { r: 0, g: 0, b: 0, n: 0 };
+      buckets[key].r += r; buckets[key].g += g; buckets[key].b += b; buckets[key].n++;
+    }
+    var best = null;
+    for(var k in buckets){ if(!best || buckets[k].n > best.n) best = buckets[k]; }
+    if(!best) return null;
+    return '#' + hex2(best.r / best.n) + hex2(best.g / best.n) + hex2(best.b / best.n);
+  } catch(e){ return null; }
+}
+var DEFAULT_BRAND = { primary: '#E8730D', dark: '#241E1A', light: '#FBEEE3' };
+function deriveBrandPalette(hex){
+  var rgb = hexToRgb(hex);
+  if(!rgb) return DEFAULT_BRAND;
+  var hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+  var sat = Math.max(0.45, Math.min(0.85, hsl.s || 0.6));
+  return {
+    primary: hslToHex(hsl.h, sat, 0.46),
+    dark: hslToHex(hsl.h, sat, 0.18),
+    light: hslToHex(hsl.h, Math.max(0.18, sat * 0.35), 0.94)
+  };
+}
+var brandHex = null;
+function currentBrandPalette(){ return brandHex ? deriveBrandPalette(brandHex) : DEFAULT_BRAND; }
+function tryExtractFromUrl(url){
+  if(!url){ brandHex = null; refresh(); return; }
+  var img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = function(){ brandHex = extractDominantColor(img); refresh(); };
+  img.onerror = function(){ };
+  img.src = url;
+}
+document.getElementById('LOGO_IMG').addEventListener('change', function(){ tryExtractFromUrl(document.getElementById('LOGO_IMG').value.trim()); });
+var DESIGN_TPL={design_alx_sponsorizare:'tpl_alx_sponsorizare',design_alx_multumire_sponsor:'tpl_alx_multumire_sponsor',design_alx_raport_parteneri:'tpl_alx_raport_parteneri',design_alx_invitatie_parteneri:'tpl_alx_invitatie_parteneri',design_alx_d177:'tpl_alx_d177',design_editorial:'tpl_editorial',design_eveniment_elegant:'tpl_eveniment_elegant',design_foto:'tpl_foto',design_bold:'tpl_bold',design_minimal:'tpl_minimal',design_gazeta:'tpl_gazeta',design_warm:'tpl_warm',design_modular:'tpl_modular',design_scrisoare:'tpl_scrisoare',design_manifest:'tpl_manifest',design_chitanta:'tpl_chitanta',design_cronologie:'tpl_cronologie',design_certificat:'tpl_certificat',design_familie:'tpl_familie',design_vitalitate:'tpl_vitalitate',design_comunitate:'tpl_comunitate',design_adapost:'tpl_adapost',design_natura:'tpl_natura',design_avant:'tpl_avant',design_orizont:'tpl_orizont',design_muzeu:'tpl_muzeu',design_impuls:'tpl_impuls',design_hotarare:'tpl_hotarare',design_cerc:'tpl_cerc',design_garda:'tpl_garda',design_semnal:'tpl_semnal',design_laur:'tpl_laur',design_pagina:'tpl_pagina',design_galerie:'tpl_galerie',design_scut:'tpl_scut',design_stea:'tpl_stea',design_blazon:'tpl_blazon',design_refugiu:'tpl_refugiu',design_insigna:'tpl_insigna',design_start:'tpl_start',design_creion:'tpl_creion',design_cortina:'tpl_cortina'};
 function isDesign(){var e=document.getElementById('TEMPLATE');return e&&DESIGN_TPL[e.value];}
 function build(forExport, letterOverride){
   var _d=isDesign();
   if(_d){
     var dout=document.getElementById(_d).textContent;
-    ['LINK','PREHEADER','PERIOADA','HERO','D_HEADLINE','D_LEAD','D_STATBIG','D_STATLABEL','D_QUOTE','D_QAUTHOR','D_N1','D_L1','D_N2','D_L2','D_N3','D_L3','D_CTA','TERMEN'].forEach(function(id){var e=document.getElementById(id);if(e){dout=dout.split('{{'+id+'}}').join(esc(id==='LINK'?cuUtm(e.value):e.value));}});
+    ['LINK','PREHEADER','PERIOADA','HERO','D_HEADLINE','D_LEAD','D_STATBIG','D_STATLABEL','D_QUOTE','D_QAUTHOR','D_N1','D_L1','D_N2','D_L2','D_N3','D_L3','D_CTA','TERMEN','D_PILL','D_BAND','D_ONGNUME','D_CIF','D_IBAN'].forEach(function(id){var e=document.getElementById(id);if(e){dout=dout.split('{{'+id+'}}').join(esc(id==='LINK'?cuUtm(e.value):e.value));}});
+    var dlogo = esc(document.getElementById('LOGO_IMG').value);
+    dout = dout.split('{{LOGO_IMG}}').join(dlogo);
+    dout = dout.replace(dlogo.trim() ? /<!--LOGOTXT_START-->[\s\S]*?<!--LOGOTXT_END-->/ : /<!--LOGO_START-->[\s\S]*?<!--LOGO_END-->/, '');
+    var dpe = document.getElementById('D_PCT');
+    var dpct = Math.max(1, Math.min(99, parseInt(dpe ? dpe.value : '0', 10) || 0));
+    dout = dout.split('{{BAR_PCT}}').join(dpct).split('{{BAR_REST}}').join(100 - dpct).split('{{PCT_TXT}}').join(dpct + '%');
+    var dbr = currentBrandPalette();
+    dout = dout.split('{{BR_PRIMARY}}').join(dbr.primary).split('{{BR_DARK}}').join(dbr.dark).split('{{BR_LIGHT}}').join(dbr.light);
     return dout;
   }
   var out = tpl;
@@ -2556,7 +2743,91 @@ document.getElementById('remCopy').onclick = function(){
 };
 
 /* ===== Galerie de template-uri (ecran de start) ===== */
+var ALX_DEFAULTS = {
+ "design_alx_sponsorizare": {
+  "D_PILL": "Sponsorizare · [numele proiectului]",
+  "D_HEADLINE": "[O propoziție despre proiect: ce se construiește și pentru cine]",
+  "D_LEAD": "Bună ziua! [Povestea proiectului în 3–4 propoziții: ce nevoie există, ce urmează să facem și ce rezultat urmărim.] Cu sprijinul companiei dumneavoastră, proiectul poate începe în [luna].",
+  "D_STATBIG": "[00.000] lei",
+  "D_PCT": "55",
+  "D_STATLABEL": "[00.000] lei strânși de la [N] companii partenere",
+  "D_N1": "Contract",
+  "D_L1": "[Contract de sponsorizare, semnat în [N] zile]",
+  "D_N2": "Documente",
+  "D_L2": "[Factură și acte justificative pentru contabilitate]",
+  "D_N3": "Vizibilitate",
+  "D_L3": "[Logo și mențiune în materialele proiectului]",
+  "D_CTA": "Solicită contractul de sponsorizare"
+ },
+ "design_alx_multumire_sponsor": {
+  "D_HEADLINE": "Mulțumim, [nume companie]!",
+  "D_LEAD": "Sprijinul dumneavoastră pentru [numele proiectului] a fost înregistrat. Vă mulțumim în numele organizației și al celor pe care îi ajutăm.",
+  "D_STATBIG": "[Nume companie]",
+  "D_STATLABEL": "Compania",
+  "D_N1": "nr. [000] din [data]",
+  "D_L1": "Contract",
+  "D_N2": "[0.000] lei",
+  "D_L2": "Suma",
+  "D_N3": "[Numele proiectului]",
+  "D_L3": "Proiect finanțat",
+  "D_QUOTE": "[Citat de la un beneficiar sau de la directorul organizației: ce a însemnat sprijinul companiei]",
+  "D_QAUTHOR": "[Nume, funcție]",
+  "D_CTA": "Vedeți proiectul finanțat"
+ },
+ "design_alx_raport_parteneri": {
+  "D_PILL": "Raport parteneri · [anul]",
+  "D_HEADLINE": "Împreună cu partenerii noștri, în [anul]",
+  "D_LEAD": "[O frază despre ce au făcut împreună companiile partenere și organizația în acest an.]",
+  "D_STATBIG": "[00]",
+  "D_STATLABEL": "companii partenere",
+  "D_N1": "[000.000] lei",
+  "D_L1": "sprijin de la companii",
+  "D_N2": "[0.000]",
+  "D_L2": "beneficiari ajutați",
+  "D_N3": "[00]",
+  "D_L3": "proiecte finanțate",
+  "D_QUOTE": "[Un gând despre colaborarea cu partenerii.]",
+  "D_QAUTHOR": "[Nume, funcție]",
+  "D_CTA": "Descărcați raportul complet"
+ },
+ "design_alx_invitatie_parteneri": {
+  "D_PILL": "Seara partenerilor",
+  "D_HEADLINE": "[Numele evenimentului]",
+  "D_LEAD": "Vă invităm să sărbătorim împreună rezultatele anului și să discutăm planurile pentru [anul următor].",
+  "D_N1": "[Zi, 00 luna]",
+  "D_L1": "Data",
+  "D_N2": "[00:00]",
+  "D_L2": "Ora",
+  "D_N3": "[Locația, orașul]",
+  "D_L3": "Locul",
+  "D_STATBIG": "[Nume invitat]",
+  "D_STATLABEL": "invitat special",
+  "D_BAND": "Locuri limitate: [număr]. Vă rugăm să confirmați până la [data].",
+  "D_CTA": "Confirmați participarea"
+ },
+ "design_alx_d177": {
+  "D_HEADLINE": "Direcționați [până la 20%] din impozit către [numele organizației]",
+  "D_LEAD": "Compania dumneavoastră poate susține organizația noastră prin Declarația 177. [Confirmați detaliile legale cu contabilul companiei.]",
+  "D_BAND": "Termen limită: [data]",
+  "D_N1": "Completați D177",
+  "D_L1": "[Datele companiei și suma direcționată.]",
+  "D_N2": "Semnați",
+  "D_L2": "[Semnătura reprezentantului legal.]",
+  "D_N3": "Depuneți",
+  "D_L3": "[Unde și până când se depune declarația.]",
+  "D_ONGNUME": "[Nume organizație]",
+  "D_CIF": "[CIF]",
+  "D_IBAN": "[IBAN]",
+  "D_CTA": "Completați D177"
+ }
+};
 var TPL_META = {
+  design_alx_sponsorizare: {icon:'🤝', name:'Apel de sponsorizare', theme:'Proiect, buget, ce primește firma și contract'},
+  design_alx_multumire_sponsor: {icon:'🙏', name:'Mulțumire sponsor', theme:'Detalii sponsorizare, ce urmează, citat'},
+  design_alx_raport_parteneri: {icon:'📊', name:'Raport parteneri', theme:'Cifrele anului alături de companiile partenere'},
+  design_alx_invitatie_parteneri: {icon:'🎟️', name:'Invitație parteneri', theme:'Eveniment pentru parteneri, ton formal'},
+  design_alx_d177: {icon:'📝', name:'Direcționare D177', theme:'Termen, 3 pași și datele organizației'},
+
   d177: {icon:'🏢', name:'Campanie D177', theme:'Redirecționare impozit pe profit — apel complet'},
   propunere: {icon:'🤝', name:'Propunere de parteneriat', theme:'Prima abordare a unei companii noi'},
   multumire: {icon:'🙏', name:'Mulțumire partener', theme:'Recunoștință după o sponsorizare'},
@@ -2601,7 +2872,7 @@ var TPL_META = {
   design_creion: {icon:'✏️', name:'Creion', theme:'Inspirat Pencils of Promise — galben îndrăzneț, motiv de creion'},
   design_cortina: {icon:'🎭', name:'Cortina', theme:'Eleganța clasică a unei săli de spectacol — bordo & auriu, cortină'}
 };
-var TPL_ORDER_CONTINUT = ['d177','propunere','multumire','raport','eveniment','bunvenit'];
+var TPL_ORDER_CONTINUT = ['d177','propunere','multumire','raport','eveniment','bunvenit','design_alx_sponsorizare','design_alx_multumire_sponsor','design_alx_raport_parteneri','design_alx_invitatie_parteneri','design_alx_d177'];
 var TPL_ORDER_DESIGN = ['design_editorial','design_eveniment_elegant','design_foto','design_bold','design_minimal','design_gazeta','design_warm','design_modular','design_scrisoare','design_manifest','design_chitanta','design_cronologie','design_certificat','design_familie','design_vitalitate','design_comunitate','design_adapost','design_natura','design_avant','design_orizont','design_muzeu','design_impuls','design_hotarare','design_cerc','design_garda','design_semnal','design_laur','design_pagina','design_galerie','design_scut','design_stea','design_blazon','design_refugiu','design_insigna','design_start','design_creion','design_cortina'];
 
 /* Domeniul de activitate al organizației (injectat la randare — gol dacă nu
@@ -2678,6 +2949,11 @@ if (FA_DESIGN_RECOMANDAT.length && FA_DOMENIU_NUME) {
 // „Eveniment elegant" au alt sens (dată/oră/locație, invitat special),
 // așa că le suprascriem TEMPORAR doar cât timp randăm acea miniatură.
 var THUMB_FIELD_OVERRIDES = {
+  design_alx_sponsorizare: ALX_DEFAULTS.design_alx_sponsorizare,
+  design_alx_multumire_sponsor: ALX_DEFAULTS.design_alx_multumire_sponsor,
+  design_alx_raport_parteneri: ALX_DEFAULTS.design_alx_raport_parteneri,
+  design_alx_invitatie_parteneri: ALX_DEFAULTS.design_alx_invitatie_parteneri,
+  design_alx_d177: ALX_DEFAULTS.design_alx_d177,
   design_eveniment_elegant: {
     D_HEADLINE: 'Gala Partenerilor',
     D_LEAD: 'O seară dedicată companiilor care aleg să susțină cauze reale — impact, povești și un apel către comunitatea de afaceri.',
@@ -2746,6 +3022,25 @@ document.getElementById('galleryBtn').onclick = function(){
   document.getElementById('editorView').style.display = 'none';
   document.getElementById('galleryView').style.display = '';
 };
+/* Șabloanele Alexandrit: la schimbarea șablonului, câmpurile care încă au valoarea implicită (a oricărui șablon) trec pe valorile noului șablon.
+   Ce a scris utilizatorul nu se atinge. */
+(function(){
+  var IDS = ["D_PILL", "D_HEADLINE", "D_LEAD", "D_STATBIG", "D_STATLABEL", "D_QUOTE", "D_QAUTHOR", "D_N1", "D_L1", "D_N2", "D_L2", "D_N3", "D_L3", "D_CTA", "D_BAND", "D_ONGNUME", "D_CIF", "D_IBAN", "D_PCT"];
+  function pristine(id){ var e=document.getElementById(id); return e ? e.defaultValue : ''; }
+  function wasDefault(id, cur){
+    if(cur === pristine(id)) return true;
+    for(var k in ALX_DEFAULTS){ if(ALX_DEFAULTS[k][id] === cur) return true; }
+    return false;
+  }
+  document.getElementById('TEMPLATE').addEventListener('change', function(){
+    var nd = ALX_DEFAULTS[this.value] || null;
+    IDS.forEach(function(id){
+      var e = document.getElementById(id); if(!e || !wasDefault(id, e.value)) return;
+      e.value = (nd && nd[id] !== undefined) ? nd[id] : pristine(id);
+    });
+    refresh();
+  });
+})();
 </script>
 </body>
 </html>
