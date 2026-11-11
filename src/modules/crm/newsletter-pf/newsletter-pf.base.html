@@ -264,9 +264,9 @@
       .stilSw.on { border-color:#1F1B17; background:#F6F3EE; }
       .stilSw.on em { font-weight:700; color:#1F1B17; }
     </style>
-    <div class="tplfields" data-tpl="design_standard,design_alx_apel,design_alx_multumire,design_alx_raport,design_alx_eveniment,design_alx_buletin,design_alx_formular230" style="display:none;">
+    <div class="tplfields" data-tpl="design_standard,apel,urgent,design_alx_apel,design_alx_multumire,design_alx_raport,design_alx_eveniment,design_alx_buletin,design_alx_formular230,design_eveniment_elegant,design_acuarela,design_poveste,design_radiografie,design_givewell,design_familie,design_vitalitate,design_comunitate,design_adapost,design_natura,design_avant,design_orizont,design_muzeu,design_impuls,design_hotarare,design_cerc,design_garda,design_semnal,design_laur,design_pagina,design_galerie,design_scut,design_stea,design_blazon,design_refugiu,design_insigna,design_start,design_creion,design_cortina" style="display:none;">
       <h2>Stil și culori</h2>
-      <div class="hint">Alege un stil global: culorile (accent, titluri, fundaluri, carduri), colțurile și fontul titlurilor se schimbă împreună în tot șablonul. „Din logo” folosește culoarea logo-ului tău.</div>
+      <div class="hint">Alege un stil global: culorile (accent, titluri, fundaluri, carduri), colțurile și fontul titlurilor se schimbă împreună în tot șablonul. „Din logo” păstrează culorile șablonului sau folosește culoarea logo-ului tău, acolo unde există.</div>
       <div class="stilRow"><button type="button" class="stilSw" data-stil="logo" title="Din logo"><span style="background:linear-gradient(135deg,#E8730D 50%,#241E1A 50%);"></span><em>Din logo</em></button><button type="button" class="stilSw" data-stil="clasic" title="Clasic"><span style="background:linear-gradient(135deg,#1F5FA8 50%,#0F2E52 50%);"></span><em>Clasic</em></button><button type="button" class="stilSw" data-stil="cald" title="Cald"><span style="background:linear-gradient(135deg,#B4532A 50%,#3B1F14 50%);"></span><em>Cald</em></button><button type="button" class="stilSw" data-stil="natura" title="Natură"><span style="background:linear-gradient(135deg,#2A7D44 50%,#123524 50%);"></span><em>Natură</em></button><button type="button" class="stilSw" data-stil="elegant" title="Elegant"><span style="background:linear-gradient(135deg,#8A6A1F 50%,#1B2340 50%);"></span><em>Elegant</em></button><button type="button" class="stilSw" data-stil="modern" title="Modern"><span style="background:linear-gradient(135deg,#C62F55 50%,#1A1A22 50%);"></span><em>Modern</em></button><button type="button" class="stilSw" data-stil="custom" title="Culoarea mea"><span style="background:conic-gradient(#e53935,#fdd835,#43a047,#1e88e5,#8e24aa,#e53935);"></span><em>Culoarea mea</em></button></div>
       <select id="STIL" style="width:100%; padding:9px 10px; border:1.5px solid #E4DFD7; border-radius:8px; font-size:13px; font-family:inherit; background:#fff;">
         <option value="logo">Din logo</option>
@@ -2617,7 +2617,9 @@ var STIL_PRESETS = {
   "fontH": "Sora,Arial,Helvetica,sans-serif",
   "rl": 16,
   "rm": 14,
-  "rb": 12
+  "rb": 12,
+  "accent": "#B3770F",
+  "accentLight": "#F8C977"
  },
  "cald": {
   "primary": "#B4532A",
@@ -2630,7 +2632,9 @@ var STIL_PRESETS = {
   "fontH": "'Palatino Linotype','Book Antiqua',Palatino,Georgia,serif",
   "rl": 22,
   "rm": 18,
-  "rb": 14
+  "rb": 14,
+  "accent": "#A37A29",
+  "accentLight": "#EAC886"
  },
  "natura": {
   "primary": "#2A7D44",
@@ -2643,7 +2647,9 @@ var STIL_PRESETS = {
   "fontH": "Manrope,Arial,Helvetica,sans-serif",
   "rl": 12,
   "rm": 10,
-  "rb": 8
+  "rb": 8,
+  "accent": "#A0821C",
+  "accentLight": "#F1D67E"
  },
  "elegant": {
   "primary": "#8A6A1F",
@@ -2656,7 +2662,9 @@ var STIL_PRESETS = {
   "fontH": "'Palatino Linotype','Book Antiqua',Palatino,Georgia,serif",
   "rl": 2,
   "rm": 2,
-  "rb": 0
+  "rb": 0,
+  "accent": "#4187AA",
+  "accentLight": "#90C5DF"
  },
  "modern": {
   "primary": "#C62F55",
@@ -2669,13 +2677,15 @@ var STIL_PRESETS = {
   "fontH": "Sora,Arial,Helvetica,sans-serif",
   "rl": 14,
   "rm": 12,
-  "rb": 999
+  "rb": 999,
+  "accent": "#188B7B",
+  "accentLight": "#7ADBCD"
  }
 };
 function stilCustomPalette(hex){
   var rgb = hexToRgb(hex); if(!rgb) return null;
   var p = deriveBrandPalette(hex), h = rgbToHsl(rgb.r, rgb.g, rgb.b).h;
-  return { primary:p.primary, dark:p.dark, light:p.light, page:hslToHex(h,0.18,0.94), panel:hslToHex(h,0.20,0.97), main:'#FFFFFF', line:hslToHex(h,0.15,0.90) };
+  return { primary:p.primary, dark:p.dark, light:p.light, page:hslToHex(h,0.18,0.94), panel:hslToHex(h,0.20,0.97), main:'#FFFFFF', line:hslToHex(h,0.15,0.90), accent:hslToHex(h+40,0.55,0.38), accentLight:hslToHex(h+40,0.70,0.72) };
 }
 function styleOverride(){
   var s = document.getElementById('STIL'); if(!s) return null;
@@ -2693,6 +2703,63 @@ function syncStil(){
   var s = document.getElementById('STIL'); if(!s) return;
   document.querySelectorAll('.stilSw').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-stil') === s.value); });
   var c = document.getElementById('stilCustom'); if(c) c.style.display = (s.value === 'custom') ? '' : 'none';
+}
+/* ===== Stil global și pentru șabloanele vechi: culorile fiecărui șablon se mapează pe rolurile stilului ales ===== */
+var STIL_KEEP = {'#4285F4':1,'#EA4335':1,'#FBBC05':1,'#34A853':1,'#1877F2':1,'#0A66C2':1,'#E1306C':1,'#5F6368':1};
+function stilMix(a, b, t){
+  var x = hexToRgb(a), y = hexToRgb(b); if(!x || !y) return a;
+  return '#' + hex2(x.r + (y.r - x.r) * t) + hex2(x.g + (y.g - x.g) * t) + hex2(x.b + (y.b - x.b) * t);
+}
+function stilLum(hex){
+  var c = hexToRgb(hex); if(!c) return 0;
+  function f(v){ v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }
+  return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b);
+}
+function stilHueDiff(a, b){ var d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; }
+function stilMapColor(k, hsl, best, P){
+  if(STIL_KEEP[k]) return k;
+  var s = hsl.s, l = hsl.l, acc = P.accent || stilMix(P.primary, '#FFFFFF', 0.35);
+  if(s < 0.10){
+    if(l >= 0.985) return P.main;
+    if(l >= 0.93) return P.panel;
+    if(l >= 0.84) return P.line;
+    if(l < 0.20) return P.dark;
+    return k;
+  }
+  if(l < 0.28) return P.dark;
+  if(l >= 0.965) return P.panel;
+  if(l >= 0.86) return P.light;
+  if(s < 0.25) return stilMix(P.dark, '#FFFFFF', Math.max(0, Math.min(1, (l - 0.1) / 0.9)));
+  var fam = (best === null) || stilHueDiff(hsl.h, best) <= 40;
+  if(fam){
+    if(l < 0.60) return P.primary;
+    return stilMix(P.primary, '#FFFFFF', Math.min(0.85, (l - 0.45) / 0.55));
+  }
+  /* culoare diferită de familia principală (ex. auriu pe bordo): luminoasă -> accent deschis, altfel accent mediu */
+  return stilLum(k) >= 0.45 ? (P.accentLight || stilMix(acc, '#FFFFFF', 0.5)) : acc;
+}
+function recolorHtml(html, P, keepBlack){
+  var keep = [];
+  /* fundalul cercurilor de rețele sociale e culoarea platformei, nu a șablonului */
+  html = html.replace(/(<td[^>]*?bgcolor=")(#[0-9a-fA-F]{6})("[^>]*>\s*<a[^>]*href="https?:\/\/[^"]*(?:facebook|linkedin|tiktok|instagram|youtube)[^"]*")/gi,
+    function(m, a, c, b){ keep.push(c); return a + '@@K' + (keep.length - 1) + '@@' + b; });
+  var cnt = {};
+  /* &#128154; (emoji ca entitate numerică) arată ca o culoare hex de 6 cifre: se sare peste ele */
+  html.replace(/(&?)(#[0-9a-fA-F]{6})\b/g, function(m, amp, c){ if(!amp){ var k = c.toUpperCase(); cnt[k] = (cnt[k] || 0) + 1; } return m; });
+  var best = null, bw = 0, info = {}, k;
+  for(k in cnt){
+    var rgb = hexToRgb(k); if(!rgb) continue;
+    var hsl = rgbToHsl(rgb.r, rgb.g, rgb.b); info[k] = hsl;
+    if(!STIL_KEEP[k] && hsl.s >= 0.25 && hsl.l >= 0.28 && hsl.l < 0.86){ var w = cnt[k] * hsl.s; if(w > bw){ bw = w; best = hsl.h; } }
+  }
+  var map = {};
+  for(k in info){ map[k] = (keepBlack && k === '#000000') ? k : stilMapColor(k, info[k], best, P); }
+  html = html.replace(/(&?)(#[0-9a-fA-F]{6})\b/g, function(m, amp, c){ return amp ? m : (map[c.toUpperCase()] || c); });
+  return html.replace(/@@K(\d+)@@/g, function(m, i){ return keep[+i]; });
+}
+function recolorForStyle(html, keepBlack){
+  var P = styleOverride();
+  return P ? recolorHtml(html, P, keepBlack) : html;
 }
 var DEFAULT_BRAND = { primary: '#E8730D', dark: '#241E1A', light: '#FBEEE3' };
 function deriveBrandPalette(hex){
@@ -2819,6 +2886,7 @@ function build(forExport, letterOverride){
   var _d=isDesign();
   if(_d){
     var dout=document.getElementById(_d).textContent;
+    if(!/^tpl_alx_/.test(_d)){ dout = recolorForStyle(dout); }
     var dfoto=files.FOTO?(files.FOTO.url?files.FOTO.url:(forExport?files.FOTO.name:files.FOTO.blob)):esc(document.getElementById('FOTO').value);
     dout=dout.split('{{D_FOTO}}').join(dfoto);
     ['LINK','PREHEADER','LUNA','D_HEADLINE','D_LEAD','D_STATBIG','D_STATLABEL','D_QUOTE','D_QAUTHOR','D_N1','D_L1','D_N2','D_L2','D_N3','D_L3','D_CTA','D_PILL','D_BAND','D_ONGNUME','D_CIF','D_IBAN'].forEach(function(id){var e=document.getElementById(id);if(e){dout=dout.split('{{'+id+'}}').join(esc(id==='LINK'?cuUtm(e.value):e.value));}});
@@ -2844,7 +2912,7 @@ function build(forExport, letterOverride){
     dout = applyStyleTokens(dout, dbr);
     return dout;
   }
-  var out = tpl;
+  var out = recolorForStyle(tpl, true);
   ['NUME','DIAGNOSTIC','VARSTA','PENTRU_NUME','LINK','PLATA','SMS_CUVANT','TITLU','PREHEADER','LUNA','S1','S2','S3','S4','S5'].forEach(function(id){
     var v = esc(id === 'LINK' ? cuUtm(document.getElementById(id).value) : document.getElementById(id).value);
     if(id === 'PENTRU_NUME'){ v = v.trim().replace(/\s+/g,'&nbsp;'); }
