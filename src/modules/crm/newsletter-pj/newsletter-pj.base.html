@@ -167,7 +167,6 @@
       <option value="raport">Raport de impact partener</option>
       <option value="eveniment">Invitație eveniment</option>
       <option value="bunvenit">Bun venit (partener nou)</option>
-      <option value="design_import">📥 Importă HTML (din Newsman)</option>
       <option value="design_alx_sponsorizare">✦ Apel de sponsorizare</option>
       <option value="design_alx_multumire_sponsor">✦ Mulțumire sponsor</option>
       <option value="design_alx_raport_parteneri">✦ Raport parteneri</option>
@@ -211,31 +210,6 @@
       <option value="design_creion">✦ Design: Creion</option>
       <option value="design_cortina">✦ Design: Cortina</option>
     </select>
-
-    <style>
-      .imp-hide { display:none !important; }
-      button.filebtn { font-family:inherit; }
-      .impBtns { display:flex; gap:8px; margin:8px 0; flex-wrap:wrap; align-items:center; }
-      .impF { margin:8px 0; }
-      .impF label { margin-top:0; }
-      .impF textarea, .impF input[type=text] { margin-top:4px; }
-      .impSec { margin:10px 0; border:1.5px solid #E4DFD7; border-radius:10px; background:#fff; padding:2px 10px 10px; }
-      .impSec summary { cursor:pointer; font-weight:700; padding:8px 0; font-size:13px; }
-      .impThumb { display:block; max-width:96px; max-height:60px; margin:4px 0; border:1px solid #E4DFD7; border-radius:4px; background:#F6F3EE; }
-      .impColor { display:flex; align-items:center; gap:8px; margin:6px 0; }
-      .impColor input[type=color] { width:40px; height:32px; padding:2px; flex:none; border:1.5px solid #E4DFD7; border-radius:8px; background:#fff; }
-      .impColor input[type=text] { width:110px; }
-      .impCnt { font-size:11px; color:#7A736A; }
-    </style>
-    <div class="tplfields" data-tpl="design_import" style="display:none;">
-      <h2>Importă HTML din Newsman</h2>
-      <div class="hint">În Newsman: deschide draftul → Editare → în editorul de cod selectează tot (Ctrl+A) și copiază (Ctrl+C). Lipește mai jos; se încarcă singur. Apoi editezi textele, linkurile, imaginile și culorile din câmpuri, iar la final apeși „Copiază codul HTML” și îl lipești înapoi în Newsman.</div>
-      <label>Codul HTML</label>
-      <textarea id="IMP_HTML" rows="5" placeholder="Lipește aici codul HTML al newsletterului…" spellcheck="false" style="font-family:Consolas,monospace; font-size:11.5px;"></textarea>
-      <div class="impBtns"><button type="button" class="filebtn" id="IMP_LOAD">Încarcă HTML-ul</button><label class="filebtn" for="IMP_FILE">📁 sau alege un fișier .html</label><input type="file" id="IMP_FILE" accept=".html,.htm,.txt,text/html" style="display:none;"><button type="button" class="filebtn" id="IMP_CLEAR">Șterge</button></div>
-      <div class="hint" id="IMP_STATUS"></div>
-      <div id="IMP_FIELDS"></div>
-    </div>
 
     <h2>Branding (antet)</h2>
     <label>Logo (opțional — link imagine)</label>
@@ -298,7 +272,7 @@
       .stilSw.on { border-color:#1F1B17; background:#F6F3EE; }
       .stilSw.on em { font-weight:700; color:#1F1B17; }
     </style>
-    <div class="tplfields" data-tpl="d177,propunere,multumire,raport,eveniment,bunvenit,design_alx_sponsorizare,design_alx_multumire_sponsor,design_alx_raport_parteneri,design_alx_invitatie_parteneri,design_alx_d177,design_editorial,design_eveniment_elegant,design_foto,design_bold,design_minimal,design_gazeta,design_warm,design_modular,design_scrisoare,design_manifest,design_chitanta,design_cronologie,design_certificat,design_familie,design_vitalitate,design_comunitate,design_adapost,design_natura,design_avant,design_orizont,design_muzeu,design_impuls,design_hotarare,design_cerc,design_garda,design_semnal,design_laur,design_pagina,design_galerie,design_scut,design_stea,design_blazon,design_refugiu,design_insigna,design_start,design_creion,design_cortina,design_import" style="display:none;">
+    <div class="tplfields" data-tpl="d177,propunere,multumire,raport,eveniment,bunvenit,design_alx_sponsorizare,design_alx_multumire_sponsor,design_alx_raport_parteneri,design_alx_invitatie_parteneri,design_alx_d177,design_editorial,design_eveniment_elegant,design_foto,design_bold,design_minimal,design_gazeta,design_warm,design_modular,design_scrisoare,design_manifest,design_chitanta,design_cronologie,design_certificat,design_familie,design_vitalitate,design_comunitate,design_adapost,design_natura,design_avant,design_orizont,design_muzeu,design_impuls,design_hotarare,design_cerc,design_garda,design_semnal,design_laur,design_pagina,design_galerie,design_scut,design_stea,design_blazon,design_refugiu,design_insigna,design_start,design_creion,design_cortina" style="display:none;">
       <h2>Stil și culori</h2>
       <div class="hint">Alege un stil global: culorile (accent, titluri, fundaluri, carduri), colțurile și fontul titlurilor se schimbă împreună în tot șablonul. „Din logo” păstrează culorile șablonului sau folosește culoarea logo-ului tău, acolo unde există.</div>
       <div class="stilRow"><button type="button" class="stilSw" data-stil="logo" title="Din logo"><span style="background:linear-gradient(135deg,#E8730D 50%,#241E1A 50%);"></span><em>Din logo</em></button><button type="button" class="stilSw" data-stil="clasic" title="Clasic"><span style="background:linear-gradient(135deg,#1F5FA8 50%,#0F2E52 50%);"></span><em>Clasic</em></button><button type="button" class="stilSw" data-stil="cald" title="Cald"><span style="background:linear-gradient(135deg,#B4532A 50%,#3B1F14 50%);"></span><em>Cald</em></button><button type="button" class="stilSw" data-stil="natura" title="Natură"><span style="background:linear-gradient(135deg,#2A7D44 50%,#123524 50%);"></span><em>Natură</em></button><button type="button" class="stilSw" data-stil="elegant" title="Elegant"><span style="background:linear-gradient(135deg,#8A6A1F 50%,#1B2340 50%);"></span><em>Elegant</em></button><button type="button" class="stilSw" data-stil="modern" title="Modern"><span style="background:linear-gradient(135deg,#C62F55 50%,#1A1A22 50%);"></span><em>Modern</em></button><button type="button" class="stilSw" data-stil="custom" title="Culoarea mea"><span style="background:conic-gradient(#e53935,#fdd835,#43a047,#1e88e5,#8e24aa,#e53935);"></span><em>Culoarea mea</em></button></div>
@@ -2381,7 +2355,6 @@ var TPL_BLOCKS = {
 function currentTpl(){ var e=document.getElementById('TEMPLATE'); return (e && TPL_BLOCKS[e.value]) ? e.value : 'd177'; }
 /* Arată/ascunde secțiunile de câmpuri în funcție de șablon (atribut data-tpl). */
 function syncFields(){
-  if(typeof impSyncLayout === 'function'){ impSyncLayout(); }
   if(typeof syncStil === 'function'){ syncStil(); }
   var te=document.getElementById('TEMPLATE');var t=te?te.value:'d177';
   var els=document.querySelectorAll('[data-tpl]');
@@ -2601,246 +2574,6 @@ function recolorForStyle(html, keepBlack){
   var P = styleOverride();
   return P ? recolorHtml(html, P, keepBlack) : html;
 }
-/* ===== Importă HTML (din Newsman): lipești un șablon HTML și îl editezi prin câmpuri (texte, linkuri, imagini, culori) ===== */
-var IMP = { doc:null, doctype:'<!DOCTYPE html>', texts:[], links:[], imgs:[], colors:[], timer:null };
-var IMP_SKIP = {STYLE:1,SCRIPT:1,TITLE:1,HEAD:1,META:1,LINK:1,NOSCRIPT:1,TEMPLATE:1};
-var IMP_INLINE = {A:1,SPAN:1,B:1,STRONG:1,I:1,EM:1,U:1,BR:1,FONT:1,SMALL:1,SUB:1,SUP:1,S:1,MARK:1,ABBR:1,CODE:1,IMG:1,WBR:1};
-function isImport(){ var e = document.getElementById('TEMPLATE'); return !!e && e.value === 'design_import'; }
-function impEl(id){ return document.getElementById(id); }
-function impHasText(n){ return n.nodeType === 3 && /[^\s ​‌‍⁠﻿]/.test(n.nodeValue); }
-function impSerialize(){ return IMP.doc ? (IMP.doctype + '\n' + IMP.doc.documentElement.outerHTML) : ''; }
-/* Curăță ce n-are ce căuta într-un email: scripturi, handlere on*, cadrul „Subiect / Versiune” pe care Newsman îl pune pe linkul public al draftului. */
-function impClean(doc){
-  var kill = doc.querySelectorAll('script, iframe, object, embed, base');
-  for(var i = 0; i < kill.length; i++){ kill[i].parentNode.removeChild(kill[i]); }
-  var ht = doc.getElementById('headertop');
-  if(ht){ ht.parentNode.removeChild(ht); }
-  var st = doc.querySelectorAll('style');
-  for(var s = 0; s < st.length; s++){ if(st[s].textContent.indexOf('#headertop') >= 0){ st[s].parentNode.removeChild(st[s]); } }
-  var all = doc.querySelectorAll('*');
-  for(var k = 0; k < all.length; k++){
-    var at = all[k].attributes;
-    for(var a = at.length - 1; a >= 0; a--){ if(/^on/i.test(at[a].name)){ all[k].removeAttribute(at[a].name); } }
-  }
-}
-function impLabel(el){
-  var t = el.tagName, st = (el.getAttribute('style') || '').replace(/\s+/g, '').toLowerCase();
-  if(st.indexOf('display:none') >= 0 || st.indexOf('max-height:0') >= 0){ return 'Text ascuns (previzualizare în inbox)'; }
-  if(/^H[1-6]$/.test(t)){ return 'Titlu'; }
-  if(t === 'A'){ return 'Text link / buton'; }
-  if(t === 'LI'){ return 'Element de listă'; }
-  return 'Text';
-}
-function impScan(){
-  var doc = IMP.doc, body = doc.body, i, j, a;
-  IMP.texts = []; IMP.links = []; IMP.imgs = [];
-  var accepted = [], all = body.querySelectorAll('*');
-  for(i = 0; i < all.length; i++){
-    var el = all[i];
-    if(IMP_SKIP[el.tagName]) continue;
-    var inside = false;
-    for(a = 0; a < accepted.length; a++){ if(accepted[a].contains(el)){ inside = true; break; } }
-    if(inside) continue;
-    var hasText = false;
-    for(j = 0; j < el.childNodes.length; j++){ if(impHasText(el.childNodes[j])){ hasText = true; break; } }
-    if(!hasText) continue;
-    var d = el.querySelectorAll('*'), onlyInline = true;
-    for(j = 0; j < d.length; j++){ if(!IMP_INLINE[d[j].tagName]){ onlyInline = false; break; } }
-    if(onlyInline){ accepted.push(el); }
-  }
-  var tw = doc.createTreeWalker(body, NodeFilter.SHOW_TEXT, null, false), n, seen = [];
-  while((n = tw.nextNode())){
-    if(!impHasText(n)) continue;
-    var p = n.parentNode;
-    if(!p || IMP_SKIP[p.tagName]) continue;
-    var c = null;
-    for(a = 0; a < accepted.length; a++){ if(accepted[a].contains(n)){ c = accepted[a]; break; } }
-    if(c){
-      if(seen.indexOf(c) < 0){
-        seen.push(c);
-        var plain = true;
-        for(j = 0; j < c.childNodes.length; j++){ var cn = c.childNodes[j]; if(!(cn.nodeType === 3 || (cn.nodeType === 1 && cn.tagName === 'BR'))){ plain = false; break; } }
-        if(plain){ IMP.texts.push({kind:'block', el:c, label:impLabel(c)}); }
-        else {
-          var nodes = [], tw2 = doc.createTreeWalker(c, NodeFilter.SHOW_TEXT, null, false), m;
-          while((m = tw2.nextNode())){ if(impHasText(m)) nodes.push(m); }
-          IMP.texts.push({kind:'mixed', el:c, nodes:nodes, label:impLabel(c)});
-        }
-      }
-    } else {
-      IMP.texts.push({kind:'node', node:n, label:impLabel(p)});
-    }
-  }
-  var ls = body.querySelectorAll('a[href]');
-  for(i = 0; i < ls.length; i++){
-    var tx = (ls[i].textContent || '').replace(/\s+/g, ' ').trim();
-    IMP.links.push({el:ls[i], label: tx ? tx.slice(0, 44) : (ls[i].querySelector('img') ? '(imagine)' : '(fără text)')});
-  }
-  var im = body.querySelectorAll('img');
-  for(i = 0; i < im.length; i++){
-    var w = parseInt(im[i].getAttribute('width') || '0', 10), h = parseInt(im[i].getAttribute('height') || '0', 10);
-    if((w && w <= 2) || (h && h <= 2)) continue;
-    IMP.imgs.push({el:im[i]});
-  }
-  /* culorile hex, după frecvență */
-  var cnt = {}, ord = [], html = IMP.doc.documentElement.outerHTML;
-  html.replace(/(&?)(#[0-9a-fA-F]{6})\b/g, function(m, amp, c){ if(!amp){ var k = c.toUpperCase(); if(!cnt[k]){ cnt[k] = 0; ord.push(k); } cnt[k]++; } return m; });
-  ord.sort(function(x, y){ return cnt[y] - cnt[x]; });
-  IMP.colors = ord.slice(0, 14).map(function(k){ return {cur:k, n:cnt[k]}; });
-}
-function impReplaceColor(from, to){
-  var f = from.toUpperCase(), rx = /#[0-9a-fA-F]{6}\b/g;
-  function sub(v){ return v.replace(rx, function(m){ return m.toUpperCase() === f ? to : m; }); }
-  var all = IMP.doc.querySelectorAll('*');
-  for(var i = 0; i < all.length; i++){
-    var el = all[i];
-    if(el.tagName === 'STYLE'){ if(el.textContent.indexOf('#') >= 0){ el.textContent = sub(el.textContent); } continue; }
-    var at = el.attributes;
-    for(var a = 0; a < at.length; a++){ if(at[a].value.indexOf('#') >= 0){ var nv = sub(at[a].value); if(nv !== at[a].value){ el.setAttribute(at[a].name, nv); } } }
-  }
-}
-/* Orice modificare din câmpuri: scrie codul actualizat în caseta „Cod HTML” (de acolo se salvează automat) și reface previzualizarea. */
-function impCommit(){
-  clearTimeout(IMP.timer);
-  IMP.timer = setTimeout(function(){
-    var ta = impEl('IMP_HTML'); if(ta){ ta.value = impSerialize(); }
-    refresh();
-  }, 220);
-}
-function impSetBlockText(el, value){
-  while(el.firstChild){ el.removeChild(el.firstChild); }
-  var parts = String(value).split('\n');
-  for(var i = 0; i < parts.length; i++){
-    if(i){ el.appendChild(IMP.doc.createElement('br')); }
-    if(parts[i]){ el.appendChild(IMP.doc.createTextNode(parts[i])); }
-  }
-}
-function impBlockValue(el){
-  var out = '';
-  for(var i = 0; i < el.childNodes.length; i++){ var c = el.childNodes[i]; out += (c.nodeType === 3) ? c.nodeValue : '\n'; }
-  return out.replace(/^\s+|\s+$/g, '');
-}
-function impMk(tag, cls, txt){ var e = document.createElement(tag); if(cls) e.className = cls; if(txt != null) e.textContent = txt; return e; }
-function impField(label, input){ var w = impMk('div', 'impF'); w.appendChild(impMk('label', null, label)); w.appendChild(input); return w; }
-function impInput(value, onInput, disabled){
-  var i = document.createElement('input'); i.type = 'text'; i.value = value; if(disabled){ i.disabled = true; }
-  i.addEventListener('input', function(){ onInput(i.value); impCommit(); });
-  return i;
-}
-function impRender(){
-  var box = impEl('IMP_FIELDS'); if(!box) return;
-  box.innerHTML = '';
-  if(!IMP.doc){ return; }
-  var st = impEl('IMP_STATUS');
-  if(st){ st.textContent = 'Încărcat: ' + IMP.texts.length + ' texte, ' + IMP.links.length + ' linkuri, ' + IMP.imgs.length + ' imagini, ' + IMP.colors.length + ' culori principale.'; }
-  var det, i;
-  /* texte */
-  det = impMk('details', 'impSec'); det.open = true; det.appendChild(impMk('summary', null, 'Texte (' + IMP.texts.length + ')'));
-  IMP.texts.forEach(function(t){
-    if(t.kind === 'block'){
-      var v = impBlockValue(t.el), ta = document.createElement('textarea');
-      ta.rows = Math.max(1, Math.min(6, Math.ceil(v.length / 44) + (v.split('\n').length - 1))); ta.value = v;
-      ta.addEventListener('input', function(){ impSetBlockText(t.el, ta.value); impCommit(); });
-      det.appendChild(impField(t.label, ta));
-    } else if(t.kind === 'node'){
-      var tn = document.createElement('textarea'); tn.rows = Math.max(1, Math.min(4, Math.ceil(t.node.nodeValue.trim().length / 44))); tn.value = t.node.nodeValue.replace(/^\s+|\s+$/g, '');
-      tn.addEventListener('input', function(){ t.node.nodeValue = tn.value; impCommit(); });
-      det.appendChild(impField(t.label, tn));
-    } else {
-      var wrap = impMk('div', 'impF'); wrap.appendChild(impMk('label', null, t.label + ' (cu formatare — fiecare bucată separat)'));
-      t.nodes.forEach(function(nd){
-        var lead = nd.nodeValue.match(/^\s*/)[0], trail = nd.nodeValue.match(/\s*$/)[0];
-        wrap.appendChild(impInput(nd.nodeValue.replace(/^\s+|\s+$/g, ''), function(val){ nd.nodeValue = lead + val + trail; }));
-      });
-      det.appendChild(wrap);
-    }
-  });
-  box.appendChild(det);
-  /* linkuri */
-  det = impMk('details', 'impSec'); det.appendChild(impMk('summary', null, 'Linkuri (' + IMP.links.length + ')'));
-  IMP.links.forEach(function(l){
-    var href = l.el.getAttribute('href') || '', locked = /^##/.test(href) || href.indexOf('##NEWSMAN') >= 0;
-    det.appendChild(impField(l.label + (locked ? ' — etichetă Newsman, nu o modifica' : ''), impInput(href, function(val){ l.el.setAttribute('href', val); }, locked)));
-  });
-  box.appendChild(det);
-  /* imagini */
-  det = impMk('details', 'impSec'); det.appendChild(impMk('summary', null, 'Imagini (' + IMP.imgs.length + ')'));
-  IMP.imgs.forEach(function(m, idx){
-    var row = impMk('div', 'impF'), th = document.createElement('img');
-    th.src = m.el.getAttribute('src') || ''; th.alt = ''; th.className = 'impThumb';
-    row.appendChild(impMk('label', null, 'Imaginea ' + (idx + 1)));
-    row.appendChild(th);
-    row.appendChild(impInput(m.el.getAttribute('src') || '', function(val){ m.el.setAttribute('src', val); th.src = val; }));
-    var alt = impInput(m.el.getAttribute('alt') || '', function(val){ m.el.setAttribute('alt', val); });
-    alt.placeholder = 'Text alternativ (alt)';
-    row.appendChild(alt);
-    det.appendChild(row);
-  });
-  box.appendChild(det);
-  /* culori */
-  det = impMk('details', 'impSec'); det.appendChild(impMk('summary', null, 'Culori din șablon (' + IMP.colors.length + ')'));
-  det.appendChild(impMk('div', 'hint', 'Schimbi o culoare și ea se înlocuiește peste tot în șablon (fundaluri, texte, butoane). Culorile sunt ordonate după cât de des apar.'));
-  IMP.colors.forEach(function(c){
-    var row = impMk('div', 'impColor'), col = document.createElement('input'), hx = document.createElement('input');
-    col.type = 'color'; col.value = c.cur.toLowerCase(); hx.type = 'text'; hx.value = c.cur;
-    function apply(to){
-      to = to.toUpperCase(); if(!/^#[0-9A-F]{6}$/.test(to) || to === c.cur) return;
-      impReplaceColor(c.cur, to); c.cur = to; col.value = to.toLowerCase(); hx.value = to; impCommit();
-    }
-    col.addEventListener('input', function(){ apply(col.value); });
-    hx.addEventListener('change', function(){ apply(hx.value.trim()); });
-    row.appendChild(col); row.appendChild(hx); row.appendChild(impMk('span', 'impCnt', '× ' + c.n));
-    det.appendChild(row);
-  });
-  box.appendChild(det);
-}
-/* Încarcă HTML-ul: îl curăță, îl scanează și afișează câmpurile. Returnează true dacă a mers. */
-function impLoad(raw, silent){
-  raw = String(raw || '').trim();
-  if(!raw){ IMP.doc = null; impRender(); var s0 = impEl('IMP_STATUS'); if(s0){ s0.textContent = ''; } refresh(); return false; }
-  if(raw.indexOf('<') < 0){ if(!silent){ toast('Textul lipit nu pare să fie HTML. Copiază codul din Newsman (Editare → editorul de cod → selectează tot).'); } return false; }
-  var m = raw.match(/^[\s﻿]*<!DOCTYPE[^>]*>/i);
-  var doc = new DOMParser().parseFromString(raw, 'text/html');
-  if(!doc.body || !doc.body.children.length){ if(!silent){ toast('Nu am găsit conținut în HTML-ul lipit.'); } return false; }
-  impClean(doc);
-  IMP.doc = doc; IMP.doctype = m ? m[0].replace(/^[\s﻿]+/, '') : '<!DOCTYPE html>';
-  impScan(); impRender();
-  var ta = impEl('IMP_HTML'); if(ta){ ta.value = impSerialize(); }
-  refresh();
-  if(!silent){ toast('✔ HTML încărcat: ' + IMP.texts.length + ' texte, ' + IMP.links.length + ' linkuri, ' + IMP.imgs.length + ' imagini. Editează-le din câmpurile de mai jos.'); }
-  return true;
-}
-function impInit(){ var ta = impEl('IMP_HTML'); if(ta && ta.value.trim()){ impLoad(ta.value, true); } }
-var IMP_PLACEHOLDER = '<!DOCTYPE html><html><body style="margin:0;background:#F6F3EE;font-family:Arial,Helvetica,sans-serif;"><div style="max-width:560px;margin:36px auto;padding:44px 28px;border:2px dashed #C9C2B6;border-radius:16px;text-align:center;color:#4A443C;background:#ffffff;"><div style="font-size:40px;line-height:48px;">📥</div><div style="font-size:21px;line-height:28px;font-weight:700;color:#1F1B17;margin-top:8px;">Importă un șablon HTML</div><div style="font-size:14px;line-height:22px;margin-top:10px;">Lipește în stânga codul HTML al unui newsletter din Newsman (sau din alt instrument). Textele, linkurile, imaginile și culorile lui devin câmpuri pe care le poți edita aici.</div></div></body></html>';
-function buildImport(forExport){
-  if(!IMP.doc){ return IMP_PLACEHOLDER; }
-  return recolorForStyle(impSerialize(), true);
-}
-function importChecks(){
-  var w = [];
-  if(!IMP.doc){ w.push({level:'error', msg:'Nu ai încărcat niciun HTML — lipește codul din Newsman și apasă „Încarcă HTML-ul”.'}); return w; }
-  var html = impSerialize(), txt = IMP.doc.body.textContent || '', i;
-  if(html.indexOf('list_unsubscribe') < 0 && !/dezabon|unsubscribe/i.test(txt)){ w.push({level:'error', msg:'Nu găsesc linkul de dezabonare (##NEWSMAN:list_unsubscribe##) — fără el emailul nu poate fi trimis corect.'}); }
-  if(/\[[^\]\n]{3,60}\]/.test(txt)){ w.push({level:'warn', msg:'Mai sunt texte între paranteze drepte, de felul [text de exemplu] — par exemple rămase de completat.'}); }
-  var empties = 0; for(i = 0; i < IMP.imgs.length; i++){ var s = (IMP.imgs[i].el.getAttribute('src') || '').trim(); if(!s || /placeholder|example\.com/i.test(s)){ empties++; } }
-  if(empties){ w.push({level:'warn', msg:empties + ' imagini nu au adresă sau folosesc una de exemplu.'}); }
-  var bad = 0; for(i = 0; i < IMP.links.length; i++){ var h = (IMP.links[i].el.getAttribute('href') || '').trim(); if(!h || h === '#'){ bad++; } }
-  if(bad){ w.push({level:'warn', msg:bad + ' linkuri sunt goale sau trimit la „#”.'}); }
-  return w;
-}
-/* Cât timp e ales șablonul „Importă HTML”, ascundem secțiunile specifice unui caz (Cazul, Progres, Email, Poza…), care n-au sens aici. */
-function impSyncLayout(){
-  var form = document.querySelector('.form'), sel = impEl('TEMPLATE'), on = isImport();
-  if(!form || !sel) return;
-  var seenSel = false;
-  for(var i = 0; i < form.children.length; i++){
-    var c = form.children[i];
-    if(c === sel){ seenSel = true; continue; }
-    if(!seenSel || c.classList.contains('tplfields') || c.tagName === 'STYLE') continue;
-    c.classList.toggle('imp-hide', on);
-  }
-  var rb = impEl('remBtn'); if(rb){ rb.style.display = on ? 'none' : ''; }
-}
 var DEFAULT_BRAND = { primary: '#E8730D', dark: '#241E1A', light: '#FBEEE3' };
 function deriveBrandPalette(hex){
   var rgb = hexToRgb(hex);
@@ -2867,7 +2600,6 @@ document.getElementById('LOGO_IMG').addEventListener('change', function(){ tryEx
 var DESIGN_TPL={design_alx_sponsorizare:'tpl_alx_sponsorizare',design_alx_multumire_sponsor:'tpl_alx_multumire_sponsor',design_alx_raport_parteneri:'tpl_alx_raport_parteneri',design_alx_invitatie_parteneri:'tpl_alx_invitatie_parteneri',design_alx_d177:'tpl_alx_d177',design_editorial:'tpl_editorial',design_eveniment_elegant:'tpl_eveniment_elegant',design_foto:'tpl_foto',design_bold:'tpl_bold',design_minimal:'tpl_minimal',design_gazeta:'tpl_gazeta',design_warm:'tpl_warm',design_modular:'tpl_modular',design_scrisoare:'tpl_scrisoare',design_manifest:'tpl_manifest',design_chitanta:'tpl_chitanta',design_cronologie:'tpl_cronologie',design_certificat:'tpl_certificat',design_familie:'tpl_familie',design_vitalitate:'tpl_vitalitate',design_comunitate:'tpl_comunitate',design_adapost:'tpl_adapost',design_natura:'tpl_natura',design_avant:'tpl_avant',design_orizont:'tpl_orizont',design_muzeu:'tpl_muzeu',design_impuls:'tpl_impuls',design_hotarare:'tpl_hotarare',design_cerc:'tpl_cerc',design_garda:'tpl_garda',design_semnal:'tpl_semnal',design_laur:'tpl_laur',design_pagina:'tpl_pagina',design_galerie:'tpl_galerie',design_scut:'tpl_scut',design_stea:'tpl_stea',design_blazon:'tpl_blazon',design_refugiu:'tpl_refugiu',design_insigna:'tpl_insigna',design_start:'tpl_start',design_creion:'tpl_creion',design_cortina:'tpl_cortina'};
 function isDesign(){var e=document.getElementById('TEMPLATE');return e&&DESIGN_TPL[e.value];}
 function build(forExport, letterOverride){
-  if(isImport()){ return buildImport(forExport); }
   var _d=isDesign();
   if(_d){
     var dout=document.getElementById(_d).textContent;
@@ -3064,7 +2796,6 @@ document.querySelectorAll('.mtabs button').forEach(function(b){
 
 document.querySelectorAll('input[type=text], input[type=checkbox], textarea, select').forEach(function(el){ el.addEventListener('input', function(){ refresh(); }); el.addEventListener('change', function(){ refresh(); }); });
 var hadDraft = restoreDraft();
-impInit();
 var _origRefresh = refresh;
 refresh = function(){ _origRefresh(); saveDraft(); };
 refresh();
@@ -3094,7 +2825,6 @@ function zileRamase(){
   return Math.round((d - azi) / 86400000);
 }
 function runChecks(){
-  if(isImport()){ return importChecks(); }
   var w = [];
   var titlu = val('TITLU').split('{{TERMEN}}').join(val('TERMEN')), pre = val('PREHEADER'), letter = val('SCRISOARE'), termen = val('TERMEN').trim();
 
@@ -3279,7 +3009,6 @@ var ALX_DEFAULTS = {
  }
 };
 var TPL_META = {
-  design_import: {icon:'📥', name:'Importă HTML', theme:'Aduci un șablon din Newsman și îl editezi aici: texte, linkuri, imagini, culori'},
   design_alx_sponsorizare: {icon:'🤝', name:'Apel de sponsorizare', theme:'Proiect, buget, ce primește firma și contract'},
   design_alx_multumire_sponsor: {icon:'🙏', name:'Mulțumire sponsor', theme:'Detalii sponsorizare, ce urmează, citat'},
   design_alx_raport_parteneri: {icon:'📊', name:'Raport parteneri', theme:'Cifrele anului alături de companiile partenere'},
@@ -3330,7 +3059,7 @@ var TPL_META = {
   design_creion: {icon:'✏️', name:'Creion', theme:'Inspirat Pencils of Promise — galben îndrăzneț, motiv de creion'},
   design_cortina: {icon:'🎭', name:'Cortina', theme:'Eleganța clasică a unei săli de spectacol — bordo & auriu, cortină'}
 };
-var TPL_ORDER_CONTINUT = ['design_import','d177','propunere','multumire','raport','eveniment','bunvenit','design_alx_sponsorizare','design_alx_multumire_sponsor','design_alx_raport_parteneri','design_alx_invitatie_parteneri','design_alx_d177'];
+var TPL_ORDER_CONTINUT = ['d177','propunere','multumire','raport','eveniment','bunvenit','design_alx_sponsorizare','design_alx_multumire_sponsor','design_alx_raport_parteneri','design_alx_invitatie_parteneri','design_alx_d177'];
 var TPL_ORDER_DESIGN = ['design_editorial','design_eveniment_elegant','design_foto','design_bold','design_minimal','design_gazeta','design_warm','design_modular','design_scrisoare','design_manifest','design_chitanta','design_cronologie','design_certificat','design_familie','design_vitalitate','design_comunitate','design_adapost','design_natura','design_avant','design_orizont','design_muzeu','design_impuls','design_hotarare','design_cerc','design_garda','design_semnal','design_laur','design_pagina','design_galerie','design_scut','design_stea','design_blazon','design_refugiu','design_insigna','design_start','design_creion','design_cortina'];
 
 /* Domeniul de activitate al organizației (injectat la randare — gol dacă nu
@@ -3480,23 +3209,6 @@ document.getElementById('galleryBtn').onclick = function(){
   document.getElementById('editorView').style.display = 'none';
   document.getElementById('galleryView').style.display = '';
 };
-/* Șablonul „Importă HTML”: lipirea încarcă automat, butonul reîncarcă, fișierul .html se citește local. */
-(function(){
-  var ta = impEl('IMP_HTML'), ld = impEl('IMP_LOAD'), cl = impEl('IMP_CLEAR'), fi = impEl('IMP_FILE');
-  if(!ta) return;
-  if(ld){ ld.addEventListener('click', function(){ impLoad(ta.value); }); }
-  ta.addEventListener('paste', function(){ setTimeout(function(){ impLoad(ta.value); }, 60); });
-  if(cl){ cl.addEventListener('click', function(){
-    if(IMP.doc && !confirm('Ștergi HTML-ul încărcat și toate modificările făcute?')) return;
-    ta.value = ''; IMP.doc = null; impLoad('');
-  }); }
-  if(fi){ fi.addEventListener('change', function(){
-    var f = fi.files && fi.files[0]; if(!f) return;
-    var r = new FileReader();
-    r.onload = function(){ ta.value = String(r.result || ''); impLoad(ta.value); fi.value = ''; };
-    r.readAsText(f);
-  }); }
-})();
 /* Selectorul de stil: butoanele colorate setează lista, iar culoarea proprie e sincronizată între selectorul de culoare și câmpul hex. */
 (function(){
   var sel = document.getElementById('STIL'), hex = document.getElementById('STIL_HEX'), col = document.getElementById('STIL_COLOR');
