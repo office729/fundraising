@@ -86,6 +86,9 @@ export default async function PlatformAdminPage() {
         <Link href="/platform-admin/feedback" className="inline-flex items-center gap-2 rounded-lg border border-line bg-panel px-4 py-2.5 text-sm font-semibold text-brand-blue transition hover:border-brand-blue">
           Feedback de la utilizatori: satisfacție și sugestii →
         </Link>
+        <Link href="/platform-admin/newsletter" className="inline-flex items-center gap-2 rounded-lg border border-line bg-panel px-4 py-2.5 text-sm font-semibold text-brand-blue transition hover:bg-panel-2">
+          Newsletter Alexandrit: șabloane pentru Newsman →
+        </Link>
       </div>
 
       <h2 className="mt-8 text-sm font-semibold text-ink">
