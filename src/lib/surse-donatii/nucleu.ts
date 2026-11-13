@@ -1,5 +1,5 @@
 // „Sursele donațiilor”: nucleul PUR (fără importuri, rulează identic în browser și pe server, se testează direct). Conține:
-//   1. clasificarea unei vizite în cele 10 categorii, în ordinea FIXĂ din cerință (prima regulă îndeplinită decide, chiar dacă parametrii se contrazic);
+//   1. clasificarea unei vizite în cele 14 categorii, în ordinea FIXĂ din cerință (prima regulă îndeplinită decide, chiar dacă parametrii se contrazic);
 //   2. memoria atribuirii: prima și ultima sursă EXTERNĂ cu metadatele lor (o revenire Direct nu schimbă nimic; o sursă nouă înlocuiește tot setul „ultima”);
 //   3. serializarea compactă pentru formularul de donație și validarea ei pe server;
 //   4. conversia sumei în EUR, cu cursul reținut (nu se recalculează niciodată).
@@ -14,12 +14,16 @@ export type CategorieSursa =
   | "linkedin_organic"
   | "newsletter"
   | "organic_search"
+  | "tiktok_ads"
+  | "tiktok_organic"
+  | "youtube_ads"
+  | "youtube_organic"
   | "alte_retele"
   | "alt_site"
   | "afiliat";
 
 // În ordinea priorității regulilor (1–10).
-export const CATEGORII: readonly CategorieSursa[] = ["facebook_ads", "facebook_organic", "google_ads", "linkedin_ads", "linkedin_organic", "newsletter", "organic_search", "alte_retele", "alt_site", "afiliat"];
+export const CATEGORII: readonly CategorieSursa[] = ["facebook_ads", "facebook_organic", "google_ads", "linkedin_ads", "linkedin_organic", "newsletter", "organic_search", "tiktok_ads", "tiktok_organic", "youtube_ads", "youtube_organic", "alte_retele", "alt_site", "afiliat"];
 
 export const ETICHETE_SURSA: Record<CategorieSursa, string> = {
   facebook_ads: "Facebook / Instagram Ads",
@@ -29,6 +33,10 @@ export const ETICHETE_SURSA: Record<CategorieSursa, string> = {
   linkedin_organic: "LinkedIn (organic)",
   newsletter: "Newsletter",
   organic_search: "Organic (căutare)",
+  tiktok_ads: "TikTok Ads",
+  tiktok_organic: "TikTok (organic)",
+  youtube_ads: "YouTube Ads",
+  youtube_organic: "YouTube (organic)",
   alte_retele: "Alte rețele sociale",
   alt_site: "Alt site",
   afiliat: "Afiliat",
@@ -41,6 +49,10 @@ export const ETICHETE_SURSA_EN: Record<CategorieSursa, string> = {
   linkedin_organic: "LinkedIn (organic)",
   newsletter: "Newsletter",
   organic_search: "Organic (search)",
+  tiktok_ads: "TikTok Ads",
+  tiktok_organic: "TikTok (organic)",
+  youtube_ads: "YouTube Ads",
+  youtube_organic: "YouTube (organic)",
   alte_retele: "Other social networks",
   alt_site: "Other website",
   afiliat: "Affiliate",
@@ -72,13 +84,17 @@ export const DOMENII_PLATFORMA: readonly string[] = ["alexandrit.ro"];
 
 const FB_DOMENII = ["facebook.com", "fb.com", "instagram.com"];
 const LI_DOMENII = ["linkedin.com", "lnkd.in"];
-const ALTE_RETELE_DOMENII = ["twitter.com", "x.com", "t.co", "tiktok.com", "youtube.com", "youtu.be"];
+const TT_DOMENII = ["tiktok.com"];
+const YT_DOMENII = ["youtube.com", "youtu.be"];
+const ALTE_RETELE_DOMENII = ["twitter.com", "x.com", "t.co"];
 const FB_SURSE = ["facebook", "fb", "ig", "instagram", "meta"];
 const MEDIUM_REKLAMA = ["paid", "cpc", "ppc", "cpm", "paid_social", "ads"];
 const MEDIUM_GOOGLE = ["cpc", "ppc", "paid"];
 const LI_SURSE = ["linkedin", "li"];
 const NEWSLETTER_SURSE = ["newsman", "newsletter"];
-const ALTE_RETELE_SURSE = ["twitter", "x", "tiktok", "youtube"];
+const TT_SURSE = ["tiktok"];
+const YT_SURSE = ["youtube", "yt"];
+const ALTE_RETELE_SURSE = ["twitter", "x"];
 
 // Identificatori de click publicitar: păstrăm doar TIPUL (nu valoarea), suficient pentru reguli.
 export const TIPURI_CLICK = ["fbclid", "gclid", "gbraid", "wbraid", "li_fat_id", "msclkid", "ttclid"] as const;
@@ -166,7 +182,7 @@ export function semnaleDinUrl(get: (nume: string) => string | null, referrer: st
   };
 }
 
-// ---------- clasificarea (cele 10 reguli, în ordine) ----------
+// ---------- clasificarea (cele 14 reguli, în ordine) ----------
 
 // `ignorate`: domeniile al căror referrer nu e niciodată sursă (proprii + procesatori). Întoarce categoria sau null (= Direct / fără sursă externă).
 export function clasificaSursa(s: SemnaleVizita, ignorate: readonly string[] = domeniiIgnorate()): CategorieSursa | null {
@@ -194,11 +210,21 @@ export function clasificaSursa(s: SemnaleVizita, ignorate: readonly string[] = d
   if (med === "email" || NEWSLETTER_SURSE.includes(src)) return "newsletter";
   // 7. Organic (căutare): motor de căutare, fără identificatori de click publicitar
   if (esteMotorCautare(ref) && s.clickIds.length === 0) return "organic_search";
-  // 8. Alte rețele sociale
+  // 8. TikTok Ads: ttclid (adăugat doar de reclamele TikTok) sau sursă/referrer TikTok cu tip de reclamă
+  const ttSrc = TT_SURSE.includes(src) || gazdaInDomenii(ref, TT_DOMENII);
+  if (ids.has("ttclid") || (ttSrc && reclama)) return "tiktok_ads";
+  // 9. TikTok (organic)
+  if (ttSrc) return "tiktok_organic";
+  // 10. YouTube Ads (reclamele Google Ads cu gclid au fost deja prinse la regula 3)
+  const ytSrc = YT_SURSE.includes(src) || gazdaInDomenii(ref, YT_DOMENII);
+  if (ytSrc && reclama) return "youtube_ads";
+  // 11. YouTube (organic)
+  if (ytSrc) return "youtube_organic";
+  // 12. Alte rețele sociale (Twitter/X)
   if (ALTE_RETELE_SURSE.includes(src) || gazdaInDomenii(ref, ALTE_RETELE_DOMENII)) return "alte_retele";
-  // 9. Alt site (referrer extern, neignorat, care nu se încadrează mai sus)
+  // 13. Alt site (referrer extern, neignorat, care nu se încadrează mai sus)
   if (ref) return "alt_site";
-  // 10. Afiliat (doar dacă nu s-a identificat altă sursă)
+  // 14. Afiliat (doar dacă nu s-a identificat altă sursă)
   if (s.referralId) return "afiliat";
   return null;
 }

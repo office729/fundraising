@@ -48,13 +48,12 @@ test("variantele Paid sunt clasificate ca plătite de ambele straturi de atribui
   }
 });
 
-test("în „Sursele donațiilor”, Facebook / Instagram / LinkedIn / Google Paid ajung la reclamă plătită", () => {
+test("în „Sursele donațiilor”, toate variantele Paid ajung la categoria de reclamă plătită", () => {
   const cat = (source, medium) => N.clasificaSursa({ ...SEM, utmSource: source, utmMedium: medium });
   assert.equal(cat("facebook", "paid"), "facebook_ads");
   assert.equal(cat("instagram", "paid"), "facebook_ads");
   assert.equal(cat("linkedin", "paid"), "linkedin_ads");
   assert.equal(cat("google", "paid"), "google_ads");
-  // TikTok și YouTube nu au categorie proprie de reclamă: rămân „Alte rețele”, dar în Reclame/Surse sunt tot plătite.
-  assert.equal(cat("tiktok", "paid"), "alte_retele");
-  assert.equal(cat("youtube", "paid"), "alte_retele");
+  assert.equal(cat("tiktok", "paid"), "tiktok_ads");
+  assert.equal(cat("youtube", "paid"), "youtube_ads");
 });

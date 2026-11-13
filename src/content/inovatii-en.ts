@@ -5,6 +5,12 @@ import type { Inovatie } from "./inovatii";
 export type InovatieEn = { titlu: string; descriere: string; categorie: string; cumFolosesti?: string };
 
 export const INOVATII_EN: Record<string, InovatieEn> = {
+  "2026-11-09-tiktok-youtube-surse": {
+    titlu: "TikTok and YouTube as separate sources in the donations report",
+    descriere: "In “Donation sources” you now see TikTok ads, organic TikTok, YouTube ads and organic YouTube separately, not only under “Other social networks”. Older donations stay where they were saved.",
+    categorie: "Reports and statistics",
+    cumFolosesti: "Use the “Paid” links for TikTok and YouTube ads and compare them with organic posts, to see where the budget is worth spending.",
+  },
   "2026-11-09-linkuri-paid": {
     titlu: "Links for paid social media ads (Paid)",
     descriere: "The link generators in Sources and in Ads now have “Paid” variants for Facebook, Instagram, TikTok, YouTube, LinkedIn and Google, with utm_medium=paid. Donations from paid campaigns show up correctly as ads in the source reports, not mixed with organic posts.",

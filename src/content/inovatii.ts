@@ -30,6 +30,16 @@ export type Inovatie = {
 
 export const INOVATII: Inovatie[] = [
   {
+    id: "2026-11-09-tiktok-youtube-surse",
+    data: "2026-11-09",
+    titlu: "TikTok și YouTube, surse separate în raportul donațiilor",
+    descriere: "În „Sursele donațiilor” vezi acum separat donațiile din reclame TikTok, TikTok organic, reclame YouTube și YouTube organic, nu doar la „Alte rețele sociale”. Donațiile mai vechi rămân unde au fost salvate.",
+    categorie: "Rapoarte și statistici",
+    tip: "imbunatatire",
+    link: "surse-donatii",
+    cumFolosesti: "Folosește linkurile „Paid” pentru reclamele TikTok și YouTube și compară-le cu postările organice, ca să vezi unde merită bugetul.",
+  },
+  {
     id: "2026-11-09-linkuri-paid",
     data: "2026-11-09",
     titlu: "Linkuri pentru reclame plătite (Paid) pe social media",

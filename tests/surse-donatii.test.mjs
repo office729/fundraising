@@ -10,7 +10,7 @@ const url = (qs, ref) => {
   return N.semnaleDinUrl((n) => q.get(n), ref);
 };
 
-// ===== cele 10 reguli =====
+// ===== cele 14 reguli =====
 test("1. Facebook / Instagram Ads: sursă Facebook + medium de reclamă (sau referrer Facebook + medium)", () => {
   for (const src of ["facebook", "fb", "ig", "instagram", "meta", " Facebook "]) for (const med of ["paid", "cpc", "ppc", "cpm", "paid_social", "ads", "PAID"]) assert.equal(clasifica({ utmSource: src, utmMedium: med }), "facebook_ads", `${src}/${med}`);
   assert.equal(clasifica({ referrerHost: "l.facebook.com", utmMedium: "paid" }), "facebook_ads");
@@ -62,9 +62,27 @@ test("7. Organic (căutare): motoare de căutare, doar fără identificatori de 
   assert.equal(clasifica({ referrerHost: "bing.com", clickIds: ["msclkid"] }), "alt_site", "msclkid exclude regula 7; cade pe „alt site”");
 });
 
-test("8. Alte rețele sociale: sursă twitter|x|tiktok|youtube sau referrer corespunzător", () => {
-  for (const s of ["twitter", "x", "tiktok", "youtube"]) assert.equal(clasifica({ utmSource: s }), "alte_retele", s);
-  for (const h of ["twitter.com", "x.com", "t.co", "tiktok.com", "www.tiktok.com", "youtube.com", "m.youtube.com", "youtu.be"]) assert.equal(clasifica({ referrerHost: h }), "alte_retele", h);
+test("8–9. TikTok: ttclid sau sursă/referrer TikTok cu medium de reclamă = Ads; altfel organic", () => {
+  assert.equal(clasifica({ clickIds: ["ttclid"] }), "tiktok_ads", "ttclid e adăugat doar de reclamele TikTok");
+  for (const med of ["paid", "cpc", "ppc", "cpm", "paid_social", "ads", "PAID"]) assert.equal(clasifica({ utmSource: "tiktok", utmMedium: med }), "tiktok_ads", med);
+  assert.equal(clasifica({ referrerHost: "www.tiktok.com", utmMedium: "paid" }), "tiktok_ads");
+  assert.equal(clasifica({ utmSource: "tiktok" }), "tiktok_organic");
+  assert.equal(clasifica({ utmSource: "tiktok", utmMedium: "social" }), "tiktok_organic");
+  assert.equal(clasifica({ referrerHost: "tiktok.com" }), "tiktok_organic");
+  assert.equal(clasifica({ referrerHost: "tiktok.com.alt-site.ro" }), "alt_site", "hostname real, nu text");
+});
+
+test("10–11. YouTube: sursă/referrer YouTube cu medium de reclamă = Ads; altfel organic; gclid rămâne Google Ads", () => {
+  for (const s of ["youtube", "yt"]) assert.equal(clasifica({ utmSource: s, utmMedium: "paid" }), "youtube_ads", s);
+  assert.equal(clasifica({ referrerHost: "m.youtube.com", utmMedium: "cpc" }), "youtube_ads");
+  assert.equal(clasifica({ utmSource: "youtube" }), "youtube_organic");
+  for (const h of ["youtube.com", "m.youtube.com", "youtu.be"]) assert.equal(clasifica({ referrerHost: h }), "youtube_organic", h);
+  assert.equal(clasifica({ utmSource: "youtube", utmMedium: "paid", clickIds: ["gclid"] }), "google_ads", "regula 3 înaintea 10");
+});
+
+test("12. Alte rețele sociale: sursă twitter|x sau referrer corespunzător", () => {
+  for (const s of ["twitter", "x"]) assert.equal(clasifica({ utmSource: s }), "alte_retele", s);
+  for (const h of ["twitter.com", "x.com", "t.co"]) assert.equal(clasifica({ referrerHost: h }), "alte_retele", h);
 });
 
 test("9. Alt site: referrer extern, neignorat, care nu se încadrează mai sus", () => {
@@ -89,7 +107,9 @@ test("ordinea regulilor e respectată când parametrii se contrazic", () => {
   assert.equal(clasifica({ utmSource: "newsman", referrerHost: "google.com" }), "newsletter", "6 înaintea 7");
   assert.equal(clasifica({ utmSource: "tiktok", referrerHost: "google.com" }), "organic_search", "7 înaintea 8");
   assert.equal(clasifica({ utmSource: "facebook", utmMedium: "email" }), "facebook_organic", "2 înaintea 6");
-  assert.equal(clasifica({ utmSource: "tiktok", referrerHost: "stiri.ro" }), "alte_retele", "8 înaintea 9");
+  assert.equal(clasifica({ utmSource: "tiktok", referrerHost: "stiri.ro" }), "tiktok_organic", "TikTok înaintea „alt site”");
+  assert.equal(clasifica({ utmSource: "tiktok", referrerHost: "youtube.com" }), "tiktok_organic", "TikTok înaintea YouTube");
+  assert.equal(clasifica({ utmSource: "twitter", referrerHost: "youtube.com" }), "youtube_organic", "YouTube înaintea Twitter/X");
   assert.equal(clasifica({ utmSource: "  FaceBook ", utmMedium: " PAID " }), "facebook_ads", "fără diferență de litere sau spații");
 });
 

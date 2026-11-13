@@ -51,15 +51,23 @@ create table if not exists donatie_surse (
 
 do $$ begin
   alter table donatie_surse add constraint donatie_surse_u_categorie_chk
-    check (u_categorie in ('facebook_ads','facebook_organic','google_ads','linkedin_ads','linkedin_organic','newsletter','organic_search','alte_retele','alt_site','afiliat'));
+    check (u_categorie in ('facebook_ads','facebook_organic','google_ads','linkedin_ads','linkedin_organic','newsletter','organic_search','tiktok_ads','tiktok_organic','youtube_ads','youtube_organic','alte_retele','alt_site','afiliat'));
 exception when duplicate_object then null; end $$;
 do $$ begin
   alter table donatie_surse add constraint donatie_surse_p_categorie_chk
-    check (p_categorie is null or p_categorie in ('facebook_ads','facebook_organic','google_ads','linkedin_ads','linkedin_organic','newsletter','organic_search','alte_retele','alt_site','afiliat'));
+    check (p_categorie is null or p_categorie in ('facebook_ads','facebook_organic','google_ads','linkedin_ads','linkedin_organic','newsletter','organic_search','tiktok_ads','tiktok_organic','youtube_ads','youtube_organic','alte_retele','alt_site','afiliat'));
 exception when duplicate_object then null; end $$;
 do $$ begin
   alter table donatie_surse add constraint donatie_surse_conversie_chk check (conversie_baza in ('eur','ron','echivalent_lei','indisponibila'));
 exception when duplicate_object then null; end $$;
+
+-- Extindere (TikTok și YouTube ca surse separate): constrângerile de mai sus sunt create doar la prima rulare, deci aici le înlocuim cu lista nouă. Idempotent.
+alter table donatie_surse drop constraint if exists donatie_surse_u_categorie_chk;
+alter table donatie_surse add constraint donatie_surse_u_categorie_chk
+  check (u_categorie in ('facebook_ads','facebook_organic','google_ads','linkedin_ads','linkedin_organic','newsletter','organic_search','tiktok_ads','tiktok_organic','youtube_ads','youtube_organic','alte_retele','alt_site','afiliat'));
+alter table donatie_surse drop constraint if exists donatie_surse_p_categorie_chk;
+alter table donatie_surse add constraint donatie_surse_p_categorie_chk
+  check (p_categorie is null or p_categorie in ('facebook_ads','facebook_organic','google_ads','linkedin_ads','linkedin_organic','newsletter','organic_search','tiktok_ads','tiktok_organic','youtube_ads','youtube_organic','alte_retele','alt_site','afiliat'));
 
 create index if not exists donatie_surse_org_captat_idx on donatie_surse (org_id, captat_la desc);
 create index if not exists donatie_surse_org_categorie_idx on donatie_surse (org_id, u_categorie);

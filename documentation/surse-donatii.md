@@ -6,7 +6,7 @@ Donația se atribuie **ultimei surse externe cunoscute înainte de începerea pl
 Codul: `src/lib/surse-donatii/` (`nucleu.ts` = reguli, memorie, EUR — pur și testat; `client.ts` = browser; `server.ts` = salvarea pe donație), tabelul `donatie_surse`
 (`documentation/surse-donatii.sql`), testele `tests/surse-donatii*.test.mjs`. Peste modulele existente (`atribuire`, `reclame/touch`, `sursaMarketing`), care rămân neschimbate.
 
-## Cele 10 reguli (prima potrivită decide; ordinea nu se schimbă, nici când parametrii se contrazic)
+## Cele 14 reguli (prima potrivită decide; ordinea nu se schimbă, nici când parametrii se contrazic)
 
 Valorile se compară fără diferență între litere mari și mici și fără spații la capete. Domeniile se compară pe hostname real (`facebook.com.alt-site.ro` NU e Facebook).
 
@@ -19,9 +19,13 @@ Valorile se compară fără diferență între litere mari și mici și fără s
 | 5 | LinkedIn (organic) | `utm_source` ∈ linkedin, li; SAU referrer linkedin.com / lnkd.in |
 | 6 | Newsletter | `utm_medium=email`; SAU `utm_source` ∈ newsman, newsletter |
 | 7 | Organic (căutare) | referrer Google, Bing, Yahoo, DuckDuckGo sau Ecosia, fără identificatori de click publicitar |
-| 8 | Alte rețele sociale | `utm_source` ∈ twitter, x, tiktok, youtube; SAU referrer twitter.com, x.com, t.co, tiktok.com, youtube.com, youtu.be |
-| 9 | Alt site | referrer extern care nu se încadrează mai sus și nu e ignorat |
-| 10 | Afiliat | `referral_id` și nicio altă sursă |
+| 8 | TikTok Ads | `ttclid`; SAU (`utm_source=tiktok` SAU referrer tiktok.com) ȘI `utm_medium` de reclamă |
+| 9 | TikTok (organic) | `utm_source=tiktok` SAU referrer tiktok.com |
+| 10 | YouTube Ads | (`utm_source` ∈ youtube, yt SAU referrer youtube.com / youtu.be) ȘI `utm_medium` de reclamă (reclamele cu `gclid` au fost deja prinse la Google Ads) |
+| 11 | YouTube (organic) | `utm_source` ∈ youtube, yt SAU referrer youtube.com / youtu.be |
+| 12 | Alte rețele sociale | `utm_source` ∈ twitter, x; SAU referrer twitter.com, x.com, t.co |
+| 13 | Alt site | referrer extern care nu se încadrează mai sus și nu e ignorat |
+| 14 | Afiliat | `referral_id` și nicio altă sursă |
 
 Referrerii **ignorați**: domeniul propriu (gazda curentă, domeniul platformei, domeniul propriu al organizației) și procesatorii de plăți (Netopia, Stripe, PayPal, Euplatesc, Smartfintech, Google Pay).
 Lista se întreține în `DOMENII_PROCESATORI` din `nucleu.ts` sau, fără deploy, în variabila `NEXT_PUBLIC_SURSE_DOMENII_IGNORATE` (domenii separate prin virgulă).
@@ -57,4 +61,4 @@ sau site-ul gazdă să încarce widgetul cu aceeași adresă etichetată; (3) da
 
 ## Linkuri pentru reclame plătite
 
-Generatoarele de linkuri (CRM → Surse, CRM → Reclame, Panou platformă → Surse) au variante **Paid** cu `utm_medium=paid` pentru Facebook, Instagram, TikTok, YouTube, LinkedIn și Google (în plus față de `paid_social` și `cpc`, tot recunoscute). Exemplu: `?utm_source=facebook&utm_medium=paid&utm_campaign=craciun_2026`. TikTok și YouTube nu au categorie proprie în raport: apar la „Alte rețele sociale”, dar sunt marcate ca plătite în Surse și Reclame.
+Generatoarele de linkuri (CRM → Surse, CRM → Reclame, Panou platformă → Surse) au variante **Paid** cu `utm_medium=paid` pentru Facebook, Instagram, TikTok, YouTube, LinkedIn și Google (în plus față de `paid_social` și `cpc`, tot recunoscute). Exemplu: `?utm_source=facebook&utm_medium=paid&utm_campaign=craciun_2026`. TikTok și YouTube au categorii proprii în raport (Ads și organic). Donațiile salvate înainte de această extindere rămân la „Alte rețele sociale”: rândurile sunt neschimbabile.

@@ -62,7 +62,7 @@ export const SURSE_DONATII_UI_DICT = {
     ajutor: {
       titlu: "Cum se stabilește sursa și cum etichetezi linkurile",
       intro: "Citește asta înainte să pornești o reclamă sau un newsletter: o etichetă greșită mută donațiile la altă sursă.",
-      reguliTitlu: "Cele 10 reguli, în ordinea priorității",
+      reguliTitlu: "Cele 14 reguli, în ordinea priorității",
       reguliNota: "Se aplică prima regulă îndeplinită, chiar dacă linkul conține și semne care îi contrazic. De aceea ordinea contează.",
       reguli: [
         { n: "Facebook / Instagram Ads", d: "Vizita vine de pe Facebook, Instagram sau Meta (sursa din link sau site-ul de unde a venit) și are un tip de trafic de reclamă: paid, cpc, ppc, cpm, paid_social sau ads." },
@@ -72,7 +72,11 @@ export const SURSE_DONATII_UI_DICT = {
         { n: "LinkedIn (organic)", d: "Vine de pe LinkedIn, fără tip de reclamă." },
         { n: "Newsletter", d: "Tipul de trafic este email (utm_medium=email) sau sursa este newsman ori newsletter." },
         { n: "Organic (căutare)", d: "Vine dintr-un motor de căutare (Google, Bing, Yahoo, DuckDuckGo, Ecosia), fără semne de reclamă plătită." },
-        { n: "Alte rețele sociale", d: "Vine de pe Twitter/X, TikTok sau YouTube (sursa din link sau site-ul de unde a venit)." },
+        { n: "TikTok Ads", d: "Linkul conține ttclid (TikTok îl adaugă singur la reclame), sau vizita vine de pe TikTok și are un tip de trafic de reclamă (aceleași tipuri ca la Facebook)." },
+        { n: "TikTok (organic)", d: "Vine de pe TikTok, fără tip de reclamă." },
+        { n: "YouTube Ads", d: "Vizita vine de pe YouTube (sursa din link sau site-ul de unde a venit) și are un tip de trafic de reclamă. Reclamele YouTube din Google Ads care au gclid sunt numărate la Google Ads." },
+        { n: "YouTube (organic)", d: "Vine de pe YouTube, fără tip de reclamă." },
+        { n: "Alte rețele sociale", d: "Vine de pe Twitter/X (sursa din link sau site-ul de unde a venit)." },
         { n: "Alt site", d: "Vine de pe un alt site, care nu este al organizației, al platformei sau al procesatorului de plăți și nu se potrivește cu regulile de mai sus." },
         { n: "Afiliat", d: "Se aplică doar dacă nu s-a recunoscut nicio altă sursă și linkul vine cu identificatorul unui afiliat (referral_id)." },
       ],
@@ -80,6 +84,7 @@ export const SURSE_DONATII_UI_DICT = {
       etichetare: [
         { n: "Reclame Facebook și Instagram", d: "Adaugă utm_medium=paid, altfel sunt numărate ca organic. Exemplu:", ex: "?utm_source=facebook&utm_medium=paid&utm_campaign=nume_campanie" },
         { n: "Reclame LinkedIn", d: "Se recunosc după li_fat_id sau după sursa LinkedIn împreună cu un tip de trafic de reclamă (de exemplu paid). Exemplu:", ex: "?utm_source=linkedin&utm_medium=paid&utm_campaign=nume_campanie" },
+        { n: "Reclame TikTok și YouTube", d: "Adaugă utm_medium=paid; TikTok adaugă singur și ttclid. Exemplu:", ex: "?utm_source=tiktok&utm_medium=paid&utm_campaign=nume_campanie" },
         { n: "Newsletter", d: "Etichetează fiecare link din mesaj cu utm_medium=email. Exemplu:", ex: "?utm_source=newsman&utm_medium=email&utm_campaign=nume_newsletter" },
         { n: "Google Ads", d: "Nu trebuie să faci nimic: reclamele se recunosc automat după gclid, gbraid sau wbraid, cu condiția ca etichetarea automată să fie activă în contul Google Ads.", ex: "" },
       ],
@@ -156,7 +161,7 @@ export const SURSE_DONATII_UI_DICT = {
     ajutor: {
       titlu: "How the source is decided and how to tag your links",
       intro: "Read this before you start an ad or a newsletter: a wrong tag moves donations to another source.",
-      reguliTitlu: "The 10 rules, in order of priority",
+      reguliTitlu: "The 14 rules, in order of priority",
       reguliNota: "The first rule that matches is applied, even if the link also contains signs that contradict it. That is why the order matters.",
       reguli: [
         { n: "Facebook / Instagram Ads", d: "The visit comes from Facebook, Instagram or Meta (the source in the link or the site it came from) and has an ad traffic type: paid, cpc, ppc, cpm, paid_social or ads." },
@@ -166,7 +171,11 @@ export const SURSE_DONATII_UI_DICT = {
         { n: "LinkedIn (organic)", d: "It comes from LinkedIn, without an ad type." },
         { n: "Newsletter", d: "The traffic type is email (utm_medium=email) or the source is newsman or newsletter." },
         { n: "Organic (search)", d: "It comes from a search engine (Google, Bing, Yahoo, DuckDuckGo, Ecosia), with no sign of paid advertising." },
-        { n: "Other social networks", d: "It comes from Twitter/X, TikTok or YouTube (the source in the link or the site it came from)." },
+        { n: "TikTok Ads", d: "The link contains ttclid (TikTok adds it to ads on its own), or the visit comes from TikTok and has an ad traffic type (the same types as for Facebook)." },
+        { n: "TikTok (organic)", d: "It comes from TikTok, without an ad type." },
+        { n: "YouTube Ads", d: "The visit comes from YouTube (the source in the link or the site it came from) and has an ad traffic type. YouTube ads from Google Ads that carry gclid are counted under Google Ads." },
+        { n: "YouTube (organic)", d: "It comes from YouTube, without an ad type." },
+        { n: "Other social networks", d: "It comes from Twitter/X (the source in the link or the site it came from)." },
         { n: "Other website", d: "It comes from another website that is not the organization's, the platform's or the payment processor's, and does not match the rules above." },
         { n: "Affiliate", d: "Applies only if no other source was recognized and the link carries an affiliate identifier (referral_id)." },
       ],
@@ -174,6 +183,7 @@ export const SURSE_DONATII_UI_DICT = {
       etichetare: [
         { n: "Facebook and Instagram ads", d: "Add utm_medium=paid, otherwise they are counted as organic. Example:", ex: "?utm_source=facebook&utm_medium=paid&utm_campaign=campaign_name" },
         { n: "LinkedIn ads", d: "They are recognized by li_fat_id, or by the LinkedIn source together with an ad traffic type (for example paid). Example:", ex: "?utm_source=linkedin&utm_medium=paid&utm_campaign=campaign_name" },
+        { n: "TikTok and YouTube ads", d: "Add utm_medium=paid; TikTok also adds ttclid on its own. Example:", ex: "?utm_source=tiktok&utm_medium=paid&utm_campaign=campaign_name" },
         { n: "Newsletter", d: "Tag every link in the message with utm_medium=email. Example:", ex: "?utm_source=newsman&utm_medium=email&utm_campaign=newsletter_name" },
         { n: "Google Ads", d: "You do not need to do anything: ads are recognized automatically by gclid, gbraid or wbraid, as long as auto-tagging is turned on in your Google Ads account.", ex: "" },
       ],
