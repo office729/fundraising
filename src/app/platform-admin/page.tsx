@@ -65,6 +65,9 @@ export default async function PlatformAdminPage() {
       <p className="mt-1 text-sm text-muted">Vizibil doar pentru contul platformei — nicio organizație client nu ajunge la această pagină.</p>
 
       <div className="mt-4 flex flex-wrap gap-3">
+        <Link href="/platform-admin/utilizatori" className="inline-flex items-center gap-2 rounded-lg border border-line bg-panel px-4 py-2.5 text-sm font-semibold text-brand-blue transition hover:border-brand-blue">
+          Utilizatori: prima și ultima intrare, ultima lucrare, activi →
+        </Link>
         <Link href="/platform-admin/lead-uri" className="inline-flex items-center gap-2 rounded-lg border border-line bg-panel px-4 py-2.5 text-sm font-semibold text-brand-blue transition hover:border-brand-blue">
           Cereri de la ONG-uri: formularul „Descoperă Alexandrit” →
         </Link>

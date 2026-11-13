@@ -83,7 +83,8 @@ export async function loginAction(
     await tx.execute(sql`select set_config('app.current_user_email', ${email}, true)`);
     const appUser = await ensureAppUser(tx, email);
     await tx.execute(sql`select set_config('app.current_user_id', ${appUser.id}, true)`);
-    await tx.update(appUsers).set({ lastLoginAt: new Date() }).where(eq(appUsers.id, appUser.id));
+    const acum = new Date();
+    await tx.update(appUsers).set({ lastLoginAt: acum, firstLoginAt: appUser.firstLoginAt ?? acum }).where(eq(appUsers.id, appUser.id));
 
     const beneficiar = await findBeneficiaryProfile(tx, appUser.id);
     if (beneficiar) return { isBeneficiar: true, orgSlug: null };

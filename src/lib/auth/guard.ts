@@ -1,5 +1,5 @@
 import "server-only";
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
 
@@ -7,10 +7,12 @@ import type { CustomPlanConfigSaved } from "@/lib/billing/custom-plan";
 import { areModul, numeModul, numePachetMinim, type ModulPachet } from "@/lib/billing/packages";
 import { isAccessBlocked, pachetEfectiv, pachetPentruModule } from "@/lib/billing/trial";
 import { db } from "@/lib/db";
+import { appUsers } from "@/lib/db/schema";
 import { EroareUtilizator } from "@/lib/erori";
 import { getTr } from "@/lib/i18n/tr-server";
 import { esteEroareDeJurnalizat, jurnalizeazaEroareOrg } from "@/lib/suport/jurnal-erori";
 import type { DomeniuActivitate } from "@/lib/campaign-templates";
+import { trebuieNotat } from "@/lib/utilizatori/activitate";
 
 import { findBeneficiaryProfile } from "./beneficiar";
 import { ensureAppUser, getAuthUser } from "./dal";
@@ -97,7 +99,8 @@ export type OrgContext = {
 // s-a terminat și nu există abonament valabil — pornirea plății și pagina de
 // rezultat a plății. Orice altceva e refuzat AICI, nu doar ascuns de layout.
 // `modul`: acțiunea aparține unui modul inclus doar din anumite pachete (vezi MODULE_PACHET); pachetele fără el sunt refuzate aici, nu doar în pagină.
-export type OrgSessionOptions = { permiteAccesBlocat?: boolean; modul?: ModulPachet };
+// `doarVizita`: deschiderea unei pagini (requireOrgAccess), nu o acțiune — pentru Panou platformă → Utilizatori (ultima vizită vs. ultima lucrare).
+export type OrgSessionOptions = { permiteAccesBlocat?: boolean; modul?: ModulPachet; doarVizita?: boolean };
 
 export function withOrgSession<A extends unknown[], R>(
   action: (ctx: OrgContext, ...args: A) => Promise<R>,
@@ -195,6 +198,7 @@ export function withOrgSession<A extends unknown[], R>(
         throw new EroareUtilizator(t(`${numeModul(opts.modul)} este inclus începând cu pachetul ${minim}.`, `${numeModul(opts.modul, "en")} is included from the ${minim} plan upwards.`));
       }
       urma.orgId = ctx.orgId;
+      await noteazaActivitate(tx as unknown as typeof db, appUser, opts?.doarVizita === true);
       return action(ctx, ...args);
     });
     } catch (e) {
@@ -203,6 +207,23 @@ export function withOrgSession<A extends unknown[], R>(
       throw e;
     }
   };
+}
+
+// Notează, cel mult o dată la 5 minute, că utilizatorul a deschis o pagină (ultima vizită) sau a făcut o acțiune (ultima lucrare). Decizia se ia pe rândul deja citit,
+// fără interogare în plus; scrierea se face în aceeași tranzacție. O acțiune notează și vizita.
+async function noteazaActivitate(
+  tx: typeof db,
+  user: { id: string; lastSeenAt: Date | null; lastActionAt: Date | null },
+  doarVizita: boolean,
+): Promise<void> {
+  const acum = new Date();
+  if (doarVizita) {
+    if (!trebuieNotat(user.lastSeenAt, acum)) return;
+    await tx.update(appUsers).set({ lastSeenAt: acum }).where(eq(appUsers.id, user.id));
+    return;
+  }
+  if (!trebuieNotat(user.lastActionAt, acum)) return;
+  await tx.update(appUsers).set({ lastSeenAt: acum, lastActionAt: acum }).where(eq(appUsers.id, user.id));
 }
 
 export function withOrgAdmin<A extends unknown[], R>(
@@ -302,7 +323,7 @@ export const requireOrgAccess = cache(function requireOrgAccess(orgSlug: string)
     // Verificarea de acces citește starea abonamentului ca să decidă paywall-ul
     // (layout-ul) — dacă ar fi ea însăși blocată de paywall, layout-ul ar crăpa
     // în loc să-l afișeze. Nu întoarce date de tenant, doar contextul organizației.
-  }), { permiteAccesBlocat: true })(orgSlug);
+  }), { permiteAccesBlocat: true, doarVizita: true })(orgSlug);
 });
 
 // ---------------------------------------------------------------------------

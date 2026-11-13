@@ -22,6 +22,11 @@ export const appUsers = pgTable("app_users", {
   // de-aici nevoia unei coloane proprii. Null = niciodată autentificat (ex.
   // un angajat creat administrativ, fără cont propriu încă).
   lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
+  // Activitate, pentru Panou platformă → Utilizatori (vezi lib/utilizatori/activitate.ts și documentation/utilizatori-activitate.sql):
+  // prima autentificare (o singură dată), ultima pagină din CRM deschisă și ultima acțiune făcută — ultimele două scrise cel mult o dată la 5 minute.
+  firstLoginAt: timestamp("first_login_at", { withTimezone: true }),
+  lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
+  lastActionAt: timestamp("last_action_at", { withTimezone: true }),
   // Dovada acceptării Termenilor și a Politicii de confidențialitate (GDPR art.
   // 7(1) / contract): momentul bifei și versiunea textelor legale acceptate
   // (lib/legal-version.ts). Null = cont creat înainte de bifa de acceptare.

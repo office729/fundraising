@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { noteazaAutentificare } from "@/lib/auth/autentificare";
 import { getOrgSlugDupaEmail } from "@/lib/auth/dal";
 import { finalizeazaAutomatDinInscriere } from "@/lib/auth/finalizare-automata";
 import { createClient } from "@/lib/supabase/server";
@@ -26,6 +27,9 @@ export async function GET(request: Request) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      // Autentificarea făcută prin link (confirmare cont, Google, resetare parolă) se notează ca orice autentificare (Panou platformă → Utilizatori); nu blochează intrarea.
+      const { data: sesiune } = await supabase.auth.getUser();
+      if (sesiune.user?.email) await noteazaAutentificare(sesiune.user.email).catch(() => undefined);
       // Confirmare de email după înscriere (destinația implicită „/"): organizația se creează acum, din datele date la înscriere.
       // Pentru Google, resetare de parolă etc. nu există aceste date, deci nu se întâmplă nimic și se merge mai departe ca până acum.
       if (new URL(destinatie).pathname === "/") {
